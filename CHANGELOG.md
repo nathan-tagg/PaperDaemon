@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.17
+
+- Violins stay inside their axis, taper to a point and sit centered over their names.
+- Scatter charts fit their axes to the points, draw every point whole and show one key (none for one series).
+- The year map names its months and Mon / Wed / Fri, and every day's square is outlined.
+
 ## 0.1.16
 
 - A game is played on the page where you asked for it. An adventure's character sheet and log follow that page.

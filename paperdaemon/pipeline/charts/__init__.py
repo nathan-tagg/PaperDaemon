@@ -1399,7 +1399,7 @@ def _kde(vals, steps=72):
     q1, q3 = s[n // 4], s[(3 * n) // 4]
     spread = min(sd, (q3 - q1) / 1.34) or sd
     bw = 0.9 * spread * n ** (-0.2) or (hi - lo) / 10.0
-    lo, hi = lo - bw, hi + bw
+    lo, hi = lo - 2 * bw, hi + 2 * bw       # two bandwidths, where the curve has tapered (cut at one it ended flat)
     out = []
     for i in range(steps + 1):
         x = lo + (hi - lo) * i / steps
@@ -1624,6 +1624,13 @@ def _dist_vl(spec, cfg, schema):
         for g in groups:
             for v, d in _kde([float(x) for x in g["values"]]):
                 dens.append({"g": g["name"], "value": v, "density": d})
+        # THE AXIS COVERS THE CURVES: each runs past its data by its tails, and an axis cut at the data drew them
+        # over its ends
+        lo, hi = min(d["value"] for d in dens), max(d["value"] for d in dens)
+        pad = 0.0
+        # each violin centered in its column with air at its sides: a centered stack spans 0..the largest density
+        dmax = max(d["density"] for d in dens)
+        side = (dmax / 2.0 - dmax * 0.58, dmax / 2.0 + dmax * 0.58)
         return {"$schema": schema, "title": spec.get("title", ""),
                 # PER FACET, not the whole chart. `width` on a faceted spec is each column's
                 # width, and WIDTH-200 made a six-thousand-pixel strip.
@@ -1635,7 +1642,7 @@ def _dist_vl(spec, cfg, schema):
                     "y": {"field": "value", "type": "quantitative", "title": spec.get("y_label"),
                           "scale": {"domain": [lo - pad, hi + pad], "nice": False}},
                     "x": {"field": "density", "type": "quantitative", "stack": "center",
-                          "impute": None, "title": None,
+                          "impute": None, "title": None, "scale": {"domain": list(side), "nice": False},
                           "axis": {"labels": False, "values": [], "grid": False,
                                    "ticks": False, "domain": False}},
                     "column": {"field": "g", "type": "nominal", "sort": names, "spacing": 6,
@@ -3295,14 +3302,36 @@ def _yearmap_vl(spec, cfg, schema):
         rows.append({"wk": int(d.strftime("%W")), "dow": d.weekday(),
                      "fill": ramp[step], "date": d.isoformat()})
         d += _dt.timedelta(days=1)
+    # THE MONTHS over the first week each begins in, and Mon / Wed / Fri down the side: without them the grid
+    # was 365 squares and no way to find a day
+    months, seen = [], set()
+    for r in rows:
+        m = int(r["date"][5:7])
+        if m not in seen:
+            seen.add(m)
+            months.append({"wk": r["wk"], "t": _dt.date(y, m, 1).strftime("%b")})
+    names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    weeks = sorted(set(r["wk"] for r in rows))
+    x = {"field": "wk", "type": "ordinal", "axis": None, "scale": {"domain": weeks}}
     return {"$schema": schema, "title": spec.get("title", "%d" % y),
-            "width": WIDTH - 90, "height": 220, "data": {"values": rows},
-            "mark": {"type": "rect", "stroke": "#B8B8B8", "strokeWidth": 0.7,
-                     "width": {"band": 0.86}, "height": {"band": 0.86}, "cornerRadius": 2},
-            "encoding": {
-                "x": {"field": "wk", "type": "ordinal", "axis": None},
-                "y": {"field": "dow", "type": "ordinal", "axis": None},
-                "color": {"field": "fill", "type": "nominal", "scale": None, "legend": None}},
+            "width": WIDTH - 90, "height": 220,
+            "layer": [
+                {"data": {"values": rows},
+                 # the squares' outline in the charts' rule gray at a full pixel: lighter and thinner, some did not draw
+                 "mark": {"type": "rect", "stroke": RULE, "strokeWidth": 1,
+                          "width": {"band": 0.86}, "height": {"band": 0.86}, "cornerRadius": 2},
+                 "encoding": {
+                     "x": x,
+                     "y": {"field": "dow", "type": "ordinal", "title": None,
+                           "scale": {"domain": list(range(7))},
+                           "axis": {"values": [0, 2, 4], "labelExpr": "%s[datum.value]" % json.dumps(names),
+                                    "domain": False, "ticks": False, "labelFontSize": 20}},
+                     "color": {"field": "fill", "type": "nominal", "scale": None, "legend": None}}},
+                {"data": {"values": months},
+                 "mark": {"type": "text", "font": FONT, "fontSize": 20, "fontWeight": "bold", "align": "left",
+                          "baseline": "bottom", "color": "black", "dy": -6},
+                 "encoding": {"x": dict(x, bandPosition=0), "y": {"value": 0},
+                              "text": {"field": "t", "type": "nominal"}}}],
             "config": cfg}
 
 def _timeline_vl(spec, cfg, schema):
@@ -4609,16 +4638,22 @@ def _to_vegalite(spec):
                 "data": {"values": rows},
                 "mark": {"type": "point", "filled": True, "size": 300, "opacity": 1,
                          "stroke": "black", "strokeWidth": 2},
+                # THE AXES FIT THE POINTS: not forced to zero (a cloud at 150-180 sat in the far corner), and
+                # padded so a point at the edge is drawn whole
                 "encoding": {
                     "x": {"field": "x", "type": "quantitative", "title": xl,
-                          "axis": dict(**_GRID)},
+                          "scale": {"zero": False, "padding": 24}, "axis": dict(**_GRID)},
                     "y": {"field": "v", "type": "quantitative", "title": yl,
-                          "axis": dict(**_GRID)},
+                          "scale": {"zero": False, "padding": 24}, "axis": dict(**_GRID)},
+                    # ONE KEY: shape and color share one domain, so Vega draws them as one legend (they made
+                    # two), and a single series needs no key at all
                     "shape": {"field": "s", "type": "nominal", "title": None,
-                              "scale": {"range": SHAPES[:n]}},
+                              "scale": {"domain": [d["name"] for d in series], "range": SHAPES[:n]},
+                              **({"legend": None} if n == 1 else {})},
                     "color": {"field": "s", "type": "nominal", "title": None,
                               "scale": {"domain": [d["name"] for d in series],
-                                        "range": LINE_INK[:n]}}},
+                                        "range": LINE_INK[:n]},
+                              **({"legend": None} if n == 1 else {})}},
                 "config": cfg}
 
     if t in ("line", "step"):
