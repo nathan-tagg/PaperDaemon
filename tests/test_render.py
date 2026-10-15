@@ -73,3 +73,30 @@ def test_a_page_written_past_its_sides_shows_whole_and_centered(tmp_path, monkey
     im = Image.open(out)
     assert im.size == (2 * (800 + 60), 1872)                # wider by the ink past the right side, on both sides
     assert ink(im.convert("RGB"))[150, 860 + 750]           # the picture past the edge is drawn
+
+
+def test_a_stroke_anchored_to_the_typed_text_is_read_where_the_tablet_draws_it(tmp_path, monkeypatch):
+    # the tablet files ink written near typed text into a group anchored to it, stored offset from the page: read
+    # at its stored place it was ruled on, pointed at and collided with somewhere it is not. It is read where the
+    # tablet draws it, and keeps the identity of its stored self, which is what erasing matches in the file.
+    from rmscene import scene_stream as ss
+    from rmscene.crdt_sequence import CrdtSequenceItem
+    from rmscene.scene_items import Line, Point, Pen, PenColor
+    from rmscene.tagged_block_common import CrdtId
+    from paperdaemon.pipeline import page as P
+    from paperdaemon.pipeline.page import render as R
+    stored = Line(color=PenColor.BLACK, tool=Pen.FINELINER_2,
+                  points=[Point(100.0, 80.0, 2, 10, 0, 100), Point(140.0, 90.0, 2, 10, 0, 100)],
+                  thickness_scale=1.0, starting_length=0.0)
+    block = ss.SceneLineItemBlock(parent_id=CrdtId(1, 66), item=CrdtSequenceItem(
+        item_id=CrdtId(1, 70), left_id=CrdtId(0, 0), right_id=CrdtId(0, 0), deleted_length=0, value=stored))
+    page = tmp_path / "page.rm"
+    page.write_bytes(b"x")
+    monkeypatch.setattr(R, "live_pages", lambda doc: [{"id": "p"}])
+    monkeypatch.setattr(R, "page_file", lambda doc, pid: str(page))
+    monkeypatch.setattr(R, "blocks_of", lambda path: [block])
+    monkeypatch.setattr(R, "_anchor_offsets", lambda doc, page_no, blocks: {CrdtId(1, 66): (-330.0, 234.0)})
+    (line,) = R.strokes("doc", 1)
+    assert (line.points[0].x, line.points[0].y) == (-230.0, 314.0)     # where the tablet draws it
+    assert P.skey(line) == P.skey(stored)                               # erasing still finds it in the file
+    assert (stored.points[0].x, stored.points[0].y) == (100.0, 80.0)   # the stored stroke is untouched

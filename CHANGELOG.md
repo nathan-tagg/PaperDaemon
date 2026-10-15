@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.23
+
+- Ink the tablet ties to the typed text (it does that to writing near typed text) is read where the tablet shows
+  it. It was read where it is stored, often far from where it appears, so the model saw it, ruled on it, wrote
+  around it and pointed at it in the wrong place. Where a picture is tied to the same place, its record gives the
+  exact position.
+
 ## 0.1.22
 
 - Chess reads a piece where you put it, and a piece set back lands on its square. Once the tablet had grouped the

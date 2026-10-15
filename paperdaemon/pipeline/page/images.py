@@ -462,6 +462,48 @@ def _anchor_y(doc, page_no, aid):
     return None
 
 
+def _group_offsets(ims, groups, pairs, taken, doc, page_no):
+    """{group: dy} for each anchored group with recorded pictures: the offset those pictures AGREE on (one group, one
+    offset; a picture the user moved still matches its old record, and is outvoted)."""
+    from collections import Counter
+    votes, placed = {}, None
+    for im in ims:
+        g = groups.get(tuple(im["parent"])) if im.get("parent") else None
+        if g is None:
+            continue
+        if placed is None:
+            placed = placements(doc, page_no)
+        rec = pairs.get(id(im)) or record_for(im, placed, taken)
+        if rec and abs((im["box"][0] + g[0]) - rec["box"][0]) < 2.0:
+            votes.setdefault(tuple(im["parent"]), Counter())[round(rec["box"][1] - im["box"][1], 1)] += 1
+    return dict((k, c.most_common(1)[0][0]) for k, c in votes.items())
+
+
+def measured_anchors(doc, page_no, page_id=None):
+    """{(part1, part2) of an anchor in the typed text: its y on the page}, MEASURED from the recorded pictures of
+    the groups anchored there. Every group anchored to one place moves with it by the same amount, so the stroke
+    reader (render._anchor_offsets) takes this over its typed-text estimate, which on an emptied text block was 63
+    units (a third of a chess square) short. {} when no recorded picture is anchored."""
+    try:
+        from paperdaemon.pipeline.page import render as R
+        d = R.find_doc(doc) if hasattr(R, "find_doc") else doc
+        pid = page_id or R.live_pages(d)[page_no - 1]["id"]
+        path = os.path.join(RM, d, pid + ".rm")
+        ims = [im for im in parse(open(path, "rb").read()) if not im["deleted"]]
+        groups = _anchor_groups(path) if any(im.get("parent") for im in ims) else {}
+        if not groups:
+            return {}
+        taken = [tuple(im["box"]) for im in ims if not groups.get(tuple(im.get("parent") or ()))]
+        out = {}
+        for grp, dy in _group_offsets(ims, groups, {}, taken, d, page_no).items():
+            aid = groups[grp][1]
+            if aid is not None:
+                out.setdefault((aid.part1, aid.part2), dy)
+        return out
+    except Exception:
+        return {}
+
+
 def _to_page(ims, path, doc, page_no):
     """Rewrite each item's box/quad into PAGE coordinates (see the note above)."""
     groups = _anchor_groups(path) if any(im.get("parent") for im in ims) else {}
@@ -493,18 +535,7 @@ def _to_page(ims, path, doc, page_no):
     # alone that record put it back where it was, or, off by a hair in x, sent it to the typed-text estimate a square
     # away: a move to e5 read as e6, and the piece the host then set back landed far from its square. The estimate
     # is the last resort, for a group with no record at all.
-    from collections import Counter
-    votes = {}
-    for im in ims:
-        g = groups.get(tuple(im["parent"])) if im.get("parent") else None
-        if g is None:
-            continue
-        if placed is None:
-            placed = placements(doc, page_no)
-        rec = pairs.get(id(im)) or record_for(im, placed, taken)
-        if rec and abs((im["box"][0] + g[0]) - rec["box"][0]) < 2.0:
-            votes.setdefault(tuple(im["parent"]), Counter())[round(rec["box"][1] - im["box"][1], 1)] += 1
-    measured = dict((k, c.most_common(1)[0][0]) for k, c in votes.items())
+    measured = _group_offsets(ims, groups, pairs, taken, doc, page_no)
     for im in ims:
         g = groups.get(tuple(im["parent"])) if im.get("parent") else None
         if g is None:

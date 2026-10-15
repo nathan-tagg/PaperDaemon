@@ -64,8 +64,12 @@ def skey(line):
     "pear" by signature took the matching letters out of "apple" and "plum".
     Raw first-point coordinates are the same whether the stroke is read for a preview or for the
     erase, so the key is stable within a job; it is NOT meant to survive the app re-anchoring the
-    page, which is what `_sig` is for.
+    page, which is what `_sig` is for. A stroke read where the tablet draws it (render.strokes moves an anchored
+    group's strokes onto the page) carries the key of its stored self, so it still names the stroke in the file.
     """
+    stored = getattr(line, "_stored_key", None)
+    if stored:
+        return stored
     pts = getattr(line, "points", None)
     if not pts:
         return _sig(line)
@@ -80,7 +84,11 @@ def snapshot(doc_name, page_no):
 
     groups = {}
     strokes = []
-    for b in R.blocks_of(path):                       # cached parse, read only
+    # positions WHERE THE TABLET DRAWS them (a text-anchored group is stored offset from the page); `raw_bbox` is
+    # the box as stored
+    blocks = R.blocks_of(path)
+    shifts = R._anchor_offsets(doc, page_no, blocks)
+    for b in blocks:                                  # cached parse, read only
         if isinstance(b, ss.TreeNodeBlock):
             g = b.group
             groups[str(g.node_id)] = {
@@ -94,8 +102,11 @@ def snapshot(doc_name, page_no):
             v = getattr(b.item, "value", None)
             if not isinstance(v, Line):
                 continue                      # tombstone from an erased stroke
-            xs = [p.x for p in v.points]
-            ys = [p.y for p in v.points]
+            dx, dy = shifts.get(b.parent_id) or (0.0, 0.0)
+            rx = [p.x for p in v.points]
+            ry = [p.y for p in v.points]
+            xs = [x + dx for x in rx]
+            ys = [y + dy for y in ry]
             strokes.append({
                 "sig": _sig(v),
                 "item_id": str(b.item.item_id),
@@ -106,6 +117,7 @@ def snapshot(doc_name, page_no):
                 "n": len(v.points),
                 "x": xs[0] if xs else 0.0, "y": ys[0] if ys else 0.0,
                 "bbox": [min(xs), min(ys), max(xs), max(ys)] if xs else None,
+                "raw_bbox": [min(rx), min(ry), max(rx), max(ry)] if rx else None,
                 "width": v.points[0].width if v.points else None,
             })
     return {"doc": doc, "doc_name": doc_name, "page": page_no, "pid": pid,

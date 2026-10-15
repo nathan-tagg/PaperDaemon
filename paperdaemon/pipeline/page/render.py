@@ -227,7 +227,17 @@ def _anchor_offsets(doc, page_no, blocks):
     except Exception:
         pass
 
+    # MEASURED where a recorded picture is anchored to the same place (images.measured_anchors): exact, where the
+    # typed-text layout below is an estimate
+    try:
+        from paperdaemon.pipeline.page import images as _IM
+        measured = _IM.measured_anchors(doc, page_no)
+    except Exception:
+        measured = {}
+
     def anchor_y(a):
+        if (a.part1, a.part2) in measured:
+            return measured[(a.part1, a.part2)]
         if a.part1 == 0 and a.part2 == _TEXT_START:
             return top
         if a.part1 == 0 and a.part2 == _TEXT_END:
@@ -253,7 +263,7 @@ def _anchor_offsets(doc, page_no, blocks):
     return out
 
 
-def strokes(doc, page_no, displayed=False):
+def strokes(doc, page_no):
     """Live strokes on a 1-based page number, as the app numbers them.
 
     EXCLUDES strokes whose id sits inside a deleted RANGE, because the device
@@ -272,7 +282,11 @@ def strokes(doc, page_no, displayed=False):
         return []                   # never written on: a PDF or EPUB page, or a blank sheet, has no ink file
     blocks = blocks_of(path)
     dead = dead_ranges(blocks)
-    shifts = _anchor_offsets(doc, page_no, blocks) if displayed else {}
+    # WHERE THE TABLET DRAWS EACH STROKE, always: a group the tablet anchored to the typed text is stored offset
+    # from the page, and read at its stored place it was drawn, ruled on, collided with and pointed at somewhere
+    # it is not (a sentence over the board read as lying across the user's handwriting at the top). The copy keeps
+    # its STORED identity (P.skey), which is what erasing and hiding match in the file.
+    shifts = _anchor_offsets(doc, page_no, blocks)
     out, buried = [], 0
     for b in blocks:
         if isinstance(b, ss.SceneLineItemBlock):
@@ -283,8 +297,11 @@ def strokes(doc, page_no, displayed=False):
                     buried += 1          # the device treats this as erased
                 else:
                     d = shifts.get(b.parent_id)
-                    if d and (d[0] or d[1]):             # displayed=True: where the tablet draws it
+                    if d and (d[0] or d[1]):             # where the tablet draws it
+                        from paperdaemon.pipeline import page as _P
+                        key = _P.skey(v)
                         v = dataclasses.replace(v, points=[dataclasses.replace(p, x=p.x + d[0], y=p.y + d[1]) for p in v.points])
+                        v._stored_key = key
                     out.append(v)
     if buried:
         logging.getLogger("rm_render").error(
@@ -597,7 +614,7 @@ def render(doc, page_no, out, typed=True, hide=None, hide_typed=None, hide_image
 
 
 def _render(doc, page_no, out, typed, hide, hide_typed, hide_images, mark_typed, blank_ok, displayed):
-    S = strokes(doc, page_no, displayed=displayed)
+    S = strokes(doc, page_no)
     # STAGED ERASURES (rm_host): strokes, typed paragraphs and pictures the current job has
     # erased in its draft are left out, so a preview shows the page as commit() will leave it.
     if hide:
