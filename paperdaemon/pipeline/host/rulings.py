@@ -131,6 +131,12 @@ def problems(kind, args, offered=None):
             if do == "posts" and not str(q.get("source") or "").strip():
                 out.append("step %d (posts): source is where the posts come from (r/<sub>, reddit, hn, bsky, "
                            "4chan/<board>, mastodon/<server>, x/<link>)." % i)
+        # A GAME TAKES THE PAGE IT WAS ASKED ON, whole: anything else the plan would put there lands on the board
+        games = [str(q.get("do")) for q in steps if isinstance(q, dict) and q.get("do") in ST.GAMES]
+        others = [str(q.get("do")) for q in steps if isinstance(q, dict) and q.get("do") in ST.PLACE_KIND]
+        if games and others:
+            out.append("a %s game takes this page whole: nothing else goes on it, so plan the game alone (drop %s)."
+                       % (games[0], ", ".join(sorted(set(others)))))
     for a in answered:
         if a not in listing:
             out.append("answers names %s, which is not on this page." % a)

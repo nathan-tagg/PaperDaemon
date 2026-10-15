@@ -51,6 +51,7 @@ def _game_page(doc):
     from paperdaemon.remarkable import library as PG_
     pid = JOB.page_id
     pno = [i + 1 for i, q in enumerate(R.live_pages(doc)) if q["id"] == pid][0]
+    _clear_page(doc, pno)
     try:
         PG_.tag_page(doc, pid, S.TRIGGER)
     except Exception as ex:
@@ -58,11 +59,43 @@ def _game_page(doc):
     return pid, pno
 
 
-def _own_writes():
-    """What the game put on the page that asked is the job's own work: the page as it is now is where the job
-    started, so it is not taken for the user's writing and sent back to the queue."""
+def _clear_page(doc, pno):
+    """A GAME TAKES THE PAGE WHOLE: everything already on it -- the user's ink, typed text and pictures -- comes off
+    before the game is drawn, or the board lands on top of it. The page is recorded first, so what was there can be
+    restored. The erases the job had staged (the request) are done with it."""
+    from paperdaemon.pipeline import page as P
+    from paperdaemon.pipeline.page import images as IM
     try:
-        JOB.sha_start = S.page_state(JOB.doc, JOB.page_id)["sha"]
+        P.record(doc, pno, note="before a game took the page")
+    except Exception as ex:
+        H._warn("recording the page before the game", ex)
+    ink = text = pics = 0
+    try:
+        ink = (P.erase(doc, pno, lambda L: True) or {}).get("erased", 0)
+    except Exception as ex:
+        H._warn("clearing the ink for the game", ex)
+    try:
+        text = (P.erase_text(doc, pno) or {}).get("items", 0)
+    except Exception as ex:
+        H._warn("clearing the typed text for the game", ex)
+    try:
+        items = [i["item"] for i in IM.items(doc, pno) if i.get("item")]
+        pics = IM.remove_items(doc, pno, items) if items else 0
+    except Exception as ex:
+        H._warn("clearing the pictures for the game", ex)
+    JOB.hide, JOB.hide_typed, JOB.hide_images = {}, [], []
+    if JOB.plan is not None:
+        JOB.plan["erase_done"] = True
+    H.log("  the game takes the page: %d stroke(s), %d typed item(s) and %d picture(s) came off" % (ink, text, pics or 0))
+
+
+def _own_writes():
+    """What the game put on the page that asked is the job's own work, written: the job has changed the page (so it
+    is done, not skipped, though the commit has nothing left to write), and the page as it is now is the job's, not
+    the user's writing to send back to the queue."""
+    JOB.committed = True
+    try:
+        JOB.sha_start = JOB.sha_commit = S.page_state(JOB.doc, JOB.page_id)["sha"]
     except Exception as ex:
         H._warn("reading the game's page", ex)
 
@@ -77,6 +110,7 @@ def _run_game(step):
         from paperdaemon.pipeline.games import adventure as AD_
         if not H._llm_up():
             return False, "the text model is not answering, so there is no game master"
+        _clear_page(doc, [i + 1 for i, q in enumerate(R.live_pages(doc)) if q["id"] == JOB.page_id][0])
         st, adoc = AD_.start(what, H._ask_text, paint=H._paint, log=H.log, workdir=H.QUEUE, doc=doc, after=JOB.page_id,
                              here=True)
         _own_writes()

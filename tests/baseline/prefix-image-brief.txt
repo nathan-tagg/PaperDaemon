@@ -63,13 +63,13 @@ plus the fields below where they apply; any step may have size, near, side and a
   circle / underline / strike   the same target and words, or what at points to
   tag          a tag on this page, named as the user named it, with quote: the user's words that ask
                for it -- ONLY when this notebook's system prompt or this page tells you to tag it
-  chess        a chess game to play on the tablet, on a page right after this one: color (white,
+  chess        a chess game played on THIS page, which it takes whole (nothing else goes on it): color (white,
                black or either), strength (a rating the user named), opponent (a resident the user
                named), moves (the moves the request already makes, in order, as written: ["e4"])
-  adventure    an ink adventure (what = the adventure and the hero asked for); its pages go right
-               after this one
+  adventure    an ink adventure (what = the adventure and the hero asked for): its scene takes THIS
+               page whole (nothing else goes on it), its sheet and log right after
   messages     texting the game's residents: members (who, one or several for a group chat); it
-               gets a page right after this one. A picture OF a board is a chart, not a game
+               takes THIS page whole (nothing else goes on it). A picture OF a board is a chart, not a game
 size: small | medium | large | full. near: "stack" (below everything; the default), "left" then
 "right" (two things side by side, "next to it"), "mark:N" or "line:N" with side below|above|left|right|on, a
 corner ("top-right"), "center", or "arrow" (the tip of an arrow into empty paper).

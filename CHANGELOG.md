@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.21
+
+- A game takes the page it was asked on whole: what was on the page comes off first (the page is kept in its
+  history), and nothing else is written on it, so no sentence lands on the board.
+
 ## 0.1.20
 
 - A page whose path (the page, its notebook or a folder above it) carries tags of more than one lineup is no

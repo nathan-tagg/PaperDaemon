@@ -198,3 +198,32 @@ def test_an_erase_step_pointing_at_an_id_takes_that_off_and_the_job_is_done(work
     print(json.dumps({"text": json.dumps(TY.paragraphs(doc, page), default=str)}))
     """)
     assert "Mars" not in d["text"]                                       # the request came off
+
+
+def test_a_game_takes_its_page_whole(work):
+    # the request typed on a page that also holds the user's ink: a plan that adds a pointer sentence beside the game
+    # is refused (the sentence landed on the board), and the game alone clears the page and sets up on it
+    replay.run_case("prep", {"fixture": "typed-question", "replies": [("skip", {"note": "first look"})]}, work=str(work))
+    _look(work, PAGE + """
+    from paperdaemon.pipeline import draw as A
+    d = A.Drawing()
+    d.stroke([(-300, 1500), (-100, 1520), (100, 1490)], width=8)
+    d.write_rm(doc, page, keep_existing=True)
+    print("{}")
+    """)
+    r = _job(work, "typed-question", [
+        ("plan", {"steps": [{"do": "chess", "what": "a chess game", "answers": replay.NEW, "color": "white"},
+                            {"do": "write", "what": "where the game is", "answers": replay.NEW}],
+                  "rulings": replay.RULE("request", "erase")}),
+        ("plan", {"steps": [{"do": "chess", "what": "a chess game", "answers": replay.NEW, "color": "white"}],
+                  "rulings": replay.RULE("request", "erase")})])
+    assert r["status"] == "done", r["note"]
+    d = _look(work, PAGE + """
+    from paperdaemon.pipeline.page import typed as TY
+    ink = P.snapshot(doc, page)["strokes"]
+    print(json.dumps({"text": json.dumps(TY.paragraphs(doc, page), default=str), "ink": len(ink),
+                      "pictures": len(IM.items(doc, page))}))
+    """)
+    assert "Mars" not in d["text"]                  # the request and the page's typed text are gone
+    assert d["ink"] == 0                            # the user's ink came off (the page was recorded first)
+    assert d["pictures"] >= 2                       # the board and the player's pieces are on it
