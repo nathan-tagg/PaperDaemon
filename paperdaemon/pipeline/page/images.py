@@ -487,17 +487,32 @@ def _to_page(ims, path, doc, page_no):
             if len(recs_h) >= len(group):
                 for im, r in zip(sorted(group, key=lambda i: i["box"][1]), recs_h):
                     pairs[id(im)] = r
+    # ONE GROUP, ONE OFFSET: every picture in an anchored group moves with its anchor by the same amount, so the
+    # group's offset is the one its recorded pictures AGREE on, and every picture in it takes that offset. A picture
+    # the user moved still matches its old record by hash (a dragged chess piece keeps its picture), and taken
+    # alone that record put it back where it was, or, off by a hair in x, sent it to the typed-text estimate a square
+    # away: a move to e5 read as e6, and the piece the host then set back landed far from its square. The estimate
+    # is the last resort, for a group with no record at all.
+    from collections import Counter
+    votes = {}
+    for im in ims:
+        g = groups.get(tuple(im["parent"])) if im.get("parent") else None
+        if g is None:
+            continue
+        if placed is None:
+            placed = placements(doc, page_no)
+        rec = pairs.get(id(im)) or record_for(im, placed, taken)
+        if rec and abs((im["box"][0] + g[0]) - rec["box"][0]) < 2.0:
+            votes.setdefault(tuple(im["parent"]), Counter())[round(rec["box"][1] - im["box"][1], 1)] += 1
+    measured = dict((k, c.most_common(1)[0][0]) for k, c in votes.items())
     for im in ims:
         g = groups.get(tuple(im["parent"])) if im.get("parent") else None
         if g is None:
             continue                                   # Layer 1: raw IS page
         ox, aid = g
         rx0, ry0, rx1, ry1 = im["box"]
-        if placed is None:
-            placed = placements(doc, page_no)
-        rec = pairs.get(id(im)) or record_for(im, placed, taken)
-        if rec and abs((rx0 + ox) - rec["box"][0]) < 2.0:
-            dx, dy = ox, rec["box"][1] - ry0
+        if tuple(im["parent"]) in measured:
+            dx, dy = ox, measured[tuple(im["parent"])]
             im["approx_y"] = False
         else:
             ay = _anchor_y(doc, page_no, aid)

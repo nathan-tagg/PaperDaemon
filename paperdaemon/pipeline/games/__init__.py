@@ -176,11 +176,6 @@ def dialog_png(state, lines, out, width=None):
                 spec_lines.append(RC.say(cid, mood if mood in RC.EMOTIONS else "neutral", text, marks, look))
             else:
                 spec_lines.append(RC.emote(cid, mood if mood in RC.EMOTIONS else "neutral", marks, look))   # a face, no words
-        rating = (state.get("strength") or {}).get("elo")
-        if rating:                                   # a chess opponent's strength, right of its name
-            for ln in spec_lines:
-                if "speaker" in ln:
-                    ln["rating"] = int(rating)
         spec = RC.dialog(spec_lines, page="strip")
         if width:
             spec["width"], spec["height"] = int(round(width)), 800

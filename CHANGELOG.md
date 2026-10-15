@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.22
+
+- Chess reads a piece where you put it, and a piece set back lands on its square. Once the tablet had grouped the
+  page's pictures with its typed text, a moved piece was read a square off and put back far from its square.
+- The opponent's name stands alone under its face; the rating is gone.
+
 ## 0.1.21
 
 - A game takes the page it was asked on whole: what was on the page comes off first (the page is kept in its
