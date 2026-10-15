@@ -1,6 +1,6 @@
 "use strict";
-/* Jobs: every page a lineup has answered or passed over, newest first: how it went (an icon) and when, which page,
-   what happened, and how long it took. Shown inside the lineup (Lineup > Jobs), for the lineup on screen. */
+/* Jobs: every page a lineup has answered or passed over, newest first: how it went (an icon) and when, which notebook
+   and page, what happened, and how long it took. Shown inside the lineup (Lineup > Jobs), for the lineup on screen. */
 (() => {
   const { $, esc, line } = PD;
   let R = null;
@@ -23,10 +23,7 @@
   };
   PD.jobKind = jobKind;
 
-  const pageText = (nb, pg) => {
-    const p = pg == null || pg === "" ? "" : /^\d+$/.test(String(pg)) ? PD.t("job.page", { n: pg }) : String(pg);
-    return p ? esc(nb) + " › " + esc(p) : esc(nb);
-  };
+  const pageText = pg => pg == null || pg === "" ? "" : /^\d+$/.test(String(pg)) ? PD.t("job.page", { n: pg }) : String(pg);
 
   // HOW A JOB WENT, as a small line icon at the left of its time (drawn like the app's other icons; a dot said
   // nothing): done a check, failed a cross, skipped an arrow going past, waiting a clock, working the spinner
@@ -60,18 +57,20 @@
     for (const j of jobs) {
       const t0 = PD.date(j.started), t1 = PD.date(j.finished), k = jobKind(j.status, j.failed), when = t0 || t1;
       const label = when ? PD.dayLabel(when) : PD.t("jobs.earlier");
-      if (label !== day) { rows += '<tr class="dayrow"><td colspan="4">' + esc(label) + "</td></tr>"; day = label; }
+      if (label !== day) { rows += '<tr class="dayrow"><td colspan="5">' + esc(label) + "</td></tr>"; day = label; }
       let took = "";
       if (t0 && t1) took = PD.dur((t1 - t0) / 1000);
       else if (t0 && k.kind === "busy") took = PD.t("jobs.so_far", { time: PD.dur((now - t0) / 1000) });
       rows += '<tr class="' + (k.kind === "fail" ? "attn" : "") + '"><td class="jt">' + icon(k) +
         (when ? "<time>" + esc(PD.clock(when)) + "</time>" : "") + "</td>" +
-        '<td class="jp"><strong>' + pageText(j.notebook || j.key || PD.t("jobs.a_page"), j.page) + "</strong></td>" +
+        '<td class="jn"><strong>' + esc(j.notebook || j.key || PD.t("jobs.a_page")) + "</strong></td>" +
+        '<td class="jp">' + esc(pageText(j.page)) + "</td>" +
         '<td class="note">' + (j.note ? esc(j.note) : ('<span class="dim">' + esc(PD.t("jobs.no_note")) + "</span>")) + "</td>" +
         '<td class="r jd">' + esc(took) + "</td></tr>";
     }
     // FIXED COLUMNS: set by the table, not by what is in them, so nothing moves as a job runs or a note fills in
-    PD.html(box, '<table class="list jobs"><colgroup><col class="c-time"><col class="c-page"><col><col class="c-took">' +
+    PD.html(box, '<table class="list jobs"><colgroup><col class="c-time"><col class="c-nb"><col class="c-page"><col>' +
+      '<col class="c-took">' +
       "</colgroup><tbody>" + rows + "</tbody></table>");
   }
 

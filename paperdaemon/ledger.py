@@ -785,12 +785,35 @@ def classify(found, led):
     # A CLAIM ON A PAGE THE SCAN NO LONGER FINDS (untagged, deleted, moved) expires too: checked only for the pages
     # found, a job that died holding one stayed "working" for good
     seen = set(f["key"] for f in found)
+    gone = []
     for k, e in entries.items():
         if k not in seen and e.get("status") == "working" and now - e.get("claim_at", 0) >= CLAIM_TTL:
             e.pop("claim_owner", None)
             e.pop("claim_at", None)
             e["status"] = "pending"
+        # A JOB WHOSE PAGE WAS DELETED is no job: nothing can be done on a page that is not there, and left waiting
+        # it showed in Jobs as about to run. One being worked is released first (above) and goes on a later scan.
+        if k not in seen and e.get("status") == "pending" and _page_deleted(e):
+            gone.append(k)
+    for k in gone:
+        del entries[k]
     return queue
+
+
+def _page_deleted(e):
+    """True when the entry's notebook is in a complete Mirror and no longer has its page. False whenever that cannot
+    be shown (a pull still filling the Mirror, an unreadable notebook): a job is never dropped on a guess. A notebook
+    that is gone altogether is prune_notepads' to forget."""
+    from paperdaemon.remarkable import sync as _sync
+    doc, pid = e.get("doc_id"), e.get("page_id")
+    if not (doc and pid) or not _sync.mirrored():
+        return False
+    try:
+        with open(os.path.join(RM, doc + ".content"), encoding="utf-8") as f:
+            live = _sync.live_pages(json.load(f))
+    except (OSError, ValueError):
+        return False
+    return pid not in set(p.get("id") for p in live)
 
 
 @_under_lock

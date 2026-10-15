@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.19
+
+- A waiting job whose page was deleted is dropped, rather than listed as about to run.
+- Jobs: the page has its own narrow column, a notebook's name that would wrap ends in an ellipsis, and what
+  happened sits close beside them.
+
 ## 0.1.18
 
 - A job that was running when PaperDaemon updated or restarted is handed over again at once, not shown as working

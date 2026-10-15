@@ -86,3 +86,26 @@ def test_a_claim_older_than_the_running_host_is_released(tmp_path, monkeypatch):
     assert ledger.release_dead_claims(1000) == ["a/old"]
     assert led["entries"]["a/old"]["status"] == "pending" and "claim_owner" not in led["entries"]["a/old"]
     assert led["entries"]["a/new"]["status"] == "working"
+
+
+def test_a_waiting_job_on_a_deleted_page_is_dropped(tmp_path, monkeypatch):
+    # the page was deleted from its notebook: its job can never run, so it leaves the ledger (and Jobs) -- but only
+    # when the Mirror is complete and the notebook says so; a page merely not found this scan is kept
+    import json
+    from paperdaemon.remarkable import sync
+    monkeypatch.setattr(ledger, "RM", str(tmp_path))
+    (tmp_path / "doc1.content").write_text(json.dumps({"cPages": {"pages": [
+        {"id": "live", "idx": {"value": "ba"}}, {"id": "gone", "idx": {"value": "bb"}, "deleted": {"value": 1}}]}}))
+    led = {"watching_since": 0, "entries": {
+        "doc1/gone": {"status": "pending", "doc_id": "doc1", "page_id": "gone"},
+        "doc1/live": {"status": "pending", "doc_id": "doc1", "page_id": "live"},
+        "doc1/busy": {"status": "working", "doc_id": "doc1", "page_id": "gone", "claim_owner": "daemon",
+                      "claim_at": int(__import__("time").time())}}}
+    monkeypatch.setattr(sync, "mirrored", lambda: False)
+    ledger.classify([], led)
+    assert "doc1/gone" in led["entries"]                      # a Mirror still filling proves nothing
+    monkeypatch.setattr(sync, "mirrored", lambda: True)
+    ledger.classify([], led)
+    assert "doc1/gone" not in led["entries"]                  # deleted page: dropped
+    assert "doc1/live" in led["entries"]                      # the page is there (its tag may come back)
+    assert led["entries"]["doc1/busy"]["status"] == "working"  # a job being worked is not pulled out from under it
