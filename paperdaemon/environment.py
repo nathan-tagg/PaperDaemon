@@ -29,6 +29,7 @@ WIRING = {
     "RM_MIRROR": "PaperDaemon's mirror of the library",
     "RM_CACHE": "the mirror, as the page readers know it",
     "RM_TRIGGERS": "every lineup's tags, a JSON list: the tags the daemon watches for",
+    "RM_TRIGGER_LINEUPS": "each watched tag's lineup, a JSON object {tag: lineup}: a page tagged for two is skipped",
     "RM_TRIGGER": "one tag to watch for, when RM_TRIGGERS is not given (a pipeline run by hand)",
     "RM_INBOX": "the decompose inbox (Folder/Notebook), never worked whatever its tags",
     "RM_IGNORE_TAG": "the tag that keeps pages out (Settings)",

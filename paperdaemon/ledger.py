@@ -54,6 +54,22 @@ def _triggers():
 
 
 TRIGGERS = _triggers()
+
+
+def _trigger_lineups():
+    """Each watched tag's lineup ({tag: lineup name}), from RM_TRIGGER_LINEUPS; {} when not given (a pipeline run by
+    hand), and then no page is judged to be tagged for two lineups."""
+    try:
+        got = json.loads(os.environ.get("RM_TRIGGER_LINEUPS") or "null")
+    except ValueError:
+        got = None
+    return dict((str(k).strip().lower(), str(v)) for k, v in got.items()) if isinstance(got, dict) else {}
+
+
+LINEUP_OF = _trigger_lineups()
+# The daemon's note on a page whose path carries tags of more than one lineup (the user's own words, as he wrote
+# them); the daemon's signature -- a dash, its devil head and "Daemon" -- follows it.
+TAGS_ACROSS_LINEUPS = "This page has tags across several lineups in its path. skipping it."
 TRIGGER = TRIGGERS[0] if TRIGGERS else "paperdaemon"
 
 
@@ -573,11 +589,19 @@ def _extract(doc, m, c, inh=None):
     if inh:
         items.extend(_pages_of(doc, m, pages, inh[0], inh[1], inh[2],
                                "collection", 2))
-    best = {}
+    best, lineups = {}, {}
     for it in items:
         k = it["key"]
         if k not in best or it["rank"] < best[k]["rank"]:
             best[k] = it
+        lu = LINEUP_OF.get(trigger_of(it["tag"]) or "")
+        if lu:
+            lineups.setdefault(k, set()).add(lu)
+    # TAGS OF MORE THAN ONE LINEUP IN A PAGE'S PATH (on the page, its notebook or a folder above): no lineup works it;
+    # the daemon says so on the page (TAGS_ACROSS_LINEUPS). Two tags of one lineup are fine: the most specific wins.
+    for k, lus in lineups.items():
+        if len(lus) > 1:
+            best[k] = dict(best[k], lineups=sorted(lus))
     # MUTE BEATS EVERYTHING, at whatever level it was set. Applied last, after the most-specific
     # tag has already won, so "tagged for the model AND tagged ignore" resolves to ignore rather
     # than to whichever tag happened to be more specific.
@@ -748,6 +772,11 @@ def classify(found, led):
                 e.pop("claim_at", None)
                 if e["status"] == "working":
                     e["status"] = "pending"
+            if e.get("tag_conflict") and not f.get("lineups") and e["status"] == "skipped":
+                # SKIPPED FOR TAGS OF TWO LINEUPS, and now one lineup's alone: the page is that lineup's to work, though
+                # nothing on it changed
+                e.pop("tag_conflict", None)
+                e["status"] = "pending"
             if e["status"] in ("done", "skipped"):
                 # Both settled states re-open on a content change. Skipped must
                 # behave like done here: a page skipped for "no request yet" has
@@ -886,9 +915,10 @@ def touch(key, owner):
 
 
 @_under_lock
-def mark(key, status, note, failed=False):
+def mark(key, status, note, failed=False, tag_conflict=False):
     """Record a job's outcome. `failed`: it did not do what was asked (the window shows it as failed, whatever the
-    status); a skip because there was nothing to do is not a failure."""
+    status); a skip because there was nothing to do is not a failure. `tag_conflict`: skipped for tags of two lineups,
+    so the page is worked once its tags are one lineup's again (classify)."""
     led = load()
     e = led["entries"].get(key)
     if e is None:
@@ -902,6 +932,10 @@ def mark(key, status, note, failed=False):
     e["handled_sha"] = st["sha"]
     e["handled_raw"] = st.get("raw")
     e["handled_tag_ts"] = e.get("tag_ts")
+    if tag_conflict:
+        e["tag_conflict"] = True
+    else:
+        e.pop("tag_conflict", None)
     e.pop("claim_owner", None)
     e.pop("claim_at", None)
     save(led)

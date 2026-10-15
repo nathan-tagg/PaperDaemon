@@ -589,6 +589,14 @@ def main():
                 err_state.update(sig=None, n=0, last=0.0, since=0.0)
 
         todo = [q for q in queue if q["status"] in ("NEW", "PENDING", "REOPENED", "RETAGGED")]
+        # A PAGE TAGGED FOR MORE THAN ONE LINEUP is nobody's job: the daemon says so on the page, once, and settles it
+        # (it comes back when its tags are one lineup's again)
+        for q in [q for q in todo if q.get("lineups")]:
+            if not DRY:
+                log("  %s has tags of %s -- skipping it" % (where(q), " and ".join(q["lineups"])))
+                note(q["doc"], q["page"], rm_scan.TAGS_ACROSS_LINEUPS)
+                rm_scan.mark(q["key"], "skipped", rm_scan.TAGS_ACROSS_LINEUPS, tag_conflict=True)
+        todo = [q for q in todo if not q.get("lineups")]
         claimed = [q for q in queue if q["status"] == "CLAIMED"]
         waiting = [q for q in queue if q["status"] == "WAITING"]
         if DRY:

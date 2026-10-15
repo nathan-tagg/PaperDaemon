@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.20
+
+- A page whose path (the page, its notebook or a folder above it) carries tags of more than one lineup is no
+  lineup's job: the daemon writes a note on it saying so, and skips it. Once its tags are one lineup's again, that
+  lineup works it.
+
 ## 0.1.19
 
 - A waiting job whose page was deleted is dropped, rather than listed as about to run.

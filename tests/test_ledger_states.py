@@ -109,3 +109,28 @@ def test_a_waiting_job_on_a_deleted_page_is_dropped(tmp_path, monkeypatch):
     assert "doc1/gone" not in led["entries"]                  # deleted page: dropped
     assert "doc1/live" in led["entries"]                      # the page is there (its tag may come back)
     assert led["entries"]["doc1/busy"]["status"] == "working"  # a job being worked is not pulled out from under it
+
+
+def test_tags_of_two_lineups_in_a_pages_path_are_flagged_and_one_lineups_are_not(monkeypatch):
+    # a page tag of one lineup under a folder tag of another: nobody's job (the daemon notes it on the page);
+    # two tags of the same lineup: the most specific wins, as ever
+    monkeypatch.setattr(ledger, "TRIGGERS", ["qwen", "claude", "fast"])
+    monkeypatch.setattr(ledger, "LINEUP_OF", {"qwen": "Local", "fast": "Local", "claude": "Cloud"})
+    meta = {"visibleName": "Notes", "type": "DocumentType"}
+    content = {"cPages": {"pages": [{"id": "p1", "idx": {"value": "ba"}}]},
+               "pageTags": [{"name": "qwen", "pageId": "p1", "timestamp": 1}]}
+    mixed = ledger._extract("doc1", meta, content, ("claude", "", 1))
+    assert mixed[0]["lineups"] == ["Cloud", "Local"]
+    same = ledger._extract("doc1", meta, content, ("fast", "", 1))
+    assert "lineups" not in same[0] and same[0]["tag"] == "qwen"
+
+
+def test_a_page_skipped_for_two_lineups_is_worked_once_its_tags_are_one_lineups():
+    led = {"entries": {}, "watching_since": 0}
+    status(found(), led)
+    led["entries"]["aaaaaaaa/bbbbbbbb"].update(status="skipped", handled_sha="s1", handled_tag_ts="100",
+                                              tag_conflict=True)
+    f = dict(found(), lineups=["Cloud", "Local"])
+    assert status(f, led) == "SKIPPED"                         # still two lineups: left alone, no second note
+    assert status(found(), led) == "PENDING"                   # one lineup's now: worked, though nothing changed
+    assert "tag_conflict" not in led["entries"]["aaaaaaaa/bbbbbbbb"]

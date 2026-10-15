@@ -109,6 +109,7 @@ def environment(s=None, port=8770, token="", state=None, mirror=None):
     env.update(
         RM_MIRROR=mirror, RM_CACHE=mirror, RM_STATE=data,
         RM_TRIGGERS=json.dumps([tag for tag, _name in S.all_tags(s)]),
+        RM_TRIGGER_LINEUPS=json.dumps(dict((tag.strip().lower(), name) for tag, name in S.all_tags(s))),
         RM_IGNORE_TAG=S.fixed_tags(s)[0], RM_SPROMPT_TAG=S.fixed_tags(s)[1],
         RM_INBOX=str(t.get("inbox") or ""),
         # every text call goes through the engine, which starts the text server when it is not running
