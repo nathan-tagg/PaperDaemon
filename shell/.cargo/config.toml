@@ -1,0 +1,4 @@
+# Built with the llvm-mingw toolchain (no Visual Studio needed). crt-static links its unwinder into the
+# executable; WebView2Loader.dll still has to sit beside it (the GNU targets cannot link it statically).
+[target.x86_64-pc-windows-gnullvm]
+rustflags = ["-C", "target-feature=+crt-static"]

@@ -1,0 +1,12 @@
+{
+  "id": "typed-question",
+  "title": "A typed question",
+  "kind": "typed",
+  "request": "How many moons does Mars have, and what are they called?",
+  "expect": {
+    "content": "text"
+  },
+  "doc": "340a4238-acf0-5488-9521-36098b008b3c",
+  "page": "c1e372a1-209e-567d-8353-5bac8725a6a2",
+  "tag": "PaperDaemon"
+}

@@ -1,0 +1,27 @@
+{
+  "id": "keyword-assists",
+  "name": "Any server - a weaker model, with keyword assists",
+  "server": "Any OpenAI- or Anthropic-compatible server",
+  "models": [
+    "A model that misnames its steps or erases a question"
+  ],
+  "kind": "text",
+  "extends": "default-text",
+  "notes": "AN EXAMPLE, NOT ACTIVE: PaperDaemon reads user harnesses only from the harnesses folder in its data folder. To use it, copy this file into the llm folder there and pick it for the lineup's text model. Each assist acts after the model's decision, never in place of it: a hint is told to the model once and it decides again; a set overrides the model's value, and the job's record says which assist did it. The word lists below are the ones the host once applied to every model; with a model that does not need them, leave them out.",
+  "assists": [
+    {"decision": "step.kind", "reads": "step.what", "when": "image",
+     "keywords": ["reddit", "imgur", "wikipedia", "unsplash", "flickr", "the web", "the internet", "online", "website", "real photo", "news photo"],
+     "hint": "A step names the web or a site: a picture that already exists is a web_picture step (with site when one is named); image paints a new one."},
+    {"decision": "step.kind", "reads": "step.what", "when": "web_picture",
+     "keywords": ["facts", "events", "news", "headlines", "information", "history", "on this day", "anniversary", "what happened"],
+     "hint": "A web_picture step asks for facts: facts are a search step, then a write step; web_picture is for pictures only."},
+    {"decision": "step.kind", "reads": "step.what", "when": "draw",
+     "keywords": ["circle around", "circle round", "underline", "line under", "line through", "strike through", "cross out"],
+     "hint": "A draw step marks something already on the page: that is a circle, underline or strike step with target and words."},
+    {"decision": "step.kind", "reads": "step.what", "when": "image",
+     "keywords": ["calendar", "chart", "graph", "plot", "timeline", "gantt", "forecast", "week view", "table of"],
+     "hint": "An image step names a chart or a calendar: those are chart or calendar steps, built from data, never a painted picture."},
+    {"decision": "item.ruling", "reads": "item.text", "when": "erase", "ends_with": "?",
+     "set": {"is": "question", "then": "keep"}}
+  ]
+}

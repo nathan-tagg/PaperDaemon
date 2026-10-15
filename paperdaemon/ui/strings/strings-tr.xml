@@ -1,0 +1,524 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PaperDaemon's interface text, Türkçe. Names are "screen.thing"; {placeholders} are filled in by the window. -->
+<resources>
+  <string name="pair.title">Bu pencereyi eşleştir</string>
+  <string name="pair.intro">Motor yalnızca kendi eşleştirme belirtecini taşıyan istekleri kabul eder. Otomatik olarak eşleşmek için PaperDaemon'ın kendi penceresini açın ya da onu çalıştıran bilgisayarda Ağ altında gösterilen belirteci yapıştırın.</string>
+  <string name="pair.token">Eşleştirme belirteci</string>
+  <string name="pair.go">Eşleştir</string>
+  <string name="pair.empty">Önce eşleştirme belirtecini yapıştırın.</string>
+  <string name="pair.refused">Motor bu belirteci kabul etmedi.</string>
+  <string name="fatal.title">Motor yanıt vermedi</string>
+  <string name="common.try_again">Yeniden dene</string>
+  <string name="pair.window_refused">Motor bu pencerenin belirtecini kabul etmedi.</string>
+  <string name="rail.engine_on">Motor açık</string>
+  <string name="rail.version">Sürüm {version}</string>
+  <string name="api.no_answer">Motor yanıt vermedi. PaperDaemon hâlâ çalışıyor mu?</string>
+  <string name="api.unpaired">Bu pencere motorla eşleştirilmemiş.</string>
+  <string name="api.not_offered">Motor bunu henüz sunmuyor ({route}).</string>
+  <string name="day.today">Bugün</string>
+  <string name="day.yesterday">Dün</string>
+  <string name="unit.seconds">{n} sn</string>
+  <string name="unit.minutes">{n} dk</string>
+  <string name="unit.hours">{n} sa</string>
+  <string name="mirror.building_pct">Ayna oluşturuluyor, %{pct}</string>
+  <string name="mirror.pct">Ayna %{pct}</string>
+  <string name="mirror.bar">Ayna oluşturuluyor: {done} / {total} · {bytes} / {bytes_total} · %{pct}</string>
+  <string name="mirror.bar_start">Ayna oluşturuluyor: {files} · şimdiye kadar {bytes}</string>
+  <string name="count.document.one">{n} belge</string>
+  <string name="count.document.other">{n} belge</string>
+  <string name="count.file.one">{n} dosya</string>
+  <string name="count.file.other">{n} dosya</string>
+  <string name="mirror.name">Ayna</string>
+  <string name="login.privacy">Oturum bilgileriniz bu bilgisayarda kalır ve yalnızca reMarkable bulutuyla kullanılır. Sayfalarınız başka hiçbir yere gitmez; bir bulut modeli ya da web araması bağlarsanız, o hizmete yalnızca bir işin ihtiyaç duyduğu şey gider.</string>
+  <string name="login.borrow.title">reMarkable uygulamasının oturumunu ödünç al</string>
+  <string name="login.borrow.body">PaperDaemon, reMarkable masaüstü uygulamasının oturumunu Windows Kimlik Bilgisi Yöneticisi'ne kopyalar. Uygulama oturumu açık kalır. İkisi aynı oturumu kullandığı için aynı anda yalnızca biri çalışabilir.</string>
+  <string name="login.borrow.action">Oturumu ödünç al</string>
+  <string name="login.steal.title">⚠ reMarkable uygulamasının oturumunu devral</string>
+  <string name="login.steal.body">PaperDaemon, reMarkable masaüstü uygulamasının oturumunu Windows Kimlik Bilgisi Yöneticisi'ne kopyalar, sonra Windows kayıt defterindeki uygulama ayarlarından siler. Uygulamanın oturumu kapanır; yeniden oturum açtığınızda ayrı bir cihaz olur. Önce reMarkable uygulamasını kapatın.</string>
+  <string name="login.steal.action">Oturumu devral</string>
+  <string name="login.not_found">reMarkable uygulamasında bu bilgisayarda oturum açılmamış. Uygulamayı kurun, oturum açın ve yeniden deneyin.</string>
+  <string name="login.not_kept">Uygulamanın oturumu bulundu ama PaperDaemon onu saklayamadı.</string>
+  <string name="login.not_kept_why">Uygulamanın oturumu bulundu ama PaperDaemon onu saklayamadı: {why}</string>
+  <string name="login.stolen">Oturum PaperDaemon'da ve reMarkable uygulamasının oturumu kapandı. Uygulamayı ayrı bir cihaz olarak kullanmak için yeniden oturum açın.</string>
+  <string name="login.borrowed">PaperDaemon, reMarkable uygulamasının oturumunu kullanıyor. PaperDaemon çalışırken uygulamayı kapalı tutun.</string>
+  <string name="job.failed">Başarısız</string>
+  <string name="job.working">Çalışıyor</string>
+  <string name="job.skipped">Atlandı</string>
+  <string name="job.waiting">Bekliyor</string>
+  <string name="job.done">Bitti</string>
+  <string name="job.unknown">Bilinmiyor</string>
+  <string name="job.page">s. {n}</string>
+  <string name="jobs.unreadable">İşler okunamadı.</string>
+  <string name="jobs.reading">İşler okunuyor…</string>
+  <string name="jobs.none">Henüz iş yok.</string>
+  <string name="jobs.none_hint">Tabletinizde bir sayfaya {tag} etiketini ekleyin.</string>
+  <string name="count.job.one">{n} iş</string>
+  <string name="count.job.other">{n} iş</string>
+  <string name="jobs.n_failed">{n} başarısız</string>
+  <string name="jobs.n_skipped">{n} atlandı</string>
+  <string name="jobs.earlier">Daha önce</string>
+  <string name="jobs.so_far">şimdiye kadar {time}</string>
+  <string name="jobs.a_page">Bir sayfa</string>
+  <string name="jobs.no_note">Not yok</string>
+  <string name="jobs.col.time">Saat</string>
+  <string name="jobs.col.page">Sayfa</string>
+  <string name="jobs.col.status">Durum</string>
+  <string name="jobs.col.what">Ne oldu</string>
+  <string name="jobs.col.took">Süre</string>
+  <string name="jobs.label">İşler</string>
+  <string name="issue.setup">Kurulum tamamlanmadı.</string>
+  <string name="issue.setup_go">Kuruluma devam et</string>
+  <string name="issue.tablet">PaperDaemon, reMarkable'ınıza ulaşamıyor.</string>
+  <string name="issue.mirror">Ayna güncellenemedi: {why}</string>
+  <string name="issue.not_started">PaperDaemon başlamadı: {why}</string>
+  <string name="term.daemon">Daemon</string>
+  <string name="term.daemon_about">Tabletinizde etiketli sayfaları izler ve her birini iş olarak host'a verir.</string>
+  <string name="term.host">Host</string>
+  <string name="term.host_about">Her işi yürütür: sayfayı okur, modellere sorar ve yanıtı sayfaya geri yazar.</string>
+  <string name="term.empty">Henüz bir şey yok.</string>
+  <string name="loop.pausing">Duraklatılıyor…</string>
+  <string name="loop.starting">Başlatılıyor…</string>
+  <string name="loop.pause">Daemon'ı duraklat (VRAM'i boşaltır)</string>
+  <string name="loop.start">Başlat</string>
+  <string name="overview.label">Genel bakış</string>
+  <string name="overview.needs_you">Bir şey ilginizi bekliyor</string>
+  <string name="loop.running">Çalışıyor</string>
+  <string name="loop.paused">Duraklatıldı</string>
+  <string name="common.choose">Seçin…</string>
+  <string name="common.help">Yardım</string>
+  <string name="settings.label">Ayarlar</string>
+  <string name="settings.prefs">Tercihler</string>
+  <string name="settings.prefs_to_set">Ayarlanacak tercihler</string>
+  <string name="settings.note">Tercihlerinizi ayarlamak için bir dakikanızı ayırın: PaperDaemon'ın sayfalarınıza sıcaklıkları, saatleri ve haftaları nasıl yazacağı.</string>
+  <string name="settings.language">Dil</string>
+  <string name="settings.language.help">PaperDaemon'ın kendi penceresinin dili. Değiştirmek pencereyi yeniden yükler.</string>
+  <string name="settings.temperature">Sıcaklık</string>
+  <string name="settings.temperature.help">Takvimlerde ve PaperDaemon'ın yazdıklarında.</string>
+  <string name="settings.temperature.f">Fahrenheit (°F)</string>
+  <string name="settings.temperature.c">Santigrat (°C)</string>
+  <string name="settings.clock">Saat</string>
+  <string name="settings.clock.12">12 saat (2:30 PM)</string>
+  <string name="settings.clock.24">24 saat (14:30)</string>
+  <string name="settings.week">Hafta şu günle başlar</string>
+  <string name="day.sunday">Pazar</string>
+  <string name="day.monday">Pazartesi</string>
+  <string name="day.saturday">Cumartesi</string>
+  <string name="settings.remarkable">reMarkable</string>
+  <string name="settings.login.none">Bağlı değil</string>
+  <string name="settings.login.borrowing">reMarkable uygulamasının oturumu ödünç alınıyor</string>
+  <string name="settings.login.steal">Bunun yerine devral</string>
+  <string name="settings.login.stolen">reMarkable uygulamasından devralınan kendi oturumuyla bağlı</string>
+  <string name="settings.login.connected">Bağlı</string>
+  <string name="settings.inbox">Ayrıştırma gelen kutusu</string>
+  <string name="settings.inbox.help">Tablete Gönder'in sayfa eklediği defter. PaperDaemon, hangi etiketi taşırsa taşısın orayı asla yanıtlamaz.</string>
+  <string name="settings.inbox.placeholder">Bir defter seçin</string>
+  <string name="settings.inbox.pick">Listeden bir defter seçin.</string>
+  <string name="settings.location">Konum</string>
+  <string name="settings.location.help">Takvimlerdeki hava durumu, gün doğumu ve tatiller için.</string>
+  <string name="settings.location.placeholder">Bir şehir yazmaya başlayın</string>
+  <string name="settings.location.pick">Listeden bir şehir seçin.</string>
+  <string name="settings.ignore">Yok sayma etiketi</string>
+  <string name="settings.ignore.help">Bu etiketi tabletinizdeki bir klasöre, deftere ya da sayfaya koyun; PaperDaemon, hiçbir dizilim için ve başka hangi etiketi taşırsa taşısın, orada hiçbir şey yapmaz.</string>
+  <string name="settings.sprompt">Kalıcı talimatlar etiketi</string>
+  <string name="settings.sprompt.help">Bu etiketi bir defterin bir sayfasına koyun ve üzerine talimatlar yazın. PaperDaemon o sayfanın metnini o defterdeki her işin talimatlarının sonuna ekler ve sayfanın kendisi üzerinde asla çalışmaz.</string>
+  <string name="settings.network">Ağ erişimi</string>
+  <string name="settings.network.help">Hava durumu, sosyal medya gönderileri, Vikipedi ve web araması. Modelleriniz ve reMarkable bulutu etkilenmez.</string>
+  <string name="settings.network.allow">Ağ erişimine izin ver</string>
+  <string name="settings.social">Sosyal siteler</string>
+  <string name="settings.social.help">Site adı vermeyen bir gönderi isteğinin nerede arayacağı. Adı verilen bir site her zaman aranır.</string>
+  <string name="settings.tools">Araçlar</string>
+  <string name="settings.updates">Güncellemeler</string>
+  <string name="settings.updates.help">PaperDaemon kendi kendine asla kontrol etmez.</string>
+  <string name="settings.version">Sürüm {version}</string>
+  <string name="settings.updates.check">Güncellemeleri denetle</string>
+  <string name="settings.updates.installed_only">Güncellemeleri kurulu uygulama denetler; sistem tepsisi menüsünden ya da buradan.</string>
+  <string name="settings.logs">Günlükler</string>
+  <string name="settings.logs.help">Daemon'ın, host'un ve motorun son zamanlarda yazdıkları, gelen kutunuzda sayfalar olarak.</string>
+  <string name="settings.logs.send">Günlükleri gelen kutusuna gönder</string>
+  <string name="settings.logs.no_inbox">Önce yukarıda bir gelen kutusu ayarlayın</string>
+  <string name="settings.logs.sent">Gönderildi: {inbox} içinde {pages}, {first}. sayfadan başlayarak.</string>
+  <string name="settings.logs.the_inbox">gelen kutusu</string>
+  <string name="count.page.one">{n} sayfa</string>
+  <string name="count.page.other">{n} sayfa</string>
+  <string name="tablet.read">%{pct} okundu</string>
+  <string name="tablet.page_of">Sayfa {page} / {pages}</string>
+  <string name="common.reading">Okunuyor…</string>
+  <string name="tablet.my_files">Dosyalarım</string>
+  <string name="tablet.arriving">Hâlâ geliyor…</string>
+  <string name="tablet.empty">Bu klasör boş.</string>
+  <string name="viewer.pages">Sayfalar</string>
+  <string name="viewer.chapters">Bölümler</string>
+  <string name="viewer.goto">Sayfaya git (1 - {last})</string>
+  <string name="viewer.goto_aria">Sayfaya git, 1 ile {last} arası</string>
+  <string name="viewer.prev">Önceki sayfa</string>
+  <string name="viewer.next">Sonraki sayfa</string>
+  <string name="viewer.reading_chapters">Bölümler okunuyor…</string>
+  <string name="viewer.not_drawn">Bu sayfa çizilemedi.</string>
+  <string name="viewer.page">Sayfa {n}</string>
+  <string name="viewer.go_to">{n}. sayfaya git</string>
+  <string name="common.close">Kapat</string>
+  <string name="tablet.label">Tablet</string>
+  <string name="tablet.folder">Klasör</string>
+  <string name="dc.decomposing">{name} ayrıştırılıyor</string>
+  <string name="dc.drop">Bir görseli buraya bırakın ya da {choose}.</string>
+  <string name="dc.choose">bir dosya seçin</string>
+  <string name="dc.on_page">{n}. sayfada</string>
+  <string name="dc.sending">Gönderiliyor…</string>
+  <string name="dc.send">Tablete Gönder</string>
+  <string name="dc.no_inbox">Ayarlar sekmesinde bir gelen kutusu ayarlayın</string>
+  <string name="dc.look">Yakından bak</string>
+  <string name="dc.size_px">{w} × {h} px</string>
+  <string name="count.stroke.one">{n} çizgi</string>
+  <string name="count.stroke.other">{n} çizgi</string>
+  <string name="common.delete">Sil</string>
+  <string name="dc.size_range">Boyut 200 ile 1.400 tablet pikseli arasındadır.</string>
+  <string name="dc.picture">Görsel</string>
+  <string name="dc.bad_type">Bu dosya PNG, JPEG ya da WebP görseli değil.</string>
+  <string name="dc.too_big">Bu görsel {size}. {max} altında bir görsel kullanın.</string>
+  <string name="dc.unreadable">Dosya okunamadı.</string>
+  <string name="dc.drop_what">Bir görsel dosyası ya da bir web sayfasından görsel bırakın.</string>
+  <string name="dc.label">Ayrıştır</string>
+  <string name="dc.intro">Bir görseli kalem çizgilerine dönüştürüp tablete gönderin; orada her çizgi sizinkiler gibi silinip üzerine çizilebilir.</string>
+  <string name="dc.image">Görsel</string>
+  <string name="dc.size">Boyut</string>
+  <string name="dc.size_unit">tablet pikseli, 200 ile 1.400 arası</string>
+  <string name="dc.types">PNG, JPEG, WebP</string>
+  <string name="dc.decomps">Ayrıştırmalar</string>
+  <string name="lineup.unreadable">Dizilimler okunamadı.</string>
+  <string name="memories.note">Bu dizilimin modelinin sizin için çalışmak hakkında öğrendikleri: şikâyetler, düzeltmeler, işlerin nasıl yapılmasını istediğiniz. Model bunları kendisi kaydeder; notlarınızı ya da bir sayfadaki işi asla kaydetmez (her defter kendi bağlamını not defterinde tutar) ve bu dizilimin her işine bunlar gösterilir. Burada istediğinizi değiştirin ya da silin.</string>
+  <string name="memories.none">Henüz anı yok.</string>
+  <string name="memories.none_hint">Model, sizin için çalışmak hakkında bir şey öğrendiğinde bir tane kaydeder.</string>
+  <string name="memories.count">{n} / {max}</string>
+  <string name="memories.saved_on">{date} tarihinde kaydedildi</string>
+  <string name="memories.one">Anı</string>
+  <string name="memories.saved">Anı kaydedildi.</string>
+  <string name="memories.deleted">Anı silindi.</string>
+  <string name="lineup.label">Dizilim</string>
+  <string name="lineup.new_option">+ Yeni dizilim…</string>
+  <string name="lineup.rename">Yeniden adlandır</string>
+  <string name="tab.text">Metin / Akıl yürütme</string>
+  <string name="tab.image">Görsel</string>
+  <string name="tab.network">Ağ</string>
+  <string name="tab.tags">Etiketleme</string>
+  <string name="tab.memories">Anılar</string>
+  <string name="tab.tests">Test</string>
+  <string name="common.saved">Kaydedildi.</string>
+  <string name="common.no_answer">Yanıt yok.</string>
+  <string name="lineup.test_no_answer">Yanıt yok. Sağlayıcıyı, modeli ve anahtarı kontrol edin.</string>
+  <string name="memories.delete_q">Bu anı silinsin mi?</string>
+  <string name="memories.delete_body">Model bunu bir daha görmeyecek.</string>
+  <string name="lineup.new">Yeni dizilim</string>
+  <string name="lineup.rename_title">Dizilimi yeniden adlandır</string>
+  <string name="lineup.name">Ad</string>
+  <string name="lineup.delete_q">{name} silinsin mi?</string>
+  <string name="lineup.delete_body">Modelleri, web araması, etiketleri ve anıları da onunla birlikte gider.</string>
+  <string name="common.disclaimer">Feragatname</string>
+  <string name="common.cancel">İptal</string>
+  <string name="slot.other_provider">Diğer (OpenAI uyumlu)</string>
+  <string name="slot.harness_auto">Otomatik (modelin adından)</string>
+  <string name="slot.harness">Harness</string>
+  <string name="slot.add_harness">+ Harness ekle</string>
+  <string name="slot.none">Yok</string>
+  <string name="slot.api_key">API anahtarı</string>
+  <string name="slot.local">Yerelde barındır</string>
+  <string name="slot.source">Kaynak</string>
+  <string name="slot.provider">Sağlayıcı</string>
+  <string name="slot.address">Adres</string>
+  <string name="slot.model">Model</string>
+  <string name="slot.saved">kaydedildi</string>
+  <string name="common.test">Test et</string>
+  <string name="slot.script_label">Start.bat - başlatma betiği gerekmiyorsa boş bırakın</string>
+  <string name="slot.script">Başlatma betiği</string>
+  <string name="net.search">Web araması</string>
+  <string name="net.service_key">API anahtarlı arama hizmeti</string>
+  <string name="net.service">Hizmet</string>
+  <string name="net.script">Arama başlatma betiği</string>
+  <string name="tags.note">Buradaki her etiket bu dizilimin izlediği bir etikettir: tabletinizde bir sayfayı, defteri ya da klasörü onunla etiketleyin, bu dizilim üzerinde çalışsın. Bir sayfa, üzerinde, defterinde ve üstündeki klasörlerde bulunan bu dizilim etiketlerinin istemlerini bu listenin sırasıyla alır (bir kartı taşımak için tutamacından sürükleyin); defterin kendi kalıcı talimatlar sayfası en son gelir. Ek bir şeye ihtiyaç duymayan sayfalar için istemi boş bir etiket tutun. Bir etiket yalnızca bir dizilime ait olabilir.</string>
+  <string name="tags.move">{name} öğesini taşı (ok tuşları)</string>
+  <string name="tags.this">bu etiket</string>
+  <string name="tags.drag">Sıralamak için sürükleyin</string>
+  <string name="tags.tag">Etiket</string>
+  <string name="common.remove">Kaldır</string>
+  <string name="tags.prompt">İstem</string>
+  <string name="tags.prompt_blank">Boş: sayfa ek bir istem almaz</string>
+  <string name="tags.add">+ Etiket ekle</string>
+  <string name="common.testing">Test ediliyor…</string>
+  <string name="common.answering">Yanıtlıyor</string>
+  <string name="np.list_unreadable">Not defterleri okunamadı.</string>
+  <string name="np.reading_list">Not defterleri okunuyor…</string>
+  <string name="np.no_match">Eşleşen defter yok.</string>
+  <string name="np.summary">{entries} · {chars} karakter</string>
+  <string name="count.entry.one">{n} kayıt</string>
+  <string name="count.entry.other">{n} kayıt</string>
+  <string name="np.undated">Tarihsiz</string>
+  <string name="np.show_fewer">Daha az göster</string>
+  <string name="np.show_older.one">{n} eski kaydı göster</string>
+  <string name="np.show_older.other">{n} eski kaydı göster</string>
+  <string name="np.select">Not defterini okumak için bir defter seçin.</string>
+  <string name="np.wiped_at">{time} itibarıyla temizlendi.</string>
+  <string name="np.wiped_body">Tüm kayıtlar silindi ve hiçbir kopya tutulmadı. {name} içindeki bir sonraki iş boş bir not defteriyle başlar.</string>
+  <string name="np.copy">Metni kopyala</string>
+  <string name="np.wipe">Not defterini temizle</string>
+  <string name="np.not_wiped">Not defteri temizlenmedi.</string>
+  <string name="np.unreadable">Bu not defteri okunamadı.</string>
+  <string name="np.reading">Not defteri okunuyor…</string>
+  <string name="np.empty">Bu not defteri boş.</string>
+  <string name="np.show">Göster</string>
+  <string name="np.entries">Kayıtlar</string>
+  <string name="np.as_text">Metin olarak</string>
+  <string name="np.none">Henüz not defteri yok.</string>
+  <string name="np.this_notebook">bu defter</string>
+  <string name="np.wipe_q">{name} not defteri temizlensin mi?</string>
+  <string name="np.wipe_body">{entries} kaldırılır ve hiçbir kopya tutulmaz. {name} içindeki bir sonraki iş boş bir not defteriyle başlar.</string>
+  <string name="np.wipe_body2">Bu not defterinde tutulan bir oyun da gider. Tabletteki defterinize dokunulmaz.</string>
+  <string name="np.label">Not defterleri</string>
+  <string name="np.intro">Her defterin kendi işlerine dair hafızası. Her işten sonra host neyin istendiğini ve ne yaptığını not eder; o defterdeki bir sonraki işe son kayıtlar gösterilir, böylece bir konuşma sayfadan sayfaya sürebilir.</string>
+  <string name="np.books">Not defteri olan defterler</string>
+  <string name="np.find">Bir defter bulun</string>
+  <string name="common.copied">Kopyalandı</string>
+  <string name="common.copy_failed">Kopyalanamadı</string>
+  <string name="nw.this_computer">· bu bilgisayar, her zaman açık</string>
+  <string name="nw.cannot_remove">kaldırılamaz</string>
+  <string name="nw.remove_addr">{address} adresini kaldır</string>
+  <string name="nw.url_label">Diğer cihazlar için adres</string>
+  <string name="common.copy">Kopyala</string>
+  <string name="nw.local_only">Siz bir adres ekleyene kadar yalnızca bu bilgisayardan.</string>
+  <string name="nw.token">Eşleştirme belirteci</string>
+  <string name="nw.hide">Gizle</string>
+  <string name="nw.show">Göster</string>
+  <string name="nw.rotate">Yenile…</string>
+  <string name="nw.rotated_at">{time} itibarıyla yenilendi.</string>
+  <string name="nw.rotated_body">Eşleştirilmiş her cihazın yeni belirtece ihtiyacı var. Bu pencere kendiliğinden yeniden bağlandı.</string>
+  <string name="nw.token_kept">Windows kimlik bilgisi deposunda saklanır. Bu pencere kendini eşleştirir.</string>
+  <string name="nw.saved_restart">{time} itibarıyla kaydedildi. PaperDaemon yeniden başladığında geçerli olur.</string>
+  <string name="nw.rotate_q">Eşleştirme belirteci yenilensin mi?</string>
+  <string name="nw.rotate_body">Eşleştirilmiş her cihaz, siz ona yeni belirteci verene kadar çalışmaz. Bu pencere kendiliğinden yeniden bağlanır.</string>
+  <string name="nw.rotate_action">Belirteci yenile</string>
+  <string name="nw.label">Ağ</string>
+  <string name="count.address.one">{n} adres</string>
+  <string name="count.address.other">{n} adres</string>
+  <string name="nw.intro">Motor bu pencereye ve eşleştirdiğiniz her cihaza bu bilgisayardaki tek bir porttan hizmet verir.</string>
+  <string name="nw.listens">Motorun dinlediği yer</string>
+  <string name="nw.port">Port</string>
+  <string name="nw.save_port">Portu kaydet</string>
+  <string name="nw.port_hint">Yalnızca başka bir program onu zaten kullanıyorsa değiştirin. Motor yeni portu PaperDaemon yeniden başladıktan sonra kullanır.</string>
+  <string name="nw.addresses">Adresler</string>
+  <string name="nw.addresses_hint">PaperDaemon'a bir telefondan ya da başka bir bilgisayardan ulaşmak için WireGuard adresinizi ekleyin.</string>
+  <string name="nw.another">Başka bir adres</string>
+  <string name="nw.to_add">Eklenecek adres</string>
+  <string name="nw.add">Adres ekle</string>
+  <string name="nw.trust">Yalnızca güvendiğiniz ağlardaki adresleri ekleyin. Nereden gelirse gelsin her istek eşleştirme belirtecini taşımalıdır.</string>
+  <string name="nw.reach">Şuradan ulaşın</string>
+  <string name="nw.pairing">Eşleştirme</string>
+  <string name="nw.token_hint">Bir cihazı eşleştirmek için onu bir kez cihaza yazın.</string>
+  <string name="nw.bad_address">Bu bir IP adresi değil. 10.8.0.2 gibi bir biçim kullanın.</string>
+  <string name="nw.listed">{address} zaten listede.</string>
+  <string name="su.connect">reMarkable'ınızı bağlayın</string>
+  <string name="su.mirror">Ayna</string>
+  <string name="su.finish">Bitir</string>
+  <string name="su.building_pct">Ayna oluşturuluyor, %{pct}</string>
+  <string name="su.taking">Oturum alınıyor…</string>
+  <string name="su.steal_instead">Bunun yerine oturumu devral</string>
+  <string name="su.borrow_instead">Bunun yerine oturumu ödünç al</string>
+  <string name="su.connected_how">Bağlı · {how}</string>
+  <string name="su.borrowed">Ödünç alındı</string>
+  <string name="su.stolen">Devralındı</string>
+  <string name="su.continue">Devam</string>
+  <string name="su.mirror_lead">PaperDaemon'ın kitaplığınızın kopyası. Arka planda oluşur; devam edebilirsiniz.</string>
+  <string name="su.connect_first">Önce reMarkable'ınızı bağlayın.</string>
+  <string name="su.connecting">Bağlanılıyor…</string>
+  <string name="su.mirror_complete">Ayna tamamlandı</string>
+  <string name="su.cloud_silent">Bulut yanıt vermedi.</string>
+  <string name="su.lineup_lead">Metin modeli gereklidir. Görsel modeli ve web araması isteğe bağlıdır.</string>
+  <string name="su.lineup_unreadable">Dizilim okunamadı.</string>
+  <string name="su.need_address">Metin modelinin bir adrese ihtiyacı var.</string>
+  <string name="su.need_name">Dizilimin bir ada ihtiyacı var.</string>
+  <string name="su.finish_lead">PaperDaemon aşağıdaki yapılandırmayla başlayacak.</string>
+  <string name="su.proceed">PaperDaemon'a geç</string>
+  <string name="su.automatic">Otomatik</string>
+  <string name="su.local_at">{address} adresinde yerelde barındırılıyor</string>
+  <string name="su.local_at_script">{address} adresinde yerelde barındırılıyor · bir Start.bat ile</string>
+  <string name="su.harness_is">Harness: {harness}</string>
+  <string name="su.building">Oluşturuluyor · %{pct}</string>
+  <string name="su.complete">Tamamlandı</string>
+  <string name="su.not_built">Henüz oluşturulmadı</string>
+  <string name="su.tags">Etiketler</string>
+  <string name="su.no_tags">Yok: siz bir tane ekleyene kadar hiçbir sayfa yanıtlanmaz</string>
+  <string name="su.steps">Kurulum adımları</string>
+  <string name="su.later">Daha sonra kur</string>
+  <string name="su.title">Kurulum · PaperDaemon</string>
+  <string name="ts.failed">Başarısız</string>
+  <string name="ts.running">Çalışıyor</string>
+  <string name="ts.passed">Geçti</string>
+  <string name="ts.waiting">Bekliyor</string>
+  <string name="ts.stop">Testi durdur</string>
+  <string name="ts.run">Testi çalıştır</string>
+  <string name="ts.not_started">Çalıştırma başlamadı.</string>
+  <string name="ts.partly">Kısmen</string>
+  <string name="ts.unreadable">Testler okunamadı.</string>
+  <string name="ts.result">Sonuç</string>
+  <string name="ts.cases_done">Biten durumlar</string>
+  <string name="ts.passed_of">{total} durumdan {n} tanesi geçti</string>
+  <string name="ts.intro">Yalnızca en son test saklanır ve dizilimdeki her değişiklik onu geçersiz kılar.</string>
+  <string name="help.model.title">Başlatma betiği nasıl çalışır</string>
+  <string name="help.model.intro">Başlatma betiği, modelinizin sunucusunu başlatan küçük bir Windows toplu iş dosyasıdır (bir `.bat`). Onu bir kez yazarsınız. Ondan sonra PaperDaemon, bir işin bu modele ihtiyacı olduğunda onu sizin için çalıştırır; böylece sunucuyu asla elle başlatmanız gerekmez.</string>
+  <string name="help.h_do">Betiğinizin yapması gerekenler</string>
+  <string name="help.model.do1">Sunucuyu yukarıdaki kutudaki adreste yanıt verecek şekilde başlatmak, örneğin `http://127.0.0.1:8790`. PaperDaemon bu portu betiğinize `%PAPERDAEMON_PORT%` olarak verir.</string>
+  <string name="help.model.do2">Sunucu çalıştığı sürece çalışmaya devam etmek. Sunucuyu `start` ile değil doğrudan başlatın (`start` onu başka bir pencerede açar ve betik hemen biter; PaperDaemon da sunucunun gittiğini sanar).</string>
+  <string name="help.do_output">Sunucunun mesajlarını yazdırmasına izin verin. Bir şeyler ters giderse PaperDaemon son satırları burada gösterir.</string>
+  <string name="help.h_runs">PaperDaemon onu ne zaman çalıştırır</string>
+  <string name="help.model.runs1">Bir iş bu modele ilk kez ihtiyaç duyduğunda.</string>
+  <string name="help.model.runs2">Bir sayfanın etiketi, başlatma betiği çalışandan farklı olan bir dizilime ait olduğunda. PaperDaemon önce başlattığı sunucuyu durdurur, sonra bunu çalıştırır.</string>
+  <string name="help.model.runs3">Bu betiğin başlattığı sunucu zaten çalışıyorsa çalıştırmaz.</string>
+  <string name="help.h_stops">PaperDaemon onu ne zaman durdurur</string>
+  <string name="help.model.stops">PaperDaemon'ı duraklattığınızda ya da kapattığınızda veya başka bir dizilimin başlatma betiğinin çalışması gerektiğinde. Betiğinizin başlattığı her şeyi durdurur. Kendi başlatmadığı bir programı asla durdurmaz.</string>
+  <string name="help.h_wrong">Ters gidebilecek şeyler</string>
+  <string name="help.model.wrong_vram">**Ekran kartı dolu.** Bir modelin, kartınızın belleğinde (VRAM) yere ihtiyacı vardır. Başka bir model sunucusu, bir oyun ya da bir görsel aracı o belleği tutuyorsa, model yüklenemez ya da çok yavaş çalışır. Başka model sunucularını kendiniz çalıştırıyorsanız, betiğinizin önce onları durdurmasını sağlayın (örneğin `taskkill /IM llama-server.exe /F`). PaperDaemon yalnızca kendi başlattığını durdurur.</string>
+  <string name="help.model.wrong_two">**Birlikte sığmayan iki model.** Metin modeliniz ve görsel modeliniz karta birlikte sığmıyorsa, her betiği kendi sunucusunu başlatmadan önce diğerinin sunucusunu durduracak şekilde yazın.</string>
+  <string name="help.model.wrong_port">**Port kullanımda.** Başka bir program o portu zaten kullanıyorsa sunucunuz orada başlayamaz. Boş bir port seçin ve yukarıdaki adreste aynısını kullanın.</string>
+  <string name="help.wrong_spaces">**Yolda boşluklar.** Boşluk içeren her yolu tırnak içine alın.</string>
+  <string name="help.model.wrong_keys">**Anahtarlar ve parolalar.** Bunları betiğe yazmayın. API anahtarı için anahtar kutusunu kullanın.</string>
+  <string name="help.h_try">Deneyin</string>
+  <string name="help.model.try">Test sekmesine gidin ve **Testi çalıştır**'a basın.</string>
+  <string name="help.search.title">Arama başlatma betiği nasıl çalışır</string>
+  <string name="help.search.intro">Arama başlatma betiği, kendi arama sunucunuzu (genellikle SearXNG) başlatan küçük bir Windows toplu iş dosyasıdır (bir `.bat`). Bir işin bir şey araması gerektiğinde ve arama sunucunuz yanıt vermediğinde PaperDaemon onu sizin için çalıştırır.</string>
+  <string name="help.search.do1">Arama sunucusunu yukarıdaki kutudaki adreste yanıt verecek şekilde başlatmak.</string>
+  <string name="help.search.do2">Sunucu çalıştığı sürece çalışmaya devam etmek. Onu `start` ile değil doğrudan başlatın.</string>
+  <string name="help.search.runs">PaperDaemon her aramadan önce yukarıdaki adresten bir deneme araması ister. Bir SearXNG sunucusu düzgün yanıt verirse, PaperDaemon onu kim başlatmış olursa olsun olduğu gibi kullanır ve betiği çalıştırmaz. Betiği yalnızca hiçbir şey yanıt vermediğinde ya da yanıt veren şey kullanabileceği bir arama sunucusu olmadığında çalıştırır.</string>
+  <string name="help.search.stops">PaperDaemon'ı duraklattığınızda ya da kapattığınızda. Betiğinizin başlattığı her şeyi durdurur ve kendi başlatmadığı bir programı asla durdurmaz.</string>
+  <string name="help.search.wrong_json">**JSON kapalı.** SearXNG, PaperDaemon gibi programlara yalnızca `settings.yml` dosyasında JSON açıksa yanıt verir: `search:` → `formats:` altında hem `html` hem `json` listeleyin.</string>
+  <string name="help.search.wrong_docker">**Docker.** Bir Docker kapsayıcısı PaperDaemon kapandıktan sonra da çalışmaya devam eder, çünkü onu betiğiniz değil Docker çalıştırır. SearXNG'yi WSL'de (Linux için Windows Alt Sistemi) ya da Python ile çalıştırmak bunu önler.</string>
+  <string name="help.search.wrong_port">**Port kullanımda.** Başka bir program o portu zaten kullanıyorsa sunucu orada başlayamaz ve PaperDaemon bunu sizin için düzeltemez. Boş bir port seçin ve yukarıdaki adreste aynısını kullanın.</string>
+  <string name="help.search.try">Adresin yanındaki **Test et** düğmesine basın.</string>
+  <string name="help.ask">Yapay zekâdan yardım iste</string>
+  <string name="help.copied">İstem panoya kopyalandı!</string>
+  <string name="help.copy_failed">İstem kopyalanamadı</string>
+  <string name="help.model.prompt_text">Windows bilgisayarımda yapay zekâ modelleri çalıştıran, reMarkable tabletim için bir uygulama olan PaperDaemon'ı kuruyorum. Metin (LLM) modelinin sunucusunu başlatan bir Windows toplu iş dosyasına (.bat) ihtiyacım var. PaperDaemon modele ihtiyaç duyduğunda bu betiği kendisi çalıştırır ve işi bitince durdurur.
+
+Betiğin uyması gereken kurallar:
+- Sunucuyu, PaperDaemon'ın %PAPERDAEMON_PORT% içinde verdiği portta 127.0.0.1 üzerinden HTTP'ye yanıt verecek şekilde başlat.
+- Sunucuyu ön planda çalıştır ve sunucu çalıştığı sürece betiği açık tut. `start` kullanma.
+- Sunucunun çıktısını yazdır.
+- PaperDaemon ayrıca %PAPERDAEMON_ROLE% (text ya da image), %PAPERDAEMON_LOCATION% (tam adres), %PAPERDAEMON_OTHER_LOCATION% (diğer modelin adresi), %PAPERDAEMON_LINEUP% ve %PAPERDAEMON_DATA% değişkenlerini ayarlar.
+- PaperDaemon yalnızca kendi başlattığı programları durdurur. Başka model sunucuları ekran kartımın belleğini kullanıyor olabilirse, betik önce onları durdurmalı.
+- Sunucu, llama.cpp'nin llama-server'ı, Ollama, LM Studio ya da vLLM gibi OpenAI uyumlu sohbet API'sini (/v1/chat/completions) konuşmalı.
+
+Yazmadan önce bana şu soruları tek tek sor ve her yanıtı bekle:
+1. Hangi ekran kartım var ve kaç GB VRAM'i var?
+2. Hangi modeli çalıştırmak istiyorum ve model dosyası bilgisayarımda nerede?
+3. Hangi sunucu programını kullanıyorum (ya da kullanmak istiyorum) ve nereye kurulu?
+4. Hangi portu kullanmalı?
+5. Ekran kartını kullanan başka yapay zekâ sunucuları ya da programlar çalıştırıyor muyum ve betik önce onları durdurmalı mı?
+6. Metin modelim ve görsel modelim karta birlikte sığıyor mu, yoksa her betik diğerini durdurmalı mı?
+
+Sonra .bat dosyasını her satırın ne yaptığını söyleyen kısa bir yorumla yaz ve bana nasıl test edeceğimi anlat.</string>
+  <string name="help.model.prompt_image">Windows bilgisayarımda yapay zekâ modelleri çalıştıran, reMarkable tabletim için bir uygulama olan PaperDaemon'ı kuruyorum. Görsel üretme modelinin sunucusunu başlatan bir Windows toplu iş dosyasına (.bat) ihtiyacım var. PaperDaemon modele ihtiyaç duyduğunda bu betiği kendisi çalıştırır ve işi bitince durdurur.
+
+Betiğin uyması gereken kurallar:
+- Sunucuyu, PaperDaemon'ın %PAPERDAEMON_PORT% içinde verdiği portta 127.0.0.1 üzerinden HTTP'ye yanıt verecek şekilde başlat.
+- Sunucuyu ön planda çalıştır ve sunucu çalıştığı sürece betiği açık tut. `start` kullanma.
+- Sunucunun çıktısını yazdır.
+- PaperDaemon ayrıca %PAPERDAEMON_ROLE% (text ya da image), %PAPERDAEMON_LOCATION% (tam adres), %PAPERDAEMON_OTHER_LOCATION% (diğer modelin adresi), %PAPERDAEMON_LINEUP% ve %PAPERDAEMON_DATA% değişkenlerini ayarlar.
+- PaperDaemon yalnızca kendi başlattığı programları durdurur. Başka model sunucuları ekran kartımın belleğini kullanıyor olabilirse, betik önce onları durdurmalı.
+- Sunucu, stable-diffusion.cpp sunucusu, Forge ya da AUTOMATIC1111 gibi Stable Diffusion web UI API'sini (/sdapi/v1/txt2img) ya da OpenAI Images API'sini konuşmalı.
+
+Yazmadan önce bana şu soruları tek tek sor ve her yanıtı bekle:
+1. Hangi ekran kartım var ve kaç GB VRAM'i var?
+2. Hangi modeli çalıştırmak istiyorum ve model dosyası bilgisayarımda nerede?
+3. Hangi sunucu programını kullanıyorum (ya da kullanmak istiyorum) ve nereye kurulu?
+4. Hangi portu kullanmalı?
+5. Ekran kartını kullanan başka yapay zekâ sunucuları ya da programlar çalıştırıyor muyum ve betik önce onları durdurmalı mı?
+6. Metin modelim ve görsel modelim karta birlikte sığıyor mu, yoksa her betik diğerini durdurmalı mı?
+
+Sonra .bat dosyasını her satırın ne yaptığını söyleyen kısa bir yorumla yaz ve bana nasıl test edeceğimi anlat.</string>
+  <string name="help.search.prompt">Windows bilgisayarımda çalışan, reMarkable tabletim için bir uygulama olan PaperDaemon'ı kuruyorum. Bu bilgisayarda bir SearXNG arama sunucusu başlatan bir Windows toplu iş dosyasına (.bat) ihtiyacım var. PaperDaemon arama yapması gerektiğinde ve hiçbir şey yanıt vermediğinde betiği kendisi çalıştırır, PaperDaemon duraklatıldığında ya da kapandığında da durdurur.
+
+Betiğin uyması gereken kurallar:
+- SearXNG'yi, seçtiğim portta 127.0.0.1 üzerinden HTTP'ye yanıt verecek şekilde başlat.
+- SearXNG'de JSON çıktısı açık olmalı (settings.yml içinde search: formats: [html, json]).
+- Sunucuyu ön planda çalıştır ve sunucu çalıştığı sürece betiği açık tut. `start` kullanma.
+- Sunucunun çıktısını yazdır.
+- Docker yerine WSL ya da Python tercih et: PaperDaemon betiğin kendi süreçlerini durdurur, ama bir Docker kapsayıcısı o kapandıktan sonra da çalışmaya devam eder.
+
+Yazmadan önce bana şu soruları tek tek sor ve her yanıtı bekle:
+1. WSL (Linux için Windows Alt Sistemi) kurulu mu? Python? Docker?
+2. SearXNG zaten kurulu mu, kuruluysa nereye ve nasıl?
+3. Hangi portu kullanmalı ve onu zaten kullanan başka bir şey var mı?
+
+Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasını her satırın ne yaptığını söyleyen kısa bir yorumla yaz ve bana nasıl test edeceğimi anlat.</string>
+  <string name="settings.language.pick">Listeden bir dil seçin.</string>
+  <string name="ts.what">Ne</string>
+  <string name="ts.details">Ayrıntılar</string>
+  <string name="ts.testing">Test ediliyor: {total} durumdan {n} tanesi bitti</string>
+  <string name="ts.changed">Dizilim son testinden sonra değişti, bu yüzden o sonuç artık geçerli değil. Testi yeniden çalıştırın.</string>
+  <string name="ts.never">Bu dizilim henüz test edilmedi.</string>
+  <string name="ts.whole">{name} dizilimi bir bütün olarak test ediliyor: metin modeli ve harness'ı, görsel modeli ve harness'ı, ağ ve etiketleri.</string>
+  <string name="ts.row.model-text">Metin modeli</string>
+  <string name="ts.row.model-image">Görsel modeli</string>
+  <string name="ts.row.answer">Soruları yanıtlama</string>
+  <string name="ts.row.ink">El yazısı bir soruyu yanıtlama</string>
+  <string name="ts.row.chart">Grafik oluşturma</string>
+  <string name="ts.row.draw">Çizim</string>
+  <string name="ts.row.picture">Görsel oluşturma</string>
+  <string name="ts.row.handwriting">El yazısı okuma</string>
+  <string name="ts.row.search">Web'de arama</string>
+  <string name="ts.row.social">Sosyal medya</string>
+  <string name="ts.row.weather">Hava durumu</string>
+  <string name="ts.m.not_run">Çalıştırılmadı</string>
+  <string name="ts.m.no_image">Görsel modeli yok</string>
+  <string name="ts.m.waiting">Bekliyor</string>
+  <string name="ts.m.working">Çalışıyor</string>
+  <string name="ts.m.canceled">İptal edildi</string>
+  <string name="ts.m.failed">Başarısız</string>
+  <string name="ts.m.answered_in">{s} sn'de yanıtladı</string>
+  <string name="ts.m.done_in">{s} sn'de bitti</string>
+  <string name="ts.m.failed_after">{s} sn sonra başarısız oldu</string>
+  <string name="ts.m.answers">Yanıtlıyor</string>
+  <string name="ts.m.check_failed">{check}: başarısız</string>
+  <string name="ts.m.no_answer">Yanıt yok</string>
+  <string name="ts.m.not_set_up">Ayarlanmadı</string>
+  <string name="ts.m.network_off">Ağ erişimi kapalı</string>
+  <string name="ts.m.no_results_in">{s} sn'de sonuç yok</string>
+  <string name="ts.m.results_in">{s} sn'de {n} sonuç</string>
+  <string name="ts.m.no_sites">Site seçilmedi</string>
+  <string name="ts.m.site_time">{site} {s} sn</string>
+  <string name="ts.m.site_failed">{site} başarısız</string>
+  <string name="ts.m.no_forecast">Tahmin yok</string>
+  <string name="ts.m.weather">{t}{unit} ve {sky}, {s} sn'de yanıtladı</string>
+  <string name="ts.m.no_samples">Örnek yok</string>
+  <string name="ts.m.cannot_see">Model göremiyor</string>
+  <string name="ts.m.no_reading">Okuma yok</string>
+  <string name="ts.m.nothing_read">Hiçbir şey okunmadı</string>
+  <string name="ts.m.words">Kelimelerin %{pct}'i, sayfa başına {s} sn</string>
+  <string name="ts.d.no_image">Dizilimin görsel modeli yok.</string>
+  <string name="ts.d.search_setup">Dizilimin Ağ sekmesinde bir arama hizmeti ya da yerel arama sunucusu ekleyin.</string>
+  <string name="ts.d.allow_network">Ayarlar'da izin verin.</string>
+  <string name="ts.d.search_empty">Arama boş döndü.</string>
+  <string name="ts.d.first">İlk: {title}</string>
+  <string name="ts.d.every_site">Her siteden gönderi geldi.</string>
+  <string name="ts.d.choose_sites">Sosyal siteleri Ayarlar'da seçin.</string>
+  <string name="ts.d.no_forecast">Hava tahmini hizmeti yanıt vermedi.</string>
+  <string name="ts.d.weather">Bugün {place}: en yüksek {hi}{unit}, en düşük {lo}{unit}.</string>
+  <string name="ts.d.weather_london">Konum ayarlanmadığı için bugün Londra: en yüksek {hi}{unit}, en düşük {lo}{unit}.</string>
+  <string name="ts.d.samples_missing">El yazısı örnekleri eksik.</string>
+  <string name="ts.d.cannot_see">Dizilimin metin modeli görsel kabul etmiyor, bu yüzden el yazısı okumuyor.</string>
+  <string name="ts.d.words">Dört kıtadan {pages} yazarın {pages} sayfasında {total} kelimeden {right} tanesi ({regions}).</string>
+  <string name="ts.d.text_failed">Metin modeli kontrolünü geçemedi.</string>
+  <string name="page.gave_up">Bunu bitiremedim; {n} denemeden sonra vazgeçtim.</string>
+  <string name="issue.loop_token_unreadable">reMarkable bağlantısı okunamadı: {why}</string>
+  <string name="issue.loop_gave_up">PaperDaemon'ın bir parçası arka arkaya {n} kez durdu ve durmuş halde bırakıldı; nedenini günlüğü söylüyor.</string>
+  <string name="issue.loop_supervisor">PaperDaemon'ın denetleyicisi bir hatayla karşılaştı: {why}</string>
+  <string name="slot.key_where">Önce sunucunun adresini doldurun: anahtar o sunucu için saklanır.</string>
+  <string name="slot.source.help">API anahtarı: modeli bir şirket çalıştırır ve PaperDaemon ona anahtarınızla ulaşır. Yerelde barındır: bu bilgisayarda ya da ağınızda kendi çalıştırdığınız bir model sunucusu.</string>
+  <string name="slot.provider.help">Modeli kimin çalıştırdığı. Diğer: verdiğiniz adreste OpenAI API'sini konuşan herhangi bir hizmet.</string>
+  <string name="slot.address.help_hosted">Hizmetin API adresi, örneğin https://api.example.com/v1.</string>
+  <string name="slot.model.help">Modelin adı, tam olarak sağlayıcının yazdığı gibi.</string>
+  <string name="slot.api_key.help">Windows Kimlik Bilgisi Yöneticisi'nde saklanır, asla bir dosyada değil. Aynı sunucuyu kullanan dizilimler onun anahtarını paylaşır.</string>
+  <string name="slot.address.help_local">Modelinizin sunucusunun yanıt verdiği yer, örneğin http://127.0.0.1:8080. Orada hiçbir şey yanıt vermezse PaperDaemon aşağıdaki başlatma betiğini çalıştırır.</string>
+  <string name="slot.harness.help">PaperDaemon'ın bu modelle nasıl çalıştığı: ona ne söylediği ve yanıtları nasıl okuduğu. Otomatik, modelin adından birini seçer; Harness ekle, kendi harness'larınız için klasörü açar.</string>
+  <string name="net.source.help">Bir işin bilgi aradığı yer: API anahtarınız olan bir arama hizmeti ya da kendi çalıştırdığınız bir SearXNG sunucusu.</string>
+  <string name="net.service.help">Anahtarınızın ait olduğu arama hizmeti.</string>
+  <string name="net.address.help">SearXNG sunucunuzun yanıt verdiği yer, örneğin http://127.0.0.1:8888. Orada kullanılabilir bir şey yanıt vermezse PaperDaemon aşağıdaki başlatma betiğini çalıştırır.</string>
+  <string name="tags.tag.help">Etiket, tam olarak tablette koyduğunuz gibi; büyük ve küçük harf fark etmez.</string>
+  <string name="tags.prompt.help">Bu etiketi taşıyan bir sayfadaki ya da onu taşıyan bir defter veya klasördeki her işin talimatlarına eklenir.</string>
+</resources>

@@ -1,0 +1,524 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PaperDaemon's interface text, Français. Names are "screen.thing"; {placeholders} are filled in by the window. -->
+<resources>
+  <string name="pair.title">Associer cette fenêtre</string>
+  <string name="pair.intro">Le moteur n'accepte que les requêtes qui portent son jeton d'association. Ouvrez la fenêtre de PaperDaemon pour l'associer automatiquement, ou collez le jeton affiché sous Réseau sur l'ordinateur qui l'exécute.</string>
+  <string name="pair.token">Jeton d'association</string>
+  <string name="pair.go">Associer</string>
+  <string name="pair.empty">Collez d'abord le jeton d'association.</string>
+  <string name="pair.refused">Le moteur n'a pas accepté ce jeton.</string>
+  <string name="fatal.title">Le moteur n'a pas répondu</string>
+  <string name="common.try_again">Réessayer</string>
+  <string name="pair.window_refused">Le moteur n'a pas accepté le jeton de cette fenêtre.</string>
+  <string name="rail.engine_on">Moteur en marche</string>
+  <string name="rail.version">Version {version}</string>
+  <string name="api.no_answer">Le moteur n'a pas répondu. PaperDaemon est-il toujours en cours d'exécution ?</string>
+  <string name="api.unpaired">Cette fenêtre n'est pas associée au moteur.</string>
+  <string name="api.not_offered">Le moteur ne propose pas encore ceci ({route}).</string>
+  <string name="day.today">Aujourd'hui</string>
+  <string name="day.yesterday">Hier</string>
+  <string name="unit.seconds">{n} s</string>
+  <string name="unit.minutes">{n} min</string>
+  <string name="unit.hours">{n} h</string>
+  <string name="mirror.building_pct">Création du Miroir, {pct} %</string>
+  <string name="mirror.pct">Miroir {pct} %</string>
+  <string name="mirror.bar">Création du Miroir : {done} sur {total} · {bytes} sur {bytes_total} · {pct} %</string>
+  <string name="mirror.bar_start">Création du Miroir : {files} · {bytes} jusqu'ici</string>
+  <string name="count.document.one">{n} document</string>
+  <string name="count.document.other">{n} documents</string>
+  <string name="count.file.one">{n} fichier</string>
+  <string name="count.file.other">{n} fichiers</string>
+  <string name="mirror.name">Le Miroir</string>
+  <string name="login.privacy">Votre connexion reste sur cet ordinateur et ne sert qu'avec le cloud de reMarkable. Vos pages ne vont nulle part ailleurs, sauf si vous connectez un modèle dans le cloud ou la recherche web ; alors seul ce dont une tâche a besoin va à ce service.</string>
+  <string name="login.borrow.title">Emprunter la connexion de l'app reMarkable</string>
+  <string name="login.borrow.body">PaperDaemon copie la connexion de l'app de bureau reMarkable dans le Gestionnaire d'identification de Windows. L'app reste connectée. Les deux utilisent la même connexion, donc une seule peut fonctionner à la fois.</string>
+  <string name="login.borrow.action">Emprunter la connexion</string>
+  <string name="login.steal.title">⚠ Voler la connexion de l'app reMarkable</string>
+  <string name="login.steal.body">PaperDaemon copie la connexion de l'app de bureau reMarkable dans le Gestionnaire d'identification de Windows, puis la supprime des réglages de l'app dans le registre de Windows. L'app est déconnectée ; quand vous vous y reconnectez, elle devient un appareil distinct. Fermez d'abord l'app reMarkable.</string>
+  <string name="login.steal.action">Voler la connexion</string>
+  <string name="login.not_found">L'app reMarkable n'est pas connectée sur cet ordinateur. Installez-la, connectez-vous, puis réessayez.</string>
+  <string name="login.not_kept">La connexion de l'app a été trouvée, mais PaperDaemon n'a pas pu la garder.</string>
+  <string name="login.not_kept_why">La connexion de l'app a été trouvée, mais PaperDaemon n'a pas pu la garder : {why}</string>
+  <string name="login.stolen">PaperDaemon a la connexion, et l'app reMarkable est déconnectée. Reconnectez-vous à l'app pour l'utiliser comme un appareil à part entière.</string>
+  <string name="login.borrowed">PaperDaemon utilise la connexion de l'app reMarkable. Gardez l'app fermée pendant que PaperDaemon fonctionne.</string>
+  <string name="job.failed">Échec</string>
+  <string name="job.working">En cours</string>
+  <string name="job.skipped">Ignorée</string>
+  <string name="job.waiting">En attente</string>
+  <string name="job.done">Terminée</string>
+  <string name="job.unknown">Inconnu</string>
+  <string name="job.page">p. {n}</string>
+  <string name="jobs.unreadable">Impossible de lire les tâches.</string>
+  <string name="jobs.reading">Lecture des tâches…</string>
+  <string name="jobs.none">Aucune tâche pour l'instant.</string>
+  <string name="jobs.none_hint">Étiquetez une page avec {tag} sur votre tablette.</string>
+  <string name="count.job.one">{n} tâche</string>
+  <string name="count.job.other">{n} tâches</string>
+  <string name="jobs.n_failed">{n} en échec</string>
+  <string name="jobs.n_skipped">{n} ignorées</string>
+  <string name="jobs.earlier">Plus tôt</string>
+  <string name="jobs.so_far">{time} jusqu'ici</string>
+  <string name="jobs.a_page">Une page</string>
+  <string name="jobs.no_note">Aucune note</string>
+  <string name="jobs.col.time">Heure</string>
+  <string name="jobs.col.page">Page</string>
+  <string name="jobs.col.status">État</string>
+  <string name="jobs.col.what">Ce qui s'est passé</string>
+  <string name="jobs.col.took">Durée</string>
+  <string name="jobs.label">Tâches</string>
+  <string name="issue.setup">La configuration n'est pas terminée.</string>
+  <string name="issue.setup_go">Poursuivre la configuration</string>
+  <string name="issue.tablet">PaperDaemon n'arrive pas à joindre votre reMarkable.</string>
+  <string name="issue.mirror">Impossible de mettre à jour le Miroir : {why}</string>
+  <string name="issue.not_started">PaperDaemon n'a pas démarré : {why}</string>
+  <string name="term.daemon">Daemon</string>
+  <string name="term.daemon_about">Surveille votre tablette à la recherche de pages étiquetées et confie chacune à l'hôte comme une tâche.</string>
+  <string name="term.host">Hôte</string>
+  <string name="term.host_about">Exécute chaque tâche : lit la page, interroge les modèles et écrit la réponse sur la page.</string>
+  <string name="term.empty">Rien pour l'instant.</string>
+  <string name="loop.pausing">Mise en pause…</string>
+  <string name="loop.starting">Démarrage…</string>
+  <string name="loop.pause">Mettre le daemon en pause (libère la VRAM)</string>
+  <string name="loop.start">Démarrer</string>
+  <string name="overview.label">Vue d'ensemble</string>
+  <string name="overview.needs_you">Quelque chose demande votre attention</string>
+  <string name="loop.running">En marche</string>
+  <string name="loop.paused">En pause</string>
+  <string name="common.choose">Choisir…</string>
+  <string name="common.help">Aide</string>
+  <string name="settings.label">Réglages</string>
+  <string name="settings.prefs">Préférences</string>
+  <string name="settings.prefs_to_set">Préférences à définir</string>
+  <string name="settings.note">Prenez un moment pour définir vos préférences : la façon dont PaperDaemon écrit les températures, les heures et les semaines sur vos pages.</string>
+  <string name="settings.language">Langue</string>
+  <string name="settings.language.help">La langue de la fenêtre de PaperDaemon. La changer recharge la fenêtre.</string>
+  <string name="settings.temperature">Température</string>
+  <string name="settings.temperature.help">Sur les calendriers et dans ce qu'écrit PaperDaemon.</string>
+  <string name="settings.temperature.f">Fahrenheit (°F)</string>
+  <string name="settings.temperature.c">Celsius (°C)</string>
+  <string name="settings.clock">Horloge</string>
+  <string name="settings.clock.12">12 heures (2:30 PM)</string>
+  <string name="settings.clock.24">24 heures (14:30)</string>
+  <string name="settings.week">La semaine commence le</string>
+  <string name="day.sunday">Dimanche</string>
+  <string name="day.monday">Lundi</string>
+  <string name="settings.remarkable">reMarkable</string>
+  <string name="settings.login.none">Non connecté</string>
+  <string name="settings.login.borrowing">Emprunte la connexion de l'app reMarkable</string>
+  <string name="settings.login.steal">Voler plutôt</string>
+  <string name="settings.login.stolen">Connecté avec sa propre connexion, volée à l'app reMarkable</string>
+  <string name="settings.login.connected">Connecté</string>
+  <string name="settings.inbox">Boîte de réception de Décomposer</string>
+  <string name="settings.inbox.help">Le carnet auquel Envoyer à la tablette ajoute des pages. PaperDaemon n'y répond jamais, quelle que soit son étiquette.</string>
+  <string name="settings.inbox.placeholder">Choisissez un carnet</string>
+  <string name="settings.inbox.pick">Choisissez un carnet dans la liste.</string>
+  <string name="settings.location">Lieu</string>
+  <string name="settings.location.help">Pour la météo, le lever du soleil et les jours fériés sur les calendriers.</string>
+  <string name="settings.location.placeholder">Commencez à taper une ville</string>
+  <string name="settings.location.pick">Choisissez une ville dans la liste.</string>
+  <string name="settings.ignore">Étiquette à ignorer</string>
+  <string name="settings.ignore.help">Mettez cette étiquette sur un dossier, un carnet ou une page de votre tablette, et PaperDaemon n'y traite jamais rien, pour aucune équipe, quelles que soient ses autres étiquettes.</string>
+  <string name="settings.sprompt">Étiquette des consignes permanentes</string>
+  <string name="settings.sprompt.help">Mettez cette étiquette sur une page d'un carnet et écrivez-y des consignes. PaperDaemon ajoute le texte de cette page à la fin des consignes de chaque tâche de ce carnet, et ne traite jamais la page elle-même.</string>
+  <string name="settings.network">Accès au réseau</string>
+  <string name="settings.network.help">Météo, publications sociales, Wikipédia et recherche web. Vos modèles et le cloud de reMarkable ne sont pas concernés.</string>
+  <string name="settings.network.allow">Autoriser l'accès au réseau</string>
+  <string name="settings.social">Sites sociaux</string>
+  <string name="settings.social.help">Où cherche une demande de publications quand elle ne nomme aucun site. Un site nommé est toujours consulté.</string>
+  <string name="settings.tools">Outils</string>
+  <string name="settings.updates">Mises à jour</string>
+  <string name="settings.updates.help">PaperDaemon ne vérifie jamais de lui-même.</string>
+  <string name="settings.version">Version {version}</string>
+  <string name="settings.updates.check">Rechercher des mises à jour</string>
+  <string name="settings.updates.installed_only">Les mises à jour sont vérifiées par l'app installée, depuis son menu de la zone de notification ou ici.</string>
+  <string name="settings.logs">Journaux</string>
+  <string name="settings.logs.help">Ce que le daemon, l'hôte et le moteur ont écrit récemment, sous forme de pages dans votre boîte de réception.</string>
+  <string name="settings.logs.send">Envoyer les journaux à la boîte de réception</string>
+  <string name="settings.logs.no_inbox">Définissez d'abord une boîte de réception ci-dessus</string>
+  <string name="settings.logs.sent">Envoyé : {pages} dans {inbox}, à partir de la page {first}.</string>
+  <string name="settings.logs.the_inbox">la boîte de réception</string>
+  <string name="count.page.one">{n} page</string>
+  <string name="count.page.other">{n} pages</string>
+  <string name="tablet.read">{pct} % lu</string>
+  <string name="tablet.page_of">Page {page} sur {pages}</string>
+  <string name="common.reading">Lecture…</string>
+  <string name="tablet.my_files">Mes fichiers</string>
+  <string name="tablet.arriving">Encore en cours d'arrivée…</string>
+  <string name="tablet.empty">Ce dossier est vide.</string>
+  <string name="viewer.pages">Pages</string>
+  <string name="viewer.chapters">Chapitres</string>
+  <string name="viewer.goto">Aller à la page (1 - {last})</string>
+  <string name="viewer.goto_aria">Aller à la page, de 1 à {last}</string>
+  <string name="viewer.prev">Page précédente</string>
+  <string name="viewer.next">Page suivante</string>
+  <string name="viewer.reading_chapters">Lecture des chapitres…</string>
+  <string name="viewer.not_drawn">Impossible de dessiner cette page.</string>
+  <string name="viewer.page">Page {n}</string>
+  <string name="viewer.go_to">Aller à la page {n}</string>
+  <string name="common.close">Fermer</string>
+  <string name="tablet.label">Tablette</string>
+  <string name="tablet.folder">Dossier</string>
+  <string name="dc.decomposing">Décomposition de {name}</string>
+  <string name="dc.drop">Déposez une image ici, ou {choose}.</string>
+  <string name="dc.choose">choisissez un fichier</string>
+  <string name="dc.on_page">Sur la page n° {n}</string>
+  <string name="dc.sending">Envoi…</string>
+  <string name="dc.send">Envoyer à la tablette</string>
+  <string name="dc.no_inbox">Définissez une boîte de réception dans l'onglet Réglages</string>
+  <string name="dc.look">Regarder de près</string>
+  <string name="dc.size_px">{w} × {h} px</string>
+  <string name="count.stroke.one">{n} trait</string>
+  <string name="count.stroke.other">{n} traits</string>
+  <string name="common.delete">Supprimer</string>
+  <string name="dc.size_range">La taille va de 200 à 1 400 pixels de tablette.</string>
+  <string name="dc.picture">Image</string>
+  <string name="dc.bad_type">Ce fichier n'est pas une image PNG, JPEG ou WebP.</string>
+  <string name="dc.too_big">Cette image fait {size}. Utilisez-en une de moins de {max}.</string>
+  <string name="dc.unreadable">Impossible de lire le fichier.</string>
+  <string name="dc.drop_what">Déposez un fichier image, ou une image d'une page web.</string>
+  <string name="dc.label">Décomposer</string>
+  <string name="dc.intro">Transformez une image en traits de stylo et envoyez-la à la tablette, où chaque ligne peut être effacée et redessinée comme les vôtres.</string>
+  <string name="dc.image">Image</string>
+  <string name="dc.size">Taille</string>
+  <string name="dc.size_unit">pixels de tablette, de 200 à 1 400</string>
+  <string name="dc.types">PNG, JPEG, WebP</string>
+  <string name="dc.decomps">Décompositions</string>
+  <string name="lineup.unreadable">Impossible de lire les équipes.</string>
+  <string name="memories.note">Ce que le modèle de cette équipe a appris sur la façon de travailler pour vous : plaintes, corrections, la façon dont vous voulez que les choses soient faites. Le modèle les enregistre lui-même, jamais vos notes ni le travail d'une page (chaque carnet garde son propre contexte dans son bloc-notes), et chaque tâche de cette équipe les voit. Modifiez ou supprimez-les ici.</string>
+  <string name="memories.none">Aucun souvenir pour l'instant.</string>
+  <string name="memories.none_hint">Le modèle en enregistre un quand il apprend quelque chose sur la façon de travailler pour vous.</string>
+  <string name="memories.count">{n} sur {max}</string>
+  <string name="memories.saved_on">Enregistré le {date}</string>
+  <string name="memories.one">Souvenir</string>
+  <string name="memories.saved">Souvenir enregistré.</string>
+  <string name="memories.deleted">Souvenir supprimé.</string>
+  <string name="lineup.label">Équipe</string>
+  <string name="lineup.new_option">+ Nouvelle équipe…</string>
+  <string name="lineup.rename">Renommer</string>
+  <string name="tab.text">Texte / Raisonnement</string>
+  <string name="tab.image">Image</string>
+  <string name="tab.network">Réseau</string>
+  <string name="tab.tags">Étiquettes</string>
+  <string name="tab.memories">Souvenirs</string>
+  <string name="tab.tests">Test</string>
+  <string name="common.saved">Enregistré.</string>
+  <string name="common.no_answer">Pas de réponse.</string>
+  <string name="lineup.test_no_answer">Pas de réponse. Vérifiez le fournisseur, le modèle et la clé.</string>
+  <string name="memories.delete_q">Supprimer ce souvenir ?</string>
+  <string name="memories.delete_body">Il ne sera plus montré au modèle.</string>
+  <string name="lineup.new">Nouvelle équipe</string>
+  <string name="lineup.rename_title">Renommer l'équipe</string>
+  <string name="lineup.name">Nom</string>
+  <string name="lineup.delete_q">Supprimer {name} ?</string>
+  <string name="lineup.delete_body">Ses modèles, sa recherche web, ses étiquettes et ses souvenirs partent avec elle.</string>
+  <string name="common.disclaimer">Avertissement</string>
+  <string name="common.cancel">Annuler</string>
+  <string name="slot.other_provider">Autre (compatible OpenAI)</string>
+  <string name="slot.harness_auto">Automatique (d'après le nom du modèle)</string>
+  <string name="slot.harness">Harnais</string>
+  <string name="slot.add_harness">+ Ajouter un harnais</string>
+  <string name="slot.none">Aucun</string>
+  <string name="slot.api_key">Clé d'API</string>
+  <string name="slot.local">Héberger en local</string>
+  <string name="slot.source">Source</string>
+  <string name="slot.provider">Fournisseur</string>
+  <string name="slot.address">Adresse</string>
+  <string name="slot.model">Modèle</string>
+  <string name="slot.saved">enregistrée</string>
+  <string name="common.test">Tester</string>
+  <string name="slot.script_label">Start.bat - laissez vide si aucun script de démarrage n'est nécessaire</string>
+  <string name="slot.script">Script de démarrage</string>
+  <string name="net.search">Recherche web</string>
+  <string name="net.service_key">Service de recherche, avec une clé d'API</string>
+  <string name="net.service">Service</string>
+  <string name="net.script">Script de démarrage de la recherche</string>
+  <string name="tags.note">Chaque étiquette ici est une étiquette que cette équipe surveille : étiquetez avec elle une page, un carnet ou un dossier sur votre tablette, et cette équipe s'en charge. Une page reçoit les consignes des étiquettes de cette équipe qu'elle porte, que porte son carnet et que portent les dossiers au-dessus, dans l'ordre de cette liste (faites glisser une carte par sa poignée pour la déplacer) ; la page de consignes permanentes du carnet vient en dernier. Gardez une étiquette avec une consigne vide, pour les pages qui n'ont besoin de rien de plus. Une étiquette ne peut appartenir qu'à une seule équipe.</string>
+  <string name="tags.move">Déplacer {name} (touches fléchées)</string>
+  <string name="tags.this">cette étiquette</string>
+  <string name="tags.drag">Faites glisser pour réordonner</string>
+  <string name="tags.tag">Étiquette</string>
+  <string name="common.remove">Retirer</string>
+  <string name="tags.prompt">Consigne</string>
+  <string name="tags.prompt_blank">Vide : la page ne reçoit aucune consigne supplémentaire</string>
+  <string name="tags.add">+ Ajouter une étiquette</string>
+  <string name="common.testing">Test en cours…</string>
+  <string name="common.answering">Répond</string>
+  <string name="np.list_unreadable">Impossible de lire les blocs-notes.</string>
+  <string name="np.reading_list">Lecture des blocs-notes…</string>
+  <string name="np.no_match">Aucun carnet ne correspond.</string>
+  <string name="np.summary">{entries} · {chars} caractères</string>
+  <string name="count.entry.one">{n} entrée</string>
+  <string name="count.entry.other">{n} entrées</string>
+  <string name="np.undated">Sans date</string>
+  <string name="np.show_fewer">Afficher moins</string>
+  <string name="np.show_older.one">Afficher {n} entrée plus ancienne</string>
+  <string name="np.show_older.other">Afficher {n} entrées plus anciennes</string>
+  <string name="np.select">Choisissez un carnet pour lire son bloc-notes.</string>
+  <string name="np.wiped_at">Effacé à {time}.</string>
+  <string name="np.wiped_body">Toutes les entrées ont disparu, et aucune copie n'a été gardée. La prochaine tâche dans {name} commence avec un bloc-notes vide.</string>
+  <string name="np.copy">Copier le texte</string>
+  <string name="np.wipe">Effacer le bloc-notes</string>
+  <string name="np.not_wiped">Le bloc-notes n'a pas été effacé.</string>
+  <string name="np.unreadable">Impossible de lire ce bloc-notes.</string>
+  <string name="np.reading">Lecture du bloc-notes…</string>
+  <string name="np.empty">Ce bloc-notes est vide.</string>
+  <string name="np.show">Afficher</string>
+  <string name="np.entries">Entrées</string>
+  <string name="np.as_text">En texte</string>
+  <string name="np.none">Aucun bloc-notes pour l'instant.</string>
+  <string name="np.this_notebook">ce carnet</string>
+  <string name="np.wipe_q">Effacer le bloc-notes de {name} ?</string>
+  <string name="np.wipe_body">Les {entries} sont toutes retirées, et aucune copie n'est gardée. La prochaine tâche dans {name} commence avec un bloc-notes vide.</string>
+  <string name="np.wipe_body2">Une partie gardée dans ce bloc-notes disparaît aussi. Votre carnet sur la tablette n'est pas touché.</string>
+  <string name="np.label">Blocs-notes</string>
+  <string name="np.intro">La mémoire de chaque carnet sur ses tâches. Après chaque tâche, l'hôte note ce qui a été demandé et ce qu'il a fait, et la tâche suivante dans ce carnet voit les entrées récentes, pour qu'une conversation puisse se poursuivre de page en page.</string>
+  <string name="np.books">Carnets avec un bloc-notes</string>
+  <string name="np.find">Trouver un carnet</string>
+  <string name="common.copied">Copié</string>
+  <string name="common.copy_failed">Copie impossible</string>
+  <string name="nw.this_computer">· cet ordinateur, toujours actif</string>
+  <string name="nw.cannot_remove">ne peut pas être retiré</string>
+  <string name="nw.remove_addr">Retirer {address}</string>
+  <string name="nw.url_label">Adresse pour les autres appareils</string>
+  <string name="common.copy">Copier</string>
+  <string name="nw.local_only">Uniquement depuis cet ordinateur, tant que vous n'ajoutez pas d'adresse.</string>
+  <string name="nw.token">Jeton d'association</string>
+  <string name="nw.hide">Masquer</string>
+  <string name="nw.show">Afficher</string>
+  <string name="nw.rotate">Renouveler…</string>
+  <string name="nw.rotated_at">Renouvelé à {time}.</string>
+  <string name="nw.rotated_body">Chaque appareil associé a besoin du nouveau jeton. Cette fenêtre s'est reconnectée d'elle-même.</string>
+  <string name="nw.token_kept">Gardé dans le magasin d'identification de Windows. Cette fenêtre s'associe d'elle-même.</string>
+  <string name="nw.saved_restart">Enregistré à {time}. Pris en compte au redémarrage de PaperDaemon.</string>
+  <string name="nw.rotate_q">Renouveler le jeton d'association ?</string>
+  <string name="nw.rotate_body">Chaque appareil associé cesse de fonctionner jusqu'à ce que vous lui donniez le nouveau jeton. Cette fenêtre se reconnecte d'elle-même.</string>
+  <string name="nw.rotate_action">Renouveler le jeton</string>
+  <string name="nw.label">Réseau</string>
+  <string name="count.address.one">{n} adresse</string>
+  <string name="count.address.other">{n} adresses</string>
+  <string name="nw.intro">Le moteur sert cette fenêtre, et tout appareil que vous associez, depuis un port de cet ordinateur.</string>
+  <string name="nw.listens">Où le moteur écoute</string>
+  <string name="nw.port">Port</string>
+  <string name="nw.save_port">Enregistrer le port</string>
+  <string name="nw.port_hint">Changez-le seulement si un autre programme l'utilise déjà. Le moteur utilise le nouveau port après le redémarrage de PaperDaemon.</string>
+  <string name="nw.addresses">Adresses</string>
+  <string name="nw.addresses_hint">Ajoutez votre adresse WireGuard pour joindre PaperDaemon depuis un téléphone ou un autre ordinateur.</string>
+  <string name="nw.another">Une autre adresse</string>
+  <string name="nw.to_add">Adresse à ajouter</string>
+  <string name="nw.add">Ajouter l'adresse</string>
+  <string name="nw.trust">N'ajoutez que des adresses de réseaux de confiance. Chaque requête, d'où qu'elle vienne, doit porter le jeton d'association.</string>
+  <string name="nw.reach">Accès à</string>
+  <string name="nw.pairing">Association</string>
+  <string name="nw.token_hint">Saisissez-le une fois sur un appareil pour l'associer.</string>
+  <string name="nw.bad_address">Ce n'est pas une adresse IP. Utilisez une forme comme 10.8.0.2.</string>
+  <string name="nw.listed">{address} est déjà dans la liste.</string>
+  <string name="su.connect">Connectez votre reMarkable</string>
+  <string name="su.mirror">Miroir</string>
+  <string name="su.finish">Terminer</string>
+  <string name="su.building_pct">Création du Miroir, {pct} %</string>
+  <string name="su.taking">Récupération de la connexion…</string>
+  <string name="su.steal_instead">Voler la connexion plutôt</string>
+  <string name="su.borrow_instead">Emprunter la connexion plutôt</string>
+  <string name="su.connected_how">Connecté · {how}</string>
+  <string name="su.borrowed">Empruntée</string>
+  <string name="su.stolen">Volée</string>
+  <string name="su.continue">Continuer</string>
+  <string name="su.mirror_lead">La copie de votre bibliothèque chez PaperDaemon. Elle se crée en arrière-plan ; vous pouvez continuer.</string>
+  <string name="su.connect_first">Connectez d'abord votre reMarkable.</string>
+  <string name="su.connecting">Connexion…</string>
+  <string name="su.mirror_complete">Le Miroir est complet</string>
+  <string name="su.cloud_silent">Le cloud n'a pas répondu.</string>
+  <string name="su.lineup_lead">Le modèle de texte est obligatoire. Le modèle d'image et la recherche web sont facultatifs.</string>
+  <string name="su.lineup_unreadable">Impossible de lire l'équipe.</string>
+  <string name="su.need_address">Le modèle de texte a besoin d'une adresse.</string>
+  <string name="su.need_name">L'équipe a besoin d'un nom.</string>
+  <string name="su.finish_lead">PaperDaemon va démarrer avec la configuration suivante.</string>
+  <string name="su.proceed">Aller à PaperDaemon</string>
+  <string name="su.automatic">Automatique</string>
+  <string name="su.local_at">Hébergé en local à {address}</string>
+  <string name="su.local_at_script">Hébergé en local à {address} · avec un Start.bat</string>
+  <string name="su.harness_is">Harnais : {harness}</string>
+  <string name="su.building">Création · {pct} %</string>
+  <string name="su.complete">Complet</string>
+  <string name="su.not_built">Pas encore créé</string>
+  <string name="su.tags">Étiquettes</string>
+  <string name="su.no_tags">Aucune : aucune page ne recevra de réponse tant que vous n'en ajoutez pas une</string>
+  <string name="su.steps">Étapes de configuration</string>
+  <string name="su.later">Configurer plus tard</string>
+  <string name="su.title">Configuration · PaperDaemon</string>
+  <string name="ts.failed">Échec</string>
+  <string name="ts.running">En cours</string>
+  <string name="ts.passed">Réussi</string>
+  <string name="ts.waiting">En attente</string>
+  <string name="ts.stop">Arrêter le test</string>
+  <string name="ts.run">Lancer le test</string>
+  <string name="ts.not_started">L'exécution n'a pas démarré.</string>
+  <string name="ts.partly">En partie</string>
+  <string name="ts.unreadable">Impossible de lire les tests.</string>
+  <string name="ts.result">Résultat</string>
+  <string name="ts.cases_done">Cas terminés</string>
+  <string name="ts.passed_of">{n} sur {total} réussis</string>
+  <string name="ts.intro">Seul le dernier test est gardé, et tout changement de l'équipe l'annule.</string>
+  <string name="help.model.title">Comment fonctionne le script de démarrage</string>
+  <string name="help.model.intro">Un script de démarrage est un petit fichier batch Windows (un `.bat`) qui lance le serveur de votre modèle. Vous l'écrivez une fois. Ensuite, PaperDaemon l'exécute pour vous chaque fois qu'une tâche a besoin de ce modèle, vous n'avez donc jamais à lancer le serveur à la main.</string>
+  <string name="help.h_do">Ce que votre script doit faire</string>
+  <string name="help.model.do1">Lancer le serveur pour qu'il réponde à l'adresse du champ ci-dessus, par exemple `http://127.0.0.1:8790`. PaperDaemon transmet ce port à votre script dans `%PAPERDAEMON_PORT%`.</string>
+  <string name="help.model.do2">Rester en marche tant que le serveur tourne. Lancez le serveur directement, pas avec `start` (cela l'ouvre dans une autre fenêtre et le script se termine aussitôt, alors PaperDaemon croit que le serveur a disparu).</string>
+  <string name="help.do_output">Laisser le serveur afficher ses messages. PaperDaemon montre les dernières lignes ici si quelque chose se passe mal.</string>
+  <string name="help.h_runs">Quand PaperDaemon l'exécute</string>
+  <string name="help.model.runs1">La première fois qu'une tâche a besoin de ce modèle.</string>
+  <string name="help.model.runs2">Quand l'étiquette d'une page appartient à une équipe dont le script de démarrage diffère de celui en cours. PaperDaemon arrête le serveur qu'il avait lancé, puis exécute celui-ci.</string>
+  <string name="help.model.runs3">Pas quand le serveur lancé par ce script tourne déjà.</string>
+  <string name="help.h_stops">Quand PaperDaemon l'arrête</string>
+  <string name="help.model.stops">Quand vous mettez PaperDaemon en pause ou le quittez, ou quand le script de démarrage d'une autre équipe doit s'exécuter. Il arrête tout ce que votre script a lancé. Il n'arrête jamais un programme qu'il n'a pas lancé.</string>
+  <string name="help.h_wrong">Ce qui peut mal tourner</string>
+  <string name="help.model.wrong_vram">**La carte graphique est pleine.** Un modèle a besoin de place dans la mémoire de votre carte (VRAM). Si un autre serveur de modèles, un jeu ou un outil d'images occupe cette mémoire, le modèle ne se charge pas ou tourne très lentement. Si vous lancez vous-même d'autres serveurs de modèles, faites-les arrêter d'abord par votre script (par exemple `taskkill /IM llama-server.exe /F`). PaperDaemon n'arrête que ce qu'il a lancé.</string>
+  <string name="help.model.wrong_two">**Deux modèles qui ne tiennent pas ensemble.** Si votre modèle de texte et votre modèle d'image ne tiennent pas ensemble sur votre carte, écrivez chaque script pour qu'il arrête le serveur de l'autre avant de lancer le sien.</string>
+  <string name="help.model.wrong_port">**Le port est pris.** Si un autre programme utilise déjà ce port, votre serveur ne peut pas y démarrer. Choisissez un port libre et utilisez le même dans l'adresse ci-dessus.</string>
+  <string name="help.wrong_spaces">**Des espaces dans un chemin.** Mettez des guillemets autour de tout chemin contenant des espaces.</string>
+  <string name="help.model.wrong_keys">**Clés et mots de passe.** Ne les écrivez pas dans le script. Utilisez le champ de clé pour une clé d'API.</string>
+  <string name="help.h_try">Essayez</string>
+  <string name="help.model.try">Allez dans l'onglet Test et appuyez sur **Lancer le test**.</string>
+  <string name="help.search.title">Comment fonctionne le script de démarrage de la recherche</string>
+  <string name="help.search.intro">Un script de démarrage de la recherche est un petit fichier batch Windows (un `.bat`) qui lance votre propre serveur de recherche, en général SearXNG. PaperDaemon l'exécute pour vous quand une tâche doit chercher quelque chose et que votre serveur de recherche ne répond pas.</string>
+  <string name="help.search.do1">Lancer le serveur de recherche pour qu'il réponde à l'adresse du champ ci-dessus.</string>
+  <string name="help.search.do2">Rester en marche tant que le serveur tourne. Lancez-le directement, pas avec `start`.</string>
+  <string name="help.search.runs">Avant chaque recherche, PaperDaemon demande une recherche de test à l'adresse ci-dessus. Si un serveur SearXNG répond correctement, PaperDaemon l'utilise tel quel, quel que soit celui qui l'a lancé, et n'exécute pas le script. Il n'exécute le script que si rien ne répond, ou si ce qui répond n'est pas un serveur de recherche qu'il peut utiliser.</string>
+  <string name="help.search.stops">Quand vous mettez PaperDaemon en pause ou le quittez. Il arrête tout ce que votre script a lancé, et jamais un programme qu'il n'a pas lancé.</string>
+  <string name="help.search.wrong_json">**Le JSON est désactivé.** SearXNG ne répond aux programmes comme PaperDaemon que si le JSON est activé dans son `settings.yml` : sous `search:` → `formats:`, listez à la fois `html` et `json`.</string>
+  <string name="help.search.wrong_docker">**Docker.** Un conteneur Docker continue de tourner après la fermeture de PaperDaemon, car c'est Docker qui l'exécute, pas votre script. Lancer SearXNG dans WSL (sous-système Windows pour Linux) ou avec Python évite cela.</string>
+  <string name="help.search.wrong_port">**Le port est pris.** Si un autre programme utilise déjà ce port, le serveur ne peut pas y démarrer, et PaperDaemon ne peut pas le régler pour vous. Choisissez un port libre et utilisez le même dans l'adresse ci-dessus.</string>
+  <string name="help.search.try">Appuyez sur **Tester** à côté de l'adresse.</string>
+  <string name="help.ask">Demander de l'aide à une IA</string>
+  <string name="help.copied">Consigne copiée dans le presse-papiers !</string>
+  <string name="help.copy_failed">Impossible de copier la consigne</string>
+  <string name="help.model.prompt_text">Je configure PaperDaemon, une app pour ma tablette reMarkable qui exécute des modèles d'IA sur mon PC Windows. J'ai besoin d'un fichier batch Windows (.bat) qui lance le serveur du modèle de texte (LLM). PaperDaemon exécute ce script lui-même chaque fois qu'il a besoin du modèle, et l'arrête quand il a fini.
+
+Règles que le script doit suivre :
+- Lancer le serveur pour qu'il réponde en HTTP sur 127.0.0.1, sur le port que PaperDaemon transmet dans %PAPERDAEMON_PORT%.
+- Exécuter le serveur au premier plan et garder le script en marche tant que le serveur tourne. Ne pas utiliser `start`.
+- Afficher la sortie du serveur.
+- PaperDaemon définit aussi %PAPERDAEMON_ROLE% (text ou image), %PAPERDAEMON_LOCATION% (l'adresse complète), %PAPERDAEMON_OTHER_LOCATION% (l'adresse de l'autre modèle), %PAPERDAEMON_LINEUP% et %PAPERDAEMON_DATA%.
+- PaperDaemon n'arrête que les programmes qu'il a lancés. Si d'autres serveurs de modèles peuvent occuper la mémoire de ma carte graphique, le script doit d'abord les arrêter.
+- Le serveur doit parler l'API de chat compatible OpenAI (/v1/chat/completions), comme llama-server de llama.cpp, Ollama, LM Studio ou vLLM.
+
+Avant de l'écrire, pose-moi ces questions une par une et attends chaque réponse :
+1. Quelle carte graphique ai-je, et combien de VRAM a-t-elle ?
+2. Quel modèle est-ce que je veux exécuter, et où se trouve le fichier du modèle sur mon PC ?
+3. Quel programme serveur est-ce que j'utilise (ou veux utiliser), et où est-il installé ?
+4. Quel port doit-il utiliser ?
+5. Est-ce que j'exécute d'autres serveurs ou programmes d'IA qui utilisent la carte graphique, et le script doit-il les arrêter d'abord ?
+6. Mon modèle de texte et mon modèle d'image tiennent-ils ensemble sur la carte, ou chaque script doit-il arrêter l'autre ?
+
+Ensuite, écris le fichier .bat avec un court commentaire sur chaque ligne qui dit ce qu'elle fait, et dis-moi comment le tester.</string>
+  <string name="help.model.prompt_image">Je configure PaperDaemon, une app pour ma tablette reMarkable qui exécute des modèles d'IA sur mon PC Windows. J'ai besoin d'un fichier batch Windows (.bat) qui lance le serveur du modèle de génération d'images. PaperDaemon exécute ce script lui-même chaque fois qu'il a besoin du modèle, et l'arrête quand il a fini.
+
+Règles que le script doit suivre :
+- Lancer le serveur pour qu'il réponde en HTTP sur 127.0.0.1, sur le port que PaperDaemon transmet dans %PAPERDAEMON_PORT%.
+- Exécuter le serveur au premier plan et garder le script en marche tant que le serveur tourne. Ne pas utiliser `start`.
+- Afficher la sortie du serveur.
+- PaperDaemon définit aussi %PAPERDAEMON_ROLE% (text ou image), %PAPERDAEMON_LOCATION% (l'adresse complète), %PAPERDAEMON_OTHER_LOCATION% (l'adresse de l'autre modèle), %PAPERDAEMON_LINEUP% et %PAPERDAEMON_DATA%.
+- PaperDaemon n'arrête que les programmes qu'il a lancés. Si d'autres serveurs de modèles peuvent occuper la mémoire de ma carte graphique, le script doit d'abord les arrêter.
+- Le serveur doit parler l'API Stable Diffusion web UI (/sdapi/v1/txt2img), comme le serveur de stable-diffusion.cpp, Forge ou AUTOMATIC1111, ou l'API Images d'OpenAI.
+
+Avant de l'écrire, pose-moi ces questions une par une et attends chaque réponse :
+1. Quelle carte graphique ai-je, et combien de VRAM a-t-elle ?
+2. Quel modèle est-ce que je veux exécuter, et où se trouve le fichier du modèle sur mon PC ?
+3. Quel programme serveur est-ce que j'utilise (ou veux utiliser), et où est-il installé ?
+4. Quel port doit-il utiliser ?
+5. Est-ce que j'exécute d'autres serveurs ou programmes d'IA qui utilisent la carte graphique, et le script doit-il les arrêter d'abord ?
+6. Mon modèle de texte et mon modèle d'image tiennent-ils ensemble sur la carte, ou chaque script doit-il arrêter l'autre ?
+
+Ensuite, écris le fichier .bat avec un court commentaire sur chaque ligne qui dit ce qu'elle fait, et dis-moi comment le tester.</string>
+  <string name="help.search.prompt">Je configure PaperDaemon, une app pour ma tablette reMarkable qui tourne sur mon PC Windows. J'ai besoin d'un fichier batch Windows (.bat) qui lance un serveur de recherche SearXNG sur ce PC. PaperDaemon exécute le script lui-même quand il doit chercher et que rien ne répond, et l'arrête quand PaperDaemon se met en pause ou se ferme.
+
+Règles que le script doit suivre :
+- Lancer SearXNG pour qu'il réponde en HTTP sur 127.0.0.1, sur le port que je choisis.
+- SearXNG doit avoir la sortie JSON activée (search: formats: [html, json] dans settings.yml).
+- Exécuter le serveur au premier plan et garder le script en marche tant que le serveur tourne. Ne pas utiliser `start`.
+- Afficher la sortie du serveur.
+- Préférer WSL ou Python à Docker : PaperDaemon arrête les processus propres au script, mais un conteneur Docker continuerait de tourner après sa fermeture.
+
+Avant de l'écrire, pose-moi ces questions une par une et attends chaque réponse :
+1. Ai-je WSL (sous-système Windows pour Linux) installé ? Python ? Docker ?
+2. SearXNG est-il déjà installé, et si oui, où et comment ?
+3. Quel port doit-il utiliser, et quelque chose l'utilise-t-il déjà ?
+
+Ensuite, guide-moi pour installer SearXNG si besoin, écris le fichier .bat avec un court commentaire sur chaque ligne qui dit ce qu'elle fait, et dis-moi comment le tester.</string>
+  <string name="settings.language.pick">Choisissez une langue dans la liste.</string>
+  <string name="ts.what">Quoi</string>
+  <string name="ts.details">Détails</string>
+  <string name="ts.testing">Test en cours : {n} sur {total} faits</string>
+  <string name="ts.changed">L'équipe a changé depuis son dernier test : ce résultat ne vaut plus. Relancez le test.</string>
+  <string name="ts.never">Cette équipe n'a pas encore été testée.</string>
+  <string name="ts.whole">Toute l'équipe {name} est testée ensemble : son modèle de texte et son harnais, son modèle d'image et son harnais, le réseau et ses étiquettes.</string>
+  <string name="ts.row.model-text">Modèle de texte</string>
+  <string name="ts.row.model-image">Modèle d'image</string>
+  <string name="ts.row.answer">Répondre aux questions</string>
+  <string name="ts.row.ink">Répondre à une question manuscrite</string>
+  <string name="ts.row.chart">Faire des graphiques</string>
+  <string name="ts.row.draw">Dessiner</string>
+  <string name="ts.row.picture">Faire des images</string>
+  <string name="ts.row.handwriting">Lire l'écriture manuscrite</string>
+  <string name="ts.row.search">Chercher sur le web</string>
+  <string name="ts.row.social">Réseaux sociaux</string>
+  <string name="ts.row.weather">Météo</string>
+  <string name="ts.m.not_run">Non lancé</string>
+  <string name="ts.m.no_image">Pas de modèle d'image</string>
+  <string name="ts.m.waiting">En attente</string>
+  <string name="ts.m.working">En cours</string>
+  <string name="ts.m.canceled">Annulé</string>
+  <string name="ts.m.failed">Échec</string>
+  <string name="ts.m.answered_in">Répondu en {s} s</string>
+  <string name="ts.m.done_in">Fait en {s} s</string>
+  <string name="ts.m.failed_after">Échec après {s} s</string>
+  <string name="ts.m.answers">Répond</string>
+  <string name="ts.m.check_failed">{check} : échec</string>
+  <string name="ts.m.no_answer">Pas de réponse</string>
+  <string name="ts.m.not_set_up">Non configuré</string>
+  <string name="ts.m.network_off">L'accès au réseau est coupé</string>
+  <string name="ts.m.no_results_in">Aucun résultat en {s} s</string>
+  <string name="ts.m.results_in">{n} résultats en {s} s</string>
+  <string name="ts.m.no_sites">Aucun site choisi</string>
+  <string name="ts.m.site_time">{site} {s} s</string>
+  <string name="ts.m.site_failed">{site} : échec</string>
+  <string name="ts.m.no_forecast">Pas de prévision</string>
+  <string name="ts.m.weather">{t}{unit} et {sky}, répondu en {s} s</string>
+  <string name="ts.m.no_samples">Pas d'échantillons</string>
+  <string name="ts.m.cannot_see">Le modèle ne voit pas</string>
+  <string name="ts.m.no_reading">Pas de lecture</string>
+  <string name="ts.m.nothing_read">Rien lu</string>
+  <string name="ts.m.words">{pct} % des mots, {s} s par page</string>
+  <string name="ts.d.no_image">L'équipe n'a pas de modèle d'image.</string>
+  <string name="ts.d.search_setup">Ajoutez un service de recherche ou un serveur de recherche local dans l'onglet Réseau de l'équipe.</string>
+  <string name="ts.d.allow_network">Autorisez-le dans les Réglages.</string>
+  <string name="ts.d.search_empty">La recherche est revenue vide.</string>
+  <string name="ts.d.first">Premier : {title}</string>
+  <string name="ts.d.every_site">Des messages sont revenus de chaque site.</string>
+  <string name="ts.d.choose_sites">Choisissez les réseaux sociaux dans les Réglages.</string>
+  <string name="ts.d.no_forecast">Le service de prévisions n'a pas répondu.</string>
+  <string name="ts.d.weather">Aujourd'hui à {place} : max. {hi}{unit}, min. {lo}{unit}.</string>
+  <string name="ts.d.weather_london">Aucun lieu défini, donc Londres aujourd'hui : max. {hi}{unit}, min. {lo}{unit}.</string>
+  <string name="ts.d.samples_missing">Les échantillons d'écriture manquent.</string>
+  <string name="ts.d.cannot_see">Le modèle de texte de l'équipe ne prend pas d'images, il ne lit donc pas l'écriture manuscrite.</string>
+  <string name="ts.d.words">{right} mots sur {total} sur {pages} pages de {pages} personnes de quatre continents ({regions}).</string>
+  <string name="ts.d.text_failed">Le modèle de texte n'a pas réussi sa vérification.</string>
+  <string name="page.gave_up">Impossible de terminer ceci ; abandon après {n} essais.</string>
+  <string name="issue.loop_token_unreadable">La connexion à la reMarkable n'a pas pu être lue : {why}</string>
+  <string name="issue.loop_gave_up">Une partie de PaperDaemon s'est arrêtée {n} fois de suite et reste arrêtée ; son journal dit pourquoi.</string>
+  <string name="issue.loop_supervisor">Le superviseur de PaperDaemon a rencontré une erreur : {why}</string>
+  <string name="slot.key_where">Saisissez d'abord l'adresse du serveur : la clé est gardée pour ce serveur.</string>
+  <string name="day.saturday">Samedi</string>
+  <string name="slot.source.help">Clé d'API : une entreprise fait tourner le modèle et PaperDaemon y accède avec votre clé. Héberger en local : un serveur de modèles que vous faites tourner, sur cet ordinateur ou votre réseau.</string>
+  <string name="slot.provider.help">Qui fait tourner le modèle. Autre : tout service qui parle l'API d'OpenAI, à l'adresse que vous indiquez.</string>
+  <string name="slot.address.help_hosted">L'adresse de l'API du service, par exemple https://api.example.com/v1.</string>
+  <string name="slot.model.help">Le nom du modèle, exactement comme le fournisseur l'écrit.</string>
+  <string name="slot.api_key.help">Conservée dans le Gestionnaire d'identification de Windows, jamais dans un fichier. Les compositions qui utilisent le même serveur partagent sa clé.</string>
+  <string name="slot.address.help_local">Où le serveur de votre modèle répond, par exemple http://127.0.0.1:8080. Si rien n'y répond, PaperDaemon lance le script de démarrage ci-dessous.</string>
+  <string name="slot.harness.help">Comment PaperDaemon travaille avec ce modèle : ce qu'il lui dit et comment il lit ses réponses. Automatique en choisit un d'après le nom du modèle ; Ajouter un harness ouvre le dossier pour les vôtres.</string>
+  <string name="net.source.help">Où une tâche cherche des informations : un service de recherche pour lequel vous avez une clé d'API, ou un serveur SearXNG que vous faites tourner vous-même.</string>
+  <string name="net.service.help">Le service de recherche auquel appartient votre clé.</string>
+  <string name="net.address.help">Où votre serveur SearXNG répond, par exemple http://127.0.0.1:8888. Si rien d'utilisable n'y répond, PaperDaemon lance le script de démarrage ci-dessous.</string>
+  <string name="tags.tag.help">L'étiquette exactement comme vous la posez sur la tablette ; majuscules et minuscules n'ont pas d'importance.</string>
+  <string name="tags.prompt.help">Ajouté aux instructions de chaque tâche sur une page portant cette étiquette, ou dans un carnet ou un dossier qui la porte.</string>
+</resources>

@@ -1,0 +1,185 @@
+{
+ "schema": 2,
+ "id": "otto-krall",
+ "name": "Otto Krall",
+ "short": "Otto",
+ "kind": "human",
+ "sex": "male",
+ "age": "66",
+ "circle": "passing-through",
+ "summary": "A long-haul trucker who stops in Merrow Bay a few nights a month: sits down, plays, wins or loses, nods and leaves. No small talk, no ties to anyone, and very strong at nearly every game that has no bluffing in it.",
+ "look": {
+  "badge": "#D8CFC0",
+  "head": "long",
+  "skin": "#DDB091",
+  "eyes": "dark",
+  "brows": {
+   "color": "#9A958E",
+   "weight": 7
+  },
+  "body": {
+   "part": "flannel",
+   "color": "#7E3A2E"
+  },
+  "hair": [
+   {
+    "part": "gray_crop",
+    "color": "#A8A49D"
+   },
+   {
+    "part": "cap",
+    "color": "#6E8B5E"
+   }
+  ],
+  "face": [
+   {
+    "part": "stubble"
+   },
+   {
+    "part": "bags"
+   },
+   {
+    "part": "small_nose"
+   }
+  ],
+  "mouth_fill": "#6E2A2A",
+  "description": "66, a long weathered face, gray crop under a faded green trucker cap, gray stubble, tired eyes, a brick-red flannel shirt"
+ },
+ "backstory": {
+  "prose": "Otto has hauled refrigerated freight for forty-five years. When a run ends near Merrow he finds a game, pays for coffee and sleeps in the cab. Correspondence chess supplied the education he wanted. No hidden allegiance or spectacular tragedy explains the silence. He simply prefers a game to an account of himself.",
+  "facts": [
+   "A long-haul trucker who stops in Merrow Bay a few nights a month",
+   "Parks his rig in the truck lot by the old cannery and sleeps in the cab",
+   "Has driven about four million miles",
+   "Plays chess on a magnetic board clipped to his dashboard",
+   "Says almost nothing at the table"
+  ]
+ },
+ "agenda": {
+  "win_drive": 1.0,
+  "goals": [
+   "Play the game. Win it if he can."
+  ],
+  "target": null,
+  "prose": "He came to play. That is all."
+ },
+ "personality": {
+  "traits": {
+   "aggression": 0.5,
+   "caution": 0.6,
+   "risk": 0.35,
+   "patience": 0.95,
+   "ego": 0.1,
+   "humor": 0.1,
+   "sociability": 0.02,
+   "honesty": 0.95,
+   "focus": 0.97
+  },
+  "prose": "Plays, and that's all. No small talk, no grudges, no favorites, and no interest in anyone at the table beyond their next move. Not unkind and not warm. Sits down, plays well, nods, and leaves."
+ },
+ "temperament": {
+  "baseline": "neutral",
+  "level": 0.05,
+  "leanings": {
+   "thinking": 1.1,
+   "happy": 0.3,
+   "angry": 0.3,
+   "worried": 0.3,
+   "surprised": 0.3,
+   "sad": 0.2
+  },
+  "volatility": 0.05,
+  "recovery": 0.95,
+  "hot_buttons": [],
+  "prose": "Quiet, emotionally self-contained, and here to play. There may be a rich private life elsewhere; the game must not invent trauma, a hidden identity, or an eventual confession to explain his reserve."
+ },
+ "expression": {
+  "expressiveness": 0.1,
+  "mask": null,
+  "tells": [],
+  "prose": "A consistently reserved opponent, not a puzzle box. No discoverable strategic tell is assigned."
+ },
+ "voice": {
+  "style": "Almost silent. When he speaks, it is about the game, in two or three words. Sample lines illustrate cadence, not scripts. Do not repeat a signature phrase to signal a hidden state. Habits are occasional background color, never a required beat per turn.",
+  "samples": [
+   "Your move.",
+   "Good game.",
+   "Check.",
+   "Deal.",
+   "Again?"
+  ],
+  "chattiness": 0.03,
+  "truthfulness": 1.0,
+  "advice": 0.0,
+  "tics": []
+ },
+ "abilities": {
+  "logic": 90,
+  "memory": 88,
+  "numeracy": 88,
+  "spatial": 85,
+  "words": 50,
+  "trivia": 45,
+  "creativity": 55,
+  "nerve": 90,
+  "bluff": 20,
+  "read": 55,
+  "negotiation": 20,
+  "teamwork": 30,
+  "rules": 85,
+  "ruthlessness": 80
+ },
+ "games": {
+  "chess": {
+   "elo": 2000,
+   "style": "Clean, practical and unhurried: sound openings, no swindles, no mercy. Plays the board, never the player.",
+   "love": 0.6
+  },
+  "cribbage": {
+   "skill": 88,
+   "style": "Counts fast and quietly and pegs exactly; never says a word.",
+   "love": 0.5
+  },
+  "gin-rummy": {
+   "skill": 90,
+   "style": "Knocks early and often.",
+   "love": 0.5
+  },
+  "checkers": {
+   "skill": 88,
+   "love": 0.4
+  },
+  "poker": {
+   "skill": 50,
+   "style": "Won't bluff: plays his cards at face value and folds the rest.",
+   "love": 0.0
+  },
+  "dnd": {
+   "skill": 5,
+   "love": -1.0,
+   "notes": "Would never."
+  }
+ },
+ "consistency": {
+  "blunder": 0.02,
+  "genius": 0.04,
+  "prose": "Machine-steady: rarely wrong, rarely spectacular."
+ },
+ "quirks": [
+  "Likes very crisp apples",
+  "Checks unfamiliar chairs before sitting because some are simply bad chairs"
+ ],
+ "likes": [
+  "A quiet table",
+  "Endgames",
+  "Black coffee",
+  "Empty roads at three in the morning"
+ ],
+ "dislikes": [
+  "Small talk",
+  "Table talk",
+  "Waiting"
+ ],
+ "secrets": [],
+ "relationships": []
+}

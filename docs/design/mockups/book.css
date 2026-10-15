@@ -1,0 +1,56 @@
+/* The tablet book: page boxes, overlays and the link layer. Only the book (tools/mockup_book.py) uses it. */
+
+@page { size: 1160px 1547px; margin: 0; }
+html, body { margin: 0; padding: 0; background: #FFFFFF; }
+* { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+/* where each screen is laid out to be measured; never printed */
+.bk-stage { position: absolute; left: -40000px; top: 0; width: 1160px; }
+.bk-stage .rail { position: static; height: auto; }
+
+.bk-page { position: relative; width: 1160px; height: 1547px; overflow: hidden; background: var(--paper); color: var(--ink); break-after: page; }
+.bk-page > .app, .bk-page > .firstrun { height: 1547px; min-height: 0; overflow: hidden; }
+.bk-page .rail { position: relative; top: auto; height: 1547px; }
+
+.bk-scroll { position: absolute; right: 0; z-index: 11; display: flex; align-items: center; justify-content: center; gap: 8px;
+  font: 400 12px/16px var(--font-ui); color: var(--ink-3); }
+.bk-scroll.up { top: 0; height: 40px; border-bottom: 1px dashed var(--rule); }
+.bk-scroll.down { bottom: 0; height: 40px; border-top: 1px dashed var(--rule); }
+
+/* dialogs and menus */
+.bk-shade { position: absolute; inset: 0; background: var(--shade); z-index: 20; }
+.bk-sheet { position: absolute; z-index: 30; width: 460px; padding: var(--s5); border: 1px solid var(--edge); border-radius: var(--radius);
+  background: var(--field); color: var(--ink); box-shadow: var(--lift); }
+.bk-sheet h2 { margin-bottom: var(--s2); }
+.bk-sheet p { color: var(--ink-2); }
+.bk-sheet .actions { justify-content: flex-end; margin-top: var(--s5); }
+.bk-menu { position: absolute; z-index: 30; min-width: 220px; padding: 4px 0; background: var(--field); border: 1px solid var(--edge);
+  border-radius: var(--radius); box-shadow: var(--lift); font: 400 14px/20px var(--font-ui); }
+.bk-menu div { padding: 7px 14px; white-space: nowrap; }
+.bk-menu div[aria-selected="true"] { font-weight: 600; background: var(--paper-sunk); }
+.bk-menu div.off { color: var(--ink-3); }
+
+
+/* the first page */
+.bk-cover { padding: 88px 120px 0; }
+.bk-cover .wordmark { padding: 0; font-size: 24px; }
+.bk-cover h1 { margin-top: var(--s6); font-size: 36px; line-height: 42px; }
+.bk-cover .lead { margin-top: var(--s4); max-width: 64ch; color: var(--ink-2); font-size: 16px; line-height: 24px; }
+.bk-cover .lead + .lead { margin-top: var(--s3); }
+.bk-cover .toc a { text-decoration: none; }
+.bk-cover .foot { margin-top: var(--s6); }
+
+/* e-ink draws a soft shadow as grain, and a PDF stores it as a picture: the book's is crisp */
+.bk-sheet, .bk-menu { box-shadow: 6px 6px 0 var(--shade); }
+
+/* print can match a narrow-window rule that the measured layout did not; the book is always 1160 wide */
+.bk-page .pads, .bk-stage .pads { grid-template-columns: 216px minmax(0, 1fr); }
+.bk-page .books, .bk-stage .books { position: static; }
+
+/* the same glyph widths on screen, where the book is measured, as in print, where it is drawn */
+.bk-page, .bk-stage { text-rendering: geometricPrecision; }
+.bk-page *, .bk-stage * { text-rendering: geometricPrecision; }
+
+/* a link inside each control: it moves with the control in print */
+.bk-hit { position: absolute; inset: 0; z-index: 6; display: block; }
+.bk-wrap { position: relative; display: inline-block; }

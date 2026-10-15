@@ -1,0 +1,35 @@
+{
+  "about": "Groups the characters of Merrow Bay belong to (profile.groups). A secret group's members know each other; nobody else does, though some suspect. See cast.md.",
+  "groups": {
+    "chess-club": {
+      "name": "Merrow Bay Library Chess Club",
+      "secret": false,
+      "about": "Thursday nights at the library, run by Grandmaster Vera Novak."
+    },
+    "velvet-anchor": {
+      "name": "The Velvet Anchor backroom game",
+      "secret": false,
+      "about": "Mimi Duval's straight game in the back of her club on the Strip. Cheaters are banned."
+    },
+    "tusk-associates": {
+      "name": "Tusk & Associates",
+      "secret": false,
+      "about": "The accounting firm in Tanglewood: Barty Tusk, Fidget Pennywhistle, Gary Nolan."
+    },
+    "the-works": {
+      "name": "The Works",
+      "secret": false,
+      "about": "The old cannery, now a tech and robotics campus."
+    },
+    "city-hall": {
+      "name": "City Hall",
+      "secret": false,
+      "about": "The mayor's office, the council, the clerk and the police."
+    },
+    "drowned-bell": {
+      "name": "The Choir of the Drowned Bell",
+      "secret": true,
+      "about": "The Choir is older than Bea: it descends from a mutual-aid vigil for the drowned, repeatedly dissolved and revived. Bea revived its present circle. There is no password or universal badge. At low-tide meetings different members sing different verses of an incomplete roll of names. The bell before the 1938 hurricane is real testimony, not proof of a prophecy. Nobody knows what causes it. A name is missing from the oldest roll; recovering it, hearing a bell, and obeying Bea are three different things. No ritual automatically kills or saves anyone. Membership and personal motives are private. The shared hymn is not a password to repeat during games."
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "id": "default-text",
+  "name": "Built in",
+  "server": "Any OpenAI- or Anthropic-compatible server",
+  "models": [
+    "Any model that sees the page and can be made to call a tool"
+  ],
+  "kind": "text",
+  "notes": "Every ability PaperDaemon has, for a model that sees the page and can be made to call a tool.",
+  "vision": true,
+  "forced_tool": true,
+  "max_output": null,
+  "brief_additions": "",
+  "request": {}
+}

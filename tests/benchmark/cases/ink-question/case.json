@@ -1,0 +1,12 @@
+{
+  "id": "ink-question",
+  "title": "A handwritten question",
+  "kind": "ink",
+  "request": "How many legs does a spider have?",
+  "expect": {
+    "content": "text"
+  },
+  "doc": "64a320ea-740f-5dea-9b78-34bb5d80b694",
+  "page": "f03dc1dc-0a83-59fe-9162-e0328ce1f565",
+  "tag": "PaperDaemon"
+}

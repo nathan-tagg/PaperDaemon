@@ -1,0 +1,524 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PaperDaemon's interface text, 简体中文. Names are "screen.thing"; {placeholders} are filled in by the window. -->
+<resources>
+  <string name="pair.title">配对此窗口</string>
+  <string name="pair.intro">引擎只接受带有配对令牌的请求。打开 PaperDaemon 自己的窗口即可自动配对，或粘贴运行它的电脑上“网络”页面中显示的令牌。</string>
+  <string name="pair.token">配对令牌</string>
+  <string name="pair.go">配对</string>
+  <string name="pair.empty">请先粘贴配对令牌。</string>
+  <string name="pair.refused">引擎不接受该令牌。</string>
+  <string name="fatal.title">引擎没有响应</string>
+  <string name="common.try_again">重试</string>
+  <string name="pair.window_refused">引擎不接受此窗口的令牌。</string>
+  <string name="rail.engine_on">引擎运行中</string>
+  <string name="rail.version">版本 {version}</string>
+  <string name="api.no_answer">引擎没有响应。PaperDaemon 还在运行吗？</string>
+  <string name="api.unpaired">此窗口未与引擎配对。</string>
+  <string name="api.not_offered">引擎尚未提供此功能（{route}）。</string>
+  <string name="day.today">今天</string>
+  <string name="day.yesterday">昨天</string>
+  <string name="unit.seconds">{n} 秒</string>
+  <string name="unit.minutes">{n} 分钟</string>
+  <string name="unit.hours">{n} 小时</string>
+  <string name="mirror.building_pct">正在建立镜像，{pct}%</string>
+  <string name="mirror.pct">镜像 {pct}%</string>
+  <string name="mirror.bar">正在建立镜像：{done}/{total} · {bytes}/{bytes_total} · {pct}%</string>
+  <string name="mirror.bar_start">正在建立镜像：{files} · 已有 {bytes}</string>
+  <string name="count.document.one">{n} 个文档</string>
+  <string name="count.document.other">{n} 个文档</string>
+  <string name="count.file.one">{n} 个文件</string>
+  <string name="count.file.other">{n} 个文件</string>
+  <string name="mirror.name">镜像</string>
+  <string name="login.privacy">您的登录信息保存在这台电脑上，只用于 reMarkable 云。您的页面不会去往其他任何地方，除非您连接了云端模型或网页搜索；那时只有任务需要的内容会发送给该服务。</string>
+  <string name="login.borrow.title">借用 reMarkable 应用的登录</string>
+  <string name="login.borrow.body">PaperDaemon 会把 reMarkable 桌面应用的登录复制到 Windows 凭据管理器中。应用保持登录状态。两者使用同一个登录，因此同一时间只能运行其中一个。</string>
+  <string name="login.borrow.action">借用登录</string>
+  <string name="login.steal.title">⚠ 夺取 reMarkable 应用的登录</string>
+  <string name="login.steal.body">PaperDaemon 会把 reMarkable 桌面应用的登录复制到 Windows 凭据管理器中，然后从 Windows 注册表的应用设置中删除它。应用会被注销；再次登录时，它会成为一台独立的设备。请先关闭 reMarkable 应用。</string>
+  <string name="login.steal.action">夺取登录</string>
+  <string name="login.not_found">这台电脑上的 reMarkable 应用没有登录。请安装并登录，然后重试。</string>
+  <string name="login.not_kept">找到了应用的登录，但 PaperDaemon 无法保存它。</string>
+  <string name="login.not_kept_why">找到了应用的登录，但 PaperDaemon 无法保存它：{why}</string>
+  <string name="login.stolen">PaperDaemon 拥有该登录，reMarkable 应用已注销。再次登录该应用即可把它作为独立设备使用。</string>
+  <string name="login.borrowed">PaperDaemon 正在使用 reMarkable 应用的登录。PaperDaemon 运行时请保持该应用关闭。</string>
+  <string name="job.failed">失败</string>
+  <string name="job.working">处理中</string>
+  <string name="job.skipped">已跳过</string>
+  <string name="job.waiting">等待中</string>
+  <string name="job.done">完成</string>
+  <string name="job.unknown">未知</string>
+  <string name="job.page">第 {n} 页</string>
+  <string name="jobs.unreadable">无法读取任务。</string>
+  <string name="jobs.reading">正在读取任务…</string>
+  <string name="jobs.none">还没有任务。</string>
+  <string name="jobs.none_hint">在平板上给页面加上 {tag} 标签。</string>
+  <string name="count.job.one">{n} 个任务</string>
+  <string name="count.job.other">{n} 个任务</string>
+  <string name="jobs.n_failed">{n} 个失败</string>
+  <string name="jobs.n_skipped">{n} 个跳过</string>
+  <string name="jobs.earlier">更早</string>
+  <string name="jobs.so_far">已用 {time}</string>
+  <string name="jobs.a_page">一个页面</string>
+  <string name="jobs.no_note">无备注</string>
+  <string name="jobs.col.time">时间</string>
+  <string name="jobs.col.page">页面</string>
+  <string name="jobs.col.status">状态</string>
+  <string name="jobs.col.what">发生了什么</string>
+  <string name="jobs.col.took">用时</string>
+  <string name="jobs.label">任务</string>
+  <string name="issue.setup">设置尚未完成。</string>
+  <string name="issue.setup_go">继续设置</string>
+  <string name="issue.tablet">PaperDaemon 无法连接到您的 reMarkable。</string>
+  <string name="issue.mirror">无法更新镜像：{why}</string>
+  <string name="issue.not_started">PaperDaemon 没有启动：{why}</string>
+  <string name="term.daemon">守护进程</string>
+  <string name="term.daemon_about">监视平板上带标签的页面，并把每一页作为任务交给主机。</string>
+  <string name="term.host">主机</string>
+  <string name="term.host_about">执行每个任务：读取页面、询问模型，并把答案写回页面。</string>
+  <string name="term.empty">暂时没有内容。</string>
+  <string name="loop.pausing">正在暂停…</string>
+  <string name="loop.starting">正在启动…</string>
+  <string name="loop.pause">暂停守护进程（释放显存）</string>
+  <string name="loop.start">启动</string>
+  <string name="overview.label">概览</string>
+  <string name="overview.needs_you">有事项需要您处理</string>
+  <string name="loop.running">运行中</string>
+  <string name="loop.paused">已暂停</string>
+  <string name="common.choose">选择…</string>
+  <string name="common.help">帮助</string>
+  <string name="settings.label">设置</string>
+  <string name="settings.prefs">偏好</string>
+  <string name="settings.prefs_to_set">待设置的偏好</string>
+  <string name="settings.note">请花点时间设置您的偏好：PaperDaemon 在页面上如何书写温度、时间和星期。</string>
+  <string name="settings.language">语言</string>
+  <string name="settings.language.help">PaperDaemon 窗口本身的语言。更改后窗口会重新加载。</string>
+  <string name="settings.language.pick">请从列表中选择一种语言。</string>
+  <string name="settings.temperature">温度</string>
+  <string name="settings.temperature.help">用于日历和 PaperDaemon 书写的内容。</string>
+  <string name="settings.temperature.f">华氏度（°F）</string>
+  <string name="settings.temperature.c">摄氏度（°C）</string>
+  <string name="settings.clock">时钟</string>
+  <string name="settings.clock.12">12 小时制（2:30 PM）</string>
+  <string name="settings.clock.24">24 小时制（14:30）</string>
+  <string name="settings.week">每周开始于</string>
+  <string name="day.sunday">星期日</string>
+  <string name="day.monday">星期一</string>
+  <string name="settings.remarkable">reMarkable</string>
+  <string name="settings.login.none">未连接</string>
+  <string name="settings.login.borrowing">正在借用 reMarkable 应用的登录</string>
+  <string name="settings.login.steal">改为夺取</string>
+  <string name="settings.login.stolen">已用自己的登录连接，该登录夺自 reMarkable 应用</string>
+  <string name="settings.login.connected">已连接</string>
+  <string name="settings.inbox">分解收件笔记本</string>
+  <string name="settings.inbox.help">“发送到平板”添加页面的笔记本。无论它带什么标签，PaperDaemon 都不会答复它。</string>
+  <string name="settings.inbox.placeholder">选择一个笔记本</string>
+  <string name="settings.inbox.pick">请从列表中选择一个笔记本。</string>
+  <string name="settings.location">位置</string>
+  <string name="settings.location.help">用于日历上的天气、日出和节假日。</string>
+  <string name="settings.location.placeholder">输入城市名称</string>
+  <string name="settings.location.pick">请从列表中选择一个城市。</string>
+  <string name="settings.ignore">忽略标签</string>
+  <string name="settings.ignore.help">把这个标签加到平板上的文件夹、笔记本或页面上，PaperDaemon 就永远不会处理那里的任何内容，对任何阵容都是如此，不论它还带有什么其他标签。</string>
+  <string name="settings.sprompt">常驻指令标签</string>
+  <string name="settings.sprompt.help">把这个标签加到笔记本的某一页上，并在上面写下指令。PaperDaemon 会把该页的文字加到这个笔记本中每个任务指令的末尾，且从不处理该页本身。</string>
+  <string name="settings.network">网络访问</string>
+  <string name="settings.network.help">天气、社交帖子、维基百科和网页搜索。您的模型和 reMarkable 云不受影响。</string>
+  <string name="settings.network.allow">允许网络访问</string>
+  <string name="settings.social">社交网站</string>
+  <string name="settings.social.help">当获取帖子的请求没有指明网站时搜索的位置。被指明的网站总会被搜索。</string>
+  <string name="settings.tools">工具</string>
+  <string name="settings.updates">更新</string>
+  <string name="settings.updates.help">PaperDaemon 从不自行检查。</string>
+  <string name="settings.version">版本 {version}</string>
+  <string name="settings.updates.check">检查更新</string>
+  <string name="settings.updates.installed_only">更新由已安装的应用检查，可从其托盘菜单或这里进行。</string>
+  <string name="settings.logs">日志</string>
+  <string name="settings.logs.help">守护进程、主机和引擎最近写下的内容，以页面形式放入您的收件笔记本。</string>
+  <string name="settings.logs.send">将日志发送到收件笔记本</string>
+  <string name="settings.logs.no_inbox">请先在上方设置收件笔记本</string>
+  <string name="settings.logs.sent">已发送：{pages}，放入 {inbox}，从第 {first} 页开始。</string>
+  <string name="settings.logs.the_inbox">收件笔记本</string>
+  <string name="count.page.one">{n} 页</string>
+  <string name="count.page.other">{n} 页</string>
+  <string name="tablet.read">已读 {pct}%</string>
+  <string name="tablet.page_of">第 {page} 页，共 {pages} 页</string>
+  <string name="common.reading">正在读取…</string>
+  <string name="tablet.my_files">我的文件</string>
+  <string name="tablet.arriving">仍在接收…</string>
+  <string name="tablet.empty">此文件夹为空。</string>
+  <string name="viewer.pages">页面</string>
+  <string name="viewer.chapters">章节</string>
+  <string name="viewer.goto">转到页面（1 - {last}）</string>
+  <string name="viewer.goto_aria">转到页面，1 到 {last}</string>
+  <string name="viewer.prev">上一页</string>
+  <string name="viewer.next">下一页</string>
+  <string name="viewer.reading_chapters">正在读取章节…</string>
+  <string name="viewer.not_drawn">无法绘制此页面。</string>
+  <string name="viewer.page">第 {n} 页</string>
+  <string name="viewer.go_to">转到第 {n} 页</string>
+  <string name="common.close">关闭</string>
+  <string name="tablet.label">平板</string>
+  <string name="tablet.folder">文件夹</string>
+  <string name="dc.decomposing">正在分解 {name}</string>
+  <string name="dc.drop">把图片拖放到这里，或{choose}。</string>
+  <string name="dc.choose">选择文件</string>
+  <string name="dc.on_page">在第 {n} 页</string>
+  <string name="dc.sending">正在发送…</string>
+  <string name="dc.send">发送到平板</string>
+  <string name="dc.no_inbox">请在“设置”标签页中设置收件笔记本</string>
+  <string name="dc.look">仔细查看</string>
+  <string name="dc.size_px">{w} × {h} 像素</string>
+  <string name="count.stroke.one">{n} 笔</string>
+  <string name="count.stroke.other">{n} 笔</string>
+  <string name="common.delete">删除</string>
+  <string name="dc.size_range">尺寸为平板的 200 到 1,400 像素。</string>
+  <string name="dc.picture">图片</string>
+  <string name="dc.bad_type">该文件不是 PNG、JPEG 或 WebP 图片。</string>
+  <string name="dc.too_big">该图片大小为 {size}。请使用小于 {max} 的图片。</string>
+  <string name="dc.unreadable">无法读取该文件。</string>
+  <string name="dc.drop_what">请拖放图片文件，或网页上的图片。</string>
+  <string name="dc.label">分解</string>
+  <string name="dc.intro">把图片转换成笔画并发送到平板，每一条线都能像您自己画的一样擦除和描画。</string>
+  <string name="dc.image">图片</string>
+  <string name="dc.size">尺寸</string>
+  <string name="dc.size_unit">平板像素，200 到 1,400</string>
+  <string name="dc.types">PNG、JPEG、WebP</string>
+  <string name="dc.decomps">分解结果</string>
+  <string name="lineup.unreadable">无法读取阵容。</string>
+  <string name="memories.note">这个阵容的模型在为您工作中学到的东西：抱怨、纠正、您希望事情如何完成。模型自己保存这些内容，绝不包括您的笔记或页面上的工作（每个笔记本在自己的记事本中保留各自的上下文），这个阵容的每个任务都会看到它们。您可以在这里修改或删除任何一条。</string>
+  <string name="memories.none">还没有记忆。</string>
+  <string name="memories.none_hint">模型在学到关于如何为您工作的东西时会保存一条。</string>
+  <string name="memories.count">{n}/{max}</string>
+  <string name="memories.saved_on">保存于 {date}</string>
+  <string name="memories.one">记忆</string>
+  <string name="memories.saved">记忆已保存。</string>
+  <string name="memories.deleted">记忆已删除。</string>
+  <string name="lineup.label">阵容</string>
+  <string name="lineup.new_option">+ 新建阵容…</string>
+  <string name="lineup.rename">重命名</string>
+  <string name="tab.text">文本 / 推理</string>
+  <string name="tab.image">图片</string>
+  <string name="tab.network">网络</string>
+  <string name="tab.tags">标签</string>
+  <string name="tab.memories">记忆</string>
+  <string name="tab.tests">测试</string>
+  <string name="common.saved">已保存。</string>
+  <string name="common.no_answer">没有响应。</string>
+  <string name="lineup.test_no_answer">没有响应。请检查提供商、模型和密钥。</string>
+  <string name="memories.delete_q">删除这条记忆？</string>
+  <string name="memories.delete_body">模型将不会再看到它。</string>
+  <string name="lineup.new">新建阵容</string>
+  <string name="lineup.rename_title">重命名阵容</string>
+  <string name="lineup.name">名称</string>
+  <string name="lineup.delete_q">删除 {name}？</string>
+  <string name="lineup.delete_body">它的模型、网页搜索、标签和记忆会一并删除。</string>
+  <string name="common.disclaimer">免责声明</string>
+  <string name="common.cancel">取消</string>
+  <string name="slot.other_provider">其他（兼容 OpenAI）</string>
+  <string name="slot.harness_auto">自动（根据模型名称）</string>
+  <string name="slot.harness">适配框架</string>
+  <string name="slot.add_harness">+ 添加适配框架</string>
+  <string name="slot.none">无</string>
+  <string name="slot.api_key">API 密钥</string>
+  <string name="slot.local">本地托管</string>
+  <string name="slot.source">来源</string>
+  <string name="slot.provider">提供商</string>
+  <string name="slot.address">地址</string>
+  <string name="slot.model">模型</string>
+  <string name="slot.saved">已保存</string>
+  <string name="common.test">测试</string>
+  <string name="slot.script_label">Start.bat - 如果不需要启动脚本请留空</string>
+  <string name="slot.script">启动脚本</string>
+  <string name="net.search">网页搜索</string>
+  <string name="net.service_key">搜索服务（需 API 密钥）</string>
+  <string name="net.service">服务</string>
+  <string name="net.script">搜索启动脚本</string>
+  <string name="tags.note">这里的每个标签都是这个阵容会留意的标签：在平板上用它标记页面、笔记本或文件夹，这个阵容就会处理它。一个页面会按此列表的顺序（拖动卡片的手柄来移动它）得到页面本身、所在笔记本及上层文件夹上属于这个阵容的标签的提示词；笔记本自己的常驻指令页放在最后。请保留一个提示词为空的标签，用于不需要额外内容的页面。一个标签只能属于一个阵容。</string>
+  <string name="tags.move">移动 {name}（方向键）</string>
+  <string name="tags.this">这个标签</string>
+  <string name="tags.drag">拖动以重新排序</string>
+  <string name="tags.tag">标签</string>
+  <string name="common.remove">移除</string>
+  <string name="tags.prompt">提示词</string>
+  <string name="tags.prompt_blank">空白：页面不会得到额外的提示词</string>
+  <string name="tags.add">+ 添加标签</string>
+  <string name="common.testing">正在测试…</string>
+  <string name="common.answering">有响应</string>
+  <string name="np.list_unreadable">无法读取记事本。</string>
+  <string name="np.reading_list">正在读取记事本…</string>
+  <string name="np.no_match">没有匹配的笔记本。</string>
+  <string name="np.summary">{entries} · {chars} 个字符</string>
+  <string name="count.entry.one">{n} 条记录</string>
+  <string name="count.entry.other">{n} 条记录</string>
+  <string name="np.undated">无日期</string>
+  <string name="np.show_fewer">显示更少</string>
+  <string name="np.show_older.one">显示 {n} 条更早的记录</string>
+  <string name="np.show_older.other">显示 {n} 条更早的记录</string>
+  <string name="np.select">选择一个笔记本来阅读它的记事本。</string>
+  <string name="np.wiped_at">已于 {time} 清空。</string>
+  <string name="np.wiped_body">所有记录都已删除，没有保留副本。{name} 中的下一个任务将从空记事本开始。</string>
+  <string name="np.copy">复制文本</string>
+  <string name="np.wipe">清空记事本</string>
+  <string name="np.not_wiped">记事本没有被清空。</string>
+  <string name="np.unreadable">无法读取此记事本。</string>
+  <string name="np.reading">正在读取记事本…</string>
+  <string name="np.empty">此记事本为空。</string>
+  <string name="np.show">显示</string>
+  <string name="np.entries">记录</string>
+  <string name="np.as_text">纯文本</string>
+  <string name="np.none">还没有记事本。</string>
+  <string name="np.this_notebook">此笔记本</string>
+  <string name="np.wipe_q">清空 {name} 的记事本？</string>
+  <string name="np.wipe_body">全部 {entries}都会被删除，且不保留副本。{name} 中的下一个任务将从空记事本开始。</string>
+  <string name="np.wipe_body2">保存在此记事本中的游戏也会一并删除。平板上的笔记本不会受影响。</string>
+  <string name="np.label">记事本</string>
+  <string name="np.intro">每个笔记本对其任务的记忆。每个任务完成后，主机会记下被要求做什么以及做了什么，该笔记本中的下一个任务会看到最近的记录，这样对话就能一页接一页地继续。</string>
+  <string name="np.books">有记事本的笔记本</string>
+  <string name="np.find">查找笔记本</string>
+  <string name="common.copied">已复制</string>
+  <string name="common.copy_failed">无法复制</string>
+  <string name="nw.this_computer">· 这台电脑，始终开启</string>
+  <string name="nw.cannot_remove">无法移除</string>
+  <string name="nw.remove_addr">移除 {address}</string>
+  <string name="nw.url_label">供其他设备使用的地址</string>
+  <string name="common.copy">复制</string>
+  <string name="nw.local_only">在您添加地址之前，只能从这台电脑访问。</string>
+  <string name="nw.token">配对令牌</string>
+  <string name="nw.hide">隐藏</string>
+  <string name="nw.show">显示</string>
+  <string name="nw.rotate">更换…</string>
+  <string name="nw.rotated_at">已于 {time} 更换。</string>
+  <string name="nw.rotated_body">每台已配对的设备都需要新令牌。此窗口已自动重新连接。</string>
+  <string name="nw.token_kept">保存在 Windows 凭据存储中。此窗口会自动配对。</string>
+  <string name="nw.saved_restart">已于 {time} 保存。PaperDaemon 重启后生效。</string>
+  <string name="nw.rotate_q">更换配对令牌？</string>
+  <string name="nw.rotate_body">在您给它们新令牌之前，每台已配对的设备都将无法工作。此窗口会自动重新连接。</string>
+  <string name="nw.rotate_action">更换令牌</string>
+  <string name="nw.label">网络</string>
+  <string name="count.address.one">{n} 个地址</string>
+  <string name="count.address.other">{n} 个地址</string>
+  <string name="nw.intro">引擎通过这台电脑上的一个端口为此窗口以及您配对的任何设备提供服务。</string>
+  <string name="nw.listens">引擎监听的位置</string>
+  <string name="nw.port">端口</string>
+  <string name="nw.save_port">保存端口</string>
+  <string name="nw.port_hint">仅当其他程序已在使用它时才更改。PaperDaemon 重启后引擎会使用新端口。</string>
+  <string name="nw.addresses">地址</string>
+  <string name="nw.addresses_hint">添加您的 WireGuard 地址，就能从手机或另一台电脑访问 PaperDaemon。</string>
+  <string name="nw.another">另一个地址</string>
+  <string name="nw.to_add">要添加的地址</string>
+  <string name="nw.add">添加地址</string>
+  <string name="nw.trust">只添加您信任的网络上的地址。来自任何地方的每个请求都必须带有配对令牌。</string>
+  <string name="nw.reach">访问地址</string>
+  <string name="nw.pairing">配对</string>
+  <string name="nw.token_hint">在设备上输入一次即可配对。</string>
+  <string name="nw.bad_address">这不是 IP 地址。请使用类似 10.8.0.2 的格式。</string>
+  <string name="nw.listed">{address} 已在列表中。</string>
+  <string name="su.connect">连接您的 reMarkable</string>
+  <string name="su.mirror">镜像</string>
+  <string name="su.finish">完成</string>
+  <string name="su.building_pct">正在建立镜像，{pct}%</string>
+  <string name="su.taking">正在获取登录…</string>
+  <string name="su.steal_instead">改为夺取登录</string>
+  <string name="su.borrow_instead">改为借用登录</string>
+  <string name="su.connected_how">已连接 · {how}</string>
+  <string name="su.borrowed">借用</string>
+  <string name="su.stolen">夺取</string>
+  <string name="su.continue">继续</string>
+  <string name="su.mirror_lead">PaperDaemon 保存的您的资料库副本。它在后台建立，您可以继续。</string>
+  <string name="su.connect_first">请先连接您的 reMarkable。</string>
+  <string name="su.connecting">正在连接…</string>
+  <string name="su.mirror_complete">镜像已完成</string>
+  <string name="su.cloud_silent">云端没有响应。</string>
+  <string name="su.lineup_lead">文本模型是必需的。图片模型和网页搜索是可选的。</string>
+  <string name="su.lineup_unreadable">无法读取阵容。</string>
+  <string name="su.need_address">文本模型需要一个地址。</string>
+  <string name="su.need_name">阵容需要一个名称。</string>
+  <string name="su.finish_lead">PaperDaemon 将以下列配置启动。</string>
+  <string name="su.proceed">进入 PaperDaemon</string>
+  <string name="su.automatic">自动</string>
+  <string name="su.local_at">本地托管于 {address}</string>
+  <string name="su.local_at_script">本地托管于 {address} · 带有 Start.bat</string>
+  <string name="su.harness_is">适配框架：{harness}</string>
+  <string name="su.building">正在建立 · {pct}%</string>
+  <string name="su.complete">已完成</string>
+  <string name="su.not_built">尚未建立</string>
+  <string name="su.tags">标签</string>
+  <string name="su.no_tags">无：添加标签之前不会答复任何页面</string>
+  <string name="su.steps">设置步骤</string>
+  <string name="su.later">稍后设置</string>
+  <string name="su.title">设置 · PaperDaemon</string>
+  <string name="ts.failed">失败</string>
+  <string name="ts.running">运行中</string>
+  <string name="ts.passed">通过</string>
+  <string name="ts.waiting">等待中</string>
+  <string name="ts.stop">停止测试</string>
+  <string name="ts.run">运行测试</string>
+  <string name="ts.not_started">运行没有开始。</string>
+  <string name="ts.partly">部分</string>
+  <string name="ts.unreadable">无法读取测试。</string>
+  <string name="ts.result">结果</string>
+  <string name="ts.cases_done">已完成的用例</string>
+  <string name="ts.passed_of">{total} 个中通过 {n} 个</string>
+  <string name="ts.intro">只保留最新一次测试，阵容的任何更改都会使其失效。</string>
+  <string name="help.model.title">启动脚本如何工作</string>
+  <string name="help.model.intro">启动脚本是一个小型 Windows 批处理文件（`.bat`），用来启动您的模型服务器。您只需写一次。之后，每当任务需要这个模型时，PaperDaemon 都会替您运行它，您永远不必手动启动服务器。</string>
+  <string name="help.h_do">您的脚本必须做到</string>
+  <string name="help.model.do1">启动服务器，使其在上方框中的地址上响应，例如 `http://127.0.0.1:8790`。PaperDaemon 会通过 `%PAPERDAEMON_PORT%` 把该端口交给您的脚本。</string>
+  <string name="help.model.do2">只要服务器在运行，脚本就保持运行。直接启动服务器，不要用 `start`（那样会在另一个窗口中打开它，脚本立即结束，PaperDaemon 会以为服务器已经没了）。</string>
+  <string name="help.do_output">让服务器输出它的消息。出现问题时，PaperDaemon 会在这里显示最后几行。</string>
+  <string name="help.h_runs">PaperDaemon 何时运行它</string>
+  <string name="help.model.runs1">任务第一次需要这个模型时。</string>
+  <string name="help.model.runs2">当页面的标签属于某个阵容，而该阵容的启动脚本与正在运行的不同时。PaperDaemon 会先停止它之前启动的服务器，然后运行这个。</string>
+  <string name="help.model.runs3">如果这个脚本启动的服务器已在运行，则不会运行。</string>
+  <string name="help.h_stops">PaperDaemon 何时停止它</string>
+  <string name="help.model.stops">当您暂停或退出 PaperDaemon 时，或者需要运行另一个阵容的启动脚本时。它会停止您的脚本启动的所有内容。它从不停止不是它启动的程序。</string>
+  <string name="help.h_wrong">常见问题</string>
+  <string name="help.model.wrong_vram">**显卡已满。** 模型需要显卡内存（显存）中的空间。如果其他模型服务器、游戏或图像工具占用了这些内存，模型会无法加载或运行得很慢。如果您自己运行其他模型服务器，请让脚本先停止它们（例如 `taskkill /IM llama-server.exe /F`）。PaperDaemon 只停止它自己启动的程序。</string>
+  <string name="help.model.wrong_two">**两个模型放不下。** 如果您的文本模型和图片模型不能同时放进显卡，请让每个脚本在启动自己的服务器之前先停止另一个的服务器。</string>
+  <string name="help.model.wrong_port">**端口被占用。** 如果其他程序已在使用该端口，您的服务器就无法在那里启动。请选择一个空闲端口，并在上方地址中使用同一个端口。</string>
+  <string name="help.wrong_spaces">**路径中有空格。** 给任何带空格的路径加上引号。</string>
+  <string name="help.model.wrong_keys">**密钥和密码。** 不要把它们写在脚本里。API 密钥请使用密钥框。</string>
+  <string name="help.h_try">试一试</string>
+  <string name="help.model.try">进入“测试”标签页并点击 **运行测试**。</string>
+  <string name="help.search.title">搜索启动脚本如何工作</string>
+  <string name="help.search.intro">搜索启动脚本是一个小型 Windows 批处理文件（`.bat`），用来启动您自己的搜索服务器，通常是 SearXNG。当任务需要查找资料而您的搜索服务器没有响应时，PaperDaemon 会替您运行它。</string>
+  <string name="help.search.do1">启动搜索服务器，使其在上方框中的地址上响应。</string>
+  <string name="help.search.do2">只要服务器在运行，脚本就保持运行。直接启动它，不要用 `start`。</string>
+  <string name="help.search.runs">每次搜索前，PaperDaemon 都会向上方地址发起一次测试搜索。如果 SearXNG 服务器正确响应，PaperDaemon 就直接使用它，不管是谁启动的，也不运行脚本。只有在没有任何响应，或响应的不是它能使用的搜索服务器时，它才运行脚本。</string>
+  <string name="help.search.stops">当您暂停或退出 PaperDaemon 时。它会停止您的脚本启动的所有内容，从不停止不是它启动的程序。</string>
+  <string name="help.search.wrong_json">**JSON 已关闭。** 只有在 `settings.yml` 中开启了 JSON，SearXNG 才会响应 PaperDaemon 这样的程序：在 `search:` → `formats:` 下同时列出 `html` 和 `json`。</string>
+  <string name="help.search.wrong_docker">**Docker。** Docker 容器在 PaperDaemon 退出后仍会继续运行，因为运行它的是 Docker，而不是您的脚本。在 WSL（适用于 Linux 的 Windows 子系统）中或用 Python 运行 SearXNG 可以避免这种情况。</string>
+  <string name="help.search.wrong_port">**端口被占用。** 如果其他程序已在使用该端口，服务器就无法在那里启动，PaperDaemon 也无法替您解决。请选择一个空闲端口，并在上方地址中使用同一个端口。</string>
+  <string name="help.search.try">点击地址旁边的 **测试**。</string>
+  <string name="help.ask">向 AI 求助</string>
+  <string name="help.copied">提示词已复制到剪贴板！</string>
+  <string name="help.copy_failed">无法复制提示词</string>
+  <string name="help.model.prompt_text">我正在设置 PaperDaemon，这是一个用于我的 reMarkable 平板的应用，它在我的 Windows 电脑上运行 AI 模型。我需要一个 Windows 批处理文件（.bat）来启动文本模型（LLM）的服务器。每当 PaperDaemon 需要这个模型时，它会自己运行这个脚本，用完后再停止它。
+
+脚本必须遵守的规则：
+- 启动服务器，使其在 127.0.0.1 上、PaperDaemon 通过 %PAPERDAEMON_PORT% 传入的端口响应 HTTP。
+- 在前台运行服务器，并让脚本在服务器运行期间一直运行。不要使用 `start`。
+- 输出服务器的消息。
+- PaperDaemon 还会设置 %PAPERDAEMON_ROLE%（text 或 image）、%PAPERDAEMON_LOCATION%（完整地址）、%PAPERDAEMON_OTHER_LOCATION%（另一个模型的地址）、%PAPERDAEMON_LINEUP% 和 %PAPERDAEMON_DATA%。
+- PaperDaemon 只停止它自己启动的程序。如果其他模型服务器可能占用我的显卡内存，脚本应先停止它们。
+- 服务器必须支持兼容 OpenAI 的聊天 API（/v1/chat/completions），就像 llama.cpp 的 llama-server、Ollama、LM Studio 或 vLLM 那样。
+
+在你编写之前，请一次问我一个下面的问题，并等我回答：
+1. 我的显卡是什么型号，有多少显存？
+2. 我想运行哪个模型，模型文件在我电脑的哪里？
+3. 我使用（或想使用）哪个服务器程序，它安装在哪里？
+4. 它应该使用哪个端口？
+5. 我是否运行着其他使用显卡的 AI 服务器或程序，脚本是否应该先停止它们？
+6. 我的文本模型和图片模型能同时放进显卡吗，还是每个脚本都应该停止另一个？
+
+然后编写 .bat 文件，每一行都加上简短注释说明它的作用，并告诉我如何测试。</string>
+  <string name="help.model.prompt_image">我正在设置 PaperDaemon，这是一个用于我的 reMarkable 平板的应用，它在我的 Windows 电脑上运行 AI 模型。我需要一个 Windows 批处理文件（.bat）来启动图像生成模型的服务器。每当 PaperDaemon 需要这个模型时，它会自己运行这个脚本，用完后再停止它。
+
+脚本必须遵守的规则：
+- 启动服务器，使其在 127.0.0.1 上、PaperDaemon 通过 %PAPERDAEMON_PORT% 传入的端口响应 HTTP。
+- 在前台运行服务器，并让脚本在服务器运行期间一直运行。不要使用 `start`。
+- 输出服务器的消息。
+- PaperDaemon 还会设置 %PAPERDAEMON_ROLE%（text 或 image）、%PAPERDAEMON_LOCATION%（完整地址）、%PAPERDAEMON_OTHER_LOCATION%（另一个模型的地址）、%PAPERDAEMON_LINEUP% 和 %PAPERDAEMON_DATA%。
+- PaperDaemon 只停止它自己启动的程序。如果其他模型服务器可能占用我的显卡内存，脚本应先停止它们。
+- 服务器必须支持 Stable Diffusion web UI API（/sdapi/v1/txt2img），就像 stable-diffusion.cpp 的服务器、Forge 或 AUTOMATIC1111 那样，或者支持 OpenAI 的图像 API。
+
+在你编写之前，请一次问我一个下面的问题，并等我回答：
+1. 我的显卡是什么型号，有多少显存？
+2. 我想运行哪个模型，模型文件在我电脑的哪里？
+3. 我使用（或想使用）哪个服务器程序，它安装在哪里？
+4. 它应该使用哪个端口？
+5. 我是否运行着其他使用显卡的 AI 服务器或程序，脚本是否应该先停止它们？
+6. 我的文本模型和图片模型能同时放进显卡吗，还是每个脚本都应该停止另一个？
+
+然后编写 .bat 文件，每一行都加上简短注释说明它的作用，并告诉我如何测试。</string>
+  <string name="help.search.prompt">我正在设置 PaperDaemon，这是一个用于我的 reMarkable 平板、在我的 Windows 电脑上运行的应用。我需要一个 Windows 批处理文件（.bat），在这台电脑上启动 SearXNG 搜索服务器。当 PaperDaemon 需要搜索而没有任何服务响应时，它会自己运行这个脚本，并在 PaperDaemon 暂停或退出时停止它。
+
+脚本必须遵守的规则：
+- 启动 SearXNG，使其在 127.0.0.1 上、我选择的端口响应 HTTP。
+- SearXNG 必须开启 JSON 输出（settings.yml 中的 search: formats: [html, json]）。
+- 在前台运行服务器，并让脚本在服务器运行期间一直运行。不要使用 `start`。
+- 输出服务器的消息。
+- 优先使用 WSL 或 Python 而不是 Docker：PaperDaemon 会停止脚本自己的进程，但 Docker 容器在它退出后仍会继续运行。
+
+在你编写之前，请一次问我一个下面的问题，并等我回答：
+1. 我安装了 WSL（适用于 Linux 的 Windows 子系统）吗？Python 呢？Docker 呢？
+2. SearXNG 已经安装了吗？如果装了，装在哪里、怎么装的？
+3. 它应该使用哪个端口，是否已有其他程序在使用？
+
+然后在需要时指导我安装 SearXNG，编写 .bat 文件，每一行都加上简短注释说明它的作用，并告诉我如何测试。</string>
+  <string name="ts.what">项目</string>
+  <string name="ts.details">详情</string>
+  <string name="ts.testing">测试中：已完成 {n}/{total}</string>
+  <string name="ts.changed">上次测试后阵容已更改，那次结果不再有效。请再次运行测试。</string>
+  <string name="ts.never">此阵容尚未测试。</string>
+  <string name="ts.whole">整体测试阵容 {name}：文本模型及其适配框架、图片模型及其适配框架、网络和标签。</string>
+  <string name="ts.row.model-text">文本模型</string>
+  <string name="ts.row.model-image">图片模型</string>
+  <string name="ts.row.answer">回答问题</string>
+  <string name="ts.row.ink">回答手写问题</string>
+  <string name="ts.row.chart">制作图表</string>
+  <string name="ts.row.draw">绘画</string>
+  <string name="ts.row.picture">制作图片</string>
+  <string name="ts.row.handwriting">读取手写</string>
+  <string name="ts.row.search">网络搜索</string>
+  <string name="ts.row.social">社交媒体</string>
+  <string name="ts.row.weather">天气</string>
+  <string name="ts.m.not_run">未运行</string>
+  <string name="ts.m.no_image">没有图片模型</string>
+  <string name="ts.m.waiting">等待中</string>
+  <string name="ts.m.working">进行中</string>
+  <string name="ts.m.canceled">已取消</string>
+  <string name="ts.m.failed">失败</string>
+  <string name="ts.m.answered_in">{s} 秒内回答</string>
+  <string name="ts.m.done_in">{s} 秒内完成</string>
+  <string name="ts.m.failed_after">{s} 秒后失败</string>
+  <string name="ts.m.answers">有响应</string>
+  <string name="ts.m.check_failed">{check}：失败</string>
+  <string name="ts.m.no_answer">无响应</string>
+  <string name="ts.m.not_set_up">未设置</string>
+  <string name="ts.m.network_off">网络访问已关闭</string>
+  <string name="ts.m.no_results_in">{s} 秒内无结果</string>
+  <string name="ts.m.results_in">{s} 秒内 {n} 个结果</string>
+  <string name="ts.m.no_sites">未选择网站</string>
+  <string name="ts.m.site_time">{site} {s} 秒</string>
+  <string name="ts.m.site_failed">{site} 失败</string>
+  <string name="ts.m.no_forecast">没有预报</string>
+  <string name="ts.m.weather">{t}{unit}，{sky}，{s} 秒内回答</string>
+  <string name="ts.m.no_samples">没有样本</string>
+  <string name="ts.m.cannot_see">模型无法看图</string>
+  <string name="ts.m.no_reading">没有读取结果</string>
+  <string name="ts.m.nothing_read">什么也没读到</string>
+  <string name="ts.m.words">{pct}% 的词，每页 {s} 秒</string>
+  <string name="ts.d.no_image">此阵容没有图片模型。</string>
+  <string name="ts.d.search_setup">在阵容的“网络”标签页中添加搜索服务或本地搜索服务器。</string>
+  <string name="ts.d.allow_network">请在设置中允许。</string>
+  <string name="ts.d.search_empty">搜索结果为空。</string>
+  <string name="ts.d.first">第一条：{title}</string>
+  <string name="ts.d.every_site">每个网站都返回了帖子。</string>
+  <string name="ts.d.choose_sites">请在设置中选择社交网站。</string>
+  <string name="ts.d.no_forecast">天气预报服务没有响应。</string>
+  <string name="ts.d.weather">今天{place}：最高 {hi}{unit}，最低 {lo}{unit}。</string>
+  <string name="ts.d.weather_london">未设置位置，因此显示今天伦敦：最高 {hi}{unit}，最低 {lo}{unit}。</string>
+  <string name="ts.d.samples_missing">缺少手写样本。</string>
+  <string name="ts.d.cannot_see">此阵容的文本模型不接受图片，因此不读取手写。</string>
+  <string name="ts.d.words">{total} 个词中读对 {right} 个，共 {pages} 页，来自四个大洲的 {pages} 位书写者（{regions}）。</string>
+  <string name="ts.d.text_failed">文本模型未通过检查。</string>
+  <string name="page.gave_up">无法完成；尝试 {n} 次后已放弃。</string>
+  <string name="issue.loop_token_unreadable">无法读取 reMarkable 连接：{why}</string>
+  <string name="issue.loop_gave_up">PaperDaemon 的一部分连续停止了 {n} 次，已保持停止；原因见其日志。</string>
+  <string name="issue.loop_supervisor">PaperDaemon 的监控出错：{why}</string>
+  <string name="slot.key_where">请先填写服务器地址：密钥会为该服务器保存。</string>
+  <string name="day.saturday">星期六</string>
+  <string name="slot.source.help">API 密钥：由公司运行模型，PaperDaemon 用您的密钥访问它。本地托管：您自己在这台电脑或您的网络上运行的模型服务器。</string>
+  <string name="slot.provider.help">运行模型的服务商。其他：任何在您给出的地址上使用 OpenAI API 的服务。</string>
+  <string name="slot.address.help_hosted">该服务的 API 地址，例如 https://api.example.com/v1。</string>
+  <string name="slot.model.help">模型名称，与服务商的写法完全一致。</string>
+  <string name="slot.api_key.help">保存在 Windows 凭据管理器中，从不写入文件。使用同一服务器的阵容共用其密钥。</string>
+  <string name="slot.address.help_local">模型服务器应答的地址，例如 http://127.0.0.1:8080。如果那里没有应答，PaperDaemon 会运行下方的启动脚本。</string>
+  <string name="slot.harness.help">PaperDaemon 与此模型协作的方式：告诉它什么、如何读取它的回答。自动会根据模型名称选择一个；添加 Harness 会打开存放您自己的 harness 的文件夹。</string>
+  <string name="net.source.help">任务查找资料的地方：您有 API 密钥的搜索服务，或您自己运行的 SearXNG 服务器。</string>
+  <string name="net.service.help">您的密钥所属的搜索服务。</string>
+  <string name="net.address.help">您的 SearXNG 服务器应答的地址，例如 http://127.0.0.1:8888。如果那里没有可用的应答，PaperDaemon 会运行下方的启动脚本。</string>
+  <string name="tags.tag.help">与您在平板上添加的标签完全一致；不区分大小写。</string>
+  <string name="tags.prompt.help">添加到带有此标签的页面上、或带有此标签的笔记本或文件夹中每个任务的说明里。</string>
+</resources>

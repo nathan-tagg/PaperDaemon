@@ -1,0 +1,62 @@
+{
+ "chart.png@half": {
+  "sha256": "7ead496e9c6ac08df23cc74834b833f8d4d5b460731011c0ed16239c015a1150",
+  "strokes": 688
+ },
+ "chart.png@page": {
+  "sha256": "c906e78cf1012f255fc0f05625c5f66dd1310795eb21e5afae35a9db94c21b4e",
+  "strokes": 1039
+ },
+ "chart.png@width": {
+  "sha256": "58e7c38f3311b824f04d7b9005049de2b8b5db8d69c84d28f4dac0069ae17f16",
+  "strokes": 715
+ },
+ "great-wave.jpg@half": {
+  "sha256": "abeb7ee9b7bb891f975abb7283403281a2e8567b119fa6258c18ef2ab2c76cc5",
+  "strokes": 15478
+ },
+ "great-wave.jpg@page": {
+  "sha256": "24f2504f21763f1e5c9c8011b9a5555eb5f0671d37ad49ea58cc26d626ac1459",
+  "strokes": 20481
+ },
+ "great-wave.jpg@width": {
+  "sha256": "ec111f94f9ff618c288e62f4b043d563beb2efb630470b9a9f0cf9fc761489e5",
+  "strokes": 19201
+ },
+ "pearl-earring.jpg@half": {
+  "sha256": "0663992cfad8f5cd018582cdc30b827c76cc9bbf5a7674f457ee157cb03bc888",
+  "strokes": 6736
+ },
+ "pearl-earring.jpg@page": {
+  "sha256": "f932f3e88b4bf33ef90729a495f678e3aea4373084965361cdf9f47cc5fa7280",
+  "strokes": 9010
+ },
+ "pearl-earring.jpg@width": {
+  "sha256": "6a696a6a8d1b9af5a00a929a40ca2322f29e46e733f2a96584a12e27dc893c3c",
+  "strokes": 8735
+ },
+ "shapes.png@half": {
+  "sha256": "28a1af11b027595ef9d68f8ce916fdc4b4fb18e5a9bd4267ea78707f124be3d7",
+  "strokes": 282
+ },
+ "shapes.png@page": {
+  "sha256": "83a7335f1d7f5c1bd926661a6286db95466e83d11dd40682cca30e97b3218717",
+  "strokes": 813
+ },
+ "shapes.png@width": {
+  "sha256": "f89f1b63b3af01a8dcecb007cb9825ebd59551e5cd7fa96f4cc8eeaebb5f5b94",
+  "strokes": 750
+ },
+ "starry-night.jpg@half": {
+  "sha256": "faddc2ef151f359c5986f9ba311611a601fc5ea614ee7ca9777b3ce376c01032",
+  "strokes": 19581
+ },
+ "starry-night.jpg@page": {
+  "sha256": "0824023d961ad29cd584a2c0a0a2799f633a9c8d9c811fad8fcd191e25ae8583",
+  "strokes": 26085
+ },
+ "starry-night.jpg@width": {
+  "sha256": "74b9ceba7b636d967650d614bffcafd6b6f465a76a0c58530d46d9237dc06ca1",
+  "strokes": 25603
+ }
+}

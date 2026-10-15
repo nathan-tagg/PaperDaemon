@@ -1,0 +1,8 @@
+# Review items a person has looked at and accepted: one "path-prefix kind" per line (kind: uuid).
+# Denylist hits can never be listed here.
+# placeholder author and page ids of the new-notebook template (random values, not tied to any account)
+paperdaemon/pipeline/rm-templates/notebook.content uuid
+# the benchmark fixture notebooks: ids derived deterministically from each case name
+tests/benchmark/cases uuid
+# Microsoft's public WebView2 runtime app GUID in Tauri's stock installer template
+shell/installer/installer.nsi uuid

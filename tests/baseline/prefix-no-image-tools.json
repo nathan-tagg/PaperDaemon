@@ -1,0 +1,1449 @@
+[
+ {
+  "type": "function",
+  "function": {
+   "name": "plan",
+   "description": "Your ONE decision for a page that asks for work other than plain words: its steps, in order (PLAN STEPS), and your RULINGS on the page.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "steps": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "description": "One step: do, what and answers, then any of its kind's fields (PLAN STEPS), in any order.",
+       "properties": {
+        "do": {
+         "type": "string",
+         "enum": [
+          "erase",
+          "search",
+          "image",
+          "web_picture",
+          "coloring",
+          "posts",
+          "highlight",
+          "circle",
+          "underline",
+          "strike",
+          "tag",
+          "chess",
+          "adventure",
+          "messages",
+          "chart",
+          "calendar",
+          "write",
+          "draw"
+         ]
+        },
+        "what": {
+         "type": "string"
+        },
+        "answers": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "enum": [
+           "para:1",
+           "para:2",
+           "para:3",
+           "para:4",
+           "para:5",
+           "para:6",
+           "para:7",
+           "para:8",
+           "para:9",
+           "para:10",
+           "para:11",
+           "para:12",
+           "para:13",
+           "para:14",
+           "para:15",
+           "para:16",
+           "para:17",
+           "para:18",
+           "para:19",
+           "para:20",
+           "para:21",
+           "para:22",
+           "para:23",
+           "para:24",
+           "para:25",
+           "para:26",
+           "para:27",
+           "para:28",
+           "para:29",
+           "para:30",
+           "line:1",
+           "line:2",
+           "line:3",
+           "line:4",
+           "line:5",
+           "line:6",
+           "line:7",
+           "line:8",
+           "line:9",
+           "line:10",
+           "line:11",
+           "line:12",
+           "line:13",
+           "line:14",
+           "line:15",
+           "line:16",
+           "line:17",
+           "line:18",
+           "line:19",
+           "line:20",
+           "line:21",
+           "line:22",
+           "line:23",
+           "line:24",
+           "line:25",
+           "line:26",
+           "line:27",
+           "line:28",
+           "line:29",
+           "line:30",
+           "line:31",
+           "line:32",
+           "line:33",
+           "line:34",
+           "line:35",
+           "line:36",
+           "line:37",
+           "line:38",
+           "line:39",
+           "line:40",
+           "mark:1",
+           "mark:2",
+           "mark:3",
+           "mark:4",
+           "mark:5",
+           "mark:6",
+           "mark:7",
+           "mark:8",
+           "mark:9",
+           "mark:10",
+           "mark:11",
+           "mark:12",
+           "mark:13",
+           "mark:14",
+           "mark:15",
+           "mark:16",
+           "mark:17",
+           "mark:18",
+           "mark:19",
+           "mark:20",
+           "mark:21",
+           "mark:22",
+           "mark:23",
+           "mark:24",
+           "mark:25",
+           "mark:26",
+           "mark:27",
+           "mark:28",
+           "mark:29",
+           "mark:30",
+           "mark:31",
+           "mark:32",
+           "mark:33",
+           "mark:34",
+           "mark:35",
+           "mark:36",
+           "mark:37",
+           "mark:38",
+           "mark:39",
+           "mark:40",
+           "mark:41",
+           "mark:42",
+           "mark:43",
+           "mark:44",
+           "mark:45",
+           "mark:46",
+           "mark:47",
+           "mark:48",
+           "mark:49",
+           "mark:50",
+           "mark:51",
+           "mark:52",
+           "mark:53",
+           "mark:54",
+           "mark:55",
+           "mark:56",
+           "mark:57",
+           "mark:58",
+           "mark:59",
+           "mark:60",
+           "mark:61",
+           "mark:62",
+           "mark:63",
+           "mark:64",
+           "mark:65",
+           "mark:66",
+           "mark:67",
+           "mark:68",
+           "mark:69",
+           "mark:70",
+           "mark:71",
+           "mark:72",
+           "mark:73",
+           "mark:74",
+           "mark:75",
+           "mark:76",
+           "mark:77",
+           "mark:78",
+           "mark:79",
+           "mark:80",
+           "mark:81",
+           "mark:82",
+           "mark:83",
+           "mark:84",
+           "mark:85",
+           "mark:86",
+           "mark:87",
+           "mark:88",
+           "mark:89",
+           "mark:90",
+           "mark:91",
+           "mark:92",
+           "mark:93",
+           "mark:94",
+           "mark:95",
+           "mark:96",
+           "mark:97",
+           "mark:98",
+           "mark:99",
+           "picture:1",
+           "picture:2",
+           "picture:3",
+           "picture:4",
+           "picture:5",
+           "picture:6",
+           "picture:7",
+           "picture:8",
+           "picture:9",
+           "picture:10",
+           "picture:11",
+           "picture:12"
+          ]
+         },
+         "description": "The ids of what on the page this carries out ([] when nothing there asked for it)."
+        }
+       },
+       "required": [
+        "do",
+        "what",
+        "answers"
+       ],
+       "additionalProperties": true
+      }
+     },
+     "rulings": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "id": {
+         "type": "string",
+         "enum": [
+          "para:1",
+          "para:2",
+          "para:3",
+          "para:4",
+          "para:5",
+          "para:6",
+          "para:7",
+          "para:8",
+          "para:9",
+          "para:10",
+          "para:11",
+          "para:12",
+          "para:13",
+          "para:14",
+          "para:15",
+          "para:16",
+          "para:17",
+          "para:18",
+          "para:19",
+          "para:20",
+          "para:21",
+          "para:22",
+          "para:23",
+          "para:24",
+          "para:25",
+          "para:26",
+          "para:27",
+          "para:28",
+          "para:29",
+          "para:30",
+          "line:1",
+          "line:2",
+          "line:3",
+          "line:4",
+          "line:5",
+          "line:6",
+          "line:7",
+          "line:8",
+          "line:9",
+          "line:10",
+          "line:11",
+          "line:12",
+          "line:13",
+          "line:14",
+          "line:15",
+          "line:16",
+          "line:17",
+          "line:18",
+          "line:19",
+          "line:20",
+          "line:21",
+          "line:22",
+          "line:23",
+          "line:24",
+          "line:25",
+          "line:26",
+          "line:27",
+          "line:28",
+          "line:29",
+          "line:30",
+          "line:31",
+          "line:32",
+          "line:33",
+          "line:34",
+          "line:35",
+          "line:36",
+          "line:37",
+          "line:38",
+          "line:39",
+          "line:40",
+          "mark:1",
+          "mark:2",
+          "mark:3",
+          "mark:4",
+          "mark:5",
+          "mark:6",
+          "mark:7",
+          "mark:8",
+          "mark:9",
+          "mark:10",
+          "mark:11",
+          "mark:12",
+          "mark:13",
+          "mark:14",
+          "mark:15",
+          "mark:16",
+          "mark:17",
+          "mark:18",
+          "mark:19",
+          "mark:20",
+          "mark:21",
+          "mark:22",
+          "mark:23",
+          "mark:24",
+          "mark:25",
+          "mark:26",
+          "mark:27",
+          "mark:28",
+          "mark:29",
+          "mark:30",
+          "mark:31",
+          "mark:32",
+          "mark:33",
+          "mark:34",
+          "mark:35",
+          "mark:36",
+          "mark:37",
+          "mark:38",
+          "mark:39",
+          "mark:40",
+          "mark:41",
+          "mark:42",
+          "mark:43",
+          "mark:44",
+          "mark:45",
+          "mark:46",
+          "mark:47",
+          "mark:48",
+          "mark:49",
+          "mark:50",
+          "mark:51",
+          "mark:52",
+          "mark:53",
+          "mark:54",
+          "mark:55",
+          "mark:56",
+          "mark:57",
+          "mark:58",
+          "mark:59",
+          "mark:60",
+          "mark:61",
+          "mark:62",
+          "mark:63",
+          "mark:64",
+          "mark:65",
+          "mark:66",
+          "mark:67",
+          "mark:68",
+          "mark:69",
+          "mark:70",
+          "mark:71",
+          "mark:72",
+          "mark:73",
+          "mark:74",
+          "mark:75",
+          "mark:76",
+          "mark:77",
+          "mark:78",
+          "mark:79",
+          "mark:80",
+          "mark:81",
+          "mark:82",
+          "mark:83",
+          "mark:84",
+          "mark:85",
+          "mark:86",
+          "mark:87",
+          "mark:88",
+          "mark:89",
+          "mark:90",
+          "mark:91",
+          "mark:92",
+          "mark:93",
+          "mark:94",
+          "mark:95",
+          "mark:96",
+          "mark:97",
+          "mark:98",
+          "mark:99",
+          "picture:1",
+          "picture:2",
+          "picture:3",
+          "picture:4",
+          "picture:5",
+          "picture:6",
+          "picture:7",
+          "picture:8",
+          "picture:9",
+          "picture:10",
+          "picture:11",
+          "picture:12"
+         ]
+        },
+        "is": {
+         "type": "string",
+         "enum": [
+          "request",
+          "command",
+          "asked_to_remove",
+          "stale_work",
+          "question",
+          "conversation",
+          "note",
+          "other"
+         ]
+        },
+        "then": {
+         "type": "string",
+         "enum": [
+          "erase",
+          "keep"
+         ]
+        }
+       },
+       "required": [
+        "id",
+        "is",
+        "then"
+       ],
+       "additionalProperties": false
+      },
+      "description": "One ruling per thing on the page you rule on, and one for EVERY item listed as NEW: {\"id\": copied from the listing, \"is\": request | command | asked_to_remove | stale_work | question | conversation | note | other, \"then\": erase | keep}. erase only for a request or command this job carries out, what the user asked to have removed, or your own work this job makes stale."
+     },
+     "remember": {
+      "type": "array",
+      "description": "Your MEMORIES (see YOUR MEMORIES): only a lesson about working for this user -- a complaint, a correction, how they want something done. Each {\"text\"} adds one; {\"text\", \"replaces\": \"mN\"} replaces memory mN; {\"text\": \"\", \"replaces\": \"mN\"} removes it. Leave it out when nothing was learned.",
+      "items": {
+       "type": "object",
+       "properties": {
+        "text": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "text"
+       ],
+       "additionalProperties": true
+      }
+     }
+    },
+    "required": [
+     "steps",
+     "rulings"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "answer",
+   "description": "Your ONE decision when the whole job is WORDS -- a question, a greeting, a fact, an opinion, a list. answers = the ids of what it answers; lines = the reply, one string per line, at the length the question deserves (the host fits it to the page); rulings = your RULINGS on the page. Written below what is on the page, in the text column, and put on the page at once.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "answers": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "enum": [
+        "para:1",
+        "para:2",
+        "para:3",
+        "para:4",
+        "para:5",
+        "para:6",
+        "para:7",
+        "para:8",
+        "para:9",
+        "para:10",
+        "para:11",
+        "para:12",
+        "para:13",
+        "para:14",
+        "para:15",
+        "para:16",
+        "para:17",
+        "para:18",
+        "para:19",
+        "para:20",
+        "para:21",
+        "para:22",
+        "para:23",
+        "para:24",
+        "para:25",
+        "para:26",
+        "para:27",
+        "para:28",
+        "para:29",
+        "para:30",
+        "line:1",
+        "line:2",
+        "line:3",
+        "line:4",
+        "line:5",
+        "line:6",
+        "line:7",
+        "line:8",
+        "line:9",
+        "line:10",
+        "line:11",
+        "line:12",
+        "line:13",
+        "line:14",
+        "line:15",
+        "line:16",
+        "line:17",
+        "line:18",
+        "line:19",
+        "line:20",
+        "line:21",
+        "line:22",
+        "line:23",
+        "line:24",
+        "line:25",
+        "line:26",
+        "line:27",
+        "line:28",
+        "line:29",
+        "line:30",
+        "line:31",
+        "line:32",
+        "line:33",
+        "line:34",
+        "line:35",
+        "line:36",
+        "line:37",
+        "line:38",
+        "line:39",
+        "line:40",
+        "mark:1",
+        "mark:2",
+        "mark:3",
+        "mark:4",
+        "mark:5",
+        "mark:6",
+        "mark:7",
+        "mark:8",
+        "mark:9",
+        "mark:10",
+        "mark:11",
+        "mark:12",
+        "mark:13",
+        "mark:14",
+        "mark:15",
+        "mark:16",
+        "mark:17",
+        "mark:18",
+        "mark:19",
+        "mark:20",
+        "mark:21",
+        "mark:22",
+        "mark:23",
+        "mark:24",
+        "mark:25",
+        "mark:26",
+        "mark:27",
+        "mark:28",
+        "mark:29",
+        "mark:30",
+        "mark:31",
+        "mark:32",
+        "mark:33",
+        "mark:34",
+        "mark:35",
+        "mark:36",
+        "mark:37",
+        "mark:38",
+        "mark:39",
+        "mark:40",
+        "mark:41",
+        "mark:42",
+        "mark:43",
+        "mark:44",
+        "mark:45",
+        "mark:46",
+        "mark:47",
+        "mark:48",
+        "mark:49",
+        "mark:50",
+        "mark:51",
+        "mark:52",
+        "mark:53",
+        "mark:54",
+        "mark:55",
+        "mark:56",
+        "mark:57",
+        "mark:58",
+        "mark:59",
+        "mark:60",
+        "mark:61",
+        "mark:62",
+        "mark:63",
+        "mark:64",
+        "mark:65",
+        "mark:66",
+        "mark:67",
+        "mark:68",
+        "mark:69",
+        "mark:70",
+        "mark:71",
+        "mark:72",
+        "mark:73",
+        "mark:74",
+        "mark:75",
+        "mark:76",
+        "mark:77",
+        "mark:78",
+        "mark:79",
+        "mark:80",
+        "mark:81",
+        "mark:82",
+        "mark:83",
+        "mark:84",
+        "mark:85",
+        "mark:86",
+        "mark:87",
+        "mark:88",
+        "mark:89",
+        "mark:90",
+        "mark:91",
+        "mark:92",
+        "mark:93",
+        "mark:94",
+        "mark:95",
+        "mark:96",
+        "mark:97",
+        "mark:98",
+        "mark:99",
+        "picture:1",
+        "picture:2",
+        "picture:3",
+        "picture:4",
+        "picture:5",
+        "picture:6",
+        "picture:7",
+        "picture:8",
+        "picture:9",
+        "picture:10",
+        "picture:11",
+        "picture:12"
+       ]
+      },
+      "description": "The ids of what on the page this carries out ([] when nothing there asked for it)."
+     },
+     "lines": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "rulings": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "id": {
+         "type": "string",
+         "enum": [
+          "para:1",
+          "para:2",
+          "para:3",
+          "para:4",
+          "para:5",
+          "para:6",
+          "para:7",
+          "para:8",
+          "para:9",
+          "para:10",
+          "para:11",
+          "para:12",
+          "para:13",
+          "para:14",
+          "para:15",
+          "para:16",
+          "para:17",
+          "para:18",
+          "para:19",
+          "para:20",
+          "para:21",
+          "para:22",
+          "para:23",
+          "para:24",
+          "para:25",
+          "para:26",
+          "para:27",
+          "para:28",
+          "para:29",
+          "para:30",
+          "line:1",
+          "line:2",
+          "line:3",
+          "line:4",
+          "line:5",
+          "line:6",
+          "line:7",
+          "line:8",
+          "line:9",
+          "line:10",
+          "line:11",
+          "line:12",
+          "line:13",
+          "line:14",
+          "line:15",
+          "line:16",
+          "line:17",
+          "line:18",
+          "line:19",
+          "line:20",
+          "line:21",
+          "line:22",
+          "line:23",
+          "line:24",
+          "line:25",
+          "line:26",
+          "line:27",
+          "line:28",
+          "line:29",
+          "line:30",
+          "line:31",
+          "line:32",
+          "line:33",
+          "line:34",
+          "line:35",
+          "line:36",
+          "line:37",
+          "line:38",
+          "line:39",
+          "line:40",
+          "mark:1",
+          "mark:2",
+          "mark:3",
+          "mark:4",
+          "mark:5",
+          "mark:6",
+          "mark:7",
+          "mark:8",
+          "mark:9",
+          "mark:10",
+          "mark:11",
+          "mark:12",
+          "mark:13",
+          "mark:14",
+          "mark:15",
+          "mark:16",
+          "mark:17",
+          "mark:18",
+          "mark:19",
+          "mark:20",
+          "mark:21",
+          "mark:22",
+          "mark:23",
+          "mark:24",
+          "mark:25",
+          "mark:26",
+          "mark:27",
+          "mark:28",
+          "mark:29",
+          "mark:30",
+          "mark:31",
+          "mark:32",
+          "mark:33",
+          "mark:34",
+          "mark:35",
+          "mark:36",
+          "mark:37",
+          "mark:38",
+          "mark:39",
+          "mark:40",
+          "mark:41",
+          "mark:42",
+          "mark:43",
+          "mark:44",
+          "mark:45",
+          "mark:46",
+          "mark:47",
+          "mark:48",
+          "mark:49",
+          "mark:50",
+          "mark:51",
+          "mark:52",
+          "mark:53",
+          "mark:54",
+          "mark:55",
+          "mark:56",
+          "mark:57",
+          "mark:58",
+          "mark:59",
+          "mark:60",
+          "mark:61",
+          "mark:62",
+          "mark:63",
+          "mark:64",
+          "mark:65",
+          "mark:66",
+          "mark:67",
+          "mark:68",
+          "mark:69",
+          "mark:70",
+          "mark:71",
+          "mark:72",
+          "mark:73",
+          "mark:74",
+          "mark:75",
+          "mark:76",
+          "mark:77",
+          "mark:78",
+          "mark:79",
+          "mark:80",
+          "mark:81",
+          "mark:82",
+          "mark:83",
+          "mark:84",
+          "mark:85",
+          "mark:86",
+          "mark:87",
+          "mark:88",
+          "mark:89",
+          "mark:90",
+          "mark:91",
+          "mark:92",
+          "mark:93",
+          "mark:94",
+          "mark:95",
+          "mark:96",
+          "mark:97",
+          "mark:98",
+          "mark:99",
+          "picture:1",
+          "picture:2",
+          "picture:3",
+          "picture:4",
+          "picture:5",
+          "picture:6",
+          "picture:7",
+          "picture:8",
+          "picture:9",
+          "picture:10",
+          "picture:11",
+          "picture:12"
+         ]
+        },
+        "is": {
+         "type": "string",
+         "enum": [
+          "request",
+          "command",
+          "asked_to_remove",
+          "stale_work",
+          "question",
+          "conversation",
+          "note",
+          "other"
+         ]
+        },
+        "then": {
+         "type": "string",
+         "enum": [
+          "erase",
+          "keep"
+         ]
+        }
+       },
+       "required": [
+        "id",
+        "is",
+        "then"
+       ],
+       "additionalProperties": false
+      },
+      "description": "One ruling per thing on the page you rule on, and one for EVERY item listed as NEW: {\"id\": copied from the listing, \"is\": request | command | asked_to_remove | stale_work | question | conversation | note | other, \"then\": erase | keep}. erase only for a request or command this job carries out, what the user asked to have removed, or your own work this job makes stale."
+     },
+     "size": {
+      "type": "number"
+     },
+     "remember": {
+      "type": "array",
+      "description": "Your MEMORIES (see YOUR MEMORIES): only a lesson about working for this user -- a complaint, a correction, how they want something done. Each {\"text\"} adds one; {\"text\", \"replaces\": \"mN\"} replaces memory mN; {\"text\": \"\", \"replaces\": \"mN\"} removes it. Leave it out when nothing was learned.",
+      "items": {
+       "type": "object",
+       "properties": {
+        "text": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "text"
+       ],
+       "additionalProperties": true
+      }
+     }
+    },
+    "required": [
+     "answers",
+     "lines",
+     "rulings"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "ask",
+   "description": "Your ONE decision when the request cannot be done without something only the user can tell you (ASKING): lines = your question, in your own words, one string per line. It is written under the request and nothing comes off; the request stays until the user's reply lets a later job do it.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "lines": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "remember": {
+      "type": "array",
+      "description": "Your MEMORIES (see YOUR MEMORIES): only a lesson about working for this user -- a complaint, a correction, how they want something done. Each {\"text\"} adds one; {\"text\", \"replaces\": \"mN\"} replaces memory mN; {\"text\": \"\", \"replaces\": \"mN\"} removes it. Leave it out when nothing was learned.",
+      "items": {
+       "type": "object",
+       "properties": {
+        "text": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "text"
+       ],
+       "additionalProperties": true
+      }
+     }
+    },
+    "required": [
+     "lines"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "skip",
+   "description": "Your ONE decision when THIS page asks for nothing, or when this notebook's system prompt says to leave it alone: say what is on it and why you are not acting. Nothing changes. What another page answered never answers a request on this one.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "note": {
+      "type": "string"
+     },
+     "remember": {
+      "type": "array",
+      "description": "Your MEMORIES (see YOUR MEMORIES): only a lesson about working for this user -- a complaint, a correction, how they want something done. Each {\"text\"} adds one; {\"text\", \"replaces\": \"mN\"} replaces memory mN; {\"text\": \"\", \"replaces\": \"mN\"} removes it. Leave it out when nothing was learned.",
+      "items": {
+       "type": "object",
+       "properties": {
+        "text": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "text"
+       ],
+       "additionalProperties": true
+      }
+     }
+    },
+    "required": [
+     "note"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "need_step",
+   "description": "The plan missed something -- a search that came back useless, a second chart you only now know you need. Adds one step BEFORE the one you are on; same shape as a step in plan().",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "do": {
+      "type": "string",
+      "enum": [
+       "erase",
+       "search",
+       "image",
+       "web_picture",
+       "coloring",
+       "posts",
+       "highlight",
+       "circle",
+       "underline",
+       "strike",
+       "tag",
+       "chess",
+       "adventure",
+       "messages",
+       "chart",
+       "calendar",
+       "write",
+       "draw"
+      ]
+     },
+     "what": {
+      "type": "string"
+     },
+     "size": {
+      "type": "string"
+     },
+     "near": {
+      "type": "string"
+     },
+     "side": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "do",
+     "what"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "write_paragraph",
+   "description": "The words for a write step: lines in reading order, at the length the step deserves. The host puts them in the step's box and wraps any line that is too long; words that run past the first screen extend the page below (it scrolls).",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "lines": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "size": {
+      "type": "number"
+     },
+     "place": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "lines"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "write_line",
+   "description": "ONE line of lettering when a single line is the whole step (a title, a label, a date). align left|center|right within the step's box.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "text": {
+      "type": "string"
+     },
+     "size": {
+      "type": "number"
+     },
+     "align": {
+      "type": "string"
+     },
+     "place": {
+      "type": "string"
+     },
+     "y": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "text"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "chart",
+   "description": "The spec for a chart or calendar step; the host places it. Numbers: {type: bar|hbar|line|pie|donut|area|scatter, title, x_label, y_label, categories: [...], series: [{name, values: [...]}]} -- up to 4 series; hbar and pie take one; categories keep your order. A month: {type: 'calendar', year, month, marks?: {'14': {events: [{text, at?: 'HH:MM'}], card?: {year, title, text: [l1, l2, l3]}}}}. The week from today: {type: 'week', days?: {'Thu': {events, card}}}. The forecast, sunrise and sunset, holidays and observances are fetched and drawn for you. A calendar or a week takes the page: plan it a place of kind 'calendar', size 'full'. A card is an on-this-day HAIKU (5-7-5, each line under 31 characters) naming the event; the facts for its dates come with the calendar step; three to six cards a month. Never draw a chart, a calendar or a map by hand.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "spec": {
+      "type": "object",
+      "properties": {
+       "type": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "type"
+      ],
+      "additionalProperties": true
+     },
+     "place": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "spec"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "history",
+   "description": "Wikipedia's on-this-day facts for one month, a few per day. A calendar or week STEP already comes with the facts for its dates, so it never needs this and it is never a plan step; it is for a chart step that wants them.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "month": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "month"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "element",
+   "description": "Draw ONE small solved shape or icon -- a mark, not a picture -- at cx, cy with radius r, inside your box. An emoji works as a name (a fire draws a flame). Names: alert, anchor, angry, apple, arrow, baby, balloon, battery, bell, bike, bird, blob, bolt, book, bracket, briefcase, brush, cake, calendar, camera, candle, candy, car, cart, cat, chart, check, clock, cloud, cloud-wind, coffee, coin, compass, cpu, crescent, cross, crown, devil-head, dice, dog, down, drop, dumbbell, egg, eye, file, fish, flag, flame, flower, fog, folder, frame-corners, frame-double, frame-single, frown, gamepad, ghost, gift, globe, graduation, hammer, hand, headphones, heart, home, humid, info, key, laptop, laugh, leaf, leaf-simple, leaf-veined, lightbulb, lock, mail, map, meh, mic, moon, mountain, music, package, part, party, pause, pencil, petal, phone, pill, pin, pizza, plane, play, printer, pumpkin, puzzle, rain, rainbow, recycle, rocket, rule, run, school, scissors, search, server, shirt, shower, sleep, smile, snow, snowflake, snowman, sparkle, speaker, squircle, star, star-sharp, star-soft, stethoscope, storm, sun, sun-wind, sun_ring, sunrise, sunset, target, tent, thermo, thumbs-down, thumbs-up, tick, ticket, tornado, train, trash, tree, trophy, truck, tv, umbrella, underline, up, user, users, utensils, walk, wallet, waves, wifi, wind, wine, wrench",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "cx": {
+      "type": "number"
+     },
+     "cy": {
+      "type": "number"
+     },
+     "r": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "name",
+     "cx",
+     "cy",
+     "r"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "draw_figure",
+   "description": "DRAW something yourself by listing the parts it is made of: lines, circles, ellipses, arcs, rectangles, polylines. One call for the whole figure, inside your box. A house is a box and a triangle; a bicycle is two circles and a frame. Coordinates are page coordinates: x -800..800 (0 = center), y 160..2150 (larger y is further DOWN).",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "parts": {
+      "type": "array",
+      "description": "The parts of the figure, in any order.",
+      "items": {
+       "type": "object",
+       "description": "kind, then its numbers: line x1 y1 x2 y2; rect x1 y1 x2 y2 (corners); circle cx cy r; ellipse cx cy rx ry; arc cx cy r start end (degrees); polyline points [[x, y], ...].",
+       "properties": {
+        "kind": {
+         "type": "string",
+         "enum": [
+          "line",
+          "circle",
+          "ellipse",
+          "arc",
+          "polyline",
+          "rect"
+         ]
+        }
+       },
+       "required": [
+        "kind"
+       ],
+       "additionalProperties": true
+      }
+     }
+    },
+    "required": [
+     "parts"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "edit_figure",
+   "description": "Change SOME parts of the figure you drew, leaving the rest alone -- e.g. [{\"index\":3,\"cy\":720},{\"index\":7,\"delete\":true}]. Part numbers come back from draw_figure.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "changes": {
+      "type": "array",
+      "items": {
+       "type": "object"
+      }
+     }
+    },
+    "required": [
+     "changes"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "image",
+   "description": "MAKE A PICTURE from your description, on this machine, into your box. Say what is in it, how it is lit and what style it is in; a bare noun gives a bare picture. SLOW (about a minute: the card is handed to the picture model and back), so describe it well and ask once.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "prompt": {
+      "type": "string"
+     },
+     "place": {
+      "type": "string"
+     },
+     "seed": {
+      "type": "integer"
+     }
+    },
+    "required": [
+     "prompt"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "find",
+   "description": "FIND one thing on the page and get its exact position back. Quote its words if it has words, or name the object (the bicycle drawing). Never by category or position. Returns the real extent of the strokes there, plus their mark numbers.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "what": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "what"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "look_closer",
+   "description": "Look at ONE mark close up, filling the whole image. Give a number from the mark listing.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "mark": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "mark"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "show_marks",
+   "description": "Look at the page with every separate mark outlined in its OWN COLOR and numbered. detail: 'coarse' (words and figures) or 'fine' (letters and single strokes).",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "detail": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "detail"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "render",
+   "description": "Look at the page with your draft drawn on it.",
+   "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "page_history",
+   "description": "Look at the page as an earlier job found it: back = 1 for the last job, 2 for the one before.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "back": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "back"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "changes",
+   "description": "What was added to the page and what was erased since this system last worked on it.",
+   "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "notepad_read",
+   "description": "Read this notebook's notepad beyond what the listing shows: scope = 'page' (this page's entries) or 'notebook' (all of them).",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "scope": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "scope"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "undo_last",
+   "description": "Take back the last thing(s) you drew, keeping the rest.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "parts": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "parts"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "notepad",
+   "description": "Remember something for FUTURE jobs in THIS notebook -- a preference the user stated, what a running list is about. Shown to every later job here under THIS NOTEBOOK'S NOTEPAD.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "text": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "text"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "web_search",
+   "description": "Search the web, for a fact you cannot already know.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "query": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "query"
+    ]
+   }
+  }
+ }
+]

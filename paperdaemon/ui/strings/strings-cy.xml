@@ -1,0 +1,524 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PaperDaemon's interface text, Cymraeg. Names are "screen.thing"; {placeholders} are filled in by the window. -->
+<resources>
+  <string name="pair.title">Paru'r ffenestr hon</string>
+  <string name="pair.intro">Dim ond ceisiadau sy'n cario ei docyn paru y mae'r injan yn eu derbyn. Agorwch ffenestr PaperDaemon ei hun i'w pharu'n awtomatig, neu gludwch y tocyn a ddangosir dan Rhwydwaith ar y cyfrifiadur sy'n ei redeg.</string>
+  <string name="pair.token">Tocyn paru</string>
+  <string name="pair.go">Paru</string>
+  <string name="pair.empty">Gludwch y tocyn paru yn gyntaf.</string>
+  <string name="pair.refused">Ni dderbyniodd yr injan y tocyn hwnnw.</string>
+  <string name="fatal.title">Ni atebodd yr injan</string>
+  <string name="common.try_again">Rhowch gynnig arall arni</string>
+  <string name="pair.window_refused">Ni dderbyniodd yr injan docyn y ffenestr hon.</string>
+  <string name="rail.engine_on">Injan ymlaen</string>
+  <string name="rail.version">Fersiwn {version}</string>
+  <string name="api.no_answer">Ni atebodd yr injan. Ydy PaperDaemon yn dal i redeg?</string>
+  <string name="api.unpaired">Nid yw'r ffenestr hon wedi'i pharu â'r injan.</string>
+  <string name="api.not_offered">Nid yw'r injan yn cynnig hyn eto ({route}).</string>
+  <string name="day.today">Heddiw</string>
+  <string name="day.yesterday">Ddoe</string>
+  <string name="unit.seconds">{n} eiliad</string>
+  <string name="unit.minutes">{n} munud</string>
+  <string name="unit.hours">{n} awr</string>
+  <string name="mirror.building_pct">Yn adeiladu'r Drych, {pct}%</string>
+  <string name="mirror.pct">Drych {pct}%</string>
+  <string name="mirror.bar">Yn adeiladu'r Drych: {done} o {total} · {bytes} o {bytes_total} · {pct}%</string>
+  <string name="mirror.bar_start">Yn adeiladu'r Drych: {files} · {bytes} hyd yma</string>
+  <string name="count.document.one">{n} ddogfen</string>
+  <string name="count.document.other">{n} dogfen</string>
+  <string name="count.file.one">{n} ffeil</string>
+  <string name="count.file.other">{n} ffeil</string>
+  <string name="mirror.name">Y Drych</string>
+  <string name="login.privacy">Mae eich mewngofnod yn aros ar y cyfrifiadur hwn ac yn cael ei ddefnyddio gyda chwmwl reMarkable yn unig. Nid yw eich tudalennau'n mynd i unman arall, oni bai eich bod yn cysylltu model yn y cwmwl neu chwilio ar y we; yna dim ond yr hyn sydd ei angen ar dasg sy'n mynd i'r gwasanaeth hwnnw.</string>
+  <string name="login.borrow.title">Benthyg mewngofnod ap reMarkable</string>
+  <string name="login.borrow.body">Mae PaperDaemon yn copïo mewngofnod ap bwrdd gwaith reMarkable i Reolwr Manylion Windows. Mae'r ap yn aros wedi mewngofnodi. Mae'r ddau'n defnyddio'r un mewngofnod, felly dim ond un ohonynt all redeg ar y tro.</string>
+  <string name="login.borrow.action">Benthyg y mewngofnod</string>
+  <string name="login.steal.title">⚠ Dwyn mewngofnod ap reMarkable</string>
+  <string name="login.steal.body">Mae PaperDaemon yn copïo mewngofnod ap bwrdd gwaith reMarkable i Reolwr Manylion Windows, yna'n ei ddileu o osodiadau'r ap yng nghofrestrfa Windows. Mae'r ap wedi allgofnodi; pan fyddwch yn mewngofnodi iddo eto, bydd yn ddyfais ar wahân. Caewch ap reMarkable yn gyntaf.</string>
+  <string name="login.steal.action">Dwyn y mewngofnod</string>
+  <string name="login.not_found">Nid yw ap reMarkable wedi mewngofnodi ar y cyfrifiadur hwn. Gosodwch ef, mewngofnodwch, yna rhowch gynnig arall arni.</string>
+  <string name="login.not_kept">Daethpwyd o hyd i fewngofnod yr ap, ond ni allai PaperDaemon ei gadw.</string>
+  <string name="login.not_kept_why">Daethpwyd o hyd i fewngofnod yr ap, ond ni allai PaperDaemon ei gadw: {why}</string>
+  <string name="login.stolen">Mae gan PaperDaemon y mewngofnod, ac mae ap reMarkable wedi allgofnodi. Mewngofnodwch i'r ap eto i'w ddefnyddio fel dyfais ei hun.</string>
+  <string name="login.borrowed">Mae PaperDaemon yn defnyddio mewngofnod ap reMarkable. Cadwch yr ap ar gau tra bo PaperDaemon yn rhedeg.</string>
+  <string name="job.failed">Wedi methu</string>
+  <string name="job.working">Wrthi</string>
+  <string name="job.skipped">Wedi'i hepgor</string>
+  <string name="job.waiting">Yn aros</string>
+  <string name="job.done">Wedi gorffen</string>
+  <string name="job.unknown">Anhysbys</string>
+  <string name="job.page">t. {n}</string>
+  <string name="jobs.unreadable">Doedd dim modd darllen y tasgau.</string>
+  <string name="jobs.reading">Yn darllen y tasgau…</string>
+  <string name="jobs.none">Dim tasgau eto.</string>
+  <string name="jobs.none_hint">Rhowch y tag {tag} ar dudalen ar eich llechen.</string>
+  <string name="count.job.one">{n} dasg</string>
+  <string name="count.job.other">{n} tasg</string>
+  <string name="jobs.n_failed">{n} wedi methu</string>
+  <string name="jobs.n_skipped">{n} wedi'u hepgor</string>
+  <string name="jobs.earlier">Yn gynharach</string>
+  <string name="jobs.so_far">{time} hyd yma</string>
+  <string name="jobs.a_page">Tudalen</string>
+  <string name="jobs.no_note">Dim nodyn</string>
+  <string name="jobs.col.time">Amser</string>
+  <string name="jobs.col.page">Tudalen</string>
+  <string name="jobs.col.status">Statws</string>
+  <string name="jobs.col.what">Beth ddigwyddodd</string>
+  <string name="jobs.col.took">Hyd</string>
+  <string name="jobs.label">Tasgau</string>
+  <string name="issue.setup">Nid yw'r gosod wedi'i orffen.</string>
+  <string name="issue.setup_go">Parhau â'r gosod</string>
+  <string name="issue.tablet">Ni all PaperDaemon gyrraedd eich reMarkable.</string>
+  <string name="issue.mirror">Doedd dim modd diweddaru'r Drych: {why}</string>
+  <string name="issue.not_started">Ni ddechreuodd PaperDaemon: {why}</string>
+  <string name="term.daemon">Daemon</string>
+  <string name="term.daemon_about">Yn gwylio eich llechen am dudalennau â thag ac yn trosglwyddo pob un i'r gwesteiwr fel tasg.</string>
+  <string name="term.host">Gwesteiwr</string>
+  <string name="term.host_about">Yn cyflawni pob tasg: yn darllen y dudalen, yn holi'r modelau, ac yn ysgrifennu'r ateb yn ôl ar y dudalen.</string>
+  <string name="term.empty">Dim byd eto.</string>
+  <string name="loop.pausing">Yn oedi…</string>
+  <string name="loop.starting">Yn dechrau…</string>
+  <string name="loop.pause">Oedi'r daemon (yn rhyddhau VRAM)</string>
+  <string name="loop.start">Dechrau</string>
+  <string name="overview.label">Trosolwg</string>
+  <string name="overview.needs_you">Mae angen eich sylw ar rywbeth</string>
+  <string name="loop.running">Yn rhedeg</string>
+  <string name="loop.paused">Wedi oedi</string>
+  <string name="common.choose">Dewiswch…</string>
+  <string name="common.help">Cymorth</string>
+  <string name="settings.label">Gosodiadau</string>
+  <string name="settings.prefs">Dewisiadau</string>
+  <string name="settings.prefs_to_set">Dewisiadau i'w gosod</string>
+  <string name="settings.note">Cymerwch eiliad i osod eich dewisiadau: sut mae PaperDaemon yn ysgrifennu tymheredd, amseroedd ac wythnosau ar eich tudalennau.</string>
+  <string name="settings.language">Iaith</string>
+  <string name="settings.language.help">Iaith ffenestr PaperDaemon ei hun. Mae ei newid yn ail-lwytho'r ffenestr.</string>
+  <string name="settings.language.pick">Dewiswch iaith o'r rhestr.</string>
+  <string name="settings.temperature">Tymheredd</string>
+  <string name="settings.temperature.help">Ar galendrau ac yn yr hyn y mae PaperDaemon yn ei ysgrifennu.</string>
+  <string name="settings.temperature.f">Fahrenheit (°F)</string>
+  <string name="settings.temperature.c">Celsius (°C)</string>
+  <string name="settings.clock">Cloc</string>
+  <string name="settings.clock.12">12 awr (2:30 PM)</string>
+  <string name="settings.clock.24">24 awr (14:30)</string>
+  <string name="settings.week">Mae'r wythnos yn dechrau ar</string>
+  <string name="day.sunday">Dydd Sul</string>
+  <string name="day.monday">Dydd Llun</string>
+  <string name="settings.remarkable">reMarkable</string>
+  <string name="settings.login.none">Heb gysylltu</string>
+  <string name="settings.login.borrowing">Yn benthyg mewngofnod ap reMarkable</string>
+  <string name="settings.login.steal">Dwyn yn lle hynny</string>
+  <string name="settings.login.stolen">Wedi cysylltu â'i fewngofnod ei hun, wedi'i ddwyn o ap reMarkable</string>
+  <string name="settings.login.connected">Wedi cysylltu</string>
+  <string name="settings.inbox">Mewnflwch Dadelfennu</string>
+  <string name="settings.inbox.help">Y llyfr nodiadau y mae Anfon i'r Llechen yn ychwanegu tudalennau ato. Nid yw PaperDaemon byth yn ei ateb, pa dag bynnag sydd arno.</string>
+  <string name="settings.inbox.placeholder">Dewiswch lyfr nodiadau</string>
+  <string name="settings.inbox.pick">Dewiswch lyfr nodiadau o'r rhestr.</string>
+  <string name="settings.location">Lleoliad</string>
+  <string name="settings.location.help">Ar gyfer y tywydd, codiad yr haul a gwyliau ar galendrau.</string>
+  <string name="settings.location.placeholder">Dechreuwch deipio dinas</string>
+  <string name="settings.location.pick">Dewiswch ddinas o'r rhestr.</string>
+  <string name="settings.ignore">Tag anwybyddu</string>
+  <string name="settings.ignore.help">Rhowch y tag hwn ar ffolder, llyfr nodiadau neu dudalen ar eich llechen, ac ni fydd PaperDaemon byth yn gweithio dim yno, i unrhyw dîm, pa dagiau eraill bynnag sydd arno.</string>
+  <string name="settings.sprompt">Tag cyfarwyddiadau sefydlog</string>
+  <string name="settings.sprompt.help">Rhowch y tag hwn ar un dudalen mewn llyfr nodiadau ac ysgrifennwch gyfarwyddiadau arni. Mae PaperDaemon yn ychwanegu testun y dudalen honno ar ddiwedd cyfarwyddiadau pob tasg yn y llyfr nodiadau hwnnw, a byth yn gweithio'r dudalen ei hun.</string>
+  <string name="settings.network">Mynediad i'r rhwydwaith</string>
+  <string name="settings.network.help">Tywydd, negeseuon cymdeithasol, Wicipedia a chwilio ar y we. Nid effeithir ar eich modelau na chwmwl reMarkable.</string>
+  <string name="settings.network.allow">Caniatáu mynediad i'r rhwydwaith</string>
+  <string name="settings.social">Gwefannau cymdeithasol</string>
+  <string name="settings.social.help">Lle mae cais am negeseuon yn chwilio pan nad yw'n enwi gwefan. Mae gwefan a enwir bob amser yn cael ei chwilio.</string>
+  <string name="settings.tools">Offer</string>
+  <string name="settings.updates">Diweddariadau</string>
+  <string name="settings.updates.help">Nid yw PaperDaemon byth yn gwirio ar ei ben ei hun.</string>
+  <string name="settings.version">Fersiwn {version}</string>
+  <string name="settings.updates.check">Chwilio am ddiweddariadau</string>
+  <string name="settings.updates.installed_only">Mae'r ap sydd wedi'i osod yn gwirio am ddiweddariadau, o'i ddewislen yn yr hambwrdd neu yma.</string>
+  <string name="settings.logs">Logiau</string>
+  <string name="settings.logs.help">Yr hyn a ysgrifennodd y daemon, y gwesteiwr a'r injan yn ddiweddar, fel tudalennau yn eich mewnflwch.</string>
+  <string name="settings.logs.send">Anfon y logiau i'r mewnflwch</string>
+  <string name="settings.logs.no_inbox">Gosodwch fewnflwch uchod yn gyntaf</string>
+  <string name="settings.logs.sent">Wedi anfon: {pages} yn {inbox}, o dudalen {first}.</string>
+  <string name="settings.logs.the_inbox">y mewnflwch</string>
+  <string name="count.page.one">{n} dudalen</string>
+  <string name="count.page.other">{n} tudalen</string>
+  <string name="tablet.read">{pct}% wedi'i ddarllen</string>
+  <string name="tablet.page_of">Tudalen {page} o {pages}</string>
+  <string name="common.reading">Yn darllen…</string>
+  <string name="tablet.my_files">Fy ffeiliau</string>
+  <string name="tablet.arriving">Yn dal i gyrraedd…</string>
+  <string name="tablet.empty">Mae'r ffolder hon yn wag.</string>
+  <string name="viewer.pages">Tudalennau</string>
+  <string name="viewer.chapters">Penodau</string>
+  <string name="viewer.goto">Mynd i dudalen (1 - {last})</string>
+  <string name="viewer.goto_aria">Mynd i dudalen, 1 i {last}</string>
+  <string name="viewer.prev">Tudalen flaenorol</string>
+  <string name="viewer.next">Tudalen nesaf</string>
+  <string name="viewer.reading_chapters">Yn darllen y penodau…</string>
+  <string name="viewer.not_drawn">Doedd dim modd tynnu'r dudalen hon.</string>
+  <string name="viewer.page">Tudalen {n}</string>
+  <string name="viewer.go_to">Mynd i dudalen {n}</string>
+  <string name="common.close">Cau</string>
+  <string name="tablet.label">Llechen</string>
+  <string name="tablet.folder">Ffolder</string>
+  <string name="dc.decomposing">Yn dadelfennu {name}</string>
+  <string name="dc.drop">Gollyngwch ddelwedd yma, neu {choose}.</string>
+  <string name="dc.choose">dewiswch ffeil</string>
+  <string name="dc.on_page">Ar dudalen #{n}</string>
+  <string name="dc.sending">Yn anfon…</string>
+  <string name="dc.send">Anfon i'r Llechen</string>
+  <string name="dc.no_inbox">Gosodwch fewnflwch yn y tab Gosodiadau</string>
+  <string name="dc.look">Edrych yn fanwl</string>
+  <string name="dc.size_px">{w} × {h} px</string>
+  <string name="count.stroke.one">{n} strôc</string>
+  <string name="count.stroke.other">{n} strôc</string>
+  <string name="common.delete">Dileu</string>
+  <string name="dc.size_range">Mae'r maint rhwng 200 a 1,400 picsel llechen.</string>
+  <string name="dc.picture">Llun</string>
+  <string name="dc.bad_type">Nid yw'r ffeil honno'n ddelwedd PNG, JPEG na WebP.</string>
+  <string name="dc.too_big">Mae'r ddelwedd honno'n {size}. Defnyddiwch un sy'n llai na {max}.</string>
+  <string name="dc.unreadable">Doedd dim modd darllen y ffeil.</string>
+  <string name="dc.drop_what">Gollyngwch ffeil delwedd, neu ddelwedd o dudalen we.</string>
+  <string name="dc.label">Dadelfennu</string>
+  <string name="dc.intro">Troi delwedd yn strociau pen a'i hanfon i'r llechen, lle gellir rhwbio a thynnu dros bob llinell fel eich rhai chi.</string>
+  <string name="dc.image">Delwedd</string>
+  <string name="dc.size">Maint</string>
+  <string name="dc.size_unit">picsel llechen, 200 i 1,400</string>
+  <string name="dc.types">PNG, JPEG, WebP</string>
+  <string name="dc.decomps">Dadelfeniadau</string>
+  <string name="lineup.unreadable">Doedd dim modd darllen y timau.</string>
+  <string name="memories.note">Yr hyn y mae model y tîm hwn wedi'i ddysgu am weithio i chi: cwynion, cywiriadau, sut rydych am i bethau gael eu gwneud. Mae'r model yn eu cadw ei hun, byth eich nodiadau na'r gwaith ar dudalen (mae pob llyfr nodiadau'n cadw ei gyd-destun ei hun yn ei lyfr bach), ac maent yn cael eu dangos i bob tasg gan y tîm hwn. Newidiwch neu dilëwch unrhyw un ohonynt yma.</string>
+  <string name="memories.none">Dim atgofion eto.</string>
+  <string name="memories.none_hint">Mae'r model yn cadw un pan fydd yn dysgu rhywbeth am weithio i chi.</string>
+  <string name="memories.count">{n} o {max}</string>
+  <string name="memories.saved_on">Wedi'i gadw {date}</string>
+  <string name="memories.one">Atgof</string>
+  <string name="memories.saved">Atgof wedi'i gadw.</string>
+  <string name="memories.deleted">Atgof wedi'i ddileu.</string>
+  <string name="lineup.label">Tîm</string>
+  <string name="lineup.new_option">+ Tîm newydd…</string>
+  <string name="lineup.rename">Ailenwi</string>
+  <string name="tab.text">Testun / Rhesymu</string>
+  <string name="tab.image">Delwedd</string>
+  <string name="tab.network">Rhwydwaith</string>
+  <string name="tab.tags">Tagio</string>
+  <string name="tab.memories">Atgofion</string>
+  <string name="tab.tests">Prawf</string>
+  <string name="common.saved">Wedi cadw.</string>
+  <string name="common.no_answer">Dim ateb.</string>
+  <string name="lineup.test_no_answer">Dim ateb. Gwiriwch y darparwr, y model a'r allwedd.</string>
+  <string name="memories.delete_q">Dileu'r atgof hwn?</string>
+  <string name="memories.delete_body">Ni fydd yn cael ei ddangos i'r model eto.</string>
+  <string name="lineup.new">Tîm newydd</string>
+  <string name="lineup.rename_title">Ailenwi'r tîm</string>
+  <string name="lineup.name">Enw</string>
+  <string name="lineup.delete_q">Dileu {name}?</string>
+  <string name="lineup.delete_body">Mae ei fodelau, ei chwilio ar y we, ei dagiau a'i atgofion yn mynd gydag ef.</string>
+  <string name="common.disclaimer">Ymwadiad</string>
+  <string name="common.cancel">Canslo</string>
+  <string name="slot.other_provider">Arall (sy'n gydnaws ag OpenAI)</string>
+  <string name="slot.harness_auto">Awtomatig (o enw'r model)</string>
+  <string name="slot.harness">Harnais</string>
+  <string name="slot.add_harness">+ Ychwanegu harnais</string>
+  <string name="slot.none">Dim</string>
+  <string name="slot.api_key">Allwedd API</string>
+  <string name="slot.local">Cynnal yn lleol</string>
+  <string name="slot.source">Ffynhonnell</string>
+  <string name="slot.provider">Darparwr</string>
+  <string name="slot.address">Cyfeiriad</string>
+  <string name="slot.model">Model</string>
+  <string name="slot.saved">wedi'i chadw</string>
+  <string name="common.test">Profi</string>
+  <string name="slot.script_label">Start.bat - gadewch yn wag os nad oes angen sgript gychwyn</string>
+  <string name="slot.script">Sgript gychwyn</string>
+  <string name="net.search">Chwilio ar y we</string>
+  <string name="net.service_key">Gwasanaeth chwilio, gydag allwedd API</string>
+  <string name="net.service">Gwasanaeth</string>
+  <string name="net.script">Sgript gychwyn chwilio</string>
+  <string name="tags.note">Mae pob tag yma yn un y mae'r tîm hwn yn gwylio amdano: rhowch ef ar dudalen, llyfr nodiadau neu ffolder ar eich llechen ac mae'r tîm hwn yn ei weithio. Mae tudalen yn cael anogwyr tagiau'r tîm hwn sydd arni hi, ar ei llyfr nodiadau ac ar y ffolderi uwch ei phen, yn nhrefn y rhestr hon (llusgwch gerdyn wrth ei ddolen i'w symud); daw tudalen cyfarwyddiadau sefydlog y llyfr nodiadau ei hun yn olaf. Cadwch un tag ag anogwr gwag, ar gyfer tudalennau nad oes angen dim ychwanegol arnynt. Dim ond i un tîm y gall tag berthyn.</string>
+  <string name="tags.move">Symud {name} (bysellau saeth)</string>
+  <string name="tags.this">y tag hwn</string>
+  <string name="tags.drag">Llusgwch i aildrefnu</string>
+  <string name="tags.tag">Tag</string>
+  <string name="common.remove">Tynnu</string>
+  <string name="tags.prompt">Anogwr</string>
+  <string name="tags.prompt_blank">Gwag: nid yw'r dudalen yn cael anogwr ychwanegol</string>
+  <string name="tags.add">+ Ychwanegu tag</string>
+  <string name="common.testing">Yn profi…</string>
+  <string name="common.answering">Yn ateb</string>
+  <string name="np.list_unreadable">Doedd dim modd darllen y llyfrau bach.</string>
+  <string name="np.reading_list">Yn darllen y llyfrau bach…</string>
+  <string name="np.no_match">Does dim llyfr nodiadau'n cyfateb.</string>
+  <string name="np.summary">{entries} · {chars} nod</string>
+  <string name="count.entry.one">{n} cofnod</string>
+  <string name="count.entry.other">{n} cofnod</string>
+  <string name="np.undated">Heb ddyddiad</string>
+  <string name="np.show_fewer">Dangos llai</string>
+  <string name="np.show_older.one">Dangos {n} cofnod hŷn</string>
+  <string name="np.show_older.other">Dangos {n} cofnod hŷn</string>
+  <string name="np.select">Dewiswch lyfr nodiadau i ddarllen ei lyfr bach.</string>
+  <string name="np.wiped_at">Wedi'i glirio am {time}.</string>
+  <string name="np.wiped_body">Mae pob cofnod wedi mynd, ac ni chadwyd copi. Mae'r dasg nesaf yn {name} yn dechrau gyda llyfr bach gwag.</string>
+  <string name="np.copy">Copïo'r testun</string>
+  <string name="np.wipe">Clirio'r llyfr bach</string>
+  <string name="np.not_wiped">Ni chliriwyd y llyfr bach.</string>
+  <string name="np.unreadable">Doedd dim modd darllen y llyfr bach hwn.</string>
+  <string name="np.reading">Yn darllen y llyfr bach…</string>
+  <string name="np.empty">Mae'r llyfr bach hwn yn wag.</string>
+  <string name="np.show">Dangos</string>
+  <string name="np.entries">Cofnodion</string>
+  <string name="np.as_text">Fel testun</string>
+  <string name="np.none">Dim llyfrau bach eto.</string>
+  <string name="np.this_notebook">y llyfr nodiadau hwn</string>
+  <string name="np.wipe_q">Clirio llyfr bach {name}?</string>
+  <string name="np.wipe_body">Mae'r {entries} i gyd yn cael eu tynnu, ac ni chedwir copi. Mae'r dasg nesaf yn {name} yn dechrau gyda llyfr bach gwag.</string>
+  <string name="np.wipe_body2">Mae gêm a gedwir yn y llyfr bach hwn yn mynd hefyd. Nid yw eich llyfr nodiadau ar y llechen yn cael ei gyffwrdd.</string>
+  <string name="np.label">Llyfrau bach</string>
+  <string name="np.intro">Cof pob llyfr nodiadau am ei dasgau. Ar ôl pob tasg mae'r gwesteiwr yn nodi beth a ofynnwyd a beth a wnaeth, ac mae'r dasg nesaf yn y llyfr nodiadau hwnnw'n cael gweld y cofnodion diweddar, fel y gall sgwrs barhau o dudalen i dudalen.</string>
+  <string name="np.books">Llyfrau nodiadau â llyfr bach</string>
+  <string name="np.find">Dod o hyd i lyfr nodiadau</string>
+  <string name="common.copied">Wedi copïo</string>
+  <string name="common.copy_failed">Doedd dim modd copïo</string>
+  <string name="nw.this_computer">· y cyfrifiadur hwn, bob amser ymlaen</string>
+  <string name="nw.cannot_remove">ni ellir ei dynnu</string>
+  <string name="nw.remove_addr">Tynnu {address}</string>
+  <string name="nw.url_label">Cyfeiriad ar gyfer dyfeisiau eraill</string>
+  <string name="common.copy">Copïo</string>
+  <string name="nw.local_only">O'r cyfrifiadur hwn yn unig, nes i chi ychwanegu cyfeiriad.</string>
+  <string name="nw.token">Tocyn paru</string>
+  <string name="nw.hide">Cuddio</string>
+  <string name="nw.show">Dangos</string>
+  <string name="nw.rotate">Adnewyddu…</string>
+  <string name="nw.rotated_at">Wedi'i adnewyddu am {time}.</string>
+  <string name="nw.rotated_body">Mae angen y tocyn newydd ar bob dyfais sydd wedi'i pharu. Ailgysylltodd y ffenestr hon ar ei phen ei hun.</string>
+  <string name="nw.token_kept">Wedi'i gadw yn storfa manylion Windows. Mae'r ffenestr hon yn ei pharu ei hun.</string>
+  <string name="nw.saved_restart">Wedi cadw am {time}. Daw i rym pan fydd PaperDaemon yn ailgychwyn.</string>
+  <string name="nw.rotate_q">Adnewyddu'r tocyn paru?</string>
+  <string name="nw.rotate_body">Mae pob dyfais sydd wedi'i pharu yn stopio gweithio nes i chi roi'r tocyn newydd iddi. Mae'r ffenestr hon yn ailgysylltu ar ei phen ei hun.</string>
+  <string name="nw.rotate_action">Adnewyddu'r tocyn</string>
+  <string name="nw.label">Rhwydwaith</string>
+  <string name="count.address.one">{n} cyfeiriad</string>
+  <string name="count.address.other">{n} cyfeiriad</string>
+  <string name="nw.intro">Mae'r injan yn gwasanaethu'r ffenestr hon, ac unrhyw ddyfais rydych yn ei pharu, o un porth ar y cyfrifiadur hwn.</string>
+  <string name="nw.listens">Lle mae'r injan yn gwrando</string>
+  <string name="nw.port">Porth</string>
+  <string name="nw.save_port">Cadw'r porth</string>
+  <string name="nw.port_hint">Newidiwch ef dim ond os yw rhaglen arall eisoes yn ei ddefnyddio. Mae'r injan yn defnyddio'r porth newydd ar ôl i PaperDaemon ailgychwyn.</string>
+  <string name="nw.addresses">Cyfeiriadau</string>
+  <string name="nw.addresses_hint">Ychwanegwch eich cyfeiriad WireGuard i gyrraedd PaperDaemon o ffôn neu gyfrifiadur arall.</string>
+  <string name="nw.another">Cyfeiriad arall</string>
+  <string name="nw.to_add">Cyfeiriad i'w ychwanegu</string>
+  <string name="nw.add">Ychwanegu cyfeiriad</string>
+  <string name="nw.trust">Ychwanegwch gyfeiriadau ar rwydweithiau rydych yn ymddiried ynddynt yn unig. Rhaid i bob cais, o unrhyw le, gario'r tocyn paru.</string>
+  <string name="nw.reach">Ei gyrraedd yn</string>
+  <string name="nw.pairing">Paru</string>
+  <string name="nw.token_hint">Teipiwch ef i mewn i ddyfais unwaith i'w pharu.</string>
+  <string name="nw.bad_address">Nid cyfeiriad IP yw hwnnw. Defnyddiwch ffurf fel 10.8.0.2.</string>
+  <string name="nw.listed">Mae {address} eisoes ar y rhestr.</string>
+  <string name="su.connect">Cysylltwch eich reMarkable</string>
+  <string name="su.mirror">Drych</string>
+  <string name="su.finish">Gorffen</string>
+  <string name="su.building_pct">Yn adeiladu'r Drych, {pct}%</string>
+  <string name="su.taking">Yn cymryd y mewngofnod…</string>
+  <string name="su.steal_instead">Dwyn y mewngofnod yn lle hynny</string>
+  <string name="su.borrow_instead">Benthyg y mewngofnod yn lle hynny</string>
+  <string name="su.connected_how">Wedi cysylltu · {how}</string>
+  <string name="su.borrowed">Wedi'i fenthyg</string>
+  <string name="su.stolen">Wedi'i ddwyn</string>
+  <string name="su.continue">Parhau</string>
+  <string name="su.mirror_lead">Copi PaperDaemon o'ch llyfrgell. Mae'n cael ei adeiladu yn y cefndir; gallwch fwrw ymlaen.</string>
+  <string name="su.connect_first">Cysylltwch eich reMarkable yn gyntaf.</string>
+  <string name="su.connecting">Yn cysylltu…</string>
+  <string name="su.mirror_complete">Mae'r Drych yn gyflawn</string>
+  <string name="su.cloud_silent">Ni atebodd y cwmwl.</string>
+  <string name="su.lineup_lead">Mae angen y model testun. Mae'r model delwedd a chwilio ar y we yn ddewisol.</string>
+  <string name="su.lineup_unreadable">Doedd dim modd darllen y tîm.</string>
+  <string name="su.need_address">Mae angen cyfeiriad ar y model testun.</string>
+  <string name="su.need_name">Mae angen enw ar y tîm.</string>
+  <string name="su.finish_lead">Bydd PaperDaemon yn dechrau gyda'r ffurfweddiad canlynol.</string>
+  <string name="su.proceed">Ymlaen i PaperDaemon</string>
+  <string name="su.automatic">Awtomatig</string>
+  <string name="su.local_at">Wedi'i gynnal yn lleol yn {address}</string>
+  <string name="su.local_at_script">Wedi'i gynnal yn lleol yn {address} · gyda Start.bat</string>
+  <string name="su.harness_is">Harnais: {harness}</string>
+  <string name="su.building">Yn adeiladu · {pct}%</string>
+  <string name="su.complete">Cyflawn</string>
+  <string name="su.not_built">Heb ei adeiladu eto</string>
+  <string name="su.tags">Tagiau</string>
+  <string name="su.no_tags">Dim: ni fydd unrhyw dudalen yn cael ei hateb nes i chi ychwanegu un</string>
+  <string name="su.steps">Camau gosod</string>
+  <string name="su.later">Gosod yn nes ymlaen</string>
+  <string name="su.title">Gosod · PaperDaemon</string>
+  <string name="ts.failed">Wedi methu</string>
+  <string name="ts.running">Yn rhedeg</string>
+  <string name="ts.passed">Wedi pasio</string>
+  <string name="ts.waiting">Yn aros</string>
+  <string name="ts.stop">Stopio'r prawf</string>
+  <string name="ts.run">Rhedeg y prawf</string>
+  <string name="ts.not_started">Ni ddechreuodd y rhediad.</string>
+  <string name="ts.partly">Yn rhannol</string>
+  <string name="ts.unreadable">Doedd dim modd darllen y profion.</string>
+  <string name="ts.result">Canlyniad</string>
+  <string name="ts.cases_done">Achosion wedi'u gwneud</string>
+  <string name="ts.passed_of">{n} o {total} wedi pasio</string>
+  <string name="ts.intro">Dim ond y prawf diwethaf a gedwir, ac mae unrhyw newid i'r tîm yn ei ddileu.</string>
+  <string name="help.model.title">Sut mae'r sgript gychwyn yn gweithio</string>
+  <string name="help.model.intro">Ffeil swp Windows fach (`.bat`) yw sgript gychwyn sy'n cychwyn gweinydd eich model. Rydych yn ei hysgrifennu unwaith. Wedi hynny, mae PaperDaemon yn ei rhedeg i chi pryd bynnag y mae angen y model hwn ar dasg, felly does dim rhaid i chi byth gychwyn y gweinydd â llaw.</string>
+  <string name="help.h_do">Beth sy'n rhaid i'ch sgript ei wneud</string>
+  <string name="help.model.do1">Cychwyn y gweinydd fel ei fod yn ateb yn y cyfeiriad yn y blwch uchod, er enghraifft `http://127.0.0.1:8790`. Mae PaperDaemon yn rhoi'r porth hwnnw i'ch sgript fel `%PAPERDAEMON_PORT%`.</string>
+  <string name="help.model.do2">Dal i redeg cyhyd ag y mae'r gweinydd yn rhedeg. Cychwynnwch y gweinydd yn uniongyrchol, nid gyda `start` (mae hynny'n ei agor mewn ffenestr arall ac mae'r sgript yn gorffen ar unwaith, felly mae PaperDaemon yn meddwl bod y gweinydd wedi mynd).</string>
+  <string name="help.do_output">Gadael i'r gweinydd argraffu ei negeseuon. Mae PaperDaemon yn dangos y llinellau olaf yma os aiff rhywbeth o'i le.</string>
+  <string name="help.h_runs">Pryd mae PaperDaemon yn ei rhedeg</string>
+  <string name="help.model.runs1">Y tro cyntaf y mae angen y model hwn ar dasg.</string>
+  <string name="help.model.runs2">Pan fydd tag tudalen yn perthyn i dîm y mae ei sgript gychwyn yn wahanol i'r un sy'n rhedeg. Mae PaperDaemon yn stopio'r gweinydd a gychwynnodd o'r blaen, yna'n rhedeg hon.</string>
+  <string name="help.model.runs3">Nid pan fydd y gweinydd a gychwynnodd y sgript hon eisoes yn rhedeg.</string>
+  <string name="help.h_stops">Pryd mae PaperDaemon yn ei stopio</string>
+  <string name="help.model.stops">Pan fyddwch yn oedi neu'n cau PaperDaemon, neu pan fydd rhaid i sgript gychwyn tîm arall redeg. Mae'n stopio popeth a gychwynnodd eich sgript. Nid yw byth yn stopio rhaglen na wnaeth ei chychwyn.</string>
+  <string name="help.h_wrong">Pethau sy'n mynd o chwith</string>
+  <string name="help.model.wrong_vram">**Mae'r cerdyn graffeg yn llawn.** Mae angen lle ar fodel yng nghof eich cerdyn (VRAM). Os yw gweinydd model arall, gêm neu offeryn delweddau yn dal y cof hwnnw, mae'r model yn methu llwytho neu'n rhedeg yn araf iawn. Os ydych yn rhedeg gweinyddion model eraill eich hun, gwnewch i'ch sgript eu stopio yn gyntaf (er enghraifft `taskkill /IM llama-server.exe /F`). Dim ond yr hyn a gychwynnodd y mae PaperDaemon yn ei stopio.</string>
+  <string name="help.model.wrong_two">**Dau fodel nad ydynt yn ffitio gyda'i gilydd.** Os na all eich model testun a'ch model delwedd ffitio ar eich cerdyn gyda'i gilydd, ysgrifennwch bob sgript fel ei bod yn stopio gweinydd y llall cyn cychwyn ei un ei hun.</string>
+  <string name="help.model.wrong_port">**Mae'r porth wedi'i gymryd.** Os yw rhaglen arall eisoes yn defnyddio'r porth hwnnw, ni all eich gweinydd gychwyn yno. Dewiswch borth rhydd a defnyddiwch yr un un yn y cyfeiriad uchod.</string>
+  <string name="help.wrong_spaces">**Bylchau mewn llwybr.** Rhowch ddyfynodau o amgylch unrhyw lwybr sydd â bylchau ynddo.</string>
+  <string name="help.model.wrong_keys">**Allweddi a chyfrineiriau.** Peidiwch â'u hysgrifennu yn y sgript. Defnyddiwch y blwch allwedd ar gyfer allwedd API.</string>
+  <string name="help.h_try">Rhowch gynnig arni</string>
+  <string name="help.model.try">Ewch i'r tab Prawf a phwyswch **Rhedeg y prawf**.</string>
+  <string name="help.search.title">Sut mae'r sgript gychwyn chwilio yn gweithio</string>
+  <string name="help.search.intro">Ffeil swp Windows fach (`.bat`) yw sgript gychwyn chwilio sy'n cychwyn eich gweinydd chwilio eich hun, SearXNG fel arfer. Mae PaperDaemon yn ei rhedeg i chi pan fydd angen i dasg chwilio am rywbeth a'ch gweinydd chwilio ddim yn ateb.</string>
+  <string name="help.search.do1">Cychwyn y gweinydd chwilio fel ei fod yn ateb yn y cyfeiriad yn y blwch uchod.</string>
+  <string name="help.search.do2">Dal i redeg cyhyd ag y mae'r gweinydd yn rhedeg. Cychwynnwch ef yn uniongyrchol, nid gyda `start`.</string>
+  <string name="help.search.runs">Cyn pob chwiliad, mae PaperDaemon yn gofyn i'r cyfeiriad uchod am chwiliad prawf. Os yw gweinydd SearXNG yn ateb yn iawn, mae PaperDaemon yn ei ddefnyddio fel y mae, pwy bynnag a'i cychwynnodd, a ddim yn rhedeg y sgript. Mae'n rhedeg y sgript dim ond pan nad oes dim yn ateb, neu pan nad yw'r hyn sy'n ateb yn weinydd chwilio y gall ei ddefnyddio.</string>
+  <string name="help.search.stops">Pan fyddwch yn oedi neu'n cau PaperDaemon. Mae'n stopio popeth a gychwynnodd eich sgript, a byth raglen na wnaeth ei chychwyn.</string>
+  <string name="help.search.wrong_json">**Mae JSON wedi'i ddiffodd.** Dim ond os yw JSON ymlaen yn ei `settings.yml` y mae SearXNG yn ateb rhaglenni fel PaperDaemon: dan `search:` → `formats:`, rhestrwch `html` a `json`.</string>
+  <string name="help.search.wrong_docker">**Docker.** Mae cynhwysydd Docker yn dal i redeg ar ôl i PaperDaemon gau, oherwydd Docker sy'n ei redeg, nid eich sgript. Mae rhedeg SearXNG yn WSL (Is-system Windows ar gyfer Linux) neu gyda Python yn osgoi hynny.</string>
+  <string name="help.search.wrong_port">**Mae'r porth wedi'i gymryd.** Os yw rhaglen arall eisoes yn defnyddio'r porth hwnnw, ni all y gweinydd gychwyn yno, ac ni all PaperDaemon drwsio hynny i chi. Dewiswch borth rhydd a defnyddiwch yr un un yn y cyfeiriad uchod.</string>
+  <string name="help.search.try">Pwyswch **Profi** wrth ymyl y cyfeiriad.</string>
+  <string name="help.ask">Gofyn i AI am help</string>
+  <string name="help.copied">Anogwr wedi'i gopïo i'r clipfwrdd!</string>
+  <string name="help.copy_failed">Doedd dim modd copïo'r anogwr</string>
+  <string name="help.model.prompt_text">Rwy'n gosod PaperDaemon, ap ar gyfer fy llechen reMarkable sy'n rhedeg modelau AI ar fy nghyfrifiadur Windows. Mae angen ffeil swp Windows (.bat) arnaf sy'n cychwyn gweinydd y model testun (LLM). Mae PaperDaemon yn rhedeg y sgript hon ei hun pryd bynnag y mae angen y model arno, ac yn ei stopio pan fydd wedi gorffen.
+
+Rheolau y mae'n rhaid i'r sgript eu dilyn:
+- Cychwyn y gweinydd fel ei fod yn ateb HTTP yn 127.0.0.1 ar y porth y mae PaperDaemon yn ei basio yn %PAPERDAEMON_PORT%.
+- Rhedeg y gweinydd yn y blaendir a chadw'r sgript i redeg cyhyd ag y mae'r gweinydd yn rhedeg. Peidio â defnyddio `start`.
+- Argraffu allbwn y gweinydd.
+- Mae PaperDaemon hefyd yn gosod %PAPERDAEMON_ROLE% (text neu image), %PAPERDAEMON_LOCATION% (y cyfeiriad llawn), %PAPERDAEMON_OTHER_LOCATION% (cyfeiriad y model arall), %PAPERDAEMON_LINEUP% a %PAPERDAEMON_DATA%.
+- Dim ond rhaglenni a gychwynnodd y mae PaperDaemon yn eu stopio. Os gallai gweinyddion model eraill fod yn defnyddio cof fy ngherdyn graffeg, dylai'r sgript eu stopio yn gyntaf.
+- Rhaid i'r gweinydd siarad yr API sgwrsio sy'n gydnaws ag OpenAI (/v1/chat/completions), fel y mae llama-server llama.cpp, Ollama, LM Studio neu vLLM yn ei wneud.
+
+Cyn i ti ei hysgrifennu, gofyn y cwestiynau hyn i mi un ar y tro ac aros am bob ateb:
+1. Pa gerdyn graffeg sydd gen i, a faint o VRAM sydd ganddo?
+2. Pa fodel ydw i eisiau ei redeg, a ble mae ffeil y model ar fy nghyfrifiadur?
+3. Pa raglen weinydd ydw i'n ei defnyddio (neu eisiau ei defnyddio), a ble mae wedi'i gosod?
+4. Pa borth ddylai ei ddefnyddio?
+5. Ydw i'n rhedeg unrhyw weinyddion AI neu raglenni eraill sy'n defnyddio'r cerdyn graffeg, ac a ddylai'r sgript eu stopio yn gyntaf?
+6. A yw fy model testun a fy model delwedd yn ffitio ar y cerdyn gyda'i gilydd, neu a ddylai pob sgript stopio'r llall?
+
+Yna ysgrifenna'r ffeil .bat gyda sylw byr ar bob llinell yn dweud beth mae'n ei wneud, a dywed wrtha i sut i'w phrofi.</string>
+  <string name="help.model.prompt_image">Rwy'n gosod PaperDaemon, ap ar gyfer fy llechen reMarkable sy'n rhedeg modelau AI ar fy nghyfrifiadur Windows. Mae angen ffeil swp Windows (.bat) arnaf sy'n cychwyn gweinydd y model cynhyrchu delweddau. Mae PaperDaemon yn rhedeg y sgript hon ei hun pryd bynnag y mae angen y model arno, ac yn ei stopio pan fydd wedi gorffen.
+
+Rheolau y mae'n rhaid i'r sgript eu dilyn:
+- Cychwyn y gweinydd fel ei fod yn ateb HTTP yn 127.0.0.1 ar y porth y mae PaperDaemon yn ei basio yn %PAPERDAEMON_PORT%.
+- Rhedeg y gweinydd yn y blaendir a chadw'r sgript i redeg cyhyd ag y mae'r gweinydd yn rhedeg. Peidio â defnyddio `start`.
+- Argraffu allbwn y gweinydd.
+- Mae PaperDaemon hefyd yn gosod %PAPERDAEMON_ROLE% (text neu image), %PAPERDAEMON_LOCATION% (y cyfeiriad llawn), %PAPERDAEMON_OTHER_LOCATION% (cyfeiriad y model arall), %PAPERDAEMON_LINEUP% a %PAPERDAEMON_DATA%.
+- Dim ond rhaglenni a gychwynnodd y mae PaperDaemon yn eu stopio. Os gallai gweinyddion model eraill fod yn defnyddio cof fy ngherdyn graffeg, dylai'r sgript eu stopio yn gyntaf.
+- Rhaid i'r gweinydd siarad API Stable Diffusion web UI (/sdapi/v1/txt2img), fel y mae gweinydd stable-diffusion.cpp, Forge neu AUTOMATIC1111 yn ei wneud, neu API Images OpenAI.
+
+Cyn i ti ei hysgrifennu, gofyn y cwestiynau hyn i mi un ar y tro ac aros am bob ateb:
+1. Pa gerdyn graffeg sydd gen i, a faint o VRAM sydd ganddo?
+2. Pa fodel ydw i eisiau ei redeg, a ble mae ffeil y model ar fy nghyfrifiadur?
+3. Pa raglen weinydd ydw i'n ei defnyddio (neu eisiau ei defnyddio), a ble mae wedi'i gosod?
+4. Pa borth ddylai ei ddefnyddio?
+5. Ydw i'n rhedeg unrhyw weinyddion AI neu raglenni eraill sy'n defnyddio'r cerdyn graffeg, ac a ddylai'r sgript eu stopio yn gyntaf?
+6. A yw fy model testun a fy model delwedd yn ffitio ar y cerdyn gyda'i gilydd, neu a ddylai pob sgript stopio'r llall?
+
+Yna ysgrifenna'r ffeil .bat gyda sylw byr ar bob llinell yn dweud beth mae'n ei wneud, a dywed wrtha i sut i'w phrofi.</string>
+  <string name="help.search.prompt">Rwy'n gosod PaperDaemon, ap ar gyfer fy llechen reMarkable sy'n rhedeg ar fy nghyfrifiadur Windows. Mae angen ffeil swp Windows (.bat) arnaf sy'n cychwyn gweinydd chwilio SearXNG ar y cyfrifiadur hwn. Mae PaperDaemon yn rhedeg y sgript ei hun pan fydd angen chwilio a dim byd yn ateb, ac yn ei stopio pan fydd PaperDaemon yn oedi neu'n cau.
+
+Rheolau y mae'n rhaid i'r sgript eu dilyn:
+- Cychwyn SearXNG fel ei fod yn ateb HTTP yn 127.0.0.1 ar y porth a ddewisaf.
+- Rhaid i allbwn JSON fod ymlaen yn SearXNG (search: formats: [html, json] yn settings.yml).
+- Rhedeg y gweinydd yn y blaendir a chadw'r sgript i redeg cyhyd ag y mae'r gweinydd yn rhedeg. Peidio â defnyddio `start`.
+- Argraffu allbwn y gweinydd.
+- Ffafrio WSL neu Python dros Docker: mae PaperDaemon yn stopio prosesau'r sgript ei hun, ond byddai cynhwysydd Docker yn dal i redeg ar ôl iddo gau.
+
+Cyn i ti ei hysgrifennu, gofyn y cwestiynau hyn i mi un ar y tro ac aros am bob ateb:
+1. Oes gen i WSL (Is-system Windows ar gyfer Linux) wedi'i osod? Python? Docker?
+2. Ydy SearXNG eisoes wedi'i osod, ac os felly ble a sut?
+3. Pa borth ddylai ei ddefnyddio, ac a oes unrhyw beth arall eisoes yn ei ddefnyddio?
+
+Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw byr ar bob llinell yn dweud beth mae'n ei wneud, a dywed wrtha i sut i'w phrofi.</string>
+  <string name="ts.what">Beth</string>
+  <string name="ts.details">Manylion</string>
+  <string name="ts.testing">Yn profi: {n} o {total} wedi'u gwneud</string>
+  <string name="ts.changed">Newidiodd y tîm ar ôl ei brawf diwethaf, felly nid yw'r canlyniad hwnnw'n dal mwyach. Rhedwch y prawf eto.</string>
+  <string name="ts.never">Nid yw'r tîm hwn wedi'i brofi eto.</string>
+  <string name="ts.whole">Profi'r tîm {name} cyfan gyda'i gilydd: ei fodel testun a'i harnais, ei fodel delwedd a'i harnais, y rhwydwaith a'i dagiau.</string>
+  <string name="ts.row.model-text">Model testun</string>
+  <string name="ts.row.model-image">Model delwedd</string>
+  <string name="ts.row.answer">Ateb cwestiynau</string>
+  <string name="ts.row.ink">Ateb cwestiwn mewn llawysgrifen</string>
+  <string name="ts.row.chart">Gwneud siartiau</string>
+  <string name="ts.row.draw">Tynnu llun</string>
+  <string name="ts.row.picture">Gwneud lluniau</string>
+  <string name="ts.row.handwriting">Darllen llawysgrifen</string>
+  <string name="ts.row.search">Chwilio'r we</string>
+  <string name="ts.row.social">Cyfryngau cymdeithasol</string>
+  <string name="ts.row.weather">Tywydd</string>
+  <string name="ts.m.not_run">Heb ei redeg</string>
+  <string name="ts.m.no_image">Dim model delwedd</string>
+  <string name="ts.m.waiting">Yn aros</string>
+  <string name="ts.m.working">Wrthi</string>
+  <string name="ts.m.canceled">Wedi'i ganslo</string>
+  <string name="ts.m.failed">Wedi methu</string>
+  <string name="ts.m.answered_in">Atebwyd mewn {s} e</string>
+  <string name="ts.m.done_in">Wedi'i wneud mewn {s} e</string>
+  <string name="ts.m.failed_after">Wedi methu ar ôl {s} e</string>
+  <string name="ts.m.answers">Yn ateb</string>
+  <string name="ts.m.check_failed">{check}: wedi methu</string>
+  <string name="ts.m.no_answer">Dim ateb</string>
+  <string name="ts.m.not_set_up">Heb ei osod</string>
+  <string name="ts.m.network_off">Mae mynediad i'r rhwydwaith i ffwrdd</string>
+  <string name="ts.m.no_results_in">Dim canlyniadau mewn {s} e</string>
+  <string name="ts.m.results_in">{n} canlyniad mewn {s} e</string>
+  <string name="ts.m.no_sites">Dim gwefannau wedi'u dewis</string>
+  <string name="ts.m.site_time">{site} {s} e</string>
+  <string name="ts.m.site_failed">{site} wedi methu</string>
+  <string name="ts.m.no_forecast">Dim rhagolwg</string>
+  <string name="ts.m.weather">{t}{unit} a {sky}, atebwyd mewn {s} e</string>
+  <string name="ts.m.no_samples">Dim samplau</string>
+  <string name="ts.m.cannot_see">Ni all y model weld</string>
+  <string name="ts.m.no_reading">Dim darlleniad</string>
+  <string name="ts.m.nothing_read">Dim wedi'i ddarllen</string>
+  <string name="ts.m.words">{pct}% o'r geiriau, {s} e y dudalen</string>
+  <string name="ts.d.no_image">Does gan y tîm ddim model delwedd.</string>
+  <string name="ts.d.search_setup">Ychwanegwch wasanaeth chwilio neu weinydd chwilio lleol yn nhab Rhwydwaith y tîm.</string>
+  <string name="ts.d.allow_network">Caniatewch ef yn y Gosodiadau.</string>
+  <string name="ts.d.search_empty">Daeth y chwiliad yn ôl yn wag.</string>
+  <string name="ts.d.first">Cyntaf: {title}</string>
+  <string name="ts.d.every_site">Daeth negeseuon yn ôl o bob gwefan.</string>
+  <string name="ts.d.choose_sites">Dewiswch y gwefannau cymdeithasol yn y Gosodiadau.</string>
+  <string name="ts.d.no_forecast">Ni atebodd y gwasanaeth rhagolygon.</string>
+  <string name="ts.d.weather">Heddiw yn {place}: uchaf {hi}{unit}, isaf {lo}{unit}.</string>
+  <string name="ts.d.weather_london">Does dim lleoliad wedi'i osod, felly Llundain heddiw: uchaf {hi}{unit}, isaf {lo}{unit}.</string>
+  <string name="ts.d.samples_missing">Mae'r samplau llawysgrifen ar goll.</string>
+  <string name="ts.d.cannot_see">Nid yw model testun y tîm yn derbyn lluniau, felly nid yw'n darllen llawysgrifen.</string>
+  <string name="ts.d.words">{right} o {total} gair ar {pages} tudalen gan {pages} awdur o bedwar cyfandir ({regions}).</string>
+  <string name="ts.d.text_failed">Ni lwyddodd y model testun yn ei wiriad.</string>
+  <string name="page.gave_up">Methu gorffen hwn; rhoi'r gorau iddi ar ôl {n} cais.</string>
+  <string name="issue.loop_token_unreadable">Methu darllen y cysylltiad reMarkable: {why}</string>
+  <string name="issue.loop_gave_up">Stopiodd rhan o PaperDaemon {n} gwaith yn olynol ac fe'i gadawyd wedi'i stopio; mae ei log yn dweud pam.</string>
+  <string name="issue.loop_supervisor">Cafodd goruchwyliwr PaperDaemon wall: {why}</string>
+  <string name="slot.key_where">Rhowch gyfeiriad y gweinydd yn gyntaf: cedwir yr allwedd ar gyfer y gweinydd hwnnw.</string>
+  <string name="day.saturday">Dydd Sadwrn</string>
+  <string name="slot.source.help">Allwedd API: mae cwmni'n rhedeg y model, ac mae PaperDaemon yn ei gyrraedd gyda'ch allwedd. Gwesteio'n lleol: gweinydd model rydych chi'n ei redeg, ar y cyfrifiadur hwn neu ar eich rhwydwaith.</string>
+  <string name="slot.provider.help">Pwy sy'n rhedeg y model. Arall: unrhyw wasanaeth sy'n siarad API OpenAI, yn y cyfeiriad a roddwch.</string>
+  <string name="slot.address.help_hosted">Cyfeiriad API y gwasanaeth, er enghraifft https://api.example.com/v1.</string>
+  <string name="slot.model.help">Enw'r model yn union fel mae'r darparwr yn ei ysgrifennu.</string>
+  <string name="slot.api_key.help">Yn cael ei chadw yn Rheolwr Manylion Adnabod Windows, byth mewn ffeil. Mae timau sy'n defnyddio'r un gweinydd yn rhannu ei allwedd.</string>
+  <string name="slot.address.help_local">Ble mae gweinydd eich model yn ateb, er enghraifft http://127.0.0.1:8080. Os nad oes dim yn ateb yno, mae PaperDaemon yn rhedeg y sgript gychwyn isod.</string>
+  <string name="slot.harness.help">Sut mae PaperDaemon yn gweithio gyda'r model hwn: beth mae'n ei ddweud wrtho a sut mae'n darllen yr atebion. Mae Awtomatig yn dewis un o enw'r model; mae Ychwanegu harness yn agor y ffolder ar gyfer eich rhai chi.</string>
+  <string name="net.source.help">Ble mae tasg yn chwilio am bethau: gwasanaeth chwilio y mae gennych allwedd API ar ei gyfer, neu weinydd SearXNG rydych chi'n ei redeg eich hun.</string>
+  <string name="net.service.help">Y gwasanaeth chwilio y mae eich allwedd yn perthyn iddo.</string>
+  <string name="net.address.help">Ble mae eich gweinydd SearXNG yn ateb, er enghraifft http://127.0.0.1:8888. Os nad oes dim defnyddiadwy yn ateb yno, mae PaperDaemon yn rhedeg y sgript gychwyn isod.</string>
+  <string name="tags.tag.help">Y tag yn union fel rydych chi'n ei roi ar y llechen; does dim ots am briflythrennau a llythrennau bach.</string>
+  <string name="tags.prompt.help">Yn cael ei ychwanegu at gyfarwyddiadau pob tasg ar dudalen gyda'r tag hwn, neu mewn llyfr nodiadau neu ffolder sydd ag ef.</string>
+</resources>

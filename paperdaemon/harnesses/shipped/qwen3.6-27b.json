@@ -1,0 +1,18 @@
+{
+  "id": "qwen3.6-27b",
+  "name": "llama.cpp - Qwen 3.6 27B",
+  "server": "llama.cpp (llama-server)",
+  "models": [
+    "Qwen 3.6 27B"
+  ],
+  "extends": "default-text",
+  "notes": "The text model the brief was tuned on, served by llama.cpp's server. On the benchmark jobs it did best with thinking off in its start script. The pretrained Base release cannot follow the brief or call tools and is refused.",
+  "patterns": [
+    "qwen-?3\\.?6-?27b"
+  ],
+  "refuse": [
+    "(^|-)base(-|\\.|$)"
+  ],
+  "vision": true,
+  "forced_tool": true
+}

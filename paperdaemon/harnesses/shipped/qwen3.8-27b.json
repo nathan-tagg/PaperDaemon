@@ -1,0 +1,18 @@
+{
+  "id": "qwen3.8-27b",
+  "name": "llama.cpp - Qwen 3.8 27B",
+  "server": "llama.cpp (llama-server)",
+  "models": [
+    "Qwen 3.8 27B"
+  ],
+  "extends": "default-text",
+  "notes": "Qwen 3.8 27B. Its start script serves a larger context and turns on speculative decoding with the files' multi-token-prediction head, a server flag, not a harness value.",
+  "patterns": [
+    "qwen-?3\\.?8-?27b"
+  ],
+  "refuse": [
+    "(^|-)base(-|\\.|$)"
+  ],
+  "vision": true,
+  "forced_tool": true
+}

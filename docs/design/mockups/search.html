@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Search · PaperDaemon</title>
+<link rel="stylesheet" href="paper.css">
+<script src="mockup.js" defer></script>
+</head>
+<body>
+<div class="app" data-state="stest=idle&skey=idle">
+  <nav class="rail" aria-label="PaperDaemon">
+    <a class="wordmark" href="index.html">PaperDaemon</a>
+    <ul class="nav">
+      <li><a href="overview.html">Overview <span class="state"><i class="mk busy"></i>Working</span></a></li>
+      <li><a href="notepads.html">Notepads <span class="state num">5</span></a></li>
+      <li><a href="decompose.html">Decompose and send</a></li>
+      <li><a href="benchmark.html">Benchmark <span class="state num">10/12</span></a></li>
+    </ul>
+    <ul class="nav">
+      <li><a href="tablet.html">Tablet <span class="state"><i class="mk on"></i>Connected</span></a></li>
+      <li><a href="models.html">Models <span class="state"><i class="mk on"></i>Ready</span></a></li>
+      <li><a href="search.html" aria-current="page">Search <span class="state" data-when="prov!=none"><i class="mk on"></i>On</span><span class="state" data-when="prov=none"><i class="mk off"></i>Off</span></a></li>
+      <li><a href="capabilities.html">Capabilities <span class="state num">9 on</span></a></li>
+      <li><a href="network.html">Network <span class="state num">2 addresses</span></a></li>
+    </ul>
+    <div class="rail-foot">
+      <p class="meta">Engine on <code>127.0.0.1:8770</code><br>Version 0.1.0</p>
+    </div>
+  </nav>
+
+  <main class="page">
+    <header class="page-head">
+      <h1>Search</h1>
+      <p>Where the host looks things up when a page asks about the world, the other services it may call, and which social sites it can clip posts from.</p>
+    </header>
+
+    <section class="section" aria-labelledby="h-web">
+      <h2 id="h-web">Web search</h2>
+      <div class="row">
+        <div class="label">Search with</div>
+        <div class="control">
+          <span class="select"><select class="field w-m" data-name="prov" aria-label="Search provider"><option value="none">Nothing: no web search</option><option value="searxng" selected>SearXNG</option><option value="brave">Brave Search API</option><option value="tavily">Tavily API</option><option value="kagi">Kagi API</option></select></span>
+        </div>
+      </div>
+      <div class="row" data-when="prov=none">
+        <div class="label">Without search</div>
+        <div class="control"><p class="value sub">The model is offered no search. A page that needs one says web search is not set up.</p></div>
+      </div>
+      <div class="row" data-when="prov=searxng">
+        <div class="label">SearXNG address<small>An instance you run, on this computer or your network.</small></div>
+        <div class="control">
+          <input class="field mono w-m" value="http://127.0.0.1:8888" aria-label="SearXNG address">
+          <button type="button" class="btn" data-set="stest=done">Test</button>
+          <span class="state-line" data-when="stest=done"><i class="mk on"></i>Answered in 0.4 s with 18 results</span>
+          <p class="hint">JSON output must be switched on in the instance's settings. PaperDaemon never installs, starts or updates SearXNG.</p>
+        </div>
+      </div>
+      <div class="row" data-when="prov=brave|tavily|kagi">
+        <div class="label">Key</div>
+        <div class="control">
+          <span class="actions" data-when="skey=idle"><input class="field mono w-m" type="password" placeholder="Paste an API key" aria-label="Search API key" autocomplete="off"><button type="button" class="btn primary" data-set="skey=saved">Save</button></span>
+          <span class="actions" data-when="skey=saved"><span class="secret"><i class="mk on"></i>Saved in the Windows credential store · just now</span><button type="button" class="btn" data-set="skey=idle">Replace</button></span>
+          <p class="hint">Kept in the Windows credential store.</p>
+        </div>
+      </div>
+      <div class="row" data-when="prov=brave|tavily|kagi">
+        <div class="label">Privacy</div>
+        <div class="control">
+          <p class="notice"><strong>Off this computer.</strong> Your searches go to the provider. The host writes each query from what is on the page.</p>
+        </div>
+      </div>
+      <div class="row" data-when="prov!=none">
+        <div class="label">Results per search</div>
+        <div class="control">
+          <input class="field num w-xs" value="8" aria-label="Results per search">
+          <p class="hint">More results give the model more to read and make each job slower.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="h-builtin">
+      <h2 id="h-builtin">Other services</h2>
+      <p class="section-note">Besides the search provider, these are the only services a job may call. One that is off is never called.</p>
+      <table class="list">
+        <thead><tr><th>Service</th><th>What it gives a job</th><th>Calls</th><th class="r">Use</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Wikipedia</strong></td><td>Facts about a date, and "on this day" for calendars</td><td><code>en.wikipedia.org</code></td><td class="r"><input type="checkbox" class="switch" data-name="wiki" checked aria-label="Use Wikipedia"></td></tr>
+          <tr><td><strong>Weather</strong></td><td>Forecasts for the location on the Tablet screen</td><td><code>api.open-meteo.com</code></td><td class="r"><input type="checkbox" class="switch" data-name="weather" checked aria-label="Use the weather service"></td></tr>
+          <tr><td><strong>Licensed pictures</strong></td><td>Photos with a license and a credit, from Openverse and Wikimedia Commons</td><td><code>api.openverse.org</code>, <code>commons.wikimedia.org</code></td><td class="r"><input type="checkbox" class="switch" data-name="pics" aria-label="Use licensed pictures"></td></tr>
+          <tr><td><strong>Web pages you name</strong></td><td>The text of an address written on the page, to summarize or quote</td><td class="sub">The address on the page</td><td class="r"><input type="checkbox" class="switch" data-name="fetch" checked aria-label="Fetch web pages you name"></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section" aria-labelledby="h-social">
+      <h2 id="h-social">Social sources</h2>
+      <p class="section-note">For social cards: real posts, clipped onto the page with their author and date. What each site allows is set by the site, not by PaperDaemon.</p>
+      <table class="list">
+        <thead><tr><th>Source</th><th>What the host can show</th><th>Limits</th><th class="r">Use</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Reddit</strong></td><td>Posts and comments, with vote counts</td><td>About one request a minute, so four cards take about four minutes. No account needed.</td><td class="r"><input type="checkbox" class="switch" data-name="reddit" checked aria-label="Use Reddit"></td></tr>
+          <tr><td><strong>Hacker News</strong></td><td>Posts, comments and points</td><td class="sub">None</td><td class="r"><input type="checkbox" class="switch" data-name="hn" checked aria-label="Use Hacker News"></td></tr>
+          <tr><td><strong>Bluesky</strong></td><td>Posts and threads</td><td class="sub">None</td><td class="r"><input type="checkbox" class="switch" data-name="bsky" checked aria-label="Use Bluesky"></td></tr>
+          <tr><td><strong>Mastodon</strong></td><td>Posts from any public server</td><td>A server can refuse readers it doesn't know.</td><td class="r"><input type="checkbox" class="switch" data-name="masto" checked aria-label="Use Mastodon"></td></tr>
+          <tr><td><strong>4chan</strong></td><td>Threads and replies</td><td>Off until you turn it on.</td><td class="r"><input type="checkbox" class="switch" data-name="fourchan" aria-label="Use 4chan"></td></tr>
+          <tr><td><strong>X</strong></td><td>One post, from its link</td><td>No search and no threads.</td><td class="r"><input type="checkbox" class="switch" data-name="x" checked aria-label="Use X"></td></tr>
+          <tr><td><strong>Instagram, Facebook</strong></td><td class="sub">Nothing</td><td>Neither offers public access.</td><td class="r"><input type="checkbox" class="switch" disabled aria-label="Instagram and Facebook are not available"></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</div>
+</body>
+</html>

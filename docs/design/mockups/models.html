@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Models · PaperDaemon</title>
+<link rel="stylesheet" href="paper.css">
+<script src="mockup.js" defer></script>
+<style>
+  .facts.compact dd .meta { margin-left: var(--s2); }
+  .protocols dt { font-weight: 600; color: var(--ink); }
+  .report { margin-top: var(--s2); width: 100%; }
+  .lineup-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3); margin-top: var(--s3); }
+  dialog.sheet.wide, .bk-sheet.wide { width: min(680px, calc(100vw - 32px)); }
+  .wide .row { grid-template-columns: 180px minmax(0, 1fr); }
+  .wide .row:last-of-type { border-bottom: 0; }
+  .times { color: var(--ink-3); padding: 0 2px; }
+</style>
+</head>
+<body>
+<div class="app" data-state="lu=local&active=local&ckey=saved&ttest=idle&itest=idle&ctx=override&lnew=off&pk=text&pnew=on&pvis=on&pag=default&pthink=off&pstyle=after&psaved=off">
+  <nav class="rail" aria-label="PaperDaemon">
+    <a class="wordmark" href="index.html">PaperDaemon</a>
+    <ul class="nav">
+      <li><a href="overview.html">Overview <span class="state"><i class="mk busy"></i>Working</span></a></li>
+      <li><a href="notepads.html">Notepads <span class="state num">5</span></a></li>
+      <li><a href="decompose.html">Decompose and send</a></li>
+      <li><a href="benchmark.html">Benchmark <span class="state num">10/12</span></a></li>
+    </ul>
+    <ul class="nav">
+      <li><a href="tablet.html">Tablet <span class="state"><i class="mk on"></i>Connected</span></a></li>
+      <li><a href="models.html" aria-current="page">Models <span class="state"><i class="mk on"></i>Ready</span></a></li>
+      <li><a href="search.html">Search <span class="state"><i class="mk on"></i>On</span></a></li>
+      <li><a href="capabilities.html">Capabilities <span class="state num">9 on</span></a></li>
+      <li><a href="network.html">Network <span class="state num">2 addresses</span></a></li>
+    </ul>
+    <div class="rail-foot">
+      <p class="meta">Engine on <code>127.0.0.1:8770</code><br>Version 0.1.0</p>
+    </div>
+  </nav>
+
+  <main class="page">
+    <header class="page-head">
+      <h1>Models</h1>
+      <p>A lineup is the pair of models that handles your jobs, one to read pages and decide and one to draw, with the
+        harness each runs with. Keep as many lineups as you like and switch when you want a different pair on the job.</p>
+    </header>
+
+    <!-- the lineups -->
+    <section class="section" aria-labelledby="h-lineup">
+      <h2 id="h-lineup">Lineup</h2>
+      <div class="lineup-bar">
+        <div class="seg" data-name="lu" role="group" aria-label="Lineup shown"><button type="button" data-value="local" aria-pressed="true">Local</button><button type="button" data-value="claude" aria-pressed="false">Claude</button></div>
+        <button type="button" class="btn" data-set="lnew=on">New lineup</button>
+        <span class="state-line" data-when="lu=local&active=local"><i class="mk on"></i>This lineup handles your jobs</span>
+        <span class="state-line" data-when="lu=claude&active=claude"><i class="mk on"></i>This lineup handles your jobs</span>
+        <button type="button" class="btn primary" data-when="lu=local&active=claude" data-set="active=local">Use this lineup for jobs</button>
+        <button type="button" class="btn primary" data-when="lu=claude&active=local" data-set="active=claude">Use this lineup for jobs</button>
+      </div>
+      <p class="hint sub" style="margin-top: var(--s2)" data-when="lnew=on">A new lineup starts as a copy of the one shown. Change either model, or both.</p>
+      <p class="sub" style="margin-top: var(--s2)" data-when="lu=claude&active=claude">Pages go to Anthropic while this lineup is in use. Switch back to Local at any time; a job already running finishes first.</p>
+    </section>
+
+    <!-- LOCAL: text -->
+    <section class="section" aria-labelledby="h-ltext" data-when="lu=local">
+      <header><h2 id="h-ltext">Text and reasoning</h2><span class="state-line meta"><i class="mk on"></i>Running, started by PaperDaemon</span></header>
+      <p class="section-note">Reads the page, decides what to do, and writes the words.</p>
+      <div class="row">
+        <div class="label">Runs</div>
+        <div class="control"><p class="value">On this computer</p></div>
+      </div>
+      <div class="row">
+        <div class="label">Location<small>Where PaperDaemon sends requests.</small></div>
+        <div class="control">
+          <input class="field mono w-l" value="http://127.0.0.1:11434/v1" aria-label="Location of the text model">
+          <p class="hint">Speaks the OpenAI-compatible API, as llama.cpp, Ollama, LM Studio and vLLM do.</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="label">Start.bat<small>If nothing PaperDaemon started answers there.</small></div>
+        <div class="control stack">
+          <div class="actions">
+            <span class="meta">Template</span>
+            <span class="select"><select class="field w-s" data-name="ltmpl" aria-label="Start script template"><option value="llama" selected>llama.cpp</option><option value="ollama">Ollama</option></select></span>
+          </div>
+          <div class="code-cap"><span>PaperDaemon runs this and waits until the location answers. It never rewrites it.</span><span>Windows batch</span></div>
+          <div class="code" data-when="ltmpl=llama"><div class="gutter"></div><textarea spellcheck="false" rows="13" aria-label="Start script for the text model">@echo off
+rem Frees the graphics card: ends EVERY llama-server and
+rem sd-server on this computer, including ones other apps
+rem started. Delete the two taskkill lines if both models
+rem fit on your card.
+taskkill /IM llama-server.exe /F &gt;nul 2&gt;&amp;1
+taskkill /IM sd-server.exe /F &gt;nul 2&gt;&amp;1
+C:\llama\llama-server.exe ^
+  --model D:\llm\qwen3.6-27b-q4_k_m.gguf ^
+  --mmproj D:\llm\qwen3.6-27b-mmproj.gguf --jinja ^
+  --host 127.0.0.1 --port 11434 --ctx-size 32768 ^
+  --cache-type-k q8_0 --cache-type-v q8_0 ^
+  --n-gpu-layers 99 --flash-attn on --no-mmap</textarea></div>
+          <div class="code" data-when="ltmpl=ollama"><div class="gutter"></div><textarea spellcheck="false" rows="6" aria-label="Start script for the text model">@echo off
+rem Ollama runs as its own app and loads models when asked,
+rem so PaperDaemon never owns it. This runs before every
+rem call, so it only checks that Ollama is up.
+curl -s http://127.0.0.1:11434/api/version &gt;nul 2&gt;&amp;1
+if errorlevel 1 start "" ollama serve</textarea></div>
+          <p class="hint">PaperDaemon runs this only when the server it started is not running, and never while a model is
+            working on a task. Leave it empty if you run this server yourself: PaperDaemon then uses whatever answers
+            at the location and never starts it.</p>
+        </div>
+      </div>
+      <div class="row" data-when="ltmpl=llama">
+        <div class="label">Graphics card</div>
+        <div class="control">
+          <p class="value num">About 18.8 GB of the card's 24 GB, read from the script's model file and context.</p>
+          <p class="hint">With the image model's 16 GB the two don't fit together, so each start script ends the other's
+            server first and the two take turns. There is nothing else to set.</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="label">Harness<small>How a job runs with this model.</small></div>
+        <div class="control">
+          <span class="select"><select class="field w-m" data-name="ltprof" aria-label="Harness for the text model"><option value="qwen" selected>Qwen 3.6 27B</option><option value="default">Default</option><option value="novision">Default, no vision</option></select></span>
+          <button type="button" class="btn" data-open="pe" data-set="pk=text&pnew=on&pvis=on&pag=default">Duplicate and edit</button>
+          <p class="hint">Shipped harnesses stay as they are; duplicate one to make it yours.</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="label">How a job runs<small>The harness's protocols.</small></div>
+        <div class="control">
+          <dl class="facts compact protocols" data-when="ltprof=qwen|default">
+            <dt>Intake</dt><dd>The page image, its typed text and the reader's handwriting lines, the notepad, then the notebook's prompt, word for word, last</dd>
+            <dt>Output</dt><dd>One plan, as a forced tool call: the tasks, their places and rough sizes, what to erase</dd>
+            <dt>Tasks</dt><dd>The host places and draws everything; a search's results go back to the model for the words</dd>
+            <dt>Validate</dt><dd>The base checks: every place filled, nothing of yours erased beyond the request, no new notebook, no tag you didn't name</dd>
+          </dl>
+          <dl class="facts compact protocols" data-when="ltprof=novision">
+            <dt>Intake</dt><dd>The page as text: typed text, the reader's lines and every mark's position. No image</dd>
+            <dt>Output</dt><dd>One plan, asked for rather than forced; a prose reply is asked again once</dd>
+            <dt>Tasks</dt><dd>The host places everything, text included, and draws everything</dd>
+            <dt>Validate</dt><dd>The base checks</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="row">
+        <div class="label">Capabilities<small>Where each value comes from.</small></div>
+        <div class="control">
+          <dl class="facts compact">
+            <dt>Vision</dt><dd data-when="ltprof=qwen|default">Reads the rendered page as an image <span class="meta">from the harness</span></dd>
+            <dd data-when="ltprof=novision">Off: the page goes as text <span class="meta">from the harness</span></dd>
+            <dt>Forced tool call</dt><dd>Works <span class="meta">confirmed by the test</span></dd>
+            <dt>Thinking</dt><dd>Off <span class="meta">from the harness</span></dd>
+            <dt>Context</dt><dd class="num" data-when="ctx=override">32,768 tokens <span class="meta">your override; the harness says 65,536</span> <button type="button" class="btn quiet small" data-set="ctx=harness">Use the harness's</button></dd>
+            <dd class="num" data-when="ctx=harness">65,536 tokens <span class="meta">from the harness</span></dd>
+            <dt>Output limit</dt><dd class="num">None; a repetition check stops a runaway. No time limit. <span class="meta">from the harness</span></dd>
+          </dl>
+        </div>
+      </div>
+      <div class="row">
+        <div class="label">Test</div>
+        <div class="control">
+          <button type="button" class="btn" data-set="ttest=done">Test this model</button>
+          <span class="state-line" data-when="ttest=idle"><i class="mk on"></i>Passed at 09:02: answered the test page in 14 s</span>
+          <dl class="facts compact report" data-when="ttest=done">
+            <dt>Answered</dt><dd class="num"><i class="mk on"></i> The test page in 13 s, just now</dd>
+            <dt>Forced tool call</dt><dd><i class="mk on"></i> Made and parsed</dd>
+            <dt>Vision</dt><dd><i class="mk on"></i> Read the word on one small synthetic picture</dd>
+            <dt>Context</dt><dd class="num"><i class="mk on"></i> The brief and a full notepad fit in 32,768 tokens</dd>
+            <dt>Suggests</dt><dd>Nothing to change</dd>
+          </dl>
+          <p class="hint">A test waits for the job in progress and runs after it, never beside it.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOCAL: image -->
+    <section class="section" aria-labelledby="h-limage" data-when="lu=local">
+      <header><h2 id="h-limage">Image</h2><span class="state-line meta"><i class="mk off"></i>Not running; starts when a job needs a picture</span></header>
+      <p class="section-note">Draws pictures and coloring pages. Charts and text never use it.</p>
+      <div class="row">
+        <div class="label">Runs</div>
+        <div class="control"><p class="value">On this computer</p></div>
+      </div>
+      <div class="row">
+        <div class="label">Location<small>Where PaperDaemon sends requests.</small></div>
+        <div class="control">
+          <input class="field mono w-l" value="http://127.0.0.1:1234" aria-label="Location of the image model">
+          <p class="hint">Speaks the Stable Diffusion web UI API, as stable-diffusion.cpp, Forge and AUTOMATIC1111 do.</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="label">Start.bat<small>If nothing PaperDaemon started answers there.</small></div>
+        <div class="control stack">
+          <div class="code-cap"><span>PaperDaemon runs this and waits until the location answers. It never rewrites it.</span><span>Windows batch</span></div>
+          <div class="code"><div class="gutter"></div><textarea spellcheck="false" rows="11" aria-label="Start script for the image model">@echo off
+rem Frees the graphics card: ends EVERY llama-server and
+rem sd-server on this computer, including ones other apps
+rem started. Delete the two taskkill lines if both models
+rem fit on your card.
+taskkill /IM llama-server.exe /F &gt;nul 2&gt;&amp;1
+taskkill /IM sd-server.exe /F &gt;nul 2&gt;&amp;1
+C:\sd\sd-server.exe ^
+  --diffusion-model D:\llm\flux-2-klein-9b-q8_0.gguf ^
+  --llm D:\llm\qwen3-8b-q8_0.gguf ^
+  --vae D:\llm\flux2-vae.safetensors --listen-port 1234</textarea></div>
+          <p class="hint">The same rule as the text model's: run only when PaperDaemon's own server is not running, never mid-task.</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="label">Graphics card</div>
+        <div class="control"><p class="value num">About 16 GB of the card's 24 GB, read from the script's model files.</p></div>
+      </div>
+      <div class="row">
+        <div class="label">Harness<small>How PaperDaemon works with this model.</small></div>
+        <div class="control">
+          <span class="select"><select class="field w-m" data-name="liprof" aria-label="Harness for the image model"><option value="klein" selected>FLUX.2 Klein 9B</option><option value="zimage">Z-Image Turbo</option><option value="default">Default</option></select></span>
+          <button type="button" class="btn" data-open="pe" data-set="pk=image&pnew=on&pstyle=after">Duplicate and edit</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="label">What the harness sets</div>
+        <div class="control">
+          <dl class="facts compact" data-when="liprof=klein">
+            <dt>Steps</dt><dd class="num">4 by default, 4 to 12 when the model asks; coloring pages use 12; your own numbers are used as written</dd>
+            <dt>Guidance</dt><dd class="num">1.0, a distilled model</dd>
+            <dt>Prompt</dt><dd>Coloring pages get the black line art prompt</dd>
+            <dt>Size</dt><dd class="num">Fits the picture box, up to 1,024 px on the long side</dd>
+          </dl>
+          <dl class="facts compact" data-when="liprof=zimage">
+            <dt>Steps</dt><dd class="num">8; more gains nothing</dd>
+            <dt>Guidance</dt><dd class="num">1.0</dd>
+            <dt>Prompt</dt><dd>The style goes after the subject</dd>
+            <dt>Size</dt><dd class="num">Fits the picture box, up to 1,024 px on the long side</dd>
+          </dl>
+          <dl class="facts compact" data-when="liprof=default">
+            <dt>Steps</dt><dd class="num">The server's own</dd>
+            <dt>Guidance</dt><dd class="num">The server's own</dd>
+            <dt>Size</dt><dd class="num">Fits the picture box, up to 1,024 px on the long side</dd>
+            <dt>Watch for</dt><dd>A distilled model comes out burned at the server's guidance: the test picture shows it. Duplicate and set its three numbers.</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="row">
+        <div class="label">Test</div>
+        <div class="control">
+          <button type="button" class="btn" data-set="itest=done">Test this model</button>
+          <span class="state-line" data-when="itest=idle"><i class="mk on"></i>Passed at 09:03: drew a 768 × 1,024 test picture in 9 s</span>
+          <dl class="facts compact report" data-when="itest=done">
+            <dt>Started</dt><dd class="num"><i class="mk on"></i> By its start script, answering after 21 s</dd>
+            <dt>Picture</dt><dd class="num"><i class="mk on"></i> 768 × 1,024 in 9 s at 4 steps, just now</dd>
+            <dt>Coloring page</dt><dd class="num"><i class="mk on"></i> Black and white after cleaning, 12 steps in 24 s</dd>
+            <dt>Suggests</dt><dd>Nothing to change</dd>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <!-- CLAUDE: text -->
+    <section class="section" aria-labelledby="h-ctext" data-when="lu=claude">
+      <header><h2 id="h-ctext">Text and reasoning</h2><span class="state-line meta"><i class="mk on"></i>Answering</span></header>
+      <p class="section-note">Reads the page, decides what to do, and writes the words.</p>
+      <div class="row">
+        <div class="label">Runs</div>
+        <div class="control"><p class="value">Remote service</p></div>
+      </div>
+      <div class="row">
+        <div class="label">Location<small>Where PaperDaemon sends requests.</small></div>
+        <div class="control">
+          <input class="field mono w-l" value="https://api.anthropic.com" aria-label="Location of the text model">
+          <p class="hint">Speaks the Anthropic API.</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="label">Key</div>
+        <div class="control">
+          <span class="actions" data-when="ckey=saved"><span class="secret"><i class="mk on"></i>Saved in the Windows credential store · Sep 26</span><button type="button" class="btn" data-set="ckey=adding">Replace</button><button type="button" class="btn danger" data-set="ckey=none">Remove</button></span>
+          <span class="actions" style="width: 100%" data-when="ckey=adding"><input class="field mono grow" type="password" placeholder="Paste the key" aria-label="Key for the text model" autocomplete="off"><button type="button" class="btn primary" data-set="ckey=saved">Save</button><button type="button" class="btn" data-set="ckey=saved">Cancel</button></span>
+          <span class="actions" data-when="ckey=none"><span class="secret"><i class="mk off"></i>No key</span><button type="button" class="btn" data-set="ckey=adding">Add key</button><span class="hint attn" style="flex-basis:auto">A remote service needs one.</span></span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="label">Harness<small>How a job runs with this model.</small></div>
+        <div class="control">
+          <span class="select"><select class="field w-m" data-name="ctprof" aria-label="Harness for the text model"><option value="claudehigh" selected>Claude, high · yours</option><option value="default">Default</option></select></span>
+          <button type="button" class="btn" data-open="pe" data-set="pk=text&pnew=off&pvis=on&pag=high" data-when="ctprof=claudehigh">Edit</button>
+          <button type="button" class="btn" data-open="pe" data-set="pk=text&pnew=on&pvis=on&pag=default" data-when="ctprof=default">Duplicate and edit</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="label">How a job runs<small>The harness's protocols.</small></div>
+        <div class="control">
+          <dl class="facts compact protocols" data-when="ctprof=claudehigh">
+            <dt>Intake</dt><dd>The page image, its typed text and the reader's lines, the notepad, then the notebook's prompt, last</dd>
+            <dt>Output</dt><dd>Several turns, calling the host's tasks as tools, until the model says the page is finished</dd>
+            <dt>Tasks</dt><dd>The host still places and draws; the model chooses chart types and search terms itself</dd>
+            <dt>Validate</dt><dd>The base checks</dd>
+          </dl>
+          <dl class="facts compact protocols" data-when="ctprof=default">
+            <dt>Intake</dt><dd>The page image, its typed text and the reader's handwriting lines, the notepad, then the notebook's prompt, last</dd>
+            <dt>Output</dt><dd>One plan, as a forced tool call</dd>
+            <dt>Tasks</dt><dd>The host places and draws everything</dd>
+            <dt>Validate</dt><dd>The base checks</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="row">
+        <div class="label">Privacy</div>
+        <div class="control">
+          <p class="notice"><strong>Off this computer.</strong> This lineup sends page images, what is written on your pages and your notebook prompts to <code>api.anthropic.com</code>. They leave this computer each time a page is answered.</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="label">Test</div>
+        <div class="control">
+          <button type="button" class="btn" data-set="ttest=done">Test this model</button>
+          <span class="state-line" data-when="ttest=idle"><i class="mk on"></i>Passed on Sep 26: answered the test page in 6 s</span>
+          <dl class="facts compact report" data-when="ttest=done">
+            <dt>Answered</dt><dd class="num"><i class="mk on"></i> The test page in 5 s, just now</dd>
+            <dt>Tool calls</dt><dd><i class="mk on"></i> Made and parsed</dd>
+            <dt>Vision</dt><dd><i class="mk on"></i> Read the word on one small synthetic picture</dd>
+            <dt>Suggests</dt><dd>Nothing to change</dd>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <!-- CLAUDE: image -->
+    <section class="section" aria-labelledby="h-cimage" data-when="lu=claude">
+      <header><h2 id="h-cimage">Image</h2><span class="state-line meta"><i class="mk off"></i>Not running; starts when a job needs a picture</span></header>
+      <div class="row">
+        <div class="label">Model</div>
+        <div class="control">
+          <p class="value">The same as in Local: FLUX.2 Klein 9B at <code>127.0.0.1:1234</code>, with its start script and harness.</p>
+          <button type="button" class="btn quiet" data-set="lu=local">Show it in Local</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- harnesses -->
+    <section class="section" aria-labelledby="h-harnesses">
+      <h2 id="h-harnesses">Harnesses</h2>
+      <p class="section-note">A harness holds the settings that differ between models: what the model can do, how to ask it, and the numbers
+        a picture needs. The shipped ones stay as they are; duplicate one to make your own.</p>
+      <table class="list">
+        <thead><tr><th>Harness</th><th>For</th><th>From</th><th></th></tr></thead>
+        <tbody>
+          <tr><td><strong>Default</strong><p class="sub">Assumes a capable model that sees the page</p></td><td>Text</td><td class="sub">Shipped</td><td class="r"><button type="button" class="btn small" data-open="pe" data-set="pk=text&pnew=on&pvis=on&pag=default">Duplicate</button></td></tr>
+          <tr><td><strong>Default, no vision</strong><p class="sub">The host takes over placing text</p></td><td>Text</td><td class="sub">Shipped</td><td class="r"><button type="button" class="btn small" data-open="pe" data-set="pk=text&pnew=on&pvis=off&pag=default">Duplicate</button></td></tr>
+          <tr><td><strong>Qwen 3.6 27B</strong></td><td>Text</td><td class="sub">Shipped</td><td class="r"><button type="button" class="btn small" data-open="pe" data-set="pk=text&pnew=on&pvis=on&pag=default">Duplicate</button></td></tr>
+          <tr><td><strong>Claude, high</strong></td><td>Text</td><td class="sub">Yours</td><td class="r"><button type="button" class="btn small" data-open="pe" data-set="pk=text&pnew=off&pvis=on&pag=high">Edit</button></td></tr>
+          <tr><td><strong>Default</strong><p class="sub">The server's own steps and guidance</p></td><td>Image</td><td class="sub">Shipped</td><td class="r"><button type="button" class="btn small" data-open="pe" data-set="pk=image&pnew=on&pstyle=after">Duplicate</button></td></tr>
+          <tr><td><strong>FLUX.2 Klein 9B</strong></td><td>Image</td><td class="sub">Shipped</td><td class="r"><button type="button" class="btn small" data-open="pe" data-set="pk=image&pnew=on&pstyle=after">Duplicate</button></td></tr>
+          <tr><td><strong>Z-Image Turbo</strong></td><td>Image</td><td class="sub">Shipped</td><td class="r"><button type="button" class="btn small" data-open="pe" data-set="pk=image&pnew=on&pstyle=before">Duplicate</button></td></tr>
+        </tbody>
+      </table>
+      <div class="actions" style="margin-top: var(--s4)">
+        <button type="button" class="btn" data-open="pe" data-set="pk=text&pnew=on&pvis=on&pag=default">New harness</button>
+        <span class="state-line" data-when="psaved=on"><i class="mk on"></i>Harness saved</span>
+      </div>
+    </section>
+  </main>
+
+  <!-- the harness editor -->
+  <dialog class="sheet wide" id="pe" aria-labelledby="pe-h">
+    <h2 id="pe-h"><span data-when="pnew=on">New harness</span><span data-when="pnew=off">Edit “Claude, high”</span></h2>
+    <p>Each setting starts from the harness you begin with. Change only what differs for your model.</p>
+    <div class="row" data-when="pnew=on">
+      <div class="label">For</div>
+      <div class="control"><div class="seg" data-name="pk" role="group" aria-label="Kind of model"><button type="button" data-value="text" aria-pressed="true">Text</button><button type="button" data-value="image" aria-pressed="false">Image</button></div></div>
+    </div>
+    <div class="row" data-when="pnew=on">
+      <div class="label">Start from</div>
+      <div class="control">
+        <span class="select" data-when="pk=text"><select class="field w-m" aria-label="Start from"><option selected>Default</option><option>Default, no vision</option><option>Qwen 3.6 27B</option><option>Claude, high</option></select></span>
+        <span class="select" data-when="pk=image"><select class="field w-m" aria-label="Start from"><option>Default</option><option selected>FLUX.2 Klein 9B</option><option>Z-Image Turbo</option></select></span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="label">Name</div>
+      <div class="control">
+        <input class="field w-m" value="Claude, high" aria-label="Harness name" data-when="pnew=off">
+        <input class="field w-m" placeholder="Name it for its model" aria-label="Harness name" data-when="pnew=on">
+      </div>
+    </div>
+
+    <!-- text -->
+    <div class="row" data-when="pk=text">
+      <div class="label">Vision</div>
+      <div class="control">
+        <label class="switch-label"><input type="checkbox" class="switch" data-name="pvis" checked> Reads the page as an image</label>
+        <p class="hint" data-when="pvis=off">The page goes as text: typed text, the reader's lines and where every mark is. The host places everything, text included.</p>
+      </div>
+    </div>
+    <div class="row" data-when="pk=text&pvis=on">
+      <div class="label">Where things are<small>How it answers when the host asks where something is.</small></div>
+      <div class="control">
+        <span class="select"><select class="field w-l" aria-label="How the model gives positions"><option>Pixels of the image</option><option>Qwen: bbox_2d and point_2d on a 0–1,000 grid</option><option>Gemini: box_2d on 0–1,000, y first</option><option>Molmo: points in percent</option></select></span>
+      </div>
+    </div>
+    <div class="row" data-when="pk=text">
+      <div class="label">How much it drives</div>
+      <div class="control">
+        <div class="seg" data-name="pag" role="group" aria-label="How much of the job the model drives"><button type="button" data-value="default" aria-pressed="true">Default</button><button type="button" data-value="high" aria-pressed="false">High</button></div>
+        <p class="hint" data-when="pag=default">One decision turn, then the host carries out the tasks. What the Qwen harness does.</p>
+        <p class="hint" data-when="pag=high">For models like Claude or ChatGPT: several turns, and the model calls the host's tasks itself.</p>
+      </div>
+    </div>
+    <div class="row" data-when="pk=text">
+      <div class="label">Thinking</div>
+      <div class="control">
+        <div class="seg" data-name="pthink" role="group" aria-label="Thinking"><button type="button" data-value="off" aria-pressed="true">Off</button><button type="button" data-value="on" aria-pressed="false">On</button></div>
+        <span class="meta" data-when="pthink=off">turned off with</span>
+        <span class="select" data-when="pthink=off"><select class="field w-m" aria-label="How thinking is turned off"><option>The service's own setting</option><option>Qwen's template switch</option><option>gpt-oss's reasoning line</option><option>Nothing to send</option></select></span>
+      </div>
+    </div>
+    <div class="row" data-when="pk=text">
+      <div class="label">Context</div>
+      <div class="control"><input class="field w-s num" value="200,000" aria-label="Context in tokens" data-when="pnew=off"><input class="field w-s num" value="32,768" aria-label="Context in tokens" data-when="pnew=on"><span class="meta">tokens, prompt and reply together</span></div>
+    </div>
+
+    <!-- image -->
+    <div class="row" data-when="pk=image">
+      <div class="label">Size</div>
+      <div class="control"><input class="field w-xs num" value="768" aria-label="Width"><span class="times">×</span><input class="field w-xs num" value="1024" aria-label="Height"><span class="meta">px, the largest it draws; a picture fits its box</span></div>
+    </div>
+    <div class="row" data-when="pk=image">
+      <div class="label">Steps</div>
+      <div class="control">
+        <input class="field w-xs num" value="4" aria-label="Steps">
+        <span class="meta">the model may choose</span><input class="field w-xs num" value="4" aria-label="Fewest steps"><span class="times">to</span><input class="field w-xs num" value="12" aria-label="Most steps">
+        <span class="meta">coloring pages</span><input class="field w-xs num" value="12" aria-label="Steps for a coloring page">
+      </div>
+    </div>
+    <div class="row" data-when="pk=image">
+      <div class="label">Guidance</div>
+      <div class="control"><input class="field w-xs num" value="1.0" aria-label="Guidance"><span class="meta">1.0 for a distilled model</span></div>
+    </div>
+    <div class="row" data-when="pk=image">
+      <div class="label">Style in the prompt</div>
+      <div class="control"><div class="seg" data-name="pstyle" role="group" aria-label="Where the style goes"><button type="button" data-value="after" aria-pressed="true">After the subject</button><button type="button" data-value="before" aria-pressed="false">Before the subject</button></div></div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn" data-close>Cancel</button>
+      <button type="button" class="btn primary" data-close data-then="psaved=on">Save harness</button>
+    </div>
+  </dialog>
+</div>
+</body>
+</html>

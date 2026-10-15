@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tablet · PaperDaemon</title>
+<link rel="stylesheet" href="paper.css">
+<script src="mockup.js" defer></script>
+</head>
+<body>
+<div class="app" data-state="tok=saved&conn=idle&pull=idle&folder=off&copied=off&tags=idle&inbox=idle&loc=idle&rb=none&rolled=none">
+  <nav class="rail" aria-label="PaperDaemon">
+    <a class="wordmark" href="index.html">PaperDaemon</a>
+    <ul class="nav">
+      <li><a href="overview.html">Overview <span class="state"><i class="mk busy"></i>Working</span></a></li>
+      <li><a href="notepads.html">Notepads <span class="state num">5</span></a></li>
+      <li><a href="decompose.html">Decompose and send</a></li>
+      <li><a href="benchmark.html">Benchmark <span class="state num">10/12</span></a></li>
+    </ul>
+    <ul class="nav">
+      <li><a href="tablet.html" aria-current="page">Tablet <span class="state" data-when="tok!=removed"><i class="mk on"></i>Connected</span><span class="state" data-when="tok=removed"><i class="mk off"></i>Signed out</span></a></li>
+      <li><a href="models.html">Models <span class="state"><i class="mk on"></i>Ready</span></a></li>
+      <li><a href="search.html">Search <span class="state"><i class="mk on"></i>On</span></a></li>
+      <li><a href="capabilities.html">Capabilities <span class="state num">9 on</span></a></li>
+      <li><a href="network.html">Network <span class="state num">2 addresses</span></a></li>
+    </ul>
+    <div class="rail-foot">
+      <p class="meta">Engine on <code>127.0.0.1:8770</code><br>Version 0.1.0</p>
+    </div>
+  </nav>
+
+  <main class="page">
+    <header class="page-head">
+      <h1>Tablet</h1>
+      <p>How PaperDaemon reaches your reMarkable, which tags it answers to, and every write it has made to your cloud library.</p>
+    </header>
+
+    <section class="section" aria-labelledby="h-conn">
+      <h2 id="h-conn">Connection</h2>
+      <div class="row">
+        <div class="label">Sign-in<small>PaperDaemon reaches the reMarkable cloud through the desktop app's sign-in.</small></div>
+        <div class="control">
+          <div class="actions" data-when="tok=saved|checked">
+            <span class="secret"><i class="mk on"></i>Using the desktop app's sign-in · kept in the Windows credential store</span>
+            <button type="button" class="btn" data-set="tok=checked">Check again</button>
+            <button type="button" class="btn danger" data-open="dlg-token">Stop using it</button>
+          </div>
+          <p class="hint" data-when="tok=checked">Checked just now: the desktop app's sign-in is unchanged.</p>
+          <div class="actions" data-when="tok=removed">
+            <span class="secret"><i class="mk off"></i>Not signed in</span>
+            <button type="button" class="btn primary" data-set="tok=saved&conn=tested">Use the desktop app's sign-in</button>
+          </div>
+          <p class="hint attn" data-when="tok=removed">The daemon has stopped and nothing syncs until PaperDaemon uses a sign-in again.</p>
+          <p class="hint">PaperDaemon and the desktop app share one device. Removing that device at my.remarkable.com signs out both.</p>
+        </div>
+      </div>
+      <div class="row" data-when="tok!=removed">
+        <div class="label">Connection</div>
+        <div class="control">
+          <button type="button" class="btn" data-set="conn=tested">Test connection</button>
+          <span class="state-line"><i class="mk on"></i>Connected · library generation 4,127</span>
+          <span class="meta" data-when="conn=idle">checked 09:40</span>
+          <span class="meta" data-when="conn=tested">checked just now, in 0.6 s</span>
+        </div>
+      </div>
+      <div class="row" data-when="tok!=removed">
+        <div class="label">Change notifications<small>How the daemon hears about changes.</small></div>
+        <div class="control">
+          <span class="state-line value"><i class="mk on"></i>Connected to the cloud's push channel</span>
+          <p class="hint">If the channel drops, the daemon reconnects on its own.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="h-copy">
+      <h2 id="h-copy">PaperDaemon's copy of your library</h2>
+      <div class="row">
+        <div class="label">Last pull</div>
+        <div class="control" data-when="pull=idle">
+          <span class="value num">09:41 · 2 files in, 0 removed</span>
+          <button type="button" class="btn" data-set="pull=pulling" data-when="tok!=removed">Pull now</button>
+        </div>
+        <div class="control stack" data-when="pull=pulling">
+          <p class="num">Pulling 1 of 2 changed documents · 38 KB of 212 KB</p>
+          <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="2" aria-valuenow="1" aria-label="Documents pulled"><i style="width: 50%"></i></div>
+          <p class="hint">Only what changed since 09:41 is fetched.</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="label">Where it lives<small>PaperDaemon's own files. The reMarkable desktop app's files are never touched.</small></div>
+        <div class="control">
+          <input id="mirror-path" class="field mono grow" readonly value="%APPDATA%\PaperDaemon\mirror" aria-label="Mirror folder">
+          <button type="button" class="btn" data-set="folder=on">Open folder</button>
+          <button type="button" class="btn quiet" data-copy="mirror-path" data-set="copied=on"><span data-when="copied=off">Copy path</span><span data-when="copied=on">Copied</span></button>
+          <p class="hint" data-when="folder=on">Opened in File Explorer.</p>
+          <p class="hint num">412 documents · 1.8 GB. Anything in the tablet's trash is treated as gone.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="h-tags">
+      <h2 id="h-tags">Tags</h2>
+      <div class="row">
+        <div class="label">Ask with<small>The tag that sends a page to PaperDaemon.</small></div>
+        <div class="control">
+          <input class="field mono w-s" value="PaperDaemon" aria-label="Trigger tag">
+          <p class="hint">Tag a page, or a whole notebook or folder, with it.</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="label">Never pick up<small>A tag of its own, the same for everyone.</small></div>
+        <div class="control">
+          <code class="mono">ignore</code>
+          <p class="hint">On a folder, a notebook or a page: nothing there is ever answered, whatever else it is tagged.</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="label">Standing instructions<small>A tag of its own, the same for everyone.</small></div>
+        <div class="control">
+          <code class="mono">sprompt</code>
+          <p class="hint">On a page only: the page holds its notebook's instructions for every job in the notebook, used word for word, whatever other tags are there. It is never answered itself.</p>
+        </div>
+      </div>
+      <div class="actions" style="margin-top: var(--s4)">
+        <button type="button" class="btn primary" data-set="tags=saved">Save tags</button>
+        <span class="sub" data-when="tags=saved">Saved at 09:52. The three tags must all differ, and they do.</span>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="h-inbox">
+      <h2 id="h-inbox">Inbox</h2>
+      <div class="row">
+        <div class="label">Inbox<small>On the tablet: a folder, then a notebook.</small></div>
+        <div class="control">
+          <input class="field mono w-m" value="PaperDaemon/inbox" aria-label="Inbox on the tablet: a folder, then a notebook">
+          <button type="button" class="btn" data-set="inbox=saved">Save</button>
+          <p class="hint" data-when="inbox=saved">Saved at 09:52.</p>
+          <p class="hint">Pictures sent from Decompose and send become new pages here. PaperDaemon makes the notebook, and any folder on its path, on the first send, and tags it with the mute tag so its pages are never answered. Documents a job files go in the same folder.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="h-loc">
+      <h2 id="h-loc">Location</h2>
+      <div class="row">
+        <div class="label">Place<small>For weather, holidays and sunrise. Leave it empty and jobs show none of them.</small></div>
+        <div class="control">
+          <input class="field w-m" value="Springfield" aria-label="Place">
+          <input class="field num w-s" value="39.80" aria-label="Latitude">
+          <input class="field num w-s" value="-89.64" aria-label="Longitude">
+          <input class="field mono w-xs" value="US-IL" aria-label="Holiday region">
+          <button type="button" class="btn" data-set="loc=saved">Save</button>
+          <p class="hint" data-when="loc=saved">Saved at 09:52. The next week calendar uses it.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="h-writes">
+      <header><h2 id="h-writes">Recent cloud writes</h2><span class="meta">last 7 days</span></header>
+      <p class="section-note">Before every write, PaperDaemon records the notebook as it was. Rolling back restores that one notebook; your other notebooks are not touched.</p>
+      <table class="list">
+        <thead><tr><th>When</th><th>What changed</th><th class="r">Undo</th></tr></thead>
+        <tbody>
+          <tr><td class="nowrap"><time>09:41</time></td><td>Garden plans: page 3 changed</td><td class="r"><button type="button" class="btn quiet small" data-set="rb=garden" data-open="dlg-rollback" data-when="rolled!=garden">Roll back this job</button><span class="meta" data-when="rolled=garden">Rolled back at 09:52</span></td></tr>
+          <tr><td class="nowrap"><time>09:13</time></td><td>Reading log: page 12 changed</td><td class="r"><button type="button" class="btn quiet small" data-set="rb=reading" data-open="dlg-rollback" data-when="rolled!=reading">Roll back this job</button><span class="meta" data-when="rolled=reading">Rolled back at 09:52</span></td></tr>
+          <tr><td class="nowrap"><time>08:57</time></td><td>Sketches: page 8 added</td><td class="r"><button type="button" class="btn quiet small" data-set="rb=sketches" data-open="dlg-rollback" data-when="rolled!=sketches">Roll back this job</button><span class="meta" data-when="rolled=sketches">Rolled back at 09:52</span></td></tr>
+          <tr><td class="nowrap"><time>08:32</time></td><td>Week planner: page 1 changed</td><td class="r"><button type="button" class="btn quiet small" data-set="rb=week" data-open="dlg-rollback" data-when="rolled!=week">Roll back this job</button><span class="meta" data-when="rolled=week">Rolled back at 09:52</span></td></tr>
+          <tr><td class="nowrap"><time>07:49</time></td><td>Field notes: page 9 changed</td><td class="r"><button type="button" class="btn quiet small" data-set="rb=field" data-open="dlg-rollback" data-when="rolled!=field">Roll back this job</button><span class="meta" data-when="rolled=field">Rolled back at 09:52</span></td></tr>
+          <tr><td class="nowrap"><time>Sep 25, 18:20</time></td><td>Inbox: new page 3, “Leaf study”</td><td class="r"><button type="button" class="btn quiet small" data-set="rb=inbox" data-open="dlg-rollback" data-when="rolled!=inbox">Undo this send</button><span class="meta" data-when="rolled=inbox">Undone at 09:52</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</div>
+
+<dialog class="sheet" id="dlg-rollback" aria-labelledby="dlg-rollback-t">
+  <h2 id="dlg-rollback-t">
+    <span data-when="rb=garden">Roll back Garden plans to 09:41?</span>
+    <span data-when="rb=reading">Roll back Reading log to 09:13?</span>
+    <span data-when="rb=sketches">Roll back Sketches to 08:57?</span>
+    <span data-when="rb=week">Roll back Week planner to 08:32?</span>
+    <span data-when="rb=field">Roll back Field notes to 07:49?</span>
+    <span data-when="rb=inbox">Undo the send of Sep 25, 18:20?</span>
+  </h2>
+  <p data-when="rb!=inbox">The notebook goes back to how it was just before PaperDaemon changed it. Your other notebooks are not touched.</p>
+  <p data-when="rb=reading">You wrote in Reading log after 09:13. Those edits go back too.</p>
+  <p data-when="rb=inbox">Page 3, the page that send added to PaperDaemon/inbox, is removed. Nothing else changes.</p>
+  <p>The notebook as it is now is recorded first, so this can be undone.</p>
+  <div class="actions">
+    <button type="button" class="btn" data-close>Cancel</button>
+    <button type="button" class="btn danger" data-close data-then="rolled=garden" data-when="rb=garden">Roll back</button>
+    <button type="button" class="btn danger" data-close data-then="rolled=reading" data-when="rb=reading">Roll back</button>
+    <button type="button" class="btn danger" data-close data-then="rolled=sketches" data-when="rb=sketches">Roll back</button>
+    <button type="button" class="btn danger" data-close data-then="rolled=week" data-when="rb=week">Roll back</button>
+    <button type="button" class="btn danger" data-close data-then="rolled=field" data-when="rb=field">Roll back</button>
+    <button type="button" class="btn danger" data-close data-then="rolled=inbox" data-when="rb=inbox">Undo send</button>
+  </div>
+</dialog>
+
+<dialog class="sheet" id="dlg-token" aria-labelledby="dlg-token-t">
+  <h2 id="dlg-token-t">Stop using the desktop app's sign-in?</h2>
+  <p>PaperDaemon stops syncing and the daemon stops noticing tagged pages. Your copy of the library stays on this computer.</p>
+  <p>The desktop app stays signed in. Removing the device at my.remarkable.com would sign out both.</p>
+  <div class="actions"><button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn danger" data-close data-then="tok=removed">Stop using it</button></div>
+</dialog>
+</body>
+</html>

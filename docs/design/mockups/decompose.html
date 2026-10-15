@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decompose and send · PaperDaemon</title>
+<link rel="stylesheet" href="paper.css">
+<script src="mockup.js" defer></script>
+<style>
+  .source { display: block; aspect-ratio: 4 / 5; border: 1px solid var(--edge); background: var(--field); color: var(--ink); }
+  .true-colors .source { background: #FFFFFF; color: #111111; }
+  .source svg { display: block; width: 100%; height: 100%; }
+  .previews { display: grid; grid-template-columns: repeat(2, minmax(0, 260px)); gap: var(--s6); margin-top: var(--s4); align-items: end; }
+  .drop .file { display: flex; gap: var(--s3); align-items: baseline; justify-content: center; flex-wrap: wrap; color: var(--ink); }
+  .drop.empty-drop { padding: var(--s7) var(--s5); cursor: pointer; }
+  .drop.empty-drop svg { width: 40px; height: 52px; color: var(--edge); }
+  .waiting { display: grid; place-items: center; aspect-ratio: 1404 / 1872; border: 1px dashed var(--edge); color: var(--ink-3); text-align: center; padding: var(--s4); }
+  .send-bar { margin-top: var(--s6); padding-top: var(--s4); border-top: 1px solid var(--ink); }
+</style>
+</head>
+<body>
+<div class="app" data-state="img=none&dec=off&sent=off">
+  <nav class="rail" aria-label="PaperDaemon">
+    <a class="wordmark" href="index.html">PaperDaemon</a>
+    <ul class="nav">
+      <li><a href="overview.html">Overview <span class="state"><i class="mk busy"></i>Working</span></a></li>
+      <li><a href="notepads.html">Notepads <span class="state num">5</span></a></li>
+      <li><a href="decompose.html" aria-current="page">Decompose and send</a></li>
+      <li><a href="benchmark.html">Benchmark <span class="state num">10/12</span></a></li>
+    </ul>
+    <ul class="nav">
+      <li><a href="tablet.html">Tablet <span class="state"><i class="mk on"></i>Connected</span></a></li>
+      <li><a href="models.html">Models <span class="state"><i class="mk on"></i>Ready</span></a></li>
+      <li><a href="search.html">Search <span class="state"><i class="mk on"></i>On</span></a></li>
+      <li><a href="capabilities.html">Capabilities <span class="state num">9 on</span></a></li>
+      <li><a href="network.html">Network <span class="state num">2 addresses</span></a></li>
+    </ul>
+    <div class="rail-foot">
+      <p class="meta">Engine on <code>127.0.0.1:8770</code><br>Version 0.1.0</p>
+    </div>
+  </nav>
+
+  <main class="page">
+    <header class="page-head">
+      <h1>Decompose and send</h1>
+      <p>Turn an image into pen strokes and send it to the tablet, where every line can be erased and drawn over like your own.</p>
+    </header>
+
+    <section class="section" aria-labelledby="h-img">
+      <h2 id="h-img">Image</h2>
+      <div class="drop empty-drop" style="margin-top: var(--s4)" data-when="img=none" data-set="img=leaf&dec=off&sent=off">
+        <svg viewBox="0 0 40 52" aria-hidden="true"><rect x="1" y="1" width="38" height="50" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M20 34V16M13 23l7-7 7 7" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+        <p><strong>Drop an image here</strong></p>
+        <p class="sub">or <button type="button" class="btn small" data-set="img=leaf&dec=off&sent=off">choose a file</button>. PNG, JPEG or WebP. It stays in memory and is never saved.</p>
+      </div>
+      <div class="drop" style="margin-top: var(--s4)" data-when="img=leaf">
+        <div class="file"><strong>leaf-study.png</strong><span class="meta num">1,600 × 2,000 px · 1.2 MB</span></div>
+        <p class="sub">Drop another image here to replace it, or <button type="button" class="btn quiet small" data-set="img=leaf&dec=off&sent=off">choose a file</button>. PNG, JPEG or WebP.</p>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="h-prev" data-when="img=leaf">
+      <h2 id="h-prev">Preview</h2>
+      <div class="actions" style="margin-top: var(--s4)">
+        <span class="meta">Size</span>
+        <input class="field num w-s" type="number" value="1200" min="200" max="1400" step="50" aria-label="Size on the page in tablet pixels">
+        <span class="meta">tablet pixels, 200 to 1,400</span>
+        <button type="button" class="btn" data-class="primary:dec=off" data-set="dec=on&sent=off">Decompose</button>
+      </div>
+      <div class="previews true-colors">
+        <figure class="figure">
+          <div class="source">
+            <svg viewBox="0 0 320 400" role="img" aria-label="The source image: a potted plant on a table">
+              <rect width="320" height="400" fill="currentColor" opacity=".05"/>
+              <rect y="330" width="320" height="70" fill="currentColor" opacity=".13"/>
+              <g fill="currentColor">
+                <path opacity=".5" d="M160 262C128 222 104 204 86 160C118 168 146 200 160 262Z"/>
+                <path opacity=".68" d="M160 262C188 212 216 194 240 156C208 166 174 202 160 262Z"/>
+                <path opacity=".8" d="M160 262C152 200 154 148 166 96C182 146 176 208 160 262Z"/>
+                <path opacity=".42" d="M160 262C136 236 110 234 88 222C114 214 140 226 160 262Z"/>
+                <path opacity=".6" d="M160 262C186 240 212 242 232 232C208 222 180 228 160 262Z"/>
+                <path opacity=".72" d="M116 274H204L194 346H126Z"/>
+                <rect opacity=".88" x="110" y="260" width="100" height="16"/>
+              </g>
+            </svg>
+          </div>
+          <figcaption><h3>Original</h3><p class="meta">Tones and fills, as the file has them</p></figcaption>
+        </figure>
+        <figure class="figure" data-when="dec=off">
+          <div class="waiting"><p>The strokes appear here<br>once you decompose.</p></div>
+          <figcaption><h3>As strokes</h3><p class="meta">Choose a size, then Decompose</p></figcaption>
+        </figure>
+        <figure class="figure" data-when="dec=on">
+          <div class="pg">
+            <svg viewBox="0 0 300 400" role="img" aria-label="Preview: the plant drawn as pen strokes on a tablet page">
+              <defs><clipPath id="pot"><path d="M106 264H194L184 334H116Z"/></clipPath></defs>
+              <g class="ph" stroke-width="1.6">
+                <path d="M150 252C118 212 94 194 76 150C108 158 136 190 150 252Z"/>
+                <path d="M150 252C178 202 206 184 230 146C198 156 164 192 150 252Z"/>
+                <path d="M150 252C142 190 144 138 156 86C172 136 166 198 150 252Z"/>
+                <path d="M150 252C126 226 100 224 78 212C104 204 130 216 150 252Z"/>
+                <path d="M150 252C176 230 202 232 222 222C198 212 170 218 150 252Z"/>
+                <path d="M106 264H194L184 334H116ZM100 250H200V266H100Z"/>
+                <path d="M40 334H260"/>
+              </g>
+              <g class="ph soft" stroke-width="1">
+                <path d="M150 252C128 214 104 186 80 154M150 252C176 210 204 180 226 150M150 252C150 196 152 140 156 92M150 252C128 236 104 224 82 214M150 252C174 238 198 228 218 224"/>
+              </g>
+              <g class="ph" stroke-width="1" clip-path="url(#pot)">
+                <path d="M100 270L200 170M100 280L200 180M100 290L200 190M100 300L200 200M100 310L200 210M100 320L200 220M100 330L200 230M100 340L200 240M100 350L200 250M100 360L200 260M100 370L200 270M100 380L200 280M100 390L200 290M100 400L200 300M100 410L200 310M100 420L200 320M100 430L200 330"/>
+              </g>
+            </svg>
+          </div>
+          <figcaption><h3>As strokes</h3><p class="meta num">1,284 strokes · fineliner and pencil · decomposed in 11 s</p></figcaption>
+        </figure>
+      </div>
+
+      <div class="send-bar" data-when="dec=on">
+        <div class="actions" data-when="sent=off|undone">
+          <span class="meta">Inbox</span>
+          <input class="field mono w-m" value="PaperDaemon/inbox" aria-label="Inbox: a folder, then a notebook">
+          <button type="button" class="btn primary" data-set="sent=on">Send</button>
+        </div>
+        <p class="hint sub" style="margin-top: var(--s2)" data-when="sent=off|undone">A folder, then a notebook. PaperDaemon makes any that don't exist on the first send.</p>
+        <p class="notice" style="margin-top: var(--s3)" data-when="sent=undone"><strong>Send undone.</strong> Page 14 is gone from <code>PaperDaemon/inbox</code>. Nothing else changed.</p>
+        <div data-when="sent=on">
+          <span class="state-line"><i class="mk on"></i>Sent to <code>PaperDaemon/inbox</code>, page 14 · 1,284 strokes</span>
+          <div class="actions" style="margin-top: var(--s4)">
+            <button type="button" class="btn" data-open="dlg-undo">Undo this send</button>
+            <button type="button" class="btn quiet" data-set="img=none&dec=off&sent=off">Send another image</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<dialog class="sheet" id="dlg-undo" aria-labelledby="dlg-undo-t">
+  <h2 id="dlg-undo-t">Undo the send to PaperDaemon/inbox?</h2>
+  <p>Page 14, the page this send added, is removed from the notebook and the tablet. Nothing else changes.</p>
+  <div class="actions"><button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn danger" data-close data-then="sent=undone">Undo send</button></div>
+</dialog>
+</body>
+</html>

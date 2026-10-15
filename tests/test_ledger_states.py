@@ -1,0 +1,63 @@
+"""The daemon's page states (ledger.classify): new, waiting (nothing on the page yet), baseline (an old page an
+inherited tag reached), done, reopened (the page changed), retagged (the same page, its tag taken off and put
+back), and a dead worker's claim given back."""
+from paperdaemon import ledger
+
+
+def found(key="aaaaaaaa/bbbbbbbb", sha="s1", empty=False, tag_ts="100", inherited=None, modifed="100", tag="paperdaemon"):
+    return {"key": key, "doc": "Notes", "doc_id": "doc-" + key[:8], "page_id": key[9:], "page": 1, "tag": tag,
+            "instruction": "", "tag_ts": tag_ts, "inherited": inherited, "modifed": modifed, "scope": "page",
+            "state": {"sha": sha, "raw": "raw-" + sha, "empty": empty}}
+
+
+def status(f, led):
+    return ledger.classify([f], led)[0]["status"]
+
+
+def test_a_page_goes_through_its_states():
+    led = {"entries": {}, "watching_since": 0}
+    assert status(found(empty=True), led) == "WAITING"        # tagged before its ink arrived
+    assert status(found(), led) == "PENDING"                  # now it has something on it
+    e = led["entries"]["aaaaaaaa/bbbbbbbb"]
+    e.update(status="done", handled_sha="s1", handled_tag_ts="100")
+    assert status(found(), led) == "DONE"                     # unchanged: nothing to do
+    assert status(found(sha="s2"), led) == "REOPENED"         # the user wrote on it again
+    e.update(status="done", handled_sha="s2", handled_tag_ts="100")
+    assert status(found(sha="s2", tag_ts="200"), led) == "RETAGGED"   # the tag taken off and put back
+    e.update(status="done", handled_sha="s2", handled_tag_ts="200")
+    assert status(found(sha="s3", empty=True, tag_ts="200"), led) == "WAITING"   # cleared: wait for a request
+
+
+def test_a_new_page_is_new_and_an_old_page_under_an_inherited_tag_is_a_baseline():
+    assert status(found(), {"entries": {}, "watching_since": 0}) == "NEW"
+    old = found(inherited="collection", tag_ts=str(10 ** 12), modifed="1000")    # written long before the tag
+    led = {"entries": {}, "watching_since": 0}
+    assert status(old, led) == "BASELINE" and led["entries"][old["key"]]["status"] == "skipped"
+
+
+def test_a_dead_workers_claim_is_given_back():
+    led = {"entries": {}, "watching_since": 0}
+    status(found(), led)
+    led["entries"]["aaaaaaaa/bbbbbbbb"].update(status="working", claim_owner="host", claim_at=0)
+    assert status(found(), led) == "PENDING"
+    assert "claim_owner" not in led["entries"]["aaaaaaaa/bbbbbbbb"]
+
+
+def test_pages_already_tagged_when_paperdaemon_starts_are_never_a_backlog():
+    led = {"entries": {}}                                        # a new install's first look
+    assert status(found(tag_ts="1700000000000"), led) == "BASELINE"
+    assert led["entries"]["aaaaaaaa/bbbbbbbb"]["status"] == "skipped"
+    since = led["watching_since"]
+    # a page met later whose tag is older than the watch: still not a job
+    assert status(found(key="cccccccc/dddddddd", tag_ts=str((since - 60) * 1000)), led) == "BASELINE"
+    # a tag put on after PaperDaemon began watching: a job
+    assert status(found(key="eeeeeeee/ffffffff", tag_ts=str((since + 5) * 1000)), led) == "NEW"
+    # the old page comes back once its tag is put on again
+    assert status(found(tag_ts=str((since + 9) * 1000)), led) == "RETAGGED"
+
+
+def test_pages_tagged_before_watching_are_not_listed_as_jobs(monkeypatch):
+    led = {"entries": {}}
+    status(found(tag_ts="1700000000000"), led)
+    monkeypatch.setattr(ledger, "entries", lambda state=None: led["entries"])
+    assert ledger.jobs() == []

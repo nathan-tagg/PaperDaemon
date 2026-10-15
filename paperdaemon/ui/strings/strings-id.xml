@@ -1,0 +1,524 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PaperDaemon's interface text, Bahasa Indonesia. Names are "screen.thing"; {placeholders} are filled in by the window. -->
+<resources>
+  <string name="pair.title">Pasangkan jendela ini</string>
+  <string name="pair.intro">Mesin hanya menerima permintaan yang membawa token pemasangannya. Buka jendela PaperDaemon sendiri agar dipasangkan otomatis, atau tempel token yang ditampilkan di Jaringan pada komputer yang menjalankannya.</string>
+  <string name="pair.token">Token pemasangan</string>
+  <string name="pair.go">Pasangkan</string>
+  <string name="pair.empty">Tempel token pemasangan terlebih dahulu.</string>
+  <string name="pair.refused">Mesin tidak menerima token itu.</string>
+  <string name="fatal.title">Mesin tidak menjawab</string>
+  <string name="common.try_again">Coba lagi</string>
+  <string name="pair.window_refused">Mesin tidak menerima token jendela ini.</string>
+  <string name="rail.engine_on">Mesin menyala</string>
+  <string name="rail.version">Versi {version}</string>
+  <string name="api.no_answer">Mesin tidak menjawab. Apakah PaperDaemon masih berjalan?</string>
+  <string name="api.unpaired">Jendela ini belum dipasangkan dengan mesin.</string>
+  <string name="api.not_offered">Mesin belum menyediakan ini ({route}).</string>
+  <string name="day.today">Hari ini</string>
+  <string name="day.yesterday">Kemarin</string>
+  <string name="unit.seconds">{n} dtk</string>
+  <string name="unit.minutes">{n} mnt</string>
+  <string name="unit.hours">{n} jam</string>
+  <string name="mirror.building_pct">Membangun Cermin, {pct}%</string>
+  <string name="mirror.pct">Cermin {pct}%</string>
+  <string name="mirror.bar">Membangun Cermin: {done} dari {total} · {bytes} dari {bytes_total} · {pct}%</string>
+  <string name="mirror.bar_start">Membangun Cermin: {files} · {bytes} sejauh ini</string>
+  <string name="count.document.one">{n} dokumen</string>
+  <string name="count.document.other">{n} dokumen</string>
+  <string name="count.file.one">{n} berkas</string>
+  <string name="count.file.other">{n} berkas</string>
+  <string name="mirror.name">Cermin</string>
+  <string name="login.privacy">Login Anda tetap di komputer ini dan hanya dipakai dengan cloud reMarkable. Halaman Anda tidak dikirim ke mana pun, kecuali Anda menghubungkan model cloud atau pencarian web; maka hanya yang dibutuhkan sebuah tugas yang dikirim ke layanan itu.</string>
+  <string name="login.borrow.title">Pinjam login aplikasi reMarkable</string>
+  <string name="login.borrow.body">PaperDaemon menyalin login aplikasi desktop reMarkable ke Pengelola Kredensial Windows. Aplikasi tetap masuk. Keduanya memakai login yang sama, jadi hanya salah satu yang bisa berjalan pada satu waktu.</string>
+  <string name="login.borrow.action">Pinjam login</string>
+  <string name="login.steal.title">⚠ Ambil alih login aplikasi reMarkable</string>
+  <string name="login.steal.body">PaperDaemon menyalin login aplikasi desktop reMarkable ke Pengelola Kredensial Windows, lalu menghapusnya dari pengaturan aplikasi di registri Windows. Aplikasi akan keluar; saat Anda masuk lagi, aplikasi menjadi perangkat terpisah. Tutup aplikasi reMarkable terlebih dahulu.</string>
+  <string name="login.steal.action">Ambil alih login</string>
+  <string name="login.not_found">Aplikasi reMarkable belum masuk di komputer ini. Pasang aplikasinya, masuk, lalu coba lagi.</string>
+  <string name="login.not_kept">Login aplikasi ditemukan, tetapi PaperDaemon tidak dapat menyimpannya.</string>
+  <string name="login.not_kept_why">Login aplikasi ditemukan, tetapi PaperDaemon tidak dapat menyimpannya: {why}</string>
+  <string name="login.stolen">PaperDaemon memegang login, dan aplikasi reMarkable sudah keluar. Masuk lagi ke aplikasi untuk memakainya sebagai perangkat tersendiri.</string>
+  <string name="login.borrowed">PaperDaemon memakai login aplikasi reMarkable. Biarkan aplikasi tertutup selama PaperDaemon berjalan.</string>
+  <string name="job.failed">Gagal</string>
+  <string name="job.working">Dikerjakan</string>
+  <string name="job.skipped">Dilewati</string>
+  <string name="job.waiting">Menunggu</string>
+  <string name="job.done">Selesai</string>
+  <string name="job.unknown">Tidak diketahui</string>
+  <string name="job.page">hlm. {n}</string>
+  <string name="jobs.unreadable">Tugas tidak dapat dibaca.</string>
+  <string name="jobs.reading">Membaca tugas…</string>
+  <string name="jobs.none">Belum ada tugas.</string>
+  <string name="jobs.none_hint">Beri tag {tag} pada sebuah halaman di tablet Anda.</string>
+  <string name="count.job.one">{n} tugas</string>
+  <string name="count.job.other">{n} tugas</string>
+  <string name="jobs.n_failed">{n} gagal</string>
+  <string name="jobs.n_skipped">{n} dilewati</string>
+  <string name="jobs.earlier">Sebelumnya</string>
+  <string name="jobs.so_far">{time} sejauh ini</string>
+  <string name="jobs.a_page">Sebuah halaman</string>
+  <string name="jobs.no_note">Tanpa catatan</string>
+  <string name="jobs.col.time">Waktu</string>
+  <string name="jobs.col.page">Halaman</string>
+  <string name="jobs.col.status">Status</string>
+  <string name="jobs.col.what">Apa yang terjadi</string>
+  <string name="jobs.col.took">Lama</string>
+  <string name="jobs.label">Tugas</string>
+  <string name="issue.setup">Penyiapan belum selesai.</string>
+  <string name="issue.setup_go">Lanjutkan penyiapan</string>
+  <string name="issue.tablet">PaperDaemon tidak dapat menjangkau reMarkable Anda.</string>
+  <string name="issue.mirror">Cermin tidak dapat diperbarui: {why}</string>
+  <string name="issue.not_started">PaperDaemon tidak berjalan: {why}</string>
+  <string name="term.daemon">Daemon</string>
+  <string name="term.daemon_about">Mengawasi tablet Anda untuk halaman bertag dan menyerahkan masing-masing ke host sebagai tugas.</string>
+  <string name="term.host">Host</string>
+  <string name="term.host_about">Mengerjakan setiap tugas: membaca halaman, bertanya kepada model, dan menulis jawabannya kembali di halaman.</string>
+  <string name="term.empty">Belum ada apa-apa.</string>
+  <string name="loop.pausing">Menjeda…</string>
+  <string name="loop.starting">Memulai…</string>
+  <string name="loop.pause">Jeda Daemon (Membebaskan VRAM)</string>
+  <string name="loop.start">Mulai</string>
+  <string name="overview.label">Ringkasan</string>
+  <string name="overview.needs_you">Ada yang perlu Anda tangani</string>
+  <string name="loop.running">Berjalan</string>
+  <string name="loop.paused">Dijeda</string>
+  <string name="common.choose">Pilih…</string>
+  <string name="common.help">Bantuan</string>
+  <string name="settings.label">Pengaturan</string>
+  <string name="settings.prefs">Preferensi</string>
+  <string name="settings.prefs_to_set">Preferensi yang perlu diatur</string>
+  <string name="settings.note">Luangkan waktu sejenak untuk mengatur preferensi Anda: cara PaperDaemon menulis suhu, waktu, dan minggu di halaman Anda.</string>
+  <string name="settings.language">Bahasa</string>
+  <string name="settings.language.help">Bahasa jendela PaperDaemon sendiri. Mengubahnya akan memuat ulang jendela.</string>
+  <string name="settings.temperature">Suhu</string>
+  <string name="settings.temperature.help">Di kalender dan dalam tulisan PaperDaemon.</string>
+  <string name="settings.temperature.f">Fahrenheit (°F)</string>
+  <string name="settings.temperature.c">Celsius (°C)</string>
+  <string name="settings.clock">Jam</string>
+  <string name="settings.clock.12">12 jam (2:30 PM)</string>
+  <string name="settings.clock.24">24 jam (14:30)</string>
+  <string name="settings.week">Minggu dimulai pada</string>
+  <string name="day.sunday">Minggu</string>
+  <string name="day.monday">Senin</string>
+  <string name="day.saturday">Sabtu</string>
+  <string name="settings.remarkable">reMarkable</string>
+  <string name="settings.login.none">Tidak terhubung</string>
+  <string name="settings.login.borrowing">Meminjam login aplikasi reMarkable</string>
+  <string name="settings.login.steal">Ambil alih saja</string>
+  <string name="settings.login.stolen">Terhubung dengan login sendiri, diambil alih dari aplikasi reMarkable</string>
+  <string name="settings.login.connected">Terhubung</string>
+  <string name="settings.inbox">Kotak masuk Urai</string>
+  <string name="settings.inbox.help">Buku catatan tempat Kirim ke Tablet menambahkan halaman. PaperDaemon tidak pernah menjawab di sana, apa pun tag-nya.</string>
+  <string name="settings.inbox.placeholder">Pilih buku catatan</string>
+  <string name="settings.inbox.pick">Pilih buku catatan dari daftar.</string>
+  <string name="settings.location">Lokasi</string>
+  <string name="settings.location.help">Untuk cuaca, matahari terbit, dan hari libur di kalender.</string>
+  <string name="settings.location.placeholder">Mulai ketik nama kota</string>
+  <string name="settings.location.pick">Pilih kota dari daftar.</string>
+  <string name="settings.ignore">Tag abaikan</string>
+  <string name="settings.ignore.help">Pasang tag ini pada folder, buku catatan, atau halaman di tablet Anda, dan PaperDaemon tidak pernah mengerjakan apa pun di sana, untuk semua formasi, apa pun tag lainnya.</string>
+  <string name="settings.sprompt">Tag instruksi tetap</string>
+  <string name="settings.sprompt.help">Pasang tag ini pada satu halaman di buku catatan dan tulis instruksi di sana. PaperDaemon menambahkan teks halaman itu di akhir instruksi setiap tugas di buku catatan tersebut, dan tidak pernah mengerjakan halaman itu sendiri.</string>
+  <string name="settings.network">Akses jaringan</string>
+  <string name="settings.network.help">Cuaca, postingan media sosial, Wikipedia, dan pencarian web. Model Anda dan cloud reMarkable tidak terpengaruh.</string>
+  <string name="settings.network.allow">Izinkan akses jaringan</string>
+  <string name="settings.social">Situs sosial</string>
+  <string name="settings.social.help">Tempat permintaan postingan mencari ketika tidak menyebut situs. Situs yang disebut selalu dicari.</string>
+  <string name="settings.tools">Alat</string>
+  <string name="settings.updates">Pembaruan</string>
+  <string name="settings.updates.help">PaperDaemon tidak pernah memeriksa sendiri.</string>
+  <string name="settings.version">Versi {version}</string>
+  <string name="settings.updates.check">Periksa pembaruan</string>
+  <string name="settings.updates.installed_only">Pembaruan diperiksa oleh aplikasi yang terpasang, dari menu baki atau dari sini.</string>
+  <string name="settings.logs">Log</string>
+  <string name="settings.logs.help">Apa yang baru-baru ini ditulis daemon, host, dan mesin, sebagai halaman di kotak masuk Anda.</string>
+  <string name="settings.logs.send">Kirim log ke kotak masuk</string>
+  <string name="settings.logs.no_inbox">Atur kotak masuk di atas terlebih dahulu</string>
+  <string name="settings.logs.sent">Terkirim: {pages} di {inbox}, mulai halaman {first}.</string>
+  <string name="settings.logs.the_inbox">kotak masuk</string>
+  <string name="count.page.one">{n} halaman</string>
+  <string name="count.page.other">{n} halaman</string>
+  <string name="tablet.read">{pct}% terbaca</string>
+  <string name="tablet.page_of">Halaman {page} dari {pages}</string>
+  <string name="common.reading">Membaca…</string>
+  <string name="tablet.my_files">Berkas saya</string>
+  <string name="tablet.arriving">Masih berdatangan…</string>
+  <string name="tablet.empty">Folder ini kosong.</string>
+  <string name="viewer.pages">Halaman</string>
+  <string name="viewer.chapters">Bab</string>
+  <string name="viewer.goto">Ke halaman (1 - {last})</string>
+  <string name="viewer.goto_aria">Ke halaman, 1 sampai {last}</string>
+  <string name="viewer.prev">Halaman sebelumnya</string>
+  <string name="viewer.next">Halaman berikutnya</string>
+  <string name="viewer.reading_chapters">Membaca bab…</string>
+  <string name="viewer.not_drawn">Halaman ini tidak dapat digambar.</string>
+  <string name="viewer.page">Halaman {n}</string>
+  <string name="viewer.go_to">Ke halaman {n}</string>
+  <string name="common.close">Tutup</string>
+  <string name="tablet.label">Tablet</string>
+  <string name="tablet.folder">Folder</string>
+  <string name="dc.decomposing">Mengurai {name}</string>
+  <string name="dc.drop">Letakkan gambar di sini, atau {choose}.</string>
+  <string name="dc.choose">pilih berkas</string>
+  <string name="dc.on_page">Di halaman #{n}</string>
+  <string name="dc.sending">Mengirim…</string>
+  <string name="dc.send">Kirim ke Tablet</string>
+  <string name="dc.no_inbox">Atur kotak masuk di tab Pengaturan</string>
+  <string name="dc.look">Lihat lebih dekat</string>
+  <string name="dc.size_px">{w} × {h} px</string>
+  <string name="count.stroke.one">{n} goresan</string>
+  <string name="count.stroke.other">{n} goresan</string>
+  <string name="common.delete">Hapus</string>
+  <string name="dc.size_range">Ukurannya 200 sampai 1.400 piksel tablet.</string>
+  <string name="dc.picture">Gambar</string>
+  <string name="dc.bad_type">Berkas itu bukan gambar PNG, JPEG, atau WebP.</string>
+  <string name="dc.too_big">Gambar itu berukuran {size}. Pakai yang di bawah {max}.</string>
+  <string name="dc.unreadable">Berkas tidak dapat dibaca.</string>
+  <string name="dc.drop_what">Letakkan berkas gambar, atau gambar dari halaman web.</string>
+  <string name="dc.label">Urai</string>
+  <string name="dc.intro">Ubah gambar menjadi goresan pena dan kirim ke tablet, tempat setiap garis bisa dihapus dan digambar ulang seperti milik Anda sendiri.</string>
+  <string name="dc.image">Gambar</string>
+  <string name="dc.size">Ukuran</string>
+  <string name="dc.size_unit">piksel tablet, 200 sampai 1.400</string>
+  <string name="dc.types">PNG, JPEG, WebP</string>
+  <string name="dc.decomps">Hasil urai</string>
+  <string name="lineup.unreadable">Formasi tidak dapat dibaca.</string>
+  <string name="memories.note">Apa yang telah dipelajari model formasi ini tentang bekerja untuk Anda: keluhan, koreksi, cara Anda ingin sesuatu dikerjakan. Model menyimpannya sendiri, tidak pernah catatan Anda atau pekerjaan di sebuah halaman (setiap buku catatan menyimpan konteksnya di notepad-nya), dan setiap tugas formasi ini diperlihatkan kepadanya. Ubah atau hapus yang mana pun di sini.</string>
+  <string name="memories.none">Belum ada ingatan.</string>
+  <string name="memories.none_hint">Model menyimpannya ketika mempelajari sesuatu tentang bekerja untuk Anda.</string>
+  <string name="memories.count">{n} dari {max}</string>
+  <string name="memories.saved_on">Disimpan {date}</string>
+  <string name="memories.one">Ingatan</string>
+  <string name="memories.saved">Ingatan disimpan.</string>
+  <string name="memories.deleted">Ingatan dihapus.</string>
+  <string name="lineup.label">Formasi</string>
+  <string name="lineup.new_option">+ Formasi baru…</string>
+  <string name="lineup.rename">Ganti nama</string>
+  <string name="tab.text">Teks / Penalaran</string>
+  <string name="tab.image">Gambar</string>
+  <string name="tab.network">Jaringan</string>
+  <string name="tab.tags">Penandaan</string>
+  <string name="tab.memories">Ingatan</string>
+  <string name="tab.tests">Uji</string>
+  <string name="common.saved">Tersimpan.</string>
+  <string name="common.no_answer">Tidak ada jawaban.</string>
+  <string name="lineup.test_no_answer">Tidak ada jawaban. Periksa penyedia, model, dan kuncinya.</string>
+  <string name="memories.delete_q">Hapus ingatan ini?</string>
+  <string name="memories.delete_body">Model tidak akan diperlihatkan ingatan ini lagi.</string>
+  <string name="lineup.new">Formasi baru</string>
+  <string name="lineup.rename_title">Ganti nama formasi</string>
+  <string name="lineup.name">Nama</string>
+  <string name="lineup.delete_q">Hapus {name}?</string>
+  <string name="lineup.delete_body">Model, pencarian web, tag, dan ingatannya ikut terhapus.</string>
+  <string name="common.disclaimer">Penafian</string>
+  <string name="common.cancel">Batal</string>
+  <string name="slot.other_provider">Lainnya (kompatibel dengan OpenAI)</string>
+  <string name="slot.harness_auto">Otomatis (dari nama model)</string>
+  <string name="slot.harness">Harness</string>
+  <string name="slot.add_harness">+ Tambah Harness</string>
+  <string name="slot.none">Tidak ada</string>
+  <string name="slot.api_key">Kunci API</string>
+  <string name="slot.local">Jalankan secara lokal</string>
+  <string name="slot.source">Sumber</string>
+  <string name="slot.provider">Penyedia</string>
+  <string name="slot.address">Alamat</string>
+  <string name="slot.model">Model</string>
+  <string name="slot.saved">tersimpan</string>
+  <string name="common.test">Uji</string>
+  <string name="slot.script_label">Start.bat - kosongkan jika tidak perlu skrip mulai</string>
+  <string name="slot.script">Skrip mulai</string>
+  <string name="net.search">Pencarian web</string>
+  <string name="net.service_key">Layanan pencarian, dengan kunci API</string>
+  <string name="net.service">Layanan</string>
+  <string name="net.script">Skrip mulai pencarian</string>
+  <string name="tags.note">Setiap tag di sini diawasi oleh formasi ini: beri tag pada halaman, buku catatan, atau folder di tablet Anda dan formasi ini mengerjakannya. Sebuah halaman mendapat prompt dari tag formasi ini yang ada padanya, pada buku catatannya, dan pada folder di atasnya, sesuai urutan daftar ini (seret kartu lewat pegangannya untuk memindahkannya); halaman instruksi tetap milik buku catatan itu sendiri datang terakhir. Simpan satu tag dengan prompt kosong, untuk halaman yang tidak memerlukan tambahan apa pun. Satu tag hanya bisa dimiliki satu formasi.</string>
+  <string name="tags.move">Pindahkan {name} (tombol panah)</string>
+  <string name="tags.this">tag ini</string>
+  <string name="tags.drag">Seret untuk mengurutkan</string>
+  <string name="tags.tag">Tag</string>
+  <string name="common.remove">Hapus</string>
+  <string name="tags.prompt">Prompt</string>
+  <string name="tags.prompt_blank">Kosong: halaman tidak mendapat prompt tambahan</string>
+  <string name="tags.add">+ Tambah tag</string>
+  <string name="common.testing">Menguji…</string>
+  <string name="common.answering">Menjawab</string>
+  <string name="np.list_unreadable">Notepad tidak dapat dibaca.</string>
+  <string name="np.reading_list">Membaca notepad…</string>
+  <string name="np.no_match">Tidak ada buku catatan yang cocok.</string>
+  <string name="np.summary">{entries} · {chars} karakter</string>
+  <string name="count.entry.one">{n} entri</string>
+  <string name="count.entry.other">{n} entri</string>
+  <string name="np.undated">Tanpa tanggal</string>
+  <string name="np.show_fewer">Tampilkan lebih sedikit</string>
+  <string name="np.show_older.one">Tampilkan {n} entri lama</string>
+  <string name="np.show_older.other">Tampilkan {n} entri lama</string>
+  <string name="np.select">Pilih buku catatan untuk membaca notepad-nya.</string>
+  <string name="np.wiped_at">Dikosongkan pukul {time}.</string>
+  <string name="np.wiped_body">Semua entri hilang, dan tidak ada salinan yang disimpan. Tugas berikutnya di {name} dimulai dengan notepad kosong.</string>
+  <string name="np.copy">Salin teks</string>
+  <string name="np.wipe">Kosongkan notepad</string>
+  <string name="np.not_wiped">Notepad tidak dikosongkan.</string>
+  <string name="np.unreadable">Notepad ini tidak dapat dibaca.</string>
+  <string name="np.reading">Membaca notepad…</string>
+  <string name="np.empty">Notepad ini kosong.</string>
+  <string name="np.show">Tampilkan</string>
+  <string name="np.entries">Entri</string>
+  <string name="np.as_text">Sebagai teks</string>
+  <string name="np.none">Belum ada notepad.</string>
+  <string name="np.this_notebook">buku catatan ini</string>
+  <string name="np.wipe_q">Kosongkan notepad {name}?</string>
+  <string name="np.wipe_body">Semua {entries} dihapus, dan tidak ada salinan yang disimpan. Tugas berikutnya di {name} dimulai dengan notepad kosong.</string>
+  <string name="np.wipe_body2">Permainan yang tersimpan di notepad ini juga ikut hilang. Buku catatan Anda di tablet tidak disentuh.</string>
+  <string name="np.label">Notepad</string>
+  <string name="np.intro">Ingatan setiap buku catatan tentang tugas-tugasnya. Setelah setiap tugas, host mencatat apa yang diminta dan apa yang dilakukannya, dan tugas berikutnya di buku catatan itu diperlihatkan entri terbaru, sehingga percakapan bisa berlanjut dari halaman ke halaman.</string>
+  <string name="np.books">Buku catatan dengan notepad</string>
+  <string name="np.find">Cari buku catatan</string>
+  <string name="common.copied">Tersalin</string>
+  <string name="common.copy_failed">Tidak dapat menyalin</string>
+  <string name="nw.this_computer">· komputer ini, selalu aktif</string>
+  <string name="nw.cannot_remove">tidak dapat dihapus</string>
+  <string name="nw.remove_addr">Hapus {address}</string>
+  <string name="nw.url_label">Alamat untuk perangkat lain</string>
+  <string name="common.copy">Salin</string>
+  <string name="nw.local_only">Hanya dari komputer ini, sampai Anda menambahkan alamat.</string>
+  <string name="nw.token">Token pemasangan</string>
+  <string name="nw.hide">Sembunyikan</string>
+  <string name="nw.show">Tampilkan</string>
+  <string name="nw.rotate">Ganti…</string>
+  <string name="nw.rotated_at">Diganti pukul {time}.</string>
+  <string name="nw.rotated_body">Setiap perangkat yang dipasangkan memerlukan token baru. Jendela ini tersambung kembali dengan sendirinya.</string>
+  <string name="nw.token_kept">Disimpan di penyimpanan kredensial Windows. Jendela ini memasangkan dirinya sendiri.</string>
+  <string name="nw.saved_restart">Disimpan pukul {time}. Berlaku saat PaperDaemon dimulai ulang.</string>
+  <string name="nw.rotate_q">Ganti token pemasangan?</string>
+  <string name="nw.rotate_body">Setiap perangkat yang dipasangkan berhenti bekerja sampai Anda memberinya token baru. Jendela ini tersambung kembali dengan sendirinya.</string>
+  <string name="nw.rotate_action">Ganti token</string>
+  <string name="nw.label">Jaringan</string>
+  <string name="count.address.one">{n} alamat</string>
+  <string name="count.address.other">{n} alamat</string>
+  <string name="nw.intro">Mesin melayani jendela ini, dan setiap perangkat yang Anda pasangkan, dari satu port di komputer ini.</string>
+  <string name="nw.listens">Tempat mesin mendengarkan</string>
+  <string name="nw.port">Port</string>
+  <string name="nw.save_port">Simpan port</string>
+  <string name="nw.port_hint">Ubah hanya jika program lain sudah memakainya. Mesin memakai port baru setelah PaperDaemon dimulai ulang.</string>
+  <string name="nw.addresses">Alamat</string>
+  <string name="nw.addresses_hint">Tambahkan alamat WireGuard Anda untuk menjangkau PaperDaemon dari ponsel atau komputer lain.</string>
+  <string name="nw.another">Alamat lain</string>
+  <string name="nw.to_add">Alamat yang akan ditambahkan</string>
+  <string name="nw.add">Tambah alamat</string>
+  <string name="nw.trust">Hanya tambahkan alamat di jaringan yang Anda percayai. Setiap permintaan, dari mana pun, harus membawa token pemasangan.</string>
+  <string name="nw.reach">Jangkau di</string>
+  <string name="nw.pairing">Pemasangan</string>
+  <string name="nw.token_hint">Ketikkan sekali di sebuah perangkat untuk memasangkannya.</string>
+  <string name="nw.bad_address">Itu bukan alamat IP. Gunakan bentuk seperti 10.8.0.2.</string>
+  <string name="nw.listed">{address} sudah ada di daftar.</string>
+  <string name="su.connect">Hubungkan reMarkable Anda</string>
+  <string name="su.mirror">Cermin</string>
+  <string name="su.finish">Selesai</string>
+  <string name="su.building_pct">Membangun Cermin, {pct}%</string>
+  <string name="su.taking">Mengambil login…</string>
+  <string name="su.steal_instead">Ambil alih login saja</string>
+  <string name="su.borrow_instead">Pinjam login saja</string>
+  <string name="su.connected_how">Terhubung · {how}</string>
+  <string name="su.borrowed">Dipinjam</string>
+  <string name="su.stolen">Diambil alih</string>
+  <string name="su.continue">Lanjutkan</string>
+  <string name="su.mirror_lead">Salinan pustaka Anda milik PaperDaemon. Dibangun di latar belakang; Anda bisa lanjut.</string>
+  <string name="su.connect_first">Hubungkan reMarkable Anda terlebih dahulu.</string>
+  <string name="su.connecting">Menghubungkan…</string>
+  <string name="su.mirror_complete">Cermin sudah lengkap</string>
+  <string name="su.cloud_silent">Cloud tidak menjawab.</string>
+  <string name="su.lineup_lead">Model teks wajib ada. Model gambar dan pencarian web opsional.</string>
+  <string name="su.lineup_unreadable">Formasi tidak dapat dibaca.</string>
+  <string name="su.need_address">Model teks memerlukan alamat.</string>
+  <string name="su.need_name">Formasi memerlukan nama.</string>
+  <string name="su.finish_lead">PaperDaemon akan dimulai dengan konfigurasi berikut.</string>
+  <string name="su.proceed">Lanjut ke PaperDaemon</string>
+  <string name="su.automatic">Otomatis</string>
+  <string name="su.local_at">Dijalankan secara lokal di {address}</string>
+  <string name="su.local_at_script">Dijalankan secara lokal di {address} · dengan Start.bat</string>
+  <string name="su.harness_is">Harness: {harness}</string>
+  <string name="su.building">Membangun · {pct}%</string>
+  <string name="su.complete">Lengkap</string>
+  <string name="su.not_built">Belum dibangun</string>
+  <string name="su.tags">Tag</string>
+  <string name="su.no_tags">Tidak ada: tidak ada halaman yang dijawab sampai Anda menambahkannya</string>
+  <string name="su.steps">Langkah penyiapan</string>
+  <string name="su.later">Siapkan nanti</string>
+  <string name="su.title">Penyiapan · PaperDaemon</string>
+  <string name="ts.failed">Gagal</string>
+  <string name="ts.running">Berjalan</string>
+  <string name="ts.passed">Lulus</string>
+  <string name="ts.waiting">Menunggu</string>
+  <string name="ts.stop">Hentikan uji</string>
+  <string name="ts.run">Jalankan uji</string>
+  <string name="ts.not_started">Uji tidak dimulai.</string>
+  <string name="ts.partly">Sebagian</string>
+  <string name="ts.unreadable">Hasil uji tidak dapat dibaca.</string>
+  <string name="ts.result">Hasil</string>
+  <string name="ts.cases_done">Kasus selesai</string>
+  <string name="ts.passed_of">{n} dari {total} lulus</string>
+  <string name="ts.intro">Hanya uji terakhir yang disimpan, dan setiap perubahan pada formasi membatalkannya.</string>
+  <string name="help.model.title">Cara kerja skrip mulai</string>
+  <string name="help.model.intro">Skrip mulai adalah berkas batch Windows kecil (sebuah `.bat`) yang menjalankan server model Anda. Anda menulisnya sekali. Setelah itu, PaperDaemon menjalankannya untuk Anda setiap kali sebuah tugas memerlukan model ini, jadi Anda tidak perlu menjalankan server secara manual.</string>
+  <string name="help.h_do">Yang harus dilakukan skrip Anda</string>
+  <string name="help.model.do1">Menjalankan server agar menjawab di alamat pada kotak di atas, misalnya `http://127.0.0.1:8790`. PaperDaemon memberikan port itu ke skrip Anda sebagai `%PAPERDAEMON_PORT%`.</string>
+  <string name="help.model.do2">Tetap berjalan selama server berjalan. Jalankan server secara langsung, bukan dengan `start` (itu membukanya di jendela lain dan skrip langsung berakhir, sehingga PaperDaemon mengira servernya hilang).</string>
+  <string name="help.do_output">Biarkan server mencetak pesannya. PaperDaemon menampilkan baris terakhirnya di sini jika ada yang salah.</string>
+  <string name="help.h_runs">Kapan PaperDaemon menjalankannya</string>
+  <string name="help.model.runs1">Pertama kali sebuah tugas memerlukan model ini.</string>
+  <string name="help.model.runs2">Ketika tag sebuah halaman milik formasi yang skrip mulainya berbeda dari yang sedang berjalan. PaperDaemon menghentikan server yang dijalankannya sebelumnya, lalu menjalankan yang ini.</string>
+  <string name="help.model.runs3">Tidak ketika server yang dijalankan skrip ini sudah berjalan.</string>
+  <string name="help.h_stops">Kapan PaperDaemon menghentikannya</string>
+  <string name="help.model.stops">Ketika Anda menjeda atau menutup PaperDaemon, atau ketika skrip mulai formasi lain harus berjalan. PaperDaemon menghentikan semua yang dijalankan skrip Anda. PaperDaemon tidak pernah menghentikan program yang tidak dijalankannya.</string>
+  <string name="help.h_wrong">Hal yang bisa salah</string>
+  <string name="help.model.wrong_vram">**Kartu grafis penuh.** Sebuah model memerlukan ruang di memori kartu Anda (VRAM). Jika server model lain, game, atau alat gambar sedang memakai memori itu, model gagal dimuat atau berjalan sangat lambat. Jika Anda sendiri menjalankan server model lain, buat skrip Anda menghentikannya terlebih dahulu (misalnya `taskkill /IM llama-server.exe /F`). PaperDaemon hanya menghentikan yang dijalankannya.</string>
+  <string name="help.model.wrong_two">**Dua model yang tidak muat bersama.** Jika model teks dan model gambar Anda tidak muat bersamaan di kartu, tulis setiap skrip agar menghentikan server yang lain sebelum menjalankan servernya sendiri.</string>
+  <string name="help.model.wrong_port">**Port sudah dipakai.** Jika program lain sudah memakai port itu, server Anda tidak bisa berjalan di sana. Pilih port yang kosong dan pakai port yang sama di alamat di atas.</string>
+  <string name="help.wrong_spaces">**Spasi di jalur.** Beri tanda kutip pada setiap jalur yang berisi spasi.</string>
+  <string name="help.model.wrong_keys">**Kunci dan kata sandi.** Jangan menuliskannya di skrip. Pakai kotak kunci untuk kunci API.</string>
+  <string name="help.h_try">Cobalah</string>
+  <string name="help.model.try">Buka tab Uji dan tekan **Jalankan uji**.</string>
+  <string name="help.search.title">Cara kerja skrip mulai pencarian</string>
+  <string name="help.search.intro">Skrip mulai pencarian adalah berkas batch Windows kecil (sebuah `.bat`) yang menjalankan server pencarian Anda sendiri, biasanya SearXNG. PaperDaemon menjalankannya untuk Anda ketika sebuah tugas perlu mencari sesuatu dan server pencarian Anda tidak menjawab.</string>
+  <string name="help.search.do1">Menjalankan server pencarian agar menjawab di alamat pada kotak di atas.</string>
+  <string name="help.search.do2">Tetap berjalan selama server berjalan. Jalankan secara langsung, bukan dengan `start`.</string>
+  <string name="help.search.runs">Sebelum setiap pencarian, PaperDaemon meminta pencarian uji ke alamat di atas. Jika server SearXNG menjawab dengan benar, PaperDaemon memakainya apa adanya, siapa pun yang menjalankannya, dan tidak menjalankan skrip. PaperDaemon menjalankan skrip hanya ketika tidak ada yang menjawab, atau ketika yang menjawab bukan server pencarian yang bisa dipakainya.</string>
+  <string name="help.search.stops">Ketika Anda menjeda atau menutup PaperDaemon. PaperDaemon menghentikan semua yang dijalankan skrip Anda, dan tidak pernah program yang tidak dijalankannya.</string>
+  <string name="help.search.wrong_json">**JSON dimatikan.** SearXNG hanya menjawab program seperti PaperDaemon jika JSON diaktifkan di `settings.yml`-nya: di bawah `search:` → `formats:`, cantumkan `html` dan `json`.</string>
+  <string name="help.search.wrong_docker">**Docker.** Kontainer Docker tetap berjalan setelah PaperDaemon ditutup, karena Docker yang menjalankannya, bukan skrip Anda. Menjalankan SearXNG di WSL (Subsistem Windows untuk Linux) atau dengan Python menghindari hal itu.</string>
+  <string name="help.search.wrong_port">**Port sudah dipakai.** Jika program lain sudah memakai port itu, server tidak bisa berjalan di sana, dan PaperDaemon tidak bisa memperbaikinya untuk Anda. Pilih port yang kosong dan pakai port yang sama di alamat di atas.</string>
+  <string name="help.search.try">Tekan **Uji** di samping alamat.</string>
+  <string name="help.ask">Minta bantuan AI</string>
+  <string name="help.copied">Prompt disalin ke papan klip!</string>
+  <string name="help.copy_failed">Prompt tidak dapat disalin</string>
+  <string name="help.model.prompt_text">Saya sedang menyiapkan PaperDaemon, aplikasi untuk tablet reMarkable saya yang menjalankan model AI di PC Windows saya. Saya memerlukan berkas batch Windows (.bat) yang menjalankan server model teks (LLM). PaperDaemon menjalankan skrip ini sendiri setiap kali memerlukan model itu, dan menghentikannya setelah selesai.
+
+Aturan yang harus diikuti skrip:
+- Jalankan server agar menjawab HTTP di 127.0.0.1 pada port yang diberikan PaperDaemon di %PAPERDAEMON_PORT%.
+- Jalankan server di latar depan dan biarkan skrip tetap berjalan selama server berjalan. Jangan pakai `start`.
+- Cetak keluaran server.
+- PaperDaemon juga mengatur %PAPERDAEMON_ROLE% (text atau image), %PAPERDAEMON_LOCATION% (alamat lengkap), %PAPERDAEMON_OTHER_LOCATION% (alamat model lainnya), %PAPERDAEMON_LINEUP% dan %PAPERDAEMON_DATA%.
+- PaperDaemon hanya menghentikan program yang dijalankannya. Jika server model lain mungkin memakai memori kartu grafis saya, skrip harus menghentikannya terlebih dahulu.
+- Server harus berbicara dengan API chat yang kompatibel dengan OpenAI (/v1/chat/completions), seperti llama-server dari llama.cpp, Ollama, LM Studio, atau vLLM.
+
+Sebelum menulisnya, ajukan pertanyaan-pertanyaan ini satu per satu dan tunggu setiap jawaban:
+1. Kartu grafis apa yang saya punya, dan berapa VRAM-nya?
+2. Model apa yang ingin saya jalankan, dan di mana berkas modelnya di PC saya?
+3. Program server apa yang saya pakai (atau ingin pakai), dan di mana terpasangnya?
+4. Port mana yang harus dipakai?
+5. Apakah saya menjalankan server AI atau program lain yang memakai kartu grafis, dan haruskah skrip menghentikannya terlebih dahulu?
+6. Apakah model teks dan model gambar saya muat bersama di kartu, atau haruskah setiap skrip menghentikan yang lain?
+
+Lalu tulis berkas .bat dengan komentar singkat di setiap baris yang menjelaskan fungsinya, dan beri tahu saya cara mengujinya.</string>
+  <string name="help.model.prompt_image">Saya sedang menyiapkan PaperDaemon, aplikasi untuk tablet reMarkable saya yang menjalankan model AI di PC Windows saya. Saya memerlukan berkas batch Windows (.bat) yang menjalankan server model pembuat gambar. PaperDaemon menjalankan skrip ini sendiri setiap kali memerlukan model itu, dan menghentikannya setelah selesai.
+
+Aturan yang harus diikuti skrip:
+- Jalankan server agar menjawab HTTP di 127.0.0.1 pada port yang diberikan PaperDaemon di %PAPERDAEMON_PORT%.
+- Jalankan server di latar depan dan biarkan skrip tetap berjalan selama server berjalan. Jangan pakai `start`.
+- Cetak keluaran server.
+- PaperDaemon juga mengatur %PAPERDAEMON_ROLE% (text atau image), %PAPERDAEMON_LOCATION% (alamat lengkap), %PAPERDAEMON_OTHER_LOCATION% (alamat model lainnya), %PAPERDAEMON_LINEUP% dan %PAPERDAEMON_DATA%.
+- PaperDaemon hanya menghentikan program yang dijalankannya. Jika server model lain mungkin memakai memori kartu grafis saya, skrip harus menghentikannya terlebih dahulu.
+- Server harus berbicara dengan API web UI Stable Diffusion (/sdapi/v1/txt2img), seperti server stable-diffusion.cpp, Forge, atau AUTOMATIC1111, atau dengan API Images OpenAI.
+
+Sebelum menulisnya, ajukan pertanyaan-pertanyaan ini satu per satu dan tunggu setiap jawaban:
+1. Kartu grafis apa yang saya punya, dan berapa VRAM-nya?
+2. Model apa yang ingin saya jalankan, dan di mana berkas modelnya di PC saya?
+3. Program server apa yang saya pakai (atau ingin pakai), dan di mana terpasangnya?
+4. Port mana yang harus dipakai?
+5. Apakah saya menjalankan server AI atau program lain yang memakai kartu grafis, dan haruskah skrip menghentikannya terlebih dahulu?
+6. Apakah model teks dan model gambar saya muat bersama di kartu, atau haruskah setiap skrip menghentikan yang lain?
+
+Lalu tulis berkas .bat dengan komentar singkat di setiap baris yang menjelaskan fungsinya, dan beri tahu saya cara mengujinya.</string>
+  <string name="help.search.prompt">Saya sedang menyiapkan PaperDaemon, aplikasi untuk tablet reMarkable saya yang berjalan di PC Windows saya. Saya memerlukan berkas batch Windows (.bat) yang menjalankan server pencarian SearXNG di PC ini. PaperDaemon menjalankan skrip itu sendiri ketika perlu mencari dan tidak ada yang menjawab, dan menghentikannya ketika PaperDaemon dijeda atau ditutup.
+
+Aturan yang harus diikuti skrip:
+- Jalankan SearXNG agar menjawab HTTP di 127.0.0.1 pada port yang saya pilih.
+- SearXNG harus mengaktifkan keluaran JSON (search: formats: [html, json] di settings.yml).
+- Jalankan server di latar depan dan biarkan skrip tetap berjalan selama server berjalan. Jangan pakai `start`.
+- Cetak keluaran server.
+- Utamakan WSL atau Python daripada Docker: PaperDaemon menghentikan proses milik skrip, tetapi kontainer Docker akan tetap berjalan setelah PaperDaemon ditutup.
+
+Sebelum menulisnya, ajukan pertanyaan-pertanyaan ini satu per satu dan tunggu setiap jawaban:
+1. Apakah saya sudah memasang WSL (Subsistem Windows untuk Linux)? Python? Docker?
+2. Apakah SearXNG sudah terpasang, dan jika ya di mana dan bagaimana?
+3. Port mana yang harus dipakai, dan apakah ada program lain yang sudah memakainya?
+
+Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar singkat di setiap baris yang menjelaskan fungsinya, dan beri tahu saya cara mengujinya.</string>
+  <string name="settings.language.pick">Pilih bahasa dari daftar.</string>
+  <string name="ts.what">Apa</string>
+  <string name="ts.details">Rincian</string>
+  <string name="ts.testing">Menguji: {n} dari {total} selesai</string>
+  <string name="ts.changed">Formasi berubah setelah uji terakhirnya, jadi hasil itu tidak berlaku lagi. Jalankan uji lagi.</string>
+  <string name="ts.never">Formasi ini belum pernah diuji.</string>
+  <string name="ts.whole">Menguji seluruh formasi {name} bersama-sama: model teks dan harness-nya, model gambar dan harness-nya, jaringan, dan tag-nya.</string>
+  <string name="ts.row.model-text">Model teks</string>
+  <string name="ts.row.model-image">Model gambar</string>
+  <string name="ts.row.answer">Menjawab pertanyaan</string>
+  <string name="ts.row.ink">Menjawab pertanyaan tulisan tangan</string>
+  <string name="ts.row.chart">Membuat bagan</string>
+  <string name="ts.row.draw">Menggambar</string>
+  <string name="ts.row.picture">Membuat gambar</string>
+  <string name="ts.row.handwriting">Membaca tulisan tangan</string>
+  <string name="ts.row.search">Mencari di web</string>
+  <string name="ts.row.social">Media sosial</string>
+  <string name="ts.row.weather">Cuaca</string>
+  <string name="ts.m.not_run">Tidak dijalankan</string>
+  <string name="ts.m.no_image">Tidak ada model gambar</string>
+  <string name="ts.m.waiting">Menunggu</string>
+  <string name="ts.m.working">Dikerjakan</string>
+  <string name="ts.m.canceled">Dibatalkan</string>
+  <string name="ts.m.failed">Gagal</string>
+  <string name="ts.m.answered_in">Dijawab dalam {s} dtk</string>
+  <string name="ts.m.done_in">Selesai dalam {s} dtk</string>
+  <string name="ts.m.failed_after">Gagal setelah {s} dtk</string>
+  <string name="ts.m.answers">Menjawab</string>
+  <string name="ts.m.check_failed">{check}: gagal</string>
+  <string name="ts.m.no_answer">Tidak ada jawaban</string>
+  <string name="ts.m.not_set_up">Belum disiapkan</string>
+  <string name="ts.m.network_off">Akses jaringan mati</string>
+  <string name="ts.m.no_results_in">Tidak ada hasil dalam {s} dtk</string>
+  <string name="ts.m.results_in">{n} hasil dalam {s} dtk</string>
+  <string name="ts.m.no_sites">Tidak ada situs yang dipilih</string>
+  <string name="ts.m.site_time">{site} {s} dtk</string>
+  <string name="ts.m.site_failed">{site} gagal</string>
+  <string name="ts.m.no_forecast">Tidak ada prakiraan</string>
+  <string name="ts.m.weather">{t}{unit} dan {sky}, dijawab dalam {s} dtk</string>
+  <string name="ts.m.no_samples">Tidak ada sampel</string>
+  <string name="ts.m.cannot_see">Model tidak dapat melihat</string>
+  <string name="ts.m.no_reading">Tidak ada bacaan</string>
+  <string name="ts.m.nothing_read">Tidak ada yang terbaca</string>
+  <string name="ts.m.words">{pct}% kata, {s} dtk per halaman</string>
+  <string name="ts.d.no_image">Formasi tidak memiliki model gambar.</string>
+  <string name="ts.d.search_setup">Tambahkan layanan pencarian atau server pencarian lokal di tab Jaringan formasi.</string>
+  <string name="ts.d.allow_network">Izinkan di Pengaturan.</string>
+  <string name="ts.d.search_empty">Pencarian kembali kosong.</string>
+  <string name="ts.d.first">Pertama: {title}</string>
+  <string name="ts.d.every_site">Postingan datang dari setiap situs.</string>
+  <string name="ts.d.choose_sites">Pilih situs sosial di Pengaturan.</string>
+  <string name="ts.d.no_forecast">Layanan prakiraan tidak menjawab.</string>
+  <string name="ts.d.weather">Hari ini di {place}: tertinggi {hi}{unit}, terendah {lo}{unit}.</string>
+  <string name="ts.d.weather_london">Lokasi belum diatur, jadi London hari ini: tertinggi {hi}{unit}, terendah {lo}{unit}.</string>
+  <string name="ts.d.samples_missing">Sampel tulisan tangan tidak ada.</string>
+  <string name="ts.d.cannot_see">Model teks formasi tidak menerima gambar, jadi tidak membaca tulisan tangan.</string>
+  <string name="ts.d.words">{right} dari {total} kata di {pages} halaman oleh {pages} penulis dari empat benua ({regions}).</string>
+  <string name="ts.d.text_failed">Model teks tidak lulus pemeriksaannya.</string>
+  <string name="page.gave_up">Tidak bisa menyelesaikan ini; menyerah setelah {n} kali mencoba.</string>
+  <string name="issue.loop_token_unreadable">Koneksi reMarkable tidak dapat dibaca: {why}</string>
+  <string name="issue.loop_gave_up">Sebagian PaperDaemon berhenti {n} kali berturut-turut dan dibiarkan berhenti; log-nya menjelaskan alasannya.</string>
+  <string name="issue.loop_supervisor">Supervisor PaperDaemon mengalami galat: {why}</string>
+  <string name="slot.key_where">Isi alamat server terlebih dahulu: kuncinya disimpan untuk server itu.</string>
+  <string name="slot.source.help">Kunci API: sebuah perusahaan menjalankan modelnya, dan PaperDaemon menjangkaunya dengan kunci Anda. Jalankan secara lokal: server model yang Anda jalankan sendiri, di komputer ini atau di jaringan Anda.</string>
+  <string name="slot.provider.help">Siapa yang menjalankan model. Lainnya: layanan apa pun yang memakai API OpenAI, di alamat yang Anda berikan.</string>
+  <string name="slot.address.help_hosted">Alamat API layanan, misalnya https://api.example.com/v1.</string>
+  <string name="slot.model.help">Nama model persis seperti yang ditulis penyedia.</string>
+  <string name="slot.api_key.help">Disimpan di Pengelola Kredensial Windows, tidak pernah di berkas. Formasi yang memakai server yang sama berbagi kuncinya.</string>
+  <string name="slot.address.help_local">Tempat server model Anda menjawab, misalnya http://127.0.0.1:8080. Jika tidak ada yang menjawab di sana, PaperDaemon menjalankan skrip mulai di bawah.</string>
+  <string name="slot.harness.help">Cara PaperDaemon bekerja dengan model ini: apa yang disampaikan kepadanya dan cara membaca jawabannya. Otomatis memilih satu dari nama model; Tambah Harness membuka folder untuk milik Anda sendiri.</string>
+  <string name="net.source.help">Tempat sebuah tugas mencari informasi: layanan pencarian yang kunci API-nya Anda punya, atau server SearXNG yang Anda jalankan sendiri.</string>
+  <string name="net.service.help">Layanan pencarian pemilik kunci Anda.</string>
+  <string name="net.address.help">Tempat server SearXNG Anda menjawab, misalnya http://127.0.0.1:8888. Jika tidak ada jawaban yang bisa dipakai di sana, PaperDaemon menjalankan skrip mulai di bawah.</string>
+  <string name="tags.tag.help">Tag persis seperti yang Anda pasang di tablet; huruf besar dan kecil tidak berpengaruh.</string>
+  <string name="tags.prompt.help">Ditambahkan ke instruksi setiap tugas di halaman dengan tag ini, atau di buku catatan atau folder yang memilikinya.</string>
+</resources>

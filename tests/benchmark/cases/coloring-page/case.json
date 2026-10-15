@@ -1,0 +1,12 @@
+{
+  "id": "coloring-page",
+  "title": "A coloring page",
+  "kind": "typed",
+  "request": "Make a coloring page of a friendly dragon.",
+  "expect": {
+    "content": "picture"
+  },
+  "doc": "76a513f0-4af9-500a-a96d-553ee41059fb",
+  "page": "3c50db47-a991-54a6-b77c-7c125bc67c45",
+  "tag": "PaperDaemon"
+}

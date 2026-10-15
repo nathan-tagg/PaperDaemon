@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Set up · PaperDaemon</title>
+<link rel="stylesheet" href="paper.css">
+<script src="mockup.js" defer></script>
+<style>
+  .firstrun .page { padding-top: var(--s7); }
+  .step > h2 { padding-bottom: var(--s2); border-bottom: 1px solid var(--ink); margin-top: var(--s6); }
+  .step > p.lead { color: var(--ink-2); margin-top: var(--s3); max-width: 66ch; }
+  .step .actions.next { margin-top: var(--s6); }
+  .done { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: var(--s5); align-items: start; margin-top: var(--s5); }
+  .done .pg { width: 120px; }
+  .slot-h { font: 600 15px/20px var(--font-ui); margin-top: var(--s5); }
+  .tap { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+  .tap:hover { color: var(--ink); }
+  .pull { display: grid; gap: var(--s3); margin-top: var(--s5); max-width: 66ch; }
+  .pull .progress { margin-top: 0; }
+  .ping { margin-left: var(--s2); }
+  .row .code textarea { min-height: 0; }
+  .w-t { width: 200px; }
+</style>
+</head>
+<body>
+<div class="firstrun" data-state="step=1&auth=found&conn=testing&dl=pulling&tkey=none&ikey=none&tping=checking&iping=checking">
+  <nav class="rail" aria-label="Setup steps">
+    <a class="wordmark" href="index.html">PaperDaemon</a>
+    <ol class="steplist">
+      <li data-current="step=1"><i class="mk" data-class="busy:step=1;on:step=2|3|4"></i>Connect your reMarkable</li>
+      <li data-current="step=2"><i class="mk" data-class="off:step=1;busy:step=2;on:step=3|4"></i>Check the connection</li>
+      <li data-current="step=3"><i class="mk" data-class="off:step=1|2;busy:step=3;on:step=4"></i>Choose your models</li>
+      <li data-current="step=4"><i class="mk" data-class="off:step=1|2|3;busy:step=4"></i>Start</li>
+    </ol>
+    <div class="rail-foot">
+      <p class="meta">Everything here can be changed later.</p>
+    </div>
+  </nav>
+
+  <main class="page">
+    <h1>Set up PaperDaemon</h1>
+
+    <!-- 1 -->
+    <section class="step" data-when="step=1">
+      <h2>Connect your reMarkable</h2>
+      <p class="lead">PaperDaemon reaches your library through the reMarkable desktop app's sign-in on this computer.</p>
+      <div class="row">
+        <div class="label">Sign-in</div>
+        <div class="control">
+          <span class="state-line value" data-when="auth=found"><i class="mk on"></i>Found the desktop app's sign-in on this computer</span>
+          <button type="button" class="btn primary" data-set="auth=using" data-when="auth=found">Use this sign-in</button>
+          <span class="secret" data-when="auth=using"><i class="mk on"></i>Using the desktop app's sign-in · kept in the Windows credential store</span>
+          <span class="state-line value" data-when="auth=missing"><i class="mk off"></i>The reMarkable desktop app isn't signed in on this computer. Install it, sign in, then check again.</span>
+          <button type="button" class="btn" data-set="auth=found" data-when="auth=missing">Check again</button>
+          <p class="hint">PaperDaemon and the desktop app then share one device. Removing that device at my.remarkable.com signs out both.</p>
+        </div>
+      </div>
+      <div class="actions next">
+        <button type="button" class="btn primary" data-set="step=2" data-when="auth=using">Continue</button>
+        <button type="button" class="btn quiet small" data-set="auth=missing" data-when="auth=found">Mockup: the desktop app isn't signed in</button>
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section class="step" data-when="step=2">
+      <h2>Check the connection</h2>
+      <div class="pull">
+        <button type="button" class="tap state-line" data-set="conn=ok" data-when="conn=testing"><i class="mk busy"></i>Testing connection…</button>
+        <span class="state-line" data-when="conn=ok"><i class="mk on"></i>Connected</span>
+        <p class="num" data-when="conn=ok&dl=pulling">Pulling 112 of 412 documents · 486 MB of 1.8 GB</p>
+        <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="412" aria-valuenow="112" aria-label="Documents pulled" data-when="conn=ok&dl=pulling"><i style="width: 27%"></i></div>
+        <span class="state-line" data-when="dl=done"><i class="mk on"></i>PaperDaemon's copy is complete: 412 documents, 1.8 GB</span>
+      </div>
+      <div class="actions next">
+        <button type="button" class="btn" data-set="step=1">Back</button>
+        <button type="button" class="btn primary" data-set="step=3" data-when="dl=done">Continue</button>
+        <button type="button" class="btn quiet small" data-set="dl=done" data-when="conn=ok&dl=pulling">Mockup: finish the download</button>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section class="step" data-when="step=3">
+      <h2>Choose your models</h2>
+      <p class="lead">One model reads pages and decides; one draws pictures. Point each at a server on this computer or a remote
+        service, and pick the harness it runs with.</p>
+
+      <p class="slot-h">Text and reasoning</p>
+      <div class="row">
+        <div class="label">Runs</div>
+        <div class="control"><div class="seg" data-name="text" role="group" aria-label="Where the text model runs"><button type="button" data-value="local" aria-pressed="true">On this computer</button><button type="button" data-value="remote" aria-pressed="false">Remote service</button></div></div>
+      </div>
+      <div class="row">
+        <div class="label">Location</div>
+        <div class="control">
+          <input class="field mono w-m" value="http://127.0.0.1:11434/v1" aria-label="Location of the text model" data-when="text=local">
+          <input class="field mono w-m" value="https://api.anthropic.com" aria-label="Location of the text model" data-when="text=remote">
+          <button type="button" class="tap state-line ping" data-set="tping=ok" data-when="tping=checking"><i class="mk busy"></i>Checking…</button>
+          <span class="state-line ping" data-when="tping=ok"><i class="mk on"></i>Answering</span>
+          <p class="notice" data-when="text=remote"><strong>Off this computer.</strong> Your pages will be sent to this service each time one is answered.</p>
+        </div>
+      </div>
+      <div class="row" data-when="text=remote">
+        <div class="label">Key</div>
+        <div class="control">
+          <span class="actions" data-when="tkey=none"><span class="secret"><i class="mk off"></i>No key</span><button type="button" class="btn" data-set="tkey=adding">Add key</button></span>
+          <span class="actions" style="width: 100%" data-when="tkey=adding"><input class="field mono grow" type="password" placeholder="Paste the key" aria-label="Key for the text model" autocomplete="off"><button type="button" class="btn primary" data-set="tkey=saved">Save</button><button type="button" class="btn" data-set="tkey=none">Cancel</button></span>
+          <span class="actions" data-when="tkey=saved"><span class="secret"><i class="mk on"></i>Saved in the Windows credential store · just now</span><button type="button" class="btn" data-set="tkey=adding">Replace</button></span>
+        </div>
+      </div>
+      <div class="row" data-when="text=local">
+        <div class="label">Start.bat<small>If nothing PaperDaemon started answers there.</small></div>
+        <div class="control stack">
+          <div class="actions">
+            <span class="meta">Template</span>
+            <span class="select"><select class="field w-t" data-name="ttmpl" aria-label="Start script template for the text model"><option value="llama" selected>llama.cpp</option><option value="ollama">Ollama</option></select></span>
+          </div>
+          <div class="code" data-when="ttmpl=llama"><div class="gutter"></div><textarea spellcheck="false" rows="13" aria-label="Start script for the text model">@echo off
+rem Frees the graphics card: ends EVERY llama-server and
+rem sd-server on this computer, including ones other apps
+rem started. Delete the two taskkill lines if both models
+rem fit on your card.
+taskkill /IM llama-server.exe /F &gt;nul 2&gt;&amp;1
+taskkill /IM sd-server.exe /F &gt;nul 2&gt;&amp;1
+C:\llama\llama-server.exe ^
+  --model D:\llm\qwen3.6-27b-q4_k_m.gguf ^
+  --mmproj D:\llm\qwen3.6-27b-mmproj.gguf --jinja ^
+  --host 127.0.0.1 --port 11434 --ctx-size 32768 ^
+  --cache-type-k q8_0 --cache-type-v q8_0 ^
+  --n-gpu-layers 99 --flash-attn on --no-mmap</textarea></div>
+          <div class="code" data-when="ttmpl=ollama"><div class="gutter"></div><textarea spellcheck="false" rows="6" aria-label="Start script for the text model">@echo off
+rem Ollama runs as its own app and loads models when asked,
+rem so PaperDaemon never owns it. This runs before every
+rem call, so it only checks that Ollama is up.
+curl -s http://127.0.0.1:11434/api/version &gt;nul 2&gt;&amp;1
+if errorlevel 1 start "" ollama serve</textarea></div>
+          <p class="hint">Leave it empty if you run this server yourself.</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="label">Harness</div>
+        <div class="control">
+          <span class="select"><select class="field w-m" data-name="tprof" aria-label="Harness for the text model"><option value="qwen" selected>Qwen 3.6 27B</option><option value="default">Default</option><option value="novision">Default, no vision</option></select></span>
+          <p class="hint" data-when="tprof=default">For a capable model that sees the page.</p>
+          <p class="hint" data-when="tprof=novision">For a model that can't see: the host places everything, text included.</p>
+        </div>
+      </div>
+
+      <p class="slot-h">Image</p>
+      <div class="row">
+        <div class="label">Runs</div>
+        <div class="control"><div class="seg" data-name="image" role="group" aria-label="Where the image model runs"><button type="button" data-value="local" aria-pressed="true">On this computer</button><button type="button" data-value="remote" aria-pressed="false">Remote service</button><button type="button" data-value="none" aria-pressed="false">None for now</button></div></div>
+      </div>
+      <div class="row" data-when="image=local|remote">
+        <div class="label">Location</div>
+        <div class="control">
+          <input class="field mono w-m" value="http://127.0.0.1:1234" aria-label="Location of the image model" data-when="image=local">
+          <input class="field mono w-m" value="https://images.example.com/v1" aria-label="Location of the image model" data-when="image=remote">
+          <button type="button" class="tap state-line ping" data-set="iping=ok" data-when="iping=checking"><i class="mk busy"></i>Checking…</button>
+          <span class="state-line ping" data-when="iping=ok"><i class="mk on"></i>Answering</span>
+          <p class="hint" data-when="image=local&iping=checking">A model that takes turns on the card may not be running yet. That's fine: PaperDaemon starts it when a job needs a picture.</p>
+          <p class="notice" data-when="image=remote"><strong>Off this computer.</strong> Picture prompts, written from what is on your pages, go to this service.</p>
+        </div>
+      </div>
+      <div class="row" data-when="image=remote">
+        <div class="label">Key</div>
+        <div class="control">
+          <span class="actions" data-when="ikey=none"><span class="secret"><i class="mk off"></i>No key</span><button type="button" class="btn" data-set="ikey=adding">Add key</button></span>
+          <span class="actions" style="width: 100%" data-when="ikey=adding"><input class="field mono grow" type="password" placeholder="Paste the key" aria-label="Key for the image model" autocomplete="off"><button type="button" class="btn primary" data-set="ikey=saved">Save</button><button type="button" class="btn" data-set="ikey=none">Cancel</button></span>
+          <span class="actions" data-when="ikey=saved"><span class="secret"><i class="mk on"></i>Saved in the Windows credential store · just now</span><button type="button" class="btn" data-set="ikey=adding">Replace</button></span>
+        </div>
+      </div>
+      <div class="row" data-when="image=local">
+        <div class="label">Start.bat<small>If nothing PaperDaemon started answers there.</small></div>
+        <div class="control stack">
+          <div class="actions">
+            <span class="meta">Template</span>
+            <span class="select"><select class="field w-t" data-name="itmpl" aria-label="Start script template for the image model"><option value="sdcpp" selected>stable-diffusion.cpp</option><option value="forge">Forge</option></select></span>
+          </div>
+          <div class="code" data-when="itmpl=sdcpp"><div class="gutter"></div><textarea spellcheck="false" rows="11" aria-label="Start script for the image model">@echo off
+rem Frees the graphics card: ends EVERY llama-server and
+rem sd-server on this computer, including ones other apps
+rem started. Delete the two taskkill lines if both models
+rem fit on your card.
+taskkill /IM llama-server.exe /F &gt;nul 2&gt;&amp;1
+taskkill /IM sd-server.exe /F &gt;nul 2&gt;&amp;1
+C:\sd\sd-server.exe ^
+  --diffusion-model D:\llm\flux-2-klein-9b-q8_0.gguf ^
+  --llm D:\llm\qwen3-8b-q8_0.gguf ^
+  --vae D:\llm\flux2-vae.safetensors --listen-port 1234</textarea></div>
+          <div class="code" data-when="itmpl=forge"><div class="gutter"></div><textarea spellcheck="false" rows="9" aria-label="Start script for the image model">@echo off
+rem Frees the graphics card: ends EVERY llama-server and
+rem sd-server on this computer, including ones other apps
+rem started. Delete the two taskkill lines if both models
+rem fit on your card.
+taskkill /IM llama-server.exe /F &gt;nul 2&gt;&amp;1
+taskkill /IM sd-server.exe /F &gt;nul 2&gt;&amp;1
+cd /d C:\Forge
+call webui.bat --api --nowebui --port 1234</textarea></div>
+          <p class="hint">Leave it empty if you run this server yourself.</p>
+        </div>
+      </div>
+      <div class="row" data-when="image=local|remote">
+        <div class="label">Harness</div>
+        <div class="control">
+          <span class="select"><select class="field w-m" data-name="iprof" aria-label="Harness for the image model"><option value="klein" selected>FLUX.2 Klein 9B</option><option value="zimage">Z-Image Turbo</option><option value="default">Default</option></select></span>
+          <p class="hint" data-when="iprof=default">The server's own steps and guidance. A distilled model can come out burned at those; the Models screen can duplicate this and set three numbers.</p>
+        </div>
+      </div>
+      <div class="row" data-when="image=none">
+        <div class="label">Without one</div>
+        <div class="control"><p class="value sub">Pictures and coloring pages stay off. Charts and answers work.</p></div>
+      </div>
+      <div class="actions next"><button type="button" class="btn" data-set="step=2">Back</button><button type="button" class="btn primary" data-set="step=4">Continue</button></div>
+    </section>
+
+    <!-- 4 -->
+    <section class="step" data-when="step=4">
+      <h2>Start</h2>
+      <div class="done">
+        <div class="pg" aria-hidden="true">
+          <svg viewBox="0 0 300 400">
+            <path class="ph" stroke-width="3" d="M30 90c5-14 12-14 14 0s7 12 12 0 7-14 12-2 5 12 11 0 9-9 13 0M104 90c4-11 11-11 13 0s6 10 11-1 8-11 12 0M150 90c5-12 11-10 13 1s7 8 12-2"/>
+            <rect class="ph" stroke-width="2" x="130" y="12" width="152" height="38" rx="4"/>
+            <text x="206" y="39" text-anchor="middle" font-family="Source Code Pro, monospace" font-size="20" fill="currentColor">PaperDaemon</text>
+          </svg>
+        </div>
+        <div>
+          <p>The daemon is listening. On your tablet, tag a page with <span class="tag">PaperDaemon</span>, then write or type a request on it.</p>
+          <p>The host answers on the same page, usually within a minute. Every job shows up in the overview, and every write to your library can be rolled back.</p>
+        </div>
+      </div>
+      <div class="actions next"><button type="button" class="btn" data-set="step=3">Back</button><a class="btn primary" href="overview.html" style="text-decoration: none">Open the overview</a><a class="btn" href="benchmark.html" style="text-decoration: none">Run the benchmark first</a></div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

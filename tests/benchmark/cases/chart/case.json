@@ -1,0 +1,12 @@
+{
+  "id": "chart",
+  "title": "A chart",
+  "kind": "typed",
+  "request": "Make a bar chart of the diameters of the four inner planets.",
+  "expect": {
+    "content": "chart"
+  },
+  "doc": "a516ded0-84a2-5b28-b9b7-e75bf52faf14",
+  "page": "46c55401-e98c-5bde-8938-b86719ac514a",
+  "tag": "PaperDaemon"
+}

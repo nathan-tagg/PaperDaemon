@@ -1,0 +1,540 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PaperDaemon's interface text, Русский. Names are "screen.thing"; {placeholders} are filled in by the window. -->
+<resources>
+  <string name="pair.title">Связать это окно</string>
+  <string name="pair.intro">Движок принимает только запросы с его токеном связи. Откройте собственное окно PaperDaemon, чтобы связать его автоматически, или вставьте токен, показанный в разделе «Сеть» на компьютере, где он работает.</string>
+  <string name="pair.token">Токен связи</string>
+  <string name="pair.go">Связать</string>
+  <string name="pair.empty">Сначала вставьте токен связи.</string>
+  <string name="pair.refused">Движок не принял этот токен.</string>
+  <string name="fatal.title">Движок не ответил</string>
+  <string name="common.try_again">Повторить</string>
+  <string name="pair.window_refused">Движок не принял токен этого окна.</string>
+  <string name="rail.engine_on">Движок работает</string>
+  <string name="rail.version">Версия {version}</string>
+  <string name="api.no_answer">Движок не ответил. PaperDaemon всё ещё работает?</string>
+  <string name="api.unpaired">Это окно не связано с движком.</string>
+  <string name="api.not_offered">Движок пока этого не умеет ({route}).</string>
+  <string name="day.today">Сегодня</string>
+  <string name="day.yesterday">Вчера</string>
+  <string name="unit.seconds">{n} с</string>
+  <string name="unit.minutes">{n} мин</string>
+  <string name="unit.hours">{n} ч</string>
+  <string name="mirror.building_pct">Зеркало создаётся, {pct}%</string>
+  <string name="mirror.pct">Зеркало {pct}%</string>
+  <string name="mirror.bar">Создание Зеркала: {done} из {total} · {bytes} из {bytes_total} · {pct}%</string>
+  <string name="mirror.bar_start">Создание Зеркала: {files} · пока {bytes}</string>
+  <string name="count.document.one">{n} документ</string>
+  <string name="count.document.few">{n} документа</string>
+  <string name="count.document.many">{n} документов</string>
+  <string name="count.document.other">{n} документа</string>
+  <string name="count.file.one">{n} файл</string>
+  <string name="count.file.few">{n} файла</string>
+  <string name="count.file.many">{n} файлов</string>
+  <string name="count.file.other">{n} файла</string>
+  <string name="mirror.name">Зеркало</string>
+  <string name="login.privacy">Ваш вход остаётся на этом компьютере и используется только с облаком reMarkable. Ваши страницы никуда больше не уходят, если только вы не подключите облачную модель или веб-поиск; тогда в этот сервис уходит только то, что нужно заданию.</string>
+  <string name="login.borrow.title">Позаимствовать вход приложения reMarkable</string>
+  <string name="login.borrow.body">PaperDaemon копирует вход настольного приложения reMarkable в диспетчер учётных данных Windows. Приложение остаётся в системе. Оба используют один вход, поэтому одновременно может работать только одно из них.</string>
+  <string name="login.borrow.action">Позаимствовать вход</string>
+  <string name="login.steal.title">⚠ Забрать вход приложения reMarkable</string>
+  <string name="login.steal.body">PaperDaemon копирует вход настольного приложения reMarkable в диспетчер учётных данных Windows, а затем удаляет его из настроек приложения в реестре Windows. Приложение выходит из системы; когда вы снова войдёте в него, оно станет отдельным устройством. Сначала закройте приложение reMarkable.</string>
+  <string name="login.steal.action">Забрать вход</string>
+  <string name="login.not_found">На этом компьютере приложение reMarkable не выполнило вход. Установите его, войдите и попробуйте снова.</string>
+  <string name="login.not_kept">Вход приложения найден, но PaperDaemon не смог его сохранить.</string>
+  <string name="login.not_kept_why">Вход приложения найден, но PaperDaemon не смог его сохранить: {why}</string>
+  <string name="login.stolen">Вход у PaperDaemon, а приложение reMarkable вышло из системы. Войдите в приложение снова, чтобы использовать его как отдельное устройство.</string>
+  <string name="login.borrowed">PaperDaemon использует вход приложения reMarkable. Держите приложение закрытым, пока работает PaperDaemon.</string>
+  <string name="job.failed">Ошибка</string>
+  <string name="job.working">В работе</string>
+  <string name="job.skipped">Пропущено</string>
+  <string name="job.waiting">Ожидает</string>
+  <string name="job.done">Готово</string>
+  <string name="job.unknown">Неизвестно</string>
+  <string name="job.page">с. {n}</string>
+  <string name="jobs.unreadable">Не удалось прочитать задания.</string>
+  <string name="jobs.reading">Чтение заданий…</string>
+  <string name="jobs.none">Заданий пока нет.</string>
+  <string name="jobs.none_hint">Поставьте на странице на планшете тег {tag}.</string>
+  <string name="count.job.one">{n} задание</string>
+  <string name="count.job.few">{n} задания</string>
+  <string name="count.job.many">{n} заданий</string>
+  <string name="count.job.other">{n} задания</string>
+  <string name="jobs.n_failed">с ошибкой: {n}</string>
+  <string name="jobs.n_skipped">пропущено: {n}</string>
+  <string name="jobs.earlier">Ранее</string>
+  <string name="jobs.so_far">пока {time}</string>
+  <string name="jobs.a_page">Страница</string>
+  <string name="jobs.no_note">Без заметки</string>
+  <string name="jobs.col.time">Время</string>
+  <string name="jobs.col.page">Страница</string>
+  <string name="jobs.col.status">Статус</string>
+  <string name="jobs.col.what">Что произошло</string>
+  <string name="jobs.col.took">Длительность</string>
+  <string name="jobs.label">Задания</string>
+  <string name="issue.setup">Настройка не завершена.</string>
+  <string name="issue.setup_go">Продолжить настройку</string>
+  <string name="issue.tablet">PaperDaemon не может связаться с вашим reMarkable.</string>
+  <string name="issue.mirror">Не удалось обновить Зеркало: {why}</string>
+  <string name="issue.not_started">PaperDaemon не запустился: {why}</string>
+  <string name="term.daemon">Демон</string>
+  <string name="term.daemon_about">Следит за помеченными страницами на планшете и передаёт каждую хосту как задание.</string>
+  <string name="term.host">Хост</string>
+  <string name="term.host_about">Выполняет каждое задание: читает страницу, спрашивает модели и записывает ответ обратно на страницу.</string>
+  <string name="term.empty">Пока ничего.</string>
+  <string name="loop.pausing">Приостановка…</string>
+  <string name="loop.starting">Запуск…</string>
+  <string name="loop.pause">Приостановить демон (освобождает видеопамять)</string>
+  <string name="loop.start">Запустить</string>
+  <string name="overview.label">Обзор</string>
+  <string name="overview.needs_you">Нужно ваше внимание</string>
+  <string name="loop.running">Работает</string>
+  <string name="loop.paused">Приостановлен</string>
+  <string name="common.choose">Выбрать…</string>
+  <string name="common.help">Справка</string>
+  <string name="settings.label">Настройки</string>
+  <string name="settings.prefs">Предпочтения</string>
+  <string name="settings.prefs_to_set">Предпочтения не заданы</string>
+  <string name="settings.note">Задайте свои предпочтения: как PaperDaemon пишет на ваших страницах температуру, время и недели.</string>
+  <string name="settings.language">Язык</string>
+  <string name="settings.language.help">Язык окна PaperDaemon. При смене окно перезагружается.</string>
+  <string name="settings.language.pick">Выберите язык из списка.</string>
+  <string name="settings.temperature">Температура</string>
+  <string name="settings.temperature.help">В календарях и в том, что пишет PaperDaemon.</string>
+  <string name="settings.temperature.f">Фаренгейт (°F)</string>
+  <string name="settings.temperature.c">Цельсий (°C)</string>
+  <string name="settings.clock">Часы</string>
+  <string name="settings.clock.12">12-часовой (2:30 PM)</string>
+  <string name="settings.clock.24">24-часовой (14:30)</string>
+  <string name="settings.week">Неделя начинается с</string>
+  <string name="day.sunday">Воскресенье</string>
+  <string name="day.monday">Понедельник</string>
+  <string name="settings.remarkable">reMarkable</string>
+  <string name="settings.login.none">Не подключено</string>
+  <string name="settings.login.borrowing">Использует заимствованный вход приложения reMarkable</string>
+  <string name="settings.login.steal">Забрать вместо этого</string>
+  <string name="settings.login.stolen">Подключено со своим входом, забранным у приложения reMarkable</string>
+  <string name="settings.login.connected">Подключено</string>
+  <string name="settings.inbox">Входящие для разложения</string>
+  <string name="settings.inbox.help">Блокнот, в который «Отправить на планшет» добавляет страницы. PaperDaemon никогда в нём не отвечает, какие бы теги на нём ни стояли.</string>
+  <string name="settings.inbox.placeholder">Выберите блокнот</string>
+  <string name="settings.inbox.pick">Выберите блокнот из списка.</string>
+  <string name="settings.location">Местоположение</string>
+  <string name="settings.location.help">Для погоды, восхода солнца и праздников в календарях.</string>
+  <string name="settings.location.placeholder">Начните вводить город</string>
+  <string name="settings.location.pick">Выберите город из списка.</string>
+  <string name="settings.ignore">Тег «игнорировать»</string>
+  <string name="settings.ignore.help">Поставьте этот тег на папку, блокнот или страницу на планшете, и PaperDaemon никогда ничего там не обрабатывает, ни для одного состава, какие бы ещё теги там ни были.</string>
+  <string name="settings.sprompt">Тег постоянных указаний</string>
+  <string name="settings.sprompt.help">Поставьте этот тег на одну страницу блокнота и напишите на ней указания. PaperDaemon добавляет текст этой страницы в конец указаний каждого задания в этом блокноте и никогда не обрабатывает саму страницу.</string>
+  <string name="settings.network">Доступ к сети</string>
+  <string name="settings.network.help">Погода, публикации в соцсетях, Википедия и веб-поиск. Ваши модели и облако reMarkable это не затрагивает.</string>
+  <string name="settings.network.allow">Разрешить доступ к сети</string>
+  <string name="settings.social">Соцсети</string>
+  <string name="settings.social.help">Где ищет запрос публикаций, если сайт не назван. Названный сайт ищется всегда.</string>
+  <string name="settings.tools">Инструменты</string>
+  <string name="settings.updates">Обновления</string>
+  <string name="settings.updates.help">PaperDaemon никогда не проверяет сам.</string>
+  <string name="settings.version">Версия {version}</string>
+  <string name="settings.updates.check">Проверить обновления</string>
+  <string name="settings.updates.installed_only">Обновления проверяет установленное приложение, из меню в трее или отсюда.</string>
+  <string name="settings.logs">Журналы</string>
+  <string name="settings.logs.help">Что недавно записали демон, хост и движок — страницами во входящих.</string>
+  <string name="settings.logs.send">Отправить журналы во входящие</string>
+  <string name="settings.logs.no_inbox">Сначала задайте входящие выше</string>
+  <string name="settings.logs.sent">Отправлено: {pages} в {inbox}, начиная со страницы {first}.</string>
+  <string name="settings.logs.the_inbox">входящие</string>
+  <string name="count.page.one">{n} страница</string>
+  <string name="count.page.few">{n} страницы</string>
+  <string name="count.page.many">{n} страниц</string>
+  <string name="count.page.other">{n} страницы</string>
+  <string name="tablet.read">прочитано {pct}%</string>
+  <string name="tablet.page_of">Страница {page} из {pages}</string>
+  <string name="common.reading">Чтение…</string>
+  <string name="tablet.my_files">Мои файлы</string>
+  <string name="tablet.arriving">Ещё поступает…</string>
+  <string name="tablet.empty">Эта папка пуста.</string>
+  <string name="viewer.pages">Страницы</string>
+  <string name="viewer.chapters">Главы</string>
+  <string name="viewer.goto">Перейти к странице (1 - {last})</string>
+  <string name="viewer.goto_aria">Перейти к странице, от 1 до {last}</string>
+  <string name="viewer.prev">Предыдущая страница</string>
+  <string name="viewer.next">Следующая страница</string>
+  <string name="viewer.reading_chapters">Чтение глав…</string>
+  <string name="viewer.not_drawn">Не удалось отрисовать эту страницу.</string>
+  <string name="viewer.page">Страница {n}</string>
+  <string name="viewer.go_to">Перейти к странице {n}</string>
+  <string name="common.close">Закрыть</string>
+  <string name="tablet.label">Планшет</string>
+  <string name="tablet.folder">Папка</string>
+  <string name="dc.decomposing">Разложение {name}</string>
+  <string name="dc.drop">Перетащите изображение сюда или {choose}.</string>
+  <string name="dc.choose">выберите файл</string>
+  <string name="dc.on_page">На странице № {n}</string>
+  <string name="dc.sending">Отправка…</string>
+  <string name="dc.send">Отправить на планшет</string>
+  <string name="dc.no_inbox">Задайте входящие на вкладке «Настройки»</string>
+  <string name="dc.look">Посмотреть вблизи</string>
+  <string name="dc.size_px">{w} × {h} пикс.</string>
+  <string name="count.stroke.one">{n} штрих</string>
+  <string name="count.stroke.few">{n} штриха</string>
+  <string name="count.stroke.many">{n} штрихов</string>
+  <string name="count.stroke.other">{n} штриха</string>
+  <string name="common.delete">Удалить</string>
+  <string name="dc.size_range">Размер — от 200 до 1400 пикселей планшета.</string>
+  <string name="dc.picture">Изображение</string>
+  <string name="dc.bad_type">Этот файл не изображение PNG, JPEG или WebP.</string>
+  <string name="dc.too_big">Размер изображения {size}. Используйте изображение меньше {max}.</string>
+  <string name="dc.unreadable">Не удалось прочитать файл.</string>
+  <string name="dc.drop_what">Перетащите файл изображения или изображение с веб-страницы.</string>
+  <string name="dc.label">Разложить</string>
+  <string name="dc.intro">Превратите изображение в штрихи пера и отправьте на планшет, где каждую линию можно стереть и обвести, как свою.</string>
+  <string name="dc.image">Изображение</string>
+  <string name="dc.size">Размер</string>
+  <string name="dc.size_unit">пикселей планшета, от 200 до 1400</string>
+  <string name="dc.types">PNG, JPEG, WebP</string>
+  <string name="dc.decomps">Разложенные</string>
+  <string name="lineup.unreadable">Не удалось прочитать составы.</string>
+  <string name="memories.note">Что модель этого состава узнала о работе для вас: жалобы, исправления, как вы хотите, чтобы всё делалось. Модель сохраняет их сама — никогда не ваши заметки и не работу на странице (каждый блокнот хранит свой контекст в своей записной книжке), — и они показываются каждому заданию этого состава. Измените или удалите любое из них здесь.</string>
+  <string name="memories.none">Воспоминаний пока нет.</string>
+  <string name="memories.none_hint">Модель сохраняет воспоминание, когда узнаёт что-то о работе для вас.</string>
+  <string name="memories.count">{n} из {max}</string>
+  <string name="memories.saved_on">Сохранено {date}</string>
+  <string name="memories.one">Воспоминание</string>
+  <string name="memories.saved">Воспоминание сохранено.</string>
+  <string name="memories.deleted">Воспоминание удалено.</string>
+  <string name="lineup.label">Состав</string>
+  <string name="lineup.new_option">+ Новый состав…</string>
+  <string name="lineup.rename">Переименовать</string>
+  <string name="tab.text">Текст / Рассуждение</string>
+  <string name="tab.image">Изображение</string>
+  <string name="tab.network">Сеть</string>
+  <string name="tab.tags">Теги</string>
+  <string name="tab.memories">Воспоминания</string>
+  <string name="tab.tests">Тест</string>
+  <string name="common.saved">Сохранено.</string>
+  <string name="common.no_answer">Нет ответа.</string>
+  <string name="lineup.test_no_answer">Нет ответа. Проверьте поставщика, модель и ключ.</string>
+  <string name="memories.delete_q">Удалить это воспоминание?</string>
+  <string name="memories.delete_body">Модели его больше не покажут.</string>
+  <string name="lineup.new">Новый состав</string>
+  <string name="lineup.rename_title">Переименовать состав</string>
+  <string name="lineup.name">Название</string>
+  <string name="lineup.delete_q">Удалить {name}?</string>
+  <string name="lineup.delete_body">Вместе с ним удаляются его модели, веб-поиск, теги и воспоминания.</string>
+  <string name="common.disclaimer">Предупреждение</string>
+  <string name="common.cancel">Отмена</string>
+  <string name="slot.other_provider">Другой (совместимый с OpenAI)</string>
+  <string name="slot.harness_auto">Автоматически (по названию модели)</string>
+  <string name="slot.harness">Обвязка</string>
+  <string name="slot.add_harness">+ Добавить обвязку</string>
+  <string name="slot.none">Нет</string>
+  <string name="slot.api_key">Ключ API</string>
+  <string name="slot.local">Размещать локально</string>
+  <string name="slot.source">Источник</string>
+  <string name="slot.provider">Поставщик</string>
+  <string name="slot.address">Адрес</string>
+  <string name="slot.model">Модель</string>
+  <string name="slot.saved">сохранён</string>
+  <string name="common.test">Проверить</string>
+  <string name="slot.script_label">Start.bat — оставьте пустым, если скрипт запуска не нужен</string>
+  <string name="slot.script">Скрипт запуска</string>
+  <string name="net.search">Веб-поиск</string>
+  <string name="net.service_key">Поисковый сервис с ключом API</string>
+  <string name="net.service">Сервис</string>
+  <string name="net.script">Скрипт запуска поиска</string>
+  <string name="tags.note">Каждый тег здесь — тот, за которым следит этот состав: поставьте его на страницу, блокнот или папку на планшете, и этот состав возьмётся за работу. Страница получает подсказки тегов этого состава, стоящих на ней, на её блокноте и на папках над ним, в порядке этого списка (перетаскивайте карточку за ручку); страница постоянных указаний самого блокнота идёт последней. Оставьте один тег с пустой подсказкой для страниц, которым ничего не нужно добавлять. Тег может принадлежать только одному составу.</string>
+  <string name="tags.move">Переместить {name} (клавиши со стрелками)</string>
+  <string name="tags.this">этот тег</string>
+  <string name="tags.drag">Перетащите, чтобы изменить порядок</string>
+  <string name="tags.tag">Тег</string>
+  <string name="common.remove">Убрать</string>
+  <string name="tags.prompt">Подсказка</string>
+  <string name="tags.prompt_blank">Пусто: странице не добавляется подсказка</string>
+  <string name="tags.add">+ Добавить тег</string>
+  <string name="common.testing">Проверка…</string>
+  <string name="common.answering">Отвечает</string>
+  <string name="np.list_unreadable">Не удалось прочитать записные книжки.</string>
+  <string name="np.reading_list">Чтение записных книжек…</string>
+  <string name="np.no_match">Подходящих блокнотов нет.</string>
+  <string name="np.summary">{entries} · знаков: {chars}</string>
+  <string name="count.entry.one">{n} запись</string>
+  <string name="count.entry.few">{n} записи</string>
+  <string name="count.entry.many">{n} записей</string>
+  <string name="count.entry.other">{n} записи</string>
+  <string name="np.undated">Без даты</string>
+  <string name="np.show_fewer">Показать меньше</string>
+  <string name="np.show_older.one">Показать ещё {n} старую запись</string>
+  <string name="np.show_older.few">Показать ещё {n} старые записи</string>
+  <string name="np.show_older.many">Показать ещё {n} старых записей</string>
+  <string name="np.show_older.other">Показать ещё {n} старой записи</string>
+  <string name="np.select">Выберите блокнот, чтобы прочитать его записную книжку.</string>
+  <string name="np.wiped_at">Очищено в {time}.</string>
+  <string name="np.wiped_body">Все записи удалены, копия не сохранена. Следующее задание в {name} начнётся с пустой записной книжки.</string>
+  <string name="np.copy">Копировать текст</string>
+  <string name="np.wipe">Очистить записную книжку</string>
+  <string name="np.not_wiped">Записная книжка не очищена.</string>
+  <string name="np.unreadable">Не удалось прочитать эту записную книжку.</string>
+  <string name="np.reading">Чтение записной книжки…</string>
+  <string name="np.empty">Эта записная книжка пуста.</string>
+  <string name="np.show">Показать</string>
+  <string name="np.entries">Записи</string>
+  <string name="np.as_text">Текстом</string>
+  <string name="np.none">Записных книжек пока нет.</string>
+  <string name="np.this_notebook">этот блокнот</string>
+  <string name="np.wipe_q">Очистить записную книжку {name}?</string>
+  <string name="np.wipe_body">Удаляются все записи ({entries}), копия не сохраняется. Следующее задание в {name} начнётся с пустой записной книжки.</string>
+  <string name="np.wipe_body2">Игра, сохранённая в этой записной книжке, тоже удаляется. Ваш блокнот на планшете не затрагивается.</string>
+  <string name="np.label">Записные книжки</string>
+  <string name="np.intro">Память каждого блокнота о его заданиях. После каждого задания хост записывает, о чём просили и что он сделал, а следующее задание в этом блокноте видит последние записи, так что разговор может продолжаться от страницы к странице.</string>
+  <string name="np.books">Блокноты с записной книжкой</string>
+  <string name="np.find">Найти блокнот</string>
+  <string name="common.copied">Скопировано</string>
+  <string name="common.copy_failed">Не удалось скопировать</string>
+  <string name="nw.this_computer">· этот компьютер, всегда включён</string>
+  <string name="nw.cannot_remove">нельзя убрать</string>
+  <string name="nw.remove_addr">Убрать {address}</string>
+  <string name="nw.url_label">Адрес для других устройств</string>
+  <string name="common.copy">Копировать</string>
+  <string name="nw.local_only">Только с этого компьютера, пока вы не добавите адрес.</string>
+  <string name="nw.token">Токен связи</string>
+  <string name="nw.hide">Скрыть</string>
+  <string name="nw.show">Показать</string>
+  <string name="nw.rotate">Заменить…</string>
+  <string name="nw.rotated_at">Заменён в {time}.</string>
+  <string name="nw.rotated_body">Каждому связанному устройству нужен новый токен. Это окно переподключилось само.</string>
+  <string name="nw.token_kept">Хранится в хранилище учётных данных Windows. Это окно связывается само.</string>
+  <string name="nw.saved_restart">Сохранено в {time}. Вступит в силу после перезапуска PaperDaemon.</string>
+  <string name="nw.rotate_q">Заменить токен связи?</string>
+  <string name="nw.rotate_body">Каждое связанное устройство перестанет работать, пока вы не дадите ему новый токен. Это окно переподключится само.</string>
+  <string name="nw.rotate_action">Заменить токен</string>
+  <string name="nw.label">Сеть</string>
+  <string name="count.address.one">{n} адрес</string>
+  <string name="count.address.few">{n} адреса</string>
+  <string name="count.address.many">{n} адресов</string>
+  <string name="count.address.other">{n} адреса</string>
+  <string name="nw.intro">Движок обслуживает это окно и любое связанное устройство через один порт на этом компьютере.</string>
+  <string name="nw.listens">Где слушает движок</string>
+  <string name="nw.port">Порт</string>
+  <string name="nw.save_port">Сохранить порт</string>
+  <string name="nw.port_hint">Меняйте, только если его уже занимает другая программа. Движок начнёт использовать новый порт после перезапуска PaperDaemon.</string>
+  <string name="nw.addresses">Адреса</string>
+  <string name="nw.addresses_hint">Добавьте свой адрес WireGuard, чтобы подключаться к PaperDaemon с телефона или другого компьютера.</string>
+  <string name="nw.another">Другой адрес</string>
+  <string name="nw.to_add">Добавляемый адрес</string>
+  <string name="nw.add">Добавить адрес</string>
+  <string name="nw.trust">Добавляйте только адреса доверенных сетей. Каждый запрос, откуда бы он ни шёл, должен содержать токен связи.</string>
+  <string name="nw.reach">Адрес доступа</string>
+  <string name="nw.pairing">Связь</string>
+  <string name="nw.token_hint">Введите его на устройстве один раз, чтобы связать его.</string>
+  <string name="nw.bad_address">Это не IP-адрес. Используйте вид вроде 10.8.0.2.</string>
+  <string name="nw.listed">{address} уже в списке.</string>
+  <string name="su.connect">Подключите reMarkable</string>
+  <string name="su.mirror">Зеркало</string>
+  <string name="su.finish">Готово</string>
+  <string name="su.building_pct">Создание Зеркала, {pct}%</string>
+  <string name="su.taking">Получение входа…</string>
+  <string name="su.steal_instead">Забрать вход вместо этого</string>
+  <string name="su.borrow_instead">Позаимствовать вход вместо этого</string>
+  <string name="su.connected_how">Подключено · {how}</string>
+  <string name="su.borrowed">Заимствован</string>
+  <string name="su.stolen">Забран</string>
+  <string name="su.continue">Продолжить</string>
+  <string name="su.mirror_lead">Копия вашей библиотеки у PaperDaemon. Она создаётся в фоне; можно продолжать.</string>
+  <string name="su.connect_first">Сначала подключите reMarkable.</string>
+  <string name="su.connecting">Подключение…</string>
+  <string name="su.mirror_complete">Зеркало готово</string>
+  <string name="su.cloud_silent">Облако не ответило.</string>
+  <string name="su.lineup_lead">Текстовая модель обязательна. Модель изображений и веб-поиск необязательны.</string>
+  <string name="su.lineup_unreadable">Не удалось прочитать состав.</string>
+  <string name="su.need_address">Текстовой модели нужен адрес.</string>
+  <string name="su.need_name">Составу нужно название.</string>
+  <string name="su.finish_lead">PaperDaemon запустится со следующей конфигурацией.</string>
+  <string name="su.proceed">Перейти к PaperDaemon</string>
+  <string name="su.automatic">Автоматически</string>
+  <string name="su.local_at">Размещено локально: {address}</string>
+  <string name="su.local_at_script">Размещено локально: {address} · со Start.bat</string>
+  <string name="su.harness_is">Обвязка: {harness}</string>
+  <string name="su.building">Создаётся · {pct}%</string>
+  <string name="su.complete">Готово</string>
+  <string name="su.not_built">Ещё не создано</string>
+  <string name="su.tags">Теги</string>
+  <string name="su.no_tags">Нет: ни на одну страницу не будет ответа, пока вы не добавите тег</string>
+  <string name="su.steps">Шаги настройки</string>
+  <string name="su.later">Настроить позже</string>
+  <string name="su.title">Настройка · PaperDaemon</string>
+  <string name="ts.failed">Не пройден</string>
+  <string name="ts.running">Выполняется</string>
+  <string name="ts.passed">Пройден</string>
+  <string name="ts.waiting">Ожидает</string>
+  <string name="ts.stop">Остановить тест</string>
+  <string name="ts.run">Запустить тест</string>
+  <string name="ts.not_started">Прогон не начался.</string>
+  <string name="ts.partly">Частично</string>
+  <string name="ts.unreadable">Не удалось прочитать тесты.</string>
+  <string name="ts.result">Результат</string>
+  <string name="ts.cases_done">Готовые случаи</string>
+  <string name="ts.passed_of">Пройдено {n} из {total}</string>
+  <string name="ts.intro">Хранится только последний тест, и любое изменение состава делает его недействительным.</string>
+  <string name="help.model.title">Как работает скрипт запуска</string>
+  <string name="help.model.intro">Скрипт запуска — это небольшой пакетный файл Windows (`.bat`), который запускает сервер вашей модели. Вы пишете его один раз. После этого PaperDaemon запускает его за вас всякий раз, когда заданию нужна эта модель, так что запускать сервер вручную не придётся.</string>
+  <string name="help.h_do">Что должен делать ваш скрипт</string>
+  <string name="help.model.do1">Запускать сервер так, чтобы он отвечал по адресу в поле выше, например `http://127.0.0.1:8790`. PaperDaemon передаёт вашему скрипту этот порт как `%PAPERDAEMON_PORT%`.</string>
+  <string name="help.model.do2">Работать, пока работает сервер. Запускайте сервер напрямую, а не через `start` (тот открывает его в другом окне, и скрипт сразу завершается, так что PaperDaemon решит, что сервер пропал).</string>
+  <string name="help.do_output">Давать серверу выводить свои сообщения. Если что-то пойдёт не так, PaperDaemon покажет здесь последние строки.</string>
+  <string name="help.h_runs">Когда PaperDaemon его запускает</string>
+  <string name="help.model.runs1">Когда эта модель впервые нужна заданию.</string>
+  <string name="help.model.runs2">Когда тег страницы принадлежит составу, чей скрипт запуска отличается от работающего. PaperDaemon останавливает запущенный им ранее сервер, затем запускает этот.</string>
+  <string name="help.model.runs3">Не запускает, если сервер, запущенный этим скриптом, уже работает.</string>
+  <string name="help.h_stops">Когда PaperDaemon его останавливает</string>
+  <string name="help.model.stops">Когда вы приостанавливаете или закрываете PaperDaemon, или когда нужно запустить скрипт другого состава. Он останавливает всё, что запустил ваш скрипт. Он никогда не останавливает программу, которую не запускал.</string>
+  <string name="help.h_wrong">Что может пойти не так</string>
+  <string name="help.model.wrong_vram">**Видеокарта заполнена.** Модели нужно место в памяти карты (VRAM). Если эту память держит другой сервер моделей, игра или графический инструмент, модель не загрузится или будет работать очень медленно. Если вы сами запускаете другие серверы моделей, пусть ваш скрипт сначала их остановит (например, `taskkill /IM llama-server.exe /F`). PaperDaemon останавливает только то, что запустил сам.</string>
+  <string name="help.model.wrong_two">**Две модели не помещаются вместе.** Если текстовая модель и модель изображений не помещаются на карту одновременно, напишите каждый скрипт так, чтобы он останавливал сервер другого перед запуском своего.</string>
+  <string name="help.model.wrong_port">**Порт занят.** Если этот порт уже использует другая программа, ваш сервер не сможет на нём запуститься. Выберите свободный порт и укажите его же в адресе выше.</string>
+  <string name="help.wrong_spaces">**Пробелы в пути.** Заключайте в кавычки любой путь с пробелами.</string>
+  <string name="help.model.wrong_keys">**Ключи и пароли.** Не пишите их в скрипт. Для ключа API используйте поле ключа.</string>
+  <string name="help.h_try">Попробуйте</string>
+  <string name="help.model.try">Откройте вкладку «Тест» и нажмите **Запустить тест**.</string>
+  <string name="help.search.title">Как работает скрипт запуска поиска</string>
+  <string name="help.search.intro">Скрипт запуска поиска — это небольшой пакетный файл Windows (`.bat`), который запускает ваш собственный поисковый сервер, обычно SearXNG. PaperDaemon запускает его за вас, когда заданию нужно что-то найти, а ваш поисковый сервер не отвечает.</string>
+  <string name="help.search.do1">Запускать поисковый сервер так, чтобы он отвечал по адресу в поле выше.</string>
+  <string name="help.search.do2">Работать, пока работает сервер. Запускайте его напрямую, а не через `start`.</string>
+  <string name="help.search.runs">Перед каждым поиском PaperDaemon просит адрес выше выполнить пробный поиск. Если сервер SearXNG отвечает правильно, PaperDaemon использует его как есть, кто бы его ни запустил, и не запускает скрипт. Скрипт запускается, только когда ничего не отвечает или когда ответивший — не тот поисковый сервер, которым он может пользоваться.</string>
+  <string name="help.search.stops">Когда вы приостанавливаете или закрываете PaperDaemon. Он останавливает всё, что запустил ваш скрипт, и никогда — программу, которую не запускал.</string>
+  <string name="help.search.wrong_json">**JSON выключен.** SearXNG отвечает программам вроде PaperDaemon, только если в его `settings.yml` включён JSON: в `search:` → `formats:` укажите и `html`, и `json`.</string>
+  <string name="help.search.wrong_docker">**Docker.** Контейнер Docker продолжает работать после закрытия PaperDaemon, потому что его запускает Docker, а не ваш скрипт. Запуск SearXNG в WSL (подсистеме Windows для Linux) или через Python этого избегает.</string>
+  <string name="help.search.wrong_port">**Порт занят.** Если этот порт уже использует другая программа, сервер не сможет на нём запуститься, и PaperDaemon не сможет это исправить. Выберите свободный порт и укажите его же в адресе выше.</string>
+  <string name="help.search.try">Нажмите **Проверить** рядом с адресом.</string>
+  <string name="help.ask">Попросить ИИ о помощи</string>
+  <string name="help.copied">Подсказка скопирована в буфер обмена!</string>
+  <string name="help.copy_failed">Не удалось скопировать подсказку</string>
+  <string name="help.model.prompt_text">Я настраиваю PaperDaemon — приложение для моего планшета reMarkable, которое запускает модели ИИ на моём ПК с Windows. Мне нужен пакетный файл Windows (.bat), который запускает сервер текстовой модели (LLM). PaperDaemon сам запускает этот скрипт, когда ему нужна модель, и останавливает его, когда закончит.
+
+Правила, которым должен следовать скрипт:
+- Запускать сервер так, чтобы он отвечал по HTTP на 127.0.0.1 на порту, который PaperDaemon передаёт в %PAPERDAEMON_PORT%.
+- Запускать сервер на переднем плане и держать скрипт запущенным, пока работает сервер. Не использовать `start`.
+- Выводить сообщения сервера.
+- PaperDaemon также задаёт %PAPERDAEMON_ROLE% (text или image), %PAPERDAEMON_LOCATION% (полный адрес), %PAPERDAEMON_OTHER_LOCATION% (адрес другой модели), %PAPERDAEMON_LINEUP% и %PAPERDAEMON_DATA%.
+- PaperDaemon останавливает только программы, которые запустил сам. Если другие серверы моделей могут занимать память моей видеокарты, скрипт должен сначала их остановить.
+- Сервер должен поддерживать OpenAI-совместимый API чата (/v1/chat/completions), как llama-server из llama.cpp, Ollama, LM Studio или vLLM.
+
+Прежде чем писать, задай мне эти вопросы по одному и дождись каждого ответа:
+1. Какая у меня видеокарта и сколько у неё VRAM?
+2. Какую модель я хочу запускать и где на моём ПК лежит файл модели?
+3. Какую серверную программу я использую (или хочу использовать) и где она установлена?
+4. Какой порт использовать?
+5. Запускаю ли я другие ИИ-серверы или программы, использующие видеокарту, и должен ли скрипт сначала их останавливать?
+6. Помещаются ли моя текстовая модель и модель изображений на карту вместе, или каждый скрипт должен останавливать другой?
+
+Затем напиши файл .bat с коротким комментарием к каждой строке о том, что она делает, и расскажи, как его проверить.</string>
+  <string name="help.model.prompt_image">Я настраиваю PaperDaemon — приложение для моего планшета reMarkable, которое запускает модели ИИ на моём ПК с Windows. Мне нужен пакетный файл Windows (.bat), который запускает сервер модели генерации изображений. PaperDaemon сам запускает этот скрипт, когда ему нужна модель, и останавливает его, когда закончит.
+
+Правила, которым должен следовать скрипт:
+- Запускать сервер так, чтобы он отвечал по HTTP на 127.0.0.1 на порту, который PaperDaemon передаёт в %PAPERDAEMON_PORT%.
+- Запускать сервер на переднем плане и держать скрипт запущенным, пока работает сервер. Не использовать `start`.
+- Выводить сообщения сервера.
+- PaperDaemon также задаёт %PAPERDAEMON_ROLE% (text или image), %PAPERDAEMON_LOCATION% (полный адрес), %PAPERDAEMON_OTHER_LOCATION% (адрес другой модели), %PAPERDAEMON_LINEUP% и %PAPERDAEMON_DATA%.
+- PaperDaemon останавливает только программы, которые запустил сам. Если другие серверы моделей могут занимать память моей видеокарты, скрипт должен сначала их остановить.
+- Сервер должен поддерживать API Stable Diffusion web UI (/sdapi/v1/txt2img), как сервер stable-diffusion.cpp, Forge или AUTOMATIC1111, или API изображений OpenAI.
+
+Прежде чем писать, задай мне эти вопросы по одному и дождись каждого ответа:
+1. Какая у меня видеокарта и сколько у неё VRAM?
+2. Какую модель я хочу запускать и где на моём ПК лежит файл модели?
+3. Какую серверную программу я использую (или хочу использовать) и где она установлена?
+4. Какой порт использовать?
+5. Запускаю ли я другие ИИ-серверы или программы, использующие видеокарту, и должен ли скрипт сначала их останавливать?
+6. Помещаются ли моя текстовая модель и модель изображений на карту вместе, или каждый скрипт должен останавливать другой?
+
+Затем напиши файл .bat с коротким комментарием к каждой строке о том, что она делает, и расскажи, как его проверить.</string>
+  <string name="help.search.prompt">Я настраиваю PaperDaemon — приложение для моего планшета reMarkable, которое работает на моём ПК с Windows. Мне нужен пакетный файл Windows (.bat), который запускает поисковый сервер SearXNG на этом ПК. PaperDaemon сам запускает скрипт, когда ему нужно искать, а ничего не отвечает, и останавливает его, когда PaperDaemon приостанавливается или закрывается.
+
+Правила, которым должен следовать скрипт:
+- Запускать SearXNG так, чтобы он отвечал по HTTP на 127.0.0.1 на выбранном мной порту.
+- В SearXNG должен быть включён вывод JSON (search: formats: [html, json] в settings.yml).
+- Запускать сервер на переднем плане и держать скрипт запущенным, пока работает сервер. Не использовать `start`.
+- Выводить сообщения сервера.
+- Предпочитать WSL или Python, а не Docker: PaperDaemon останавливает собственные процессы скрипта, но контейнер Docker продолжит работать после его закрытия.
+
+Прежде чем писать, задай мне эти вопросы по одному и дождись каждого ответа:
+1. Установлены ли у меня WSL (подсистема Windows для Linux)? Python? Docker?
+2. Установлен ли уже SearXNG, и если да, то где и как?
+3. Какой порт использовать и занят ли он уже чем-то?
+
+Затем, если нужно, проведи меня через установку SearXNG, напиши файл .bat с коротким комментарием к каждой строке о том, что она делает, и расскажи, как его проверить.</string>
+  <string name="ts.what">Что</string>
+  <string name="ts.details">Подробности</string>
+  <string name="ts.testing">Тестирование: готово {n} из {total}</string>
+  <string name="ts.changed">Состав изменился после последнего теста, поэтому тот результат больше не действует. Запустите тест снова.</string>
+  <string name="ts.never">Этот состав ещё не тестировался.</string>
+  <string name="ts.whole">Весь состав {name} проверяется целиком: текстовая модель и её обвязка, модель изображений и её обвязка, сеть и теги.</string>
+  <string name="ts.row.model-text">Текстовая модель</string>
+  <string name="ts.row.model-image">Модель изображений</string>
+  <string name="ts.row.answer">Отвечать на вопросы</string>
+  <string name="ts.row.ink">Ответить на рукописный вопрос</string>
+  <string name="ts.row.chart">Строить диаграммы</string>
+  <string name="ts.row.draw">Рисовать</string>
+  <string name="ts.row.picture">Создавать изображения</string>
+  <string name="ts.row.handwriting">Читать рукописный текст</string>
+  <string name="ts.row.search">Искать в интернете</string>
+  <string name="ts.row.social">Соцсети</string>
+  <string name="ts.row.weather">Погода</string>
+  <string name="ts.m.not_run">Не запускалось</string>
+  <string name="ts.m.no_image">Нет модели изображений</string>
+  <string name="ts.m.waiting">Ожидает</string>
+  <string name="ts.m.working">Выполняется</string>
+  <string name="ts.m.canceled">Отменено</string>
+  <string name="ts.m.failed">Не удалось</string>
+  <string name="ts.m.answered_in">Ответ за {s} с</string>
+  <string name="ts.m.done_in">Готово за {s} с</string>
+  <string name="ts.m.failed_after">Не удалось через {s} с</string>
+  <string name="ts.m.answers">Отвечает</string>
+  <string name="ts.m.check_failed">{check}: не пройдено</string>
+  <string name="ts.m.no_answer">Нет ответа</string>
+  <string name="ts.m.not_set_up">Не настроено</string>
+  <string name="ts.m.network_off">Доступ к сети выключен</string>
+  <string name="ts.m.no_results_in">Нет результатов за {s} с</string>
+  <string name="ts.m.results_in">{n} результатов за {s} с</string>
+  <string name="ts.m.no_sites">Сайты не выбраны</string>
+  <string name="ts.m.site_time">{site} {s} с</string>
+  <string name="ts.m.site_failed">{site}: ошибка</string>
+  <string name="ts.m.no_forecast">Нет прогноза</string>
+  <string name="ts.m.weather">{t}{unit}, {sky}, ответ за {s} с</string>
+  <string name="ts.m.no_samples">Нет образцов</string>
+  <string name="ts.m.cannot_see">Модель не видит</string>
+  <string name="ts.m.no_reading">Нет прочтения</string>
+  <string name="ts.m.nothing_read">Ничего не прочитано</string>
+  <string name="ts.m.words">{pct}% слов, {s} с на страницу</string>
+  <string name="ts.d.no_image">В составе нет модели изображений.</string>
+  <string name="ts.d.search_setup">Добавьте поисковый сервис или локальный поисковый сервер на вкладке «Сеть» состава.</string>
+  <string name="ts.d.allow_network">Разрешите его в настройках.</string>
+  <string name="ts.d.search_empty">Поиск вернулся пустым.</string>
+  <string name="ts.d.first">Первый: {title}</string>
+  <string name="ts.d.every_site">Посты пришли со всех сайтов.</string>
+  <string name="ts.d.choose_sites">Выберите соцсети в настройках.</string>
+  <string name="ts.d.no_forecast">Служба прогноза не ответила.</string>
+  <string name="ts.d.weather">Сегодня в {place}: максимум {hi}{unit}, минимум {lo}{unit}.</string>
+  <string name="ts.d.weather_london">Место не задано, поэтому Лондон сегодня: максимум {hi}{unit}, минимум {lo}{unit}.</string>
+  <string name="ts.d.samples_missing">Образцы рукописного текста отсутствуют.</string>
+  <string name="ts.d.cannot_see">Текстовая модель состава не принимает изображения, поэтому не читает рукописный текст.</string>
+  <string name="ts.d.words">{right} из {total} слов на {pages} страницах от {pages} авторов с четырёх континентов ({regions}).</string>
+  <string name="ts.d.text_failed">Текстовая модель не прошла проверку.</string>
+  <string name="page.gave_up">Не удалось закончить; остановлено после {n} попыток.</string>
+  <string name="issue.loop_token_unreadable">Не удалось прочитать подключение к reMarkable: {why}</string>
+  <string name="issue.loop_gave_up">Часть PaperDaemon останавливалась {n} раз подряд и оставлена остановленной; причина в её журнале.</string>
+  <string name="issue.loop_supervisor">В надзоре PaperDaemon произошла ошибка: {why}</string>
+  <string name="slot.key_where">Сначала укажите адрес сервера: ключ хранится для этого сервера.</string>
+  <string name="day.saturday">Суббота</string>
+  <string name="slot.source.help">Ключ API: модель запускает компания, а PaperDaemon обращается к ней с вашим ключом. Запуск на своём компьютере: сервер модели, который вы запускаете сами, на этом компьютере или в своей сети.</string>
+  <string name="slot.provider.help">Кто запускает модель. Другой: любой сервис, говорящий на API OpenAI, по указанному вами адресу.</string>
+  <string name="slot.address.help_hosted">Адрес API сервиса, например https://api.example.com/v1.</string>
+  <string name="slot.model.help">Название модели в точности так, как его пишет поставщик.</string>
+  <string name="slot.api_key.help">Хранится в диспетчере учётных данных Windows и никогда не попадает в файл. Составы, использующие один и тот же сервер, делят его ключ.</string>
+  <string name="slot.address.help_local">Где отвечает сервер вашей модели, например http://127.0.0.1:8080. Если там ничего не отвечает, PaperDaemon запускает скрипт запуска ниже.</string>
+  <string name="slot.harness.help">Как PaperDaemon работает с этой моделью: что он ей говорит и как читает её ответы. «Автоматически» выбирает его по названию модели; «Добавить harness» открывает папку для ваших собственных.</string>
+  <string name="net.source.help">Где задача ищет сведения: в поисковом сервисе, для которого у вас есть ключ API, или на сервере SearXNG, который вы запускаете сами.</string>
+  <string name="net.service.help">Поисковый сервис, к которому относится ваш ключ.</string>
+  <string name="net.address.help">Где отвечает ваш сервер SearXNG, например http://127.0.0.1:8888. Если там не отвечает ничего пригодного, PaperDaemon запускает скрипт запуска ниже.</string>
+  <string name="tags.tag.help">Тег в точности так, как вы ставите его на планшете; регистр букв не важен.</string>
+  <string name="tags.prompt.help">Добавляется к инструкциям каждой задачи на странице с этим тегом или в блокноте или папке, у которых он есть.</string>
+</resources>

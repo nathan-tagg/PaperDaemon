@@ -1,0 +1,12 @@
+{
+  "id": "draw",
+  "title": "Draw a picture",
+  "kind": "typed",
+  "request": "Draw a lighthouse on a rocky shore.",
+  "expect": {
+    "content": "drawing"
+  },
+  "doc": "fedc1d23-ff55-5d77-a8ef-ea843eee3abb",
+  "page": "5e1e0f3b-5fe1-5389-a108-d3ae41ae8828",
+  "tag": "PaperDaemon"
+}

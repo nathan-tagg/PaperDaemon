@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockups · PaperDaemon</title>
+<link rel="stylesheet" href="paper.css">
+<script src="mockup.js" defer></script>
+<style>
+  .contents { max-width: 760px; padding: var(--s7) var(--s7) var(--s8); }
+  .contents .wordmark { padding: 0; font-size: 21px; }
+</style>
+</head>
+<body>
+<main class="contents">
+  <span class="wordmark">PaperDaemon</span>
+  <h1 style="margin-top: var(--s6)">Interface mockups</h1>
+  <p class="sub measure" style="margin-top: var(--s2)">Static pages with invented example data, drawn in the interface language described in
+    <code>docs/design/ui-language.md</code>. Every button, switch, menu and dialog works, so you can see what each
+    one does; nothing is saved and nothing talks to an engine. <code>tools/mockup_book.py</code> makes the same
+    pages into one PDF for the tablet.</p>
+
+  <ol class="toc">
+    <li><a href="first-run.html"><span class="n">01</span><span><span class="t">First run</span><span class="d">Sign in through the reMarkable desktop app, pull your library, choose your models, start.</span></span><span class="go">›</span></a></li>
+    <li><a href="overview.html"><span class="n">02</span><span><span class="t">Overview</span><span class="d">What the daemon noticed and what the host did, job by job; sync and model state.</span></span><span class="go">›</span></a></li>
+    <li><a href="notepads.html"><span class="n">03</span><span><span class="t">Notepads</span><span class="d">Each notebook's memory of its jobs, what the next job is shown, and wiping it.</span></span><span class="go">›</span></a></li>
+    <li><a href="tablet.html"><span class="n">04</span><span><span class="t">Tablet</span><span class="d">The desktop app's sign-in, connection, PaperDaemon's copy of the library, tags, the inbox notebook, rolling back writes.</span></span><span class="go">›</span></a></li>
+    <li><a href="models.html"><span class="n">05</span><span><span class="t">Models</span><span class="d">Lineups: the two models, where each runs and how PaperDaemon starts it, the harness each runs with, and making harnesses.</span></span><span class="go">›</span></a></li>
+    <li><a href="search.html"><span class="n">06</span><span><span class="t">Search</span><span class="d">SearXNG or a search API, and what each social source can and can't do.</span></span><span class="go">›</span></a></li>
+    <li><a href="decompose.html"><span class="n">07</span><span><span class="t">Decompose and send</span><span class="d">An image becomes pen strokes and goes to a new page in the inbox notebook.</span></span><span class="go">›</span></a></li>
+    <li><a href="benchmark.html"><span class="n">08</span><span><span class="t">Benchmark</span><span class="d">The whole pipeline on a mirror of its own, the same cases every run, and what your setup can do.</span></span><span class="go">›</span></a></li>
+    <li><a href="network.html"><span class="n">09</span><span><span class="t">Network</span><span class="d">Port, listen addresses for WireGuard, the pairing token.</span></span><span class="go">›</span></a></li>
+    <li><a href="capabilities.html"><span class="n">10</span><span><span class="t">Capabilities</span><span class="d">What the host may do on a page, what each capability needs, room for more.</span></span><span class="go">›</span></a></li>
+    <li><a href="components.html"><span class="n">11</span><span><span class="t">Components</span><span class="d">Every component and state on one sheet, for building the real interface.</span></span><span class="go">›</span></a></li>
+  </ol>
+
+  <p class="meta" style="margin-top: var(--s5)">Fonts: Source Serif 4, Source Sans 3 and Source Code Pro, under the SIL Open Font License, bundled in <code>docs/design/fonts/</code>.</p>
+</main>
+</body>
+</html>

@@ -1,0 +1,65 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Build and packaging output (the shell's own dist/ holds a hand-written page the build needs)
+build/
+/dist/
+target/
+node_modules/
+*.dll
+*.so
+*.dylib
+*.exe
+*.pyd
+
+# A content folder kept at the top of a checkout for development (see paperdaemon/paths.py); the content the
+# app ships with is paperdaemon/content and is part of the source tree
+/content/
+
+# Local state, logs, caches and secrets
+*.log
+*.out
+*.sqlite
+*.sqlite3
+*.db
+.env
+.env.*
+*.local.json
+settings.json.bak
+rm-queue/
+rm-ledger.json
+rm-state/
+rm-cache/
+rm-mirror/
+rm-notepad/
+rm-history/
+rm-pdfdoc/
+rm-secrets/
+mirror/
+cloud-safety/
+logs/
+tmp/
+scratch/
+
+# Editor and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# The Tauri shell's build output
+shell/target/
+shell/gen/
+
+# build output of the C decomposer (built by tools/build_app.py)
+*.pdb
+*.lib
+*.o
+.zig-cache*/

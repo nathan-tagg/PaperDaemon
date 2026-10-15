@@ -1,0 +1,49 @@
+schema: spec-driven
+
+# Shown to AI when creating artifacts.
+context: |
+  PaperDaemon is a desktop app that turns a reMarkable tablet into an AI assistant. The user tags a
+  page; a daemon notices; the host reads the page and runs the job the way the text slot's harness
+  says: the harness's intake protocol decides what the model is shown and told, its output protocol
+  what the model hands back (tasks, or a finished page), a protocol per task who does which part of
+  it, and its validate() what is refused before the host commits. The host carries out its part
+  (words, charts, pictures, coloring pages, mark-ups, erasing, search), commits, updates the mirror
+  and syncs the page back.
+
+  Stack: a Python 3.12 engine (managed with uv) serving a local HTTP API (versioned, pairing-token
+  protected) to a desktop window. Its own reMarkable sync client and its own mirror of the library.
+  Two model slots, text and image, each an endpoint that can be local or remote, driven through
+  adapters (OpenAI-compatible, Anthropic, Stable Diffusion web UI API, OpenAI Images) and run through
+  per-model-family harnesses, with a base harness for any model.
+
+  The project is exploratory. The maintainer decides, and the specs follow the maintainer's decisions; when
+  something new is decided, the specs change to match.
+
+  The maintainer's standing rules: American spelling everywhere; no prices, cost meters or usage counts;
+  only real runs on the real tablet back a claim about behavior; no secret in any file; tests use their
+  own ports and data and stop processes by identity; the user's own prompts are used as written;
+  runaway model output is stopped by tokens and repetition, never by a clock.
+
+rules:
+  proposal:
+    - Include a Non-goals section
+    - Never propose pricing, cost display or usage metering
+  specs:
+    - Behavior contracts only, with SHALL or MUST; every requirement has at least one scenario
+    - Leave undecided behavior out of specs; record it under Open Questions in design.md
+    - Never name a person; say "the user"
+  design:
+    - End with an Open Questions section, even if it says "none"
+    - Record rejected alternatives and why
+  tasks:
+    - Every task ends in something checkable
+    - A change that alters behavior includes a real-run evidence task
+
+operations:
+  apply:
+    guidance:
+      - Keep personal data, notebook names and incident diaries out of code, comments and docs
+      - Run tools/publish_check.py before a release; it must exit 0
+  archive:
+    guidance:
+      - Archive a behavior change only after its real-run evidence is recorded in tasks.md

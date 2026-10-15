@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capabilities · PaperDaemon</title>
+<link rel="stylesheet" href="paper.css">
+<script src="mockup.js" defer></script>
+<style>
+  .caps td:first-child { width: 170px; }
+  .caps td:nth-child(3) { width: 230px; }
+  .later td { color: var(--ink-3); }
+  .later td strong { color: var(--ink-2); }
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="rail" aria-label="PaperDaemon">
+    <a class="wordmark" href="index.html">PaperDaemon</a>
+    <ul class="nav">
+      <li><a href="overview.html">Overview <span class="state"><i class="mk busy"></i>Working</span></a></li>
+      <li><a href="notepads.html">Notepads <span class="state num">5</span></a></li>
+      <li><a href="decompose.html">Decompose and send</a></li>
+      <li><a href="benchmark.html">Benchmark <span class="state num">10/12</span></a></li>
+    </ul>
+    <ul class="nav">
+      <li><a href="tablet.html">Tablet <span class="state"><i class="mk on"></i>Connected</span></a></li>
+      <li><a href="models.html">Models <span class="state"><i class="mk on"></i>Ready</span></a></li>
+      <li><a href="search.html">Search <span class="state"><i class="mk on"></i>On</span></a></li>
+      <li><a href="capabilities.html" aria-current="page">Capabilities <span class="state num">9 on</span></a></li>
+      <li><a href="network.html">Network <span class="state num">2 addresses</span></a></li>
+    </ul>
+    <div class="rail-foot">
+      <p class="meta">Engine on <code>127.0.0.1:8770</code><br>Version 0.1.0</p>
+    </div>
+  </nav>
+
+  <main class="page">
+    <header class="page-head">
+      <h1>Capabilities</h1>
+      <p>What the host may do on a page. Turn one off and no model is ever offered it, whatever its harness says.</p>
+    </header>
+
+    <section class="section" aria-labelledby="h-on">
+      <header><h2 id="h-on">On a page</h2><span class="meta">9 of 9 on</span></header>
+      <table class="list caps">
+        <thead><tr><th>Capability</th><th>What the host does</th><th>Needs</th><th class="r">On</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Answers</strong></td><td>Writes the answer in typed text under your question</td><td><span class="state-line"><i class="mk on"></i>Text model</span></td><td class="r"><input type="checkbox" class="switch" checked disabled aria-label="Answers are always on"></td></tr>
+          <tr><td><strong>Charts</strong></td><td>56 kinds of chart and calendar, drawn as a picture that fills the free width</td><td><span class="sub">Nothing else</span></td><td class="r"><input type="checkbox" class="switch" data-name="charts" checked aria-label="Charts"></td></tr>
+          <tr><td><strong>Pictures</strong></td><td>Generates a picture, then draws it in pen strokes you can erase</td><td><span class="state-line"><i class="mk on"></i>Image model</span></td><td class="r"><input type="checkbox" class="switch" data-name="pictures" checked aria-label="Pictures"></td></tr>
+          <tr><td><strong>Coloring pages</strong></td><td>Black line art, inserted as a picture that takes the page</td><td><span class="state-line"><i class="mk on"></i>Image model</span></td><td class="r"><input type="checkbox" class="switch" data-name="coloring" checked aria-label="Coloring pages"></td></tr>
+          <tr><td><strong>Web search</strong></td><td>Looks things up and lists where the answer came from</td><td><span class="state-line"><i class="mk on"></i>SearXNG</span></td><td class="r"><input type="checkbox" class="switch" data-name="websearch" checked aria-label="Web search"></td></tr>
+          <tr><td><strong>Social cards</strong></td><td>Clips real posts onto the page as cards</td><td><span class="state-line"><i class="mk on"></i>5 sources on</span></td><td class="r"><input type="checkbox" class="switch" data-name="social" checked aria-label="Social cards"></td></tr>
+          <tr><td><strong>Mark-ups</strong></td><td>Underlines, circles and highlights the words you name</td><td><span class="state-line"><i class="mk on"></i>Handwriting reader</span></td><td class="r"><input type="checkbox" class="switch" data-name="markups" checked aria-label="Mark-ups"></td></tr>
+          <tr><td><strong>PDF highlights</strong></td><td>Finds a passage in a PDF and highlights it</td><td><span class="sub">A PDF with a text layer</span></td><td class="r"><input type="checkbox" class="switch" data-name="pdf" checked aria-label="PDF highlights"></td></tr>
+          <tr><td><strong>Tags</strong></td><td>Adds a tag to the page, only when you named the tag on the page or in the notebook's prompt</td><td><span class="sub">Your direction</span></td><td class="r"><input type="checkbox" class="switch" data-name="tags" checked aria-label="Tags"></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section" aria-labelledby="h-reader">
+      <h2 id="h-reader">Handwriting reader</h2>
+      <div class="row">
+        <div class="label">Reader<small>Turns ink into words for the model and finds words to mark up.</small></div>
+        <div class="control">
+          <span class="select"><select class="field w-m" data-name="reader" aria-label="Handwriting reader"><option value="winocr" selected>Windows OCR (built in)</option><option value="model">The text model, from the page image</option></select></span>
+          <span class="state-line" data-when="reader=winocr"><i class="mk on"></i>Ready · English (United States)</span>
+          <span class="state-line" data-when="reader=model"><i class="mk on"></i>Uses Qwen 3.6 27B, which can see</span>
+          <p class="hint" data-when="reader=winocr">Runs on this computer. Nothing is sent anywhere to read your handwriting.</p>
+          <p class="hint" data-when="reader=model">Slower, and it finds no word positions, so mark-ups fall back to whole lines.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="h-more">
+      <header><h2 id="h-more">More slots</h2><span class="meta">not installed</span></header>
+      <p class="section-note">A capability is a separate module. A new one can be added without changing the others, and each one arrives off.</p>
+      <table class="list caps later">
+        <tbody>
+          <tr><td><strong>Terminal</strong></td><td>Runs a command you wrote on the page, after you approve it on this computer</td><td>Your approval each time</td><td class="r"><input type="checkbox" class="switch" disabled aria-label="Terminal is not installed"></td></tr>
+          <tr><td><strong>Home automation</strong></td><td>Turns devices on and off through Home Assistant, such as a garage door</td><td>A Home Assistant address and token</td><td class="r"><input type="checkbox" class="switch" disabled aria-label="Home automation is not installed"></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</div>
+</body>
+</html>

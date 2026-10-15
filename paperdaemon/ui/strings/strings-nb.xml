@@ -1,0 +1,524 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PaperDaemon's interface text, Norsk bokmål. Names are "screen.thing"; {placeholders} are filled in by the window. -->
+<resources>
+  <string name="pair.title">Koble til dette vinduet</string>
+  <string name="pair.intro">Motoren godtar bare forespørsler som har med sammenkoblingsnøkkelen. Åpne PaperDaemons eget vindu for å bli koblet til automatisk, eller lim inn nøkkelen som vises under Nettverk på datamaskinen som kjører den.</string>
+  <string name="pair.token">Sammenkoblingsnøkkel</string>
+  <string name="pair.go">Koble til</string>
+  <string name="pair.empty">Lim inn sammenkoblingsnøkkelen først.</string>
+  <string name="pair.refused">Motoren godtok ikke den nøkkelen.</string>
+  <string name="fatal.title">Motoren svarte ikke</string>
+  <string name="common.try_again">Prøv igjen</string>
+  <string name="pair.window_refused">Motoren godtok ikke nøkkelen til dette vinduet.</string>
+  <string name="rail.engine_on">Motoren er på</string>
+  <string name="rail.version">Versjon {version}</string>
+  <string name="api.no_answer">Motoren svarte ikke. Kjører PaperDaemon fortsatt?</string>
+  <string name="api.unpaired">Dette vinduet er ikke koblet til motoren.</string>
+  <string name="api.not_offered">Motoren tilbyr ikke dette ennå ({route}).</string>
+  <string name="day.today">I dag</string>
+  <string name="day.yesterday">I går</string>
+  <string name="unit.seconds">{n} s</string>
+  <string name="unit.minutes">{n} min</string>
+  <string name="unit.hours">{n} t</string>
+  <string name="mirror.building_pct">Bygger Speilet, {pct} %</string>
+  <string name="mirror.pct">Speil {pct} %</string>
+  <string name="mirror.bar">Bygger Speilet: {done} av {total} · {bytes} av {bytes_total} · {pct} %</string>
+  <string name="mirror.bar_start">Bygger Speilet: {files} · {bytes} så langt</string>
+  <string name="count.document.one">{n} dokument</string>
+  <string name="count.document.other">{n} dokumenter</string>
+  <string name="count.file.one">{n} fil</string>
+  <string name="count.file.other">{n} filer</string>
+  <string name="mirror.name">Speilet</string>
+  <string name="login.privacy">Påloggingen din blir på denne datamaskinen og brukes bare mot reMarkable-skyen. Sidene dine går ingen andre steder, med mindre du kobler til en skymodell eller nettsøk; da går bare det en jobb trenger, til den tjenesten.</string>
+  <string name="login.borrow.title">Lån påloggingen til reMarkable-appen</string>
+  <string name="login.borrow.body">PaperDaemon kopierer påloggingen til reMarkable-skrivebordsappen inn i Windows Legitimasjonsbehandling. Appen forblir pålogget. Begge bruker samme pålogging, så bare én av dem kan kjøre om gangen.</string>
+  <string name="login.borrow.action">Lån påloggingen</string>
+  <string name="login.steal.title">⚠ Stjel påloggingen til reMarkable-appen</string>
+  <string name="login.steal.body">PaperDaemon kopierer påloggingen til reMarkable-skrivebordsappen inn i Windows Legitimasjonsbehandling, og sletter den deretter fra appens innstillinger i Windows-registeret. Appen blir logget ut; når du logger på den igjen, blir den en egen enhet. Lukk reMarkable-appen først.</string>
+  <string name="login.steal.action">Stjel påloggingen</string>
+  <string name="login.not_found">reMarkable-appen er ikke pålogget på denne datamaskinen. Installer den, logg på, og prøv igjen.</string>
+  <string name="login.not_kept">Appens pålogging ble funnet, men PaperDaemon kunne ikke beholde den.</string>
+  <string name="login.not_kept_why">Appens pålogging ble funnet, men PaperDaemon kunne ikke beholde den: {why}</string>
+  <string name="login.stolen">PaperDaemon har påloggingen, og reMarkable-appen er logget ut. Logg på appen igjen for å bruke den som en egen enhet.</string>
+  <string name="login.borrowed">PaperDaemon bruker påloggingen til reMarkable-appen. Hold appen lukket mens PaperDaemon kjører.</string>
+  <string name="job.failed">Mislyktes</string>
+  <string name="job.working">Arbeider</string>
+  <string name="job.skipped">Hoppet over</string>
+  <string name="job.waiting">Venter</string>
+  <string name="job.done">Ferdig</string>
+  <string name="job.unknown">Ukjent</string>
+  <string name="job.page">s. {n}</string>
+  <string name="jobs.unreadable">Kunne ikke lese jobbene.</string>
+  <string name="jobs.reading">Leser jobbene…</string>
+  <string name="jobs.none">Ingen jobber ennå.</string>
+  <string name="jobs.none_hint">Merk en side med {tag} på nettbrettet.</string>
+  <string name="count.job.one">{n} jobb</string>
+  <string name="count.job.other">{n} jobber</string>
+  <string name="jobs.n_failed">{n} mislyktes</string>
+  <string name="jobs.n_skipped">{n} hoppet over</string>
+  <string name="jobs.earlier">Tidligere</string>
+  <string name="jobs.so_far">{time} så langt</string>
+  <string name="jobs.a_page">En side</string>
+  <string name="jobs.no_note">Ingen merknad</string>
+  <string name="jobs.col.time">Tid</string>
+  <string name="jobs.col.page">Side</string>
+  <string name="jobs.col.status">Status</string>
+  <string name="jobs.col.what">Hva som skjedde</string>
+  <string name="jobs.col.took">Varighet</string>
+  <string name="jobs.label">Jobber</string>
+  <string name="issue.setup">Oppsettet er ikke ferdig.</string>
+  <string name="issue.setup_go">Fortsett oppsettet</string>
+  <string name="issue.tablet">PaperDaemon når ikke reMarkable-en din.</string>
+  <string name="issue.mirror">Kunne ikke oppdatere Speilet: {why}</string>
+  <string name="issue.not_started">PaperDaemon startet ikke: {why}</string>
+  <string name="term.daemon">Daemon</string>
+  <string name="term.daemon_about">Holder øye med nettbrettet etter merkede sider og gir hver av dem til verten som en jobb.</string>
+  <string name="term.host">Vert</string>
+  <string name="term.host_about">Utfører hver jobb: leser siden, spør modellene og skriver svaret tilbake på siden.</string>
+  <string name="term.empty">Ingenting ennå.</string>
+  <string name="loop.pausing">Setter på pause…</string>
+  <string name="loop.starting">Starter…</string>
+  <string name="loop.pause">Sett daemonen på pause (frigjør VRAM)</string>
+  <string name="loop.start">Start</string>
+  <string name="overview.label">Oversikt</string>
+  <string name="overview.needs_you">Noe trenger deg</string>
+  <string name="loop.running">Kjører</string>
+  <string name="loop.paused">På pause</string>
+  <string name="common.choose">Velg…</string>
+  <string name="common.help">Hjelp</string>
+  <string name="settings.label">Innstillinger</string>
+  <string name="settings.prefs">Preferanser</string>
+  <string name="settings.prefs_to_set">Preferanser å angi</string>
+  <string name="settings.note">Ta deg et øyeblikk til å angi preferansene dine: hvordan PaperDaemon skriver temperaturer, klokkeslett og uker på sidene dine.</string>
+  <string name="settings.language">Språk</string>
+  <string name="settings.language.help">Språket i PaperDaemons eget vindu. Når du endrer det, lastes vinduet inn på nytt.</string>
+  <string name="settings.language.pick">Velg et språk fra listen.</string>
+  <string name="settings.temperature">Temperatur</string>
+  <string name="settings.temperature.help">På kalendere og i det PaperDaemon skriver.</string>
+  <string name="settings.temperature.f">Fahrenheit (°F)</string>
+  <string name="settings.temperature.c">Celsius (°C)</string>
+  <string name="settings.clock">Klokke</string>
+  <string name="settings.clock.12">12 timer (2:30 PM)</string>
+  <string name="settings.clock.24">24 timer (14:30)</string>
+  <string name="settings.week">Uken starter på</string>
+  <string name="day.sunday">Søndag</string>
+  <string name="day.monday">Mandag</string>
+  <string name="settings.remarkable">reMarkable</string>
+  <string name="settings.login.none">Ikke tilkoblet</string>
+  <string name="settings.login.borrowing">Låner påloggingen til reMarkable-appen</string>
+  <string name="settings.login.steal">Stjel i stedet</string>
+  <string name="settings.login.stolen">Tilkoblet med egen pålogging, stjålet fra reMarkable-appen</string>
+  <string name="settings.login.connected">Tilkoblet</string>
+  <string name="settings.inbox">Innboks for Dekomponer</string>
+  <string name="settings.inbox.help">Notatboken som Send til nettbrett legger til sider i. PaperDaemon svarer aldri i den, uansett hvordan den er merket.</string>
+  <string name="settings.inbox.placeholder">Velg en notatbok</string>
+  <string name="settings.inbox.pick">Velg en notatbok fra listen.</string>
+  <string name="settings.location">Sted</string>
+  <string name="settings.location.help">For vær, soloppgang og helligdager på kalendere.</string>
+  <string name="settings.location.placeholder">Begynn å skrive en by</string>
+  <string name="settings.location.pick">Velg en by fra listen.</string>
+  <string name="settings.ignore">Ignorer-merke</string>
+  <string name="settings.ignore.help">Sett dette merket på en mappe, en notatbok eller en side på nettbrettet, så behandler PaperDaemon aldri noe der, for noe oppsett, uansett hvilke andre merker den har.</string>
+  <string name="settings.sprompt">Merke for faste instrukser</string>
+  <string name="settings.sprompt.help">Sett dette merket på én side i en notatbok og skriv instrukser på den. PaperDaemon legger sidens tekst til på slutten av instruksene for hver jobb i den notatboken, og behandler aldri selve siden.</string>
+  <string name="settings.network">Nettverkstilgang</string>
+  <string name="settings.network.help">Vær, innlegg fra sosiale medier, Wikipedia og nettsøk. Modellene dine og reMarkable-skyen påvirkes ikke.</string>
+  <string name="settings.network.allow">Tillat nettverkstilgang</string>
+  <string name="settings.social">Sosiale nettsteder</string>
+  <string name="settings.social.help">Hvor en forespørsel om innlegg leter når den ikke nevner noe nettsted. Et nettsted som nevnes, søkes alltid i.</string>
+  <string name="settings.tools">Verktøy</string>
+  <string name="settings.updates">Oppdateringer</string>
+  <string name="settings.updates.help">PaperDaemon sjekker aldri av seg selv.</string>
+  <string name="settings.version">Versjon {version}</string>
+  <string name="settings.updates.check">Se etter oppdateringer</string>
+  <string name="settings.updates.installed_only">Oppdateringer sjekkes av den installerte appen, fra menyen i systemstatusfeltet eller her.</string>
+  <string name="settings.logs">Logger</string>
+  <string name="settings.logs.help">Det daemonen, verten og motoren har skrevet nylig, som sider i innboksen din.</string>
+  <string name="settings.logs.send">Send loggene til innboksen</string>
+  <string name="settings.logs.no_inbox">Angi en innboks ovenfor først</string>
+  <string name="settings.logs.sent">Sendt: {pages} i {inbox}, fra side {first}.</string>
+  <string name="settings.logs.the_inbox">innboksen</string>
+  <string name="count.page.one">{n} side</string>
+  <string name="count.page.other">{n} sider</string>
+  <string name="tablet.read">{pct} % lest</string>
+  <string name="tablet.page_of">Side {page} av {pages}</string>
+  <string name="common.reading">Leser…</string>
+  <string name="tablet.my_files">Mine filer</string>
+  <string name="tablet.arriving">Kommer fortsatt…</string>
+  <string name="tablet.empty">Denne mappen er tom.</string>
+  <string name="viewer.pages">Sider</string>
+  <string name="viewer.chapters">Kapitler</string>
+  <string name="viewer.goto">Gå til side (1 - {last})</string>
+  <string name="viewer.goto_aria">Gå til side, 1 til {last}</string>
+  <string name="viewer.prev">Forrige side</string>
+  <string name="viewer.next">Neste side</string>
+  <string name="viewer.reading_chapters">Leser kapitlene…</string>
+  <string name="viewer.not_drawn">Kunne ikke tegne denne siden.</string>
+  <string name="viewer.page">Side {n}</string>
+  <string name="viewer.go_to">Gå til side {n}</string>
+  <string name="common.close">Lukk</string>
+  <string name="tablet.label">Nettbrett</string>
+  <string name="tablet.folder">Mappe</string>
+  <string name="dc.decomposing">Dekomponerer {name}</string>
+  <string name="dc.drop">Slipp et bilde her, eller {choose}.</string>
+  <string name="dc.choose">velg en fil</string>
+  <string name="dc.on_page">På side nr. {n}</string>
+  <string name="dc.sending">Sender…</string>
+  <string name="dc.send">Send til nettbrett</string>
+  <string name="dc.no_inbox">Angi en innboks under fanen Innstillinger</string>
+  <string name="dc.look">Se nærmere</string>
+  <string name="dc.size_px">{w} × {h} px</string>
+  <string name="count.stroke.one">{n} strek</string>
+  <string name="count.stroke.other">{n} streker</string>
+  <string name="common.delete">Slett</string>
+  <string name="dc.size_range">Størrelsen er 200 til 1 400 nettbrettpiksler.</string>
+  <string name="dc.picture">Bilde</string>
+  <string name="dc.bad_type">Den filen er ikke et PNG-, JPEG- eller WebP-bilde.</string>
+  <string name="dc.too_big">Det bildet er {size}. Bruk et under {max}.</string>
+  <string name="dc.unreadable">Kunne ikke lese filen.</string>
+  <string name="dc.drop_what">Slipp en bildefil, eller et bilde fra en nettside.</string>
+  <string name="dc.label">Dekomponer</string>
+  <string name="dc.intro">Gjør et bilde om til pennestreker og send det til nettbrettet, der hver linje kan viskes ut og tegnes over som dine egne.</string>
+  <string name="dc.image">Bilde</string>
+  <string name="dc.size">Størrelse</string>
+  <string name="dc.size_unit">nettbrettpiksler, 200 til 1 400</string>
+  <string name="dc.types">PNG, JPEG, WebP</string>
+  <string name="dc.decomps">Dekomponeringer</string>
+  <string name="lineup.unreadable">Kunne ikke lese oppsettene.</string>
+  <string name="memories.note">Det modellen i dette oppsettet har lært om å jobbe for deg: klager, rettelser, hvordan du vil ha ting gjort. Modellen lagrer dem selv, aldri notatene dine eller arbeidet på en side (hver notatbok har sin egen kontekst i sin notisblokk), og hver jobb i dette oppsettet får se dem. Endre eller slett hvilken som helst av dem her.</string>
+  <string name="memories.none">Ingen minner ennå.</string>
+  <string name="memories.none_hint">Modellen lagrer et når den lærer noe om å jobbe for deg.</string>
+  <string name="memories.count">{n} av {max}</string>
+  <string name="memories.saved_on">Lagret {date}</string>
+  <string name="memories.one">Minne</string>
+  <string name="memories.saved">Minnet er lagret.</string>
+  <string name="memories.deleted">Minnet er slettet.</string>
+  <string name="lineup.label">Oppsett</string>
+  <string name="lineup.new_option">+ Nytt oppsett…</string>
+  <string name="lineup.rename">Gi nytt navn</string>
+  <string name="tab.text">Tekst / Resonnering</string>
+  <string name="tab.image">Bilde</string>
+  <string name="tab.network">Nettverk</string>
+  <string name="tab.tags">Merking</string>
+  <string name="tab.memories">Minner</string>
+  <string name="tab.tests">Test</string>
+  <string name="common.saved">Lagret.</string>
+  <string name="common.no_answer">Ikke noe svar.</string>
+  <string name="lineup.test_no_answer">Ikke noe svar. Sjekk leverandøren, modellen og nøkkelen.</string>
+  <string name="memories.delete_q">Slette dette minnet?</string>
+  <string name="memories.delete_body">Modellen får ikke se det igjen.</string>
+  <string name="lineup.new">Nytt oppsett</string>
+  <string name="lineup.rename_title">Gi oppsettet nytt navn</string>
+  <string name="lineup.name">Navn</string>
+  <string name="lineup.delete_q">Slette {name}?</string>
+  <string name="lineup.delete_body">Modellene, nettsøket, merkene og minnene følger med.</string>
+  <string name="common.disclaimer">Ansvarsfraskrivelse</string>
+  <string name="common.cancel">Avbryt</string>
+  <string name="slot.other_provider">Annen (OpenAI-kompatibel)</string>
+  <string name="slot.harness_auto">Automatisk (fra modellens navn)</string>
+  <string name="slot.harness">Sele</string>
+  <string name="slot.add_harness">+ Legg til sele</string>
+  <string name="slot.none">Ingen</string>
+  <string name="slot.api_key">API-nøkkel</string>
+  <string name="slot.local">Kjør lokalt</string>
+  <string name="slot.source">Kilde</string>
+  <string name="slot.provider">Leverandør</string>
+  <string name="slot.address">Adresse</string>
+  <string name="slot.model">Modell</string>
+  <string name="slot.saved">lagret</string>
+  <string name="common.test">Test</string>
+  <string name="slot.script_label">Start.bat - la stå tom hvis det ikke trengs noe startskript</string>
+  <string name="slot.script">Startskript</string>
+  <string name="net.search">Nettsøk</string>
+  <string name="net.service_key">Søketjeneste, med API-nøkkel</string>
+  <string name="net.service">Tjeneste</string>
+  <string name="net.script">Startskript for søk</string>
+  <string name="tags.note">Hvert merke her er et som dette oppsettet ser etter: merk en side, en notatbok eller en mappe med det på nettbrettet, så behandler dette oppsettet den. En side får ledetekstene til merkene fra dette oppsettet som står på den, på notatboken og på mappene over, i rekkefølgen i denne listen (dra et kort i håndtaket for å flytte det); notatbokens egen side med faste instrukser kommer sist. Behold ett merke med tom ledetekst, for sider som ikke trenger noe ekstra. Et merke kan bare høre til ett oppsett.</string>
+  <string name="tags.move">Flytt {name} (piltaster)</string>
+  <string name="tags.this">dette merket</string>
+  <string name="tags.drag">Dra for å endre rekkefølgen</string>
+  <string name="tags.tag">Merke</string>
+  <string name="common.remove">Fjern</string>
+  <string name="tags.prompt">Ledetekst</string>
+  <string name="tags.prompt_blank">Tom: siden får ingen ekstra ledetekst</string>
+  <string name="tags.add">+ Legg til merke</string>
+  <string name="common.testing">Tester…</string>
+  <string name="common.answering">Svarer</string>
+  <string name="np.list_unreadable">Kunne ikke lese notisblokkene.</string>
+  <string name="np.reading_list">Leser notisblokkene…</string>
+  <string name="np.no_match">Ingen notatbok passer.</string>
+  <string name="np.summary">{entries} · {chars} tegn</string>
+  <string name="count.entry.one">{n} oppføring</string>
+  <string name="count.entry.other">{n} oppføringer</string>
+  <string name="np.undated">Udatert</string>
+  <string name="np.show_fewer">Vis færre</string>
+  <string name="np.show_older.one">Vis {n} eldre oppføring</string>
+  <string name="np.show_older.other">Vis {n} eldre oppføringer</string>
+  <string name="np.select">Velg en notatbok for å lese notisblokken.</string>
+  <string name="np.wiped_at">Tømt kl. {time}.</string>
+  <string name="np.wiped_body">Alle oppføringene er borte, og ingen kopi ble beholdt. Neste jobb i {name} starter med en tom notisblokk.</string>
+  <string name="np.copy">Kopier teksten</string>
+  <string name="np.wipe">Tøm notisblokken</string>
+  <string name="np.not_wiped">Notisblokken ble ikke tømt.</string>
+  <string name="np.unreadable">Kunne ikke lese denne notisblokken.</string>
+  <string name="np.reading">Leser notisblokken…</string>
+  <string name="np.empty">Denne notisblokken er tom.</string>
+  <string name="np.show">Vis</string>
+  <string name="np.entries">Oppføringer</string>
+  <string name="np.as_text">Som tekst</string>
+  <string name="np.none">Ingen notisblokker ennå.</string>
+  <string name="np.this_notebook">denne notatboken</string>
+  <string name="np.wipe_q">Tømme notisblokken til {name}?</string>
+  <string name="np.wipe_body">Alle {entries} fjernes, og ingen kopi beholdes. Neste jobb i {name} starter med en tom notisblokk.</string>
+  <string name="np.wipe_body2">Et spill som ligger i denne notisblokken, forsvinner også. Notatboken din på nettbrettet røres ikke.</string>
+  <string name="np.label">Notisblokker</string>
+  <string name="np.intro">Hver notatboks minne om jobbene sine. Etter hver jobb skriver verten ned hva som ble spurt om og hva den gjorde, og neste jobb i den notatboken får se de siste oppføringene, slik at en samtale kan fortsette fra side til side.</string>
+  <string name="np.books">Notatbøker med notisblokk</string>
+  <string name="np.find">Finn en notatbok</string>
+  <string name="common.copied">Kopiert</string>
+  <string name="common.copy_failed">Kunne ikke kopiere</string>
+  <string name="nw.this_computer">· denne datamaskinen, alltid på</string>
+  <string name="nw.cannot_remove">kan ikke fjernes</string>
+  <string name="nw.remove_addr">Fjern {address}</string>
+  <string name="nw.url_label">Adresse for andre enheter</string>
+  <string name="common.copy">Kopier</string>
+  <string name="nw.local_only">Bare fra denne datamaskinen, til du legger til en adresse.</string>
+  <string name="nw.token">Sammenkoblingsnøkkel</string>
+  <string name="nw.hide">Skjul</string>
+  <string name="nw.show">Vis</string>
+  <string name="nw.rotate">Forny…</string>
+  <string name="nw.rotated_at">Fornyet kl. {time}.</string>
+  <string name="nw.rotated_body">Hver tilkoblede enhet trenger den nye nøkkelen. Dette vinduet koblet seg til igjen av seg selv.</string>
+  <string name="nw.token_kept">Lagret i Windows-legitimasjonslageret. Dette vinduet kobler seg til selv.</string>
+  <string name="nw.saved_restart">Lagret kl. {time}. Gjelder når PaperDaemon starter på nytt.</string>
+  <string name="nw.rotate_q">Forny sammenkoblingsnøkkelen?</string>
+  <string name="nw.rotate_body">Hver tilkoblede enhet slutter å virke til du gir den den nye nøkkelen. Dette vinduet kobler seg til igjen av seg selv.</string>
+  <string name="nw.rotate_action">Forny nøkkelen</string>
+  <string name="nw.label">Nettverk</string>
+  <string name="count.address.one">{n} adresse</string>
+  <string name="count.address.other">{n} adresser</string>
+  <string name="nw.intro">Motoren betjener dette vinduet, og alle enheter du kobler til, fra én port på denne datamaskinen.</string>
+  <string name="nw.listens">Hvor motoren lytter</string>
+  <string name="nw.port">Port</string>
+  <string name="nw.save_port">Lagre porten</string>
+  <string name="nw.port_hint">Endre den bare hvis et annet program allerede bruker den. Motoren bruker den nye porten etter at PaperDaemon starter på nytt.</string>
+  <string name="nw.addresses">Adresser</string>
+  <string name="nw.addresses_hint">Legg til WireGuard-adressen din for å nå PaperDaemon fra en telefon eller en annen datamaskin.</string>
+  <string name="nw.another">En annen adresse</string>
+  <string name="nw.to_add">Adresse å legge til</string>
+  <string name="nw.add">Legg til adresse</string>
+  <string name="nw.trust">Legg bare til adresser på nettverk du stoler på. Hver forespørsel, uansett hvor fra, må ha med sammenkoblingsnøkkelen.</string>
+  <string name="nw.reach">Nås på</string>
+  <string name="nw.pairing">Sammenkobling</string>
+  <string name="nw.token_hint">Skriv den inn på en enhet én gang for å koble den til.</string>
+  <string name="nw.bad_address">Det er ikke en IP-adresse. Bruk en form som 10.8.0.2.</string>
+  <string name="nw.listed">{address} står allerede på listen.</string>
+  <string name="su.connect">Koble til reMarkable-en din</string>
+  <string name="su.mirror">Speil</string>
+  <string name="su.finish">Fullfør</string>
+  <string name="su.building_pct">Bygger Speilet, {pct} %</string>
+  <string name="su.taking">Henter påloggingen…</string>
+  <string name="su.steal_instead">Stjel påloggingen i stedet</string>
+  <string name="su.borrow_instead">Lån påloggingen i stedet</string>
+  <string name="su.connected_how">Tilkoblet · {how}</string>
+  <string name="su.borrowed">Lånt</string>
+  <string name="su.stolen">Stjålet</string>
+  <string name="su.continue">Fortsett</string>
+  <string name="su.mirror_lead">PaperDaemons kopi av biblioteket ditt. Den bygges i bakgrunnen; du kan fortsette.</string>
+  <string name="su.connect_first">Koble til reMarkable-en din først.</string>
+  <string name="su.connecting">Kobler til…</string>
+  <string name="su.mirror_complete">Speilet er komplett</string>
+  <string name="su.cloud_silent">Skyen svarte ikke.</string>
+  <string name="su.lineup_lead">Tekstmodellen er påkrevd. Bildemodellen og nettsøk er valgfrie.</string>
+  <string name="su.lineup_unreadable">Kunne ikke lese oppsettet.</string>
+  <string name="su.need_address">Tekstmodellen trenger en adresse.</string>
+  <string name="su.need_name">Oppsettet trenger et navn.</string>
+  <string name="su.finish_lead">PaperDaemon starter med følgende konfigurasjon.</string>
+  <string name="su.proceed">Gå videre til PaperDaemon</string>
+  <string name="su.automatic">Automatisk</string>
+  <string name="su.local_at">Kjøres lokalt på {address}</string>
+  <string name="su.local_at_script">Kjøres lokalt på {address} · med en Start.bat</string>
+  <string name="su.harness_is">Sele: {harness}</string>
+  <string name="su.building">Bygger · {pct} %</string>
+  <string name="su.complete">Komplett</string>
+  <string name="su.not_built">Ikke bygget ennå</string>
+  <string name="su.tags">Merker</string>
+  <string name="su.no_tags">Ingen: ingen side blir besvart før du legger til et</string>
+  <string name="su.steps">Oppsettstrinn</string>
+  <string name="su.later">Sett opp senere</string>
+  <string name="su.title">Oppsett · PaperDaemon</string>
+  <string name="ts.failed">Mislyktes</string>
+  <string name="ts.running">Kjører</string>
+  <string name="ts.passed">Bestått</string>
+  <string name="ts.waiting">Venter</string>
+  <string name="ts.stop">Stopp testen</string>
+  <string name="ts.run">Kjør testen</string>
+  <string name="ts.not_started">Kjøringen startet ikke.</string>
+  <string name="ts.partly">Delvis</string>
+  <string name="ts.unreadable">Kunne ikke lese testene.</string>
+  <string name="ts.result">Resultat</string>
+  <string name="ts.cases_done">Ferdige tilfeller</string>
+  <string name="ts.passed_of">{n} av {total} bestått</string>
+  <string name="ts.intro">Bare den siste testen beholdes, og enhver endring i oppsettet gjør den ugyldig.</string>
+  <string name="help.model.title">Slik virker startskriptet</string>
+  <string name="help.model.intro">Et startskript er en liten Windows-batchfil (en `.bat`) som starter serveren til modellen din. Du skriver den én gang. Etter det kjører PaperDaemon den for deg når en jobb trenger denne modellen, så du aldri må starte serveren for hånd.</string>
+  <string name="help.h_do">Hva skriptet ditt må gjøre</string>
+  <string name="help.model.do1">Starte serveren slik at den svarer på adressen i feltet over, for eksempel `http://127.0.0.1:8790`. PaperDaemon gir skriptet ditt den porten som `%PAPERDAEMON_PORT%`.</string>
+  <string name="help.model.do2">Fortsette å kjøre så lenge serveren kjører. Start serveren direkte, ikke med `start` (det åpner den i et annet vindu og skriptet avslutter med en gang, så PaperDaemon tror serveren er borte).</string>
+  <string name="help.do_output">La serveren skrive ut meldingene sine. PaperDaemon viser de siste linjene her hvis noe går galt.</string>
+  <string name="help.h_runs">Når PaperDaemon kjører det</string>
+  <string name="help.model.runs1">Første gang en jobb trenger denne modellen.</string>
+  <string name="help.model.runs2">Når merket på en side hører til et oppsett med et annet startskript enn det som kjører. PaperDaemon stopper serveren det startet før, og kjører så dette.</string>
+  <string name="help.model.runs3">Ikke når serveren dette skriptet startet, allerede kjører.</string>
+  <string name="help.h_stops">Når PaperDaemon stopper det</string>
+  <string name="help.model.stops">Når du setter PaperDaemon på pause eller avslutter det, eller når et annet oppsetts startskript må kjøre. Det stopper alt skriptet ditt startet. Det stopper aldri et program det ikke startet.</string>
+  <string name="help.h_wrong">Ting som går galt</string>
+  <string name="help.model.wrong_vram">**Grafikkortet er fullt.** En modell trenger plass i kortets minne (VRAM). Hvis en annen modellserver, et spill eller et bildeverktøy holder på det minnet, klarer ikke modellen å laste, eller den går svært tregt. Hvis du kjører andre modellservere selv, la skriptet stoppe dem først (for eksempel `taskkill /IM llama-server.exe /F`). PaperDaemon stopper bare det det startet.</string>
+  <string name="help.model.wrong_two">**To modeller som ikke får plass sammen.** Hvis tekstmodellen og bildemodellen ikke får plass på kortet samtidig, skriv hvert skript slik at det stopper den andres server før det starter sin egen.</string>
+  <string name="help.model.wrong_port">**Porten er opptatt.** Hvis et annet program allerede bruker den porten, kan ikke serveren din starte der. Velg en ledig port og bruk den samme i adressen over.</string>
+  <string name="help.wrong_spaces">**Mellomrom i en bane.** Sett anførselstegn rundt alle baner med mellomrom i.</string>
+  <string name="help.model.wrong_keys">**Nøkler og passord.** Ikke skriv dem i skriptet. Bruk nøkkelfeltet for en API-nøkkel.</string>
+  <string name="help.h_try">Prøv det</string>
+  <string name="help.model.try">Gå til fanen Test og trykk **Kjør testen**.</string>
+  <string name="help.search.title">Slik virker startskriptet for søk</string>
+  <string name="help.search.intro">Et startskript for søk er en liten Windows-batchfil (en `.bat`) som starter din egen søkeserver, vanligvis SearXNG. PaperDaemon kjører den for deg når en jobb må slå opp noe og søkeserveren din ikke svarer.</string>
+  <string name="help.search.do1">Starte søkeserveren slik at den svarer på adressen i feltet over.</string>
+  <string name="help.search.do2">Fortsette å kjøre så lenge serveren kjører. Start den direkte, ikke med `start`.</string>
+  <string name="help.search.runs">Før hvert søk ber PaperDaemon adressen over om et testsøk. Hvis en SearXNG-server svarer ordentlig, bruker PaperDaemon den som den er, uansett hvem som startet den, og kjører ikke skriptet. Det kjører skriptet bare når ingenting svarer, eller når det som svarer ikke er en søkeserver det kan bruke.</string>
+  <string name="help.search.stops">Når du setter PaperDaemon på pause eller avslutter det. Det stopper alt skriptet ditt startet, og aldri et program det ikke startet.</string>
+  <string name="help.search.wrong_json">**JSON er slått av.** SearXNG svarer bare programmer som PaperDaemon hvis JSON er slått på i `settings.yml`: under `search:` → `formats:`, list både `html` og `json`.</string>
+  <string name="help.search.wrong_docker">**Docker.** En Docker-container fortsetter å kjøre etter at PaperDaemon avslutter, fordi Docker kjører den, ikke skriptet ditt. Å kjøre SearXNG i WSL (Windows-undersystem for Linux) eller med Python unngår det.</string>
+  <string name="help.search.wrong_port">**Porten er opptatt.** Hvis et annet program allerede bruker den porten, kan ikke serveren starte der, og PaperDaemon kan ikke fikse det for deg. Velg en ledig port og bruk den samme i adressen over.</string>
+  <string name="help.search.try">Trykk **Test** ved siden av adressen.</string>
+  <string name="help.ask">Be en KI om hjelp</string>
+  <string name="help.copied">Ledeteksten er kopiert til utklippstavlen!</string>
+  <string name="help.copy_failed">Kunne ikke kopiere ledeteksten</string>
+  <string name="help.model.prompt_text">Jeg setter opp PaperDaemon, en app for reMarkable-nettbrettet mitt som kjører KI-modeller på Windows-PC-en min. Jeg trenger en Windows-batchfil (.bat) som starter serveren til tekstmodellen (LLM). PaperDaemon kjører dette skriptet selv når den trenger modellen, og stopper det når den er ferdig.
+
+Regler skriptet må følge:
+- Starte serveren slik at den svarer på HTTP på 127.0.0.1 på porten PaperDaemon sender i %PAPERDAEMON_PORT%.
+- Kjøre serveren i forgrunnen og holde skriptet i gang så lenge serveren kjører. Ikke bruke `start`.
+- Skrive ut serverens utdata.
+- PaperDaemon setter også %PAPERDAEMON_ROLE% (text eller image), %PAPERDAEMON_LOCATION% (hele adressen), %PAPERDAEMON_OTHER_LOCATION% (adressen til den andre modellen), %PAPERDAEMON_LINEUP% og %PAPERDAEMON_DATA%.
+- PaperDaemon stopper bare programmer den har startet. Hvis andre modellservere kan bruke minnet på grafikkortet mitt, bør skriptet stoppe dem først.
+- Serveren må snakke det OpenAI-kompatible chat-API-et (/v1/chat/completions), slik llama-server fra llama.cpp, Ollama, LM Studio eller vLLM gjør.
+
+Før du skriver det, still meg disse spørsmålene ett om gangen og vent på hvert svar:
+1. Hvilket grafikkort har jeg, og hvor mye VRAM har det?
+2. Hvilken modell vil jeg kjøre, og hvor ligger modellfilen på PC-en min?
+3. Hvilket serverprogram bruker jeg (eller vil jeg bruke), og hvor er det installert?
+4. Hvilken port skal det bruke?
+5. Kjører jeg andre KI-servere eller programmer som bruker grafikkortet, og skal skriptet stoppe dem først?
+6. Får tekstmodellen og bildemodellen min plass på kortet samtidig, eller skal hvert skript stoppe det andre?
+
+Skriv så .bat-filen med en kort kommentar på hver linje som sier hva den gjør, og fortell meg hvordan jeg tester den.</string>
+  <string name="help.model.prompt_image">Jeg setter opp PaperDaemon, en app for reMarkable-nettbrettet mitt som kjører KI-modeller på Windows-PC-en min. Jeg trenger en Windows-batchfil (.bat) som starter serveren til bildegenereringsmodellen. PaperDaemon kjører dette skriptet selv når den trenger modellen, og stopper det når den er ferdig.
+
+Regler skriptet må følge:
+- Starte serveren slik at den svarer på HTTP på 127.0.0.1 på porten PaperDaemon sender i %PAPERDAEMON_PORT%.
+- Kjøre serveren i forgrunnen og holde skriptet i gang så lenge serveren kjører. Ikke bruke `start`.
+- Skrive ut serverens utdata.
+- PaperDaemon setter også %PAPERDAEMON_ROLE% (text eller image), %PAPERDAEMON_LOCATION% (hele adressen), %PAPERDAEMON_OTHER_LOCATION% (adressen til den andre modellen), %PAPERDAEMON_LINEUP% og %PAPERDAEMON_DATA%.
+- PaperDaemon stopper bare programmer den har startet. Hvis andre modellservere kan bruke minnet på grafikkortet mitt, bør skriptet stoppe dem først.
+- Serveren må snakke Stable Diffusion web UI-API-et (/sdapi/v1/txt2img), slik serveren til stable-diffusion.cpp, Forge eller AUTOMATIC1111 gjør, eller OpenAI Images-API-et.
+
+Før du skriver det, still meg disse spørsmålene ett om gangen og vent på hvert svar:
+1. Hvilket grafikkort har jeg, og hvor mye VRAM har det?
+2. Hvilken modell vil jeg kjøre, og hvor ligger modellfilen på PC-en min?
+3. Hvilket serverprogram bruker jeg (eller vil jeg bruke), og hvor er det installert?
+4. Hvilken port skal det bruke?
+5. Kjører jeg andre KI-servere eller programmer som bruker grafikkortet, og skal skriptet stoppe dem først?
+6. Får tekstmodellen og bildemodellen min plass på kortet samtidig, eller skal hvert skript stoppe det andre?
+
+Skriv så .bat-filen med en kort kommentar på hver linje som sier hva den gjør, og fortell meg hvordan jeg tester den.</string>
+  <string name="help.search.prompt">Jeg setter opp PaperDaemon, en app for reMarkable-nettbrettet mitt som kjører på Windows-PC-en min. Jeg trenger en Windows-batchfil (.bat) som starter en SearXNG-søkeserver på denne PC-en. PaperDaemon kjører skriptet selv når den må søke og ingenting svarer, og stopper det når PaperDaemon settes på pause eller avsluttes.
+
+Regler skriptet må følge:
+- Starte SearXNG slik at den svarer på HTTP på 127.0.0.1 på porten jeg velger.
+- SearXNG må ha JSON-utdata slått på (search: formats: [html, json] i settings.yml).
+- Kjøre serveren i forgrunnen og holde skriptet i gang så lenge serveren kjører. Ikke bruke `start`.
+- Skrive ut serverens utdata.
+- Foretrekke WSL eller Python fremfor Docker: PaperDaemon stopper skriptets egne prosesser, men en Docker-container ville fortsette å kjøre etter at den avslutter.
+
+Før du skriver det, still meg disse spørsmålene ett om gangen og vent på hvert svar:
+1. Har jeg WSL (Windows-undersystem for Linux) installert? Python? Docker?
+2. Er SearXNG allerede installert, og i så fall hvor og hvordan?
+3. Hvilken port skal det bruke, og bruker noe annet den allerede?
+
+Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen med en kort kommentar på hver linje som sier hva den gjør, og fortell meg hvordan jeg tester den.</string>
+  <string name="ts.what">Hva</string>
+  <string name="ts.details">Detaljer</string>
+  <string name="ts.testing">Tester: {n} av {total} ferdig</string>
+  <string name="ts.changed">Oppsettet er endret siden forrige test, så det resultatet gjelder ikke lenger. Kjør testen på nytt.</string>
+  <string name="ts.never">Dette oppsettet er ikke testet ennå.</string>
+  <string name="ts.whole">Hele oppsettet {name} testes samlet: tekstmodellen og selen, bildemodellen og selen, nettverket og merkene.</string>
+  <string name="ts.row.model-text">Tekstmodell</string>
+  <string name="ts.row.model-image">Bildemodell</string>
+  <string name="ts.row.answer">Svare på spørsmål</string>
+  <string name="ts.row.ink">Svare på et håndskrevet spørsmål</string>
+  <string name="ts.row.chart">Lage diagrammer</string>
+  <string name="ts.row.draw">Tegne</string>
+  <string name="ts.row.picture">Lage bilder</string>
+  <string name="ts.row.handwriting">Lese håndskrift</string>
+  <string name="ts.row.search">Søke på nettet</string>
+  <string name="ts.row.social">Sosiale medier</string>
+  <string name="ts.row.weather">Vær</string>
+  <string name="ts.m.not_run">Ikke kjørt</string>
+  <string name="ts.m.no_image">Ingen bildemodell</string>
+  <string name="ts.m.waiting">Venter</string>
+  <string name="ts.m.working">Pågår</string>
+  <string name="ts.m.canceled">Avbrutt</string>
+  <string name="ts.m.failed">Mislyktes</string>
+  <string name="ts.m.answered_in">Svarte på {s} s</string>
+  <string name="ts.m.done_in">Ferdig på {s} s</string>
+  <string name="ts.m.failed_after">Mislyktes etter {s} s</string>
+  <string name="ts.m.answers">Svarer</string>
+  <string name="ts.m.check_failed">{check}: mislyktes</string>
+  <string name="ts.m.no_answer">Ikke noe svar</string>
+  <string name="ts.m.not_set_up">Ikke satt opp</string>
+  <string name="ts.m.network_off">Nettverkstilgang er av</string>
+  <string name="ts.m.no_results_in">Ingen treff på {s} s</string>
+  <string name="ts.m.results_in">{n} treff på {s} s</string>
+  <string name="ts.m.no_sites">Ingen sider valgt</string>
+  <string name="ts.m.site_time">{site} {s} s</string>
+  <string name="ts.m.site_failed">{site} mislyktes</string>
+  <string name="ts.m.no_forecast">Ingen varsel</string>
+  <string name="ts.m.weather">{t}{unit} og {sky}, svarte på {s} s</string>
+  <string name="ts.m.no_samples">Ingen prøver</string>
+  <string name="ts.m.cannot_see">Modellen kan ikke se</string>
+  <string name="ts.m.no_reading">Ingen lesing</string>
+  <string name="ts.m.nothing_read">Ingenting lest</string>
+  <string name="ts.m.words">{pct} % av ordene, {s} s per side</string>
+  <string name="ts.d.no_image">Oppsettet har ingen bildemodell.</string>
+  <string name="ts.d.search_setup">Legg til en søketjeneste eller en lokal søkeserver i oppsettets Nettverk-fane.</string>
+  <string name="ts.d.allow_network">Tillat det i Innstillinger.</string>
+  <string name="ts.d.search_empty">Søket kom tilbake tomt.</string>
+  <string name="ts.d.first">Første: {title}</string>
+  <string name="ts.d.every_site">Innlegg kom tilbake fra hver side.</string>
+  <string name="ts.d.choose_sites">Velg de sosiale sidene i Innstillinger.</string>
+  <string name="ts.d.no_forecast">Værtjenesten svarte ikke.</string>
+  <string name="ts.d.weather">I dag i {place}: høyeste {hi}{unit}, laveste {lo}{unit}.</string>
+  <string name="ts.d.weather_london">Ingen plassering er satt, så London i dag: høyeste {hi}{unit}, laveste {lo}{unit}.</string>
+  <string name="ts.d.samples_missing">Håndskriftprøvene mangler.</string>
+  <string name="ts.d.cannot_see">Oppsettets tekstmodell tar ikke imot bilder, så den leser ingen håndskrift.</string>
+  <string name="ts.d.words">{right} av {total} ord på {pages} sider av {pages} skribenter fra fire kontinenter ({regions}).</string>
+  <string name="ts.d.text_failed">Tekstmodellen besto ikke sjekken sin.</string>
+  <string name="page.gave_up">Klarte ikke å fullføre dette; ga opp etter {n} forsøk.</string>
+  <string name="issue.loop_token_unreadable">reMarkable-tilkoblingen kunne ikke leses: {why}</string>
+  <string name="issue.loop_gave_up">En del av PaperDaemon stoppet {n} ganger på rad og er latt være stoppet; loggen sier hvorfor.</string>
+  <string name="issue.loop_supervisor">PaperDaemons tilsyn fikk en feil: {why}</string>
+  <string name="slot.key_where">Fyll inn serverens adresse først: nøkkelen lagres for den serveren.</string>
+  <string name="day.saturday">Lørdag</string>
+  <string name="slot.source.help">API-nøkkel: et selskap kjører modellen, og PaperDaemon når den med nøkkelen din. Kjør lokalt: en modellserver du kjører selv, på denne datamaskinen eller i nettverket ditt.</string>
+  <string name="slot.provider.help">Hvem som kjører modellen. Annen: enhver tjeneste som snakker OpenAI-API-et, på adressen du oppgir.</string>
+  <string name="slot.address.help_hosted">Tjenestens API-adresse, for eksempel https://api.example.com/v1.</string>
+  <string name="slot.model.help">Modellens navn nøyaktig slik leverandøren skriver det.</string>
+  <string name="slot.api_key.help">Lagres i Windows Legitimasjonsbehandling, aldri i en fil. Oppstillinger som bruker samme server, deler nøkkelen.</string>
+  <string name="slot.address.help_local">Der modellens server svarer, for eksempel http://127.0.0.1:8080. Hvis ingenting svarer der, kjører PaperDaemon oppstartsskriptet nedenfor.</string>
+  <string name="slot.harness.help">Hvordan PaperDaemon jobber med denne modellen: hva den sier til den og hvordan den leser svarene. Automatisk velger en ut fra modellens navn; Legg til harness åpner mappen for dine egne.</string>
+  <string name="net.source.help">Der en jobb slår opp ting: en søketjeneste du har en API-nøkkel til, eller en SearXNG-server du kjører selv.</string>
+  <string name="net.service.help">Søketjenesten nøkkelen din hører til.</string>
+  <string name="net.address.help">Der SearXNG-serveren din svarer, for eksempel http://127.0.0.1:8888. Hvis ingenting brukbart svarer der, kjører PaperDaemon oppstartsskriptet nedenfor.</string>
+  <string name="tags.tag.help">Merket nøyaktig slik du setter det på nettbrettet; store og små bokstaver spiller ingen rolle.</string>
+  <string name="tags.prompt.help">Legges til instruksjonene for hver jobb på en side med dette merket, eller i en notatbok eller mappe som har det.</string>
+</resources>

@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notepads · PaperDaemon</title>
+<link rel="stylesheet" href="paper.css">
+<script src="mockup.js" defer></script>
+<style>
+  .pads { display: grid; grid-template-columns: 216px minmax(0, 1fr); gap: var(--s6); align-items: start; }
+  .books { position: sticky; top: var(--s5); }
+  .books .field { width: 100%; }
+  .booklist { list-style: none; margin: var(--s3) 0 0; padding: 0; border-top: 1px solid var(--ink); }
+  .booklist li { border-bottom: 1px solid var(--rule); }
+  .booklist a { display: block; padding: 7px var(--s2) 7px var(--s3); text-decoration: none; border-left: 2px solid transparent; transition: background var(--quick); cursor: pointer; }
+  .booklist a:hover { background: var(--paper-sunk); }
+  .booklist a[aria-current="true"] { background: var(--paper-sunk); border-left-color: var(--ink); }
+  .booklist a[aria-current="true"] strong { font-weight: 600; }
+  .booklist strong { display: block; font-weight: 400; }
+  .booklist .meta { display: block; margin-top: 1px; }
+  .books > .meta { margin-top: var(--s3); }
+
+  .padhead { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s4); padding-bottom: var(--s2); border-bottom: 1px solid var(--ink); }
+  .padhead .meta { margin-top: 2px; }
+  .padhead code { font-size: 12px; }
+  .padhead .actions { flex: none; padding-top: 3px; }
+
+  .pad { list-style: none; margin: 0; padding: 0; }
+  .day { font: 600 12px/16px var(--font-ui); color: var(--ink-3); padding: var(--s4) 0 var(--s1); border-bottom: 1px solid var(--rule); }
+  .entry { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: var(--s4); padding: var(--s3) 0; border-bottom: 1px solid var(--rule); }
+  .entry .when time { display: block; font-weight: 600; }
+  .entry .when .meta { display: block; margin-top: 2px; }
+  .entry .asked { font-family: var(--font-head); font-style: italic; font-size: 15px; line-height: 21px; }
+  .entry .did { margin-top: 3px; }
+  .entry .foot { margin-top: var(--s1); }
+  .entry.skipped .asked, .entry.skipped .did { color: var(--ink-3); }
+  .cut { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) 0; color: var(--ink-3); font-size: 12px; line-height: 16px; text-align: center; }
+  .cut::before, .cut::after { content: ""; flex: 1 1 24px; border-top: 1px dashed var(--edge); }
+  .cut span { flex: 0 1 auto; max-width: 52ch; }
+
+  .shown { margin-top: var(--s4); }
+  .shown pre.snippet { white-space: pre-wrap; padding: var(--s3) var(--s4); font-size: 12.5px; line-height: 19px; }
+
+  @media (max-width: 900px) {
+    .pads { grid-template-columns: minmax(0, 1fr); }
+    .books { position: static; }
+  }
+</style>
+</head>
+<body>
+<div class="app" data-state="nb=garden&older=off&copied=off&wiped=none">
+  <nav class="rail" aria-label="PaperDaemon">
+    <a class="wordmark" href="index.html">PaperDaemon</a>
+    <ul class="nav">
+      <li><a href="overview.html">Overview <span class="state"><i class="mk busy"></i>Working</span></a></li>
+      <li><a href="notepads.html" aria-current="page">Notepads <span class="state num">5</span></a></li>
+      <li><a href="decompose.html">Decompose and send</a></li>
+      <li><a href="benchmark.html">Benchmark <span class="state num">10/12</span></a></li>
+    </ul>
+    <ul class="nav">
+      <li><a href="tablet.html">Tablet <span class="state"><i class="mk on"></i>Connected</span></a></li>
+      <li><a href="models.html">Models <span class="state"><i class="mk on"></i>Ready</span></a></li>
+      <li><a href="search.html">Search <span class="state"><i class="mk on"></i>On</span></a></li>
+      <li><a href="capabilities.html">Capabilities <span class="state num">9 on</span></a></li>
+      <li><a href="network.html">Network <span class="state num">2 addresses</span></a></li>
+    </ul>
+    <div class="rail-foot">
+      <p class="meta">Engine on <code>127.0.0.1:8770</code><br>Version 0.1.0</p>
+    </div>
+  </nav>
+
+  <main class="page">
+    <header class="page-head">
+      <h1>Notepads</h1>
+      <p>Each notebook's memory of its jobs. After every job the host writes down what was asked and what it did, and the next job in that notebook is shown the recent entries, so a conversation can carry on from page to page.</p>
+    </header>
+
+    <div class="pads">
+      <aside class="books" aria-label="Notebooks with a notepad">
+        <input class="field" type="search" placeholder="Find a notebook" aria-label="Find a notebook">
+        <ul class="booklist">
+          <li><a data-set="nb=garden&view=entries&older=off&copied=off"><strong>Garden plans</strong><span class="meta num">18 entries · 09:41</span></a></li>
+          <li><a data-set="nb=reading&view=entries&older=off&copied=off"><strong>Reading log</strong><span class="meta num">31 entries · 09:12</span></a></li>
+          <li><a data-set="nb=sketches&view=entries&older=off&copied=off"><strong>Sketches</strong><span class="meta num">Art · 9 entries · 08:55</span></a></li>
+          <li><a data-set="nb=week&view=entries&older=off&copied=off"><strong>Week planner</strong><span class="meta num">12 entries · 08:31</span></a></li>
+          <li><a data-set="nb=questions&view=entries&older=off&copied=off"><strong>Questions</strong><span class="meta num">44 entries · 08:02</span></a></li>
+        </ul>
+        <p class="meta">Notebooks in the trash are not listed.</p>
+      </aside>
+
+      <div>
+        <!-- Garden plans -->
+        <section aria-labelledby="h-garden" data-when="nb=garden">
+          <header class="padhead">
+            <div>
+              <h2 id="h-garden">Garden plans</h2>
+              <p class="meta num"><span data-when="wiped!=garden">18 entries since Sep 2 · last written 09:41 · </span>kept as <code id="path-garden">%APPDATA%\PaperDaemon\notepads\3f2a9c1e.md</code></p>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn quiet small" data-set="copied=on" data-copy="path-garden"><span data-when="copied=off">Copy path</span><span data-when="copied=on">Copied</span></button>
+              <button type="button" class="btn danger small" data-open="dlg-wipe" data-when="wiped!=garden">Wipe notepad</button>
+            </div>
+          </header>
+          <div data-when="wiped!=garden">
+            <div class="spread" style="margin-top: var(--s4)">
+              <div class="seg small" data-name="view" role="group" aria-label="Show"><button type="button" data-value="entries" aria-pressed="true">Entries</button><button type="button" data-value="model" aria-pressed="false">What the next job is shown</button></div>
+              <span class="meta">New entries appear here as jobs finish.</span>
+            </div>
+            <div data-when="view=entries">
+              <ol class="pad">
+                <li class="day">Today</li>
+                <li class="entry">
+                  <div class="when"><time>09:41</time><span class="meta">p. 3</span></div>
+                  <div><p class="asked">Chart this year's rainfall by month.</p><p class="did">Drew a bar chart of rainfall by month, 12 bars, below the notes.</p><p class="foot meta">31 s · <a href="overview.html">Job record</a></p></div>
+                </li>
+                <li class="entry">
+                  <div class="when"><time>09:20</time><span class="meta">p. 3</span></div>
+                  <div><p class="asked">What is a good cover crop for a raised bed over winter?</p><p class="did">Answered in 2 paragraphs under the question: crimson clover or winter rye, sown by mid-October.</p><p class="foot meta">24 s · <a href="overview.html">Job record</a></p></div>
+                </li>
+                <li class="entry skipped">
+                  <div class="when"><time>08:58</time><span class="meta">p. 2</span></div>
+                  <div><p class="asked">Tag added again, nothing new on the page.</p><p class="did"><span class="state-line"><i class="mk skip"></i>Skipped. Skips are never shown to the model.</span></p><p class="foot meta">2 s · <a href="overview.html">Job record</a></p></div>
+                </li>
+                <li class="day">Yesterday</li>
+                <li class="entry">
+                  <div class="when"><time>18:05</time><span class="meta">p. 2</span></div>
+                  <div><p class="asked">What should I plant in October in zone 7?</p><p class="did">Answered in 3 paragraphs: garlic, spinach and pansies, with planting depths.</p><p class="foot meta">38 s · <a href="overview.html">Job record</a></p></div>
+                </li>
+                <li class="entry">
+                  <div class="when"><time>17:40</time><span class="meta">a removed page</span></div>
+                  <div><p class="asked">Draw the bed layout: 4 by 8 feet, tomatoes on the north end.</p><p class="did">Drew a labeled plan of the bed, 4 × 8 ft.</p><p class="foot meta">1 min 12 s · <a href="overview.html">Job record</a></p></div>
+                </li>
+                <li class="cut"><span>The next job is shown the entries above. Older entries reach only a job on their own page.</span></li>
+                <li class="day">Sep 24</li>
+                <li class="entry">
+                  <div class="when"><time>14:12</time><span class="meta">p. 1</span></div>
+                  <div><p class="asked">Make a planting calendar for spring.</p><p class="did">Filed "Spring planting calendar" as a document beside the inbox notebook, with a pointer on the page.</p><p class="foot meta">52 s · <a href="overview.html">Job record</a></p></div>
+                </li>
+              </ol>
+              <ol class="pad" data-when="older=on">
+                <li class="day">Sep 20</li>
+                <li class="entry">
+                  <div class="when"><time>10:02</time><span class="meta">p. 1</span></div>
+                  <div><p class="asked">Which of these seeds need to be started indoors?</p><p class="did">Marked 3 of the 7 seeds on the list with a circle, and wrote why under the list.</p></div>
+                </li>
+                <li class="entry">
+                  <div class="when"><time>09:47</time><span class="meta">p. 1</span></div>
+                  <div><p class="asked">How deep do I plant garlic?</p><p class="did">Answered in 1 paragraph: about 2 inches deep, pointy end up, 6 inches apart.</p></div>
+                </li>
+                <li class="day">Sep 2</li>
+                <li class="entry">
+                  <div class="when"><time>19:15</time><span class="meta">p. 1</span></div>
+                  <div><p class="asked">Start a garden notebook: what should I track?</p><p class="did">Wrote a list of 6 things to track, with a line for each.</p></div>
+                </li>
+              </ol>
+              <p class="actions" style="margin-top: var(--s3)">
+                <button type="button" class="btn" data-set="older=on" data-when="older=off">Show 12 older entries</button>
+                <button type="button" class="btn" data-set="older=off" data-when="older=on">Show fewer</button>
+              </p>
+            </div>
+            <div class="shown" data-when="view=model">
+              <p class="section-note">Word for word, the notepad text the next job in Garden plans is shown: 4 entries, 684 of the 2,600 characters it may hold. The skipped job at 08:58 is left out. A job on a page is also shown that page's older entries.</p>
+<pre class="snippet">## 2026-09-27 09:41, page 3
+Asked: Chart this year's rainfall by month.
+On the page: a bar chart of rainfall by month, 12 bars, below the notes.
+
+## 2026-09-27 09:20, page 3
+Asked: What is a good cover crop for a raised bed over winter?
+On the page: 2 paragraphs under the question: crimson clover or winter rye, sown by mid-October.
+
+## 2026-09-26 18:05, page 2
+Asked: What should I plant in October in zone 7?
+On the page: 3 paragraphs: garlic, spinach and pansies, with planting depths.
+
+## 2026-09-26 17:40, a page no longer in the notebook
+Asked: Draw the bed layout: 4 by 8 feet, tomatoes on the north end.
+On the page: a labeled plan of the bed, 4 by 8 feet, north at the top.</pre>
+            </div>
+          </div>
+          <div class="empty" data-when="wiped=garden">
+            <svg viewBox="0 0 48 64" aria-hidden="true"><rect x="1" y="1" width="46" height="62" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+            <p><strong>Wiped at 09:52.</strong> All 18 entries are gone, and no copy was kept. The next job in Garden plans starts with an empty notepad.</p>
+          </div>
+        </section>
+
+        <!-- Reading log -->
+        <section aria-labelledby="h-reading" data-when="nb=reading">
+          <header class="padhead">
+            <div>
+              <h2 id="h-reading">Reading log</h2>
+              <p class="meta num"><span data-when="wiped!=reading">31 entries since Aug 11 · last written 09:12 · </span>kept as <code id="path-reading">%APPDATA%\PaperDaemon\notepads\8c01d4e7.md</code></p>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn quiet small" data-set="copied=on" data-copy="path-reading"><span data-when="copied=off">Copy path</span><span data-when="copied=on">Copied</span></button>
+              <button type="button" class="btn danger small" data-open="dlg-wipe" data-when="wiped!=reading">Wipe notepad</button>
+            </div>
+          </header>
+          <div data-when="wiped!=reading">
+            <div class="spread" style="margin-top: var(--s4)">
+              <div class="seg small" data-name="view" role="group" aria-label="Show"><button type="button" data-value="entries" aria-pressed="true">Entries</button><button type="button" data-value="model" aria-pressed="false">What the next job is shown</button></div>
+              <span class="meta">New entries appear here as jobs finish.</span>
+            </div>
+            <div data-when="view=entries">
+              <ol class="pad">
+                <li class="day">Today</li>
+                <li class="entry">
+                  <div class="when"><time>09:12</time><span class="meta">p. 12</span></div>
+                  <div><p class="asked">What does "anagnorisis" mean, and where does the word come from?</p><p class="did">Answered in 3 paragraphs under the question, with the Greek root.</p><p class="foot meta">21 s · <a href="overview.html">Job record</a></p></div>
+                </li>
+                <li class="day">Yesterday</li>
+                <li class="entry">
+                  <div class="when"><time>21:30</time><span class="meta">p. 11</span></div>
+                  <div><p class="asked">Summarize chapter 9 in five bullets.</p><p class="did">Wrote 5 bullets under the question.</p><p class="foot meta">18 s · <a href="overview.html">Job record</a></p></div>
+                </li>
+                <li class="entry">
+                  <div class="when"><time>20:52</time><span class="meta">p. 10</span></div>
+                  <div><p class="asked">Who was Mary Somerville?</p><p class="did">Answered in 2 paragraphs, with her dates and her book on the physical sciences.</p><p class="foot meta">16 s · <a href="overview.html">Job record</a></p></div>
+                </li>
+                <li class="cut"><span>The next job is shown the entries above. Older entries reach only a job on their own page.</span></li>
+              </ol>
+            </div>
+            <div class="shown" data-when="view=model">
+              <p class="section-note">Word for word, the notepad text the next job in Reading log is shown: 3 entries, 431 of the 2,600 characters it may hold.</p>
+<pre class="snippet">## 2026-09-27 09:12, page 12
+Asked: What does "anagnorisis" mean, and where does the word come from?
+On the page: 3 paragraphs under the question, with the Greek root.
+
+## 2026-09-26 21:30, page 11
+Asked: Summarize chapter 9 in five bullets.
+On the page: 5 bullets under the question.
+
+## 2026-09-26 20:52, page 10
+Asked: Who was Mary Somerville?
+On the page: 2 paragraphs, with her dates and her book on the physical sciences.</pre>
+            </div>
+          </div>
+          <div class="empty" data-when="wiped=reading">
+            <svg viewBox="0 0 48 64" aria-hidden="true"><rect x="1" y="1" width="46" height="62" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+            <p><strong>Wiped at 09:52.</strong> All 31 entries are gone, and no copy was kept. The next job in Reading log starts with an empty notepad.</p>
+          </div>
+        </section>
+
+        <!-- Sketches -->
+        <section aria-labelledby="h-sketches" data-when="nb=sketches">
+          <header class="padhead">
+            <div>
+              <h2 id="h-sketches">Sketches</h2>
+              <p class="meta num"><span data-when="wiped!=sketches">In Art · 9 entries since Sep 14 · last written 08:55 · </span>kept as <code id="path-sketches">%APPDATA%\PaperDaemon\notepads\51be90a2.md</code></p>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn quiet small" data-set="copied=on" data-copy="path-sketches"><span data-when="copied=off">Copy path</span><span data-when="copied=on">Copied</span></button>
+              <button type="button" class="btn danger small" data-open="dlg-wipe" data-when="wiped!=sketches">Wipe notepad</button>
+            </div>
+          </header>
+          <div data-when="wiped!=sketches">
+            <div class="spread" style="margin-top: var(--s4)">
+              <div class="seg small" data-name="view" role="group" aria-label="Show"><button type="button" data-value="entries" aria-pressed="true">Entries</button><button type="button" data-value="model" aria-pressed="false">What the next job is shown</button></div>
+              <span class="meta">New entries appear here as jobs finish.</span>
+            </div>
+            <div data-when="view=entries">
+              <ol class="pad">
+                <li class="day">Today</li>
+                <li class="entry">
+                  <div class="when"><time>08:55</time><span class="meta">p. 7</span></div>
+                  <div><p class="asked">A fox in a meadow.</p><p class="did">Inserted a coloring page of a fox in a meadow, as the notebook's prompt asks for every page.</p><p class="foot meta">1 min 44 s · <a href="overview.html">Job record</a></p></div>
+                </li>
+                <li class="day">Yesterday</li>
+                <li class="entry skipped">
+                  <div class="when"><time>12:02</time><span class="meta">p. 6</span></div>
+                  <div><p class="asked">Notes on shading, not a request.</p><p class="did"><span class="state-line"><i class="mk skip"></i>Skipped. Skips are never shown to the model.</span></p></div>
+                </li>
+                <li class="entry">
+                  <div class="when"><time>11:40</time><span class="meta">p. 5</span></div>
+                  <div><p class="asked">A lighthouse on a rock.</p><p class="did">Inserted a coloring page of a lighthouse on a rock.</p><p class="foot meta">1 min 38 s · <a href="overview.html">Job record</a></p></div>
+                </li>
+                <li class="cut"><span>The next job is shown the entries above. Older entries reach only a job on their own page.</span></li>
+              </ol>
+            </div>
+            <div class="shown" data-when="view=model">
+              <p class="section-note">Word for word, the notepad text the next job in Sketches is shown: 2 entries, 212 of the 2,600 characters it may hold. The skipped job at 12:02 is left out.</p>
+<pre class="snippet">## 2026-09-27 08:55, page 7
+Asked: A fox in a meadow.
+On the page: a coloring page of a fox in a meadow.
+
+## 2026-09-26 11:40, page 5
+Asked: A lighthouse on a rock.
+On the page: a coloring page of a lighthouse on a rock.</pre>
+            </div>
+          </div>
+          <div class="empty" data-when="wiped=sketches">
+            <svg viewBox="0 0 48 64" aria-hidden="true"><rect x="1" y="1" width="46" height="62" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+            <p><strong>Wiped at 09:52.</strong> All 9 entries are gone, and no copy was kept. The next job in Sketches starts with an empty notepad.</p>
+          </div>
+        </section>
+
+        <!-- Week planner -->
+        <section aria-labelledby="h-week" data-when="nb=week">
+          <header class="padhead">
+            <div>
+              <h2 id="h-week">Week planner</h2>
+              <p class="meta num"><span data-when="wiped!=week">12 entries since Aug 30 · last written 08:31 · </span>kept as <code id="path-week">%APPDATA%\PaperDaemon\notepads\e4f7a310.md</code></p>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn quiet small" data-set="copied=on" data-copy="path-week"><span data-when="copied=off">Copy path</span><span data-when="copied=on">Copied</span></button>
+              <button type="button" class="btn danger small" data-open="dlg-wipe" data-when="wiped!=week">Wipe notepad</button>
+            </div>
+          </header>
+          <div data-when="wiped!=week">
+            <div class="spread" style="margin-top: var(--s4)">
+              <div class="seg small" data-name="view" role="group" aria-label="Show"><button type="button" data-value="entries" aria-pressed="true">Entries</button><button type="button" data-value="model" aria-pressed="false">What the next job is shown</button></div>
+              <span class="meta">New entries appear here as jobs finish.</span>
+            </div>
+            <div data-when="view=entries">
+              <ol class="pad">
+                <li class="day">Today</li>
+                <li class="entry">
+                  <div class="when"><time>08:31</time><span class="meta">p. 1</span></div>
+                  <div><p class="asked">Make this week's calendar from my list.</p><p class="did">Made a week calendar with 6 events and the weather, and erased the request line.</p><p class="foot meta">48 s · <a href="overview.html">Job record</a></p></div>
+                </li>
+                <li class="day">Sep 20</li>
+                <li class="entry">
+                  <div class="when"><time>07:55</time><span class="meta">p. 1</span></div>
+                  <div><p class="asked">Add Thursday's dentist appointment at 3.</p><p class="did">Redrew the week calendar with the appointment on Thursday at 3:00 pm.</p><p class="foot meta">39 s · <a href="overview.html">Job record</a></p></div>
+                </li>
+                <li class="cut"><span>The next job is shown the entries above. Older entries reach only a job on their own page.</span></li>
+              </ol>
+            </div>
+            <div class="shown" data-when="view=model">
+              <p class="section-note">Word for word, the notepad text the next job in Week planner is shown: 2 entries, 268 of the 2,600 characters it may hold.</p>
+<pre class="snippet">## 2026-09-27 08:31, page 1
+Asked: Make this week's calendar from my list.
+On the page: a week calendar with 6 events and the weather.
+
+## 2026-09-20 07:55, page 1
+Asked: Add Thursday's dentist appointment at 3.
+On the page: the week calendar, redrawn with the appointment on Thursday at 3:00 pm.</pre>
+            </div>
+          </div>
+          <div class="empty" data-when="wiped=week">
+            <svg viewBox="0 0 48 64" aria-hidden="true"><rect x="1" y="1" width="46" height="62" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+            <p><strong>Wiped at 09:52.</strong> All 12 entries are gone, and no copy was kept. The next job in Week planner starts with an empty notepad.</p>
+          </div>
+        </section>
+
+        <!-- Questions -->
+        <section aria-labelledby="h-questions" data-when="nb=questions">
+          <header class="padhead">
+            <div>
+              <h2 id="h-questions">Questions</h2>
+              <p class="meta num"><span data-when="wiped!=questions">44 entries since Jul 3 · last written 08:02 · </span>kept as <code id="path-questions">%APPDATA%\PaperDaemon\notepads\07ac66d9.md</code></p>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn quiet small" data-set="copied=on" data-copy="path-questions"><span data-when="copied=off">Copy path</span><span data-when="copied=on">Copied</span></button>
+              <button type="button" class="btn danger small" data-open="dlg-wipe" data-when="wiped!=questions">Wipe notepad</button>
+            </div>
+          </header>
+          <div data-when="wiped!=questions">
+            <div class="spread" style="margin-top: var(--s4)">
+              <div class="seg small" data-name="view" role="group" aria-label="Show"><button type="button" data-value="entries" aria-pressed="true">Entries</button><button type="button" data-value="model" aria-pressed="false">What the next job is shown</button></div>
+              <span class="meta">New entries appear here as jobs finish.</span>
+            </div>
+            <div data-when="view=entries">
+              <ol class="pad">
+                <li class="day">Today</li>
+                <li class="entry skipped">
+                  <div class="when"><time>08:02</time><span class="meta">p. 5</span></div>
+                  <div><p class="asked">Tag added again, nothing new on the page.</p><p class="did"><span class="state-line"><i class="mk skip"></i>Skipped. Skips are never shown to the model.</span></p><p class="foot meta">2 s · <a href="overview.html">Job record</a></p></div>
+                </li>
+                <li class="day">Yesterday</li>
+                <li class="entry">
+                  <div class="when"><time>19:40</time><span class="meta">p. 5</span></div>
+                  <div><p class="asked">How long does bread dough need to rise?</p><p class="did">Answered in 2 paragraphs: 1 to 2 hours at room temperature, or overnight in the fridge.</p><p class="foot meta">16 s · <a href="overview.html">Job record</a></p></div>
+                </li>
+                <li class="entry">
+                  <div class="when"><time>07:12</time><span class="meta">p. 4</span></div>
+                  <div><p class="asked">Why is the sky red at sunset?</p><p class="did">Answered in 2 paragraphs, with a small diagram of the light's path.</p><p class="foot meta">44 s · <a href="overview.html">Job record</a></p></div>
+                </li>
+                <li class="cut"><span>The next job is shown the entries above. Older entries reach only a job on their own page.</span></li>
+              </ol>
+            </div>
+            <div class="shown" data-when="view=model">
+              <p class="section-note">Word for word, the notepad text the next job in Questions is shown: 2 entries, 287 of the 2,600 characters it may hold. The skipped job at 08:02 is left out.</p>
+<pre class="snippet">## 2026-09-26 19:40, page 5
+Asked: How long does bread dough need to rise?
+On the page: 2 paragraphs: 1 to 2 hours at room temperature, or overnight in the fridge.
+
+## 2026-09-26 07:12, page 4
+Asked: Why is the sky red at sunset?
+On the page: 2 paragraphs, with a small diagram of the light's path.</pre>
+            </div>
+          </div>
+          <div class="empty" data-when="wiped=questions">
+            <svg viewBox="0 0 48 64" aria-hidden="true"><rect x="1" y="1" width="46" height="62" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+            <p><strong>Wiped at 09:52.</strong> All 44 entries are gone, and no copy was kept. The next job in Questions starts with an empty notepad.</p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+
+<dialog class="sheet" id="dlg-wipe" aria-labelledby="dlg-wipe-t">
+  <h2 id="dlg-wipe-t">
+    <span data-when="nb=garden">Wipe the Garden plans notepad?</span>
+    <span data-when="nb=reading">Wipe the Reading log notepad?</span>
+    <span data-when="nb=sketches">Wipe the Sketches notepad?</span>
+    <span data-when="nb=week">Wipe the Week planner notepad?</span>
+    <span data-when="nb=questions">Wipe the Questions notepad?</span>
+  </h2>
+  <p>
+    <span data-when="nb=garden">All 18 entries</span><span data-when="nb=reading">All 31 entries</span><span data-when="nb=sketches">All 9 entries</span><span data-when="nb=week">All 12 entries</span><span data-when="nb=questions">All 44 entries</span>
+    are deleted, and no copy is kept. The next job in the notebook starts with an empty notepad.
+  </p>
+  <p>Writing <code>/wipe</code> on a page in the notebook does the same.</p>
+  <div class="actions">
+    <button type="button" class="btn" data-close>Cancel</button>
+    <button type="button" class="btn danger" data-close data-then="wiped=garden" data-when="nb=garden">Wipe notepad</button>
+    <button type="button" class="btn danger" data-close data-then="wiped=reading" data-when="nb=reading">Wipe notepad</button>
+    <button type="button" class="btn danger" data-close data-then="wiped=sketches" data-when="nb=sketches">Wipe notepad</button>
+    <button type="button" class="btn danger" data-close data-then="wiped=week" data-when="nb=week">Wipe notepad</button>
+    <button type="button" class="btn danger" data-close data-then="wiped=questions" data-when="nb=questions">Wipe notepad</button>
+  </div>
+</dialog>
+</body>
+</html>

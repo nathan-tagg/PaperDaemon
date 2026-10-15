@@ -1,0 +1,524 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PaperDaemon's interface text, हिन्दी. Names are "screen.thing"; {placeholders} are filled in by the window. -->
+<resources>
+  <string name="pair.title">इस विंडो को जोड़ें</string>
+  <string name="pair.intro">इंजन सिर्फ़ उन्हीं अनुरोधों को स्वीकार करता है जिनमें उसका पेयरिंग टोकन हो। अपने-आप जुड़ने के लिए PaperDaemon की अपनी विंडो खोलें, या जिस कंप्यूटर पर यह चल रहा है उसके नेटवर्क पेज पर दिखाया गया टोकन चिपकाएँ।</string>
+  <string name="pair.token">पेयरिंग टोकन</string>
+  <string name="pair.go">जोड़ें</string>
+  <string name="pair.empty">पहले पेयरिंग टोकन चिपकाएँ।</string>
+  <string name="pair.refused">इंजन ने वह टोकन स्वीकार नहीं किया।</string>
+  <string name="fatal.title">इंजन ने जवाब नहीं दिया</string>
+  <string name="common.try_again">फिर से कोशिश करें</string>
+  <string name="pair.window_refused">इंजन ने इस विंडो का टोकन स्वीकार नहीं किया।</string>
+  <string name="rail.engine_on">इंजन चालू</string>
+  <string name="rail.version">संस्करण {version}</string>
+  <string name="api.no_answer">इंजन ने जवाब नहीं दिया। क्या PaperDaemon अभी भी चल रहा है?</string>
+  <string name="api.unpaired">यह विंडो इंजन से जुड़ी नहीं है।</string>
+  <string name="api.not_offered">इंजन अभी यह सुविधा नहीं देता ({route})।</string>
+  <string name="day.today">आज</string>
+  <string name="day.yesterday">कल</string>
+  <string name="unit.seconds">{n} से.</string>
+  <string name="unit.minutes">{n} मि.</string>
+  <string name="unit.hours">{n} घं.</string>
+  <string name="mirror.building_pct">मिरर बन रहा है, {pct}%</string>
+  <string name="mirror.pct">मिरर {pct}%</string>
+  <string name="mirror.bar">मिरर बन रहा है: {total} में से {done} · {bytes_total} में से {bytes} · {pct}%</string>
+  <string name="mirror.bar_start">मिरर बन रहा है: {files} · अब तक {bytes}</string>
+  <string name="count.document.one">{n} दस्तावेज़</string>
+  <string name="count.document.other">{n} दस्तावेज़</string>
+  <string name="count.file.one">{n} फ़ाइल</string>
+  <string name="count.file.other">{n} फ़ाइलें</string>
+  <string name="mirror.name">मिरर</string>
+  <string name="login.privacy">आपका लॉगिन इसी कंप्यूटर पर रहता है और सिर्फ़ reMarkable के क्लाउड के साथ इस्तेमाल होता है। आपके पेज कहीं और नहीं जाते, जब तक आप कोई क्लाउड मॉडल या वेब खोज न जोड़ें; तब भी उस सेवा को सिर्फ़ उतना जाता है जितना किसी काम के लिए ज़रूरी हो।</string>
+  <string name="login.borrow.title">reMarkable ऐप का लॉगिन उधार लें</string>
+  <string name="login.borrow.body">PaperDaemon, reMarkable डेस्कटॉप ऐप के लॉगिन को Windows क्रेडेंशियल मैनेजर में कॉपी करता है। ऐप साइन इन रहता है। दोनों एक ही लॉगिन इस्तेमाल करते हैं, इसलिए एक समय में इनमें से एक ही चल सकता है।</string>
+  <string name="login.borrow.action">लॉगिन उधार लें</string>
+  <string name="login.steal.title">⚠ reMarkable ऐप का लॉगिन ले लें</string>
+  <string name="login.steal.body">PaperDaemon, reMarkable डेस्कटॉप ऐप के लॉगिन को Windows क्रेडेंशियल मैनेजर में कॉपी करता है, फिर उसे Windows रजिस्ट्री में ऐप की सेटिंग से हटा देता है। ऐप साइन आउट हो जाता है; जब आप उसमें फिर से लॉग इन करते हैं, तो वह एक अलग डिवाइस बन जाता है। पहले reMarkable ऐप बंद करें।</string>
+  <string name="login.steal.action">लॉगिन ले लें</string>
+  <string name="login.not_found">इस कंप्यूटर पर reMarkable ऐप साइन इन नहीं है। उसे इंस्टॉल करें, लॉग इन करें, फिर से कोशिश करें।</string>
+  <string name="login.not_kept">ऐप का लॉगिन मिला, पर PaperDaemon उसे रख नहीं सका।</string>
+  <string name="login.not_kept_why">ऐप का लॉगिन मिला, पर PaperDaemon उसे रख नहीं सका: {why}</string>
+  <string name="login.stolen">लॉगिन PaperDaemon के पास है, और reMarkable ऐप साइन आउट हो गया है। ऐप को अलग डिवाइस की तरह इस्तेमाल करने के लिए उसमें फिर से लॉग इन करें।</string>
+  <string name="login.borrowed">PaperDaemon, reMarkable ऐप का लॉगिन इस्तेमाल कर रहा है। जब तक PaperDaemon चल रहा है, ऐप बंद रखें।</string>
+  <string name="job.failed">विफल</string>
+  <string name="job.working">काम जारी</string>
+  <string name="job.skipped">छोड़ा गया</string>
+  <string name="job.waiting">प्रतीक्षा में</string>
+  <string name="job.done">पूरा</string>
+  <string name="job.unknown">अज्ञात</string>
+  <string name="job.page">पृ. {n}</string>
+  <string name="jobs.unreadable">काम पढ़े नहीं जा सके।</string>
+  <string name="jobs.reading">काम पढ़े जा रहे हैं…</string>
+  <string name="jobs.none">अभी कोई काम नहीं।</string>
+  <string name="jobs.none_hint">अपने टैबलेट पर किसी पेज पर {tag} टैग लगाएँ।</string>
+  <string name="count.job.one">{n} काम</string>
+  <string name="count.job.other">{n} काम</string>
+  <string name="jobs.n_failed">{n} विफल</string>
+  <string name="jobs.n_skipped">{n} छोड़े गए</string>
+  <string name="jobs.earlier">पहले</string>
+  <string name="jobs.so_far">अब तक {time}</string>
+  <string name="jobs.a_page">एक पेज</string>
+  <string name="jobs.no_note">कोई नोट नहीं</string>
+  <string name="jobs.col.time">समय</string>
+  <string name="jobs.col.page">पेज</string>
+  <string name="jobs.col.status">स्थिति</string>
+  <string name="jobs.col.what">क्या हुआ</string>
+  <string name="jobs.col.took">लगा समय</string>
+  <string name="jobs.label">काम</string>
+  <string name="issue.setup">सेटअप पूरा नहीं हुआ है।</string>
+  <string name="issue.setup_go">सेटअप जारी रखें</string>
+  <string name="issue.tablet">PaperDaemon आपके reMarkable तक नहीं पहुँच पा रहा।</string>
+  <string name="issue.mirror">मिरर अपडेट नहीं हो सका: {why}</string>
+  <string name="issue.not_started">PaperDaemon शुरू नहीं हुआ: {why}</string>
+  <string name="term.daemon">डेमन</string>
+  <string name="term.daemon_about">टैग लगे पेजों के लिए आपके टैबलेट पर नज़र रखता है और हर पेज को काम के रूप में होस्ट को सौंपता है।</string>
+  <string name="term.host">होस्ट</string>
+  <string name="term.host_about">हर काम पूरा करता है: पेज पढ़ता है, मॉडलों से पूछता है, और जवाब वापस पेज पर लिखता है।</string>
+  <string name="term.empty">अभी कुछ नहीं।</string>
+  <string name="loop.pausing">रोका जा रहा है…</string>
+  <string name="loop.starting">शुरू हो रहा है…</string>
+  <string name="loop.pause">डेमन रोकें (VRAM खाली करता है)</string>
+  <string name="loop.start">शुरू करें</string>
+  <string name="overview.label">अवलोकन</string>
+  <string name="overview.needs_you">किसी चीज़ पर आपका ध्यान चाहिए</string>
+  <string name="loop.running">चल रहा है</string>
+  <string name="loop.paused">रुका हुआ</string>
+  <string name="common.choose">चुनें…</string>
+  <string name="common.help">सहायता</string>
+  <string name="settings.label">सेटिंग</string>
+  <string name="settings.prefs">पसंद</string>
+  <string name="settings.prefs_to_set">तय करने लायक पसंद</string>
+  <string name="settings.note">एक पल निकालकर अपनी पसंद तय करें: PaperDaemon आपके पेजों पर तापमान, समय और सप्ताह कैसे लिखे।</string>
+  <string name="settings.language">भाषा</string>
+  <string name="settings.language.help">PaperDaemon की अपनी विंडो की भाषा। बदलने पर विंडो फिर से लोड होती है।</string>
+  <string name="settings.language.pick">सूची से कोई भाषा चुनें।</string>
+  <string name="settings.temperature">तापमान</string>
+  <string name="settings.temperature.help">कैलेंडरों पर और PaperDaemon जो लिखता है उसमें।</string>
+  <string name="settings.temperature.f">फ़ारेनहाइट (°F)</string>
+  <string name="settings.temperature.c">सेल्सियस (°C)</string>
+  <string name="settings.clock">घड़ी</string>
+  <string name="settings.clock.12">12 घंटे (2:30 PM)</string>
+  <string name="settings.clock.24">24 घंटे (14:30)</string>
+  <string name="settings.week">सप्ताह शुरू होता है</string>
+  <string name="day.sunday">रविवार</string>
+  <string name="day.monday">सोमवार</string>
+  <string name="settings.remarkable">reMarkable</string>
+  <string name="settings.login.none">जुड़ा नहीं</string>
+  <string name="settings.login.borrowing">reMarkable ऐप का लॉगिन उधार लिया हुआ</string>
+  <string name="settings.login.steal">इसके बजाय ले लें</string>
+  <string name="settings.login.stolen">अपने लॉगिन से जुड़ा, जो reMarkable ऐप से लिया गया</string>
+  <string name="settings.login.connected">जुड़ा हुआ</string>
+  <string name="settings.inbox">डीकंपोज़ इनबॉक्स</string>
+  <string name="settings.inbox.help">वह नोटबुक जिसमें «टैबलेट पर भेजें» पेज जोड़ता है। चाहे इस पर कोई भी टैग हो, PaperDaemon इसका जवाब कभी नहीं देता।</string>
+  <string name="settings.inbox.placeholder">कोई नोटबुक चुनें</string>
+  <string name="settings.inbox.pick">सूची से कोई नोटबुक चुनें।</string>
+  <string name="settings.location">स्थान</string>
+  <string name="settings.location.help">कैलेंडरों पर मौसम, सूर्योदय और छुट्टियों के लिए।</string>
+  <string name="settings.location.placeholder">किसी शहर का नाम लिखना शुरू करें</string>
+  <string name="settings.location.pick">सूची से कोई शहर चुनें।</string>
+  <string name="settings.ignore">अनदेखा टैग</string>
+  <string name="settings.ignore.help">यह टैग अपने टैबलेट पर किसी फ़ोल्डर, नोटबुक या पेज पर लगाएँ, तो PaperDaemon वहाँ कभी कोई काम नहीं करेगा, किसी भी लाइनअप के लिए, चाहे उस पर और कोई भी टैग हो।</string>
+  <string name="settings.sprompt">स्थायी निर्देश टैग</string>
+  <string name="settings.sprompt.help">यह टैग किसी नोटबुक के एक पेज पर लगाएँ और उस पर निर्देश लिखें। PaperDaemon उस नोटबुक के हर काम के निर्देशों के अंत में उस पेज का टेक्स्ट जोड़ता है, और खुद उस पेज पर कभी काम नहीं करता।</string>
+  <string name="settings.network">नेटवर्क पहुँच</string>
+  <string name="settings.network.help">मौसम, सोशल पोस्ट, विकिपीडिया और वेब खोज। आपके मॉडल और reMarkable क्लाउड पर कोई असर नहीं पड़ता।</string>
+  <string name="settings.network.allow">नेटवर्क पहुँच की अनुमति दें</string>
+  <string name="settings.social">सोशल साइटें</string>
+  <string name="settings.social.help">जब पोस्ट का अनुरोध किसी साइट का नाम न ले, तब वह कहाँ खोजता है। नाम ली गई साइट हमेशा खोजी जाती है।</string>
+  <string name="settings.tools">टूल</string>
+  <string name="settings.updates">अपडेट</string>
+  <string name="settings.updates.help">PaperDaemon खुद से कभी जाँच नहीं करता।</string>
+  <string name="settings.version">संस्करण {version}</string>
+  <string name="settings.updates.check">अपडेट जाँचें</string>
+  <string name="settings.updates.installed_only">अपडेट इंस्टॉल किया गया ऐप जाँचता है, अपने ट्रे मेनू से या यहाँ से।</string>
+  <string name="settings.logs">लॉग</string>
+  <string name="settings.logs.help">डेमन, होस्ट और इंजन ने हाल में जो लिखा, वह आपके इनबॉक्स में पेजों के रूप में।</string>
+  <string name="settings.logs.send">लॉग इनबॉक्स में भेजें</string>
+  <string name="settings.logs.no_inbox">पहले ऊपर इनबॉक्स तय करें</string>
+  <string name="settings.logs.sent">भेजा गया: {inbox} में {pages}, पेज {first} से।</string>
+  <string name="settings.logs.the_inbox">इनबॉक्स</string>
+  <string name="count.page.one">{n} पेज</string>
+  <string name="count.page.other">{n} पेज</string>
+  <string name="tablet.read">{pct}% पढ़ा</string>
+  <string name="tablet.page_of">{pages} में से पेज {page}</string>
+  <string name="common.reading">पढ़ा जा रहा है…</string>
+  <string name="tablet.my_files">मेरी फ़ाइलें</string>
+  <string name="tablet.arriving">अभी आ रहा है…</string>
+  <string name="tablet.empty">यह फ़ोल्डर खाली है।</string>
+  <string name="viewer.pages">पेज</string>
+  <string name="viewer.chapters">अध्याय</string>
+  <string name="viewer.goto">पेज पर जाएँ (1 - {last})</string>
+  <string name="viewer.goto_aria">पेज पर जाएँ, 1 से {last}</string>
+  <string name="viewer.prev">पिछला पेज</string>
+  <string name="viewer.next">अगला पेज</string>
+  <string name="viewer.reading_chapters">अध्याय पढ़े जा रहे हैं…</string>
+  <string name="viewer.not_drawn">यह पेज बनाया नहीं जा सका।</string>
+  <string name="viewer.page">पेज {n}</string>
+  <string name="viewer.go_to">पेज {n} पर जाएँ</string>
+  <string name="common.close">बंद करें</string>
+  <string name="tablet.label">टैबलेट</string>
+  <string name="tablet.folder">फ़ोल्डर</string>
+  <string name="dc.decomposing">{name} को डीकंपोज़ किया जा रहा है</string>
+  <string name="dc.drop">कोई चित्र यहाँ छोड़ें, या {choose}।</string>
+  <string name="dc.choose">कोई फ़ाइल चुनें</string>
+  <string name="dc.on_page">पेज #{n} पर</string>
+  <string name="dc.sending">भेजा जा रहा है…</string>
+  <string name="dc.send">टैबलेट पर भेजें</string>
+  <string name="dc.no_inbox">सेटिंग टैब में इनबॉक्स तय करें</string>
+  <string name="dc.look">पास से देखें</string>
+  <string name="dc.size_px">{w} × {h} px</string>
+  <string name="count.stroke.one">{n} रेखा</string>
+  <string name="count.stroke.other">{n} रेखाएँ</string>
+  <string name="common.delete">हटाएँ</string>
+  <string name="dc.size_range">आकार टैबलेट के 200 से 1,400 पिक्सेल तक है।</string>
+  <string name="dc.picture">चित्र</string>
+  <string name="dc.bad_type">वह फ़ाइल PNG, JPEG या WebP चित्र नहीं है।</string>
+  <string name="dc.too_big">वह चित्र {size} का है। {max} से छोटा चित्र इस्तेमाल करें।</string>
+  <string name="dc.unreadable">फ़ाइल पढ़ी नहीं जा सकी।</string>
+  <string name="dc.drop_what">कोई चित्र फ़ाइल, या किसी वेब पेज का चित्र छोड़ें।</string>
+  <string name="dc.label">डीकंपोज़</string>
+  <string name="dc.intro">किसी चित्र को पेन की रेखाओं में बदलें और टैबलेट पर भेजें, जहाँ हर रेखा को आपकी अपनी रेखा की तरह मिटाया और उस पर बनाया जा सकता है।</string>
+  <string name="dc.image">चित्र</string>
+  <string name="dc.size">आकार</string>
+  <string name="dc.size_unit">टैबलेट पिक्सेल, 200 से 1,400</string>
+  <string name="dc.types">PNG, JPEG, WebP</string>
+  <string name="dc.decomps">डीकंपोज़ किए चित्र</string>
+  <string name="lineup.unreadable">लाइनअप पढ़े नहीं जा सके।</string>
+  <string name="memories.note">इस लाइनअप के मॉडल ने आपके लिए काम करने के बारे में जो सीखा है: शिकायतें, सुधार, आप चीज़ें कैसे करवाना चाहते हैं। मॉडल इन्हें खुद सहेजता है, आपके नोट या किसी पेज का काम कभी नहीं (हर नोटबुक अपना संदर्भ अपनी नोटपैड में रखती है), और इस लाइनअप के हर काम को ये दिखाई जाती हैं। इनमें से किसी को भी यहाँ बदलें या हटाएँ।</string>
+  <string name="memories.none">अभी कोई याद नहीं।</string>
+  <string name="memories.none_hint">जब मॉडल आपके लिए काम करने के बारे में कुछ सीखता है, तो वह एक याद सहेजता है।</string>
+  <string name="memories.count">{max} में से {n}</string>
+  <string name="memories.saved_on">{date} को सहेजा गया</string>
+  <string name="memories.one">याद</string>
+  <string name="memories.saved">याद सहेजी गई।</string>
+  <string name="memories.deleted">याद हटाई गई।</string>
+  <string name="lineup.label">लाइनअप</string>
+  <string name="lineup.new_option">+ नया लाइनअप…</string>
+  <string name="lineup.rename">नाम बदलें</string>
+  <string name="tab.text">टेक्स्ट / तर्क</string>
+  <string name="tab.image">चित्र</string>
+  <string name="tab.network">नेटवर्क</string>
+  <string name="tab.tags">टैगिंग</string>
+  <string name="tab.memories">यादें</string>
+  <string name="tab.tests">परीक्षण</string>
+  <string name="common.saved">सहेजा गया।</string>
+  <string name="common.no_answer">कोई जवाब नहीं।</string>
+  <string name="lineup.test_no_answer">कोई जवाब नहीं। प्रदाता, मॉडल और कुंजी जाँचें।</string>
+  <string name="memories.delete_q">यह याद हटाएँ?</string>
+  <string name="memories.delete_body">यह मॉडल को फिर नहीं दिखाई जाएगी।</string>
+  <string name="lineup.new">नया लाइनअप</string>
+  <string name="lineup.rename_title">लाइनअप का नाम बदलें</string>
+  <string name="lineup.name">नाम</string>
+  <string name="lineup.delete_q">{name} हटाएँ?</string>
+  <string name="lineup.delete_body">इसके मॉडल, वेब खोज, टैग और यादें भी साथ में चली जाती हैं।</string>
+  <string name="common.disclaimer">अस्वीकरण</string>
+  <string name="common.cancel">रद्द करें</string>
+  <string name="slot.other_provider">अन्य (OpenAI-संगत)</string>
+  <string name="slot.harness_auto">स्वचालित (मॉडल के नाम से)</string>
+  <string name="slot.harness">हार्नेस</string>
+  <string name="slot.add_harness">+ हार्नेस जोड़ें</string>
+  <string name="slot.none">कोई नहीं</string>
+  <string name="slot.api_key">API कुंजी</string>
+  <string name="slot.local">लोकल होस्ट करें</string>
+  <string name="slot.source">स्रोत</string>
+  <string name="slot.provider">प्रदाता</string>
+  <string name="slot.address">पता</string>
+  <string name="slot.model">मॉडल</string>
+  <string name="slot.saved">सहेजी गई</string>
+  <string name="common.test">परीक्षण</string>
+  <string name="slot.script_label">Start.bat - अगर स्टार्ट स्क्रिप्ट की ज़रूरत नहीं है तो खाली छोड़ें</string>
+  <string name="slot.script">स्टार्ट स्क्रिप्ट</string>
+  <string name="net.search">वेब खोज</string>
+  <string name="net.service_key">खोज सेवा, API कुंजी के साथ</string>
+  <string name="net.service">सेवा</string>
+  <string name="net.script">खोज की स्टार्ट स्क्रिप्ट</string>
+  <string name="tags.note">यहाँ का हर टैग ऐसा है जिस पर यह लाइनअप नज़र रखता है: अपने टैबलेट पर किसी पेज, नोटबुक या फ़ोल्डर पर यह टैग लगाएँ और यह लाइनअप उस पर काम करता है। किसी पेज को इस सूची के क्रम में (किसी कार्ड को उसके हैंडल से खींचकर हिलाएँ) इस लाइनअप के वे प्रॉम्प्ट मिलते हैं जो उस पर, उसकी नोटबुक पर और ऊपर के फ़ोल्डरों पर लगे टैगों के हैं; नोटबुक का अपना स्थायी निर्देश पेज आख़िर में आता है। जिन पेजों को कुछ और नहीं चाहिए, उनके लिए खाली प्रॉम्प्ट वाला एक टैग रखें। एक टैग सिर्फ़ एक लाइनअप का हो सकता है।</string>
+  <string name="tags.move">{name} हिलाएँ (तीर कुंजियाँ)</string>
+  <string name="tags.this">यह टैग</string>
+  <string name="tags.drag">क्रम बदलने के लिए खींचें</string>
+  <string name="tags.tag">टैग</string>
+  <string name="common.remove">हटाएँ</string>
+  <string name="tags.prompt">प्रॉम्प्ट</string>
+  <string name="tags.prompt_blank">खाली: पेज को कोई अतिरिक्त प्रॉम्प्ट नहीं मिलता</string>
+  <string name="tags.add">+ टैग जोड़ें</string>
+  <string name="common.testing">परीक्षण हो रहा है…</string>
+  <string name="common.answering">जवाब दे रहा है</string>
+  <string name="np.list_unreadable">नोटपैड पढ़े नहीं जा सके।</string>
+  <string name="np.reading_list">नोटपैड पढ़े जा रहे हैं…</string>
+  <string name="np.no_match">कोई नोटबुक मेल नहीं खाती।</string>
+  <string name="np.summary">{entries} · {chars} अक्षर</string>
+  <string name="count.entry.one">{n} प्रविष्टि</string>
+  <string name="count.entry.other">{n} प्रविष्टियाँ</string>
+  <string name="np.undated">बिना तारीख</string>
+  <string name="np.show_fewer">कम दिखाएँ</string>
+  <string name="np.show_older.one">{n} पुरानी प्रविष्टि दिखाएँ</string>
+  <string name="np.show_older.other">{n} पुरानी प्रविष्टियाँ दिखाएँ</string>
+  <string name="np.select">किसी नोटबुक की नोटपैड पढ़ने के लिए उसे चुनें।</string>
+  <string name="np.wiped_at">{time} पर मिटाया गया।</string>
+  <string name="np.wiped_body">हर प्रविष्टि चली गई, और कोई प्रति नहीं रखी गई। {name} का अगला काम खाली नोटपैड से शुरू होगा।</string>
+  <string name="np.copy">टेक्स्ट कॉपी करें</string>
+  <string name="np.wipe">नोटपैड मिटाएँ</string>
+  <string name="np.not_wiped">नोटपैड नहीं मिटाई गई।</string>
+  <string name="np.unreadable">यह नोटपैड पढ़ी नहीं जा सकी।</string>
+  <string name="np.reading">नोटपैड पढ़ी जा रही है…</string>
+  <string name="np.empty">यह नोटपैड खाली है।</string>
+  <string name="np.show">दिखाएँ</string>
+  <string name="np.entries">प्रविष्टियाँ</string>
+  <string name="np.as_text">टेक्स्ट के रूप में</string>
+  <string name="np.none">अभी कोई नोटपैड नहीं।</string>
+  <string name="np.this_notebook">यह नोटबुक</string>
+  <string name="np.wipe_q">{name} की नोटपैड मिटाएँ?</string>
+  <string name="np.wipe_body">सभी {entries} हटा दी जाती हैं, और कोई प्रति नहीं रखी जाती। {name} का अगला काम खाली नोटपैड से शुरू होगा।</string>
+  <string name="np.wipe_body2">इस नोटपैड में रखा कोई खेल भी चला जाता है। टैबलेट पर आपकी नोटबुक को छुआ नहीं जाता।</string>
+  <string name="np.label">नोटपैड</string>
+  <string name="np.intro">हर नोटबुक की अपने कामों की याद। हर काम के बाद होस्ट लिख लेता है कि क्या माँगा गया और उसने क्या किया, और उस नोटबुक के अगले काम को हाल की प्रविष्टियाँ दिखाई जाती हैं, ताकि बातचीत पेज-दर-पेज चलती रहे।</string>
+  <string name="np.books">नोटपैड वाली नोटबुकें</string>
+  <string name="np.find">कोई नोटबुक ढूँढें</string>
+  <string name="common.copied">कॉपी हो गया</string>
+  <string name="common.copy_failed">कॉपी नहीं हो सका</string>
+  <string name="nw.this_computer">· यह कंप्यूटर, हमेशा चालू</string>
+  <string name="nw.cannot_remove">हटाया नहीं जा सकता</string>
+  <string name="nw.remove_addr">{address} हटाएँ</string>
+  <string name="nw.url_label">दूसरे डिवाइसों के लिए पता</string>
+  <string name="common.copy">कॉपी करें</string>
+  <string name="nw.local_only">जब तक आप कोई पता न जोड़ें, सिर्फ़ इसी कंप्यूटर से।</string>
+  <string name="nw.token">पेयरिंग टोकन</string>
+  <string name="nw.hide">छिपाएँ</string>
+  <string name="nw.show">दिखाएँ</string>
+  <string name="nw.rotate">बदलें…</string>
+  <string name="nw.rotated_at">{time} पर बदला गया।</string>
+  <string name="nw.rotated_body">हर जुड़े डिवाइस को नया टोकन चाहिए। यह विंडो अपने-आप फिर से जुड़ गई।</string>
+  <string name="nw.token_kept">Windows क्रेडेंशियल स्टोर में रखा गया। यह विंडो अपने-आप जुड़ती है।</string>
+  <string name="nw.saved_restart">{time} पर सहेजा गया। PaperDaemon के फिर से शुरू होने पर लागू होगा।</string>
+  <string name="nw.rotate_q">पेयरिंग टोकन बदलें?</string>
+  <string name="nw.rotate_body">जब तक आप नया टोकन न दें, हर जुड़ा डिवाइस काम करना बंद कर देता है। यह विंडो अपने-आप फिर से जुड़ जाती है।</string>
+  <string name="nw.rotate_action">टोकन बदलें</string>
+  <string name="nw.label">नेटवर्क</string>
+  <string name="count.address.one">{n} पता</string>
+  <string name="count.address.other">{n} पते</string>
+  <string name="nw.intro">इंजन इस कंप्यूटर के एक पोर्ट से इस विंडो और आपके जोड़े हर डिवाइस को सेवा देता है।</string>
+  <string name="nw.listens">इंजन कहाँ सुनता है</string>
+  <string name="nw.port">पोर्ट</string>
+  <string name="nw.save_port">पोर्ट सहेजें</string>
+  <string name="nw.port_hint">इसे सिर्फ़ तभी बदलें जब कोई दूसरा प्रोग्राम इसे पहले से इस्तेमाल कर रहा हो। PaperDaemon के फिर से शुरू होने के बाद इंजन नया पोर्ट इस्तेमाल करता है।</string>
+  <string name="nw.addresses">पते</string>
+  <string name="nw.addresses_hint">फ़ोन या दूसरे कंप्यूटर से PaperDaemon तक पहुँचने के लिए अपना WireGuard पता जोड़ें।</string>
+  <string name="nw.another">दूसरा पता</string>
+  <string name="nw.to_add">जोड़ने के लिए पता</string>
+  <string name="nw.add">पता जोड़ें</string>
+  <string name="nw.trust">सिर्फ़ उन्हीं नेटवर्क के पते जोड़ें जिन पर आपको भरोसा है। कहीं से भी आने वाले हर अनुरोध में पेयरिंग टोकन होना चाहिए।</string>
+  <string name="nw.reach">यहाँ पहुँचें</string>
+  <string name="nw.pairing">पेयरिंग</string>
+  <string name="nw.token_hint">जोड़ने के लिए इसे किसी डिवाइस में एक बार लिखें।</string>
+  <string name="nw.bad_address">यह IP पता नहीं है। 10.8.0.2 जैसा रूप इस्तेमाल करें।</string>
+  <string name="nw.listed">{address} पहले से सूची में है।</string>
+  <string name="su.connect">अपना reMarkable जोड़ें</string>
+  <string name="su.mirror">मिरर</string>
+  <string name="su.finish">पूरा करें</string>
+  <string name="su.building_pct">मिरर बन रहा है, {pct}%</string>
+  <string name="su.taking">लॉगिन लिया जा रहा है…</string>
+  <string name="su.steal_instead">इसके बजाय लॉगिन ले लें</string>
+  <string name="su.borrow_instead">इसके बजाय लॉगिन उधार लें</string>
+  <string name="su.connected_how">जुड़ा हुआ · {how}</string>
+  <string name="su.borrowed">उधार लिया</string>
+  <string name="su.stolen">लिया गया</string>
+  <string name="su.continue">जारी रखें</string>
+  <string name="su.mirror_lead">आपकी लाइब्रेरी की PaperDaemon की प्रति। यह पीछे बनती रहती है; आप आगे बढ़ सकते हैं।</string>
+  <string name="su.connect_first">पहले अपना reMarkable जोड़ें।</string>
+  <string name="su.connecting">जोड़ा जा रहा है…</string>
+  <string name="su.mirror_complete">मिरर पूरा है</string>
+  <string name="su.cloud_silent">क्लाउड ने जवाब नहीं दिया।</string>
+  <string name="su.lineup_lead">टेक्स्ट मॉडल ज़रूरी है। चित्र मॉडल और वेब खोज वैकल्पिक हैं।</string>
+  <string name="su.lineup_unreadable">लाइनअप पढ़ा नहीं जा सका।</string>
+  <string name="su.need_address">टेक्स्ट मॉडल को एक पता चाहिए।</string>
+  <string name="su.need_name">लाइनअप को एक नाम चाहिए।</string>
+  <string name="su.finish_lead">PaperDaemon इस कॉन्फ़िगरेशन के साथ शुरू होगा।</string>
+  <string name="su.proceed">PaperDaemon पर जाएँ</string>
+  <string name="su.automatic">स्वचालित</string>
+  <string name="su.local_at">{address} पर लोकल होस्ट</string>
+  <string name="su.local_at_script">{address} पर लोकल होस्ट · Start.bat के साथ</string>
+  <string name="su.harness_is">हार्नेस: {harness}</string>
+  <string name="su.building">बन रहा है · {pct}%</string>
+  <string name="su.complete">पूरा</string>
+  <string name="su.not_built">अभी नहीं बना</string>
+  <string name="su.tags">टैग</string>
+  <string name="su.no_tags">कोई नहीं: जब तक आप एक न जोड़ें, किसी पेज का जवाब नहीं दिया जाएगा</string>
+  <string name="su.steps">सेटअप के चरण</string>
+  <string name="su.later">बाद में सेट करें</string>
+  <string name="su.title">सेटअप · PaperDaemon</string>
+  <string name="ts.failed">विफल</string>
+  <string name="ts.running">चल रहा है</string>
+  <string name="ts.passed">सफल</string>
+  <string name="ts.waiting">प्रतीक्षा में</string>
+  <string name="ts.stop">परीक्षण रोकें</string>
+  <string name="ts.run">परीक्षण चलाएँ</string>
+  <string name="ts.not_started">रन शुरू नहीं हुआ।</string>
+  <string name="ts.partly">आंशिक</string>
+  <string name="ts.unreadable">परीक्षण पढ़े नहीं जा सके।</string>
+  <string name="ts.result">नतीजा</string>
+  <string name="ts.cases_done">पूरे हुए मामले</string>
+  <string name="ts.passed_of">{total} में से {n} सफल</string>
+  <string name="ts.intro">सिर्फ़ आख़िरी परीक्षण रखा जाता है, और लाइनअप में कोई भी बदलाव उसे रद्द कर देता है।</string>
+  <string name="help.model.title">स्टार्ट स्क्रिप्ट कैसे काम करती है</string>
+  <string name="help.model.intro">स्टार्ट स्क्रिप्ट एक छोटी Windows बैच फ़ाइल (`.bat`) है जो आपके मॉडल का सर्वर शुरू करती है। आप इसे एक बार लिखते हैं। उसके बाद, जब भी किसी काम को इस मॉडल की ज़रूरत होती है, PaperDaemon इसे आपके लिए चलाता है, इसलिए आपको सर्वर कभी हाथ से शुरू नहीं करना पड़ता।</string>
+  <string name="help.h_do">आपकी स्क्रिप्ट को क्या करना है</string>
+  <string name="help.model.do1">सर्वर इस तरह शुरू करना कि वह ऊपर के बॉक्स के पते पर जवाब दे, जैसे `http://127.0.0.1:8790`। PaperDaemon वह पोर्ट आपकी स्क्रिप्ट को `%PAPERDAEMON_PORT%` के रूप में देता है।</string>
+  <string name="help.model.do2">जब तक सर्वर चले, तब तक चलती रहना। सर्वर सीधे शुरू करें, `start` से नहीं (वह उसे दूसरी विंडो में खोलता है और स्क्रिप्ट तुरंत खत्म हो जाती है, जिससे PaperDaemon समझता है कि सर्वर चला गया)।</string>
+  <string name="help.do_output">सर्वर को अपने संदेश छापने देना। कुछ गलत होने पर PaperDaemon आख़िरी पंक्तियाँ यहाँ दिखाता है।</string>
+  <string name="help.h_runs">PaperDaemon इसे कब चलाता है</string>
+  <string name="help.model.runs1">पहली बार जब किसी काम को इस मॉडल की ज़रूरत होती है।</string>
+  <string name="help.model.runs2">जब किसी पेज का टैग ऐसे लाइनअप का हो जिसकी स्टार्ट स्क्रिप्ट चल रही स्क्रिप्ट से अलग है। PaperDaemon पहले शुरू किया सर्वर रोकता है, फिर यह चलाता है।</string>
+  <string name="help.model.runs3">तब नहीं, जब इस स्क्रिप्ट का शुरू किया सर्वर पहले से चल रहा हो।</string>
+  <string name="help.h_stops">PaperDaemon इसे कब रोकता है</string>
+  <string name="help.model.stops">जब आप PaperDaemon को रोकते या बंद करते हैं, या जब किसी दूसरे लाइनअप की स्टार्ट स्क्रिप्ट चलनी हो। वह आपकी स्क्रिप्ट का शुरू किया सब कुछ रोकता है। जो प्रोग्राम उसने शुरू नहीं किया, उसे वह कभी नहीं रोकता।</string>
+  <string name="help.h_wrong">जो चीज़ें गलत होती हैं</string>
+  <string name="help.model.wrong_vram">**ग्राफ़िक्स कार्ड भरा हुआ है।** मॉडल को आपके कार्ड की मेमोरी (VRAM) में जगह चाहिए। अगर कोई दूसरा मॉडल सर्वर, गेम या चित्र टूल वह मेमोरी घेरे हुए है, तो मॉडल लोड नहीं होता या बहुत धीमा चलता है। अगर आप खुद दूसरे मॉडल सर्वर चलाते हैं, तो अपनी स्क्रिप्ट से पहले उन्हें रुकवाएँ (जैसे `taskkill /IM llama-server.exe /F`)। PaperDaemon सिर्फ़ वही रोकता है जो उसने शुरू किया।</string>
+  <string name="help.model.wrong_two">**दो मॉडल जो साथ में नहीं समाते।** अगर आपका टेक्स्ट मॉडल और चित्र मॉडल दोनों एक साथ कार्ड पर नहीं समाते, तो हर स्क्रिप्ट ऐसी लिखें कि वह अपना सर्वर शुरू करने से पहले दूसरे का सर्वर रोक दे।</string>
+  <string name="help.model.wrong_port">**पोर्ट व्यस्त है।** अगर कोई दूसरा प्रोग्राम वह पोर्ट पहले से इस्तेमाल कर रहा है, तो आपका सर्वर वहाँ शुरू नहीं हो सकता। कोई खाली पोर्ट चुनें और ऊपर के पते में भी वही इस्तेमाल करें।</string>
+  <string name="help.wrong_spaces">**पाथ में खाली जगह।** खाली जगह वाले किसी भी पाथ के चारों ओर उद्धरण चिह्न लगाएँ।</string>
+  <string name="help.model.wrong_keys">**कुंजियाँ और पासवर्ड।** इन्हें स्क्रिप्ट में न लिखें। API कुंजी के लिए कुंजी वाला बॉक्स इस्तेमाल करें।</string>
+  <string name="help.h_try">आज़माएँ</string>
+  <string name="help.model.try">परीक्षण टैब में जाकर **परीक्षण चलाएँ** दबाएँ।</string>
+  <string name="help.search.title">खोज की स्टार्ट स्क्रिप्ट कैसे काम करती है</string>
+  <string name="help.search.intro">खोज की स्टार्ट स्क्रिप्ट एक छोटी Windows बैच फ़ाइल (`.bat`) है जो आपका अपना खोज सर्वर शुरू करती है, आम तौर पर SearXNG। जब किसी काम को कुछ खोजना हो और आपका खोज सर्वर जवाब न दे, तब PaperDaemon इसे आपके लिए चलाता है।</string>
+  <string name="help.search.do1">खोज सर्वर इस तरह शुरू करना कि वह ऊपर के बॉक्स के पते पर जवाब दे।</string>
+  <string name="help.search.do2">जब तक सर्वर चले, तब तक चलती रहना। इसे सीधे शुरू करें, `start` से नहीं।</string>
+  <string name="help.search.runs">हर खोज से पहले PaperDaemon ऊपर के पते से एक परीक्षण खोज माँगता है। अगर कोई SearXNG सर्वर ठीक से जवाब दे, तो PaperDaemon उसे जैसा है वैसा इस्तेमाल करता है, चाहे उसे किसी ने भी शुरू किया हो, और स्क्रिप्ट नहीं चलाता। वह स्क्रिप्ट तभी चलाता है जब कुछ भी जवाब न दे, या जो जवाब दे वह ऐसा खोज सर्वर न हो जिसे वह इस्तेमाल कर सके।</string>
+  <string name="help.search.stops">जब आप PaperDaemon को रोकते या बंद करते हैं। वह आपकी स्क्रिप्ट का शुरू किया सब कुछ रोकता है, और ऐसा प्रोग्राम कभी नहीं जो उसने शुरू नहीं किया।</string>
+  <string name="help.search.wrong_json">**JSON बंद है।** SearXNG, PaperDaemon जैसे प्रोग्रामों को तभी जवाब देता है जब उसकी `settings.yml` में JSON चालू हो: `search:` → `formats:` के नीचे `html` और `json` दोनों लिखें।</string>
+  <string name="help.search.wrong_docker">**Docker।** PaperDaemon बंद होने के बाद भी Docker कंटेनर चलता रहता है, क्योंकि उसे Docker चलाता है, आपकी स्क्रिप्ट नहीं। SearXNG को WSL (Linux के लिए Windows सबसिस्टम) में या Python से चलाने पर ऐसा नहीं होता।</string>
+  <string name="help.search.wrong_port">**पोर्ट व्यस्त है।** अगर कोई दूसरा प्रोग्राम वह पोर्ट पहले से इस्तेमाल कर रहा है, तो सर्वर वहाँ शुरू नहीं हो सकता, और PaperDaemon इसे आपके लिए ठीक नहीं कर सकता। कोई खाली पोर्ट चुनें और ऊपर के पते में भी वही इस्तेमाल करें।</string>
+  <string name="help.search.try">पते के बगल में **परीक्षण** दबाएँ।</string>
+  <string name="help.ask">AI से मदद माँगें</string>
+  <string name="help.copied">प्रॉम्प्ट क्लिपबोर्ड पर कॉपी हो गया!</string>
+  <string name="help.copy_failed">प्रॉम्प्ट कॉपी नहीं हो सका</string>
+  <string name="help.model.prompt_text">मैं PaperDaemon सेट कर रहा हूँ, जो मेरे reMarkable टैबलेट के लिए एक ऐप है और मेरे Windows PC पर AI मॉडल चलाता है। मुझे एक Windows बैच फ़ाइल (.bat) चाहिए जो टेक्स्ट (LLM) मॉडल का सर्वर शुरू करे। जब भी PaperDaemon को मॉडल चाहिए, वह यह स्क्रिप्ट खुद चलाता है, और काम पूरा होने पर उसे रोक देता है।
+
+स्क्रिप्ट को इन नियमों का पालन करना है:
+- सर्वर इस तरह शुरू करे कि वह 127.0.0.1 पर, PaperDaemon के %PAPERDAEMON_PORT% में दिए पोर्ट पर HTTP का जवाब दे।
+- सर्वर को फ़ोरग्राउंड में चलाए और जब तक सर्वर चले, स्क्रिप्ट को चलता रखे। `start` का इस्तेमाल न करे।
+- सर्वर का आउटपुट छापे।
+- PaperDaemon ये भी सेट करता है: %PAPERDAEMON_ROLE% (text या image), %PAPERDAEMON_LOCATION% (पूरा पता), %PAPERDAEMON_OTHER_LOCATION% (दूसरे मॉडल का पता), %PAPERDAEMON_LINEUP% और %PAPERDAEMON_DATA%।
+- PaperDaemon सिर्फ़ वही प्रोग्राम रोकता है जो उसने शुरू किए। अगर दूसरे मॉडल सर्वर मेरे ग्राफ़िक्स कार्ड की मेमोरी इस्तेमाल कर रहे हों, तो स्क्रिप्ट पहले उन्हें रोके।
+- सर्वर को OpenAI-संगत चैट API (/v1/chat/completions) बोलना चाहिए, जैसा llama.cpp का llama-server, Ollama, LM Studio या vLLM करते हैं।
+
+लिखने से पहले मुझसे ये सवाल एक-एक करके पूछो और हर जवाब का इंतज़ार करो:
+1. मेरे पास कौन-सा ग्राफ़िक्स कार्ड है, और उसमें कितनी VRAM है?
+2. मैं कौन-सा मॉडल चलाना चाहता हूँ, और मॉडल फ़ाइल मेरे PC में कहाँ है?
+3. मैं कौन-सा सर्वर प्रोग्राम इस्तेमाल करता हूँ (या करना चाहता हूँ), और वह कहाँ इंस्टॉल है?
+4. उसे कौन-सा पोर्ट इस्तेमाल करना चाहिए?
+5. क्या मैं ग्राफ़िक्स कार्ड इस्तेमाल करने वाले दूसरे AI सर्वर या प्रोग्राम चलाता हूँ, और क्या स्क्रिप्ट को पहले उन्हें रोकना चाहिए?
+6. क्या मेरा टेक्स्ट मॉडल और चित्र मॉडल कार्ड पर एक साथ समाते हैं, या हर स्क्रिप्ट को दूसरे को रोकना चाहिए?
+
+फिर .bat फ़ाइल लिखो, हर पंक्ति पर एक छोटी टिप्पणी के साथ कि वह क्या करती है, और मुझे बताओ कि इसे कैसे जाँचूँ।</string>
+  <string name="help.model.prompt_image">मैं PaperDaemon सेट कर रहा हूँ, जो मेरे reMarkable टैबलेट के लिए एक ऐप है और मेरे Windows PC पर AI मॉडल चलाता है। मुझे एक Windows बैच फ़ाइल (.bat) चाहिए जो चित्र बनाने वाले मॉडल का सर्वर शुरू करे। जब भी PaperDaemon को मॉडल चाहिए, वह यह स्क्रिप्ट खुद चलाता है, और काम पूरा होने पर उसे रोक देता है।
+
+स्क्रिप्ट को इन नियमों का पालन करना है:
+- सर्वर इस तरह शुरू करे कि वह 127.0.0.1 पर, PaperDaemon के %PAPERDAEMON_PORT% में दिए पोर्ट पर HTTP का जवाब दे।
+- सर्वर को फ़ोरग्राउंड में चलाए और जब तक सर्वर चले, स्क्रिप्ट को चलता रखे। `start` का इस्तेमाल न करे।
+- सर्वर का आउटपुट छापे।
+- PaperDaemon ये भी सेट करता है: %PAPERDAEMON_ROLE% (text या image), %PAPERDAEMON_LOCATION% (पूरा पता), %PAPERDAEMON_OTHER_LOCATION% (दूसरे मॉडल का पता), %PAPERDAEMON_LINEUP% और %PAPERDAEMON_DATA%।
+- PaperDaemon सिर्फ़ वही प्रोग्राम रोकता है जो उसने शुरू किए। अगर दूसरे मॉडल सर्वर मेरे ग्राफ़िक्स कार्ड की मेमोरी इस्तेमाल कर रहे हों, तो स्क्रिप्ट पहले उन्हें रोके।
+- सर्वर को Stable Diffusion web UI API (/sdapi/v1/txt2img) बोलना चाहिए, जैसा stable-diffusion.cpp का सर्वर, Forge या AUTOMATIC1111 करते हैं, या OpenAI Images API।
+
+लिखने से पहले मुझसे ये सवाल एक-एक करके पूछो और हर जवाब का इंतज़ार करो:
+1. मेरे पास कौन-सा ग्राफ़िक्स कार्ड है, और उसमें कितनी VRAM है?
+2. मैं कौन-सा मॉडल चलाना चाहता हूँ, और मॉडल फ़ाइल मेरे PC में कहाँ है?
+3. मैं कौन-सा सर्वर प्रोग्राम इस्तेमाल करता हूँ (या करना चाहता हूँ), और वह कहाँ इंस्टॉल है?
+4. उसे कौन-सा पोर्ट इस्तेमाल करना चाहिए?
+5. क्या मैं ग्राफ़िक्स कार्ड इस्तेमाल करने वाले दूसरे AI सर्वर या प्रोग्राम चलाता हूँ, और क्या स्क्रिप्ट को पहले उन्हें रोकना चाहिए?
+6. क्या मेरा टेक्स्ट मॉडल और चित्र मॉडल कार्ड पर एक साथ समाते हैं, या हर स्क्रिप्ट को दूसरे को रोकना चाहिए?
+
+फिर .bat फ़ाइल लिखो, हर पंक्ति पर एक छोटी टिप्पणी के साथ कि वह क्या करती है, और मुझे बताओ कि इसे कैसे जाँचूँ।</string>
+  <string name="help.search.prompt">मैं PaperDaemon सेट कर रहा हूँ, जो मेरे reMarkable टैबलेट के लिए एक ऐप है और मेरे Windows PC पर चलता है। मुझे एक Windows बैच फ़ाइल (.bat) चाहिए जो इस PC पर SearXNG खोज सर्वर शुरू करे। जब PaperDaemon को खोजना हो और कुछ भी जवाब न दे, तब वह यह स्क्रिप्ट खुद चलाता है, और PaperDaemon के रुकने या बंद होने पर उसे रोक देता है।
+
+स्क्रिप्ट को इन नियमों का पालन करना है:
+- SearXNG इस तरह शुरू करे कि वह 127.0.0.1 पर, मेरे चुने पोर्ट पर HTTP का जवाब दे।
+- SearXNG में JSON आउटपुट चालू होना चाहिए (settings.yml में search: formats: [html, json])।
+- सर्वर को फ़ोरग्राउंड में चलाए और जब तक सर्वर चले, स्क्रिप्ट को चलता रखे। `start` का इस्तेमाल न करे।
+- सर्वर का आउटपुट छापे।
+- Docker के बजाय WSL या Python को प्राथमिकता दे: PaperDaemon स्क्रिप्ट की अपनी प्रक्रियाएँ रोकता है, पर Docker कंटेनर उसके बंद होने के बाद भी चलता रहेगा।
+
+लिखने से पहले मुझसे ये सवाल एक-एक करके पूछो और हर जवाब का इंतज़ार करो:
+1. क्या मेरे पास WSL (Linux के लिए Windows सबसिस्टम) इंस्टॉल है? Python? Docker?
+2. क्या SearXNG पहले से इंस्टॉल है, और अगर है तो कहाँ और कैसे?
+3. उसे कौन-सा पोर्ट इस्तेमाल करना चाहिए, और क्या कुछ और उसे पहले से इस्तेमाल कर रहा है?
+
+फिर ज़रूरत हो तो SearXNG इंस्टॉल करने में मेरी मदद करो, .bat फ़ाइल लिखो, हर पंक्ति पर एक छोटी टिप्पणी के साथ कि वह क्या करती है, और मुझे बताओ कि इसे कैसे जाँचूँ।</string>
+  <string name="ts.what">क्या</string>
+  <string name="ts.details">विवरण</string>
+  <string name="ts.testing">परीक्षण जारी: {total} में से {n} पूरे</string>
+  <string name="ts.changed">पिछले परीक्षण के बाद लाइनअप बदल गया, इसलिए वह नतीजा अब मान्य नहीं है। परीक्षण फिर से चलाएँ।</string>
+  <string name="ts.never">इस लाइनअप का अभी परीक्षण नहीं हुआ है।</string>
+  <string name="ts.whole">पूरे {name} लाइनअप का एक साथ परीक्षण: उसका टेक्स्ट मॉडल और हार्नेस, चित्र मॉडल और हार्नेस, नेटवर्क और उसके टैग।</string>
+  <string name="ts.row.model-text">टेक्स्ट मॉडल</string>
+  <string name="ts.row.model-image">चित्र मॉडल</string>
+  <string name="ts.row.answer">सवालों के जवाब देना</string>
+  <string name="ts.row.ink">हाथ से लिखे सवाल का जवाब देना</string>
+  <string name="ts.row.chart">चार्ट बनाना</string>
+  <string name="ts.row.draw">चित्र खींचना</string>
+  <string name="ts.row.picture">तस्वीरें बनाना</string>
+  <string name="ts.row.handwriting">हस्तलेख पढ़ना</string>
+  <string name="ts.row.search">वेब पर खोजना</string>
+  <string name="ts.row.social">सोशल मीडिया</string>
+  <string name="ts.row.weather">मौसम</string>
+  <string name="ts.m.not_run">नहीं चलाया</string>
+  <string name="ts.m.no_image">कोई चित्र मॉडल नहीं</string>
+  <string name="ts.m.waiting">इंतज़ार में</string>
+  <string name="ts.m.working">चल रहा है</string>
+  <string name="ts.m.canceled">रद्द</string>
+  <string name="ts.m.failed">विफल</string>
+  <string name="ts.m.answered_in">{s} से. में जवाब</string>
+  <string name="ts.m.done_in">{s} से. में पूरा</string>
+  <string name="ts.m.failed_after">{s} से. बाद विफल</string>
+  <string name="ts.m.answers">जवाब देता है</string>
+  <string name="ts.m.check_failed">{check}: विफल</string>
+  <string name="ts.m.no_answer">कोई जवाब नहीं</string>
+  <string name="ts.m.not_set_up">सेट नहीं</string>
+  <string name="ts.m.network_off">नेटवर्क पहुँच बंद है</string>
+  <string name="ts.m.no_results_in">{s} से. में कोई नतीजा नहीं</string>
+  <string name="ts.m.results_in">{s} से. में {n} नतीजे</string>
+  <string name="ts.m.no_sites">कोई साइट नहीं चुनी</string>
+  <string name="ts.m.site_time">{site} {s} से.</string>
+  <string name="ts.m.site_failed">{site} विफल</string>
+  <string name="ts.m.no_forecast">कोई पूर्वानुमान नहीं</string>
+  <string name="ts.m.weather">{t}{unit} और {sky}, {s} से. में जवाब</string>
+  <string name="ts.m.no_samples">कोई नमूने नहीं</string>
+  <string name="ts.m.cannot_see">मॉडल देख नहीं सकता</string>
+  <string name="ts.m.no_reading">कुछ पढ़ा नहीं गया</string>
+  <string name="ts.m.nothing_read">कुछ नहीं पढ़ा</string>
+  <string name="ts.m.words">{pct}% शब्द, हर पेज {s} से.</string>
+  <string name="ts.d.no_image">इस लाइनअप में कोई चित्र मॉडल नहीं है।</string>
+  <string name="ts.d.search_setup">लाइनअप के नेटवर्क टैब में एक खोज सेवा या लोकल खोज सर्वर जोड़ें।</string>
+  <string name="ts.d.allow_network">इसे सेटिंग्स में अनुमति दें।</string>
+  <string name="ts.d.search_empty">खोज खाली लौटी।</string>
+  <string name="ts.d.first">पहला: {title}</string>
+  <string name="ts.d.every_site">हर साइट से पोस्ट आए।</string>
+  <string name="ts.d.choose_sites">सेटिंग्स में सोशल साइटें चुनें।</string>
+  <string name="ts.d.no_forecast">मौसम सेवा ने जवाब नहीं दिया।</string>
+  <string name="ts.d.weather">आज {place} में: अधिकतम {hi}{unit}, न्यूनतम {lo}{unit}।</string>
+  <string name="ts.d.weather_london">कोई जगह सेट नहीं है, इसलिए आज लंदन: अधिकतम {hi}{unit}, न्यूनतम {lo}{unit}।</string>
+  <string name="ts.d.samples_missing">हस्तलेख के नमूने मौजूद नहीं हैं।</string>
+  <string name="ts.d.cannot_see">लाइनअप का टेक्स्ट मॉडल तस्वीरें नहीं लेता, इसलिए वह हस्तलेख नहीं पढ़ता।</string>
+  <string name="ts.d.words">{total} में से {right} शब्द, {pages} पेज, चार महाद्वीपों के {pages} लेखक ({regions})।</string>
+  <string name="ts.d.text_failed">टेक्स्ट मॉडल अपनी जाँच में पास नहीं हुआ।</string>
+  <string name="page.gave_up">यह पूरा नहीं हो सका; {n} कोशिशों के बाद छोड़ दिया।</string>
+  <string name="issue.loop_token_unreadable">reMarkable कनेक्शन पढ़ा नहीं जा सका: {why}</string>
+  <string name="issue.loop_gave_up">PaperDaemon का एक हिस्सा लगातार {n} बार रुका और रुका ही छोड़ दिया गया; उसके लॉग में कारण है।</string>
+  <string name="issue.loop_supervisor">PaperDaemon के सुपरवाइज़र में त्रुटि हुई: {why}</string>
+  <string name="slot.key_where">पहले सर्वर का पता भरें: कुंजी उसी सर्वर के लिए रखी जाती है।</string>
+  <string name="day.saturday">शनिवार</string>
+  <string name="slot.source.help">API कुंजी: कोई कंपनी मॉडल चलाती है, और PaperDaemon आपकी कुंजी से उस तक पहुँचता है। स्थानीय रूप से होस्ट करें: एक मॉडल सर्वर जिसे आप खुद इस कंप्यूटर या अपने नेटवर्क पर चलाते हैं।</string>
+  <string name="slot.provider.help">मॉडल कौन चलाता है। अन्य: कोई भी सेवा जो आपके दिए पते पर OpenAI API बोलती हो।</string>
+  <string name="slot.address.help_hosted">सेवा का API पता, उदाहरण के लिए https://api.example.com/v1.</string>
+  <string name="slot.model.help">मॉडल का नाम ठीक वैसा ही जैसा प्रदाता लिखता है।</string>
+  <string name="slot.api_key.help">Windows क्रेडेंशियल मैनेजर में रखी जाती है, किसी फ़ाइल में कभी नहीं। एक ही सर्वर इस्तेमाल करने वाले लाइनअप उसकी कुंजी साझा करते हैं।</string>
+  <string name="slot.address.help_local">जहाँ आपके मॉडल का सर्वर जवाब देता है, उदाहरण के लिए http://127.0.0.1:8080। अगर वहाँ कुछ जवाब नहीं देता, तो PaperDaemon नीचे दी गई स्टार्ट स्क्रिप्ट चलाता है।</string>
+  <string name="slot.harness.help">PaperDaemon इस मॉडल के साथ कैसे काम करता है: उसे क्या बताता है और उसके जवाब कैसे पढ़ता है। स्वचालित मॉडल के नाम से एक चुनता है; Harness जोड़ें आपके अपने harness के लिए फ़ोल्डर खोलता है।</string>
+  <string name="net.source.help">जहाँ कोई काम जानकारी खोजता है: वह खोज सेवा जिसकी API कुंजी आपके पास है, या वह SearXNG सर्वर जिसे आप खुद चलाते हैं।</string>
+  <string name="net.service.help">वह खोज सेवा जिसकी यह कुंजी है।</string>
+  <string name="net.address.help">जहाँ आपका SearXNG सर्वर जवाब देता है, उदाहरण के लिए http://127.0.0.1:8888। अगर वहाँ कोई काम का जवाब नहीं मिलता, तो PaperDaemon नीचे दी गई स्टार्ट स्क्रिप्ट चलाता है।</string>
+  <string name="tags.tag.help">टैग ठीक वैसा ही जैसा आप टैबलेट पर लगाते हैं; बड़े और छोटे अक्षरों से फ़र्क नहीं पड़ता।</string>
+  <string name="tags.prompt.help">इस टैग वाले पेज पर, या इस टैग वाली नोटबुक या फ़ोल्डर में, हर काम के निर्देशों में जोड़ा जाता है।</string>
+</resources>

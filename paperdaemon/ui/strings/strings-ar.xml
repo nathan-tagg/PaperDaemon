@@ -1,0 +1,548 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PaperDaemon's interface text, العربية. Names are "screen.thing"; {placeholders} are filled in by the window. -->
+<resources>
+  <string name="pair.title">إقران هذه النافذة</string>
+  <string name="pair.intro">لا يقبل المحرك إلا الطلبات التي تحمل رمز الإقران الخاص به. افتح نافذة PaperDaemon نفسها لتُقرن تلقائيًا، أو الصق الرمز المعروض تحت «الشبكة» على الكمبيوتر الذي يشغّله.</string>
+  <string name="pair.token">رمز الإقران</string>
+  <string name="pair.go">إقران</string>
+  <string name="pair.empty">الصق رمز الإقران أولًا.</string>
+  <string name="pair.refused">لم يقبل المحرك هذا الرمز.</string>
+  <string name="fatal.title">لم يستجب المحرك</string>
+  <string name="common.try_again">أعد المحاولة</string>
+  <string name="pair.window_refused">لم يقبل المحرك رمز هذه النافذة.</string>
+  <string name="rail.engine_on">المحرك يعمل</string>
+  <string name="rail.version">الإصدار {version}</string>
+  <string name="api.no_answer">لم يستجب المحرك. هل ما زال PaperDaemon يعمل؟</string>
+  <string name="api.unpaired">هذه النافذة غير مقترنة بالمحرك.</string>
+  <string name="api.not_offered">لا يقدّم المحرك هذا بعد ({route}).</string>
+  <string name="day.today">اليوم</string>
+  <string name="day.yesterday">أمس</string>
+  <string name="unit.seconds">{n} ث</string>
+  <string name="unit.minutes">{n} د</string>
+  <string name="unit.hours">{n} س</string>
+  <string name="mirror.building_pct">جارٍ بناء المرآة، {pct}%</string>
+  <string name="mirror.pct">المرآة {pct}%</string>
+  <string name="mirror.bar">جارٍ بناء المرآة: {done} من {total} · {bytes} من {bytes_total} · {pct}%</string>
+  <string name="mirror.bar_start">جارٍ بناء المرآة: {files} · {bytes} حتى الآن</string>
+  <string name="count.document.one">مستند واحد</string>
+  <string name="count.document.other">{n} مستند</string>
+  <string name="count.file.one">ملف واحد</string>
+  <string name="count.file.other">{n} ملف</string>
+  <string name="mirror.name">المرآة</string>
+  <string name="login.privacy">يبقى تسجيل دخولك على هذا الكمبيوتر ولا يُستخدم إلا مع سحابة reMarkable. لا تذهب صفحاتك إلى أي مكان آخر، إلا إذا وصلت نموذجًا سحابيًا أو البحث على الويب؛ عندها لا يذهب إلى تلك الخدمة إلا ما تحتاجه المهمة.</string>
+  <string name="login.borrow.title">استعارة تسجيل دخول تطبيق reMarkable</string>
+  <string name="login.borrow.body">ينسخ PaperDaemon تسجيل دخول تطبيق reMarkable لسطح المكتب إلى مدير بيانات الاعتماد في Windows. يبقى التطبيق مسجّل الدخول. يستخدم كلاهما تسجيل الدخول نفسه، لذا لا يمكن تشغيل إلا واحد منهما في كل مرة.</string>
+  <string name="login.borrow.action">استعارة تسجيل الدخول</string>
+  <string name="login.steal.title">⚠ أخذ تسجيل دخول تطبيق reMarkable</string>
+  <string name="login.steal.body">ينسخ PaperDaemon تسجيل دخول تطبيق reMarkable لسطح المكتب إلى مدير بيانات الاعتماد في Windows، ثم يحذفه من إعدادات التطبيق في سجل Windows. يُسجَّل خروج التطبيق؛ وعندما تسجّل الدخول إليه مرة أخرى يصبح جهازًا منفصلًا. أغلق تطبيق reMarkable أولًا.</string>
+  <string name="login.steal.action">أخذ تسجيل الدخول</string>
+  <string name="login.not_found">تطبيق reMarkable غير مسجّل الدخول على هذا الكمبيوتر. ثبّته، وسجّل الدخول، ثم أعد المحاولة.</string>
+  <string name="login.not_kept">عُثر على تسجيل دخول التطبيق، لكن PaperDaemon لم يتمكن من الاحتفاظ به.</string>
+  <string name="login.not_kept_why">عُثر على تسجيل دخول التطبيق، لكن PaperDaemon لم يتمكن من الاحتفاظ به: {why}</string>
+  <string name="login.stolen">لدى PaperDaemon تسجيل الدخول، وقد سُجّل خروج تطبيق reMarkable. سجّل الدخول إلى التطبيق مرة أخرى لاستخدامه جهازًا مستقلًا.</string>
+  <string name="login.borrowed">يستخدم PaperDaemon تسجيل دخول تطبيق reMarkable. أبقِ التطبيق مغلقًا ما دام PaperDaemon يعمل.</string>
+  <string name="job.failed">فشلت</string>
+  <string name="job.working">قيد العمل</string>
+  <string name="job.skipped">تم تخطيها</string>
+  <string name="job.waiting">في الانتظار</string>
+  <string name="job.done">تمت</string>
+  <string name="job.unknown">غير معروف</string>
+  <string name="job.page">ص {n}</string>
+  <string name="jobs.unreadable">تعذّرت قراءة المهام.</string>
+  <string name="jobs.reading">جارٍ قراءة المهام…</string>
+  <string name="jobs.none">لا توجد مهام بعد.</string>
+  <string name="jobs.none_hint">ضع الوسم {tag} على صفحة في جهازك اللوحي.</string>
+  <string name="count.job.one">مهمة واحدة</string>
+  <string name="count.job.other">{n} مهمة</string>
+  <string name="jobs.n_failed">{n} فشلت</string>
+  <string name="jobs.n_skipped">{n} تم تخطيها</string>
+  <string name="jobs.earlier">سابقًا</string>
+  <string name="jobs.so_far">{time} حتى الآن</string>
+  <string name="jobs.a_page">صفحة</string>
+  <string name="jobs.no_note">لا ملاحظة</string>
+  <string name="jobs.col.time">الوقت</string>
+  <string name="jobs.col.page">الصفحة</string>
+  <string name="jobs.col.status">الحالة</string>
+  <string name="jobs.col.what">ما حدث</string>
+  <string name="jobs.col.took">المدة</string>
+  <string name="jobs.label">المهام</string>
+  <string name="issue.setup">لم يكتمل الإعداد.</string>
+  <string name="issue.setup_go">متابعة الإعداد</string>
+  <string name="issue.tablet">لا يستطيع PaperDaemon الوصول إلى جهاز reMarkable.</string>
+  <string name="issue.mirror">تعذّر تحديث المرآة: {why}</string>
+  <string name="issue.not_started">لم يبدأ PaperDaemon: {why}</string>
+  <string name="term.daemon">البرنامج الخفي</string>
+  <string name="term.daemon_about">يراقب جهازك اللوحي بحثًا عن الصفحات الموسومة ويسلّم كل واحدة منها إلى المضيف كمهمة.</string>
+  <string name="term.host">المضيف</string>
+  <string name="term.host_about">ينفّذ كل مهمة: يقرأ الصفحة، ويسأل النماذج، ويكتب الإجابة على الصفحة.</string>
+  <string name="term.empty">لا شيء بعد.</string>
+  <string name="loop.pausing">جارٍ الإيقاف المؤقت…</string>
+  <string name="loop.starting">جارٍ البدء…</string>
+  <string name="loop.pause">إيقاف البرنامج الخفي مؤقتًا (يحرّر ذاكرة الرسومات)</string>
+  <string name="loop.start">ابدأ</string>
+  <string name="overview.label">نظرة عامة</string>
+  <string name="overview.needs_you">هناك ما يحتاج إليك</string>
+  <string name="loop.running">يعمل</string>
+  <string name="loop.paused">متوقف مؤقتًا</string>
+  <string name="common.choose">اختر…</string>
+  <string name="common.help">مساعدة</string>
+  <string name="settings.label">الإعدادات</string>
+  <string name="settings.prefs">التفضيلات</string>
+  <string name="settings.prefs_to_set">تفضيلات لم تُضبط</string>
+  <string name="settings.note">خذ لحظة لضبط تفضيلاتك: كيف يكتب PaperDaemon درجات الحرارة والأوقات والأسابيع على صفحاتك.</string>
+  <string name="settings.language">اللغة</string>
+  <string name="settings.language.help">لغة نافذة PaperDaemon نفسها. تغييرها يعيد تحميل النافذة.</string>
+  <string name="settings.language.pick">اختر لغة من القائمة.</string>
+  <string name="settings.temperature">درجة الحرارة</string>
+  <string name="settings.temperature.help">في التقويمات وفيما يكتبه PaperDaemon.</string>
+  <string name="settings.temperature.f">فهرنهايت (°F)</string>
+  <string name="settings.temperature.c">مئوية (°C)</string>
+  <string name="settings.clock">الساعة</string>
+  <string name="settings.clock.12">12 ساعة (2:30 PM)</string>
+  <string name="settings.clock.24">24 ساعة (14:30)</string>
+  <string name="settings.week">يبدأ الأسبوع يوم</string>
+  <string name="day.sunday">الأحد</string>
+  <string name="day.monday">الاثنين</string>
+  <string name="settings.remarkable">reMarkable</string>
+  <string name="settings.login.none">غير متصل</string>
+  <string name="settings.login.borrowing">يستعير تسجيل دخول تطبيق reMarkable</string>
+  <string name="settings.login.steal">خذه بدلًا من ذلك</string>
+  <string name="settings.login.stolen">متصل بتسجيل دخول خاص به، مأخوذ من تطبيق reMarkable</string>
+  <string name="settings.login.connected">متصل</string>
+  <string name="settings.inbox">صندوق وارد التفكيك</string>
+  <string name="settings.inbox.help">الدفتر الذي يضيف إليه «إرسال إلى الجهاز اللوحي» الصفحات. لا يجيب PaperDaemon فيه أبدًا، مهما كان وسمه.</string>
+  <string name="settings.inbox.placeholder">اختر دفترًا</string>
+  <string name="settings.inbox.pick">اختر دفترًا من القائمة.</string>
+  <string name="settings.location">الموقع</string>
+  <string name="settings.location.help">للطقس والشروق والعطلات في التقويمات.</string>
+  <string name="settings.location.placeholder">ابدأ بكتابة اسم مدينة</string>
+  <string name="settings.location.pick">اختر مدينة من القائمة.</string>
+  <string name="settings.ignore">وسم التجاهل</string>
+  <string name="settings.ignore.help">ضع هذا الوسم على مجلد أو دفتر أو صفحة في جهازك اللوحي، ولن يعالج PaperDaemon أي شيء هناك أبدًا، في أي تشكيلة، مهما كانت الوسوم الأخرى.</string>
+  <string name="settings.sprompt">وسم التعليمات الدائمة</string>
+  <string name="settings.sprompt.help">ضع هذا الوسم على صفحة واحدة من دفتر واكتب عليها تعليمات. يضيف PaperDaemon نص تلك الصفحة في نهاية تعليمات كل مهمة في ذلك الدفتر، ولا يعالج الصفحة نفسها أبدًا.</string>
+  <string name="settings.network">الوصول إلى الشبكة</string>
+  <string name="settings.network.help">الطقس، ومنشورات التواصل الاجتماعي، وويكيبيديا، والبحث على الويب. لا تتأثر نماذجك ولا سحابة reMarkable.</string>
+  <string name="settings.network.allow">السماح بالوصول إلى الشبكة</string>
+  <string name="settings.social">المواقع الاجتماعية</string>
+  <string name="settings.social.help">أين يبحث طلب المنشورات حين لا يسمّي موقعًا. الموقع المسمّى يُبحث فيه دائمًا.</string>
+  <string name="settings.tools">الأدوات</string>
+  <string name="settings.updates">التحديثات</string>
+  <string name="settings.updates.help">لا يتحقق PaperDaemon من التحديثات من تلقاء نفسه أبدًا.</string>
+  <string name="settings.version">الإصدار {version}</string>
+  <string name="settings.updates.check">التحقق من التحديثات</string>
+  <string name="settings.updates.installed_only">يتحقق التطبيق المثبّت من التحديثات، من قائمته في شريط المهام أو من هنا.</string>
+  <string name="settings.logs">السجلات</string>
+  <string name="settings.logs.help">ما كتبه البرنامج الخفي والمضيف والمحرك مؤخرًا، كصفحات في صندوق الوارد.</string>
+  <string name="settings.logs.send">إرسال السجلات إلى صندوق الوارد</string>
+  <string name="settings.logs.no_inbox">عيّن صندوق وارد أعلاه أولًا</string>
+  <string name="settings.logs.sent">أُرسلت: {pages} في {inbox}، بدءًا من الصفحة {first}.</string>
+  <string name="settings.logs.the_inbox">صندوق الوارد</string>
+  <string name="count.page.one">صفحة واحدة</string>
+  <string name="count.page.other">{n} صفحة</string>
+  <string name="tablet.read">قُرئ {pct}%</string>
+  <string name="tablet.page_of">الصفحة {page} من {pages}</string>
+  <string name="common.reading">جارٍ القراءة…</string>
+  <string name="tablet.my_files">ملفاتي</string>
+  <string name="tablet.arriving">ما زال يصل…</string>
+  <string name="tablet.empty">هذا المجلد فارغ.</string>
+  <string name="viewer.pages">الصفحات</string>
+  <string name="viewer.chapters">الفصول</string>
+  <string name="viewer.goto">الانتقال إلى صفحة (1 - {last})</string>
+  <string name="viewer.goto_aria">الانتقال إلى صفحة، من 1 إلى {last}</string>
+  <string name="viewer.prev">الصفحة السابقة</string>
+  <string name="viewer.next">الصفحة التالية</string>
+  <string name="viewer.reading_chapters">جارٍ قراءة الفصول…</string>
+  <string name="viewer.not_drawn">تعذّر رسم هذه الصفحة.</string>
+  <string name="viewer.page">الصفحة {n}</string>
+  <string name="viewer.go_to">الانتقال إلى الصفحة {n}</string>
+  <string name="common.close">إغلاق</string>
+  <string name="tablet.label">الجهاز اللوحي</string>
+  <string name="tablet.folder">مجلد</string>
+  <string name="dc.decomposing">جارٍ تفكيك {name}</string>
+  <string name="dc.drop">أفلت صورة هنا، أو {choose}.</string>
+  <string name="dc.choose">اختر ملفًا</string>
+  <string name="dc.on_page">في الصفحة رقم {n}</string>
+  <string name="dc.sending">جارٍ الإرسال…</string>
+  <string name="dc.send">إرسال إلى الجهاز اللوحي</string>
+  <string name="dc.no_inbox">عيّن صندوق وارد في تبويب الإعدادات</string>
+  <string name="dc.look">انظر عن قرب</string>
+  <string name="dc.size_px">{w} × {h} بكسل</string>
+  <string name="count.stroke.one">خط واحد</string>
+  <string name="count.stroke.other">{n} خط</string>
+  <string name="common.delete">حذف</string>
+  <string name="dc.size_range">الحجم من 200 إلى 1,400 بكسل من بكسلات الجهاز اللوحي.</string>
+  <string name="dc.picture">صورة</string>
+  <string name="dc.bad_type">هذا الملف ليس صورة PNG أو JPEG أو WebP.</string>
+  <string name="dc.too_big">حجم هذه الصورة {size}. استخدم صورة أصغر من {max}.</string>
+  <string name="dc.unreadable">تعذّرت قراءة الملف.</string>
+  <string name="dc.drop_what">أفلت ملف صورة، أو صورة من صفحة ويب.</string>
+  <string name="dc.label">تفكيك</string>
+  <string name="dc.intro">حوّل صورة إلى خطوط قلم وأرسلها إلى الجهاز اللوحي، حيث يمكن محو كل خط والرسم فوقه كما لو كان من رسمك.</string>
+  <string name="dc.image">الصورة</string>
+  <string name="dc.size">الحجم</string>
+  <string name="dc.size_unit">بكسلات الجهاز اللوحي، من 200 إلى 1,400</string>
+  <string name="dc.types">PNG، JPEG، WebP</string>
+  <string name="dc.decomps">الصور المفككة</string>
+  <string name="lineup.unreadable">تعذّرت قراءة التشكيلات.</string>
+  <string name="memories.note">ما تعلّمه نموذج هذه التشكيلة عن العمل لأجلك: الشكاوى، والتصحيحات، والطريقة التي تريد أن تُنجز بها الأمور. يحفظها النموذج بنفسه، ولا يحفظ ملاحظاتك أو العمل على صفحة أبدًا (يحتفظ كل دفتر بسياقه في مفكرته)، وتُعرض على كل مهمة في هذه التشكيلة. غيّر أيًّا منها أو احذفه هنا.</string>
+  <string name="memories.none">لا ذكريات بعد.</string>
+  <string name="memories.none_hint">يحفظ النموذج ذكرى حين يتعلم شيئًا عن العمل لأجلك.</string>
+  <string name="memories.count">{n} من {max}</string>
+  <string name="memories.saved_on">حُفظت في {date}</string>
+  <string name="memories.one">ذكرى</string>
+  <string name="memories.saved">حُفظت الذكرى.</string>
+  <string name="memories.deleted">حُذفت الذكرى.</string>
+  <string name="lineup.label">التشكيلة</string>
+  <string name="lineup.new_option">+ تشكيلة جديدة…</string>
+  <string name="lineup.rename">إعادة التسمية</string>
+  <string name="tab.text">النص / الاستدلال</string>
+  <string name="tab.image">الصورة</string>
+  <string name="tab.network">الشبكة</string>
+  <string name="tab.tags">الوسوم</string>
+  <string name="tab.memories">الذكريات</string>
+  <string name="tab.tests">الاختبار</string>
+  <string name="common.saved">تم الحفظ.</string>
+  <string name="common.no_answer">لا إجابة.</string>
+  <string name="lineup.test_no_answer">لا إجابة. تحقق من المزوّد والنموذج والمفتاح.</string>
+  <string name="memories.delete_q">حذف هذه الذكرى؟</string>
+  <string name="memories.delete_body">لن تُعرض على النموذج مرة أخرى.</string>
+  <string name="lineup.new">تشكيلة جديدة</string>
+  <string name="lineup.rename_title">إعادة تسمية التشكيلة</string>
+  <string name="lineup.name">الاسم</string>
+  <string name="lineup.delete_q">حذف {name}؟</string>
+  <string name="lineup.delete_body">تُحذف معها نماذجها وبحثها على الويب ووسومها وذكرياتها.</string>
+  <string name="common.disclaimer">تنبيه</string>
+  <string name="common.cancel">إلغاء</string>
+  <string name="slot.other_provider">آخر (متوافق مع OpenAI)</string>
+  <string name="slot.harness_auto">تلقائي (من اسم النموذج)</string>
+  <string name="slot.harness">الإطار</string>
+  <string name="slot.add_harness">+ إضافة إطار</string>
+  <string name="slot.none">لا شيء</string>
+  <string name="slot.api_key">مفتاح API</string>
+  <string name="slot.local">استضافة محلية</string>
+  <string name="slot.source">المصدر</string>
+  <string name="slot.provider">المزوّد</string>
+  <string name="slot.address">العنوان</string>
+  <string name="slot.model">النموذج</string>
+  <string name="slot.saved">محفوظ</string>
+  <string name="common.test">اختبار</string>
+  <string name="slot.script_label">Start.bat - اتركه فارغًا إن لم تكن هناك حاجة إلى نص تشغيل</string>
+  <string name="slot.script">نص التشغيل</string>
+  <string name="net.search">البحث على الويب</string>
+  <string name="net.service_key">خدمة بحث، بمفتاح API</string>
+  <string name="net.service">الخدمة</string>
+  <string name="net.script">نص تشغيل البحث</string>
+  <string name="tags.note">كل وسم هنا هو وسم تراقبه هذه التشكيلة: ضعه على صفحة أو دفتر أو مجلد في جهازك اللوحي فتعالجه هذه التشكيلة. تتلقى الصفحة توجيهات وسوم هذه التشكيلة الموجودة عليها وعلى دفترها وعلى المجلدات فوقها، بترتيب هذه القائمة (اسحب بطاقة من مقبضها لنقلها)؛ وتأتي صفحة التعليمات الدائمة الخاصة بالدفتر في النهاية. أبقِ وسمًا واحدًا بتوجيه فارغ للصفحات التي لا تحتاج إلى شيء إضافي. لا يمكن أن ينتمي الوسم إلا إلى تشكيلة واحدة.</string>
+  <string name="tags.move">نقل {name} (مفاتيح الأسهم)</string>
+  <string name="tags.this">هذا الوسم</string>
+  <string name="tags.drag">اسحب لإعادة الترتيب</string>
+  <string name="tags.tag">الوسم</string>
+  <string name="common.remove">إزالة</string>
+  <string name="tags.prompt">التوجيه</string>
+  <string name="tags.prompt_blank">فارغ: لا تتلقى الصفحة أي توجيه إضافي</string>
+  <string name="tags.add">+ إضافة وسم</string>
+  <string name="common.testing">جارٍ الاختبار…</string>
+  <string name="common.answering">يستجيب</string>
+  <string name="np.list_unreadable">تعذّرت قراءة المفكرات.</string>
+  <string name="np.reading_list">جارٍ قراءة المفكرات…</string>
+  <string name="np.no_match">لا يوجد دفتر مطابق.</string>
+  <string name="np.summary">{entries} · {chars} حرفًا</string>
+  <string name="count.entry.one">إدخال واحد</string>
+  <string name="count.entry.other">{n} إدخال</string>
+  <string name="np.undated">بلا تاريخ</string>
+  <string name="np.show_fewer">عرض أقل</string>
+  <string name="np.show_older.one">عرض إدخال أقدم واحد</string>
+  <string name="np.show_older.other">عرض {n} إدخال أقدم</string>
+  <string name="np.select">اختر دفترًا لقراءة مفكرته.</string>
+  <string name="np.wiped_at">مُسحت في {time}.</string>
+  <string name="np.wiped_body">ذهبت كل الإدخالات، ولم تُحفظ أي نسخة. تبدأ المهمة التالية في {name} بمفكرة فارغة.</string>
+  <string name="np.copy">نسخ النص</string>
+  <string name="np.wipe">مسح المفكرة</string>
+  <string name="np.not_wiped">لم تُمسح المفكرة.</string>
+  <string name="np.unreadable">تعذّرت قراءة هذه المفكرة.</string>
+  <string name="np.reading">جارٍ قراءة المفكرة…</string>
+  <string name="np.empty">هذه المفكرة فارغة.</string>
+  <string name="np.show">عرض</string>
+  <string name="np.entries">الإدخالات</string>
+  <string name="np.as_text">كنص</string>
+  <string name="np.none">لا مفكرات بعد.</string>
+  <string name="np.this_notebook">هذا الدفتر</string>
+  <string name="np.wipe_q">مسح مفكرة {name}؟</string>
+  <string name="np.wipe_body">تُزال كل الإدخالات ({entries})، ولا تُحفظ أي نسخة. تبدأ المهمة التالية في {name} بمفكرة فارغة.</string>
+  <string name="np.wipe_body2">تذهب أيضًا أي لعبة محفوظة في هذه المفكرة. لا يُمسّ دفترك على الجهاز اللوحي.</string>
+  <string name="np.label">المفكرات</string>
+  <string name="np.intro">ذاكرة كل دفتر عن مهامه. بعد كل مهمة يدوّن المضيف ما طُلب وما فعله، وتُعرض الإدخالات الأخيرة على المهمة التالية في ذلك الدفتر، كي تستمر المحادثة من صفحة إلى صفحة.</string>
+  <string name="np.books">دفاتر لها مفكرة</string>
+  <string name="np.find">ابحث عن دفتر</string>
+  <string name="common.copied">تم النسخ</string>
+  <string name="common.copy_failed">تعذّر النسخ</string>
+  <string name="nw.this_computer">· هذا الكمبيوتر، يعمل دائمًا</string>
+  <string name="nw.cannot_remove">لا يمكن إزالته</string>
+  <string name="nw.remove_addr">إزالة {address}</string>
+  <string name="nw.url_label">عنوان للأجهزة الأخرى</string>
+  <string name="common.copy">نسخ</string>
+  <string name="nw.local_only">من هذا الكمبيوتر فقط، حتى تضيف عنوانًا.</string>
+  <string name="nw.token">رمز الإقران</string>
+  <string name="nw.hide">إخفاء</string>
+  <string name="nw.show">إظهار</string>
+  <string name="nw.rotate">تجديد…</string>
+  <string name="nw.rotated_at">جُدّد في {time}.</string>
+  <string name="nw.rotated_body">يحتاج كل جهاز مقترن إلى الرمز الجديد. أعادت هذه النافذة الاتصال من تلقاء نفسها.</string>
+  <string name="nw.token_kept">محفوظ في مخزن بيانات الاعتماد في Windows. تقترن هذه النافذة من تلقاء نفسها.</string>
+  <string name="nw.saved_restart">حُفظ في {time}. يسري حين يُعاد تشغيل PaperDaemon.</string>
+  <string name="nw.rotate_q">تجديد رمز الإقران؟</string>
+  <string name="nw.rotate_body">يتوقف كل جهاز مقترن عن العمل حتى تعطيه الرمز الجديد. تعيد هذه النافذة الاتصال من تلقاء نفسها.</string>
+  <string name="nw.rotate_action">تجديد الرمز</string>
+  <string name="nw.label">الشبكة</string>
+  <string name="count.address.one">عنوان واحد</string>
+  <string name="count.address.other">{n} عنوان</string>
+  <string name="nw.intro">يخدم المحرك هذه النافذة، وأي جهاز تقرنه، من منفذ واحد على هذا الكمبيوتر.</string>
+  <string name="nw.listens">أين يستمع المحرك</string>
+  <string name="nw.port">المنفذ</string>
+  <string name="nw.save_port">حفظ المنفذ</string>
+  <string name="nw.port_hint">غيّره فقط إن كان برنامج آخر يستخدمه بالفعل. يستخدم المحرك المنفذ الجديد بعد إعادة تشغيل PaperDaemon.</string>
+  <string name="nw.addresses">العناوين</string>
+  <string name="nw.addresses_hint">أضف عنوان WireGuard الخاص بك للوصول إلى PaperDaemon من هاتف أو كمبيوتر آخر.</string>
+  <string name="nw.another">عنوان آخر</string>
+  <string name="nw.to_add">العنوان المراد إضافته</string>
+  <string name="nw.add">إضافة عنوان</string>
+  <string name="nw.trust">أضف فقط عناوين الشبكات التي تثق بها. يجب أن يحمل كل طلب، من أي مكان، رمز الإقران.</string>
+  <string name="nw.reach">الوصول عبر</string>
+  <string name="nw.pairing">الإقران</string>
+  <string name="nw.token_hint">اكتبه في الجهاز مرة واحدة لإقرانه.</string>
+  <string name="nw.bad_address">هذا ليس عنوان IP. استخدم صيغة مثل 10.8.0.2.</string>
+  <string name="nw.listed">{address} موجود في القائمة بالفعل.</string>
+  <string name="su.connect">صِل جهاز reMarkable</string>
+  <string name="su.mirror">المرآة</string>
+  <string name="su.finish">إنهاء</string>
+  <string name="su.building_pct">جارٍ بناء المرآة، {pct}%</string>
+  <string name="su.taking">جارٍ أخذ تسجيل الدخول…</string>
+  <string name="su.steal_instead">خذ تسجيل الدخول بدلًا من ذلك</string>
+  <string name="su.borrow_instead">استعر تسجيل الدخول بدلًا من ذلك</string>
+  <string name="su.connected_how">متصل · {how}</string>
+  <string name="su.borrowed">مستعار</string>
+  <string name="su.stolen">مأخوذ</string>
+  <string name="su.continue">متابعة</string>
+  <string name="su.mirror_lead">نسخة PaperDaemon من مكتبتك. تُبنى في الخلفية؛ يمكنك المتابعة.</string>
+  <string name="su.connect_first">صِل جهاز reMarkable أولًا.</string>
+  <string name="su.connecting">جارٍ الاتصال…</string>
+  <string name="su.mirror_complete">المرآة مكتملة</string>
+  <string name="su.cloud_silent">لم تستجب السحابة.</string>
+  <string name="su.lineup_lead">نموذج النص مطلوب. نموذج الصور والبحث على الويب اختياريان.</string>
+  <string name="su.lineup_unreadable">تعذّرت قراءة التشكيلة.</string>
+  <string name="su.need_address">يحتاج نموذج النص إلى عنوان.</string>
+  <string name="su.need_name">تحتاج التشكيلة إلى اسم.</string>
+  <string name="su.finish_lead">سيبدأ PaperDaemon بالإعداد التالي.</string>
+  <string name="su.proceed">المتابعة إلى PaperDaemon</string>
+  <string name="su.automatic">تلقائي</string>
+  <string name="su.local_at">مستضاف محليًا على {address}</string>
+  <string name="su.local_at_script">مستضاف محليًا على {address} · مع Start.bat</string>
+  <string name="su.harness_is">الإطار: {harness}</string>
+  <string name="su.building">جارٍ البناء · {pct}%</string>
+  <string name="su.complete">مكتمل</string>
+  <string name="su.not_built">لم يُبنَ بعد</string>
+  <string name="su.tags">الوسوم</string>
+  <string name="su.no_tags">لا شيء: لن يُجاب عن أي صفحة حتى تضيف وسمًا</string>
+  <string name="su.steps">خطوات الإعداد</string>
+  <string name="su.later">الإعداد لاحقًا</string>
+  <string name="su.title">الإعداد · PaperDaemon</string>
+  <string name="ts.failed">فشل</string>
+  <string name="ts.running">يعمل</string>
+  <string name="ts.passed">نجح</string>
+  <string name="ts.waiting">في الانتظار</string>
+  <string name="ts.stop">إيقاف الاختبار</string>
+  <string name="ts.run">تشغيل الاختبار</string>
+  <string name="ts.not_started">لم يبدأ التشغيل.</string>
+  <string name="ts.partly">جزئيًا</string>
+  <string name="ts.unreadable">تعذّرت قراءة الاختبارات.</string>
+  <string name="ts.result">النتيجة</string>
+  <string name="ts.cases_done">الحالات المنجزة</string>
+  <string name="ts.passed_of">نجح {n} من {total}</string>
+  <string name="ts.intro">لا يُحفظ إلا آخر اختبار، وأي تغيير في التشكيلة يلغيه.</string>
+  <string name="help.model.title">كيف يعمل نص التشغيل</string>
+  <string name="help.model.intro">نص التشغيل ملف دفعي صغير في Windows (ملف `.bat`) يبدأ خادم نموذجك. تكتبه مرة واحدة. بعد ذلك يشغّله PaperDaemon نيابة عنك كلما احتاجت مهمة إلى هذا النموذج، فلا تضطر أبدًا إلى بدء الخادم يدويًا.</string>
+  <string name="help.h_do">ما يجب أن يفعله نصك</string>
+  <string name="help.model.do1">أن يبدأ الخادم بحيث يستجيب على العنوان في الحقل أعلاه، مثل `http://127.0.0.1:8790`. يمرّر PaperDaemon ذلك المنفذ إلى نصك في `%PAPERDAEMON_PORT%`.</string>
+  <string name="help.model.do2">أن يبقى يعمل ما دام الخادم يعمل. ابدأ الخادم مباشرة، لا بالأمر `start` (فهو يفتحه في نافذة أخرى وينتهي النص فورًا، فيظن PaperDaemon أن الخادم اختفى).</string>
+  <string name="help.do_output">أن يترك الخادم يطبع رسائله. يعرض PaperDaemon آخر الأسطر هنا إذا حدث خطأ.</string>
+  <string name="help.h_runs">متى يشغّله PaperDaemon</string>
+  <string name="help.model.runs1">في أول مرة تحتاج فيها مهمة إلى هذا النموذج.</string>
+  <string name="help.model.runs2">حين ينتمي وسم صفحة إلى تشكيلة نص تشغيلها مختلف عن النص الذي يعمل. يوقف PaperDaemon الخادم الذي بدأه من قبل، ثم يشغّل هذا.</string>
+  <string name="help.model.runs3">لا يشغّله حين يكون الخادم الذي بدأه هذا النص يعمل بالفعل.</string>
+  <string name="help.h_stops">متى يوقفه PaperDaemon</string>
+  <string name="help.model.stops">حين توقف PaperDaemon مؤقتًا أو تغلقه، أو حين يجب تشغيل نص تشغيل تشكيلة أخرى. يوقف كل ما بدأه نصك. ولا يوقف أبدًا برنامجًا لم يبدأه.</string>
+  <string name="help.h_wrong">مشكلات شائعة</string>
+  <string name="help.model.wrong_vram">**بطاقة الرسومات ممتلئة.** يحتاج النموذج إلى مساحة في ذاكرة بطاقتك (VRAM). إذا كان خادم نماذج آخر أو لعبة أو أداة صور يحجز تلك الذاكرة، يفشل النموذج في التحميل أو يعمل ببطء شديد. إذا كنت تشغّل خوادم نماذج أخرى بنفسك، فاجعل نصك يوقفها أولًا (مثلًا `taskkill /IM llama-server.exe /F`). لا يوقف PaperDaemon إلا ما بدأه.</string>
+  <string name="help.model.wrong_two">**نموذجان لا يتسعان معًا.** إذا لم يتسع نموذج النص ونموذج الصور معًا على بطاقتك، فاكتب كل نص بحيث يوقف خادم الآخر قبل أن يبدأ خادمه.</string>
+  <string name="help.model.wrong_port">**المنفذ مشغول.** إذا كان برنامج آخر يستخدم ذلك المنفذ بالفعل، فلا يمكن لخادمك أن يبدأ عليه. اختر منفذًا حرًا واستخدمه نفسه في العنوان أعلاه.</string>
+  <string name="help.wrong_spaces">**مسافات في المسار.** ضع علامات اقتباس حول أي مسار فيه مسافات.</string>
+  <string name="help.model.wrong_keys">**المفاتيح وكلمات المرور.** لا تكتبها في النص. استخدم حقل المفتاح لمفتاح API.</string>
+  <string name="help.h_try">جرّبه</string>
+  <string name="help.model.try">انتقل إلى تبويب الاختبار واضغط **تشغيل الاختبار**.</string>
+  <string name="help.search.title">كيف يعمل نص تشغيل البحث</string>
+  <string name="help.search.intro">نص تشغيل البحث ملف دفعي صغير في Windows (ملف `.bat`) يبدأ خادم البحث الخاص بك، وهو عادة SearXNG. يشغّله PaperDaemon نيابة عنك حين تحتاج مهمة إلى البحث عن شيء ولا يستجيب خادم البحث.</string>
+  <string name="help.search.do1">أن يبدأ خادم البحث بحيث يستجيب على العنوان في الحقل أعلاه.</string>
+  <string name="help.search.do2">أن يبقى يعمل ما دام الخادم يعمل. ابدأه مباشرة، لا بالأمر `start`.</string>
+  <string name="help.search.runs">قبل كل بحث، يطلب PaperDaemon من العنوان أعلاه بحثًا تجريبيًا. إذا استجاب خادم SearXNG بشكل صحيح، يستخدمه PaperDaemon كما هو، أيًّا كان من بدأه، ولا يشغّل النص. لا يشغّل النص إلا حين لا يستجيب شيء، أو حين لا يكون المستجيب خادم بحث يمكنه استخدامه.</string>
+  <string name="help.search.stops">حين توقف PaperDaemon مؤقتًا أو تغلقه. يوقف كل ما بدأه نصك، ولا يوقف أبدًا برنامجًا لم يبدأه.</string>
+  <string name="help.search.wrong_json">**JSON معطّل.** لا يستجيب SearXNG لبرامج مثل PaperDaemon إلا إذا كان JSON مفعّلًا في `settings.yml`: تحت `search:` ← `formats:`، اذكر `html` و `json` كليهما.</string>
+  <string name="help.search.wrong_docker">**Docker.** تبقى حاوية Docker تعمل بعد إغلاق PaperDaemon، لأن Docker هو من يشغّلها لا نصك. تشغيل SearXNG في WSL (نظام Windows الفرعي لـ Linux) أو بـ Python يتجنب ذلك.</string>
+  <string name="help.search.wrong_port">**المنفذ مشغول.** إذا كان برنامج آخر يستخدم ذلك المنفذ بالفعل، فلا يمكن للخادم أن يبدأ عليه، ولا يستطيع PaperDaemon إصلاح ذلك لك. اختر منفذًا حرًا واستخدمه نفسه في العنوان أعلاه.</string>
+  <string name="help.search.try">اضغط **اختبار** بجانب العنوان.</string>
+  <string name="help.ask">اطلب المساعدة من ذكاء اصطناعي</string>
+  <string name="help.copied">نُسخ التوجيه إلى الحافظة!</string>
+  <string name="help.copy_failed">تعذّر نسخ التوجيه</string>
+  <string name="help.model.prompt_text">أُعدّ PaperDaemon، وهو تطبيق لجهاز reMarkable اللوحي يشغّل نماذج ذكاء اصطناعي على حاسوبي بنظام Windows. أحتاج إلى ملف دفعي لـ Windows (.bat) يبدأ خادم نموذج النص (LLM). يشغّل PaperDaemon هذا النص بنفسه كلما احتاج إلى النموذج، ويوقفه حين ينتهي.
+
+قواعد يجب أن يتبعها النص:
+- أن يبدأ الخادم بحيث يستجيب لـ HTTP على 127.0.0.1 على المنفذ الذي يمرّره PaperDaemon في %PAPERDAEMON_PORT%.
+- أن يشغّل الخادم في المقدمة ويُبقي النص يعمل ما دام الخادم يعمل. لا تستخدم `start`.
+- أن يطبع مخرجات الخادم.
+- يضبط PaperDaemon أيضًا %PAPERDAEMON_ROLE% (text أو image) و%PAPERDAEMON_LOCATION% (العنوان الكامل) و%PAPERDAEMON_OTHER_LOCATION% (عنوان النموذج الآخر) و%PAPERDAEMON_LINEUP% و%PAPERDAEMON_DATA%.
+- لا يوقف PaperDaemon إلا البرامج التي بدأها. إذا كانت خوادم نماذج أخرى قد تستخدم ذاكرة بطاقة الرسومات لديّ، فيجب أن يوقفها النص أولًا.
+- يجب أن يدعم الخادم واجهة الدردشة المتوافقة مع OpenAI (/v1/chat/completions)، كما يفعل llama-server من llama.cpp أو Ollama أو LM Studio أو vLLM.
+
+قبل أن تكتبه، اطرح عليّ هذه الأسئلة واحدًا تلو الآخر وانتظر كل إجابة:
+1. ما بطاقة الرسومات لديّ، وكم VRAM فيها؟
+2. أي نموذج أريد تشغيله، وأين ملف النموذج على حاسوبي؟
+3. أي برنامج خادم أستخدم (أو أريد أن أستخدم)، وأين هو مثبّت؟
+4. أي منفذ يجب أن يستخدم؟
+5. هل أشغّل خوادم أو برامج ذكاء اصطناعي أخرى تستخدم بطاقة الرسومات، وهل يجب أن يوقفها النص أولًا؟
+6. هل يتسع نموذج النص ونموذج الصور لديّ معًا على البطاقة، أم يجب أن يوقف كل نص الآخر؟
+
+ثم اكتب ملف .bat مع تعليق قصير على كل سطر يقول ما يفعله، وأخبرني كيف أختبره.</string>
+  <string name="help.model.prompt_image">أُعدّ PaperDaemon، وهو تطبيق لجهاز reMarkable اللوحي يشغّل نماذج ذكاء اصطناعي على حاسوبي بنظام Windows. أحتاج إلى ملف دفعي لـ Windows (.bat) يبدأ خادم نموذج توليد الصور. يشغّل PaperDaemon هذا النص بنفسه كلما احتاج إلى النموذج، ويوقفه حين ينتهي.
+
+قواعد يجب أن يتبعها النص:
+- أن يبدأ الخادم بحيث يستجيب لـ HTTP على 127.0.0.1 على المنفذ الذي يمرّره PaperDaemon في %PAPERDAEMON_PORT%.
+- أن يشغّل الخادم في المقدمة ويُبقي النص يعمل ما دام الخادم يعمل. لا تستخدم `start`.
+- أن يطبع مخرجات الخادم.
+- يضبط PaperDaemon أيضًا %PAPERDAEMON_ROLE% (text أو image) و%PAPERDAEMON_LOCATION% (العنوان الكامل) و%PAPERDAEMON_OTHER_LOCATION% (عنوان النموذج الآخر) و%PAPERDAEMON_LINEUP% و%PAPERDAEMON_DATA%.
+- لا يوقف PaperDaemon إلا البرامج التي بدأها. إذا كانت خوادم نماذج أخرى قد تستخدم ذاكرة بطاقة الرسومات لديّ، فيجب أن يوقفها النص أولًا.
+- يجب أن يدعم الخادم واجهة Stable Diffusion web UI (/sdapi/v1/txt2img)، كما يفعل خادم stable-diffusion.cpp أو Forge أو AUTOMATIC1111، أو واجهة الصور من OpenAI.
+
+قبل أن تكتبه، اطرح عليّ هذه الأسئلة واحدًا تلو الآخر وانتظر كل إجابة:
+1. ما بطاقة الرسومات لديّ، وكم VRAM فيها؟
+2. أي نموذج أريد تشغيله، وأين ملف النموذج على حاسوبي؟
+3. أي برنامج خادم أستخدم (أو أريد أن أستخدم)، وأين هو مثبّت؟
+4. أي منفذ يجب أن يستخدم؟
+5. هل أشغّل خوادم أو برامج ذكاء اصطناعي أخرى تستخدم بطاقة الرسومات، وهل يجب أن يوقفها النص أولًا؟
+6. هل يتسع نموذج النص ونموذج الصور لديّ معًا على البطاقة، أم يجب أن يوقف كل نص الآخر؟
+
+ثم اكتب ملف .bat مع تعليق قصير على كل سطر يقول ما يفعله، وأخبرني كيف أختبره.</string>
+  <string name="help.search.prompt">أُعدّ PaperDaemon، وهو تطبيق لجهاز reMarkable اللوحي يعمل على حاسوبي بنظام Windows. أحتاج إلى ملف دفعي لـ Windows (.bat) يبدأ خادم بحث SearXNG على هذا الحاسوب. يشغّل PaperDaemon النص بنفسه حين يحتاج إلى البحث ولا يستجيب شيء، ويوقفه حين يتوقف PaperDaemon مؤقتًا أو يُغلق.
+
+قواعد يجب أن يتبعها النص:
+- أن يبدأ SearXNG بحيث يستجيب لـ HTTP على 127.0.0.1 على المنفذ الذي أختاره.
+- يجب أن تكون مخرجات JSON مفعّلة في SearXNG (search: formats: [html, json] في settings.yml).
+- أن يشغّل الخادم في المقدمة ويُبقي النص يعمل ما دام الخادم يعمل. لا تستخدم `start`.
+- أن يطبع مخرجات الخادم.
+- أن يفضّل WSL أو Python على Docker: يوقف PaperDaemon عمليات النص نفسه، لكن حاوية Docker ستبقى تعمل بعد إغلاقه.
+
+قبل أن تكتبه، اطرح عليّ هذه الأسئلة واحدًا تلو الآخر وانتظر كل إجابة:
+1. هل لديّ WSL (نظام Windows الفرعي لـ Linux) مثبّت؟ Python؟ Docker؟
+2. هل SearXNG مثبّت بالفعل، وإن كان كذلك فأين وكيف؟
+3. أي منفذ يجب أن يستخدم، وهل يستخدمه شيء آخر بالفعل؟
+
+ثم أرشدني إلى تثبيت SearXNG إن لزم، واكتب ملف .bat مع تعليق قصير على كل سطر يقول ما يفعله، وأخبرني كيف أختبره.</string>
+  <string name="count.document.two">مستندان</string>
+  <string name="count.document.few">{n} مستندات</string>
+  <string name="count.document.many">{n} مستندًا</string>
+  <string name="count.file.two">ملفان</string>
+  <string name="count.file.few">{n} ملفات</string>
+  <string name="count.file.many">{n} ملفًا</string>
+  <string name="count.job.two">مهمتان</string>
+  <string name="count.job.few">{n} مهام</string>
+  <string name="count.job.many">{n} مهمة</string>
+  <string name="count.page.two">صفحتان</string>
+  <string name="count.page.few">{n} صفحات</string>
+  <string name="count.page.many">{n} صفحة</string>
+  <string name="count.stroke.two">خطان</string>
+  <string name="count.stroke.few">{n} خطوط</string>
+  <string name="count.stroke.many">{n} خطًا</string>
+  <string name="count.entry.two">إدخالان</string>
+  <string name="count.entry.few">{n} إدخالات</string>
+  <string name="count.entry.many">{n} إدخالًا</string>
+  <string name="np.show_older.two">عرض إدخالين أقدم</string>
+  <string name="np.show_older.few">عرض {n} إدخالات أقدم</string>
+  <string name="np.show_older.many">عرض {n} إدخالًا أقدم</string>
+  <string name="count.address.two">عنوانان</string>
+  <string name="count.address.few">{n} عناوين</string>
+  <string name="count.address.many">{n} عنوانًا</string>
+  <string name="ts.what">ماذا</string>
+  <string name="ts.details">التفاصيل</string>
+  <string name="ts.testing">جارٍ الاختبار: تم {n} من {total}</string>
+  <string name="ts.changed">تغيّرت التشكيلة بعد آخر اختبار لها، فلم تعد تلك النتيجة صالحة. شغّل الاختبار مرة أخرى.</string>
+  <string name="ts.never">لم تُختبر هذه التشكيلة بعد.</string>
+  <string name="ts.whole">اختبار التشكيلة {name} كاملة معًا: نموذج النص وإطاره، ونموذج الصورة وإطاره، والشبكة، ووسومها.</string>
+  <string name="ts.row.model-text">نموذج النص</string>
+  <string name="ts.row.model-image">نموذج الصورة</string>
+  <string name="ts.row.answer">الإجابة عن الأسئلة</string>
+  <string name="ts.row.ink">الإجابة عن سؤال مكتوب بخط اليد</string>
+  <string name="ts.row.chart">إنشاء الرسوم البيانية</string>
+  <string name="ts.row.draw">الرسم</string>
+  <string name="ts.row.picture">إنشاء الصور</string>
+  <string name="ts.row.handwriting">قراءة خط اليد</string>
+  <string name="ts.row.search">البحث في الويب</string>
+  <string name="ts.row.social">وسائل التواصل الاجتماعي</string>
+  <string name="ts.row.weather">الطقس</string>
+  <string name="ts.m.not_run">لم يُشغَّل</string>
+  <string name="ts.m.no_image">لا يوجد نموذج صورة</string>
+  <string name="ts.m.waiting">في الانتظار</string>
+  <string name="ts.m.working">قيد التنفيذ</string>
+  <string name="ts.m.canceled">أُلغي</string>
+  <string name="ts.m.failed">فشل</string>
+  <string name="ts.m.answered_in">أجاب خلال {s} ث</string>
+  <string name="ts.m.done_in">تم خلال {s} ث</string>
+  <string name="ts.m.failed_after">فشل بعد {s} ث</string>
+  <string name="ts.m.answers">يستجيب</string>
+  <string name="ts.m.check_failed">{check}: فشل</string>
+  <string name="ts.m.no_answer">لا إجابة</string>
+  <string name="ts.m.not_set_up">غير مُعدّ</string>
+  <string name="ts.m.network_off">الوصول إلى الشبكة متوقف</string>
+  <string name="ts.m.no_results_in">لا نتائج خلال {s} ث</string>
+  <string name="ts.m.results_in">{n} نتيجة خلال {s} ث</string>
+  <string name="ts.m.no_sites">لم تُختر أي مواقع</string>
+  <string name="ts.m.site_time">{site} {s} ث</string>
+  <string name="ts.m.site_failed">{site} فشل</string>
+  <string name="ts.m.no_forecast">لا توقعات</string>
+  <string name="ts.m.weather">{t}{unit} و{sky}، أجاب خلال {s} ث</string>
+  <string name="ts.m.no_samples">لا عينات</string>
+  <string name="ts.m.cannot_see">النموذج لا يرى</string>
+  <string name="ts.m.no_reading">لا قراءة</string>
+  <string name="ts.m.nothing_read">لم يُقرأ شيء</string>
+  <string name="ts.m.words">{pct}% من الكلمات، {s} ث لكل صفحة</string>
+  <string name="ts.d.no_image">ليس في التشكيلة نموذج صورة.</string>
+  <string name="ts.d.search_setup">أضف خدمة بحث أو خادم بحث محليًا في تبويب الشبكة في التشكيلة.</string>
+  <string name="ts.d.allow_network">اسمح به في الإعدادات.</string>
+  <string name="ts.d.search_empty">عاد البحث فارغًا.</string>
+  <string name="ts.d.first">الأول: {title}</string>
+  <string name="ts.d.every_site">وصلت منشورات من كل موقع.</string>
+  <string name="ts.d.choose_sites">اختر مواقع التواصل في الإعدادات.</string>
+  <string name="ts.d.no_forecast">لم تستجب خدمة التوقعات.</string>
+  <string name="ts.d.weather">اليوم في {place}: العظمى {hi}{unit}، الصغرى {lo}{unit}.</string>
+  <string name="ts.d.weather_london">لم يُحدَّد مكان، لذا لندن اليوم: العظمى {hi}{unit}، الصغرى {lo}{unit}.</string>
+  <string name="ts.d.samples_missing">عينات خط اليد مفقودة.</string>
+  <string name="ts.d.cannot_see">نموذج النص في التشكيلة لا يقبل الصور، لذا لا يقرأ خط اليد.</string>
+  <string name="ts.d.words">{right} من {total} كلمة في {pages} صفحة بأقلام {pages} كاتبًا من أربع قارات ({regions}).</string>
+  <string name="ts.d.text_failed">لم يجتز نموذج النص فحصه.</string>
+  <string name="page.gave_up">تعذّر إنهاء هذا؛ توقفت بعد {n} محاولات.</string>
+  <string name="issue.loop_token_unreadable">تعذّرت قراءة اتصال reMarkable: {why}</string>
+  <string name="issue.loop_gave_up">توقف جزء من PaperDaemon {n} مرات متتالية وتُرك متوقفًا؛ سجله يذكر السبب.</string>
+  <string name="issue.loop_supervisor">واجه مشرف PaperDaemon خطأ: {why}</string>
+  <string name="slot.key_where">اكتب عنوان الخادم أولًا: يُحفظ المفتاح لذلك الخادم.</string>
+  <string name="day.saturday">السبت</string>
+  <string name="slot.source.help">مفتاح API: تشغّل شركةٌ النموذج، ويصل إليه PaperDaemon بمفتاحك. استضافة محلية: خادم نماذج تشغّله بنفسك، على هذا الحاسوب أو على شبكتك.</string>
+  <string name="slot.provider.help">الجهة التي تشغّل النموذج. أخرى: أي خدمة تتحدث واجهة OpenAI البرمجية، على العنوان الذي تعطيه.</string>
+  <string name="slot.address.help_hosted">عنوان واجهة الخدمة البرمجية، مثلًا https://api.example.com/v1.</string>
+  <string name="slot.model.help">اسم النموذج كما يكتبه المزوّد تمامًا.</string>
+  <string name="slot.api_key.help">يُحفظ في مدير بيانات الاعتماد في Windows، ولا يُكتب في ملف أبدًا. التشكيلات التي تستخدم الخادم نفسه تتشارك مفتاحه.</string>
+  <string name="slot.address.help_local">حيث يجيب خادم نموذجك، مثلًا http://127.0.0.1:8080. إن لم يجب شيء هناك، يشغّل PaperDaemon سكربت البدء أدناه.</string>
+  <string name="slot.harness.help">طريقة عمل PaperDaemon مع هذا النموذج: ما يقوله له وكيف يقرأ إجاباته. «تلقائي» يختار واحدًا من اسم النموذج؛ و«إضافة Harness» يفتح المجلد لما تضيفه بنفسك.</string>
+  <string name="net.source.help">حيث تبحث المهمة عن المعلومات: خدمة بحث لديك مفتاح API لها، أو خادم SearXNG تشغّله بنفسك.</string>
+  <string name="net.service.help">خدمة البحث التي ينتمي إليها مفتاحك.</string>
+  <string name="net.address.help">حيث يجيب خادم SearXNG الخاص بك، مثلًا http://127.0.0.1:8888. إن لم يجب هناك شيء صالح للاستخدام، يشغّل PaperDaemon سكربت البدء أدناه.</string>
+  <string name="tags.tag.help">الوسم كما تضعه على الجهاز اللوحي تمامًا؛ لا فرق بين الأحرف الكبيرة والصغيرة.</string>
+  <string name="tags.prompt.help">يُضاف إلى تعليمات كل مهمة على صفحة تحمل هذا الوسم، أو في دفتر أو مجلد يحمله.</string>
+</resources>

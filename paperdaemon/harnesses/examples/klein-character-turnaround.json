@@ -1,0 +1,24 @@
+{
+  "id": "klein-turnaround",
+  "name": "stable-diffusion.cpp - FLUX.2 Klein 9B, character turnaround",
+  "server": "stable-diffusion.cpp (sd-server)",
+  "models": [
+    "FLUX.2 Klein 9B (distilled)"
+  ],
+  "extends": "flux.2-klein-9b",
+  "notes": "AN EXAMPLE, NOT ACTIVE: PaperDaemon reads user harnesses only from the harnesses folder in its data folder. To use it, copy this file into its image folder, put a multi-angle LoRA of your own into the image server's LoRA folder (the folder its start script passes as --lora-model-dir) and write its file name in place of the placeholder below, then pick this harness for the image slot on the Models screen. Every workflow of Klein's own, such as the coloring book, stays as it is. If the LoRA file is not there, the picture is made without it and the job's log says which file was missing.",
+  "workflows": {
+    "characterTurnaround": {
+      "about": "the same character from four sides (front, left, back, right), made from a picture of it",
+      "prompt": "A character turnaround sheet of {subject}: the same character shown four times in a row, from the front, from the left side, from the back and from the right side, full body, same proportions and clothing in every view, on a plain white background.",
+      "steps": 8,
+      "reference": true,
+      "loras": [
+        {
+          "file": "your-multi-angle-lora.safetensors",
+          "strength": 1.0
+        }
+      ]
+    }
+  }
+}

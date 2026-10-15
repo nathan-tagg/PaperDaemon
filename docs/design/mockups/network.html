@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Network · PaperDaemon</title>
+<link rel="stylesheet" href="paper.css">
+<script src="mockup.js" defer></script>
+<style>
+  .addr { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--s3); padding: 6px 0; border-bottom: 1px solid var(--rule); width: 100%; }
+  .addr:first-child { padding-top: 0; }
+  .addr code { font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="app" data-state="addr=two&copied=off&reveal=off&rotated=off&port=idle">
+  <nav class="rail" aria-label="PaperDaemon">
+    <a class="wordmark" href="index.html">PaperDaemon</a>
+    <ul class="nav">
+      <li><a href="overview.html">Overview <span class="state"><i class="mk busy"></i>Working</span></a></li>
+      <li><a href="notepads.html">Notepads <span class="state num">5</span></a></li>
+      <li><a href="decompose.html">Decompose and send</a></li>
+      <li><a href="benchmark.html">Benchmark <span class="state num">10/12</span></a></li>
+    </ul>
+    <ul class="nav">
+      <li><a href="tablet.html">Tablet <span class="state"><i class="mk on"></i>Connected</span></a></li>
+      <li><a href="models.html">Models <span class="state"><i class="mk on"></i>Ready</span></a></li>
+      <li><a href="search.html">Search <span class="state"><i class="mk on"></i>On</span></a></li>
+      <li><a href="capabilities.html">Capabilities <span class="state num">9 on</span></a></li>
+      <li><a href="network.html" aria-current="page">Network <span class="state num" data-when="addr=two">2 addresses</span><span class="state num" data-when="addr=one">1 address</span><span class="state num" data-when="addr=three">3 addresses</span></a></li>
+    </ul>
+    <div class="rail-foot">
+      <p class="meta">Engine on <code>127.0.0.1:8770</code><br>Version 0.1.0</p>
+    </div>
+  </nav>
+
+  <main class="page">
+    <header class="page-head">
+      <h1>Network</h1>
+      <p>The engine serves this window, and any device you pair, from one port on this computer.</p>
+    </header>
+
+    <section class="section" aria-labelledby="h-listen">
+      <h2 id="h-listen">Where the engine listens</h2>
+      <div class="row">
+        <div class="label">Port</div>
+        <div class="control">
+          <input class="field num w-xs" value="8770" aria-label="Port">
+          <button type="button" class="btn" data-set="port=saved">Save and restart</button>
+          <p class="hint" data-when="port=idle">Change it only if another program already uses 8770. The engine restarts to apply it.</p>
+          <p class="hint" data-when="port=saved">Restarted at 09:52 on port 8770. This window reconnected on its own.</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="label">Addresses<small>Add your WireGuard address to reach PaperDaemon from a phone or another computer.</small></div>
+        <div class="control stack">
+          <div class="addr"><span><code>127.0.0.1</code> <span class="sub">· this computer, always on</span></span><span class="meta">can't be removed</span></div>
+          <div class="addr" data-when="addr=two|three"><span><code>10.8.0.2</code> <span class="sub">· WireGuard</span></span><button type="button" class="btn quiet small" data-set="addr=one">Remove</button></div>
+          <div class="addr" data-when="addr=three"><span><code>10.8.0.9</code> <span class="sub">· added just now</span></span><button type="button" class="btn quiet small" data-set="addr=two">Remove</button></div>
+          <div class="actions" style="margin-top: var(--s2)">
+            <input class="field mono w-s" placeholder="Another address" aria-label="Address to add">
+            <button type="button" class="btn" data-set="addr=three">Add address</button>
+          </div>
+          <p class="hint">Only add addresses on networks you trust. Every request, from anywhere, must carry the pairing token.</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="label">Reach it at</div>
+        <div class="control">
+          <input id="url" class="field mono w-m" readonly value="http://10.8.0.2:8770" aria-label="Address for other devices" data-when="addr!=one">
+          <span class="value sub" data-when="addr=one">Only from this computer, until you add an address.</span>
+          <button type="button" class="btn quiet" data-copy="url" data-set="copied=url" data-when="addr!=one"><span data-when="copied!=url">Copy</span><span data-when="copied=url">Copied</span></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="h-pair">
+      <h2 id="h-pair">Pairing</h2>
+      <div class="row">
+        <div class="label">Pairing token<small>Type it into a device once to pair it.</small></div>
+        <div class="control">
+          <input class="field mono w-m" type="password" readonly value="k3v9-qp2m-7tzr-w8hd" aria-label="Pairing token" data-when="reveal=off&rotated=off">
+          <input id="pair" class="field mono w-m" readonly value="k3v9-qp2m-7tzr-w8hd" aria-label="Pairing token" data-when="reveal=on&rotated=off">
+          <input class="field mono w-m" type="password" readonly value="d8hq-2vnc-x4tp-9mrk" aria-label="Pairing token" data-when="reveal=off&rotated=on">
+          <input id="pair2" class="field mono w-m" readonly value="d8hq-2vnc-x4tp-9mrk" aria-label="Pairing token" data-when="reveal=on&rotated=on">
+          <button type="button" class="btn" data-flip="reveal"><span data-when="reveal=off">Show</span><span data-when="reveal=on">Hide</span></button>
+          <button type="button" class="btn" data-copy="pair" data-set="copied=pair"><span data-when="copied!=pair">Copy</span><span data-when="copied=pair">Copied</span></button>
+          <button type="button" class="btn danger" data-open="dlg-rotate">Rotate…</button>
+          <p class="hint" data-when="rotated=off">Kept in the Windows credential store. This window pairs itself.</p>
+          <p class="notice" data-when="rotated=on"><strong>Rotated at 09:52.</strong> Every paired device needs the new token. This window reconnected on its own.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<dialog class="sheet" id="dlg-rotate" aria-labelledby="dlg-rotate-t">
+  <h2 id="dlg-rotate-t">Rotate the pairing token?</h2>
+  <p>Every paired device stops working until you give it the new token. This window reconnects on its own.</p>
+  <div class="actions"><button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn danger" data-close data-then="rotated=on&reveal=off">Rotate token</button></div>
+</dialog>
+</body>
+</html>

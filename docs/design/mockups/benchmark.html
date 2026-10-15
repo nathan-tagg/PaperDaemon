@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Benchmark · PaperDaemon</title>
+<link rel="stylesheet" href="paper.css">
+<script src="mockup.js" defer></script>
+<style>
+  .results .result { cursor: pointer; }
+  .results .result[aria-current="true"] .pg { outline: 2px solid var(--ink); outline-offset: 3px; }
+  .results .result.na .pg { border-style: dashed; }
+  .bigpage { width: 300px; margin: var(--s3) auto 0; }
+  .run-steps { list-style: none; margin: var(--s4) 0 0; padding: 0; border-top: 1px solid var(--rule); }
+  .run-steps li { display: flex; gap: var(--s3); align-items: baseline; padding: 7px 0; border-bottom: 1px solid var(--rule); }
+  .run-steps li .r { margin-left: auto; }
+</style>
+</head>
+<body>
+<div class="app" data-state="run=last&case=tp06&stopped=off">
+  <nav class="rail" aria-label="PaperDaemon">
+    <a class="wordmark" href="index.html">PaperDaemon</a>
+    <ul class="nav">
+      <li><a href="overview.html">Overview <span class="state"><i class="mk busy"></i>Working</span></a></li>
+      <li><a href="notepads.html">Notepads <span class="state num">5</span></a></li>
+      <li><a href="decompose.html">Decompose and send</a></li>
+      <li><a href="benchmark.html" aria-current="page">Benchmark <span class="state num" data-when="run=last">10/12</span><span class="state" data-when="run=running|one"><i class="mk busy"></i>Running</span></a></li>
+    </ul>
+    <ul class="nav">
+      <li><a href="tablet.html">Tablet <span class="state"><i class="mk on"></i>Connected</span></a></li>
+      <li><a href="models.html">Models <span class="state"><i class="mk on"></i>Ready</span></a></li>
+      <li><a href="search.html">Search <span class="state"><i class="mk on"></i>On</span></a></li>
+      <li><a href="capabilities.html">Capabilities <span class="state num">9 on</span></a></li>
+      <li><a href="network.html">Network <span class="state num">2 addresses</span></a></li>
+    </ul>
+    <div class="rail-foot">
+      <p class="meta">Engine on <code>127.0.0.1:8770</code><br>Version 0.1.0</p>
+    </div>
+  </nav>
+
+  <main class="page">
+    <header class="page-head">
+      <h1>Benchmark</h1>
+      <p>The whole pipeline, from the daemon noticing a page to the commit, run with your models on a mirror of its own that never touches your library. The same cases and seeds every run, so two setups can be compared.</p>
+      <div class="actions" data-when="run=last">
+        <button type="button" class="btn primary" data-set="run=running&stopped=off">Run the benchmark</button>
+        <span class="sub">About 10 minutes with these models. Your tablet's jobs wait until the run ends.</span>
+      </div>
+    </header>
+
+    <!-- a run in progress -->
+    <section class="section" aria-labelledby="h-running" data-when="run=running">
+      <header><h2 id="h-running">Running</h2><span class="meta num">started 09:52 · 3 min 40 s so far</span></header>
+      <p class="num" style="margin-top: var(--s3)">Case 6 of 13 · Picture from a prompt · loading the image model</p>
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="13" aria-valuenow="5" aria-label="Cases done"><i style="width: 38%"></i></div>
+      <ol class="run-steps">
+        <li><i class="mk on"></i>Daemon cases, 5 of 5<span class="r meta num">6 s</span></li>
+        <li><i class="mk on"></i>Typed question<span class="r meta num">18 s</span></li>
+        <li><i class="mk on"></i>Handwritten question<span class="r meta num">22 s</span></li>
+        <li><i class="mk on"></i>Bar chart<span class="r meta num">26 s</span></li>
+        <li><i class="mk on"></i>Month calendar<span class="r meta num">31 s</span></li>
+        <li><i class="mk busy"></i>Picture from a prompt: hot swapping to FLUX.2 Klein 9B<span class="r meta num">14 s so far</span></li>
+      </ol>
+      <p class="sub" style="margin-top: var(--s3)">Your tablet's jobs wait until the run ends: 1 waiting. The benchmark uses its own mirror, daemon and ledger, and writes nothing to the cloud.</p>
+      <div class="actions" style="margin-top: var(--s4)"><button type="button" class="btn" data-set="run=last&stopped=on">Stop the run</button></div>
+    </section>
+
+    <section class="section" aria-labelledby="h-one" data-when="run=one">
+      <header><h2 id="h-one">Running one case</h2><span class="meta num">started 09:52 · 9 s so far</span></header>
+      <p class="num" style="margin-top: var(--s3)">
+        <span data-when="case=tp06">Picture from a prompt</span><span data-when="case=tp11">Tag only when told</span><span data-when="case!=tp06&case!=tp11">The chosen case</span>, again, with the same page and seed as the last run.
+      </p>
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0" aria-label="Case progress"><i style="width: 20%"></i></div>
+      <div class="actions" style="margin-top: var(--s4)"><button type="button" class="btn" data-set="run=last">Stop</button></div>
+    </section>
+
+    <!-- the last complete run -->
+    <p class="notice" data-when="run=last&stopped=on"><strong>Stopped after 5 of 13 cases.</strong> A stopped run keeps no results; the report below is still the last complete run. Your tablet's jobs have resumed.</p>
+
+    <section class="section" aria-labelledby="h-last" data-when="run=last">
+      <header><h2 id="h-last">Last run</h2><span class="meta num">Sep 25, 21:14 · took 9 min 12 s · benchmark version 1</span></header>
+      <dl class="facts">
+        <dt>Result</dt><dd><span class="state-line"><i class="mk fail"></i>10 of 12 passed · 1 not available</span></dd>
+        <dt>Text model</dt><dd>Qwen 3.6 27B <span class="meta">· harness Qwen 3.6 27B, guessed from the model name · this computer</span></dd>
+        <dt>Image model</dt><dd>FLUX.2 Klein 9B <span class="meta">· harness FLUX.2 Klein 9B · this computer</span></dd>
+        <dt>Hot swapping</dt><dd>On <span class="meta">· 6 swaps in the run</span></dd>
+        <dt>Search</dt><dd>SearXNG at <code>127.0.0.1:8888</code></dd>
+        <dt>Versions</dt><dd class="num">PaperDaemon 0.1.0 · benchmark 1</dd>
+      </dl>
+    </section>
+
+    <section class="section" aria-labelledby="h-daemon" data-when="run=last">
+      <header><h2 id="h-daemon">The daemon</h2><span class="meta">5 of 5 passed</span></header>
+      <table class="list">
+        <thead><tr><th>Case</th><th>What was checked</th><th class="r">Took</th></tr></thead>
+        <tbody>
+          <tr><td><span class="state-line"><i class="mk on"></i><strong>Dispatch</strong></span></td><td>A newly tagged page became a job once it settled</td><td class="r num">1.1 s</td></tr>
+          <tr><td><span class="state-line"><i class="mk on"></i><strong>The ignore tag</strong></span></td><td>An ignored page inside a tagged notebook was left alone</td><td class="r num">0.4 s</td></tr>
+          <tr><td><span class="state-line"><i class="mk on"></i><strong>A retag</strong></span></td><td>A tag taken off and put back gave the page another look</td><td class="r num">1.3 s</td></tr>
+          <tr><td><span class="state-line"><i class="mk on"></i><strong>The system prompt page</strong></span></td><td>The notebook's prompt page was read, never answered</td><td class="r num">0.6 s</td></tr>
+          <tr><td><span class="state-line"><i class="mk on"></i><strong>A fresh ledger</strong></span></td><td>Pages already there were recorded, none dispatched</td><td class="r num">2.2 s</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section" aria-labelledby="h-pages" data-when="run=last">
+      <header>
+        <h2 id="h-pages">Pages</h2>
+        <span class="actions">
+          <label class="switch-label sub"><input type="checkbox" class="switch" data-name="tc"> Show as on the tablet</label>
+          <span class="seg small" data-name="filter" role="group" aria-label="Show"><button type="button" data-value="all" aria-pressed="true">All</button><button type="button" data-value="failed" aria-pressed="false">Failed</button></span>
+        </span>
+      </header>
+      <p class="section-note">Select a case to see what it asked and what came back.</p>
+
+      <div class="results" data-class="true-colors:tc=on">
+        <figure class="result" data-when="filter=all" data-set="case=tp01">
+          <div class="pg"><svg viewBox="0 0 300 400" aria-hidden="true">
+            <path class="ph" stroke-width="5" d="M30 44h170"/>
+            <path class="ph" stroke-width="3" d="M30 76h236M30 92h228M30 108h240M30 124h200M30 150h232M30 166h236M30 182h150"/>
+          </svg></div>
+          <figcaption><h3><i class="mk on"></i>Typed question</h3><p class="sub">Answered under the question in the typed column. The question stayed.</p></figcaption>
+        </figure>
+
+        <figure class="result" data-when="filter=all" data-set="case=tp02">
+          <div class="pg"><svg viewBox="0 0 300 400" aria-hidden="true">
+            <path class="ph" stroke-width="2.4" d="M30 50c4-12 10-12 12 0s6 10 10 0 6-12 10-2 4 10 9 0 8-8 11 0M92 50c3-9 9-9 11 0s5 8 9-1 7-9 10 0M130 50c4-10 9-8 11 1s6 7 10-2 5-8 9 1 6 6 10-1"/>
+            <path class="ph" stroke-width="3" d="M30 86h232M30 102h240M30 118h214M30 134h120"/>
+          </svg></div>
+          <figcaption><h3><i class="mk on"></i>Handwritten question</h3><p class="sub">Read the handwriting and answered below it.</p></figcaption>
+        </figure>
+
+        <figure class="result" data-when="filter=all" data-set="case=tp03">
+          <div class="pg"><svg viewBox="0 0 300 400" aria-hidden="true">
+            <path class="ph" stroke-width="2.4" d="M30 44c4-12 10-12 12 0s6 10 10 0 6-12 10-2 4 10 9 0M86 44c3-9 9-9 11 0s5 8 9-1 7-9 10 0"/>
+            <path class="ph" stroke-width="3" d="M30 80h140"/>
+            <path class="ph" stroke-width="1.6" d="M40 300V104M40 300h232"/>
+            <g class="fill"><rect x="52" y="220" width="20" height="80"/><rect x="84" y="170" width="20" height="130"/><rect x="116" y="130" width="20" height="170"/><rect x="148" y="190" width="20" height="110"/><rect x="180" y="240" width="20" height="60"/><rect x="212" y="200" width="20" height="100"/><rect x="244" y="150" width="20" height="150"/></g>
+          </svg></div>
+          <figcaption><h3><i class="mk on"></i>Bar chart</h3><p class="sub">Drawn as a picture across the full width of the free space.</p></figcaption>
+        </figure>
+
+        <figure class="result" data-when="filter=all" data-set="case=tp04">
+          <div class="pg"><svg viewBox="0 0 300 400" aria-hidden="true">
+            <path class="ph" stroke-width="4" d="M30 44h120"/>
+            <path class="ph" stroke-width="1.2" d="M30 80h240M30 120h240M30 160h240M30 200h240M30 240h240M30 280h240M30 80v200M64.3 80v200M98.6 80v200M132.9 80v200M167.1 80v200M201.4 80v200M235.7 80v200M270 80v200"/>
+            <path class="ph" stroke-width="3" d="M72 100h20M140 140h22M176 180h18M106 220h24M210 260h20"/>
+          </svg></div>
+          <figcaption><h3><i class="mk on"></i>Month calendar</h3><p class="sub">September with the 5 events from the page, in the tablet's font.</p></figcaption>
+        </figure>
+
+        <figure class="result" data-when="filter=all" data-set="case=tp05">
+          <div class="pg"><svg viewBox="0 0 300 400" aria-hidden="true">
+            <g class="ph" stroke-width="2.4">
+              <circle cx="150" cy="150" r="26"/>
+              <ellipse cx="150" cy="96" rx="13" ry="28"/><ellipse cx="150" cy="96" rx="13" ry="28" transform="rotate(40 150 150)"/><ellipse cx="150" cy="96" rx="13" ry="28" transform="rotate(80 150 150)"/><ellipse cx="150" cy="96" rx="13" ry="28" transform="rotate(120 150 150)"/><ellipse cx="150" cy="96" rx="13" ry="28" transform="rotate(160 150 150)"/><ellipse cx="150" cy="96" rx="13" ry="28" transform="rotate(200 150 150)"/><ellipse cx="150" cy="96" rx="13" ry="28" transform="rotate(240 150 150)"/><ellipse cx="150" cy="96" rx="13" ry="28" transform="rotate(280 150 150)"/><ellipse cx="150" cy="96" rx="13" ry="28" transform="rotate(320 150 150)"/>
+              <path d="M150 176C150 240 146 300 150 372M150 270C120 246 92 250 74 268C102 282 128 284 150 270ZM150 300C180 276 208 280 226 298C198 312 172 314 150 300ZM40 372H260"/>
+            </g>
+            <circle class="ph" stroke-width="1.4" cx="150" cy="150" r="14"/>
+          </svg></div>
+          <figcaption><h3><i class="mk on"></i>Coloring page</h3><p class="sub">Black line art with no gray fills, inserted as a picture that takes the page.</p></figcaption>
+        </figure>
+
+        <figure class="result attn" data-set="case=tp06">
+          <div class="pg"><svg viewBox="0 0 300 400" aria-hidden="true">
+            <g class="ph" stroke-width="1.8"><path d="M20 362L100 190L140 250L190 160L280 362Z"/><circle cx="232" cy="96" r="20"/></g>
+            <path class="ph soft" stroke-width="1" d="M100 190L84 362M100 190L118 362M190 160L174 362M190 160L212 362"/>
+            <path class="ph" stroke-width="2.4" d="M40 350c4-12 10-12 12 0s6 10 10 0 6-12 10-2 4 10 9 0 8-8 11 0M102 350c3-9 9-9 11 0s5 8 9-1 7-9 10 0"/>
+            <ellipse class="flag" cx="96" cy="346" rx="74" ry="24"/>
+          </svg></div>
+          <figcaption><h3><i class="mk fail"></i>Picture from a prompt</h3><p class="sub attn-text">The picture covered the handwritten request at the bottom of the page.</p></figcaption>
+        </figure>
+
+        <figure class="result" data-when="filter=all" data-set="case=tp07">
+          <div class="pg"><svg viewBox="0 0 300 400" aria-hidden="true">
+            <path class="ph" stroke-width="3" d="M30 60h40M78 60h28M114 60h52M174 60h36M218 60h44M30 80h60M98 80h34M140 80h48M196 80h30M30 100h36M74 100h58M140 100h40M188 100h50M30 120h70M108 120h30"/>
+            <path class="ph" stroke-width="1.8" d="M114 68h52M140 88h48"/>
+            <ellipse class="ph" stroke-width="1.8" cx="103" cy="100" rx="36" ry="12"/>
+          </svg></div>
+          <figcaption><h3><i class="mk on"></i>Word mark-ups</h3><p class="sub">Underlined the 2 words named and circled 1. Nothing else was marked.</p></figcaption>
+        </figure>
+
+        <figure class="result" data-when="filter=all" data-set="case=tp08">
+          <div class="pg"><svg viewBox="0 0 300 400" aria-hidden="true">
+            <rect class="ph soft" stroke-width="1" stroke-dasharray="3 4" x="26" y="28" width="170" height="32"/>
+            <path class="ph" stroke-width="3" d="M30 86h236M30 102h230M30 118h240M30 134h180"/>
+          </svg></div>
+          <figcaption><h3><i class="mk on"></i>Erase the request</h3><p class="sub">Only the request it carried out was erased (dashed). Notes on the page stayed.</p></figcaption>
+        </figure>
+
+        <figure class="result" data-when="filter=all" data-set="case=tp09">
+          <div class="pg"><svg viewBox="0 0 300 400" aria-hidden="true">
+            <g class="ph" stroke-width="1.4"><rect x="22" y="40" width="122" height="150" rx="3"/><rect x="156" y="40" width="122" height="110" rx="3"/><rect x="22" y="202" width="122" height="120" rx="3"/><rect x="156" y="162" width="122" height="160" rx="3"/></g>
+            <path class="ph" stroke-width="2.6" d="M32 58h60M166 58h56M32 220h64M166 180h52"/>
+            <path class="ph soft" stroke-width="2" d="M32 78h100M32 92h96M32 106h104M32 120h70M166 78h100M166 92h90M166 106h60M32 240h100M32 254h92M32 268h60M166 200h100M166 214h96M166 228h104M166 242h80"/>
+          </svg></div>
+          <figcaption><h3><i class="mk on"></i>Social cards</h3><p class="sub">4 real posts in two columns. Took 4 min because of Reddit's pace.</p></figcaption>
+        </figure>
+
+        <figure class="result" data-when="filter=all" data-set="case=tp10">
+          <div class="pg"><svg viewBox="0 0 300 400" aria-hidden="true">
+            <g class="fill" opacity=".16"><rect x="26" y="95" width="214" height="13"/><rect x="26" y="111" width="120" height="13"/></g>
+            <path class="ph" stroke-width="2.4" d="M30 50h200M30 70h236M30 86h220M30 102h206M30 118h112M30 142h232M30 158h240M30 174h190M30 198h236M30 214h120"/>
+          </svg></div>
+          <figcaption><h3><i class="mk on"></i>PDF highlight</h3><p class="sub">Found the sentence in the PDF's text and highlighted exactly it.</p></figcaption>
+        </figure>
+
+        <figure class="result attn" data-set="case=tp11">
+          <div class="pg"><svg viewBox="0 0 300 400" aria-hidden="true">
+            <path class="ph" stroke-width="3" d="M30 60h180M30 76h200M30 92h160"/>
+            <rect class="ph" stroke-width="1.4" x="206" y="18" width="70" height="22" rx="3"/>
+            <text x="241" y="34" text-anchor="middle" font-family="Source Code Pro, monospace" font-size="13" fill="currentColor">ignore</text>
+            <ellipse class="flag" cx="241" cy="29" rx="50" ry="22"/>
+          </svg></div>
+          <figcaption><h3><i class="mk fail"></i>Tag only when told</h3><p class="sub attn-text">Tagged the page “ignore” though nothing on it asked for a tag.</p></figcaption>
+        </figure>
+
+        <figure class="result" data-when="filter=all" data-set="case=tp12">
+          <div class="pg"><svg viewBox="0 0 300 400" aria-hidden="true">
+            <path class="ph" stroke-width="5" d="M30 44h150"/>
+            <path class="ph" stroke-width="3" d="M30 76h236M30 92h228M30 108h196"/>
+            <path class="ph soft" stroke-width="2" d="M30 140h10M48 140h160M30 156h10M48 156h140M30 172h10M48 172h170"/>
+          </svg></div>
+          <figcaption><h3><i class="mk on"></i>Answer from the web</h3><p class="sub">Answered from 3 search results and listed them as sources.</p></figcaption>
+        </figure>
+
+        <figure class="result na" data-when="filter=all" data-set="case=tp13">
+          <div class="pg"><svg viewBox="0 0 300 400" aria-hidden="true">
+            <path class="ph soft" stroke-width="2.4" d="M30 44c4-12 10-12 12 0s6 10 10 0 6-12 10-2 4 10 9 0M86 44c3-9 9-9 11 0s5 8 9-1"/>
+            <rect class="ph soft" stroke-width="1.2" stroke-dasharray="4 5" x="30" y="80" width="240" height="180"/>
+          </svg></div>
+          <figcaption><h3><i class="mk off"></i>Picture from the web</h3><p class="sub">Not available: the licensed-pictures source is off in Search.</p></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="h-case" data-when="run=last">
+      <header>
+        <h2 id="h-case">
+          <span data-when="case=tp01">Typed question</span><span data-when="case=tp02">Handwritten question</span><span data-when="case=tp03">Bar chart</span><span data-when="case=tp04">Month calendar</span><span data-when="case=tp05">Coloring page</span><span data-when="case=tp06">Picture from a prompt</span><span data-when="case=tp07">Word mark-ups</span><span data-when="case=tp08">Erase the request</span><span data-when="case=tp09">Social cards</span><span data-when="case=tp10">PDF highlight</span><span data-when="case=tp11">Tag only when told</span><span data-when="case=tp12">Answer from the web</span><span data-when="case=tp13">Picture from the web</span>
+        </h2>
+        <span class="state-line meta" data-when="case=tp06|tp11"><i class="mk fail"></i>Failed</span>
+        <span class="state-line meta" data-when="case=tp13"><i class="mk off"></i>Not available</span>
+        <span class="state-line meta" data-when="case!=tp06&case!=tp11&case!=tp13"><i class="mk on"></i>Passed</span>
+      </header>
+      <dl class="facts" data-when="case=tp01"><dt>Asked</dt><dd>A typed question: “What is the tallest mountain in Colorado?”</dd><dt>Expected</dt><dd>An answer under the question, in the typed column; the question stays</dd><dt>Got</dt><dd>2 paragraphs: Mount Elbert, 14,438 ft, in the Sawatch Range</dd><dt>Took</dt><dd class="num">18 s · 1 model turn</dd><dt>Evidence</dt><dd class="num">Case 1 of 13 · page <code>tp-01</code></dd></dl>
+      <dl class="facts" data-when="case=tp02"><dt>Asked</dt><dd>The same question, handwritten</dd><dt>Expected</dt><dd>The handwriting read, and the answer below it</dd><dt>Got</dt><dd>Read all 8 words; answered below the last line</dd><dt>Took</dt><dd class="num">22 s · reading 2.4 s</dd><dt>Evidence</dt><dd class="num">Case 2 of 13 · page <code>tp-02</code></dd></dl>
+      <dl class="facts" data-when="case=tp03"><dt>Asked</dt><dd>“Chart this rainfall by month” over a handwritten table of 7 months</dd><dt>Expected</dt><dd>A bar chart in the months' order, filling the free width</dd><dt>Got</dt><dd>7 bars in the table's order, drawn as a picture 1,280 px wide</dd><dt>Took</dt><dd class="num">26 s</dd><dt>Evidence</dt><dd class="num">Case 3 of 13 · page <code>tp-03</code></dd></dl>
+      <dl class="facts" data-when="case=tp04"><dt>Asked</dt><dd>“September calendar with these” over a list of 5 events</dd><dt>Expected</dt><dd>A month calendar holding every event, in the tablet's font</dd><dt>Got</dt><dd>September with all 5 events on their days</dd><dt>Took</dt><dd class="num">31 s</dd><dt>Evidence</dt><dd class="num">Case 4 of 13 · page <code>tp-04</code></dd></dl>
+      <dl class="facts" data-when="case=tp05"><dt>Asked</dt><dd>“A sunflower” in a notebook whose prompt asks for coloring pages</dd><dt>Expected</dt><dd>Black line art, no gray, inserted as a picture that takes the page</dd><dt>Got</dt><dd>A sunflower in black line art, 12 steps, seed 1105</dd><dt>Took</dt><dd class="num">1 min 36 s · hot swaps 41 s of it</dd><dt>Evidence</dt><dd class="num">Case 5 of 13 · page <code>tp-05</code></dd></dl>
+      <dl class="facts" data-when="case=tp06"><dt>Asked</dt><dd>“Draw a mountain lake at dawn” in handwriting near the bottom of the page</dd><dt>Expected</dt><dd>A picture in the free space above the request, then the request erased</dd><dt>Got</dt><dd>The picture box ran to the bottom edge and covered the request, so it could not be erased cleanly</dd><dt>What the host knows</dt><dd class="num">The model asked for a box 1,700 px tall. The free space above the request was 1,420 px.</dd><dt>Evidence</dt><dd class="num">Case 6 of 13 · page <code>tp-06</code> · seed 4410</dd></dl>
+      <dl class="facts" data-when="case=tp07"><dt>Asked</dt><dd>“Underline sepal and stamen, circle pistil” on a page of typed notes</dd><dt>Expected</dt><dd>Exactly those words marked, nothing on the request</dd><dt>Got</dt><dd>2 underlines and 1 circle on the located words</dd><dt>Took</dt><dd class="num">24 s</dd><dt>Evidence</dt><dd class="num">Case 7 of 13 · page <code>tp-07</code></dd></dl>
+      <dl class="facts" data-when="case=tp08"><dt>Asked</dt><dd>A request line above the user's own notes</dd><dt>Expected</dt><dd>The request erased once carried out; the notes stay</dd><dt>Got</dt><dd>The request line erased; every note unchanged</dd><dt>Took</dt><dd class="num">19 s</dd><dt>Evidence</dt><dd class="num">Case 8 of 13 · page <code>tp-08</code></dd></dl>
+      <dl class="facts" data-when="case=tp09"><dt>Asked</dt><dd>“Top posts about reMarkable this week”</dd><dt>Expected</dt><dd>Real posts as cards, no duplicates</dd><dt>Got</dt><dd>4 cards in two columns, from Reddit and Hacker News</dd><dt>Took</dt><dd class="num">4 min 2 s · Reddit allows one request a minute</dd><dt>Evidence</dt><dd class="num">Case 9 of 13 · page <code>tp-09</code></dd></dl>
+      <dl class="facts" data-when="case=tp10"><dt>Asked</dt><dd>“Highlight the sentence about osmosis” on a PDF page</dd><dt>Expected</dt><dd>That sentence highlighted, found in the PDF's text</dd><dt>Got</dt><dd>The one sentence highlighted across 2 lines</dd><dt>Took</dt><dd class="num">14 s</dd><dt>Evidence</dt><dd class="num">Case 10 of 13 · page <code>tp-10</code></dd></dl>
+      <dl class="facts" data-when="case=tp11"><dt>Asked</dt><dd>A typed question, with nothing about tags on the page or in the notebook's prompt</dd><dt>Expected</dt><dd>An answer, and no tag</dd><dt>Got</dt><dd>An answer, and the tag “ignore” on the page</dd><dt>What the host knows</dt><dd>Nothing on the page, in the notebook's prompt or in the settings named the tag “ignore”, and the harness's validate() let it through. That check is where to look.</dd><dt>Evidence</dt><dd class="num">Case 11 of 13 · page <code>tp-11</code></dd></dl>
+      <dl class="facts" data-when="case=tp12"><dt>Asked</dt><dd>“Who won the last Tour de France?”</dd><dt>Expected</dt><dd>An answer from search results, with the sources listed</dd><dt>Got</dt><dd>1 paragraph and 3 sources, from 2 model turns</dd><dt>Took</dt><dd class="num">27 s · search 1.2 s</dd><dt>Evidence</dt><dd class="num">Case 12 of 13 · page <code>tp-12</code></dd></dl>
+      <dl class="facts" data-when="case=tp13"><dt>Asked</dt><dd>“Put a photo of a red fox here”</dd><dt>Expected</dt><dd>A licensed picture from the web, with its credit</dd><dt>Got</dt><dd>Not run: the licensed-pictures source is off in <a href="search.html">Search</a>. Not available is not a failure.</dd><dt>Evidence</dt><dd class="num">Case 13 of 13 · page <code>tp-13</code></dd></dl>
+      <div class="actions" style="margin-top: var(--s4)">
+        <button type="button" class="btn" data-set="run=one" data-when="case!=tp13">Run this case again</button>
+        <button type="button" class="btn quiet" data-open="dlg-page" data-when="case=tp06|tp11">Open the page at full size</button>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="h-time" data-when="run=last">
+      <h2 id="h-time">Where the time went</h2>
+      <table class="list">
+        <thead><tr><th>Stage</th><th class="r">Median</th><th class="r">Longest</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>The daemon's dispatch</td><td class="r num">1.1 s</td><td class="r num">2.4 s</td><td class="sub">From the page changing to the job starting</td></tr>
+          <tr><td>Reading the page</td><td class="r num">1.9 s</td><td class="r num">3.8 s</td><td class="sub">Typed text, handwriting and the page image</td></tr>
+          <tr><td>Model turns</td><td class="r num">9.6 s</td><td class="r num">31 s</td><td class="sub">1.4 turns a job · 21 tokens a second, as the server reports</td></tr>
+          <tr><td>Pictures</td><td class="r num">38 s</td><td class="r num">52 s</td><td class="sub">4 pictures, 4 to 12 steps</td></tr>
+          <tr><td>Decomposing</td><td class="r num">6.1 s</td><td class="r num">11 s</td><td class="sub">2 pictures traced into strokes</td></tr>
+          <tr><td>Hot swaps</td><td class="r num">22 s in, 19 s back</td><td class="r num">26 s</td><td class="sub">6 swaps</td></tr>
+          <tr><td>Commit and sync</td><td class="r num">2.3 s</td><td class="r num">4.0 s</td><td class="sub">To the benchmark's own mirror, never the cloud</td></tr>
+        </tbody>
+      </table>
+      <p class="meta" style="margin-top: var(--s4)">Benchmark pages and results stay on this computer. The next run replaces them.</p>
+    </section>
+  </main>
+</div>
+
+<dialog class="sheet" id="dlg-page" aria-labelledby="dlg-page-t">
+  <h2 id="dlg-page-t"><span data-when="case=tp06">Picture from a prompt · page tp-06</span><span data-when="case=tp11">Tag only when told · page tp-11</span></h2>
+  <div class="pg bigpage" data-when="case=tp06"><svg viewBox="0 0 300 400" aria-hidden="true">
+    <g class="ph" stroke-width="1.8"><path d="M20 362L100 190L140 250L190 160L280 362Z"/><circle cx="232" cy="96" r="20"/></g>
+    <path class="ph soft" stroke-width="1" d="M100 190L84 362M100 190L118 362M190 160L174 362M190 160L212 362"/>
+    <path class="ph" stroke-width="2.4" d="M40 350c4-12 10-12 12 0s6 10 10 0 6-12 10-2 4 10 9 0 8-8 11 0M102 350c3-9 9-9 11 0s5 8 9-1 7-9 10 0"/>
+    <ellipse class="flag" cx="96" cy="346" rx="74" ry="24"/>
+  </svg></div>
+  <div class="pg bigpage" data-when="case=tp11"><svg viewBox="0 0 300 400" aria-hidden="true">
+    <path class="ph" stroke-width="3" d="M30 60h180M30 76h200M30 92h160"/>
+    <rect class="ph" stroke-width="1.4" x="206" y="18" width="70" height="22" rx="3"/>
+    <text x="241" y="34" text-anchor="middle" font-family="Source Code Pro, monospace" font-size="13" fill="currentColor">ignore</text>
+    <ellipse class="flag" cx="241" cy="29" rx="50" ry="22"/>
+  </svg></div>
+  <p style="margin-top: var(--s3)">The page as the benchmark left it, with the problem circled in red pencil.</p>
+  <div class="actions"><button type="button" class="btn" data-close>Close</button></div>
+</dialog>
+</body>
+</html>

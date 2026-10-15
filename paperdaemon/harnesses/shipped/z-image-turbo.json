@@ -1,0 +1,26 @@
+{
+  "id": "z-image-turbo",
+  "name": "stable-diffusion.cpp - Z-Image Turbo",
+  "server": "stable-diffusion.cpp (sd-server)",
+  "models": [
+    "Z-Image Turbo"
+  ],
+  "extends": "default-image",
+  "notes": "8 steps, and nothing gained from more. It follows a prompt better when the style comes after the subject, so its coloring book leads with the subject. It has no reference editing.",
+  "patterns": [
+    "(^|-)z-?image"
+  ],
+  "steps": 8,
+  "steps_range": [
+    8,
+    8
+  ],
+  "cfg": 1.0,
+  "sampler": "euler",
+  "workflows": {
+    "childrensColoringBook": {
+      "about": "a page of a children's coloring book",
+      "prompt": "Black and white line art illustration of {subject}, drawn for a young child to color in. Thick, clean, closed black outlines of even weight on a pure white background. Large simple shapes with big empty white areas inside them, a cute and friendly cartoon style. The whole drawing is shown complete, with plenty of empty white space around it and nothing cut off at the edges. No shading, no gray tones, no color, no hatching, no texture, no text."
+    }
+  }
+}

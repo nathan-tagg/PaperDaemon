@@ -1,0 +1,524 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PaperDaemon's interface text, Tiếng Việt. Names are "screen.thing"; {placeholders} are filled in by the window. -->
+<resources>
+  <string name="pair.title">Ghép nối cửa sổ này</string>
+  <string name="pair.intro">Bộ máy chỉ chấp nhận các yêu cầu mang mã ghép nối của nó. Mở cửa sổ riêng của PaperDaemon để được ghép nối tự động, hoặc dán mã hiển thị trong mục Mạng trên máy tính đang chạy nó.</string>
+  <string name="pair.token">Mã ghép nối</string>
+  <string name="pair.go">Ghép nối</string>
+  <string name="pair.empty">Hãy dán mã ghép nối trước.</string>
+  <string name="pair.refused">Bộ máy không chấp nhận mã đó.</string>
+  <string name="fatal.title">Bộ máy không phản hồi</string>
+  <string name="common.try_again">Thử lại</string>
+  <string name="pair.window_refused">Bộ máy không chấp nhận mã của cửa sổ này.</string>
+  <string name="rail.engine_on">Bộ máy đang bật</string>
+  <string name="rail.version">Phiên bản {version}</string>
+  <string name="api.no_answer">Bộ máy không phản hồi. PaperDaemon vẫn đang chạy chứ?</string>
+  <string name="api.unpaired">Cửa sổ này chưa được ghép nối với bộ máy.</string>
+  <string name="api.not_offered">Bộ máy chưa hỗ trợ việc này ({route}).</string>
+  <string name="day.today">Hôm nay</string>
+  <string name="day.yesterday">Hôm qua</string>
+  <string name="unit.seconds">{n} giây</string>
+  <string name="unit.minutes">{n} phút</string>
+  <string name="unit.hours">{n} giờ</string>
+  <string name="mirror.building_pct">Đang dựng Bản sao, {pct}%</string>
+  <string name="mirror.pct">Bản sao {pct}%</string>
+  <string name="mirror.bar">Đang dựng Bản sao: {done} / {total} · {bytes} / {bytes_total} · {pct}%</string>
+  <string name="mirror.bar_start">Đang dựng Bản sao: {files} · đã có {bytes}</string>
+  <string name="count.document.one">{n} tài liệu</string>
+  <string name="count.document.other">{n} tài liệu</string>
+  <string name="count.file.one">{n} tệp</string>
+  <string name="count.file.other">{n} tệp</string>
+  <string name="mirror.name">Bản sao</string>
+  <string name="login.privacy">Thông tin đăng nhập của bạn ở lại trên máy tính này và chỉ được dùng với đám mây của reMarkable. Các trang của bạn không đi đâu khác, trừ khi bạn kết nối một mô hình đám mây hoặc tìm kiếm web; khi đó chỉ những gì một công việc cần mới được gửi đến dịch vụ đó.</string>
+  <string name="login.borrow.title">Mượn thông tin đăng nhập của ứng dụng reMarkable</string>
+  <string name="login.borrow.body">PaperDaemon sao chép thông tin đăng nhập của ứng dụng reMarkable trên máy tính vào Trình quản lý thông tin xác thực của Windows. Ứng dụng vẫn đăng nhập. Cả hai dùng chung một thông tin đăng nhập, nên mỗi lúc chỉ một trong hai có thể chạy.</string>
+  <string name="login.borrow.action">Mượn thông tin đăng nhập</string>
+  <string name="login.steal.title">⚠ Lấy hẳn thông tin đăng nhập của ứng dụng reMarkable</string>
+  <string name="login.steal.body">PaperDaemon sao chép thông tin đăng nhập của ứng dụng reMarkable trên máy tính vào Trình quản lý thông tin xác thực của Windows, rồi xóa nó khỏi cài đặt của ứng dụng trong sổ đăng ký Windows. Ứng dụng bị đăng xuất; khi bạn đăng nhập lại, nó trở thành một thiết bị riêng. Hãy đóng ứng dụng reMarkable trước.</string>
+  <string name="login.steal.action">Lấy hẳn thông tin đăng nhập</string>
+  <string name="login.not_found">Ứng dụng reMarkable chưa đăng nhập trên máy tính này. Hãy cài đặt, đăng nhập, rồi thử lại.</string>
+  <string name="login.not_kept">Đã tìm thấy thông tin đăng nhập của ứng dụng, nhưng PaperDaemon không thể giữ nó.</string>
+  <string name="login.not_kept_why">Đã tìm thấy thông tin đăng nhập của ứng dụng, nhưng PaperDaemon không thể giữ nó: {why}</string>
+  <string name="login.stolen">PaperDaemon đã giữ thông tin đăng nhập, và ứng dụng reMarkable đã bị đăng xuất. Hãy đăng nhập lại vào ứng dụng để dùng nó như một thiết bị riêng.</string>
+  <string name="login.borrowed">PaperDaemon đang dùng thông tin đăng nhập của ứng dụng reMarkable. Hãy để ứng dụng đóng trong khi PaperDaemon chạy.</string>
+  <string name="job.failed">Thất bại</string>
+  <string name="job.working">Đang làm</string>
+  <string name="job.skipped">Bỏ qua</string>
+  <string name="job.waiting">Đang chờ</string>
+  <string name="job.done">Xong</string>
+  <string name="job.unknown">Không rõ</string>
+  <string name="job.page">tr. {n}</string>
+  <string name="jobs.unreadable">Không đọc được các công việc.</string>
+  <string name="jobs.reading">Đang đọc các công việc…</string>
+  <string name="jobs.none">Chưa có công việc nào.</string>
+  <string name="jobs.none_hint">Gắn thẻ {tag} cho một trang trên máy tính bảng của bạn.</string>
+  <string name="count.job.one">{n} công việc</string>
+  <string name="count.job.other">{n} công việc</string>
+  <string name="jobs.n_failed">{n} thất bại</string>
+  <string name="jobs.n_skipped">{n} bỏ qua</string>
+  <string name="jobs.earlier">Trước đó</string>
+  <string name="jobs.so_far">{time} cho đến giờ</string>
+  <string name="jobs.a_page">Một trang</string>
+  <string name="jobs.no_note">Không có ghi chú</string>
+  <string name="jobs.col.time">Thời gian</string>
+  <string name="jobs.col.page">Trang</string>
+  <string name="jobs.col.status">Trạng thái</string>
+  <string name="jobs.col.what">Điều đã xảy ra</string>
+  <string name="jobs.col.took">Mất</string>
+  <string name="jobs.label">Công việc</string>
+  <string name="issue.setup">Chưa hoàn tất thiết lập.</string>
+  <string name="issue.setup_go">Tiếp tục thiết lập</string>
+  <string name="issue.tablet">PaperDaemon không kết nối được với reMarkable của bạn.</string>
+  <string name="issue.mirror">Không thể cập nhật Bản sao: {why}</string>
+  <string name="issue.not_started">PaperDaemon không khởi động được: {why}</string>
+  <string name="term.daemon">Daemon</string>
+  <string name="term.daemon_about">Theo dõi máy tính bảng để tìm các trang được gắn thẻ và giao từng trang cho host như một công việc.</string>
+  <string name="term.host">Host</string>
+  <string name="term.host_about">Thực hiện từng công việc: đọc trang, hỏi các mô hình và viết câu trả lời trở lại trang.</string>
+  <string name="term.empty">Chưa có gì.</string>
+  <string name="loop.pausing">Đang tạm dừng…</string>
+  <string name="loop.starting">Đang khởi động…</string>
+  <string name="loop.pause">Tạm dừng Daemon (Giải phóng VRAM)</string>
+  <string name="loop.start">Bắt đầu</string>
+  <string name="overview.label">Tổng quan</string>
+  <string name="overview.needs_you">Có việc cần bạn</string>
+  <string name="loop.running">Đang chạy</string>
+  <string name="loop.paused">Đã tạm dừng</string>
+  <string name="common.choose">Chọn…</string>
+  <string name="common.help">Trợ giúp</string>
+  <string name="settings.label">Cài đặt</string>
+  <string name="settings.prefs">Tùy chọn</string>
+  <string name="settings.prefs_to_set">Tùy chọn cần đặt</string>
+  <string name="settings.note">Hãy dành chút thời gian đặt tùy chọn của bạn: cách PaperDaemon viết nhiệt độ, giờ và tuần trên các trang của bạn.</string>
+  <string name="settings.language">Ngôn ngữ</string>
+  <string name="settings.language.help">Ngôn ngữ của cửa sổ PaperDaemon. Thay đổi sẽ tải lại cửa sổ.</string>
+  <string name="settings.temperature">Nhiệt độ</string>
+  <string name="settings.temperature.help">Trên lịch và trong những gì PaperDaemon viết.</string>
+  <string name="settings.temperature.f">Độ F (°F)</string>
+  <string name="settings.temperature.c">Độ C (°C)</string>
+  <string name="settings.clock">Đồng hồ</string>
+  <string name="settings.clock.12">12 giờ (2:30 PM)</string>
+  <string name="settings.clock.24">24 giờ (14:30)</string>
+  <string name="settings.week">Tuần bắt đầu vào</string>
+  <string name="day.sunday">Chủ nhật</string>
+  <string name="day.monday">Thứ hai</string>
+  <string name="day.saturday">Thứ bảy</string>
+  <string name="settings.remarkable">reMarkable</string>
+  <string name="settings.login.none">Chưa kết nối</string>
+  <string name="settings.login.borrowing">Đang mượn thông tin đăng nhập của ứng dụng reMarkable</string>
+  <string name="settings.login.steal">Lấy hẳn thay vào đó</string>
+  <string name="settings.login.stolen">Đã kết nối bằng thông tin đăng nhập riêng, lấy từ ứng dụng reMarkable</string>
+  <string name="settings.login.connected">Đã kết nối</string>
+  <string name="settings.inbox">Hộp thư đến của Phân tách</string>
+  <string name="settings.inbox.help">Sổ tay mà Gửi đến máy tính bảng thêm trang vào. PaperDaemon không bao giờ trả lời trong đó, dù nó được gắn thẻ gì.</string>
+  <string name="settings.inbox.placeholder">Chọn một sổ tay</string>
+  <string name="settings.inbox.pick">Chọn một sổ tay trong danh sách.</string>
+  <string name="settings.location">Vị trí</string>
+  <string name="settings.location.help">Dùng cho thời tiết, giờ mặt trời mọc và ngày lễ trên lịch.</string>
+  <string name="settings.location.placeholder">Bắt đầu gõ tên thành phố</string>
+  <string name="settings.location.pick">Chọn một thành phố trong danh sách.</string>
+  <string name="settings.ignore">Thẻ bỏ qua</string>
+  <string name="settings.ignore.help">Gắn thẻ này cho một thư mục, sổ tay hoặc trang trên máy tính bảng, và PaperDaemon sẽ không bao giờ làm gì ở đó, với mọi đội hình, dù nó còn được gắn thẻ gì khác.</string>
+  <string name="settings.sprompt">Thẻ hướng dẫn thường trực</string>
+  <string name="settings.sprompt.help">Gắn thẻ này cho một trang của sổ tay và viết hướng dẫn lên đó. PaperDaemon thêm văn bản của trang đó vào cuối hướng dẫn của mọi công việc trong sổ tay ấy, và không bao giờ xử lý chính trang đó.</string>
+  <string name="settings.network">Truy cập mạng</string>
+  <string name="settings.network.help">Thời tiết, bài đăng mạng xã hội, Wikipedia và tìm kiếm web. Các mô hình của bạn và đám mây reMarkable không bị ảnh hưởng.</string>
+  <string name="settings.network.allow">Cho phép truy cập mạng</string>
+  <string name="settings.social">Trang mạng xã hội</string>
+  <string name="settings.social.help">Nơi một yêu cầu tìm bài đăng sẽ tìm khi không nêu tên trang nào. Trang được nêu tên luôn được tìm.</string>
+  <string name="settings.tools">Công cụ</string>
+  <string name="settings.updates">Cập nhật</string>
+  <string name="settings.updates.help">PaperDaemon không bao giờ tự kiểm tra.</string>
+  <string name="settings.version">Phiên bản {version}</string>
+  <string name="settings.updates.check">Kiểm tra cập nhật</string>
+  <string name="settings.updates.installed_only">Cập nhật được ứng dụng đã cài kiểm tra, từ menu khay hệ thống hoặc tại đây.</string>
+  <string name="settings.logs">Nhật ký</string>
+  <string name="settings.logs.help">Những gì daemon, host và bộ máy đã ghi gần đây, dưới dạng các trang trong hộp thư đến của bạn.</string>
+  <string name="settings.logs.send">Gửi nhật ký đến hộp thư đến</string>
+  <string name="settings.logs.no_inbox">Hãy đặt hộp thư đến ở trên trước</string>
+  <string name="settings.logs.sent">Đã gửi: {pages} trong {inbox}, từ trang {first}.</string>
+  <string name="settings.logs.the_inbox">hộp thư đến</string>
+  <string name="count.page.one">{n} trang</string>
+  <string name="count.page.other">{n} trang</string>
+  <string name="tablet.read">Đã đọc {pct}%</string>
+  <string name="tablet.page_of">Trang {page} / {pages}</string>
+  <string name="common.reading">Đang đọc…</string>
+  <string name="tablet.my_files">Tệp của tôi</string>
+  <string name="tablet.arriving">Vẫn đang tải về…</string>
+  <string name="tablet.empty">Thư mục này trống.</string>
+  <string name="viewer.pages">Trang</string>
+  <string name="viewer.chapters">Chương</string>
+  <string name="viewer.goto">Đến trang (1 - {last})</string>
+  <string name="viewer.goto_aria">Đến trang, từ 1 đến {last}</string>
+  <string name="viewer.prev">Trang trước</string>
+  <string name="viewer.next">Trang sau</string>
+  <string name="viewer.reading_chapters">Đang đọc các chương…</string>
+  <string name="viewer.not_drawn">Không thể vẽ trang này.</string>
+  <string name="viewer.page">Trang {n}</string>
+  <string name="viewer.go_to">Đến trang {n}</string>
+  <string name="common.close">Đóng</string>
+  <string name="tablet.label">Máy tính bảng</string>
+  <string name="tablet.folder">Thư mục</string>
+  <string name="dc.decomposing">Đang phân tách {name}</string>
+  <string name="dc.drop">Thả một ảnh vào đây, hoặc {choose}.</string>
+  <string name="dc.choose">chọn một tệp</string>
+  <string name="dc.on_page">Trên trang số {n}</string>
+  <string name="dc.sending">Đang gửi…</string>
+  <string name="dc.send">Gửi đến máy tính bảng</string>
+  <string name="dc.no_inbox">Hãy đặt hộp thư đến trong thẻ Cài đặt</string>
+  <string name="dc.look">Xem kỹ</string>
+  <string name="dc.size_px">{w} × {h} px</string>
+  <string name="count.stroke.one">{n} nét</string>
+  <string name="count.stroke.other">{n} nét</string>
+  <string name="common.delete">Xóa</string>
+  <string name="dc.size_range">Kích thước từ 200 đến 1.400 điểm ảnh của máy tính bảng.</string>
+  <string name="dc.picture">Hình</string>
+  <string name="dc.bad_type">Tệp đó không phải ảnh PNG, JPEG hay WebP.</string>
+  <string name="dc.too_big">Ảnh đó nặng {size}. Hãy dùng ảnh dưới {max}.</string>
+  <string name="dc.unreadable">Không đọc được tệp.</string>
+  <string name="dc.drop_what">Thả một tệp ảnh, hoặc một ảnh từ trang web.</string>
+  <string name="dc.label">Phân tách</string>
+  <string name="dc.intro">Biến một ảnh thành các nét bút và gửi đến máy tính bảng, nơi mọi đường nét đều có thể tẩy và vẽ đè lên như của chính bạn.</string>
+  <string name="dc.image">Ảnh</string>
+  <string name="dc.size">Kích thước</string>
+  <string name="dc.size_unit">điểm ảnh máy tính bảng, từ 200 đến 1.400</string>
+  <string name="dc.types">PNG, JPEG, WebP</string>
+  <string name="dc.decomps">Bản phân tách</string>
+  <string name="lineup.unreadable">Không đọc được các đội hình.</string>
+  <string name="memories.note">Những gì mô hình của đội hình này đã học được về cách làm việc cho bạn: phàn nàn, chỉnh sửa, cách bạn muốn mọi việc được làm. Mô hình tự lưu chúng, không bao giờ lưu ghi chú của bạn hay nội dung trên một trang (mỗi sổ tay giữ ngữ cảnh riêng trong sổ ghi chép của nó), và mọi công việc của đội hình này đều được cho xem chúng. Bạn có thể sửa hoặc xóa bất kỳ mục nào tại đây.</string>
+  <string name="memories.none">Chưa có ký ức nào.</string>
+  <string name="memories.none_hint">Mô hình lưu một ký ức khi nó học được điều gì đó về cách làm việc cho bạn.</string>
+  <string name="memories.count">{n} / {max}</string>
+  <string name="memories.saved_on">Đã lưu {date}</string>
+  <string name="memories.one">Ký ức</string>
+  <string name="memories.saved">Đã lưu ký ức.</string>
+  <string name="memories.deleted">Đã xóa ký ức.</string>
+  <string name="lineup.label">Đội hình</string>
+  <string name="lineup.new_option">+ Đội hình mới…</string>
+  <string name="lineup.rename">Đổi tên</string>
+  <string name="tab.text">Văn bản / Suy luận</string>
+  <string name="tab.image">Ảnh</string>
+  <string name="tab.network">Mạng</string>
+  <string name="tab.tags">Gắn thẻ</string>
+  <string name="tab.memories">Ký ức</string>
+  <string name="tab.tests">Kiểm tra</string>
+  <string name="common.saved">Đã lưu.</string>
+  <string name="common.no_answer">Không có phản hồi.</string>
+  <string name="lineup.test_no_answer">Không có phản hồi. Hãy kiểm tra nhà cung cấp, mô hình và khóa.</string>
+  <string name="memories.delete_q">Xóa ký ức này?</string>
+  <string name="memories.delete_body">Mô hình sẽ không được cho xem nó nữa.</string>
+  <string name="lineup.new">Đội hình mới</string>
+  <string name="lineup.rename_title">Đổi tên đội hình</string>
+  <string name="lineup.name">Tên</string>
+  <string name="lineup.delete_q">Xóa {name}?</string>
+  <string name="lineup.delete_body">Các mô hình, tìm kiếm web, thẻ và ký ức của nó cũng bị xóa theo.</string>
+  <string name="common.disclaimer">Tuyên bố miễn trừ</string>
+  <string name="common.cancel">Hủy</string>
+  <string name="slot.other_provider">Khác (tương thích OpenAI)</string>
+  <string name="slot.harness_auto">Tự động (theo tên mô hình)</string>
+  <string name="slot.harness">Harness</string>
+  <string name="slot.add_harness">+ Thêm Harness</string>
+  <string name="slot.none">Không có</string>
+  <string name="slot.api_key">Khóa API</string>
+  <string name="slot.local">Chạy trên máy</string>
+  <string name="slot.source">Nguồn</string>
+  <string name="slot.provider">Nhà cung cấp</string>
+  <string name="slot.address">Địa chỉ</string>
+  <string name="slot.model">Mô hình</string>
+  <string name="slot.saved">đã lưu</string>
+  <string name="common.test">Kiểm tra</string>
+  <string name="slot.script_label">Start.bat - để trống nếu không cần tập lệnh khởi động</string>
+  <string name="slot.script">Tập lệnh khởi động</string>
+  <string name="net.search">Tìm kiếm web</string>
+  <string name="net.service_key">Dịch vụ tìm kiếm, có khóa API</string>
+  <string name="net.service">Dịch vụ</string>
+  <string name="net.script">Tập lệnh khởi động tìm kiếm</string>
+  <string name="tags.note">Mỗi thẻ ở đây là một thẻ mà đội hình này theo dõi: gắn thẻ đó cho một trang, sổ tay hoặc thư mục trên máy tính bảng và đội hình này sẽ xử lý nó. Một trang nhận lời nhắc của các thẻ thuộc đội hình này có trên trang, trên sổ tay của nó và trên các thư mục phía trên, theo thứ tự của danh sách này (kéo một thẻ bằng tay cầm để di chuyển); trang hướng dẫn thường trực của chính sổ tay đó đến sau cùng. Hãy giữ một thẻ có lời nhắc trống, cho những trang không cần thêm gì. Một thẻ chỉ có thể thuộc về một đội hình.</string>
+  <string name="tags.move">Di chuyển {name} (phím mũi tên)</string>
+  <string name="tags.this">thẻ này</string>
+  <string name="tags.drag">Kéo để sắp xếp lại</string>
+  <string name="tags.tag">Thẻ</string>
+  <string name="common.remove">Gỡ bỏ</string>
+  <string name="tags.prompt">Lời nhắc</string>
+  <string name="tags.prompt_blank">Trống: trang không nhận thêm lời nhắc nào</string>
+  <string name="tags.add">+ Thêm thẻ</string>
+  <string name="common.testing">Đang kiểm tra…</string>
+  <string name="common.answering">Đang trả lời</string>
+  <string name="np.list_unreadable">Không đọc được các sổ ghi chép.</string>
+  <string name="np.reading_list">Đang đọc các sổ ghi chép…</string>
+  <string name="np.no_match">Không có sổ tay nào khớp.</string>
+  <string name="np.summary">{entries} · {chars} ký tự</string>
+  <string name="count.entry.one">{n} mục</string>
+  <string name="count.entry.other">{n} mục</string>
+  <string name="np.undated">Không có ngày</string>
+  <string name="np.show_fewer">Hiện ít hơn</string>
+  <string name="np.show_older.one">Hiện {n} mục cũ hơn</string>
+  <string name="np.show_older.other">Hiện {n} mục cũ hơn</string>
+  <string name="np.select">Chọn một sổ tay để đọc sổ ghi chép của nó.</string>
+  <string name="np.wiped_at">Đã xóa sạch lúc {time}.</string>
+  <string name="np.wiped_body">Mọi mục đã bị xóa, và không giữ bản sao nào. Công việc tiếp theo trong {name} bắt đầu với một sổ ghi chép trống.</string>
+  <string name="np.copy">Sao chép văn bản</string>
+  <string name="np.wipe">Xóa sạch sổ ghi chép</string>
+  <string name="np.not_wiped">Sổ ghi chép chưa được xóa.</string>
+  <string name="np.unreadable">Không đọc được sổ ghi chép này.</string>
+  <string name="np.reading">Đang đọc sổ ghi chép…</string>
+  <string name="np.empty">Sổ ghi chép này trống.</string>
+  <string name="np.show">Hiện</string>
+  <string name="np.entries">Các mục</string>
+  <string name="np.as_text">Dạng văn bản</string>
+  <string name="np.none">Chưa có sổ ghi chép nào.</string>
+  <string name="np.this_notebook">sổ tay này</string>
+  <string name="np.wipe_q">Xóa sạch sổ ghi chép của {name}?</string>
+  <string name="np.wipe_body">Tất cả {entries} sẽ bị xóa, và không giữ bản sao nào. Công việc tiếp theo trong {name} bắt đầu với một sổ ghi chép trống.</string>
+  <string name="np.wipe_body2">Ván chơi lưu trong sổ ghi chép này cũng mất theo. Sổ tay của bạn trên máy tính bảng không bị động đến.</string>
+  <string name="np.label">Sổ ghi chép</string>
+  <string name="np.intro">Ký ức của mỗi sổ tay về các công việc của nó. Sau mỗi công việc, host ghi lại điều được yêu cầu và điều nó đã làm, và công việc tiếp theo trong sổ tay đó được cho xem các mục gần đây, để một cuộc trò chuyện có thể tiếp diễn từ trang này sang trang khác.</string>
+  <string name="np.books">Sổ tay có sổ ghi chép</string>
+  <string name="np.find">Tìm một sổ tay</string>
+  <string name="common.copied">Đã sao chép</string>
+  <string name="common.copy_failed">Không thể sao chép</string>
+  <string name="nw.this_computer">· máy tính này, luôn bật</string>
+  <string name="nw.cannot_remove">không thể gỡ bỏ</string>
+  <string name="nw.remove_addr">Gỡ bỏ {address}</string>
+  <string name="nw.url_label">Địa chỉ cho các thiết bị khác</string>
+  <string name="common.copy">Sao chép</string>
+  <string name="nw.local_only">Chỉ từ máy tính này, cho đến khi bạn thêm một địa chỉ.</string>
+  <string name="nw.token">Mã ghép nối</string>
+  <string name="nw.hide">Ẩn</string>
+  <string name="nw.show">Hiện</string>
+  <string name="nw.rotate">Đổi mã…</string>
+  <string name="nw.rotated_at">Đã đổi mã lúc {time}.</string>
+  <string name="nw.rotated_body">Mọi thiết bị đã ghép nối đều cần mã mới. Cửa sổ này đã tự kết nối lại.</string>
+  <string name="nw.token_kept">Được giữ trong kho thông tin xác thực của Windows. Cửa sổ này tự ghép nối.</string>
+  <string name="nw.saved_restart">Đã lưu lúc {time}. Có hiệu lực khi PaperDaemon khởi động lại.</string>
+  <string name="nw.rotate_q">Đổi mã ghép nối?</string>
+  <string name="nw.rotate_body">Mọi thiết bị đã ghép nối sẽ ngừng hoạt động cho đến khi bạn đưa cho nó mã mới. Cửa sổ này tự kết nối lại.</string>
+  <string name="nw.rotate_action">Đổi mã</string>
+  <string name="nw.label">Mạng</string>
+  <string name="count.address.one">{n} địa chỉ</string>
+  <string name="count.address.other">{n} địa chỉ</string>
+  <string name="nw.intro">Bộ máy phục vụ cửa sổ này, và mọi thiết bị bạn ghép nối, từ một cổng trên máy tính này.</string>
+  <string name="nw.listens">Nơi bộ máy lắng nghe</string>
+  <string name="nw.port">Cổng</string>
+  <string name="nw.save_port">Lưu cổng</string>
+  <string name="nw.port_hint">Chỉ đổi nếu một chương trình khác đã dùng cổng này. Bộ máy dùng cổng mới sau khi PaperDaemon khởi động lại.</string>
+  <string name="nw.addresses">Địa chỉ</string>
+  <string name="nw.addresses_hint">Thêm địa chỉ WireGuard của bạn để truy cập PaperDaemon từ điện thoại hoặc máy tính khác.</string>
+  <string name="nw.another">Địa chỉ khác</string>
+  <string name="nw.to_add">Địa chỉ cần thêm</string>
+  <string name="nw.add">Thêm địa chỉ</string>
+  <string name="nw.trust">Chỉ thêm địa chỉ trên những mạng bạn tin cậy. Mọi yêu cầu, từ bất kỳ đâu, đều phải mang mã ghép nối.</string>
+  <string name="nw.reach">Truy cập tại</string>
+  <string name="nw.pairing">Ghép nối</string>
+  <string name="nw.token_hint">Gõ nó vào một thiết bị một lần để ghép nối.</string>
+  <string name="nw.bad_address">Đó không phải địa chỉ IP. Hãy dùng dạng như 10.8.0.2.</string>
+  <string name="nw.listed">{address} đã có trong danh sách.</string>
+  <string name="su.connect">Kết nối reMarkable của bạn</string>
+  <string name="su.mirror">Bản sao</string>
+  <string name="su.finish">Hoàn tất</string>
+  <string name="su.building_pct">Đang dựng Bản sao, {pct}%</string>
+  <string name="su.taking">Đang lấy thông tin đăng nhập…</string>
+  <string name="su.steal_instead">Lấy hẳn thông tin đăng nhập thay vào đó</string>
+  <string name="su.borrow_instead">Mượn thông tin đăng nhập thay vào đó</string>
+  <string name="su.connected_how">Đã kết nối · {how}</string>
+  <string name="su.borrowed">Đã mượn</string>
+  <string name="su.stolen">Đã lấy hẳn</string>
+  <string name="su.continue">Tiếp tục</string>
+  <string name="su.mirror_lead">Bản sao thư viện của bạn do PaperDaemon giữ. Nó được dựng ở chế độ nền; bạn có thể tiếp tục.</string>
+  <string name="su.connect_first">Hãy kết nối reMarkable của bạn trước.</string>
+  <string name="su.connecting">Đang kết nối…</string>
+  <string name="su.mirror_complete">Bản sao đã hoàn chỉnh</string>
+  <string name="su.cloud_silent">Đám mây không phản hồi.</string>
+  <string name="su.lineup_lead">Mô hình văn bản là bắt buộc. Mô hình ảnh và tìm kiếm web là tùy chọn.</string>
+  <string name="su.lineup_unreadable">Không đọc được đội hình.</string>
+  <string name="su.need_address">Mô hình văn bản cần một địa chỉ.</string>
+  <string name="su.need_name">Đội hình cần một cái tên.</string>
+  <string name="su.finish_lead">PaperDaemon sẽ khởi động với cấu hình sau.</string>
+  <string name="su.proceed">Vào PaperDaemon</string>
+  <string name="su.automatic">Tự động</string>
+  <string name="su.local_at">Chạy trên máy tại {address}</string>
+  <string name="su.local_at_script">Chạy trên máy tại {address} · có Start.bat</string>
+  <string name="su.harness_is">Harness: {harness}</string>
+  <string name="su.building">Đang dựng · {pct}%</string>
+  <string name="su.complete">Hoàn chỉnh</string>
+  <string name="su.not_built">Chưa dựng</string>
+  <string name="su.tags">Thẻ</string>
+  <string name="su.no_tags">Không có: sẽ không trang nào được trả lời cho đến khi bạn thêm một thẻ</string>
+  <string name="su.steps">Các bước thiết lập</string>
+  <string name="su.later">Thiết lập sau</string>
+  <string name="su.title">Thiết lập · PaperDaemon</string>
+  <string name="ts.failed">Thất bại</string>
+  <string name="ts.running">Đang chạy</string>
+  <string name="ts.passed">Đạt</string>
+  <string name="ts.waiting">Đang chờ</string>
+  <string name="ts.stop">Dừng kiểm tra</string>
+  <string name="ts.run">Chạy kiểm tra</string>
+  <string name="ts.not_started">Lượt chạy không bắt đầu.</string>
+  <string name="ts.partly">Một phần</string>
+  <string name="ts.unreadable">Không đọc được các bài kiểm tra.</string>
+  <string name="ts.result">Kết quả</string>
+  <string name="ts.cases_done">Số trường hợp đã xong</string>
+  <string name="ts.passed_of">{n} / {total} đạt</string>
+  <string name="ts.intro">Chỉ giữ bài kiểm tra gần nhất, và mọi thay đổi đối với đội hình đều làm nó mất hiệu lực.</string>
+  <string name="help.model.title">Tập lệnh khởi động hoạt động thế nào</string>
+  <string name="help.model.intro">Tập lệnh khởi động là một tệp batch Windows nhỏ (một tệp `.bat`) khởi động máy chủ của mô hình. Bạn viết nó một lần. Sau đó, PaperDaemon chạy nó cho bạn mỗi khi một công việc cần mô hình này, nên bạn không bao giờ phải tự khởi động máy chủ.</string>
+  <string name="help.h_do">Tập lệnh của bạn phải làm gì</string>
+  <string name="help.model.do1">Khởi động máy chủ để nó phản hồi tại địa chỉ trong ô phía trên, ví dụ `http://127.0.0.1:8790`. PaperDaemon chuyển cổng đó cho tập lệnh của bạn dưới dạng `%PAPERDAEMON_PORT%`.</string>
+  <string name="help.model.do2">Tiếp tục chạy chừng nào máy chủ còn chạy. Hãy khởi động máy chủ trực tiếp, không dùng `start` (lệnh này mở nó trong một cửa sổ khác và tập lệnh kết thúc ngay, khiến PaperDaemon tưởng máy chủ đã biến mất).</string>
+  <string name="help.do_output">Để máy chủ in ra các thông báo của nó. PaperDaemon hiển thị vài dòng cuối tại đây nếu có sự cố.</string>
+  <string name="help.h_runs">Khi nào PaperDaemon chạy nó</string>
+  <string name="help.model.runs1">Lần đầu tiên một công việc cần mô hình này.</string>
+  <string name="help.model.runs2">Khi thẻ của một trang thuộc về một đội hình có tập lệnh khởi động khác với tập lệnh đang chạy. PaperDaemon dừng máy chủ nó đã khởi động trước đó, rồi chạy tập lệnh này.</string>
+  <string name="help.model.runs3">Không chạy khi máy chủ do tập lệnh này khởi động đã đang chạy.</string>
+  <string name="help.h_stops">Khi nào PaperDaemon dừng nó</string>
+  <string name="help.model.stops">Khi bạn tạm dừng hoặc thoát PaperDaemon, hoặc khi tập lệnh khởi động của một đội hình khác phải chạy. Nó dừng mọi thứ tập lệnh của bạn đã khởi động. Nó không bao giờ dừng một chương trình mà nó không khởi động.</string>
+  <string name="help.h_wrong">Những điều có thể trục trặc</string>
+  <string name="help.model.wrong_vram">**Card đồ họa đã đầy.** Một mô hình cần chỗ trong bộ nhớ của card (VRAM). Nếu một máy chủ mô hình khác, một trò chơi hay một công cụ xử lý ảnh đang chiếm bộ nhớ đó, mô hình sẽ không tải được hoặc chạy rất chậm. Nếu bạn tự chạy các máy chủ mô hình khác, hãy cho tập lệnh dừng chúng trước (ví dụ `taskkill /IM llama-server.exe /F`). PaperDaemon chỉ dừng những gì nó đã khởi động.</string>
+  <string name="help.model.wrong_two">**Hai mô hình không vừa cùng lúc.** Nếu mô hình văn bản và mô hình ảnh của bạn không thể cùng nằm trên card, hãy viết mỗi tập lệnh sao cho nó dừng máy chủ của mô hình kia trước khi khởi động máy chủ của mình.</string>
+  <string name="help.model.wrong_port">**Cổng đã bị dùng.** Nếu một chương trình khác đã dùng cổng đó, máy chủ của bạn không thể khởi động ở đó. Hãy chọn một cổng trống và dùng cùng cổng đó trong địa chỉ phía trên.</string>
+  <string name="help.wrong_spaces">**Khoảng trắng trong đường dẫn.** Hãy đặt mọi đường dẫn có khoảng trắng trong dấu ngoặc kép.</string>
+  <string name="help.model.wrong_keys">**Khóa và mật khẩu.** Đừng viết chúng trong tập lệnh. Hãy dùng ô khóa cho khóa API.</string>
+  <string name="help.h_try">Thử ngay</string>
+  <string name="help.model.try">Vào thẻ Kiểm tra và nhấn **Chạy kiểm tra**.</string>
+  <string name="help.search.title">Tập lệnh khởi động tìm kiếm hoạt động thế nào</string>
+  <string name="help.search.intro">Tập lệnh khởi động tìm kiếm là một tệp batch Windows nhỏ (một tệp `.bat`) khởi động máy chủ tìm kiếm của riêng bạn, thường là SearXNG. PaperDaemon chạy nó cho bạn khi một công việc cần tra cứu và máy chủ tìm kiếm của bạn không phản hồi.</string>
+  <string name="help.search.do1">Khởi động máy chủ tìm kiếm để nó phản hồi tại địa chỉ trong ô phía trên.</string>
+  <string name="help.search.do2">Tiếp tục chạy chừng nào máy chủ còn chạy. Hãy khởi động nó trực tiếp, không dùng `start`.</string>
+  <string name="help.search.runs">Trước mỗi lượt tìm kiếm, PaperDaemon gửi một lượt tìm thử đến địa chỉ phía trên. Nếu một máy chủ SearXNG phản hồi đúng cách, PaperDaemon dùng nó như hiện có, bất kể ai đã khởi động nó, và không chạy tập lệnh. Nó chỉ chạy tập lệnh khi không có gì phản hồi, hoặc khi thứ phản hồi không phải máy chủ tìm kiếm mà nó dùng được.</string>
+  <string name="help.search.stops">Khi bạn tạm dừng hoặc thoát PaperDaemon. Nó dừng mọi thứ tập lệnh của bạn đã khởi động, và không bao giờ dừng một chương trình mà nó không khởi động.</string>
+  <string name="help.search.wrong_json">**JSON đang tắt.** SearXNG chỉ trả lời các chương trình như PaperDaemon nếu JSON được bật trong tệp `settings.yml` của nó: dưới `search:` → `formats:`, liệt kê cả `html` và `json`.</string>
+  <string name="help.search.wrong_docker">**Docker.** Một container Docker vẫn tiếp tục chạy sau khi PaperDaemon thoát, vì Docker chạy nó chứ không phải tập lệnh của bạn. Chạy SearXNG trong WSL (Hệ thống con Windows cho Linux) hoặc bằng Python sẽ tránh được điều đó.</string>
+  <string name="help.search.wrong_port">**Cổng đã bị dùng.** Nếu một chương trình khác đã dùng cổng đó, máy chủ không thể khởi động ở đó, và PaperDaemon không thể sửa giúp bạn. Hãy chọn một cổng trống và dùng cùng cổng đó trong địa chỉ phía trên.</string>
+  <string name="help.search.try">Nhấn **Kiểm tra** bên cạnh địa chỉ.</string>
+  <string name="help.ask">Nhờ AI trợ giúp</string>
+  <string name="help.copied">Đã sao chép lời nhắc vào bộ nhớ tạm!</string>
+  <string name="help.copy_failed">Không thể sao chép lời nhắc</string>
+  <string name="help.model.prompt_text">Tôi đang thiết lập PaperDaemon, một ứng dụng cho máy tính bảng reMarkable của tôi, chạy các mô hình AI trên PC Windows của tôi. Tôi cần một tệp batch Windows (.bat) khởi động máy chủ của mô hình văn bản (LLM). PaperDaemon tự chạy tập lệnh này mỗi khi cần mô hình, và dừng nó khi xong việc.
+
+Các quy tắc tập lệnh phải tuân theo:
+- Khởi động máy chủ để nó phản hồi HTTP tại 127.0.0.1 trên cổng mà PaperDaemon truyền vào %PAPERDAEMON_PORT%.
+- Chạy máy chủ ở tiền cảnh và giữ tập lệnh chạy chừng nào máy chủ còn chạy. Không dùng `start`.
+- In ra đầu ra của máy chủ.
+- PaperDaemon cũng đặt %PAPERDAEMON_ROLE% (text hoặc image), %PAPERDAEMON_LOCATION% (địa chỉ đầy đủ), %PAPERDAEMON_OTHER_LOCATION% (địa chỉ của mô hình kia), %PAPERDAEMON_LINEUP% và %PAPERDAEMON_DATA%.
+- PaperDaemon chỉ dừng các chương trình do nó khởi động. Nếu các máy chủ mô hình khác có thể đang dùng bộ nhớ card đồ họa của tôi, tập lệnh nên dừng chúng trước.
+- Máy chủ phải dùng API chat tương thích OpenAI (/v1/chat/completions), như llama-server của llama.cpp, Ollama, LM Studio hoặc vLLM.
+
+Trước khi viết, hãy hỏi tôi lần lượt từng câu sau và chờ từng câu trả lời:
+1. Tôi có card đồ họa nào, và nó có bao nhiêu VRAM?
+2. Tôi muốn chạy mô hình nào, và tệp mô hình nằm ở đâu trên PC của tôi?
+3. Tôi dùng (hoặc muốn dùng) chương trình máy chủ nào, và nó được cài ở đâu?
+4. Nó nên dùng cổng nào?
+5. Tôi có chạy máy chủ AI hay chương trình nào khác dùng card đồ họa không, và tập lệnh có nên dừng chúng trước không?
+6. Mô hình văn bản và mô hình ảnh của tôi có vừa cùng lúc trên card không, hay mỗi tập lệnh nên dừng cái kia?
+
+Sau đó viết tệp .bat với một chú thích ngắn trên mỗi dòng nói nó làm gì, và cho tôi biết cách kiểm tra nó.</string>
+  <string name="help.model.prompt_image">Tôi đang thiết lập PaperDaemon, một ứng dụng cho máy tính bảng reMarkable của tôi, chạy các mô hình AI trên PC Windows của tôi. Tôi cần một tệp batch Windows (.bat) khởi động máy chủ của mô hình tạo ảnh. PaperDaemon tự chạy tập lệnh này mỗi khi cần mô hình, và dừng nó khi xong việc.
+
+Các quy tắc tập lệnh phải tuân theo:
+- Khởi động máy chủ để nó phản hồi HTTP tại 127.0.0.1 trên cổng mà PaperDaemon truyền vào %PAPERDAEMON_PORT%.
+- Chạy máy chủ ở tiền cảnh và giữ tập lệnh chạy chừng nào máy chủ còn chạy. Không dùng `start`.
+- In ra đầu ra của máy chủ.
+- PaperDaemon cũng đặt %PAPERDAEMON_ROLE% (text hoặc image), %PAPERDAEMON_LOCATION% (địa chỉ đầy đủ), %PAPERDAEMON_OTHER_LOCATION% (địa chỉ của mô hình kia), %PAPERDAEMON_LINEUP% và %PAPERDAEMON_DATA%.
+- PaperDaemon chỉ dừng các chương trình do nó khởi động. Nếu các máy chủ mô hình khác có thể đang dùng bộ nhớ card đồ họa của tôi, tập lệnh nên dừng chúng trước.
+- Máy chủ phải dùng API của web UI Stable Diffusion (/sdapi/v1/txt2img), như máy chủ của stable-diffusion.cpp, Forge hoặc AUTOMATIC1111, hoặc API Images của OpenAI.
+
+Trước khi viết, hãy hỏi tôi lần lượt từng câu sau và chờ từng câu trả lời:
+1. Tôi có card đồ họa nào, và nó có bao nhiêu VRAM?
+2. Tôi muốn chạy mô hình nào, và tệp mô hình nằm ở đâu trên PC của tôi?
+3. Tôi dùng (hoặc muốn dùng) chương trình máy chủ nào, và nó được cài ở đâu?
+4. Nó nên dùng cổng nào?
+5. Tôi có chạy máy chủ AI hay chương trình nào khác dùng card đồ họa không, và tập lệnh có nên dừng chúng trước không?
+6. Mô hình văn bản và mô hình ảnh của tôi có vừa cùng lúc trên card không, hay mỗi tập lệnh nên dừng cái kia?
+
+Sau đó viết tệp .bat với một chú thích ngắn trên mỗi dòng nói nó làm gì, và cho tôi biết cách kiểm tra nó.</string>
+  <string name="help.search.prompt">Tôi đang thiết lập PaperDaemon, một ứng dụng cho máy tính bảng reMarkable của tôi, chạy trên PC Windows của tôi. Tôi cần một tệp batch Windows (.bat) khởi động máy chủ tìm kiếm SearXNG trên PC này. PaperDaemon tự chạy tập lệnh khi cần tìm kiếm mà không có gì phản hồi, và dừng nó khi PaperDaemon tạm dừng hoặc thoát.
+
+Các quy tắc tập lệnh phải tuân theo:
+- Khởi động SearXNG để nó phản hồi HTTP tại 127.0.0.1 trên cổng tôi chọn.
+- SearXNG phải bật đầu ra JSON (search: formats: [html, json] trong settings.yml).
+- Chạy máy chủ ở tiền cảnh và giữ tập lệnh chạy chừng nào máy chủ còn chạy. Không dùng `start`.
+- In ra đầu ra của máy chủ.
+- Ưu tiên WSL hoặc Python thay vì Docker: PaperDaemon dừng các tiến trình của chính tập lệnh, nhưng một container Docker sẽ vẫn chạy sau khi nó thoát.
+
+Trước khi viết, hãy hỏi tôi lần lượt từng câu sau và chờ từng câu trả lời:
+1. Tôi đã cài WSL (Hệ thống con Windows cho Linux) chưa? Python? Docker?
+2. SearXNG đã được cài chưa, và nếu rồi thì ở đâu và bằng cách nào?
+3. Nó nên dùng cổng nào, và có gì khác đang dùng cổng đó không?
+
+Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với một chú thích ngắn trên mỗi dòng nói nó làm gì, và cho tôi biết cách kiểm tra nó.</string>
+  <string name="settings.language.pick">Chọn một ngôn ngữ trong danh sách.</string>
+  <string name="ts.what">Nội dung</string>
+  <string name="ts.details">Chi tiết</string>
+  <string name="ts.testing">Đang kiểm tra: xong {n} / {total}</string>
+  <string name="ts.changed">Đội hình đã thay đổi sau lần kiểm tra cuối, nên kết quả đó không còn giá trị. Hãy chạy kiểm tra lại.</string>
+  <string name="ts.never">Đội hình này chưa được kiểm tra.</string>
+  <string name="ts.whole">Đang kiểm tra toàn bộ đội hình {name} cùng lúc: mô hình văn bản và harness của nó, mô hình ảnh và harness của nó, mạng và các thẻ.</string>
+  <string name="ts.row.model-text">Mô hình văn bản</string>
+  <string name="ts.row.model-image">Mô hình ảnh</string>
+  <string name="ts.row.answer">Trả lời câu hỏi</string>
+  <string name="ts.row.ink">Trả lời câu hỏi viết tay</string>
+  <string name="ts.row.chart">Tạo biểu đồ</string>
+  <string name="ts.row.draw">Vẽ</string>
+  <string name="ts.row.picture">Tạo ảnh</string>
+  <string name="ts.row.handwriting">Đọc chữ viết tay</string>
+  <string name="ts.row.search">Tìm kiếm trên web</string>
+  <string name="ts.row.social">Mạng xã hội</string>
+  <string name="ts.row.weather">Thời tiết</string>
+  <string name="ts.m.not_run">Chưa chạy</string>
+  <string name="ts.m.no_image">Không có mô hình ảnh</string>
+  <string name="ts.m.waiting">Đang chờ</string>
+  <string name="ts.m.working">Đang làm</string>
+  <string name="ts.m.canceled">Đã hủy</string>
+  <string name="ts.m.failed">Thất bại</string>
+  <string name="ts.m.answered_in">Trả lời trong {s} giây</string>
+  <string name="ts.m.done_in">Xong trong {s} giây</string>
+  <string name="ts.m.failed_after">Thất bại sau {s} giây</string>
+  <string name="ts.m.answers">Có trả lời</string>
+  <string name="ts.m.check_failed">{check}: thất bại</string>
+  <string name="ts.m.no_answer">Không có phản hồi</string>
+  <string name="ts.m.not_set_up">Chưa thiết lập</string>
+  <string name="ts.m.network_off">Truy cập mạng đang tắt</string>
+  <string name="ts.m.no_results_in">Không có kết quả trong {s} giây</string>
+  <string name="ts.m.results_in">{n} kết quả trong {s} giây</string>
+  <string name="ts.m.no_sites">Chưa chọn trang nào</string>
+  <string name="ts.m.site_time">{site} {s} giây</string>
+  <string name="ts.m.site_failed">{site} thất bại</string>
+  <string name="ts.m.no_forecast">Không có dự báo</string>
+  <string name="ts.m.weather">{t}{unit} và {sky}, trả lời trong {s} giây</string>
+  <string name="ts.m.no_samples">Không có mẫu</string>
+  <string name="ts.m.cannot_see">Mô hình không nhìn được</string>
+  <string name="ts.m.no_reading">Không đọc được</string>
+  <string name="ts.m.nothing_read">Không đọc được gì</string>
+  <string name="ts.m.words">{pct}% số từ, {s} giây mỗi trang</string>
+  <string name="ts.d.no_image">Đội hình không có mô hình ảnh.</string>
+  <string name="ts.d.search_setup">Thêm một dịch vụ tìm kiếm hoặc máy chủ tìm kiếm cục bộ trong thẻ Mạng của đội hình.</string>
+  <string name="ts.d.allow_network">Hãy cho phép trong Cài đặt.</string>
+  <string name="ts.d.search_empty">Lượt tìm kiếm không có kết quả.</string>
+  <string name="ts.d.first">Đầu tiên: {title}</string>
+  <string name="ts.d.every_site">Đã nhận bài đăng từ mọi trang.</string>
+  <string name="ts.d.choose_sites">Hãy chọn các trang mạng xã hội trong Cài đặt.</string>
+  <string name="ts.d.no_forecast">Dịch vụ dự báo không phản hồi.</string>
+  <string name="ts.d.weather">Hôm nay ở {place}: cao nhất {hi}{unit}, thấp nhất {lo}{unit}.</string>
+  <string name="ts.d.weather_london">Chưa đặt vị trí, nên London hôm nay: cao nhất {hi}{unit}, thấp nhất {lo}{unit}.</string>
+  <string name="ts.d.samples_missing">Thiếu các mẫu chữ viết tay.</string>
+  <string name="ts.d.cannot_see">Mô hình văn bản của đội hình không nhận ảnh, nên nó không đọc chữ viết tay.</string>
+  <string name="ts.d.words">{right} / {total} từ trên {pages} trang của {pages} người viết từ bốn châu lục ({regions}).</string>
+  <string name="ts.d.text_failed">Mô hình văn bản không vượt qua bài kiểm tra.</string>
+  <string name="page.gave_up">Không thể hoàn thành việc này; đã bỏ cuộc sau {n} lần thử.</string>
+  <string name="issue.loop_token_unreadable">Không đọc được kết nối reMarkable: {why}</string>
+  <string name="issue.loop_gave_up">Một phần của PaperDaemon đã dừng {n} lần liên tiếp và được để ở trạng thái dừng; nhật ký của nó cho biết lý do.</string>
+  <string name="issue.loop_supervisor">Bộ giám sát của PaperDaemon gặp lỗi: {why}</string>
+  <string name="slot.key_where">Hãy điền địa chỉ máy chủ trước: khóa được lưu cho máy chủ đó.</string>
+  <string name="slot.source.help">Khóa API: một công ty chạy mô hình, và PaperDaemon truy cập nó bằng khóa của bạn. Chạy trên máy: một máy chủ mô hình do bạn tự chạy, trên máy tính này hoặc trong mạng của bạn.</string>
+  <string name="slot.provider.help">Ai chạy mô hình. Khác: bất kỳ dịch vụ nào dùng API của OpenAI, tại địa chỉ bạn nhập.</string>
+  <string name="slot.address.help_hosted">Địa chỉ API của dịch vụ, ví dụ https://api.example.com/v1.</string>
+  <string name="slot.model.help">Tên mô hình đúng như nhà cung cấp viết.</string>
+  <string name="slot.api_key.help">Được giữ trong Trình quản lý thông tin xác thực của Windows, không bao giờ trong tệp. Các đội hình dùng cùng máy chủ sẽ dùng chung khóa của nó.</string>
+  <string name="slot.address.help_local">Nơi máy chủ mô hình của bạn phản hồi, ví dụ http://127.0.0.1:8080. Nếu không có gì phản hồi ở đó, PaperDaemon chạy tập lệnh khởi động bên dưới.</string>
+  <string name="slot.harness.help">Cách PaperDaemon làm việc với mô hình này: nói gì với nó và đọc câu trả lời thế nào. Tự động chọn một harness theo tên mô hình; Thêm Harness mở thư mục cho harness của riêng bạn.</string>
+  <string name="net.source.help">Nơi một công việc tra cứu thông tin: một dịch vụ tìm kiếm bạn có khóa API, hoặc một máy chủ SearXNG bạn tự chạy.</string>
+  <string name="net.service.help">Dịch vụ tìm kiếm mà khóa của bạn thuộc về.</string>
+  <string name="net.address.help">Nơi máy chủ SearXNG của bạn phản hồi, ví dụ http://127.0.0.1:8888. Nếu không có phản hồi dùng được ở đó, PaperDaemon chạy tập lệnh khởi động bên dưới.</string>
+  <string name="tags.tag.help">Thẻ đúng như bạn gắn trên máy tính bảng; chữ hoa hay chữ thường đều được.</string>
+  <string name="tags.prompt.help">Được thêm vào hướng dẫn của mọi công việc trên trang có thẻ này, hoặc trong sổ tay hay thư mục có thẻ này.</string>
+</resources>

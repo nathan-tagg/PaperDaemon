@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Components · PaperDaemon</title>
+<link rel="stylesheet" href="paper.css">
+<script src="mockup.js" defer></script>
+<style>
+  .sheet-page { max-width: 880px; padding: var(--s6) var(--s7) var(--s8); }
+  .swatches { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3) var(--s5); margin-top: var(--s4); }
+  .swatch { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: var(--s3); align-items: center; }
+  .swatch i { display: block; width: 40px; height: 28px; border: 1px solid var(--edge); }
+  .type-row { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: var(--s4); align-items: baseline; padding: var(--s2) 0; border-bottom: 1px solid var(--rule); }
+  .demo { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; padding: var(--s3) 0; border-bottom: 1px solid var(--rule); }
+  .demo > .meta:first-child { width: 120px; }
+  .inline-sheet { position: static; margin: var(--s4) 0 0; display: block; }
+</style>
+</head>
+<body>
+<main class="sheet-page">
+  <p class="meta"><a href="index.html">Mockups</a> › Components</p>
+  <h1 style="margin-top: var(--s2)">Components</h1>
+  <p class="sub measure" style="margin-top: var(--s2)">Every component in both states that matter, drawn from <code>paper.css</code>. The reasons are in <code>ui-language.md</code>.</p>
+
+  <section class="section">
+    <h2>Color</h2>
+    <div class="swatches">
+      <div class="swatch"><i style="background: var(--paper)"></i><span><code>--paper</code><br><span class="meta">window</span></span></div>
+      <div class="swatch"><i style="background: var(--paper-sunk)"></i><span><code>--paper-sunk</code><br><span class="meta">rail, hover</span></span></div>
+      <div class="swatch"><i style="background: var(--field)"></i><span><code>--field</code><br><span class="meta">inputs, pages</span></span></div>
+      <div class="swatch"><i style="background: var(--ink)"></i><span><code>--ink</code><br><span class="meta">text, primary</span></span></div>
+      <div class="swatch"><i style="background: var(--ink-2)"></i><span><code>--ink-2</code><br><span class="meta">secondary text</span></span></div>
+      <div class="swatch"><i style="background: var(--ink-3)"></i><span><code>--ink-3</code><br><span class="meta">meta text</span></span></div>
+      <div class="swatch"><i style="background: var(--rule)"></i><span><code>--rule</code><br><span class="meta">hairlines</span></span></div>
+      <div class="swatch"><i style="background: var(--edge)"></i><span><code>--edge</code><br><span class="meta">control edges</span></span></div>
+      <div class="swatch"><i style="background: var(--mark)"></i><span><code>--mark</code><br><span class="meta">the red pencil</span></span></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Type</h2>
+    <div class="type-row"><span class="meta">First-run title</span><span style="font: 600 36px/42px var(--font-head)">Set up PaperDaemon</span></div>
+    <div class="type-row"><span class="meta">Page title</span><h1>Tablet</h1></div>
+    <div class="type-row"><span class="meta">Section heading</span><h2>Recent cloud writes</h2></div>
+    <div class="type-row"><span class="meta">Row label</span><strong>Device token</strong></div>
+    <div class="type-row"><span class="meta">Body</span><span>The host answers on the same page, usually within a minute.</span></div>
+    <div class="type-row"><span class="meta">Help text</span><span class="sub">A page with this tag is left alone, even inside a tagged notebook.</span></div>
+    <div class="type-row"><span class="meta">Meta</span><span class="meta">checked 09:40 · 412 documents · 1.8 GB</span></div>
+    <div class="type-row"><span class="meta">Code</span><code>http://127.0.0.1:11434/v1</code></div>
+    <div class="type-row"><span class="meta">Tabular figures</span><span class="num">09:41 · 1,284 strokes · 21 s · 1 min 44 s</span></div>
+  </section>
+
+  <section class="section">
+    <h2>Buttons</h2>
+    <div class="demo"><span class="meta">Kinds</span><button type="button" class="btn primary">Send to tablet</button><button type="button" class="btn">Test connection</button><button type="button" class="btn quiet">Copy path</button><button type="button" class="btn danger">Remove</button><button type="button" class="btn" disabled>Pull now</button></div>
+    <div class="demo"><span class="meta">Small</span><button type="button" class="btn small">Roll back</button><button type="button" class="btn quiet small">Try again</button></div>
+  </section>
+
+  <section class="section">
+    <h2>Fields</h2>
+    <div class="row"><div class="label">Text</div><div class="control"><input class="field w-s" value="PaperDaemon" aria-label="Example text field"><input class="field w-s" placeholder="A placeholder" aria-label="Example empty field"></div></div>
+    <div class="row"><div class="label">Mono</div><div class="control"><input class="field mono w-m" value="http://127.0.0.1:8888" aria-label="Example endpoint"></div></div>
+    <div class="row"><div class="label">Invalid</div><div class="control"><input class="field num w-xs" value="80" aria-invalid="true" aria-label="Example invalid port"><p class="hint attn">Port 80 is outside the range PaperDaemon uses. Pick a port from 1024 to 65535.</p></div></div>
+    <div class="row"><div class="label">Read-only</div><div class="control"><input class="field mono w-m" readonly value="/PaperDaemon inbox" aria-label="Example read-only field"></div></div>
+    <div class="row"><div class="label">Select</div><div class="control"><span class="select"><select class="field w-m" aria-label="Example select"><option>Qwen 3.6 27B</option><option>Base (any model)</option></select></span></div></div>
+    <div class="row"><div class="label">Secret, saved</div><div class="control"><span class="secret"><i class="mk on"></i>Saved in the Windows credential store · added Sep 22</span><button type="button" class="btn">Replace</button></div></div>
+    <div class="row"><div class="label">Secret, replacing</div><div class="control"><input class="field mono w-m" type="password" placeholder="Paste a device token" aria-label="Example secret"><button type="button" class="btn primary">Save</button><button type="button" class="btn">Cancel</button></div></div>
+  </section>
+
+  <section class="section">
+    <h2>Choices</h2>
+    <div class="demo"><span class="meta">Segmented</span><div class="seg" role="group" aria-label="Example segmented control"><button type="button" aria-pressed="true">On this computer</button><button type="button" aria-pressed="false">Remote service</button></div><div class="seg small" role="group" aria-label="Example small segmented control"><button type="button" aria-pressed="true">All</button><button type="button" aria-pressed="false">Failed</button></div></div>
+    <div class="demo"><span class="meta">Toggle</span><label class="switch-label"><input type="checkbox" class="switch"> Off</label><label class="switch-label"><input type="checkbox" class="switch" checked> On</label><label class="switch-label"><input type="checkbox" class="switch" disabled> Unavailable</label></div>
+    <div class="demo"><span class="meta">Checkbox</span><label class="switch-label"><input type="checkbox" class="check" checked> Draw light tones as hatching</label></div>
+  </section>
+
+  <section class="section">
+    <h2>Status</h2>
+    <div class="demo"><span class="meta">Marks</span>
+      <span class="state-line"><i class="mk on"></i>Connected</span>
+      <span class="state-line"><i class="mk off"></i>Not loaded</span>
+      <span class="state-line"><i class="mk busy"></i>Swapping</span>
+      <span class="state-line"><i class="mk fail"></i>Failed</span>
+      <span class="state-line"><i class="mk skip"></i>Skipped</span>
+    </div>
+    <div class="demo"><span class="meta">Job steps</span>
+      <span class="steps5" role="img" aria-label="All 5 steps done"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span><span class="sub">done</span>
+      <span class="steps5" role="img" aria-label="Step 4 of 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="busy"></i><i></i></span><span class="sub">drawing</span>
+      <span class="steps5" role="img" aria-label="Failed at step 3"><i class="on"></i><i class="on"></i><i class="fail"></i><i></i><i></i></span><span class="sub">failed deciding</span>
+    </div>
+    <div class="demo" style="display: block"><span class="meta">Progress</span>
+      <p class="num" style="margin-top: var(--s2)">Pulling 112 of 412 documents</p>
+      <div class="progress" style="max-width: 420px"><i style="width: 27%"></i></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Rows and activity</h2>
+    <table class="list">
+      <thead><tr><th>Time</th><th>Page</th><th>What the host did</th><th>Steps</th><th class="r">Took</th></tr></thead>
+      <tbody>
+        <tr><td><time>09:12</time></td><td><strong>Reading log › p. 12</strong><div class="sub">Typed question</div></td><td>Answered in 3 paragraphs under the question</td><td><span class="steps5" role="img" aria-label="All 5 steps done"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></td><td class="r">21 s</td></tr>
+        <tr class="attn"><td><time>08:40</time></td><td><strong>Kitchen › p. 2</strong><div class="sub">Typed question</div></td><td><span class="attn-text">Search failed.</span> SearXNG did not answer at <code>127.0.0.1:8888</code>. <button type="button" class="btn quiet small">Try again</button></td><td><span class="steps5" role="img" aria-label="Failed at step 3"><i class="on"></i><i class="on"></i><i class="fail"></i><i></i><i></i></span></td><td class="r">4 s</td></tr>
+      </tbody>
+    </table>
+    <p class="meta" style="margin-top: var(--s3)">The failed row carries a margin mark: a red pencil stroke outside the row, which stays on paper.</p>
+  </section>
+
+  <section class="section">
+    <h2>Script editor</h2>
+    <div style="margin-top: var(--s3)">
+      <div class="code-cap"><span>Runs in its own window. PaperDaemon never rewrites it.</span><span>Windows batch</span></div>
+      <div class="code" style="margin-top: var(--s1)"><div class="gutter"></div><textarea spellcheck="false" rows="3" aria-label="Example script">sd-server ^
+  --diffusion-model C:\Models\flux-2-klein-9b-q8_0.gguf ^
+  --port 1234</textarea></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Notices, empty and error states</h2>
+    <p class="notice" style="margin-top: var(--s4)"><strong>Off this computer.</strong> This slot sends your pages to <code>api.example.com</code>. They leave this computer each time a page is answered.</p>
+    <p class="notice attn" style="margin-top: var(--s4)"><strong>The device token was refused.</strong> The cloud answered 401 at 09:40. Paste a new token under Tablet.</p>
+    <div class="empty">
+      <svg viewBox="0 0 48 64" aria-hidden="true"><rect x="1" y="1" width="46" height="62" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M9 14h22M9 22h30M9 30h26" stroke="currentColor" stroke-width="1.5" opacity=".5"/></svg>
+      <p><strong>No jobs yet.</strong> Tag a page with <span class="tag">PaperDaemon</span> on your tablet. It shows up here within a few seconds.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Rendered page</h2>
+    <div class="actions" style="margin-top: var(--s4); align-items: end; gap: var(--s5)">
+      <div class="pg" style="width: 120px" aria-hidden="true"><svg viewBox="0 0 300 400"><path class="ph" stroke-width="5" d="M30 44h170"/><path class="ph" stroke-width="3" d="M30 76h236M30 92h228M30 108h240M30 124h200"/></svg></div>
+      <div class="true-colors"><div class="pg" style="width: 120px" aria-hidden="true"><svg viewBox="0 0 300 400"><path class="ph" stroke-width="5" d="M30 44h170"/><path class="ph" stroke-width="3" d="M30 76h236M30 92h228M30 108h240M30 124h200"/></svg></div></div>
+      <p class="sub measure">3:4, like a notebook page; a PDF page keeps its own proportion. Left: in the interface's colors. Right: as on the tablet.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Confirm dialog</h2>
+    <dialog class="sheet inline-sheet" open aria-labelledby="dlg-demo-t">
+      <h2 id="dlg-demo-t">Roll back Reading log to 09:13?</h2>
+      <p>Your library goes back to how it was just before the host changed Reading log, page 12. Everything changed since then goes back too.</p>
+      <div class="actions"><button type="button" class="btn">Cancel</button><button type="button" class="btn danger">Roll back</button></div>
+    </dialog>
+  </section>
+</main>
+</body>
+</html>

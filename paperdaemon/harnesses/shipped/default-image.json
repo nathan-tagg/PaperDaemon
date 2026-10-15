@@ -1,0 +1,34 @@
+{
+  "id": "default-image",
+  "name": "Built in",
+  "server": "Any server with the Stable Diffusion web UI API or OpenAI's image API",
+  "models": [
+    "Any image model"
+  ],
+  "kind": "image",
+  "notes": "Step counts and guidance most image servers accept.",
+  "steps": 20,
+  "steps_range": [
+    10,
+    40
+  ],
+  "cfg": 5.0,
+  "sampler": "euler",
+  "scheduler": null,
+  "shift": null,
+  "size": [
+    1024,
+    1024
+  ],
+  "abilities": [
+    "generate",
+    "img2img",
+    "inpaint"
+  ],
+  "workflows": {
+    "childrensColoringBook": {
+      "about": "a page of a children's coloring book",
+      "prompt": "Black and white line art illustration of {subject}, drawn for a young child to color in. Thick, clean, closed black outlines of even weight on a pure white background. Large simple shapes with big empty white areas inside them, a cute and friendly cartoon style. The whole drawing is shown complete, with plenty of empty white space around it and nothing cut off at the edges. No shading, no gray tones, no color, no hatching, no texture, no text."
+    }
+  }
+}
