@@ -24,9 +24,10 @@ OUT_DIR = paths.generated_fonts_dir()      # RM_FONTS overrides
 UPM = 1000                 # units per em
 CAP = 700                  # cap height in font units -- rm_text's y=1
 BASE = 0                   # baseline
-WEIGHT = 46                # pen width in font units; 46/700 is close to the tablet's fineliner
-SIDE = 46                  # side bearing -- the font was set tighter than the
-                           # tablet's own 0.13 tracking and read as cramped
+WEIGHT = 78                # pen width in font units: at the fineliner's 46/700 chart text was too fine and too
+                           # light to read on the tablet
+SIDE = 62                  # side bearing: the gap between letters as it was at the fine pen (46 + the half-width
+                           # the heavier pen added), so the heavier letters do not run together
 
 
 def _seg_quad(p0, p1, r):

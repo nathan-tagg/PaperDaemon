@@ -1623,8 +1623,8 @@ def _redraw_sheet(doc, state, workdir):
 
 
 # ------------------------------------------------------------------------------ INLINE: the game in the user's notebook
-# Where a game is asked for, it is played: its pages go RIGHT AFTER the page that asked, in the same notebook (or
-# PDF), and the pages behind move down. Each new page gets an ordering key between its neighbors'
+# Where a game is asked for, it is played: the scene on the page that asked (start(here=True)), its other pages RIGHT
+# AFTER it, in the same notebook (or PDF), and the pages behind move down. Each new page gets an ordering key between its neighbors'
 # (library.insert_pages), so no other page changes -- a PDF's own pages keep their place in its file, and its links
 # still land where they did. Page 1 the sheet, 2 the scene, 3 the log, 4+ the journal, each a page picture (the
 # scene's strokes over its frame), drawn again in place turn after turn. A notebook page cannot hold a link, so the
@@ -1693,12 +1693,19 @@ def _inline_journal(doc, state, workdir, log=None, force=False):
         _log(log, "  adventure: the journal was not updated: %s: %s" % (type(ex).__name__, str(ex)[:160]))
 
 
-def _start_inline(doc, after, state, scene, kept, workdir, log):
-    """The game's first pages, right after the page that asked: the sheet, the scene, the log, then the journal."""
+def _start_inline(doc, after, state, scene, kept, workdir, log, here=False):
+    """The game's first pages: the scene, the sheet, the log, then the journal. `here`: the scene is played on the
+    page that asked (`after`) and the sheet and the log follow it; else all of them go right after that page."""
     from paperdaemon.remarkable import library as PG
-    ids = [pid for pid, _ in PG.insert_pages(doc, after, 3)]
-    state["sheet"] = {"page_id": ids[0], "hash": None, "box": None}
-    state["page_id"], state["log_page"] = ids[1], ids[2]
+    if here:
+        sheet, logp = [pid for pid, _ in PG.insert_pages(doc, after, 2)]
+        ids = [after, sheet, logp]
+        state["sheet"] = {"page_id": sheet, "hash": None, "box": None}
+        state["page_id"], state["log_page"] = after, logp
+    else:
+        ids = [pid for pid, _ in PG.insert_pages(doc, after, 3)]
+        state["sheet"] = {"page_id": ids[0], "hash": None, "box": None}
+        state["page_id"], state["log_page"] = ids[1], ids[2]
     state["pages"], state["journal_pages"] = list(ids), []
     # THE GAME IS SAVED BEFORE ITS PAGES ARE DRAWN: a job on one of them must find the game behind it
     CH.save_state(state)
@@ -1717,7 +1724,7 @@ def _start_inline(doc, after, state, scene, kept, workdir, log):
 
 
 # ------------------------------------------------------------------------------ a new adventure
-def start(what, ask_text, paint=None, log=None, workdir=None, parent=None, doc=None, after=None):
+def start(what, ask_text, paint=None, log=None, workdir=None, parent=None, doc=None, after=None, here=False):
     """A new Ink Adventure: the model invents the adventure, the hero and the people of the opening scene, the
     engine rolls them, and the game's pages go right after the page `after` of the notebook `doc` that asked (the
     sheet, the opening scene, the log, the journal; see INLINE). Without `doc`, a book of its own (an older caller).
@@ -1772,7 +1779,7 @@ def start(what, ask_text, paint=None, log=None, workdir=None, parent=None, doc=N
     state["present"] = [p["name"] for p in present]
     state["events"] = [{"n": 0, "place": scene["place"], "text": _s(scene["what_happened"], 300), "roll": ""}]
     if inline:
-        _start_inline(doc, after, state, scene, kept, workdir, log)
+        _start_inline(doc, after, state, scene, kept, workdir, log, here=here)
     else:
         _render_book(doc, state, scene, "", kept, workdir, log, parent=parent or "", n=1)
     state["turns"].append({"n": 1, "page_id": state["page_id"], "scene": scene,

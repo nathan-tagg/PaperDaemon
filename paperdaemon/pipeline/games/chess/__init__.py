@@ -528,6 +528,20 @@ def facts(state):
     return out
 
 
+def persona_text(state):
+    """Who the opponent is, as the model is told: a roster character's profile from the cast tooling (RC.brief), read
+    fresh each time -- the notepad keeps the character's id, never its profile -- else the game's own words for an
+    opponent that is no roster character."""
+    p = state["persona"]
+    if p.get("character"):
+        try:
+            from paperdaemon.pipeline.games import characters as RC
+            return RC.brief(p["character"], "chess", front=p.get("front"), shows=p.get("shows"))
+        except Exception:
+            pass
+    return p.get("text") or p.get("profile") or "a steady club player"
+
+
 def llm_prompt(state, cands, context="", stands="", plan=None, advise=False):
     """What a model is asked when it plays the character: pick one of these, what it truly feels, and
     -- only when the table says the character speaks this turn -- one line, marked true or not. The
@@ -535,7 +549,7 @@ def llm_prompt(state, cands, context="", stands="", plan=None, advise=False):
     (rm_table). `plan` is rm_table.pre_turn's; `advise` lists the player's best answer to each move
     (a kibitzer tells them)."""
     p = state["persona"]
-    lines = ["You are playing chess as this character: %s" % (p.get("profile") or p.get("text") or "a steady club player"),
+    lines = ["You are playing chess as this character: %s" % persona_text(state),
              "Traits, 0 to 1: aggression %.1f, caution %.1f, risk %.1f." % (
                  p["traits"]["aggression"], p["traits"]["caution"], p["traits"]["risk"])] + facts(state)
     if stands:
@@ -563,7 +577,8 @@ def llm_prompt(state, cands, context="", stands="", plan=None, advise=False):
     if speak:
         lines += ["Then a line SAY: one short thing the character says out loud, in their own voice (it may "
                   "bluff or hide the feeling). What it says about the game must be true to the facts above and to "
-                  "the move you chose, unless the character is lying on purpose.",
+                  "the move you chose, unless the character is lying on purpose. Saying the move you played, in the "
+                  "character's own way (\"Knight to f6.\"), is welcome: the strip has no other line that says it.",
                   "Then a line TRUTH: true, lie or bluff -- whether what the character said was true. Nobody at "
                   "the table sees this line."]
         if advise:
@@ -794,7 +809,7 @@ def pgn(state):
     board = chess.Board(state["start_fen"])
     for h in state["history"]:
         board.push(chess.Move.from_uci(h["uci"]))
-    who = (state["persona"].get("text") or "PaperDaemon")[:60]
+    who = (state["persona"].get("name") or state["persona"].get("text") or "PaperDaemon")[:60]
     return chess.pgn(board, {"Event": "PaperDaemon chess %s" % state["id"],
                              "White": "You" if state["colors"]["user"] == "w" else who,
                              "Black": who if state["colors"]["user"] == "w" else "You",
@@ -804,7 +819,7 @@ def pgn(state):
 def summary_lines(state):
     """What the notepad says about the game in words (the JSON follows it)."""
     board = chess.Board(state["fen"])
-    who = state["persona"].get("text") or "a steady club player"
+    who = state["persona"].get("name") or state["persona"].get("text") or "a steady club player"
     you = "White" if state["colors"]["user"] == "w" else "Black"
     head = "chess game %s: you play %s against %s, at about %d" % (state["id"], you, who, state["strength"]["elo"])
     if state["status"] == "playing":
@@ -833,8 +848,17 @@ def _entries(text):
 SUMMARIES = {}          # game kind -> its summary_lines, for the games that are not chess (rm_adventure)
 
 
+def _stored(state):
+    """The state as the notepad keeps it: a roster character by its id alone. Its profile comes from the cast
+    tooling when a prompt needs it (persona_text); only its memories live in the notebook."""
+    per = state.get("persona")
+    if not (isinstance(per, dict) and per.get("character")):
+        return state
+    return dict(state, persona=dict((k, v) for k, v in per.items() if k not in ("profile", "text")))
+
+
 def _entry(state):
-    body = json.dumps(state, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    body = json.dumps(_stored(state), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     body = body.replace("-->", "--\\u003e")               # the comment must not end inside the JSON
     lines = ["## %s, page id %s" % (time.strftime("%Y-%m-%d %H:%M"), state["page_id"])]
     lines += ["- %s" % " ".join(str(l).split())[:400] for l in SUMMARIES.get(state["game"], summary_lines)(state)]
@@ -1031,7 +1055,7 @@ def _board_now(state, by_hash):
         return bb
     if not state["board"].get("layer"):                # a game from before the layer: the picture is the board
         return tuple(ims[0]["box"])
-    L = layer_box(bb)
+    L = layer_box(bb, margin_of(state))
     x0, y0, x1, y1 = ims[0]["box"]
     sx, sy = (x1 - x0) / (L[2] - L[0]), (y1 - y0) / (L[3] - L[1])
     return (x0 + (bb[0] - L[0]) * sx, y0 + (bb[1] - L[1]) * sy, x0 + (bb[2] - L[0]) * sx, y0 + (bb[3] - L[1]) * sy)
@@ -1182,8 +1206,8 @@ def tidy(doc, page_no, state, page_id=None, tol=0.5):
     stale = state["board"].get("drawn") != _static(state)
     if stale:
         extra.append(layers[0]["item"])
-    elif any(abs(a - b) > tol for a, b in zip(layers[0]["box"], layer_box(board_box))):
-        todo.append((state["board"]["hash"], layer_box(board_box)))
+    elif any(abs(a - b) > tol for a, b in zip(layers[0]["box"], layer_box(board_box, margin_of(state)))):
+        todo.append((state["board"]["hash"], layer_box(board_box, margin_of(state))))
     if extra:
         IM.remove_items(doc, page_no, extra, page_id=page_id)
     done = IM.move(doc, page_no, todo, page_id=page_id) if todo else []
@@ -1274,7 +1298,7 @@ def sync_front(state, rng=None, situations=None):
         return None
     p = RC.profile(cid, fr["id"])
     tr = p["personality"]["traits"]
-    state["persona"].update(front=fr["id"], profile=RC.brief(cid, "chess", front=fr["id"], shows=fr["shows"]),
+    state["persona"].update(front=fr["id"], shows=fr["shows"],
                             traits={k: float(tr.get(k, d)) for k, d in DEFAULT_TRAITS.items()},
                             consistency=dict(p.get("consistency") or {}))
     if state["strength"].get("by_front"):

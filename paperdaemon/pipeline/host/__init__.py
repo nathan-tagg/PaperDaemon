@@ -314,21 +314,9 @@ def _drain_host_steps(limit=8, kinds=None):
                 ok, note = _stage_tag(cur["what"])
                 ST.finish(steps, cur, ok, note)
             elif cur["do"] in ST.GAMES:
+                # the game is set up on this page itself (_game_page): nothing needs to say where it is
                 ok, note = _run_game(cur)
                 ST.finish(steps, cur, ok, note)
-                if ok:
-                    # A game is never on this page (a page at the end of the notebook, or a notebook of its
-                    # own) and its request is erased, so a line in ink says where it is. When the plan already
-                    # has a write step to come, that step says it instead.
-                    later = next((q for q in steps if q["do"] == "write" and q["status"] == "todo"), None)
-                    try:
-                        if later is not None:
-                            later["what"] = "%s; and where the game is, in one sentence: %s" % (later["what"], note)
-                            log("  step %d (write) also says where the game is" % later["id"])
-                        else:
-                            _add_step({"do": "write", "what": "where the game is, in one sentence: " + note})
-                    except Exception as ex:
-                        _warn("adding the line that says where the game is", ex)
             elif cur["do"] == "web_picture":
                 cur["draw_from"] = len(JOB.draw.strokes)
                 r = t_fetch(cur["what"], place=cur.get("place"), site=cur.get("site"))

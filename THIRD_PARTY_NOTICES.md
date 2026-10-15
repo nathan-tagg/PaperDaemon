@@ -30,6 +30,12 @@ each under its own license.
   per icon and moved onto a unit box. Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above copyright notice and this permission
   notice appear in all copies.
+- **The "cburnett" chess pieces** by Colin M.L. Burnett (Creative Commons Attribution-ShareAlike 3.0,
+  <https://creativecommons.org/licenses/by-sa/3.0/>), as published by Lichess
+  (<https://github.com/lichess-org/lila/tree/master/public/piece/cburnett>): the twelve piece drawings in
+  `paperdaemon/content/games/pieces/cburnett`, unchanged. PaperDaemon recolors them to its board when it draws
+  them; the drawings and the piece pictures made from them stay under CC BY-SA 3.0 (see that folder's
+  `LICENSE.md`).
 - **The System Reference Document 5.1** by Wizards of the Coast LLC (Creative Commons Attribution 4.0,
   <https://dnd.wizards.com/resources/systems-reference-document>): the Ink Adventure's ability, skill, class,
   race, armor and spell names and rules in `paperdaemon/pipeline/games/adventure.py`, a small subset, reworded

@@ -176,6 +176,11 @@ def dialog_png(state, lines, out, width=None):
                 spec_lines.append(RC.say(cid, mood if mood in RC.EMOTIONS else "neutral", text, marks, look))
             else:
                 spec_lines.append(RC.emote(cid, mood if mood in RC.EMOTIONS else "neutral", marks, look))   # a face, no words
+        rating = (state.get("strength") or {}).get("elo")
+        if rating:                                   # a chess opponent's strength, right of its name
+            for ln in spec_lines:
+                if "speaker" in ln:
+                    ln["rating"] = int(rating)
         spec = RC.dialog(spec_lines, page="strip")
         if width:
             spec["width"], spec["height"] = int(round(width)), 800
@@ -186,9 +191,6 @@ def dialog_png(state, lines, out, width=None):
         return out
     except Exception:
         return None
-
-
-TALK_READABLE = 0.55        # the least scale a talk strip is drawn at before its earlier speech is quoted
 
 
 def talk_lines(lines):
@@ -218,33 +220,24 @@ def place_talk(doc, page_no, state, lines, page_id=None, workdir=None):
         except Exception:
             pass
     state["talk"] = {}
-    lines = talk_lines(lines)
+    # THE CHARACTER ALONE: no narrator lines (the board shows the move; the face takes the room)
+    lines = talk_lines([l for l in lines if l and l[0] != "narrator"])
     if not lines:
         return None
     x0, y0, x1, y1 = CH.talk_box(tuple(state["board"]["box"]))
     w = x1 - x0
     path = os.path.join(workdir or os.path.join(paths.state_dir(), "rm-queue"), "_game_talk_%d.png" % int(time.time() * 1000))
-    while True:
-        png = dialog_png(state, lines, path, width=w)
-        if png is None:
-            worded = [l for l in lines if str(l[2] or "").strip()]
-            if not worded:
-                return None
-            png, _h = talk_png(worded, w, path)
-        # the strip keeps its own proportions, as large as the other side's space allows (never larger
-        # than it was drawn), at the top, its left edge -- the opponent's face -- on the board's left edge
-        with Image.open(png) as im:
-            pw, ph = im.size
-        s = min(1.0, w / float(pw), (y1 - y0) / float(ph))
-        # READABLE OR SHORTER: a strip that would shrink below TALK_READABLE says its earlier speech as
-        # quoted lines -- a line of text instead of a face row -- and is drawn again, so the turn's own
-        # face, its name and every word stay large enough to read on the tablet
-        earlier = [i for i, l in enumerate(lines) if l[0] != "narrator"][:-1]
-        if s >= TALK_READABLE or not earlier:
-            break
-        i = earlier[0]
-        said = str(lines[i][2] or "").strip()
-        lines = lines[:i] + ([("narrator", "", '%s: "%s"' % (_short(state), said))] if said else []) + lines[i + 1:]
+    png = dialog_png(state, lines, path, width=w)
+    if png is None:
+        worded = [l for l in lines if str(l[2] or "").strip()]
+        if not worded:
+            return None
+        png, _h = talk_png(worded, w, path)
+    # the strip keeps its own proportions, as large as the other side's space allows (never larger than it
+    # was drawn), at the top, its left edge -- the opponent's face -- on the board's left edge
+    with Image.open(png) as im:
+        pw, ph = im.size
+    s = min(1.0, w / float(pw), (y1 - y0) / float(ph))
     bw, bh = pw * s, ph * s
     box = (x0, y0, x0 + bw, y0 + bh)
     try:
@@ -370,7 +363,7 @@ def _remark(state, context, ask_text, log=None):
                              "lying on purpose. Then a line FEEL: what it truly feels now -- one of %s -- how strongly, "
                              "1 to 10, and at whom if anyone. Then a line TRUTH: true, lie or bluff (nobody sees it). "
                              "Then FACE: one fitting signature ID from the private menu above, or none. Not a tell."
-                             % (state["persona"].get("profile") or state["persona"].get("text") or "a club player",
+                             % (CH.persona_text(state),
                                 "\n".join(CH.facts(state)), "\n".join(plan["prompt_lines"]),
                                 context + CH.recall_block(state, context), ", ".join(CH.EMOTIONS)))
             m = re.search(r"(?im)^\s*SAY:\s*(.+)$", reply or "")
@@ -635,12 +628,13 @@ def start_chess(doc, page_no, page_id, setup, ask_text=None, log=None, workdir=N
         if RC.get(setup["character"]).get("adapts"):
             setup = dict(setup, elo=RS.level(doc, setup["character"], "chess", setup["elo"]))
             adaptive = True
-    st = CH.new_game(doc, page_id, user_color=setup["user_color"], persona=setup["profile"],
+    # a roster character is kept by its id alone; its profile comes from the cast tooling (CH.persona_text)
+    st = CH.new_game(doc, page_id, user_color=setup["user_color"],
+                     persona="" if setup.get("character") else "%s: %s" % (setup["name"], setup["profile"]),
                      traits={k: setup[k] for k in ("aggression", "caution", "risk")}, elo=setup["elo"])
     st["strength"]["adaptive"] = adaptive
     st["strength"]["named"] = bool(setup.get("elo_named"))
     st["persona"]["name"] = setup["name"]
-    st["persona"]["profile"] = setup["profile"] if setup.get("character") else "%s: %s" % (setup["name"], setup["profile"])
     if setup.get("character"):
         st["persona"]["character"] = setup["character"]
     if setup.get("consistency"):
@@ -676,7 +670,7 @@ def start_chess(doc, page_no, page_id, setup, ask_text=None, log=None, workdir=N
                 reply = ask_text("You are this character, sitting down to a chess game with the player: %s\n%s\n%s\n"
                                  "Reply with a line SAY: one short greeting in your own voice, then a line FEEL: one of %s "
                                  "and how strongly, 1 to 10. Then TRUTH: true, lie or bluff (private). "
-                                 "Then FACE: one fitting signature ID from the private menu above, or none. Not a tell." % (st["persona"]["profile"], "\n".join(CH.facts(st)),
+                                 "Then FACE: one fitting signature ID from the private menu above, or none. Not a tell." % (CH.persona_text(st),"\n".join(CH.facts(st)),
                                                                  "\n".join(plan["prompt_lines"]), ", ".join(CH.EMOTIONS)))
                 m = re.search(r"(?im)^\s*SAY:\s*(.+)$", reply or "")
                 said = m.group(1).strip().strip('"') if m else ""

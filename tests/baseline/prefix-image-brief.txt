@@ -54,7 +54,8 @@ plus the fields below where they apply; any step may have size, near, side and a
   coloring     a coloring page of what is named (say what it shows, not "a coloring page"):
                generated like image, as black line art, and inserted as a picture that takes the page
   posts        social posts clipped onto the page as cards: source ('reddit', 'r/<sub>', '4chan/<board>',
-               'hn', 'bsky', 'bsky/<handle>', 'mastodon/<server>', 'x/<post link>'), search (the topic's
+               'hn', 'bsky', 'bsky/<handle>', 'mastodon/<server>', 'x/<post link>', or any other site by
+               name, e.g. 'x', 'instagram', 'tiktok', which the host searches the web for), search (the topic's
                words only), sort (hot, new, top, rising, relevance), period (hour, day, week, month,
                year, all), count (1-4), pictures (true for picture posts); never write posts out
   highlight    target (an id) and words (the exact words to mark, found inside the target); either

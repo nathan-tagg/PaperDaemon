@@ -167,7 +167,7 @@ def test_the_talk_strip_keeps_one_face_and_accepts_the_cast_marks(tmp_path):
     assert d["schema_has_cast"]                          # a signature mark no longer fails the strip
 
 
-def test_a_talk_strip_too_small_to_read_quotes_its_earlier_speech(tmp_path):
+def test_a_talk_strip_never_shows_the_narrator(tmp_path):
     d = _run(tmp_path, """
         import os
         from paperdaemon.pipeline.games import chess as CH
@@ -193,10 +193,7 @@ def test_a_talk_strip_too_small_to_read_quotes_its_earlier_speech(tmp_path):
         print(json.dumps({"lines": st["talk"]["lines"], "box": st["talk"]["box"]}))
     """)
     lines = d["lines"]
-    assert [l[0] for l in lines] == ["narrator", "narrator", 'Lyle "Buddy" Pruitt']      # one face row left
-    assert lines[0][2].endswith('"Well, well, look who it is!"')                          # its words kept
-    x0, y0, x1, y1 = d["box"]
-    assert abs((y1 - y0) - 290) < 1 and (x1 - x0) / 1526 >= 0.55         # the strip at a readable scale
+    assert [l[2] for l in lines] == ["Well, well, look who it is!", "Right on the nose, pal!"]   # the narrator never
 
 
 def test_writing_on_a_game_page_comes_off_only_once_it_was_read(tmp_path):

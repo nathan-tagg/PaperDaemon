@@ -110,7 +110,7 @@ def _ensure_font():
 # Average glyph advance as a fraction of the font size, for the places that have to
 # measure a string before drawing it. Times is appreciably narrower than Arial, and the
 # fitting code was tuned against Arial.
-EM = 0.47
+EM = 0.50                # the heavier pen's wider spacing (charts/font.py SIDE) widens every advance by ~6.6%
 CAP = 0.66               # cap height, for matching an icon to a number
 WIDTH = 1200             # target total PNG width in px
 # WHITE FIRST, and it matters. Every bar carries a black outline, so a white fill is still a
@@ -267,7 +267,7 @@ POWERS = {
              "about 21 characters a line, a longer line runs over once, ONE-word title, the year) -- "
              "the step comes with the facts for its dates. News or world events of the week are EVENTS (short); "
              "anniversaries and 'on this day' facts are CARDS"),
-    "agenda": "a day's schedule as a list -- items:[{time, text, ...}]",
+    "agenda": "a day's schedule as a list -- items:[{start, end, text}], times like \"09:00\" (no end: an hour)",
     "timeline": "dated events along a line -- events:[{date or year, text}]",
     "gantt": "tasks over time -- tasks:[{name, start, end}] (end after start)",
     "clock": "a day as a 24-hour dial -- blocks:[{start, end, label}] (hours 0-24)",
@@ -280,7 +280,7 @@ POWERS = {
     "progress": "progress bars -- items:[{label, value}]",
     # --- text, grids, places -----------------------------------------------------------------
     "table": "rows and columns of text -- columns:[...], rows:[[...], ...] (up to 24 rows)",
-    "cards": "a grid of small cards with a head and lines -- items:[...]",
+    "cards": "a row of stat cards, one big value each -- items:[{label, value, note?}]",
     "posts": ("social posts CLIPPED onto the page as cards, laid out by the chart two to a row -- "
               "where, who, when, the title, the picture, the text, votes and replies, the top "
               "comments. The HOST fetches the real posts from source: 'r/<sub>' (Reddit; sort "
@@ -375,6 +375,8 @@ def _validate_grid(spec, t):
         items = spec.get(key)
         if not isinstance(items, list) or not items:
             raise SpecError("%s needs %r: a non-empty list" % (t, key))
+        if t == "agenda":
+            _agenda_items(spec)
         if t == "progress":
             for i, c in enumerate(items):
                 if not isinstance(c, dict) or "label" not in c or "value" not in c:
@@ -615,12 +617,11 @@ def _validate_grid(spec, t):
 
 # ---------------------------------------------------------------- VL compile
 def _config():
-    # SIZED FOR THE TABLET. Sizes tuned on a monitor (axis labels 15, titles 17 and 21, axis lines 2)
-    # read small and light on the page, so labels and titles are up about a third and every rule a
-    # notch heavier -- the same eye the week and month calendars got.
+    # SIZED FOR THE TABLET. Sizes tuned on a monitor read small and light on the page: labels 26, axis
+    # titles 28, the chart's title 34 (at 20/22/28 they were still too small to read on the tablet).
     axis = {"labelColor": "black", "titleColor": "black", "domainColor": "black",
             "tickColor": "black", "domainWidth": 2.6, "tickWidth": 2.6, "tickSize": 8,
-            "labelFontSize": 20, "titleFontSize": 22, "titleFontWeight": "bold",
+            "labelFontSize": 26, "titleFontSize": 28, "titleFontWeight": "bold",
             "labelLimit": 0,        # default 180px SILENTLY truncates labels
             "grid": False, "labelPadding": 6}
     # d3 formats a negative with U+2212, which the font does not have; the locale says use the hyphen
@@ -630,10 +631,10 @@ def _config():
     # fallback face. Two full stops are what _in_font makes of an ellipsis.
     return {"background": "white", "view": {"stroke": None}, "font": FONT, "axis": axis, "locale": loc,
             "mark": {"ellipsis": ".."}, "text": {"ellipsis": ".."},
-            "title": {"color": "black", "fontSize": 28, "fontWeight": "bold",
+            "title": {"color": "black", "fontSize": 34, "fontWeight": "bold",
                       "anchor": "middle", "offset": 16},
-            "legend": {"labelColor": "black", "titleColor": "black", "labelFontSize": 20,
-                       "titleFontSize": 20, "symbolStrokeColor": "black", "symbolStrokeWidth": 2.6,
+            "legend": {"labelColor": "black", "titleColor": "black", "labelFontSize": 26,
+                       "titleFontSize": 26, "symbolStrokeColor": "black", "symbolStrokeWidth": 2.6,
                        "symbolSize": 240, "orient": "top-left", "direction": "vertical",
                        "fillColor": "white", "strokeColor": "black", "padding": 12,
                        "cornerRadius": 0, "offset": 10},
@@ -729,13 +730,13 @@ def _cards_vl(spec, cfg, schema):
         if c.get("note"):
             notes.append({"x": cx, "y": H - 40, "t": str(c["note"])})
     # the value gets whatever size still fits the narrowest card
-    longest = max([len(str(c.get("value", ""))) for c in items] or [1])
+    longest = max([len(str(c.get("value", ""))) for c in items] + [1])
     size = int(max(26, min(54, (CW - 28) / (0.62 * longest))))
     return px.spec(spec.get("title", ""), [
         px.rect(cards, strokeWidth=1.6, stroke=GRAY, cornerRadius=8),
-        px.text(labels, 17, False, color=GRAY),
+        px.text(labels, 22, False, color=GRAY),
         px.text(values, size, True),
-        px.text(notes, 15, False, color=GRAY)], cfg, schema)
+        px.text(notes, 20, False, color=GRAY)], cfg, schema)
 
 
 def _posts_vl(spec, cfg, schema):
@@ -759,7 +760,11 @@ def _posts_vl(spec, cfg, schema):
     CW = (float(WIDTH) - GAP) / 2.0                    # a card is half the chart, however many there are
     W = CW * cols + GAP * (cols - 1)
     inner = CW - 2 * PAD
-    EM = 0.45        # Remarkable Mono's advance per character, measured off a render (55 chars at 32 px = 795 px)
+    EM = 0.48        # Remarkable Mono's advance per character: 0.45 measured off a render at the fine pen, plus the
+                     # heavier pen's wider spacing (charts/font.py SIDE)
+    # THE SIZES, one table: what each line is drawn at is what it is wrapped at (at 16-19 the secondary lines were
+    # too small to read on the tablet)
+    S = {"head": 24, "who": 22, "title": 30, "link": 21, "body": 23, "foot": 22, "cwho": 20, "ctext": 22}
     cw = lambda size, indent=0: max(8, int((inner - indent) / (EM * size)))   # monospace: chars per line
     L = dict((k, []) for k in ("rects", "heads", "whos", "titles", "links", "bodies", "feet",
                                 "cwho", "ctext", "rules"))
@@ -785,18 +790,18 @@ def _posts_vl(spec, cfg, schema):
         y = y0 + PAD
         if not same:
             y += 20
-            L["heads"].append({"x": x0 + PAD, "y": y, "t": str(p.get("community") or "")[:cw(22)]})
+            L["heads"].append({"x": x0 + PAD, "y": y, "t": str(p.get("community") or "")[:cw(S["head"])]})
         who = " . ".join(s for s in (str(p.get("author") or ""), str(p.get("posted") or "")) if s)
         if who:
-            y += 18 if same else 26
-            L["whos"].append({"x": x0 + PAD, "y": y, "t": who[:cw(18)]})
+            y += 22 if same else 30
+            L["whos"].append({"x": x0 + PAD, "y": y, "t": who[:cw(S["who"])]})
         y += 8
-        for ln in lines(p.get("title"), cw(26), 5):
-            y += 33
+        for ln in lines(p.get("title"), cw(S["title"]), 5):
+            y += 38
             L["titles"].append({"x": x0 + PAD, "y": y, "t": ln})
         if p.get("link"):
-            y += 26
-            L["links"].append({"x": x0 + PAD, "y": y, "t": str(p["link"])[:cw(17)]})
+            y += 30
+            L["links"].append({"x": x0 + PAD, "y": y, "t": str(p["link"])[:cw(S["link"])]})
         im = p.get("image") or {}
         if im.get("url") and im.get("w") and im.get("h"):
             w_ = inner
@@ -805,8 +810,8 @@ def _posts_vl(spec, cfg, schema):
             y += 14
             imgs.append({"url": im["url"], "x": x0 + PAD + (inner - w_) / 2.0, "y": y, "w": w_, "h": h_})
             y += h_
-        for ln in lines(p.get("text"), cw(19), 6):
-            y += 26
+        for ln in lines(p.get("text"), cw(S["body"]), 6):
+            y += 30
             L["bodies"].append({"x": x0 + PAD, "y": y, "t": ln})
         # each site's own words for its numbers: Reddit votes, Hacker News points, Bluesky likes
         foot = " . ".join(s for s in (
@@ -814,17 +819,17 @@ def _posts_vl(spec, cfg, schema):
             _count(p["comments"], p.get("comments_label") or "comments") if p.get("comments") is not None else "",
             str(p.get("site") or "")) if s)
         if foot:
-            y += 32
-            L["feet"].append({"x": x0 + PAD, "y": y, "t": foot[:cw(18)]})
+            y += 36
+            L["feet"].append({"x": x0 + PAD, "y": y, "t": foot[:cw(S["foot"])]})
         for c in (p.get("top") or [])[:2]:
             y += 16
             top_ = y
             head = "%s%s" % (c.get("author") or "", ("  " + _count(c["score"], p.get("score_label") or "votes"))
                              if c.get("score") is not None else "")
-            y += 22
-            L["cwho"].append({"x": x0 + PAD + 14, "y": y, "t": head[:cw(16, 14)]})
-            for ln in lines(c.get("text"), cw(18, 14 + 8), 3):      # its own indent, and a letter of air
-                y += 24
+            y += 26
+            L["cwho"].append({"x": x0 + PAD + 14, "y": y, "t": head[:cw(S["cwho"], 14)]})
+            for ln in lines(c.get("text"), cw(S["ctext"], 14 + 8), 3):      # its own indent, and a letter of air
+                y += 28
                 L["ctext"].append({"x": x0 + PAD + 14, "y": y, "t": ln})
             L["rules"].append({"x0": x0 + PAD, "y0": top_ + 4, "x1": x0 + PAD + 4, "y1": y + 6})
         return y + PAD - y0
@@ -842,14 +847,14 @@ def _posts_vl(spec, cfg, schema):
     px = _Px(W, H)
     layers = [px.rect(L["rects"], fill="#FFFFFF", strokeWidth=2.4, cornerRadius=14),
               px.rect(L["rules"], fill="#B0B0B0", strokeWidth=0),
-              px.text(L["heads"], 21, True, align="left", baseline="alphabetic"),
-              px.text(L["whos"], 18, False, color=GRAY, align="left", baseline="alphabetic"),
-              px.text(L["titles"], 26, True, align="left", baseline="alphabetic"),
-              px.text(L["links"], 17, False, color=GRAY, align="left", baseline="alphabetic"),
-              px.text(L["bodies"], 19, False, align="left", baseline="alphabetic"),
-              px.text(L["feet"], 18, False, color=GRAY, align="left", baseline="alphabetic"),
-              px.text(L["cwho"], 16, True, color=GRAY, align="left", baseline="alphabetic"),
-              px.text(L["ctext"], 18, False, align="left", baseline="alphabetic")]
+              px.text(L["heads"], S["head"], True, align="left", baseline="alphabetic"),
+              px.text(L["whos"], S["who"], False, color=GRAY, align="left", baseline="alphabetic"),
+              px.text(L["titles"], S["title"], True, align="left", baseline="alphabetic"),
+              px.text(L["links"], S["link"], False, color=GRAY, align="left", baseline="alphabetic"),
+              px.text(L["bodies"], S["body"], False, align="left", baseline="alphabetic"),
+              px.text(L["feet"], S["foot"], False, color=GRAY, align="left", baseline="alphabetic"),
+              px.text(L["cwho"], S["cwho"], True, color=GRAY, align="left", baseline="alphabetic"),
+              px.text(L["ctext"], S["ctext"], False, align="left", baseline="alphabetic")]
     for im in imgs:              # one layer each: an image mark's size is a mark property
         layers.append({"data": {"values": [im]},
                        "mark": {"type": "image", "width": im["w"], "height": im["h"],
@@ -895,7 +900,7 @@ def _progress_vl(spec, cfg, schema):
                  "encoding": {"x": {"field": "v", "type": "quantitative"},
                               "color": {"field": "fill", "type": "nominal", "scale": None,
                                         "legend": None}}},
-                {"mark": {"type": "text", "align": "left", "dx": 9, "fontSize": 15,
+                {"mark": {"type": "text", "align": "left", "dx": 9, "fontSize": 22,
                           "fontWeight": "bold", "font": FONT, "color": "black"},
                  "encoding": {"x": {"field": "max", "type": "quantitative"},
                               "text": {"field": "lab", "type": "nominal"}}}],
@@ -1039,36 +1044,36 @@ def _card_lines(card, units, max_lines):
     out = []
     indent = RUNOVER / CAPF                          # the run-over's indent, in cap units
     for ln in _haiku_lines(card):
-        if _GL.measure(ln) <= units:
+        if _GL.measure(ln, TRACK) <= units:
             out.append((ln, False))
             continue
         words, head = ln.split(), []
-        while words and _GL.measure(" ".join(head + [words[0]])) <= units:
+        while words and _GL.measure(" ".join(head + [words[0]]), TRACK) <= units:
             head.append(words.pop(0))
         if not head:
             head = [words.pop(0)]
         # A RUN-OVER OF ONE WORD reads as a mistake ("Little Rock Nine walk / in"). Two words go
         # down when they fit.
         if len(words) == 1 and len(head) >= 3 and \
-                _GL.measure(" ".join([head[-1]] + words)) <= units - indent:
+                _GL.measure(" ".join([head[-1]] + words), TRACK) <= units - indent:
             words.insert(0, head.pop())
         out.append((" ".join(head), False))
         if words:
-            out.append((_GL.fit(" ".join(words), units - indent), True))
+            out.append((_GL.fit(" ".join(words), units - indent, TRACK), True))
     return out[:max_lines]
 
 
 def _needs_two_breaks(ln, units):
     """True if a haiku line cannot be set in one line plus one run-over."""
     from paperdaemon.pipeline.draw import glyphs as _GL
-    if _GL.measure(ln) <= units:
+    if _GL.measure(ln, TRACK) <= units:
         return False
     words, head = ln.split(), []
-    while words and _GL.measure(" ".join(head + [words[0]])) <= units:
+    while words and _GL.measure(" ".join(head + [words[0]]), TRACK) <= units:
         head.append(words.pop(0))
     if not head:
         return True
-    return _GL.measure(" ".join(words)) > units - RUNOVER / CAPF
+    return _GL.measure(" ".join(words), TRACK) > units - RUNOVER / CAPF
 
 
 def _card_units(cw):
@@ -1093,7 +1098,7 @@ def _validate_card(where, card, cw):
     if title and len(title.split()) != 1:
         raise SpecError("%s: a card's 'title' is ONE word (got %r)" % (where, title))
     from paperdaemon.pipeline.draw import glyphs as _GL
-    if _GL.measure(_card_head(card)) > _card_units(cw) * CARD_SZ / (CARD_SZ * 1.15):
+    if _GL.measure(_card_head(card), TRACK) > _card_units(cw) * CARD_SZ / (CARD_SZ * 1.15):
         raise SpecError("%s: '%s' is too wide for the head of a card; a shorter title"
                         % (where, _card_head(card)))
     bad = _haiku_check(_haiku_lines(card))
@@ -1137,6 +1142,11 @@ EV_LEAD = 1.28           # line pitch of an event line, in em
 # size (rm_font: CAP 700 / UPM 1000). A width in px is measure * CAPF * size. Every fit in this
 # file goes through _units(); comparing cap units to px / size left a third of each line empty.
 CAPF = 0.70
+# THE CHART FONT'S OWN LETTER SPACING, in cap heights: a letter's advance is its stroke width plus a side bearing
+# each side (charts/font.py), so every measure and fit here passes this, not the tablet lettering's TRACK -- with
+# that, a heavier font's wider bearings were measured 7% short and text ran out of its bubble.
+from paperdaemon.pipeline.charts import font as _FONT
+TRACK = 2.0 * _FONT.SIDE / _FONT.CAP
 
 
 def _units(px, size):
@@ -1584,11 +1594,11 @@ def _radar_vl(spec, cfg, schema):
                  "encoding": enc(color={"field": "s", "type": "nominal", "legend": None,
                                         "scale": {"domain": names, "range": LINE_INK[:n]}})},
                 {"data": {"values": ticks},
-                 "mark": {"type": "text", "fontSize": 12, "font": FONT, "color": GRAY,
+                 "mark": {"type": "text", "fontSize": 18, "font": FONT, "color": GRAY,
                           "align": "left", "dx": 5, "dy": -4},
                  "encoding": enc(text={"field": "t", "type": "nominal"})},
                 {"data": {"values": labels},
-                 "mark": {"type": "text", "fontSize": 16, "fontWeight": "bold", "font": FONT,
+                 "mark": {"type": "text", "fontSize": 22, "fontWeight": "bold", "font": FONT,
                           "color": "black"},
                  "encoding": enc(text={"field": "t", "type": "nominal"},
                                  align={"field": "al", "type": "nominal"})}],
@@ -1631,7 +1641,7 @@ def _dist_vl(spec, cfg, schema):
                     "column": {"field": "g", "type": "nominal", "sort": names, "spacing": 6,
                                "header": {"titleOrient": "bottom", "labelOrient": "bottom",
                                           "labelPadding": 6, "title": None,
-                                          "labelFontSize": 16, "labelFontWeight": "bold"}},
+                                          "labelFontSize": 26, "labelFontWeight": "bold"}},
                     "color": {"field": "g", "type": "nominal", "legend": None,
                               "scale": {"domain": names, "range": PALETTE[:len(names)]}}},
                 "config": dict(cfg, view={"stroke": None})}
@@ -1730,11 +1740,11 @@ def _sankey_vl(spec, cfg, schema):
                           "strokeWidth": 1},
                  "encoding": dict(xy("x0", "y0"), x2={"field": "x1"}, y2={"field": "y1"})},
                 {"data": {"values": mids},
-                 "mark": {"type": "text", "fontSize": 14, "fontWeight": "bold", "font": FONT,
+                 "mark": {"type": "text", "fontSize": 22, "fontWeight": "bold", "font": FONT,
                           "color": "black", "align": "left"},
                  "encoding": dict(xy("x", "y"), text={"field": "t", "type": "nominal"})},
                 {"data": {"values": labels},
-                 "mark": {"type": "text", "fontSize": 16, "fontWeight": "bold", "font": FONT,
+                 "mark": {"type": "text", "fontSize": 22, "fontWeight": "bold", "font": FONT,
                           "color": "black"},
                  "encoding": dict(xy("x", "y"), text={"field": "t", "type": "nominal"},
                                   align={"field": "al", "type": "nominal"})}],
@@ -1924,7 +1934,7 @@ def _stock_vl(spec, cfg, schema):
                                 "strokeDash": [4, 4]},
                        "encoding": {"x": xenc}})
         layers.append({"data": {"values": [{"i": i, "lab": ev.get("label", "")}]},
-                       "mark": {"type": "text", "fontSize": 14, "font": FONT, "color": "black",
+                       "mark": {"type": "text", "fontSize": 22, "font": FONT, "color": "black",
                                 "align": "left", "baseline": "top", "dx": 6, "dy": 6,
                                 "fontWeight": "bold"},
                        "encoding": {"x": xenc, "y": {"value": 0},
@@ -1937,12 +1947,12 @@ def _stock_vl(spec, cfg, schema):
          "encoding": {"x": xenc, "y": {"field": "c", "type": "quantitative"}}},
         {"data": {"values": [dict(last, lab="%s  %s" % (last["t"],
                                                         spec.get("fmt", "%g") % last["c"]))]},
-         "mark": {"type": "text", "fontSize": 17, "fontWeight": "bold", "font": FONT,
+         "mark": {"type": "text", "fontSize": 24, "fontWeight": "bold", "font": FONT,
                   "color": "black", "align": "right", "dx": -10, "dy": -20},
          "encoding": {"x": xenc, "y": {"field": "c", "type": "quantitative"},
                       "text": {"field": "lab", "type": "nominal"}}},
         {"data": {"values": ticks},
-         "mark": {"type": "text", "fontSize": 13, "font": FONT, "color": "black",
+         "mark": {"type": "text", "fontSize": 22, "font": FONT, "color": "black",
                   "baseline": "top", "dy": 10},
          "encoding": {"x": xenc, "y": {"value": H},
                       "text": {"field": "lab", "type": "nominal"}}}]
@@ -1973,7 +1983,7 @@ def _bullet_vl(spec, cfg, schema):
                      "hit": "yes" if float(it["value"]) >= tgt else "no"})
     names = [r["l"] for r in rows]
     yenc = {"field": "l", "type": "nominal", "sort": names, "title": None,
-            "axis": {"labelFontSize": 17, "labelLimit": 0, "domain": False, "ticks": False}}
+            "axis": {"labelFontSize": 26, "labelLimit": 0, "domain": False, "ticks": False}}
     ttl = spec.get("x_label") or "% of target"
     xsc = {"domain": [0, 170], "nice": False}
     xax = {"values": [0, 50, 100, 150], "labelExpr": "datum.value + '%'"}
@@ -2003,7 +2013,7 @@ def _bullet_vl(spec, cfg, schema):
                 # Two layers, because `align` driven from a field does nothing: every label came
                 # out centered on the bar's end and "40 / 24" was cut in half by the bar edge.
                 {"data": {"values": [r for r in rows if r["la"] == side]},
-                 "mark": {"type": "text", "fontSize": 15, "font": FONT, "color": "black",
+                 "mark": {"type": "text", "fontSize": 22, "font": FONT, "color": "black",
                           "fontWeight": "bold", "align": side,
                           "dx": 10 if side == "left" else -10},
                  "encoding": {"x": {"field": "lx", "type": "quantitative", "scale": xsc,
@@ -2048,15 +2058,15 @@ def _slope_vl(spec, cfg, schema):
                           "strokeWidth": 1.5},
                  "encoding": dict(base, color=col)},
                 {"data": {"values": heads},
-                 "mark": {"type": "text", "align": "right", "dx": -12, "fontSize": 15,
+                 "mark": {"type": "text", "align": "right", "dx": -12, "fontSize": 22,
                           "font": FONT, "color": "black"},
                  "encoding": dict(base, text={"field": "lab", "type": "nominal"})},
                 {"data": {"values": tails},
-                 "mark": {"type": "text", "align": "left", "dx": 12, "fontSize": 15,
+                 "mark": {"type": "text", "align": "left", "dx": 12, "fontSize": 22,
                           "font": FONT, "color": "black"},
                  "encoding": dict(base, text={"field": "lab", "type": "nominal"})},
                 {"data": {"values": [{"x": 0, "t": a_lab}, {"x": 1, "t": b_lab}]},
-                 "mark": {"type": "text", "fontSize": 17, "fontWeight": "bold", "font": FONT,
+                 "mark": {"type": "text", "fontSize": 24, "fontWeight": "bold", "font": FONT,
                           "color": "black", "baseline": "bottom", "dy": -8},
                  "encoding": {"x": base["x"], "y": {"value": 0},
                               "text": {"field": "t", "type": "nominal"}}}],
@@ -2076,7 +2086,7 @@ def _dumbbell_vl(spec, cfg, schema):
     xlo = max(0.0, min(allv) - pad) if min(allv) >= 0 else min(allv) - pad
     xsc = {"domain": [xlo, max(allv) + pad], "nice": False}
     yenc = {"field": "l", "type": "nominal", "sort": names, "title": None,
-            "axis": {"labelFontSize": 17, "labelLimit": 0, "domain": False, "ticks": False}}
+            "axis": {"labelFontSize": 26, "labelLimit": 0, "domain": False, "ticks": False}}
     return {"$schema": schema, "title": spec.get("title", ""),
             "width": WIDTH - 300, "height": 52 * len(rows) + 30,
             "layer": [
@@ -2084,7 +2094,8 @@ def _dumbbell_vl(spec, cfg, schema):
                  "mark": {"type": "rule", "strokeWidth": 4, "color": RULE},
                  "encoding": {"y": yenc,
                               "x": {"field": "a", "type": "quantitative",
-                                    "title": spec.get("x_label"), "scale": xsc},
+                                    "title": spec.get("x_label"), "scale": xsc,
+                                    "axis": {"tickCount": 8}},       # every 40 px, its 26 px labels ran together
                               "x2": {"field": "b"}}},
                 {"data": {"values": pts},
                  "mark": {"type": "point", "size": 260, "filled": True, "stroke": "black",
@@ -2118,11 +2129,11 @@ def _bump_vl(spec, cfg, schema):
                   "scale": {"domain": [-0.5, np_ - 1 + 2.4], "nice": False},
                   "axis": {"values": list(range(np_)),
                            "labelExpr": "%s[datum.value]" % json.dumps(periods),
-                           "labelFontSize": 15, "grid": True, "gridDash": [2, 6],
+                           "labelFontSize": 26, "grid": True, "gridDash": [2, 6],
                            "gridColor": "#BBBBBB"}},
             "y": {"field": "r", "type": "quantitative", "title": "Rank",
                   "scale": {"domain": [worst + 0.5, 0.5], "nice": False},
-                  "axis": {"values": list(range(1, worst + 1)), "labelFontSize": 15}}}
+                  "axis": {"values": list(range(1, worst + 1)), "labelFontSize": 26}}}
     col = {"field": "s", "type": "nominal", "legend": None,
            "scale": {"domain": names, "range": (LINE_INK * 4)[:len(names)]}}
     ends = [{"s": s["name"], "pi": np_ - 1, "r": int(s["values"][-1])} for s in series]
@@ -2138,7 +2149,7 @@ def _bump_vl(spec, cfg, schema):
                           "color": "white"},
                  "encoding": dict(base, text={"field": "r", "type": "quantitative"})},
                 {"data": {"values": ends},
-                 "mark": {"type": "text", "fontSize": 16, "fontWeight": "bold", "font": FONT,
+                 "mark": {"type": "text", "fontSize": 24, "fontWeight": "bold", "font": FONT,
                           "align": "left", "dx": 20},
                  "encoding": dict(base, text={"field": "s", "type": "nominal"}, color=col)}],
             "config": cfg}
@@ -2195,7 +2206,7 @@ def _quadrant_vl(spec, cfg, schema):
                 # are not pass-through channels, and a nominal field through them does nothing
                 # useful. Four literal layers cost nothing and are unambiguous.
                 {"data": {"values": [b]},
-                 "mark": {"type": "text", "fontSize": 17, "fontWeight": "bold", "font": FONT,
+                 "mark": {"type": "text", "fontSize": 24, "fontWeight": "bold", "font": FONT,
                           "color": GRAY, "align": b["al"], "baseline": b["ba"],
                           "dx": 16 if b["al"] == "left" else -16,
                           "dy": 16 if b["ba"] == "top" else -16},
@@ -2210,7 +2221,7 @@ def _quadrant_vl(spec, cfg, schema):
                           "stroke": "black", "strokeWidth": 2, "opacity": 1},
                  "encoding": {"x": xenc, "y": yenc}}] + [
                 {"data": {"values": [r for r in rows if r["al"] == side]},
-                 "mark": {"type": "text", "fontSize": 15, "font": FONT, "color": "black",
+                 "mark": {"type": "text", "fontSize": 22, "font": FONT, "color": "black",
                           "align": side, "dy": -2,
                           "dx": 16 if side == "left" else -16},
                  "encoding": {"x": xenc, "y": yenc,
@@ -2271,15 +2282,15 @@ def _sparkbars_vl(spec, cfg, schema):
                                   color={"field": "fill", "type": "nominal", "scale": None,
                                          "legend": None})},
                 {"data": {"values": names},
-                 "mark": {"type": "text", "fontSize": 17, "font": FONT, "color": "black",
+                 "mark": {"type": "text", "fontSize": 24, "font": FONT, "color": "black",
                           "align": "right"},
                  "encoding": dict(xy("x", "y"), text={"field": "t", "type": "nominal"})},
                 {"data": {"values": labels},
-                 "mark": {"type": "text", "fontSize": 18, "fontWeight": "bold", "font": FONT,
+                 "mark": {"type": "text", "fontSize": 26, "fontWeight": "bold", "font": FONT,
                           "color": "black", "align": "left"},
                  "encoding": dict(xy("x", "y"), text={"field": "t", "type": "nominal"})},
                 {"data": {"values": labels},
-                 "mark": {"type": "text", "fontSize": 16, "fontWeight": "bold", "font": FONT,
+                 "mark": {"type": "text", "fontSize": 22, "fontWeight": "bold", "font": FONT,
                           "align": "right"},
                  "encoding": dict(xy("x2", "y"), text={"field": "d", "type": "nominal"},
                                   color={"field": "dc", "type": "nominal", "scale": None,
@@ -2322,7 +2333,7 @@ def _waterfall_vl(spec, cfg, schema):
     else:
         lo -= pad
     xenc = {"field": "l", "type": "nominal", "sort": names, "title": spec.get("x_label"),
-            "axis": {"labelAngle": 0, "labelFontSize": 14, "labelLimit": 0}}
+            "axis": {"labelAngle": 0, "labelFontSize": 26, "labelLimit": 0}}
     yenc = {"field": "y0", "type": "quantitative", "title": spec.get("y_label"),
             "scale": {"domain": [lo, hi + pad], "nice": False}}
     return {"$schema": schema, "title": spec.get("title", ""),
@@ -2342,7 +2353,7 @@ def _waterfall_vl(spec, cfg, schema):
                                         "scale": {"domain": ["up", "down", "total"],
                                                   "range": [WASH["green"], WASH["magenta"],
                                                             WASH["blue"]]}}}},
-                {"mark": {"type": "text", "fontSize": 14, "fontWeight": "bold", "font": FONT,
+                {"mark": {"type": "text", "fontSize": 22, "fontWeight": "bold", "font": FONT,
                           "color": "black", "baseline": "bottom", "dy": -6},
                  "encoding": {"x": xenc,
                               "y": {"field": "ly", "type": "quantitative",
@@ -2382,7 +2393,7 @@ def _histogram_vl(spec, cfg, schema):
                                     "scale": {"domain": [lo, hi], "nice": False}}}},
                 {"data": {"values": [{"m": mean, "t": "mean %s"
                                       % (spec.get("fmt", "%.1f") % mean)}]},
-                 "mark": {"type": "text", "fontSize": 15, "fontWeight": "bold", "font": FONT,
+                 "mark": {"type": "text", "fontSize": 22, "fontWeight": "bold", "font": FONT,
                           "color": INK["red"], "align": "left", "dx": 8, "dy": 8,
                           "baseline": "top"},
                  "encoding": {"x": {"field": "m", "type": "quantitative",
@@ -2431,7 +2442,7 @@ def _bubble_vl(spec, cfg, schema):
                                        "scale": None},
                               "color": {"field": "fill", "type": "nominal", "scale": None,
                                         "legend": None}}},
-                {"mark": {"type": "text", "fontSize": 15, "fontWeight": "bold", "font": FONT,
+                {"mark": {"type": "text", "fontSize": 22, "fontWeight": "bold", "font": FONT,
                           "color": "black", "baseline": "top"},
                  "encoding": {"x": xenc,
                               "y": {"field": "ly", "type": "quantitative",
@@ -2451,10 +2462,12 @@ def _lollipop_vl(spec, cfg, schema):
         rows.sort(key=lambda r: -r["v"])
     names = [r["l"] for r in rows]
     top = max(r["v"] for r in rows)
+    low = min([0.0] + [r["v"] for r in rows])        # a negative value is drawn inside the plot, not off its left
     yenc = {"field": "l", "type": "nominal", "sort": names, "title": None,
-            "axis": {"labelFontSize": 16, "labelLimit": 0, "domain": False, "ticks": False}}
+            "axis": {"labelFontSize": 26, "labelLimit": 0, "domain": False, "ticks": False}}
     xenc = {"field": "v", "type": "quantitative", "title": spec.get("x_label"),
-            "scale": {"domain": [0, top * 1.12], "nice": False}}
+            "scale": {"domain": [low - (top - low) * 0.12 if low < 0 else 0, top + (top - low) * 0.12],
+                      "nice": False}}         # room past each end for the value beside the dot
     return {"$schema": schema, "title": spec.get("title", ""),
             "width": WIDTH - 320, "height": 42 * len(rows) + 40, "data": {"values": rows},
             "layer": [
@@ -2470,8 +2483,15 @@ def _lollipop_vl(spec, cfg, schema):
                  "encoding": {"y": yenc, "x": xenc,
                               "color": {"field": "fill", "type": "nominal", "scale": None,
                                         "legend": None}}},
-                {"mark": {"type": "text", "fontSize": 14, "fontWeight": "bold", "font": FONT,
+                # the value beside its dot, on the side away from the stem: right of a positive, left of a negative
+                {"transform": [{"filter": "datum.v >= 0"}],
+                 "mark": {"type": "text", "fontSize": 22, "fontWeight": "bold", "font": FONT,
                           "color": "black", "align": "left", "dx": 16},
+                 "encoding": {"y": yenc, "x": xenc,
+                              "text": {"field": "lab", "type": "nominal"}}},
+                {"transform": [{"filter": "datum.v < 0"}],
+                 "mark": {"type": "text", "fontSize": 22, "fontWeight": "bold", "font": FONT,
+                          "color": "black", "align": "right", "dx": -16},
                  "encoding": {"y": yenc, "x": xenc,
                               "text": {"field": "lab", "type": "nominal"}}}],
             "config": cfg}
@@ -2491,7 +2511,7 @@ def _diverging_vl(spec, cfg, schema):
     names = [r["l"] for r in rows]
     m = max(abs(r["v"]) for r in rows) * 1.18
     yenc = {"field": "l", "type": "nominal", "sort": names, "title": None,
-            "axis": {"labelFontSize": 16, "labelLimit": 0, "domain": False, "ticks": False,
+            "axis": {"labelFontSize": 26, "labelLimit": 0, "domain": False, "ticks": False,
                      "labelPadding": 10}}
     xenc = {"field": "v", "type": "quantitative", "title": spec.get("x_label"),
             "scale": {"domain": [-m, m], "nice": False}}
@@ -2510,7 +2530,7 @@ def _diverging_vl(spec, cfg, schema):
                  "encoding": {"x": {"datum": 0, "type": "quantitative",
                                     "scale": xenc["scale"]}}}] + [
                 {"data": {"values": [r for r in rows if r["la"] == side]},
-                 "mark": {"type": "text", "fontSize": 14, "fontWeight": "bold", "font": FONT,
+                 "mark": {"type": "text", "fontSize": 22, "fontWeight": "bold", "font": FONT,
                           "color": "black", "align": side,
                           "dx": 8 if side == "left" else -8},
                  "encoding": {"y": yenc, "x": xenc,
@@ -2530,11 +2550,11 @@ def _pyramid_vl(spec, cfg, schema):
     names = [x["band"] for x in bands]
     m = max(abs(r["v"]) for r in rows) * 1.18
     yenc = {"field": "b", "type": "nominal", "sort": list(reversed(names)), "title": None,
-            "axis": {"labelFontSize": 15, "labelLimit": 0, "domain": False, "ticks": False,
+            "axis": {"labelFontSize": 24, "labelLimit": 0, "domain": False, "ticks": False,
                      "labelPadding": 8}}
     xenc = {"field": "v", "type": "quantitative", "title": spec.get("x_label"),
             "scale": {"domain": [-m, m], "nice": False},
-            "axis": {"labelExpr": "abs(datum.value)"}}
+            "axis": {"labelExpr": "abs(datum.value)", "tickCount": 8}}   # every 40 px they ran together
     return {"$schema": schema, "title": spec.get("title", ""),
             "width": WIDTH - 260, "height": 40 * len(names) + 50, "data": {"values": rows},
             "layer": [
@@ -2547,7 +2567,8 @@ def _pyramid_vl(spec, cfg, schema):
                 {"mark": {"type": "rule", "strokeWidth": 2, "color": "black"},
                  "encoding": {"x": {"datum": 0, "type": "quantitative",
                                     "scale": xenc["scale"]}}}],
-            "config": dict(cfg, legend=dict(cfg["legend"], orient="top-right",
+            "config": dict(cfg, legend=dict(cfg["legend"], orient="top",            # above the bars: inside the plot it sat on the longest one
+                                           
                                             direction="horizontal"))}
 
 
@@ -2555,42 +2576,52 @@ def _marimekko_vl(spec, cfg, schema):
     """A stacked bar whose WIDTH also means something -- share within a segment, and the size of
     the segment, on one picture."""
     cols = spec.get("columns") or []
-    parts = spec.get("parts") or []
+    # THE SHAPE THE MODEL IS TOLD (POWERS): each column carries its own parts, [{name, value, color?}]. The bands
+    # are the part names in the order they first appear, each in its own palette color unless the spec names one.
+    parts, seen = [], set()
+    for c in cols:
+        for p in c.get("parts") or []:
+            if isinstance(p, dict) and p.get("name") is not None and str(p["name"]) not in seen:
+                seen.add(str(p["name"]))
+                parts.append({"name": str(p["name"]),
+                              "color": p.get("color") or PALETTE_NAMES[len(parts) % len(PALETTE_NAMES)]})
     W, H = 1060.0, 600.0
-    px = _Px(W, H + 96)
+    px = _Px(W, H + 112)
     tot = float(sum(c["value"] for c in cols)) or 1.0
     rects, heads, cells = [], [], []
     x = 0.0
     for c in cols:
         w = (W - 6 * (len(cols) - 1)) * c["value"] / tot
-        shares = [float(c["parts"].get(p["name"], 0)) for p in parts]
+        have = dict((str(q.get("name")), float(q.get("value") or 0)) for q in c.get("parts") or []
+                    if isinstance(q, dict))
+        shares = [have.get(p["name"], 0.0) for p in parts]
         s = sum(shares) or 1.0
         y = 0.0
         for p, v in zip(parts, shares):
             h = H * v / s
             rects.append({"x0": x, "x1": x + w, "y0": y, "y1": y + h,
                           "fill": WASH.get(p.get("color", "blue"), WASH["blue"])})
-            if h > 26 and w > 52:
+            if h > 34 and w > 64:
                 cells.append({"x": x + w / 2.0, "y": y + h / 2.0,
                               "t": "%.0f%%" % (100.0 * v / s)})
             y += h
-        heads.append({"x": x + w / 2.0, "y": H + 22, "t": str(c["name"])})
-        heads.append({"x": x + w / 2.0, "y": H + 44,
+        heads.append({"x": x + w / 2.0, "y": H + 24, "t": str(c["name"])})
+        heads.append({"x": x + w / 2.0, "y": H + 52,
                       "t": spec.get("fmt", "%g") % c["value"]})
         x += w + 6
     # a key, because the segment labels are percentages and nothing else says what the bands are
     sw, kt, kx = [], [], 8.0
     for p in parts:
-        sw.append({"x0": kx, "x1": kx + 26, "y0": H + 66, "y1": H + 84,
+        sw.append({"x0": kx, "x1": kx + 26, "y0": H + 82, "y1": H + 102,
                    "fill": WASH.get(p.get("color", "blue"), WASH["blue"])})
-        kt.append({"x": kx + 34, "y": H + 75, "t": str(p["name"])})
-        kx += 40 + 10.5 * len(str(p["name"]))
+        kt.append({"x": kx + 34, "y": H + 92, "t": str(p["name"])})
+        kx += 56 + EM * 22 * len(str(p["name"]))
     return px.spec(spec.get("title", ""), [
         px.rect(rects),
-        px.text(cells, 14, True),
-        px.text(heads, 15, True),
+        px.text(cells, 22, True),
+        px.text(heads, 22, True),
         px.rect(sw),
-        px.text(kt, 15, True, align="left")], cfg, schema)
+        px.text(kt, 22, True, align="left")], cfg, schema)
 
 def _worst(row, side):
     """Bruls' aspect-ratio cost for a candidate row -- the whole of squarify is this one number."""
@@ -2655,13 +2686,13 @@ def _treemap_vl(spec, cfg, schema):
                                               PALETTE_NAMES[i % len(PALETTE_NAMES)]),
                                        WASH["blue"])})
         bw, bh = x1 - x0, y1 - y0
-        if bw > 66 and bh > 42:
-            big = bw > 150 and bh > 80
-            labels.append({"x": x0 + 11, "y": y0 + 13, "t": str(it["label"]),
-                           "s": 18 if big else 13})
-            labels.append({"x": x0 + 11, "y": y0 + (37 if big else 31),
+        if bw > 80 and bh > 52:
+            big = bw > 150 and bh > 86
+            labels.append({"x": x0 + 11, "y": y0 + (18 if big else 14), "t": str(it["label"]),
+                           "s": 26 if big else 18})
+            labels.append({"x": x0 + 11, "y": y0 + (48 if big else 36),
                            "t": spec.get("fmt", "%g") % float(it["value"]),
-                           "s": 16 if big else 12})
+                           "s": 22 if big else 16})
     return px.spec(spec.get("title", ""), [
         px.rect(rects, strokeWidth=2),
         {"data": {"values": labels}, "encoding": px.xy(
@@ -2705,7 +2736,7 @@ def _venn_vl(spec, cfg, schema):
          "encoding": px.xy(color={"field": "fill", "type": "nominal", "scale": None,
                                   "legend": None})},
         px.text(counts, 26, True),
-        px.text(names, 18, True)], cfg, schema)
+        px.text(names, 24, True)], cfg, schema)
 
 
 def _ridgeline_vl(spec, cfg, schema):
@@ -2732,7 +2763,7 @@ def _ridgeline_vl(spec, cfg, schema):
                 "row": {"field": "g", "type": "nominal", "sort": names, "spacing": -step * 0.55,
                         "title": None,
                         "header": {"labelAngle": 0, "labelAlign": "right",
-                                   "labelFontSize": 15, "labelFontWeight": "bold"}},
+                                   "labelFontSize": 24, "labelFontWeight": "bold"}},
                 "color": {"field": "g", "type": "nominal", "legend": None,
                           "scale": {"domain": names,
                                     "range": (PALETTE * 4)[:len(names)]}}},
@@ -2745,37 +2776,50 @@ def _polar_vl(spec, cfg, schema):
     items = spec.get("items") or []
     n = len(items)
     top = max(float(i["value"]) for i in items) or 1.0
+    import math as _m
+    R0, R1, SZ = 70.0, 270.0, 22      # the wedges' inner and outer radius, the labels' size
+
+    def lab(it):
+        return "%s  %s" % (it["label"], spec.get("fmt", "%g") % float(it["value"]))
+
+    def ring(i, it):
+        """A label's radius in the scale's units: just clear of the outer edge at its own angle -- half its
+        width out at the sides, half its height at the top and bottom."""
+        th = 2 * _m.pi * (i + 0.5) / max(n, 1)
+        w = EM * SZ * len(lab(it))
+        r = R1 + 18 + (w / 2.0) * abs(_m.sin(th)) + (SZ * 0.6) * abs(_m.cos(th))
+        return (r - R0) * top / (R1 - R0)
+    side = max([R1 + 18 + EM * SZ * len(lab(it)) for it in items] or [R1])
     return {"$schema": schema, "title": spec.get("title", ""),
-            "width": 760, "height": 700,
-            "data": {"values": [{"l": it["label"], "v": float(it["value"]), "i": i,
-                                 "lab": "%s  %s" % (it["label"],
-                                                    spec.get("fmt", "%g") % float(it["value"])),
+            "width": max(760, int(2 * side + 20)), "height": 700,
+            "data": {"values": [{"l": it["label"], "v": float(it["value"]), "i": i, "lr": ring(i, it),
+                                 "lab": lab(it),
                                  "fill": WASH.get(it.get("color",
                                                          PALETTE_NAMES[i % len(PALETTE_NAMES)]),
                                                   WASH["blue"])}
                                 for i, it in enumerate(items)]},
             "layer": [
                 {"mark": {"type": "arc", "stroke": "black", "strokeWidth": 1.4,
-                          "innerRadius": 70, "padAngle": 0.012},
+                          "innerRadius": R0, "padAngle": 0.012},
                  "encoding": {"theta": {"field": "i", "type": "nominal",
                                         "scale": {"type": "band", "range": [0, 6.2832]},
                                         "sort": [i for i in range(n)]},
                               "radius": {"field": "v", "type": "quantitative",
                                          "scale": {"type": "linear", "zero": True,
-                                                   "range": [70, 300],
+                                                   "range": [R0, R1],
                                                    "domain": [0, top]}},
                               "color": {"field": "fill", "type": "nominal", "scale": None,
                                         "legend": None}}},
                 # labels on a FIXED outer ring, not at each wedge's own radius -- otherwise the
                 # short wedges' names crowd the middle and the ring is unreadable
-                {"mark": {"type": "text", "fontSize": 16, "fontWeight": "bold", "font": FONT,
-                          "color": "black", "radiusOffset": 30},
+                {"mark": {"type": "text", "fontSize": 22, "fontWeight": "bold", "font": FONT,
+                          "color": "black"},
                  "encoding": {"theta": {"field": "i", "type": "nominal",
                                         "scale": {"type": "band", "range": [0, 6.2832]},
                                         "sort": [i for i in range(n)], "bandPosition": 0.5},
-                              "radius": {"datum": top, "type": "quantitative",
+                              "radius": {"field": "lr", "type": "quantitative",
                                          "scale": {"type": "linear", "zero": True,
-                                                   "range": [70, 300], "domain": [0, top]}},
+                                                   "range": [R0, R1], "domain": [0, top]}},
                               "text": {"field": "lab", "type": "nominal"}}}],
             "config": dict(cfg, view={"stroke": None})}
 
@@ -2840,7 +2884,7 @@ def _tree_vl(spec, cfg, schema):
         px.line(links, strokeWidth=2, color=RULE),
         px.rect(boxes, strokeWidth=2, cornerRadius=6),
         {"data": {"values": labels},
-         "mark": {"type": "text", "font": FONT, "color": "black", "fontSize": 16},
+         "mark": {"type": "text", "font": FONT, "color": "black", "fontSize": 22},
          "encoding": px.xy(text={"field": "t", "type": "nominal"})}], cfg, schema)
 
 
@@ -2879,7 +2923,7 @@ def _flow_vl(spec, cfg, schema):
         px.line(arrows, strokeWidth=2.6, color="#404040"),
         px.rect(boxes, strokeWidth=2, cornerRadius=8),
         {"data": {"values": labels},
-         "mark": {"type": "text", "font": FONT, "color": "black", "fontSize": 17,
+         "mark": {"type": "text", "font": FONT, "color": "black", "fontSize": 24,
                   "fontWeight": "bold"},
          "encoding": px.xy(text={"field": "t", "type": "nominal"})}], cfg, schema)
 
@@ -2890,7 +2934,7 @@ def _kanban_vl(spec, cfg, schema):
     W = 1080.0
     n = max(len(cols), 1)
     CW = (W - 20 * (n + 1)) / n
-    tall = max([len(c.get("cards") or []) for c in cols] or [1])
+    tall = max([len(c.get("items") or []) for c in cols] or [1])
     H = 108 + tall * 76 + 30
     px = _Px(W, H)
     heads, cards, labels, counts, heads_t = [], [], [], [], []
@@ -2900,8 +2944,8 @@ def _kanban_vl(spec, cfg, schema):
                       "fill": WASH.get(c.get("color", "gray"), WASH["gray"])})
         heads_t.append({"x": x0 + 16, "y": 47, "t": str(c["name"]), "al": "left"})
         counts.append({"x": x0 + CW - 16, "y": 47,
-                       "t": str(len(c.get("cards") or [])), "al": "right"})
-        for j, cd in enumerate(c.get("cards") or []):
+                       "t": str(len(c.get("items") or [])), "al": "right"})
+        for j, cd in enumerate(c.get("items") or []):
             y0 = 92 + j * 76
             txt = cd if isinstance(cd, str) else cd.get("text", "")
             col = "white" if isinstance(cd, str) else cd.get("color", "white")
@@ -2915,9 +2959,9 @@ def _kanban_vl(spec, cfg, schema):
     return px.spec(spec.get("title", ""), [
         px.rect(cards, strokeWidth=1.4, cornerRadius=5),
         px.rect(heads, strokeWidth=1.8, cornerRadius=5),
-        px.text(heads_t, 19, True, align="left"),
-        px.text(counts, 19, True, align="right"),
-        px.text(labels, 16, False, align="left")], cfg, schema)
+        px.text(heads_t, 24, True, align="left"),
+        px.text(counts, 24, True, align="right"),
+        px.text(labels, 22, False, align="left")], cfg, schema)
 
 
 def _journey_vl(spec, cfg, schema):
@@ -2954,7 +2998,7 @@ def _journey_vl(spec, cfg, schema):
          "encoding": px.xy(color={"field": "fill", "type": "nominal", "scale": None,
                                   "legend": None})},
         px.text(nums, 20, True),
-        px.text(labels, 15, True)], cfg, schema)
+        px.text(labels, 22, True)], cfg, schema)
 
 
 def _clock_vl(spec, cfg, schema):
@@ -2998,7 +3042,7 @@ def _clock_vl(spec, cfg, schema):
                            color={"field": "fill", "type": "nominal", "scale": None,
                                   "legend": None})},
         px.line(ticks, strokeWidth=2, color="black"),
-        px.text(labels, 15, True)], cfg, schema)
+        px.text(labels, 22, True)], cfg, schema)
 def _agenda_vl(spec, cfg, schema):
     """A classic paper day planner. The things that make that page what it is are structural, not
     decorative:
@@ -3014,7 +3058,7 @@ def _agenda_vl(spec, cfg, schema):
     So the schedule is ruled for the WHOLE day even where nothing is planned. An agenda that only
     draws the busy hours is a record of a day; this is a page you take into one.
     """
-    items = sorted(spec.get("items") or [], key=lambda i: float(i["start"]))
+    items = sorted(_agenda_items(spec), key=lambda i: i["start"])
     lo = float(spec.get("start", 6))
     hi = float(spec.get("end", 22))
     if items:
@@ -3061,19 +3105,19 @@ def _agenda_vl(spec, cfg, schema):
         blocks.append({"x0": GUT + 4, "y0": y0 + 2, "x1": X1 - 4, "y1": y1 - 2,
                        "fill": WASH.get(it.get("color", "blue"), WASH["blue"])})
         a2, b2 = _wrap2(str(it.get("text", "")), 46)
-        labels.append({"x": GUT + 14, "y": (y0 + y1) / 2.0 - (11 if b2 else 0),
-                       "t": a2, "s": 17, "al": "left", "b": True})
+        labels.append({"x": GUT + 14, "y": (y0 + y1) / 2.0 - (14 if b2 else 0),
+                       "t": a2, "s": 22, "al": "left", "b": True})
         if b2:
-            labels.append({"x": GUT + 14, "y": (y0 + y1) / 2.0 + 13, "t": b2,
-                           "s": 17, "al": "left", "b": True})
-        labels.append({"x": X1 - 14, "y": (y0 + y1) / 2.0, "s": 14, "al": "right", "b": False,
+            labels.append({"x": GUT + 14, "y": (y0 + y1) / 2.0 + 16, "t": b2,
+                           "s": 22, "al": "left", "b": True})
+        labels.append({"x": X1 - 14, "y": (y0 + y1) / 2.0, "s": 18, "al": "right", "b": False,
                        "t": "%s-%s" % (_hhmm(it["start"]), _hhmm(it["end"]))})
 
     # side column: standing lists, then goals planned against actual
     def panel(title, y, h, rows_n, entries):
         boxes.append({"x0": SX0, "y0": y, "x1": SX1, "y1": y + h, "fill": "#FFFFFF"})
         boxes.append({"x0": SX0, "y0": y, "x1": SX1, "y1": y + 34, "fill": WASH["gray"]})
-        labels.append({"x": SX0 + 12, "y": y + 17, "t": title, "s": 16, "al": "left", "b": True})
+        labels.append({"x": SX0 + 12, "y": y + 17, "t": title, "s": 22, "al": "left", "b": True})
         step = (h - 40) / max(rows_n, 1)
         for r in range(rows_n):
             ly = y + 40 + step * (r + 1) - 6
@@ -3081,7 +3125,7 @@ def _agenda_vl(spec, cfg, schema):
             rules.append({"k": "%s%d" % (title, r), "o": 1, "x": SX1 - 10, "y": ly})
             if r < len(entries):
                 labels.append({"x": SX0 + 14, "y": ly - 11, "t": str(entries[r]),
-                               "s": 15, "al": "left", "b": False})
+                               "s": 20, "al": "left", "b": False})
 
     y = TOP
     avail = y_of(hi) - TOP
@@ -3101,27 +3145,28 @@ def _agenda_vl(spec, cfg, schema):
         boxes.append({"x0": SX0, "y0": y, "x1": SX1, "y1": y + gh, "fill": "#FFFFFF"})
         boxes.append({"x0": SX0, "y0": y, "x1": SX1, "y1": y + 34, "fill": WASH["gray"]})
         labels.append({"x": SX0 + 12, "y": y + 17, "t": spec.get("goals_title", "Goals"),
-                       "s": 16, "al": "left", "b": True})
+                       "s": 22, "al": "left", "b": True})
         gx1, gx2 = SX1 - 120, SX1 - 58
-        labels.append({"x": gx1, "y": y + 50, "t": "plan", "s": 13, "al": "center", "b": False})
-        labels.append({"x": gx2, "y": y + 50, "t": "did", "s": 13, "al": "center", "b": False})
+        labels.append({"x": gx1, "y": y + 50, "t": "plan", "s": 18, "al": "center", "b": False})
+        labels.append({"x": gx2, "y": y + 50, "t": "did", "s": 18, "al": "center", "b": False})
         step = (gh - 66) / max(len(goals), 1)
         for r, g in enumerate(goals):
             ly = y + 66 + step * (r + 0.5)
-            labels.append({"x": SX0 + 14, "y": ly, "t": str(g["name"]), "s": 15,
+            labels.append({"x": SX0 + 14, "y": ly, "t": str(g["name"]), "s": 20,
                            "al": "left", "b": False})
-            labels.append({"x": gx1, "y": ly, "t": str(g.get("goal", "")), "s": 16,
+            labels.append({"x": gx1, "y": ly, "t": str(g.get("goal", "")), "s": 22,
                            "al": "center", "b": True})
-            labels.append({"x": gx2, "y": ly, "t": str(g.get("actual", "")), "s": 16,
+            labels.append({"x": gx2, "y": ly, "t": str(g.get("actual", "")), "s": 22,
                            "al": "center", "b": True})
             rules.append({"k": "g%d" % r, "o": 0, "x": SX0 + 10, "y": ly + step / 2 - 2})
             rules.append({"k": "g%d" % r, "o": 1, "x": SX1 - 10, "y": ly + step / 2 - 2})
 
+    # the rules UNDER the events: drawn over them, a half-hour line ran through an event's words
     lay = [px.rect(boxes, strokeWidth=0),
-           px.rect(blocks, strokeWidth=1.4, stroke=GRAY, cornerRadius=4),
            px.line(rules, strokeWidth=1, color=RULE),
+           px.rect(blocks, strokeWidth=1.4, stroke=GRAY, cornerRadius=4),
            px.rect(heads, strokeWidth=0),
-           px.text(times, 14, True, color=GRAY, align="right")]
+           px.text(times, 20, True, color=GRAY, align="right")]
     for al in ("left", "right", "center"):
         for bold in (True, False):
             for sz in sorted(set(l["s"] for l in labels)):
@@ -3131,6 +3176,39 @@ def _agenda_vl(spec, cfg, schema):
                     lay.append(px.text(sel, sz, bold,
                                        color="black" if bold else GRAY, align=al))
     return px.spec("" if spec.get("day") else spec.get("title", ""), lay, cfg, schema)
+
+
+def _hours(v):
+    """A time of day as hours: 9, 15.5, "09:00", "9:30", "9 am", "3:15 pm" -> 9.0, 15.5, 9.0, 9.5, 9.0, 15.25;
+    None for anything else."""
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        return float(v)
+    m = re.match(r"\s*(\d{1,2})(?:[:.](\d{2}))?\s*([ap])?\.?m?\.?\s*$", str(v or ""), re.I)
+    if not m:
+        return None
+    h, mi = int(m.group(1)), int(m.group(2) or 0)
+    if m.group(3):
+        h = h % 12 + (12 if m.group(3).lower() == "p" else 0)
+    return h + mi / 60.0 if h <= 24 and mi < 60 else None
+
+
+def _agenda_items(spec):
+    """An agenda's items with start and end in hours, as the builder lays them out. The model is told
+    {start, end, text}, times written as people write them; `time` ("09:00" or "09:00-10:30") is read too, and
+    an item with no end lasts an hour. Raises SpecError naming an item with no time it can read."""
+    out = []
+    for i, it in enumerate(spec.get("items") or []):
+        if not isinstance(it, dict):
+            raise SpecError("agenda item %d must be {start, end, text}" % i)
+        start, end = it.get("start"), it.get("end")
+        if start is None and it.get("time") is not None:
+            parts = re.split(r"\s*(?:-|–|to)\s*", str(it["time"]), maxsplit=1)
+            start, end = parts[0], (parts[1] if len(parts) > 1 else end)
+        a, b = _hours(start), _hours(end) if end is not None else None
+        if a is None:
+            raise SpecError("agenda item %d needs a start time like \"09:00\" (got %r)" % (i, start))
+        out.append(dict(it, start=a, end=b if b is not None and b > a else a + 1.0))
+    return out
 
 
 def _hhmm(t):
@@ -3165,7 +3243,7 @@ def _checklist_vl(spec, cfg, schema):
                           "stroke": INK["black"], "strokeWidth": 3, "x": 22},
                  "encoding": {"opacity": {"condition": {"test": "datum.done == 1", "value": 1},
                                           "value": 0}}},
-                {"mark": {"type": "text", "fontSize": 17, "font": FONT, "color": "black",
+                {"mark": {"type": "text", "fontSize": 30, "font": FONT, "color": "black",
                           "align": "left", "x": 58, "limit": WIDTH - 180, "lineBreak": "\n"},
                  "encoding": {"text": {"field": "t", "type": "nominal"},
                               "strikethrough": {"condition": {"test": "datum.done == 1",
@@ -3194,10 +3272,10 @@ def _habit_vl(spec, cfg, schema):
             "encoding": {
                 "x": {"field": "d", "type": "nominal", "sort": [str(d) for d in days],
                       "axis": {"orient": "top", "labelAngle": 0, "title": None,
-                               "domain": False, "ticks": False, "labelFontSize": 13}},
+                               "domain": False, "ticks": False, "labelFontSize": 20}},
                 "y": {"field": "h", "type": "nominal", "sort": [h["name"] for h in habits],
                       "axis": {"title": None, "domain": False, "ticks": False,
-                               "labelFontSize": 16}},
+                               "labelFontSize": 24}},
                 "color": {"field": "fill", "type": "nominal", "scale": None, "legend": None}},
             "config": cfg}
 
@@ -3268,8 +3346,8 @@ def _timeline_vl(spec, cfg, schema):
                   "strokeWidth": 2, "opacity": 1},
          "encoding": px.xy(color={"field": "fill", "type": "nominal", "scale": None,
                                   "legend": None})},
-        px.text(ticks, 14, True, color="#404040"),
-        px.text(labels, 16, True)], cfg, schema)
+        px.text(ticks, 20, True, color="#404040"),
+        px.text(labels, 22, True)], cfg, schema)
 
 def _waffle_vl(spec, cfg, schema):
     """A hundred squares. Proportion you can COUNT rather than estimate off an angle.
@@ -3285,6 +3363,8 @@ def _waffle_vl(spec, cfg, schema):
     KEY = 34.0 * len(parts) + 20
     px = _Px(W, GRID + KEY + 16)
     cells, i = [], 0
+    # EACH PART ITS OWN COLOR, in palette order unless the spec names one (all blue, the parts could not be told apart)
+    tone = dict((id(p), p.get("color") or PALETTE_NAMES[j % len(PALETTE_NAMES)]) for j, p in enumerate(parts))
     for p in parts:
         n = int(round(100.0 * p["value"] / total))
         for _ in range(n):
@@ -3293,7 +3373,7 @@ def _waffle_vl(spec, cfg, schema):
             cells.append({"x0": (i % 10) * CELL + PAD / 2, "y0": (i // 10) * CELL + PAD / 2,
                           "x1": (i % 10 + 1) * CELL - PAD / 2,
                           "y1": (i // 10 + 1) * CELL - PAD / 2,
-                          "fill": WASH.get(p.get("color", "blue"), WASH["blue"])})
+                          "fill": WASH.get(tone[id(p)], WASH["blue"])})
             i += 1
     while i < 100:
         cells.append({"x0": (i % 10) * CELL + PAD / 2, "y0": (i // 10) * CELL + PAD / 2,
@@ -3304,7 +3384,7 @@ def _waffle_vl(spec, cfg, schema):
     for j, p in enumerate(parts):
         y = GRID + 26 + j * 34
         sw.append({"x0": PAD / 2, "x1": PAD / 2 + 28, "y0": y - 12, "y1": y + 12,
-                   "fill": WASH.get(p.get("color", "blue"), WASH["blue"])})
+                   "fill": WASH.get(tone[id(p)], WASH["blue"])})
         names.append({"x": PAD / 2 + 40, "y": y, "t": str(p["name"])})
         vals.append({"x": W - PAD / 2, "y": y,
                      "t": "%s  ·  %.0f%%" % (spec.get("fmt", "%g") % float(p["value"]),
@@ -3312,8 +3392,8 @@ def _waffle_vl(spec, cfg, schema):
     return px.spec(spec.get("title", ""), [
         px.rect(cells, strokeWidth=1.2, cornerRadius=2),
         px.rect(sw, strokeWidth=1.4, cornerRadius=3),
-        px.text(names, 17, False, align="left"),
-        px.text(vals, 17, True, align="right")], cfg, schema)
+        px.text(names, 24, False, align="left"),
+        px.text(vals, 24, True, align="right")], cfg, schema)
 
 
 def _funnel_vl(spec, cfg, schema):
@@ -3354,9 +3434,9 @@ def _funnel_vl(spec, cfg, schema):
     return px.spec(spec.get("title", ""), [
         px.line(leaders, strokeWidth=1.2, color=RULE, strokeDash=[3, 3]),
         px.rect(bars, strokeWidth=2, cornerRadius=4),
-        px.text(names, 18, True, align="left"),
-        px.text(vals, 17, True, align="right"),
-        px.text(drops, 15, False, color="#505050", align="right")], cfg, schema)
+        px.text(names, 24, True, align="left"),
+        px.text(vals, 24, True, align="right"),
+        px.text(drops, 20, False, color="#505050", align="right")], cfg, schema)
 
 
 def _gauge_vl(spec, cfg, schema):
@@ -3382,7 +3462,7 @@ def _gauge_vl(spec, cfg, schema):
                 {"mark": {"type": "text", "fontSize": 54, "fontWeight": "bold", "font": FONT,
                           "color": "black", "x": 310, "y": 268},
                  "encoding": {"text": {"value": spec.get("label", "%g" % v)}}},
-                {"mark": {"type": "text", "fontSize": 17, "font": FONT, "color": GRAY,
+                {"mark": {"type": "text", "fontSize": 24, "font": FONT, "color": GRAY,
                           "x": 310, "y": 300},
                  "encoding": {"text": {"value": spec.get("note", "%g of %g" % (v, hi))}}}],
             "config": cfg}
@@ -3758,7 +3838,7 @@ def _week_vl(spec, cfg, schema):
                     ipx3 = lab * 1.35
                     gcx = (bx0 + bx1) / 2.0
                     ptxt = "%d%%" % round(peak)
-                    tw = _GL.measure(ptxt) * lab * CAPF
+                    tw = _GL.measure(ptxt, TRACK) * lab * CAPF
                     hz = max(ipx3, tw) * 0.95          # ONE haze, the same under glyph and figure
                     if bx1 - bx0 >= ipx3 * 1.45:
                         gcy = ny0 + lab * 0.25 + ipx3 * 0.6
@@ -3833,10 +3913,10 @@ def _week_vl(spec, cfg, schema):
             ic = e.get("icon") or KIND_ICON.get(e.get("kind"))
             text = str(e.get("text", ""))
             if (ic and icon_path(ic, None)
-                    and _GL.measure(text) * note_sz * CAPF <= avail - (ev_px + gap)):
+                    and _GL.measure(text, TRACK) * note_sz * CAPF <= avail - (ev_px + gap)):
                 I(x0 + CW - pad - ev_px / 2.0, ly + mid, ev_px, icon_path(ic))
                 avail -= ev_px + gap
-            T(x, ly, _GL.fit(text, _units(avail, note_sz)), note_sz, "left")
+            T(x, ly, _GL.fit(text, _units(avail, note_sz), TRACK), note_sz, "left")
             ly += line_h
 
     # ---- title
@@ -3927,7 +4007,7 @@ def _gantt_vl(spec, cfg, schema):
                           "height": {"band": 0.66}, "cornerRadius": 3},
                  "encoding": {"color": {"field": "fill", "type": "nominal", "scale": None,
                                         "legend": None}}},
-                {"mark": {"type": "text", "align": "left", "dx": 7, "fontSize": 14,
+                {"mark": {"type": "text", "align": "left", "dx": 7, "fontSize": 22,
                           "font": FONT, "color": "black"},
                  "encoding": {"text": {"field": "lab", "type": "nominal"},
                               "x": {"field": "b", "type": "quantitative"}}}],
@@ -4263,12 +4343,12 @@ def _grid_vl(spec):
                 # THE ICON GIVES WAY, NOT THE WORDS. If the line only fits without its icon the
                 # icon goes: a cut word is a lost meaning, a missing flag is not.
                 if (ic and icon_path(ic, None)
-                        and _GL.measure(text) * note_sz * CAPF <= avail - (ev_px + gap)):
+                        and _GL.measure(text, TRACK) * note_sz * CAPF <= avail - (ev_px + gap)):
                     icons.append({"x": x0 + CW - pad - ev_px / 2.0, "y": ly + mid,
                                   "sz": ev_px ** 2, "icon": icon_path(ic), "ink": "#000000"})
                     avail -= ev_px + gap
                 notes.append({"x": x, "y": ly, "s": note_sz,
-                              "t": _GL.fit(text, _units(avail, note_sz))})
+                              "t": _GL.fit(text, _units(avail, note_sz), TRACK)})
 
             # THE CARD: a haiku under its head ("1846 - Neptune"), on a gray rounded slip with no
             # border, at the foot of the cell.
@@ -4342,11 +4422,12 @@ def _grid_vl(spec):
                                               "scale": None, "legend": None})})
     lay += [
            px.line(grid, strokeWidth=RULE_STROKE, color=RULE),
+           # the weekday names fill their band (at 0.46 of it they were too small to read on the tablet)
            px.text([t for t in hdr_t if not t.get("al")],
-                   max(15.0, min(27.0, HDR * 0.46)), True)]
+                   max(15.0, min(32.0, HDR * 0.62)), True)]
     if [t for t in hdr_t if t.get("al")]:
         lay.append(px.text([t for t in hdr_t if t.get("al")],
-                           max(15.0, min(27.0, HDR * 0.46)), True, align="left"))
+                           max(15.0, min(32.0, HDR * 0.62)), True, align="left"))
 
     if icons:
         lay.append({"data": {"values": icons},
@@ -4615,7 +4696,7 @@ def _to_vegalite(spec):
                             "y": CY + (R - 6) * _m.sin(mid)})
             leaders.append({"k": i, "o": 1, "x": lx, "y": ly})
             leaders.append({"k": i, "o": 2, "x": tx + (-10 if right else 10), "y": ly})
-            labels.append({"x": tx, "y": ly, "al": "left" if right else "right",
+            labels.append({"x": tx, "y": ly, "al": "left" if right else "right", "k": i,
                            "t": "%s  ·  %s  ·  %.0f%%"
                                 % (c, spec.get("fmt", "%g") % v,
                                    100.0 * v / total)})
@@ -4629,10 +4710,22 @@ def _to_vegalite(spec):
                                color={"field": "fill", "type": "nominal", "scale": None,
                                       "legend": None})},
             px.line(leaders, strokeWidth=1.2, color="#808080")]
+        # LABELS NEVER SIT ON EACH OTHER: on each side, top to bottom, a label is at least a line below the one
+        # above it (two thin slices side by side put theirs at the same height), and its leader bends to it
+        LABEL_SZ = 22
+        for side in ("left", "right"):
+            prev = None
+            for l in sorted([l for l in labels if l["al"] == side], key=lambda l: l["y"]):
+                if prev is not None and l["y"] < prev + LABEL_SZ * 1.25:
+                    l["y"] = prev + LABEL_SZ * 1.25
+                    for q in leaders:
+                        if q["k"] == l["k"] and q["o"] == 2:
+                            q["y"] = l["y"]
+                prev = l["y"]
         for side in ("left", "right"):
             sel = [l for l in labels if l["al"] == side]
             if sel:
-                lay.append(px.text(sel, 16, True, align=side))
+                lay.append(px.text(sel, LABEL_SZ, True, align=side))
         return px.spec(title, lay, cfg, schema)
 
     if t == "stacked":
@@ -4674,7 +4767,7 @@ def _to_vegalite(spec):
                                             "scale": {"range": ["#FFFFFF", WASH["yellow"],
                                                                 WASH["orange"],
                                                                 WASH["magenta"]]}}}},
-                    {"mark": {"type": "text", "fontSize": 16, "fontWeight": "bold", "font": FONT,
+                    {"mark": {"type": "text", "fontSize": 22, "fontWeight": "bold", "font": FONT,
                               "color": "black"},
                      "encoding": {"text": {"field": "v", "type": "quantitative",
                                            "format": ","}}}],
@@ -4694,7 +4787,7 @@ def _to_vegalite(spec):
     layers = [{"mark": {"type": "bar", "fill": "white", "stroke": "black",
                         "strokeWidth": 2, "height": {"band": 0.62}}}]
     if spec.get("value_labels", True):
-        layers.append({"mark": {"type": "text", "align": "left", "dx": 7, "fontSize": 15,
+        layers.append({"mark": {"type": "text", "align": "left", "dx": 7, "fontSize": 22,
                                 "fontWeight": "bold", "color": "black", "font": FONT},
                        "encoding": {"text": {"field": "v", "type": "quantitative",
                                              "format": ","}}})

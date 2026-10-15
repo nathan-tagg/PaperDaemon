@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.16
+
+- A game is played on the page where you asked for it. An adventure's character sheet and log follow that page.
+- Chess: the board and the pieces line up; the classic piece shapes are back (the "cburnett" set, credited), in
+  the board's colors; the opponent's face is larger, with its rating beside its name, and no narrator text
+  appears on the board. The opponent may say its move.
+- A game's notes in the notebook keep the opponent's memories, not its whole profile.
+- Chart text is heavier and larger on every chart, and nothing runs together: pie labels keep apart, dense
+  number axes keep fewer labels, a negative lollipop stays inside its chart.
+- Kanban boards and marimekko charts show their contents again, agendas take times like "09:00", stat cards no
+  longer fail, and waffle parts each have their own color.
+
 ## 0.1.15
 
 - A job whose plan erases your request twice, once by naming it, is no longer reported as failed, and the request

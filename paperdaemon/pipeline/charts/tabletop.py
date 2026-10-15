@@ -79,7 +79,8 @@ STATE=obj({'scene':ID,'inventory':arr(ID,0,32),'flags':arr(ID,0,32),
 # with no text is an emote (a face alone); a narrator line is the game master's words, no face.
 SPEAKER=obj({'speaker':ID,'emotion':{'enum':list(EMOTIONS)},'text':text(360,1),
              'marks':{'type':'array','items':{'enum':list(MARKS)},'maxItems':3,'uniqueItems':True},
-             'front':ID},['speaker','emotion'])     # front: whose face, for a character with alters
+             'front':ID,'rating':integer(0,4000)},['speaker','emotion'])   # front: whose face, for a character with
+                                                                   # alters; rating: shown right of the name
 NARRATOR=obj({'narrator':text(360,1)},['narrator'])
 COMMON={'type':{},'version':{'const':1},'title':text(90,1),'subtitle':text(160),
         'page':{'enum':PAGES},'width':integer(600,2400),'height':integer(500,3200),
@@ -339,7 +340,7 @@ class Canvas:
                   'encoding':self.p.xy()})
     def measure(self,t,size):
         from paperdaemon.pipeline.draw import glyphs as GL
-        return GL.measure(self.CH._in_font(str(t)))*.70*size+size*.15
+        return GL.measure(self.CH._in_font(str(t)),self.CH.TRACK)*.70*size+size*.15   # the chart font's own spacing
     def wrap(self,t,size,width,path='text'):
         t=self.CH._in_font(str(t));result=[]
         for para in t.split('\n'):
@@ -675,7 +676,8 @@ def _dialog(c,s):
             row=F+name_row
         if y+row>c.bottom: fail('lines',f'line {i+1} runs past the bottom of the page; use fewer or shorter lines, or a taller page')
         c.image(RC.face_url(p['id'],ln['emotion'],ln.get('marks') or (),front=ln.get('front')),fx,y,F,F)
-        c.text(p['short'],fx+F/2,y+F+4,name_size,align='center',color=ink,bold=True)
+        c.text(p['short']+('  %d'%ln['rating'] if ln.get('rating') else ''),fx+F/2,y+F+4,name_size,align='center',
+               color=ink,bold=True)
         if text:
             by=y+max(0,(F-bh)/2)
             c.rect(bx0,by,bw,bh,'white',stroke=ink,radius=20,width=2.2)

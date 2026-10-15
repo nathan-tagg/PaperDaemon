@@ -46,10 +46,10 @@ def _paint(prompt, mode="new", src=None):
 
 
 def _game_page(doc):
-    """A new page RIGHT AFTER the page that asked (the pages behind it move down), the job's own tag on it so every
-    move comes back as a job, for this job's lineup. -> (page id, page number)."""
+    """THE PAGE THAT ASKED is the game's page (the request comes off at commit), with the job's own tag on it so
+    every move comes back as a job, for this job's lineup. -> (page id, page number)."""
     from paperdaemon.remarkable import library as PG_
-    pid = PG_.insert_pages(doc, JOB.page_id, 1)[0][0]
+    pid = JOB.page_id
     pno = [i + 1 for i, q in enumerate(R.live_pages(doc)) if q["id"] == pid][0]
     try:
         PG_.tag_page(doc, pid, S.TRIGGER)
@@ -58,9 +58,18 @@ def _game_page(doc):
     return pid, pno
 
 
+def _own_writes():
+    """What the game put on the page that asked is the job's own work: the page as it is now is where the job
+    started, so it is not taken for the user's writing and sent back to the queue."""
+    try:
+        JOB.sha_start = S.page_state(JOB.doc, JOB.page_id)["sha"]
+    except Exception as ex:
+        H._warn("reading the game's page", ex)
+
+
 def _run_game(step):
-    """A game step -- chess, adventure or messages -- set up on new pages right after the page that asked, in the
-    same notebook, with the trigger tag on the page that is played so every move comes back as a job. Its fields
+    """A game step -- chess, adventure or messages -- played on the page that asked (an adventure's sheet and log go
+    right after it), with the trigger tag on the page that is played so every move comes back as a job. Its fields
     say how: a chess game's color, strength, opponent and the moves already made; a chat's members. -> (ok, note)"""
     from paperdaemon.pipeline import games as GM
     doc, kind, what = JOB.doc, step["do"], step.get("what") or ""
@@ -68,7 +77,9 @@ def _run_game(step):
         from paperdaemon.pipeline.games import adventure as AD_
         if not H._llm_up():
             return False, "the text model is not answering, so there is no game master"
-        st, adoc = AD_.start(what, H._ask_text, paint=H._paint, log=H.log, workdir=H.QUEUE, doc=doc, after=JOB.page_id)
+        st, adoc = AD_.start(what, H._ask_text, paint=H._paint, log=H.log, workdir=H.QUEUE, doc=doc, after=JOB.page_id,
+                             here=True)
+        _own_writes()
         try:
             from paperdaemon.remarkable import library as PG_
             PG_.tag_page(doc, st["page_id"], S.TRIGGER)
@@ -90,14 +101,14 @@ def _run_game(step):
             return False, "nobody to text: name a resident, or several for a group chat"
         pid, pno = H._game_page(doc)
         st = MS.start(doc, pno, pid, members, workdir=H.QUEUE)
-        return True, "a chat with %s is on page %d of %s: write in the box at the bottom" % (
-            st["title"], pno, S.meta(doc).get("visibleName", doc))
+        _own_writes()
+        return True, "a chat with %s is on this page: write in the box at the bottom" % st["title"]
     setup = GM.choose_setup(what, ask, color=step.get("color"), strength=step.get("strength"),
                             opponent=step.get("opponent"))
-    name = S.meta(doc).get("visibleName", doc)
     pid, pno = H._game_page(doc)
     st = GM.start_chess(doc, pno, pid, setup, ask_text=ask, log=H.log, workdir=H.QUEUE, moves=step.get("moves"))
+    _own_writes()
     from paperdaemon.pipeline.games import chess as CH_
     played = CH_.movetext(st) if st and st.get("history") else ""
-    return True, "chess against %s (about %d) is on page %d of %s%s" % (
-        setup["name"], setup["elo"], pno, name, ("; the moves so far: %s" % played) if played else "")
+    return True, "chess against %s (about %d) is on this page%s" % (
+        setup["name"], setup["elo"], ("; the moves so far: %s" % played) if played else "")
