@@ -61,3 +61,28 @@ def test_pages_tagged_before_watching_are_not_listed_as_jobs(monkeypatch):
     status(found(tag_ts="1700000000000"), led)
     monkeypatch.setattr(ledger, "entries", lambda state=None: led["entries"])
     assert ledger.jobs() == []
+
+
+def test_a_dead_claim_on_a_page_no_longer_found_is_given_back():
+    # the page lost its tag (or was deleted) while a job that then died held it: the claim still expires
+    led = {"entries": {}, "watching_since": 0}
+    status(found(), led)
+    led["entries"]["aaaaaaaa/bbbbbbbb"].update(status="working", claim_owner="daemon", claim_at=0)
+    ledger.classify([], led)
+    e = led["entries"]["aaaaaaaa/bbbbbbbb"]
+    assert e["status"] == "pending" and "claim_owner" not in e
+
+
+def test_a_claim_older_than_the_running_host_is_released(tmp_path, monkeypatch):
+    # an update restarts the daemon and the host together: a job the old host had is handed over again at once,
+    # and a job the running host took is left alone
+    import time
+    monkeypatch.setattr(ledger, "LEDGER", str(tmp_path / "ledger.json"), raising=False)
+    led = {"entries": {"a/old": {"status": "working", "claim_owner": "daemon", "claim_at": 100},
+                       "a/new": {"status": "working", "claim_owner": "daemon", "claim_at": int(time.time())},
+                       "a/done": {"status": "done"}}, "watching_since": 0}
+    monkeypatch.setattr(ledger, "load", lambda: led)
+    monkeypatch.setattr(ledger, "save", lambda l: None)
+    assert ledger.release_dead_claims(1000) == ["a/old"]
+    assert led["entries"]["a/old"]["status"] == "pending" and "claim_owner" not in led["entries"]["a/old"]
+    assert led["entries"]["a/new"]["status"] == "working"

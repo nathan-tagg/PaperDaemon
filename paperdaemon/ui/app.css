@@ -27,6 +27,20 @@ p.msg:empty { display: none; }   /* an empty message line takes no room: buttons
 .list tr.dayrow:hover { background: transparent; }
 .list tr.dayrow:first-child td { padding-top: var(--s2); }
 .list .note { overflow-wrap: anywhere; }
+/* Jobs: FIXED COLUMNS, set by the table and not by what is in them, so nothing moves as a job runs, its time counts
+   up or a note fills in. A long page name ends in an ellipsis; what happened wraps inside its own column. */
+.jobs { table-layout: fixed; }
+.jobs col.c-time { width: 8.5em; }
+.jobs col.c-page { width: 30%; }
+.jobs col.c-took { width: 9em; }
+.jobs td.jt { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.jobs td.jp { overflow: hidden; }
+.jobs td.jp strong { display: block; overflow: hidden; text-overflow: ellipsis; }
+.jobs td.jd { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.jobs .ji { display: inline-block; width: 14px; height: 14px; margin-inline-end: var(--s2); vertical-align: -2px; flex: none; }
+.jobs svg.ji { fill: none; stroke: var(--ink-2); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.jobs svg.ji-fail { stroke: var(--mark); }
+.jobs svg.ji-skip, .jobs svg.ji-off { stroke: var(--ink-3); }
 
 /* a list on the left, one of its items open on the right (notepads, start scripts) */
 .pads { display: grid; grid-template-columns: 216px minmax(0, 1fr); gap: var(--s6); align-items: start; margin-top: var(--s5); }
@@ -155,18 +169,17 @@ pre.snippet.pad-text { white-space: pre-wrap; padding: var(--s3) var(--s4); font
 
 /* a phone on the tunnel: each job becomes a short block instead of a squeezed row */
 @media (max-width: 600px) {
-  .jobs thead { display: none; }
   .jobs, .jobs tbody { display: block; }
+  .jobs colgroup { display: none; }
   .jobs tbody tr:not(.dayrow) {
-    display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "page status" "note note" "time took";
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "page page" "note note" "time took";
     gap: 2px var(--s3); padding: 9px var(--s2); border-bottom: 1px solid var(--rule);
   }
   .jobs tbody tr:not(.dayrow) td { display: block; padding: 0; border: 0; }
   .jobs td:nth-child(1) { grid-area: time; color: var(--ink-3); font-size: 12px; }
   .jobs td:nth-child(2) { grid-area: page; }
-  .jobs td:nth-child(3) { grid-area: status; }
-  .jobs td:nth-child(4) { grid-area: note; max-width: none; }
-  .jobs td:nth-child(5) { grid-area: took; text-align: end; color: var(--ink-3); font-size: 12px; }
+  .jobs td:nth-child(3) { grid-area: note; max-width: none; }
+  .jobs td:nth-child(4) { grid-area: took; text-align: end; color: var(--ink-3); font-size: 12px; }
   .jobs tr.attn { border-inline-start: 2px solid var(--mark); }
   .jobs tr.attn td:first-child::before { display: none; }
   .jobs tr.dayrow { display: block; }

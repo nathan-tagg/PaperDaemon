@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.18
+
+- A job that was running when PaperDaemon updated or restarted is handed over again at once, not shown as working
+  for ever; a stuck claim on a page that lost its tag expires too.
+- The Jobs list is quieter: no summary line, no headings and no "Today" row. Each job shows an icon at the left of
+  its time (a check, a cross, an arrow past, a clock, or the spinner), and its columns keep their widths.
+
 ## 0.1.17
 
 - Violins stay inside their axis, taper to a point and sit centered over their names.

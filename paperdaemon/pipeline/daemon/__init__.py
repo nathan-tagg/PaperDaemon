@@ -531,8 +531,25 @@ def main():
     cycles = 0
     err_state = {"sig": None, "n": 0, "last": 0.0, "since": 0.0}
 
+    def release_dead():
+        """A job claimed before the running host started died with the host that had it (an update restarts
+        both): hand it over again. At the start, and once a minute while nothing is in flight."""
+        started = host_started_at()
+        if not started:
+            return
+        try:
+            gone = rm_scan.release_dead_claims(started)
+        except Exception as ex:
+            log("could not check for jobs a stopped host had: %s" % str(ex)[:80])
+            return
+        for k in gone:
+            log("  the host that had %s stopped -- handing it over again" % k)
+
+    release_dead()
     while True:
         cycles += 1
+        if not INFLIGHT and cycles % 60 == 0:
+            release_dead()
         try:
             # UNDER THE LEDGER LOCK: this cycle writes back the whole ledger it read, and a host
             # "done" landing in between was put back to "pending" -- the daemon then waited 25

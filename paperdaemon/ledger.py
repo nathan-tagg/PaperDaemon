@@ -782,6 +782,14 @@ def classify(found, led):
                 status = "WAITING" if (f["scope"] == "page" and st.get("empty")) else "PENDING"
         f["status"] = status
         queue.append(f)
+    # A CLAIM ON A PAGE THE SCAN NO LONGER FINDS (untagged, deleted, moved) expires too: checked only for the pages
+    # found, a job that died holding one stayed "working" for good
+    seen = set(f["key"] for f in found)
+    for k, e in entries.items():
+        if k not in seen and e.get("status") == "working" and now - e.get("claim_at", 0) >= CLAIM_TTL:
+            e.pop("claim_owner", None)
+            e.pop("claim_at", None)
+            e["status"] = "pending"
     return queue
 
 
@@ -806,6 +814,25 @@ def claim(key, owner):
     save(led)
     print("%s claimed by %s" % (key, owner))
     return True
+
+
+@_under_lock
+def release_dead_claims(before):
+    """Release every claim taken before `before` (when the host now running started): its host is gone, and the
+    job with it. The daemon remembers what it handed over only while it runs, so after a restart of both (an
+    update) this is how a job that was in flight is handed over again rather than shown "working" for ever.
+    -> the keys released."""
+    led = load()
+    out = []
+    for k, e in led["entries"].items():
+        if e.get("status") == "working" and e.get("claim_at", 0) < before:
+            e.pop("claim_owner", None)
+            e.pop("claim_at", None)
+            e["status"] = "pending"
+            out.append(k)
+    if out:
+        save(led)
+    return out
 
 
 @_under_lock
