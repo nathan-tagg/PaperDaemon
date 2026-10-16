@@ -198,6 +198,7 @@
   <string name="memories.delete_q">¿Eliminar este recuerdo?</string>
   <string name="memories.delete_body">No se le volverá a mostrar al modelo.</string>
   <string name="lineup.new">Nueva alineación</string>
+  <string name="lineup.create">Crear alineación</string>
   <string name="lineup.rename_title">Cambiar el nombre de la alineación</string>
   <string name="lineup.name">Nombre</string>
   <string name="lineup.delete_q">¿Eliminar {name}?</string>

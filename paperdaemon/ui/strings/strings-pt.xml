@@ -198,6 +198,7 @@
   <string name="memories.delete_q">Excluir esta memória?</string>
   <string name="memories.delete_body">Ela não será mostrada ao modelo de novo.</string>
   <string name="lineup.new">Nova escalação</string>
+  <string name="lineup.create">Criar escalação</string>
   <string name="lineup.rename_title">Renomear a escalação</string>
   <string name="lineup.name">Nome</string>
   <string name="lineup.delete_q">Excluir {name}?</string>

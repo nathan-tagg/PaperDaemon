@@ -199,6 +199,7 @@
   <string name="memories.delete_q">이 기억을 삭제할까요?</string>
   <string name="memories.delete_body">모델에게 다시 보여지지 않습니다.</string>
   <string name="lineup.new">새 라인업</string>
+  <string name="lineup.create">라인업 만들기</string>
   <string name="lineup.rename_title">라인업 이름 바꾸기</string>
   <string name="lineup.name">이름</string>
   <string name="lineup.delete_q">{name}을(를) 삭제할까요?</string>

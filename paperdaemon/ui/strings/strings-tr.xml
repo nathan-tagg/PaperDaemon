@@ -199,6 +199,7 @@
   <string name="memories.delete_q">Bu anı silinsin mi?</string>
   <string name="memories.delete_body">Model bunu bir daha görmeyecek.</string>
   <string name="lineup.new">Yeni dizilim</string>
+  <string name="lineup.create">Dizilim oluştur</string>
   <string name="lineup.rename_title">Dizilimi yeniden adlandır</string>
   <string name="lineup.name">Ad</string>
   <string name="lineup.delete_q">{name} silinsin mi?</string>

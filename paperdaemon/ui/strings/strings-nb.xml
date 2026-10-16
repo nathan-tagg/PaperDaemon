@@ -199,6 +199,7 @@
   <string name="memories.delete_q">Slette dette minnet?</string>
   <string name="memories.delete_body">Modellen får ikke se det igjen.</string>
   <string name="lineup.new">Nytt oppsett</string>
+  <string name="lineup.create">Opprett oppsett</string>
   <string name="lineup.rename_title">Gi oppsettet nytt navn</string>
   <string name="lineup.name">Navn</string>
   <string name="lineup.delete_q">Slette {name}?</string>

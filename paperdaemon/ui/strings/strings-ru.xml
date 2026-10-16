@@ -207,6 +207,7 @@
   <string name="memories.delete_q">Удалить это воспоминание?</string>
   <string name="memories.delete_body">Модели его больше не покажут.</string>
   <string name="lineup.new">Новый состав</string>
+  <string name="lineup.create">Создать состав</string>
   <string name="lineup.rename_title">Переименовать состав</string>
   <string name="lineup.name">Название</string>
   <string name="lineup.delete_q">Удалить {name}?</string>

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.24
+
+- The New lineup dialog's button says "Create lineup" (and Rename's "Rename"); it had no label at all.
+
 ## 0.1.23
 
 - Ink the tablet ties to the typed text (it does that to writing near typed text) is read where the tablet shows

@@ -199,6 +199,7 @@
   <string name="memories.delete_q">حذف هذه الذكرى؟</string>
   <string name="memories.delete_body">لن تُعرض على النموذج مرة أخرى.</string>
   <string name="lineup.new">تشكيلة جديدة</string>
+  <string name="lineup.create">إنشاء التشكيلة</string>
   <string name="lineup.rename_title">إعادة تسمية التشكيلة</string>
   <string name="lineup.name">الاسم</string>
   <string name="lineup.delete_q">حذف {name}؟</string>

@@ -199,6 +199,7 @@
   <string name="memories.delete_q">Xóa ký ức này?</string>
   <string name="memories.delete_body">Mô hình sẽ không được cho xem nó nữa.</string>
   <string name="lineup.new">Đội hình mới</string>
+  <string name="lineup.create">Tạo đội hình</string>
   <string name="lineup.rename_title">Đổi tên đội hình</string>
   <string name="lineup.name">Tên</string>
   <string name="lineup.delete_q">Xóa {name}?</string>

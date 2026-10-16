@@ -199,6 +199,7 @@
   <string name="memories.delete_q">এই স্মৃতিটি মুছবেন?</string>
   <string name="memories.delete_body">মডেলকে এটি আর দেখানো হবে না।</string>
   <string name="lineup.new">নতুন লাইনআপ</string>
+  <string name="lineup.create">লাইনআপ তৈরি করুন</string>
   <string name="lineup.rename_title">লাইনআপের নাম বদলান</string>
   <string name="lineup.name">নাম</string>
   <string name="lineup.delete_q">{name} মুছবেন?</string>

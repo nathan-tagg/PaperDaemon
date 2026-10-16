@@ -199,6 +199,7 @@
   <string name="memories.delete_q">Hapus ingatan ini?</string>
   <string name="memories.delete_body">Model tidak akan diperlihatkan ingatan ini lagi.</string>
   <string name="lineup.new">Formasi baru</string>
+  <string name="lineup.create">Buat formasi</string>
   <string name="lineup.rename_title">Ganti nama formasi</string>
   <string name="lineup.name">Nama</string>
   <string name="lineup.delete_q">Hapus {name}?</string>

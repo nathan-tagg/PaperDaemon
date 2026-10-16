@@ -199,6 +199,7 @@
   <string name="memories.delete_q">यह याद हटाएँ?</string>
   <string name="memories.delete_body">यह मॉडल को फिर नहीं दिखाई जाएगी।</string>
   <string name="lineup.new">नया लाइनअप</string>
+  <string name="lineup.create">लाइनअप बनाएँ</string>
   <string name="lineup.rename_title">लाइनअप का नाम बदलें</string>
   <string name="lineup.name">नाम</string>
   <string name="lineup.delete_q">{name} हटाएँ?</string>

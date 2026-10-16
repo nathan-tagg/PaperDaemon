@@ -198,6 +198,7 @@
   <string name="memories.delete_q">Supprimer ce souvenir ?</string>
   <string name="memories.delete_body">Il ne sera plus montré au modèle.</string>
   <string name="lineup.new">Nouvelle équipe</string>
+  <string name="lineup.create">Créer l’équipe</string>
   <string name="lineup.rename_title">Renommer l'équipe</string>
   <string name="lineup.name">Nom</string>
   <string name="lineup.delete_q">Supprimer {name} ?</string>

@@ -199,6 +199,7 @@
   <string name="memories.delete_q">Diese Erinnerung löschen?</string>
   <string name="memories.delete_body">Sie wird dem Modell nicht mehr gezeigt.</string>
   <string name="lineup.new">Neue Aufstellung</string>
+  <string name="lineup.create">Aufstellung anlegen</string>
   <string name="lineup.rename_title">Aufstellung umbenennen</string>
   <string name="lineup.name">Name</string>
   <string name="lineup.delete_q">{name} löschen?</string>

@@ -198,6 +198,7 @@
   <string name="memories.delete_q">Delete this memory?</string>
   <string name="memories.delete_body">The model will not be shown it again.</string>
   <string name="lineup.new">New lineup</string>
+  <string name="lineup.create">Create lineup</string>
   <string name="lineup.rename_title">Rename lineup</string>
   <string name="lineup.name">Name</string>
   <string name="lineup.delete_q">Delete {name}?</string>

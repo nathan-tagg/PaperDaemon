@@ -199,6 +199,7 @@
   <string name="memories.delete_q">删除这条记忆？</string>
   <string name="memories.delete_body">模型将不会再看到它。</string>
   <string name="lineup.new">新建阵容</string>
+  <string name="lineup.create">创建阵容</string>
   <string name="lineup.rename_title">重命名阵容</string>
   <string name="lineup.name">名称</string>
   <string name="lineup.delete_q">删除 {name}？</string>

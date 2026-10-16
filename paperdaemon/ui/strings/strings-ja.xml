@@ -199,6 +199,7 @@
   <string name="memories.delete_q">この記憶を削除しますか?</string>
   <string name="memories.delete_body">モデルに再び表示されることはありません。</string>
   <string name="lineup.new">新しいラインナップ</string>
+  <string name="lineup.create">ラインナップを作成</string>
   <string name="lineup.rename_title">ラインナップの名前を変更</string>
   <string name="lineup.name">名前</string>
   <string name="lineup.delete_q">{name} を削除しますか?</string>

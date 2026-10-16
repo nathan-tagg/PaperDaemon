@@ -157,7 +157,8 @@
     else if (a === "test") test(el.dataset.role);
     else if (a === "addharness") { readAll(); PD.api("POST", "/harnesses/open", { kind: el.dataset.kind }); S.stale = true; }
     else if (a === "new" || a === "rename") {
-      const v = await PD.ask({ title: PD.t(a === "new" ? "lineup.new" : "lineup.rename_title"), fields: [{ name: "name", label: PD.t("lineup.name"), kind: "text", value: a === "new" ? "" : S.show }] });
+      const v = await PD.ask({ title: PD.t(a === "new" ? "lineup.new" : "lineup.rename_title"), action: PD.t(a === "new" ? "lineup.create" : "lineup.rename"),
+        fields: [{ name: "name", label: PD.t("lineup.name"), kind: "text", value: a === "new" ? "" : S.show }] });
       if (!v || !v.name.trim()) return;
       const name = v.name.trim();
       const [, e] = a === "new"

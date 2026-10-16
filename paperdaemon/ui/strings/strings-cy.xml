@@ -199,6 +199,7 @@
   <string name="memories.delete_q">Dileu'r atgof hwn?</string>
   <string name="memories.delete_body">Ni fydd yn cael ei ddangos i'r model eto.</string>
   <string name="lineup.new">Tîm newydd</string>
+  <string name="lineup.create">Creu tîm</string>
   <string name="lineup.rename_title">Ailenwi'r tîm</string>
   <string name="lineup.name">Enw</string>
   <string name="lineup.delete_q">Dileu {name}?</string>

@@ -199,6 +199,7 @@
   <string name="memories.delete_q">یہ یادداشت حذف کریں؟</string>
   <string name="memories.delete_body">ماڈل کو یہ دوبارہ نہیں دکھائی جائے گی۔</string>
   <string name="lineup.new">نئی لائن اپ</string>
+  <string name="lineup.create">لائن اپ بنائیں</string>
   <string name="lineup.rename_title">لائن اپ کا نام بدلیں</string>
   <string name="lineup.name">نام</string>
   <string name="lineup.delete_q">{name} حذف کریں؟</string>

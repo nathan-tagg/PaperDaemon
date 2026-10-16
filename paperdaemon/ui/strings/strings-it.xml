@@ -199,6 +199,7 @@
   <string name="memories.delete_q">Eliminare questa memoria?</string>
   <string name="memories.delete_body">Il modello non la vedrà più.</string>
   <string name="lineup.new">Nuova formazione</string>
+  <string name="lineup.create">Crea formazione</string>
   <string name="lineup.rename_title">Rinomina la formazione</string>
   <string name="lineup.name">Nome</string>
   <string name="lineup.delete_q">Eliminare {name}?</string>
