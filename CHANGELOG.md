@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.25
+
+- A model's location can be its API's own address, such as Google's OpenAI-compatible
+  https://generativelanguage.googleapis.com/v1beta/openai: requests go to that address's routes rather than to a
+  /v1 added after it. A server's plain address (http://host:port) works as before.
+
 ## 0.1.24
 
 - The New lineup dialog's button says "Create lineup" (and Rename's "Rename"); it had no label at all.

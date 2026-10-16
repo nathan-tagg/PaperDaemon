@@ -105,3 +105,14 @@ def test_errors_never_carry_the_key():
         assert "sk-secret" not in str(ex)
     else:
         raise AssertionError("port 9 answered")
+
+
+def test_an_api_base_is_the_servers_v1_or_the_path_the_location_names():
+    # a server's own address takes /v1; a location naming its API's path is used as it is (Google's OpenAI
+    # compatibility is /v1beta/openai, with no /v1 of its own)
+    from paperdaemon.models.adapters import api_base
+    assert api_base("http://127.0.0.1:8790") == "http://127.0.0.1:8790/v1"
+    assert api_base("http://127.0.0.1:8790/v1/") == "http://127.0.0.1:8790/v1"
+    assert api_base("https://api.anthropic.com") == "https://api.anthropic.com/v1"
+    assert api_base("https://generativelanguage.googleapis.com/v1beta/openai/") == \
+        "https://generativelanguage.googleapis.com/v1beta/openai"

@@ -71,11 +71,21 @@ def _strip_v1(url):
     return url[:-3] if url.endswith("/v1") else url
 
 
+def api_base(url):
+    """Where a location's API routes live: a server's own address (http://host:port, an API's site) has them under
+    /v1; a location that names a path IS its API's base -- one ending in /v1, or another, such as Google's
+    https://generativelanguage.googleapis.com/v1beta/openai, whose chat route is /v1beta/openai/chat/completions."""
+    from urllib.parse import urlparse
+    url = (url or "").rstrip("/")
+    return url + "/v1" if urlparse(url).path in ("", "/") else url
+
+
 class Adapter:
     family = ""
 
     def __init__(self, url, key=None, model=""):
         self.base = _strip_v1(url)
+        self.api = api_base(url)          # the /v1 routes (models, chat, messages, images); base is the server's root
         self.key = key or None
         self.model = model or ""
 
@@ -104,7 +114,7 @@ class OpenAIChat(Adapter):
         return {"Authorization": "Bearer " + self.key} if self.key else {}
 
     def models(self):
-        d = _request("GET", self.base + "/v1/models", headers=self.headers())
+        d = _request("GET", self.api + "/models", headers=self.headers())
         return [m.get("id") for m in d.get("data") or [] if m.get("id")]
 
     def health(self):
@@ -185,12 +195,12 @@ class OpenAIChat(Adapter):
         body, dropped = self.request(system, messages, tools, force_tool, caps, harness, temperature, max_tokens)
         refused = False
         try:
-            d = _request("POST", self.base + "/v1/chat/completions", body, self.headers(), MODEL_CALL)
+            d = _request("POST", self.api + "/chat/completions", body, self.headers(), MODEL_CALL)
         except AdapterError as ex:
             # a server that cannot force a tool call says so with a 400 naming tool_choice
             if ex.status == 400 and body.get("tool_choice") == "required" and "tool_choice" in ex.body:
                 body["tool_choice"], refused = "auto", True
-                d = _request("POST", self.base + "/v1/chat/completions", body, self.headers(), MODEL_CALL)
+                d = _request("POST", self.api + "/chat/completions", body, self.headers(), MODEL_CALL)
             else:
                 raise
         r = self.parse(d)
@@ -213,7 +223,7 @@ class AnthropicChat(Adapter):
         return h
 
     def models(self):
-        d = _request("GET", self.base + "/v1/models", headers=self.headers())
+        d = _request("GET", self.api + "/models", headers=self.headers())
         return [m.get("id") for m in d.get("data") or [] if m.get("id")]
 
     def request(self, system, messages, tools=(), force_tool=False, caps=None, harness=None,
@@ -277,11 +287,11 @@ class AnthropicChat(Adapter):
         body, dropped = self.request(system, messages, tools, force_tool, caps, harness, temperature, max_tokens)
         refused = False
         try:
-            d = _request("POST", self.base + "/v1/messages", body, self.headers(), MODEL_CALL)
+            d = _request("POST", self.api + "/messages", body, self.headers(), MODEL_CALL)
         except AdapterError as ex:
             if ex.status == 400 and body.get("tool_choice", {}).get("type") == "any" and "tool_choice" in ex.body:
                 body["tool_choice"], refused = {"type": "auto"}, True
-                d = _request("POST", self.base + "/v1/messages", body, self.headers(), MODEL_CALL)
+                d = _request("POST", self.api + "/messages", body, self.headers(), MODEL_CALL)
             else:
                 raise
         r = self.parse(d)
@@ -392,7 +402,7 @@ class OpenAIImages(Adapter):
         return {"Authorization": "Bearer " + self.key} if self.key else {}
 
     def models(self):
-        d = _request("GET", self.base + "/v1/models", headers=self.headers())
+        d = _request("GET", self.api + "/models", headers=self.headers())
         return [m.get("id") for m in d.get("data") or [] if m.get("id")]
 
     def request(self, prompt, width, height, **_):
@@ -403,7 +413,7 @@ class OpenAIImages(Adapter):
 
     def generate(self, prompt, width, height, steps=None, cfg=None, sampler=None, scheduler=None, seed=-1,
                  shift=None):
-        d = _request("POST", self.base + "/v1/images/generations", self.request(prompt, width, height),
+        d = _request("POST", self.api + "/images/generations", self.request(prompt, width, height),
                      self.headers(), MODEL_CALL)
         item = (d.get("data") or [{}])[0]
         if item.get("b64_json"):

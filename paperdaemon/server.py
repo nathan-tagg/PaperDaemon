@@ -1095,9 +1095,10 @@ def host_image(name: str):
 
 
 def _text_upstream(s):
-    """(base URL, headers) of the text slot, for the proxy."""
+    """(API base URL, headers) of the text slot, for the proxy: a request for v1/<route> goes to <API base>/<route>
+    (adapters.api_base: a server's address takes /v1, a location naming its API's path is used as it is)."""
     m = slots.slot("text", s)
-    base = adapters._strip_v1(m.get("location") or "")
+    base = adapters.api_base(m.get("location") or "") if (m.get("location") or "").strip() else ""
     headers = {"Content-Type": "application/json"}
     key = vault.get(slots.key_of("text", m))
     if key:
@@ -1115,6 +1116,7 @@ async def host_llm(key: str, rest: str, request: Request):
     if not base:
         return JSONResponse({"error": {"message": "the text slot has no location"}}, status_code=503)
     rest = rest.lstrip("/")
+    route = rest[3:] if rest.startswith("v1/") else rest          # onto the API base, which carries the version
     if request.method == "GET":
         if rest == "health":
             # healthy when a call would be served: the server answers, or its start script can start it
@@ -1125,7 +1127,7 @@ async def host_llm(key: str, rest: str, request: Request):
         if not await run_in_threadpool(card.ready, "text", s):
             return JSONResponse({"error": {"message": "the text model is not running"}}, status_code=503)
         async with httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as c:
-            r = await c.get(base + "/" + rest, headers=headers, params=dict(request.query_params))
+            r = await c.get(base + "/" + route, headers=headers, params=dict(request.query_params))
         return Response(r.content, status_code=r.status_code, media_type=r.headers.get("content-type"))
 
     body = await request.body()
@@ -1160,7 +1162,7 @@ async def host_llm(key: str, rest: str, request: Request):
 
     client = httpx.AsyncClient(timeout=httpx.Timeout(None, connect=30.0))
     try:
-        upstream = await client.send(client.build_request("POST", base + "/" + rest, content=body, headers=headers),
+        upstream = await client.send(client.build_request("POST", base + "/" + route, content=body, headers=headers),
                                      stream=True)
     except Exception as ex:
         await client.aclose()
