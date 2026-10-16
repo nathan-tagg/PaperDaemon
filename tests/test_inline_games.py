@@ -86,3 +86,15 @@ def test_an_ink_adventure_is_played_in_the_notebook_that_asked(tmp_path):
     """)
     assert d == {"doc": "nb", "inline": "inline", "order": True, "journal": True, "found": True, "turn": "done",
                  "same_pages": True}
+
+
+def test_a_finished_game_gives_its_page_back(monkeypatch):
+    # the game is over: what is written on its page next goes to the model (a new game, a question), not to a game
+    # that can only refuse it; a game still being played keeps its page
+    from paperdaemon.pipeline import games as GM
+    from paperdaemon.pipeline.games import chess as CH
+    state = {"id": "g", "status": "checkmate"}
+    monkeypatch.setattr(CH, "game_for_page", lambda doc, pid: state)
+    assert GM.game_on_page("doc", "page") is None
+    state["status"] = "playing"
+    assert GM.game_on_page("doc", "page") is state

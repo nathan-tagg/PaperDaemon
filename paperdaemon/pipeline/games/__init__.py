@@ -34,13 +34,18 @@ def _log(log, msg):
     (log or print)(msg)
 
 
+ACTIVE = ("playing", "open")          # a game still being played (chess, the adventure) or a chat (messages)
+
+
 def game_on_page(doc, page_id):
-    """The game that lives on this page, or None."""
+    """The game being played on this page, or None. A FINISHED GAME DOES NOT KEEP ITS PAGE: what is written there
+    next goes to the model like any page's (a new game, a question), instead of to a game that can only refuse it."""
     from paperdaemon.pipeline.games import chess as CH
     try:
-        return CH.game_for_page(doc, page_id)
+        g = CH.game_for_page(doc, page_id)
     except Exception:
         return None
+    return g if g is not None and g.get("status", "playing") in ACTIVE else None
 
 
 # ------------------------------------------------------------------------------ the talk strip

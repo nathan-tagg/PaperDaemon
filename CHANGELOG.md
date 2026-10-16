@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.28
+
+- A finished game no longer holds its page: what you write there next is a request like any other, so "new game"
+  starts one on that page.
+
 ## 0.1.27
 
 - Game characters talk. Every character now speaks on a good share of turns (a third of ordinary moves for the
