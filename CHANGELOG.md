@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.29
+
+- Speak to a character and they answer, every time.
+- Otherwise they talk on 25% to 75% of ordinary moves, by how chatty they are, and on 75% to 100% of dramatic ones.
+
 ## 0.1.28
 
 - A finished game no longer holds its page: what you write there next is a request like any other, so "new game"

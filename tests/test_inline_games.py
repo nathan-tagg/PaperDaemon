@@ -98,3 +98,16 @@ def test_a_finished_game_gives_its_page_back(monkeypatch):
     assert GM.game_on_page("doc", "page") is None
     state["status"] = "playing"
     assert GM.game_on_page("doc", "page") is state
+
+
+def test_a_character_spoken_to_always_answers():
+    # spoken to, a character answers: every time, even when someone else has already spoken this turn
+    from paperdaemon.pipeline.games import chess as CH, characters as RC, table as TB
+    cid = next(c if isinstance(c, str) else c["id"] for c in RC.roster()
+               if float(RC.get(c if isinstance(c, str) else c["id"])["voice"]["chattiness"]) <= 0.1)
+    for seed in range(40):
+        st = CH.new_game("doc", "pid", user_color="w")
+        st["persona"].update(character=cid, name=cid)
+        rng = CH.Rng(seed)
+        plan = TB.pre_turn(st, cid, set(), rng, addressed=True, others_speaking=1, budget=1)
+        assert plan["speak"], seed
