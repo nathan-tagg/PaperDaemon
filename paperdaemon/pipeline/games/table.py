@@ -259,7 +259,11 @@ def pre_turn(state, cid, situations, rng, addressed=False, others_speaking=0, bu
     r_speak, r_face = rng.random(), rng.random()
     ex = RC.expression(p)
     rolls = [rng.random() for _ in ex["tells"]]
-    want = chat * (0.2 + 0.8 * drama) if not addressed else min(1.0, chat + 0.5)
+    # HOW OFTEN THEY SPEAK: every character talks some of the time, the chatty ones more, a dramatic turn and being
+    # spoken to most. At chattiness x (0.2 + 0.8 x drama) a quiet character (Coco, 0.1) spoke on 2% of ordinary moves --
+    # never, once the narrator no longer filled the silent turns. Now: an ordinary move 30% (the quietest) to 51%
+    # (the chattiest), a dramatic one up to 75%, and spoken to, 70% at the least.
+    want = (0.25 + 0.75 * chat ** 0.5 * (0.4 + 0.6 * drama)) if not addressed else min(1.0, 0.7 + 0.3 * chat)
     speak = others_speaking < budget and r_speak < want
     armed = [t for t, r in zip(ex["tells"], rolls) if r < t["leak"]]
     slips = [t for t in armed if t.get("says")]

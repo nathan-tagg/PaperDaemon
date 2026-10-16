@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.27
+
+- Game characters talk. Every character now speaks on a good share of turns (a third of ordinary moves for the
+  quietest, half for the chattiest, more on a dramatic move, and nearly always when you speak to them); a quiet one
+  used to say something on one move in fifty.
+
 ## 0.1.26
 
 - Chess: after the opponent moves, your pieces stay in front of the board. Once the tablet had grouped them with
