@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.26
+
+- Chess: after the opponent moves, your pieces stay in front of the board. Once the tablet had grouped them with
+  the page's text, they were brought forward only inside that group, and the redrawn board covered them.
+- Previews draw pictures in the tablet's own stacking order, so a picture the tablet shows underneath another is
+  shown underneath here too.
+
 ## 0.1.25
 
 - A model's location can be its API's own address, such as Google's OpenAI-compatible

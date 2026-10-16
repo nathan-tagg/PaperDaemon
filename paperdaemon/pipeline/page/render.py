@@ -632,6 +632,13 @@ def _render(doc, page_no, out, typed, hide, hide_typed, hide_images, mark_typed,
     try:
         from paperdaemon.pipeline.page import images as _IM
         _imgs = [im for im in _IM.items(doc, page_no) if im.get("path")]
+        # IN THE TABLET'S DRAWING ORDER: drawn in the file's order, a picture the tablet shows under another
+        # (white pieces in a group under a board drawn after it) showed on top here
+        try:
+            _st = _IM.stacking(page_file(doc, live_pages(doc)[page_no - 1]["id"]))
+            _imgs.sort(key=lambda im: _st.get(tuple(im.get("item") or ()), (0, 0, 0, 0)))
+        except Exception:
+            pass
         if hide_images:
             def _hid(im):
                 return any(all(abs(float(a) - float(b)) < 1.5 for a, b in zip(im["box"], hb))

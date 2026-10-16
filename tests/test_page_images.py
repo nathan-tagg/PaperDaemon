@@ -23,3 +23,25 @@ def test_a_group_takes_the_offset_its_recorded_pictures_agree_on(monkeypatch):
     assert out["a"]["box"][1] == 1659.0 and out["b"]["box"][1] == 1659.0      # 297 below their stored boxes
     assert out["moved"]["box"][1] == 900.0 + 297.0                            # where the player put it
     assert not any(im["approx_y"] for im in out.values())
+
+
+def test_pictures_are_drawn_in_the_tablets_order(tmp_path, monkeypatch):
+    # a board drawn on Layer 1 after a group the tablet tied to the text: the group's pictures (chess pieces) are
+    # drawn where the group sits among Layer 1's children, so the board lies on top of them -- as the tablet shows
+    from rmscene import scene_stream as ss
+    from rmscene.crdt_sequence import CrdtSequenceItem
+    from rmscene.tagged_block_common import CrdtId
+    from paperdaemon.pipeline.page import render as R
+    def group_item(item, value, parent):
+        return ss.SceneGroupItemBlock(parent_id=CrdtId(*parent), item=CrdtSequenceItem(
+            item_id=CrdtId(*item), left_id=CrdtId(0, 0), right_id=CrdtId(0, 0), deleted_length=0, value=CrdtId(*value)))
+    blocks = [group_item((0, 13), (0, 11), (0, 1)),            # Layer 1, in the page's root
+              group_item((1, 130), (1, 129), (0, 11))]          # the tied group, a child of Layer 1
+    page = tmp_path / "p.rm"
+    page.write_bytes(b"x")
+    monkeypatch.setattr(R, "blocks_of", lambda path: blocks)
+    monkeypatch.setattr(IM, "parse", lambda data: [
+        {"item": (1, 154), "parent": (1, 129), "deleted": False},    # a piece, in the group
+        {"item": (1, 212), "parent": (0, 11), "deleted": False}])    # the board, right on Layer 1, written later
+    st = IM.stacking(str(page))
+    assert st[(1, 212)] > st[(1, 154)]                                # the board is drawn after: on top

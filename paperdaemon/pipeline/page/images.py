@@ -559,6 +559,34 @@ def _to_page(ims, path, doc, page_no):
 _ITEMS = {}
 
 
+def stacking(path):
+    """{picture item (part1, part2): its place in the tablet's drawing order}, lowest drawn first. The tablet draws
+    Layer 1's children in order, and a group's pictures where that group sits among them: a picture on Layer 1 is
+    placed by its own id, one inside a group by the id of the group's place in Layer 1, then by its own. (The
+    items this system writes link (0,0)/(0,0), so the sequence orders them by id.)"""
+    from paperdaemon.pipeline.page import render as R
+    from rmscene import scene_stream as ss
+    # group node -> (the id of its place among its parent's children, that parent)
+    where = {}
+    for b in R.blocks_of(path):
+        if isinstance(b, ss.SceneGroupItemBlock):
+            v = getattr(b.item, "value", None)
+            if v is not None:
+                where[(v.part1, v.part2)] = ((b.item.item_id.part1, b.item.item_id.part2),
+                                             (b.parent_id.part1, b.parent_id.part2))
+    out = {}
+    for im in parse(open(path, "rb").read()):
+        if im["deleted"] or not im.get("item"):
+            continue
+        own = tuple(im["item"])
+        g = where.get(tuple(im.get("parent") or ()))
+        # a picture right on a LAYER (a group that sits in the page's root) is one of the layer's children: ordered
+        # by its own id among the groups beside it. One inside a group sits where its group sits, then by its own.
+        on_layer = g is None or g[1] in ((0, 1), (0, 0))
+        out[own] = (own + (0, 0)) if on_layer else (g[0] + own)
+    return out
+
+
 def items(doc, page_no, page_id=None):
     """The live images of a page with their files resolved. [] when there are none."""
     try:
@@ -748,7 +776,12 @@ def insert(doc, page_no, png_path, box, page_id=None):
 # ends up under these again.
 def to_front(doc, page_no, keys, page_id=None):
     """Bring pictures to the top of the page: each is tombstoned and added again as a new item after
-    every other, with its own asset, hash and box. keys = hashes (hex). -> how many."""
+    every other, with its own asset and hash, ON LAYER 1 at its box on the page. keys = hashes (hex). -> how many.
+
+    Layer 1, not the picture's old parent: the tablet draws a group it tied to the typed text where that group sits
+    in Layer 1's order, so a chess piece added again inside it still lay under a board drawn on Layer 1 after it
+    (the white pieces showed behind the board). On Layer 1 its stored box is its page box: no tie to the text."""
+    from rmscene import scene_stream as ss
     import io
     from paperdaemon.pipeline import draw as A
     from rmscene import read_blocks
@@ -762,6 +795,13 @@ def to_front(doc, page_no, keys, page_id=None):
     data = open(path, "rb").read()
     want = [bytes.fromhex(k) for k in keys]
     aid = {h: a for bt, b in blocks(data) if bt == 14 for h, a, _n, _s, _e in _asset_entries(b) or []}
+    layer = next((b.group.node_id for b in read_blocks(io.BytesIO(data))
+                  if isinstance(b, ss.TreeNodeBlock) and getattr(b.group.label, "value", None) == "Layer 1"), None)
+    if layer is None:
+        raise RuntimeError("no Layer 1 on that page")
+    # each picture's box ON THE PAGE (a tied group's stored boxes are offset: _to_page)
+    on_page = dict((im["hash"], tuple(im["box"])) for im in
+                   _to_page([dict(im) for im in parse(data) if not im["deleted"]], path, d, page_no))
     n = A.next_free_id(list(read_blocks(io.BytesIO(data))))
     for bt, body in blocks(data):
         if bt == 15:
@@ -778,10 +818,7 @@ def to_front(doc, page_no, keys, page_id=None):
         hm = _HASH16.search(body) if bt == 15 else None
         h = body[hm.end():hm.end() + 16] if hm else b""
         if bt == 15 and h in want and not _is_deleted(body) and h in aid:
-            q = _QUAD.search(body)
-            vals = struct.unpack_from("<16f", body, q.end())
-            xs, ys = [vals[4 * j] for j in range(4)], [vals[4 * j + 1] for j in range(4)]
-            again.append((_parent_of(body), h, (min(xs), min(ys), max(xs), max(ys))))
+            again.append(((layer.part1, layer.part2), h, on_page[h.hex()]))
             body = _tombstone(body)
         out += struct.pack("<I", len(body)) + head + body
         i += 8 + ln
