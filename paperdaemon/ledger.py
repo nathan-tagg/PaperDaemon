@@ -14,13 +14,13 @@ On each scan a tagged page is classified:
   PENDING   seen before but never completed
   DONE      completed and the page is unchanged since
   WAITING   tag present but the page has no content yet (the tag syncs before the ink)
-  BASELINE  first sight of a page reached by an inherited tag whose content predates that tag:
-            recorded, never dispatched
+  BASELINE  recorded as it is, never dispatched: a page already tagged at the start, or one of a notebook that
+            would start more than NOTEBOOK_CAP jobs at once
   CLAIMED   another worker is on it right now
 
 Tags inherit downward: a tag on a folder watches every page of every notebook in it, a tag on a notebook
-every page in it, a tag on a page that page; the most specific tag reaching a page wins. A page that was
-already old when the tag arrived is baselined, or tagging a notebook would start a job per old page.
+every page in it, a tag on a page that page; the most specific tag reaching a page wins. After the start every
+new or changed page is a job, except all of a notebook's at once when there are more than NOTEBOOK_CAP.
 
 A worker claims a page before working it and heartbeats while it works; a claim older than CLAIM_TTL is
 treated as dead, so a crashed worker cannot block the queue.
@@ -110,26 +110,16 @@ SPROMPT_TAG = (os.environ.get("RM_SPROMPT_TAG") or SPROMPT_TAG).strip().lower()
 MUTE = IGNORE_TAG
 CLAIM_TTL = int(os.environ.get("RM_CLAIM_TTL", "900"))
 
-# Tagging a NOTEBOOK (or a folder) watches every page in it -- including pages
-# written months ago, which were never a request and must not become one now.
-#
-# reMarkable stamps every page with `modifed` and every tag with a timestamp, so
-# "is this page part of what the user just tagged?" is answerable instead of guessable.
-# A page last touched in the same sitting as the tag FIRES; anything older
-# BASELINES silently -- recorded at its current content, nothing dispatched, and
-# from then on any edit comes through as REOPENED like any other watched page.
-#
-# The grace window runs BACKWARDS from the tag because the order within a sitting
-# is not fixed: writing the request and then tagging the notebook is as normal as
-# tagging first: the page the user wants looked at is often written a minute BEFORE the tag, and every
-# other page days or months earlier.
-INHERIT_GRACE = int(os.environ.get("RM_INHERIT_GRACE", "3600"))
-
-# Safety valve: if a first-sight burst somehow qualifies more pages than this,
-# baseline the lot rather than dispatch them. A notebook cannot be a hundred
-# separate requests, and being wrong here is expensive in a way being cautious
-# is not.
-INHERIT_BURST_MAX = int(os.environ.get("RM_INHERIT_BURST_MAX", "12"))
+# THE USER'S RULES FOR WHAT BECOMES A JOB:
+# - THE START is the first look at a complete mirror (the daemon waits for one): every page tagged then is
+#   recorded as it is, and none is a job.
+# - From then on, every page the mirror shows NEW or CHANGED is a job -- whether PaperDaemon was running when the
+#   change was made or not. A tag's age decides nothing: a new page in a notebook tagged long ago is a new page.
+# - A NOTEBOOK THAT WOULD START MORE THAN NOTEBOOK_CAP JOBS AT ONCE starts none: a notebook created, uploaded or
+#   moved into a tagged folder arrives whole, and its pages are not a list of requests. All of them are recorded
+#   as they are; an edit brings a page back.
+# - CHANGED PAGES GO BEFORE NEW ONES when the daemon hands the next job over (`why` on the entry).
+NOTEBOOK_CAP = int(os.environ.get("RM_NOTEBOOK_CAP", "10"))
 
 
 # ------------------------------------------------------------------ ledger
@@ -661,87 +651,41 @@ def scan():
     return uniq
 
 
-def _ago(f):
-    try:
-        d = (int(f["tag_ts"]) - int(f["modifed"])) / 1000.0
-    except Exception:
-        return "an unknown time"
-    for n, unit in ((86400, "d"), (3600, "h"), (60, "m")):
-        if abs(d) >= n:
-            return "%.0f%s" % (d / n, unit)
-    return "%.0fs" % d
-
-
-def _fresh(found, entries):
-    """Inherited pages edited in the same sitting as the tag that reached them.
-
-    Decided per NOTEBOOK so the burst cap means what it says, and only for pages
-    not already in the ledger -- this is a first-sight question.
-    """
-    by_doc = {}
-    for f in found:
-        if not f.get("inherited") or f["key"] in entries:
-            continue
-        try:
-            ok = (int(f["tag_ts"]) - int(f["modifed"])) <= INHERIT_GRACE * 1000
-        except (TypeError, ValueError):
-            ok = False               # no timestamps to judge by: do not fire
-        if ok:
-            by_doc.setdefault(f["doc_id"], []).append(f["key"])
-    out = set()
-    for doc, keys in by_doc.items():
-        if len(keys) > INHERIT_BURST_MAX:
-            continue
-        out.update(keys)
-    return out
-
-
 BEFORE_WATCHING = "tagged before PaperDaemon was watching: not a job; an edit or a new tag brings it back"
 
 
-def _tagged_before(f, since):
-    """True when the tag that reached this page was put on before PaperDaemon began watching (`since`, seconds)."""
-    try:
-        return int(f.get("tag_ts")) < since * 1000
-    except (TypeError, ValueError):
-        return False                 # no stamp: it cannot be shown to be old
+TOO_MANY = ("more than %d pages of this notebook were new or changed at once, so none is a job (a notebook that "
+            "arrives whole is not a list of requests); an edit brings a page back" % NOTEBOOK_CAP)
 
 
 def classify(found, led):
     now = int(time.time())
     entries = led["entries"]
-    # ONLY TAGS THAT ARRIVE WHILE PAPERDAEMON WATCHES ARE JOBS. A new ledger's first scan files every page that is
-    # already tagged as seen, and from then on a page whose tag is older than the watch is filed the same way:
-    # pages tagged long ago, by another tool or before PaperDaemon was installed, are never worked as a backlog.
+    # THE START: a new ledger's first scan files every page that is already tagged as seen, never a backlog. From
+    # then on a page met for the first time is a new page, whatever the age of the tag that reaches it.
     first = "watching_since" not in led and not entries
-    since = led.setdefault("watching_since", now)
-    fresh = _fresh(found, entries)
+    led.setdefault("watching_since", now)
     queue = []
     for f in found:
         e = entries.get(f["key"])
         st = f["state"]
         if e is None:
-            old = first or _tagged_before(f, since)
-            baseline = old or (f.get("inherited") and f["key"] not in fresh)
+            baseline = first
             entries[f["key"]] = {
                 "doc": f["doc"], "doc_id": f["doc_id"], "page_id": f["page_id"],
                 "page": f["page"], "tag": f["tag"], "instruction": f["instruction"],
                 "tag_ts": f.get("tag_ts"), "inherited": f.get("inherited"),
                 "first_seen": now, "last_seen": now,
-                "status": "skipped" if baseline else "pending",
+                "status": "skipped" if baseline else "pending", "why": None if baseline else "new",
                 "handled_sha": st.get("sha") if baseline else None,
                 "handled_tag_ts": f.get("tag_ts") if baseline else None,
-                "note": (BEFORE_WATCHING if old else
-                         "baselined: reached by an inherited tag but last "
-                         "edited %s before it; watching for edits from here"
-                         % _ago(f)) if baseline else None,
+                "note": BEFORE_WATCHING if baseline else None,
                 "completed_at": now if baseline else None,
             }
             if baseline:
                 status = "BASELINE"
             else:
-                status = ("WAITING" if (f["scope"] == "page" and st.get("empty"))
-                          else "NEW")
+                status = "WAITING" if st.get("empty") else "NEW"
         else:
             e["last_seen"] = now
             e["page"] = f["page"]
@@ -758,6 +702,7 @@ def classify(found, led):
                 e["instruction"] = f["instruction"]
                 e["tag_ts"] = f.get("tag_ts")
                 e["status"] = "pending"
+                e["why"] = "changed"
                 e["handled_sha"] = None
             held = e.get("claim_owner")
             age = now - e.get("claim_at", 0)
@@ -777,6 +722,7 @@ def classify(found, led):
                 # nothing on it changed
                 e.pop("tag_conflict", None)
                 e["status"] = "pending"
+                e["why"] = "changed"
             if e["status"] in ("done", "skipped"):
                 # Both settled states re-open on a content change. Skipped must
                 # behave like done here: a page skipped for "no request yet" has
@@ -798,7 +744,7 @@ def classify(found, led):
                              or e.get("handled_raw") == st.get("raw"))
                 if unchanged and not retagged:
                     status = "DONE" if e["status"] == "done" else "SKIPPED"
-                elif f["scope"] == "page" and st.get("empty"):
+                elif st.get("empty"):
                     # CHANGED TO NOTHING: the page was cleared. There is nothing to answer until
                     # something is written on it, so it waits like a new page -- dispatched, it
                     # cost a job that could only say "the page is blank"
@@ -807,10 +753,26 @@ def classify(found, led):
                 else:
                     status = "RETAGGED" if (retagged and unchanged) else "REOPENED"
                     e["status"] = "pending"
+                    e["why"] = "changed"
             else:
-                status = "WAITING" if (f["scope"] == "page" and st.get("empty")) else "PENDING"
+                status = "WAITING" if st.get("empty") else "PENDING"
         f["status"] = status
+        f["why"] = entries[f["key"]].get("why")
         queue.append(f)
+    # A NOTEBOOK THAT WOULD START MORE THAN NOTEBOOK_CAP JOBS AT ONCE starts none (see NOTEBOOK_CAP): every page of it
+    # this scan made a job is recorded as it is
+    burst = {}
+    for f in queue:
+        if f["status"] in ("NEW", "REOPENED", "RETAGGED"):
+            burst.setdefault(f["doc_id"], []).append(f)
+    for doc, fs in burst.items():
+        if len(fs) <= NOTEBOOK_CAP:
+            continue
+        for f in fs:
+            e = entries[f["key"]]
+            e.update(status="skipped", why=None, note=TOO_MANY, completed_at=now, handled_sha=f["state"].get("sha"),
+                     handled_raw=f["state"].get("raw"), handled_tag_ts=f.get("tag_ts"))
+            f["status"], f["why"], f["too_many"] = "BASELINE", None, True
     # A CLAIM ON A PAGE THE SCAN NO LONGER FINDS (untagged, deleted, moved) expires too: checked only for the pages
     # found, a job that died holding one stayed "working" for good
     seen = set(f["key"] for f in found)
@@ -977,7 +939,7 @@ def jobs(limit=50, state=None):
         if not isinstance(e, dict):
             continue
         note = str(e.get("note") or "")
-        if e.get("status") == "skipped" and (note.startswith("baselined") or note == BEFORE_WATCHING):
+        if e.get("status") == "skipped" and (note.startswith("baselined") or note in (BEFORE_WATCHING, TOO_MANY)):
             continue                          # pages that were there before PaperDaemon looked are not jobs
         started = e.get("started_at") or e.get("claim_at") or e.get("first_seen")
         finished = e.get("completed_at") if e.get("status") in ("done", "skipped") else None

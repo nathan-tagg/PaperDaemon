@@ -227,7 +227,10 @@ def report(cmp_):
 # calendars, the chess page -- began under it. TOP_MARGIN clears it with room to spare. Every kind of
 # content takes its top from here (rm_plan, rm_host, the game pages, PDF documents); if the toolbar
 # still covers ink, THIS is the number to change.
-TOP_MARGIN = 160.0
+# MEASURED ON THE TABLET: the user drew a highlighter line whose top edge marks where the toolbar's
+# zone ends -- y 115 (centered at 130, 30 wide). Text, replies and other ordinary content start there. Content
+# that takes the whole screen (a coloring page) is not held to it: the screen is the page frame, y 0..2160.
+TOP_MARGIN = 115.0
 
 
 def safe_area(frame=(1620.0, 2160.0)):
@@ -240,7 +243,7 @@ def safe_area(frame=(1620.0, 2160.0)):
     return (-fw / 2.0 + 10.0 * s, TOP_MARGIN * s, fw / 2.0 - 10.0 * s, fh - 10.0 * s)
 
 
-SAFE_AREA = safe_area()                # (-800, 160, 800, 2150) on the 1620 x 2160 notebook page
+SAFE_AREA = safe_area()                # (-800, 115, 800, 2150) on the 1620 x 2160 notebook page
 
 
 

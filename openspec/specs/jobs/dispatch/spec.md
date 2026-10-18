@@ -44,18 +44,39 @@ universal, not a setting, and is matched ignoring case.
 - **WHEN** a folder carries "ignore" and a notebook inside it carries the trigger tag
 - **THEN** no page of that notebook is dispatched
 
-### Requirement: Old pages under a new tag are left alone
-When a notebook or folder is tagged, its pages that were last changed before the tag was added SHALL be
-recorded as baseline and SHALL NOT be dispatched. A baseline page SHALL be dispatched once the user
-changes it.
+### Requirement: Every new or changed page after the start is a job
+After the start -- the first look at a complete mirror -- every tagged page that the mirror shows new or
+changed SHALL be dispatched, whether PaperDaemon was running when the change was made or not. The age of
+the tag that reaches a page SHALL decide nothing.
 
-#### Scenario: Tagging a full notebook
-- **WHEN** the user tags a notebook that already holds forty written pages
+#### Scenario: A new page in a notebook tagged long ago
+- **WHEN** a notebook was tagged a month ago and the user adds a page to it and writes on it
+- **THEN** the page is dispatched as new
+
+#### Scenario: Written while PaperDaemon was closed
+- **WHEN** the user writes on a tagged page while PaperDaemon is not running, and starts it later
+- **THEN** the page is dispatched once the mirror shows the change
+
+### Requirement: A notebook that would start more than ten jobs starts none
+When one look at the mirror would dispatch more than ten pages of a single notebook, none of them SHALL be
+dispatched, not even the first ten: every one SHALL be recorded as it is, and a page SHALL be dispatched
+once the user changes it afterward.
+
+#### Scenario: A notebook moved into a tagged folder
+- **WHEN** the user moves a notebook of forty written pages into a tagged folder
 - **THEN** none of the forty pages is dispatched, and a page the user writes on afterward is
+
+### Requirement: Changed pages go first
+When the daemon hands the next job over, a page that changed SHALL go before a page that is new.
+
+#### Scenario: A follow-up and a new page
+- **WHEN** the user adds a page with a request and writes a follow-up on an answered page
+- **THEN** the follow-up is worked first
 
 ### Requirement: A new ledger starts from what is already there
 When the daemon starts with an empty ledger, as on PaperDaemon's first run or after the ledger was reset,
-every tagged page it finds SHALL be recorded as baseline and SHALL NOT be dispatched, and the overview
+it SHALL wait for a complete mirror -- that first look is the start -- and every tagged page it finds then
+SHALL be recorded as baseline and SHALL NOT be dispatched, and the overview
 SHALL say how many pages were recorded this way. Those pages SHALL be dispatched once the user changes
 or retags them.
 
@@ -126,13 +147,14 @@ case. Nothing in the trash SHALL be dispatched.
 - **WHEN** the user creates a tagged notebook whose one page is tagged `sprompt`
 - **THEN** no job starts until the user writes on another page
 
-### Requirement: The user can pause the daemon
-The user SHALL be able to pause and resume the daemon from the UI. A paused daemon SHALL start no job
-and SHALL catch up on resume.
+### Requirement: The user can pause the jobs
+The user SHALL be able to pause and resume from the UI. Pausing SHALL stop the host, so no job is worked,
+while the daemon SHALL go on reading every mirror update and queuing the jobs it finds. The queue SHALL
+survive a restart, and the host SHALL work it on resume.
 
 #### Scenario: Pausing during a meeting
-- **WHEN** the user pauses the daemon and tags two pages, then resumes
-- **THEN** no job runs while paused, and both pages are dispatched after resuming
+- **WHEN** the user pauses and tags two pages, then resumes
+- **THEN** no job runs while paused, both pages are queued as they arrive, and both are worked after resuming
 
 ### Requirement: The overview shows what happened
 The overview SHALL list, for each job, the notebook, the page number, the state that caused the job,

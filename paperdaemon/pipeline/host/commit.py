@@ -87,7 +87,7 @@ def t_undo_last(parts=1):
 def _page_box():
     """The coloring box a FRESH page gets: what the planner gives a full coloring place there."""
     return PL.solve([{"id": "page", "kind": "coloring", "size": "full", "near": "stack"}],
-                    first_free_y=H._safe()[1], safe=H._safe())["page"]
+                    first_free_y=H._safe()[1], safe=H._safe(), screen=H._screen())["page"]
 
 
 def _new_page():

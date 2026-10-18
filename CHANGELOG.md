@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.30
+
+- What becomes a job: after PaperDaemon's first look at a complete mirror, every new or changed tagged page is a
+  job, whether PaperDaemon was running when it changed or not. A new page in a notebook tagged long ago is a new
+  page, not "tagged before PaperDaemon was watching".
+- A notebook that would start more than 10 jobs at once (created, uploaded or moved into a tagged folder) starts
+  none; its pages come back one by one when you edit them.
+- Changed pages are worked before new ones.
+- Pause stops the jobs, not the daemon: while paused, what you write is still read and queued, and Start works
+  the queue.
+- PaperDaemon never puts a tag on a page by itself. Games no longer tag their pages, the adventure journal no
+  longer gets "ignore", and a rebuilt document keeps the tags you put on it.
+- Text and replies start at the toolbar line measured on the tablet (y 115).
+- A full coloring page fills the whole screen, in the screen's exact shape.
+- An erase that points at something not on the page goes back to the model instead of putting your request back.
+- The page previews show exactly the screen: no strip below the page, no margin beside it, and a highlighter
+  without its own color code is drawn in its color (pink was drawn yellow).
+
 ## 0.1.29
 
 - Speak to a character and they answer, every time.

@@ -264,7 +264,7 @@ def _corner(p, near, safe, obstacles):
 
 
 def solve(places, first_free_y=None, safe=SAFE, arrow_tip=None, marks=None, obstacles=None,
-          text_col=None, fixed=None):
+          text_col=None, fixed=None, screen=None):
     """places -> boxes. Raises PlanError if it cannot.
 
     `fixed` are boxes that are already decided -- a picture being redone in its old place, an item of this job
@@ -281,8 +281,15 @@ def solve(places, first_free_y=None, safe=SAFE, arrow_tip=None, marks=None, obst
 
     A place with near="arrow" is centered on `arrow_tip` instead of being stacked: an arrow the user drew is an
     instruction about position.
+
+    THE SCREEN IS A PAGE'S WHOLE FACE. A full coloring page alone in the plan takes `screen` -- the page frame
+    the tablet shows without scrolling, measured on the device as x -810..810, y 0..2160 -- and not the safe
+    area: it is the page, so neither the toolbar's line nor what is already written moves it.
     """
     _check(places)
+    if (screen and len(places) == 1 and places[0]["kind"] == "coloring" and places[0]["size"] == "full"
+            and places[0]["near"] == "stack"):
+        return {places[0]["id"]: _finish(places[0]["id"], "coloring", *(float(v) for v in screen))}
     top = max(float(first_free_y if first_free_y is not None else safe[1]), safe[1])
     bottom = float(safe[3])
     band_h, band_w = bottom - top, safe[2] - safe[0]

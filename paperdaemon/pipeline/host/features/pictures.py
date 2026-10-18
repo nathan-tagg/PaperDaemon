@@ -76,6 +76,11 @@ def _dims_for(box):
     """(width, height) for the painter: the box's own shape, multiples of 64, about a megapixel at
     most. A coloring page is portrait; rendered square it filled the top half of the page."""
     ar = float(box["w"]) / max(1.0, float(box["h"]))
+    if box.get("kind") == "coloring":
+        # A COLORING PAGE IS THE BOX'S EXACT SHAPE -- on the whole screen, 3:4 -- or it sits in it with white bands:
+        # the multiple-of-64 size nearest that shape, about a megapixel at most
+        return min(((w, h) for w in range(512, 1217, 64) for h in range(512, 1217, 64) if w * h <= 1100000),
+                   key=lambda d: (abs(d[0] / float(d[1]) - ar), -d[0] * d[1]))
     if 0.8 <= ar <= 1.25:
         s = H._side_for(box)
         return s, s

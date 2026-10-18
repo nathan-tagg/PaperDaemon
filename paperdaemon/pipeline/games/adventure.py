@@ -1224,7 +1224,7 @@ def _redraw_log(doc, state, workdir):
 # has an image of each character, a link on the image takes the reader to a page detailing that person (their class,
 # if known, name, etc.). A notebook page cannot hold a link; a PDF can (rm_pdfdoc.write_pdf's GoTo links, which the
 # tablet follows). So the journal is a PDF document of its own beside the notebook, rebuilt IN PLACE whenever what it
-# shows changes, tagged with the mute tag so the daemon never takes it for a request. It shows ONLY what the hero
+# shows changes. It shows ONLY what the hero
 # knows -- never a secret or an unrevealed class.
 def journal_name(state):
     return "Ink Adventure: %s - Journal" % state["title"]
@@ -1418,7 +1418,6 @@ def update_journal(state, log=None):
         import hashlib
         from paperdaemon.remarkable import sync as C
         from paperdaemon.pipeline.page import pdf as PD
-        from paperdaemon import ledger as S
         sig = hashlib.sha1(json.dumps([state.get("title"), state.get("cast"), state.get("quests"), state.get("lore")],
                                       sort_keys=True, default=str).encode()).hexdigest()
         jr = state.get("journal") or {}
@@ -1431,10 +1430,6 @@ def update_journal(state, log=None):
         meta = json.load(open(os.path.join(PD.MIRROR, state["doc"] + ".metadata"), encoding="utf-8"))
         doc, page_ids = PD.stage(journal_name(state), pdf, folder=meta.get("parent") or "", doc=jr.get("doc"),
                                  page_ids=jr.get("page_ids"))
-        cp = os.path.join(PD.MIRROR, doc + ".content")
-        c = json.load(open(cp, encoding="utf-8"))
-        c["tags"] = [{"name": S.MUTE, "timestamp": int(time.time() * 1000)}]
-        paths.write_json_atomic(cp, c)
         pushed = C.push_new_doc(doc, dry_run=os.environ.get("RM_HOST_DRY_DOCS") == "1")
         if isinstance(pushed, dict) and "already exists" in str(pushed.get("error", "")):
             pushed = C.push_doc(doc, dry_run=os.environ.get("RM_HOST_DRY_DOCS") == "1")

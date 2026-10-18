@@ -56,7 +56,7 @@ NOTEPAD_DIR = _notepads()                                        # every noteboo
 try:
     from paperdaemon.pipeline.page import SAFE_AREA as _SAFE
 except Exception:                                     # without the rmscene stack: the same numbers
-    _SAFE = (-800.0, 160.0, 800.0, 2150.0)
+    _SAFE = (-800.0, 115.0, 800.0, 2150.0)
 SQ = 168                                              # a square in the piece pictures' own pixels
 LEGACY_MARGIN = 48
 PAGE_W = 1620

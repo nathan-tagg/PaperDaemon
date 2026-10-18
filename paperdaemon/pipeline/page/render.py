@@ -10,9 +10,9 @@ Model verified against the reMarkable desktop app:
                model width from pressure. FINELINER/HIGHLIGHTER are constant
                (ts*8 and ts*120); PAINTBRUSH varies and tapers at stroke ends.
 
-  color       Highlighters carry Line.color_rgba as an (R,G,B,A) tuple.
-               Line.color collapses every highlighter to PenColor.HIGHLIGHT, so
-               it is useless for them. Other pens use the Line.color enum and
+  color       Highlighters carry Line.color_rgba as an (R,G,B,A) tuple,
+               or, without one, their color in the Line.color enum (HL_ENUM).
+               A highlighter with rgba has Line.color HIGHLIGHT, useless then. Other pens use the Line.color enum and
                have color_rgba == None. Palette values are little-endian: read
                the raw bytes forward and orange comes out pale blue.
 
@@ -63,6 +63,12 @@ ENUM = {0: (0, 0, 0), 1: (144, 144, 144), 2: (255, 255, 255), 3: (254, 253, 96),
         4: (169, 250, 92), 5: (255, 85, 207), 6: (48, 74, 224), 7: (194, 49, 50),
         8: (191, 191, 191), 9: (255, 255, 255), 10: (145, 218, 113), 11: (116, 210, 232),
         12: (192, 127, 210), 13: (250, 231, 25)}
+# A HIGHLIGHTER WITH NO color_rgba says its color in the Line.color enum: a pink highlighter stroke the user drew
+# on the tablet carried PenColor.PINK and no rgba, and was drawn yellow. Its wash is the highlighter's own pastel
+# (the measured highlighter palette: yellow, orange, green, blue, pink, gray), not the pen color of that name.
+HL_ENUM = {3: (255, 237, 117), 13: (255, 237, 117), 4: (172, 255, 133), 10: (172, 255, 133),
+           5: (242, 158, 255), 12: (242, 158, 255), 6: (190, 234, 254), 11: (190, 234, 254),
+           1: (199, 199, 198), 8: (199, 199, 198)}
 
 # highlighter's width field uses a wider internal unit than the pens
 WSCALE = {"HIGHLIGHTER": 0.25}
@@ -666,13 +672,14 @@ def _render(doc, page_no, out, typed, hide, hide_typed, hide_images, mark_typed,
         _extra = list(_extra) + [(_x0, _y0), (_x1, _y1)]
     _page = page_frame(doc, page_no)
     if displayed:
-        # the page as the tablet shows it: from its top, at least its full width, centered. The tablet pans past
-        # the sides and lets you write there, so ink beyond them widens the picture (evenly, keeping the page in
-        # the middle); ink below makes it taller. Only ink above the top is off the page.
+        # the page as the tablet shows it: its screen, exactly the frame's width (measured on the device: x
+        # -810..810 on a notebook page) -- ink written past a side is off the screen there too, so it does not
+        # widen the picture or put a margin beside the page. Ink below makes it taller, to its own bottom and no
+        # further (content that ends at the page's foot ends at the screen's, with no strip under it). Ink above
+        # the top is off the page.
         _pw, _ph = _page
-        _side = max([abs(p.x) for L in S for p in L.points] + [abs(e[0]) for e in _extra] + [_pw / 2 - 60]) + 60
-        _half = max(_pw / 2, _side)
-        _low = max([p.y for L in S for p in L.points] + [e[1] for e in _extra] + [_ph - 60]) + 60
+        _half = _pw / 2
+        _low = max([p.y for L in S for p in L.points] + [e[1] for e in _extra] + [_ph])
         W, H, T = int(round(2 * _half)), int(round(max(_ph, _low))), (lambda p, _h=_half: (p.x + _h, p.y))
     else:
         W, H, T = _frame(S, _page, extra=_extra)
@@ -745,7 +752,7 @@ def _render(doc, page_no, out, typed, hide, hide_typed, hide_images, mark_typed,
             rgba = tuple(L.color_rgba) if getattr(L, "color_rgba", None) else (128, 128, 128, 96)
             ink.append((pts, widths, "shader", rgba[:4]))
         elif L.tool.name.startswith("HIGHLIGHTER"):
-            rgb = tuple(L.color_rgba[:3]) if L.color_rgba else (255, 237, 117)
+            rgb = tuple(L.color_rgba[:3]) if L.color_rgba else HL_ENUM.get(L.color.value, (255, 237, 117))
             ink.append((pts, widths, "highlighter", rgb))
         else:
             col = ENUM.get(L.color.value, (0, 0, 0))

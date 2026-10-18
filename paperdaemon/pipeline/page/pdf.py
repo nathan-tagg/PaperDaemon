@@ -329,7 +329,7 @@ def safe_top():
         from paperdaemon.pipeline import page as P
         return int(round(P.safe_area((PAGE_W, PAGE_H))[1]))
     except Exception:                          # without the rmscene stack: the same margin, scaled
-        return int(round(160.0 * PAGE_W / 1620.0))
+        return int(round(115.0 * PAGE_W / 1620.0))
 
 
 def page_image(im, margin=36, caption=None, caption_px=26, top=None):
@@ -581,6 +581,13 @@ def stage(name, pdf_path, folder="", doc=None, page_ids=None):
         "orientation": "portrait", "pageCount": n_pages, "pageTags": [],
         "sizeInBytes": str(len(data)), "tags": [], "textAlignment": "justify",
         "textScale": 1, "zoomMode": "bestFit"}
+    try:
+        # rebuilt in place: the tags are the user's, and stay (a page's tag while that page is still there)
+        was = json.load(open(os.path.join(MIRROR, doc + ".content"), encoding="utf-8"))
+        content["tags"] = was.get("tags") or []
+        content["pageTags"] = [t for t in was.get("pageTags") or [] if t.get("pageId") in [p["id"] for p in pages]]
+    except (OSError, ValueError):
+        pass
     now = str(int(time.time() * 1000))
     metadata = {"createdTime": now, "lastModified": now, "lastOpened": now, "lastOpenedPage": 0,
                 "new": False, "parent": parent, "pinned": False, "source": "",

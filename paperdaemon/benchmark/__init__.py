@@ -275,12 +275,13 @@ def environment(s, port, token, state, mirror, tag):
 
 
 def _work(port, token, lineup, all_cases):
-    was_running = loop.running()
+    was_running, was_paused = loop.running(), loop.paused()
     procs = {}
     state = None
     try:
-        # one runner: the tablet loop finishes what it is doing, then pauses for the run
-        while loop.busy() is not None:
+        # one runner: the tablet loop finishes what it is doing, then pauses for the run (a paused loop works
+        # nothing, though its queue may hold jobs)
+        while not was_paused and loop.busy() is not None:
             if _run["cancel"].wait(2.0):
                 raise RuntimeError("canceled before the run began")
         if was_running:
@@ -368,6 +369,8 @@ def _work(port, token, lineup, all_cases):
         if was_running:
             try:
                 loop.start(port, token)
+                if was_paused:
+                    loop.pause()
             except Exception:
                 pass
         with _lock:

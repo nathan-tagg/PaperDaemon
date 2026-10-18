@@ -46,16 +46,11 @@ def _paint(prompt, mode="new", src=None):
 
 
 def _game_page(doc):
-    """THE PAGE THAT ASKED is the game's page (the request comes off at commit), with the job's own tag on it so
-    every move comes back as a job, for this job's lineup. -> (page id, page number)."""
-    from paperdaemon.remarkable import library as PG_
+    """THE PAGE THAT ASKED is the game's page (the request comes off at commit). Its tags are the user's: the game
+    never adds one. -> (page id, page number)."""
     pid = JOB.page_id
     pno = [i + 1 for i, q in enumerate(R.live_pages(doc)) if q["id"] == pid][0]
     _clear_page(doc, pno)
-    try:
-        PG_.tag_page(doc, pid, S.TRIGGER)
-    except Exception as ex:
-        H._warn("tagging the game's page", ex)
     return pid, pno
 
 
@@ -102,7 +97,7 @@ def _own_writes():
 
 def _run_game(step):
     """A game step -- chess, adventure or messages -- played on the page that asked (an adventure's sheet and log go
-    right after it), with the trigger tag on the page that is played so every move comes back as a job. Its fields
+    right after it); the page's tags stay the user's. Its fields
     say how: a chess game's color, strength, opponent and the moves already made; a chat's members. -> (ok, note)"""
     from paperdaemon.pipeline import games as GM
     doc, kind, what = JOB.doc, step["do"], step.get("what") or ""
@@ -114,11 +109,6 @@ def _run_game(step):
         st, adoc = AD_.start(what, H._ask_text, paint=H._paint, log=H.log, workdir=H.QUEUE, doc=doc, after=JOB.page_id,
                              here=True)
         _own_writes()
-        try:
-            from paperdaemon.remarkable import library as PG_
-            PG_.tag_page(doc, st["page_id"], S.TRIGGER)
-        except Exception as ex:
-            H._warn("tagging the adventure's scene page", ex)
         nums = [i + 1 for i, q in enumerate(R.live_pages(doc)) if q["id"] in (st.get("pages") or [])]
         return True, ("Ink Adventure “%s” is ready, with %s as the hero: pages %d to %d of this notebook, the story "
                       "on page %d" % (st["title"], st["hero"]["name"], min(nums), max(nums),

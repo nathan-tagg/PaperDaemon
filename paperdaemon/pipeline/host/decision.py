@@ -190,6 +190,16 @@ def _plan(plan_steps, rulings=(), places=None):
     # of the plan's in one question
     _grounded = H._at_ground([q["at"] for q in plan_steps if isinstance(q.get("at"), str)])
     _where = {}                                   # step id -> ("box" | "point", in page units)
+    # AN ERASE THAT POINTS AT NOTHING GOES BACK TO THE MODEL, before anything is done. Run, it failed at the end, and
+    # a failed step that answers the request keeps the request (rule 10): a step that only restated the rulings'
+    # own erase ("all the handwriting marks") put the user's prompt back on the page.
+    _lost = [q for q in plan_steps if q["do"] == "erase" and isinstance(q.get("at"), str)
+             and _grounded.get(q["at"]) is None]
+    if _lost:
+        return {"error": "This plan cannot run as it is. Fix it and plan again:\n- " + "\n- ".join(
+            "the erase step pointing at %r: nothing on the page could be found there. Anything with an id "
+            "(mark:N, para:N, picture:N) is taken off by its ruling, with no erase step of its own; drop this "
+            "step, or point at what it erases so that it can be found." % q["at"][:80] for q in _lost)}
     for q in plan_steps:
         at = q.get("at")
         if not at:
@@ -451,7 +461,7 @@ def _plan(plan_steps, rulings=(), places=None):
     else:
         try:
             _rb = [(b["x0"], b["y0"], b["x1"], b["y1"]) for b in redo.values()]
-            boxes = PL.solve(places, first_free_y=info.get("first_free_y"), safe=H._safe(), arrow_tip=tip,
+            boxes = PL.solve(places, first_free_y=info.get("first_free_y"), safe=H._safe(), screen=H._screen(), arrow_tip=tip,
                              marks=marks, obstacles=obstacles + _rb, text_col=H._text_col(doc, page),
                              fixed=_rb)
         except PL.PlanError as ex:

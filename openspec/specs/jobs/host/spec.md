@@ -27,11 +27,20 @@ SHALL work the same way for every harness.
 - **THEN** the host draws the same chart both times
 
 ### Requirement: Everything stays inside the safe area, below the toolbar
-Every kind of content the host or a game puts on a page -- words, charts, calendars, pictures, coloring
-pages, game pages, the pages of documents it makes -- SHALL stay inside the page's safe area, whose top
-clears the tablet's toolbar docked across the top of the screen and whose sides and foot keep a small
-margin. The safe area SHALL be defined once, and every placement SHALL take its top from that
-definition rather than a number of its own.
+Every kind of content the host or a game puts on a page -- words, charts, calendars, pictures, game pages,
+the pages of documents it makes -- SHALL stay inside the page's safe area, whose top clears the tablet's
+toolbar docked across the top of the screen and whose sides and foot keep a small margin. The safe area's
+top is y 115 on a 1620 x 2160 page, measured on the tablet. The safe area SHALL be defined once, and every
+placement SHALL take its top from that definition rather than a number of its own. Content may run below
+the foot and the page scrolls.
+
+A full coloring page alone on its page is the exception: it SHALL take the whole screen, the page frame the
+tablet shows without scrolling (x -810..810, y 0..2160 on a notebook page), and SHALL be generated in that
+frame's exact shape.
+
+#### Scenario: A coloring book page
+- **WHEN** a job makes a full coloring page and nothing else on its page
+- **THEN** the picture fills the screen from its top edge to its bottom edge, side to side, with no white bands
 
 #### Scenario: A picture on an empty page
 - **WHEN** a job puts a full-size picture on a page whose request was erased

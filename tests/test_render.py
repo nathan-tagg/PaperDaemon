@@ -58,8 +58,9 @@ def test_what_is_under_the_strokes_stays():
     assert tuple(out[15, 30]) == (10, 200, 30)
 
 
-def test_a_page_written_past_its_sides_shows_whole_and_centered(tmp_path, monkeypatch):
-    """The tablet pans past a page's sides and lets you write there: the page view widens evenly to keep it."""
+def test_a_page_written_past_its_sides_shows_the_screen_and_no_margin(tmp_path, monkeypatch):
+    """The page view is the tablet's screen, the frame's width (measured on the device): ink past a side is off it,
+    and it neither widens the view nor puts a margin beside the page."""
     from paperdaemon.pipeline.page import images, render as R, typed
     pic = tmp_path / "p.png"
     Image.new("RGB", (10, 10), "black").save(pic)
@@ -71,8 +72,8 @@ def test_a_page_written_past_its_sides_shows_whole_and_centered(tmp_path, monkey
     out = tmp_path / "o.png"
     R.render("d", 1, str(out), blank_ok=True, displayed=True)
     im = Image.open(out)
-    assert im.size == (2 * (800 + 60), 1872)                # wider by the ink past the right side, on both sides
-    assert ink(im.convert("RGB"))[150, 860 + 750]           # the picture past the edge is drawn
+    assert im.size == (1404, 1872)                          # the screen, whatever lies past its side
+    assert ink(im.convert("RGB"))[150, 702 + 700]           # the part of the picture on the screen is drawn
 
 
 def test_a_stroke_anchored_to_the_typed_text_is_read_where_the_tablet_draws_it(tmp_path, monkeypatch):
@@ -100,3 +101,20 @@ def test_a_stroke_anchored_to_the_typed_text_is_read_where_the_tablet_draws_it(t
     assert (line.points[0].x, line.points[0].y) == (-230.0, 314.0)     # where the tablet draws it
     assert P.skey(line) == P.skey(stored)                               # erasing still finds it in the file
     assert (stored.points[0].x, stored.points[0].y) == (100.0, 80.0)   # the stored stroke is untouched
+
+
+def test_a_highlighter_with_no_rgba_takes_its_color_from_the_enum(tmp_path, monkeypatch):
+    # the user's pink highlighter stroke carried PenColor.PINK and no color_rgba, and was drawn yellow
+    from rmscene.scene_items import Line, Point, Pen, PenColor
+    from paperdaemon.pipeline.page import images, render as R, typed
+    pink = Line(color=PenColor.PINK, tool=Pen.HIGHLIGHTER_2, thickness_scale=1.0, starting_length=0.0,
+                points=[Point(-300.0, 130.0, 0, 120, 0, 100), Point(300.0, 130.0, 0, 120, 0, 100)])
+    monkeypatch.setattr(R, "strokes", lambda doc, page, displayed=False: [pink])
+    monkeypatch.setattr(R, "page_frame", lambda doc, page: (1620, 2160))
+    monkeypatch.setattr(R, "_paste_source", lambda *a: "")
+    monkeypatch.setattr(typed, "paragraphs", lambda doc, page: (_ for _ in ()).throw(ValueError()))
+    monkeypatch.setattr(images, "items", lambda doc, page: [])
+    out = tmp_path / "o.png"
+    R.render("d", 1, str(out), blank_ok=True, displayed=True)
+    r, g, b = Image.open(out).convert("RGB").getpixel((810, 130))
+    assert b == 255 and g < 230 and r > g                       # the pink wash, not the yellow one (b would be low)

@@ -460,15 +460,9 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
     if over:
         from paperdaemon.remarkable import library as PG
         from paperdaemon.pipeline.page import render as R
-        from paperdaemon import ledger as SC
         _draw(doc, page_no, page_id, state, workdir)           # this page keeps what fits on it
         pid = PG.insert_pages(doc, page_id, 1)[0][0]           # the chat goes on right after this page
         pno = [p["id"] for p in R.live_pages(doc)].index(pid) + 1
-        try:
-            PG.tag_page(doc, pid, SC.TRIGGER)                  # so what the player writes there comes back as a job
-        except Exception as ex:
-            if log:
-                log("  messages: the new page could not be tagged: %s" % str(ex)[:100])
         state["first"][pid] = max(first + len(fit) - 2, 0)    # the last two carry over for context
         state["page_id"] = pid
         state["pages"].append(pid)

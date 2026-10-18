@@ -43,3 +43,11 @@ page.
 #### Scenario: Asked to tag the whole notebook
 - **WHEN** the model asks to tag the notebook instead of the page
 - **THEN** the host refuses the step
+
+### Requirement: The user decides what is tagged
+A game SHALL NOT tag a page: not the page that asked for it, not an adventure's scene page, not a chat's new page.
+Only the tag step, with a tag the user named, puts a tag on a page.
+
+#### Scenario: A chess game starts
+- **WHEN** a game starts on the page that asked for it
+- **THEN** the page's tags stay as the user left them, and a move is played when the user tags the page

@@ -114,6 +114,12 @@ def _safe():
     return JOB.safe or SAFE_DEFAULT
 
 
+def _screen():
+    """This job's page as the tablet shows it without scrolling: its frame, x centered on 0, y from 0."""
+    fw, fh = _frame()
+    return (-fw / 2.0, 0.0, fw / 2.0, fh)
+
+
 def _page_id(doc, page):
     try:
         return R.live_pages(doc)[int(page) - 1]["id"]
@@ -267,7 +273,7 @@ def _reflow():
     if below:
         top = max(top, max(below) + PL.GAP)
     try:
-        new = PL.solve([dict(p) for p in keep], first_free_y=top, safe=_safe(), marks=rf.get("marks"),
+        new = PL.solve([dict(p) for p in keep], first_free_y=top, safe=_safe(), screen=_screen(), marks=rf.get("marks"),
                        obstacles=rf.get("obstacles"), text_col=rf.get("text_col"), fixed=fixed)
     except PL.PlanError as ex:
         log("  re-flow kept the planned boxes: %s" % str(ex)[:90])

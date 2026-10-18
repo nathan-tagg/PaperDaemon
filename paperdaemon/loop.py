@@ -12,6 +12,9 @@ host names that lineup to the engine at the start of each job (/host/lineup). Th
 lineup's values, so nothing restarts when a job goes to another lineup. When saved settings change what the
 halves were started with, they restart once no job is running. Processes are stopped by the ids PaperDaemon
 spawned, never by name.
+
+PAUSE STOPS THE HOST, NOT THE DAEMON: while paused the daemon keeps reading every mirror update and queuing the
+jobs it finds (the queue is the ledger, and survives a restart); no job is worked until the host is started again.
 """
 import atexit
 import json
@@ -33,7 +36,7 @@ FROZEN = bool(getattr(sys, "frozen", False))
 _procs = {}                          # who -> {"proc", "started", "fails", "next", "gave_up"}
 _lock = threading.RLock()
 _run = {"on": False, "port": None, "token": None, "thread": None, "msg": "not started", "pending": None,
-        "env_key": None}
+        "env_key": None, "paused": False}
 
 
 def pipeline_command(module, *args):
@@ -231,11 +234,23 @@ def running():
     return bool(_run["on"])
 
 
+def paused():
+    return bool(_run["on"] and _run["paused"])
+
+
 def start(port, token, s=None):
     """Start the daemon and the host. The text server is started by the first text call (the engine
     rule), not here."""
     s = s or S.load()
     with _lock:
+        if _run["on"] and _run["paused"]:
+            # PAUSED: the daemon kept queuing; the host comes back and works the queue
+            _run.update(paused=False, msg="running", code="running", args={})
+            st = _procs.get("host")
+            if st is not None and st["proc"].poll() is not None:
+                st.update(proc=spawn("host", dict(HALVES)["host"], environment(s, _run["port"], _run["token"])),
+                          started=time.time(), fails=0, next=0.0, gave_up=None)
+            return status()
         if _run["on"]:
             return status()
         got = check(s)
@@ -253,10 +268,23 @@ def start(port, token, s=None):
     return status()
 
 
+def pause():
+    """Pause: the host stops -- no job is worked -- and the daemon goes on queuing what the mirror shows."""
+    with _lock:
+        if not _run["on"]:
+            return status()
+        _run.update(paused=True, msg="paused", code="paused", args={})
+        st = _procs.get("host")
+        if st is not None:
+            end(st.get("proc"))
+    return status()
+
+
 def stop():
     """Stop both halves (the model servers in their job objects end with the engine)."""
     with _lock:
         _run["on"] = False
+        _run["paused"] = False
         _run.update(msg="stopped", code="stopped", args={})
         for who in list(_procs):
             end(_procs[who].get("proc"))
@@ -265,7 +293,7 @@ def stop():
 
 def status():
     s = S.load()
-    out = {"running": running(), "msg": _run["msg"], "code": _run.get("code") or "not_started",
+    out = {"running": running() and not _run["paused"], "paused": bool(_run["on"] and _run["paused"]), "msg": _run["msg"], "code": _run.get("code") or "not_started",
            "args": dict(_run.get("args") or {}), "lineup": S.in_use(), "restart_pending": bool(_run["pending"]),
            "busy": busy(), "card": card.status(s), "halves": {}}
     with _lock:
@@ -290,7 +318,7 @@ def _apply():
             env = environment(s, _run["port"], _run["token"])
             for who in ("host", "daemon"):
                 st = _procs.get(who)
-                if st is not None:
+                if st is not None and not (who == "host" and _run["paused"]):
                     end(st["proc"])
                     st.update(proc=spawn(who, dict(HALVES)[who], env), started=time.time(), fails=0, next=0.0,
                               gave_up=None)
@@ -317,7 +345,7 @@ def _supervise():
                     _apply()
                 for who, module in HALVES:
                     st = _procs.get(who)
-                    if st is None or not _run["on"]:
+                    if st is None or not _run["on"] or (who == "host" and _run["paused"]):
                         continue
                     if st["proc"].poll() is None:
                         if now - st["started"] > 60:

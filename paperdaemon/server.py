@@ -846,10 +846,10 @@ def post_loop_start():
 
 @app.post(API + "/loop/stop")
 def post_loop_stop():
-    """Pause: the daemon and the host stop, and so do the model servers PaperDaemon started (their memory and
-    the graphics card's are freed; the start scripts bring them back when the next job needs them). A server
-    PaperDaemon did not start is never stopped."""
-    loop.stop()
+    """Pause: the host stops, and so do the model servers PaperDaemon started (their memory and the graphics
+    card's are freed; the start scripts bring them back when the next job needs them). A server PaperDaemon did
+    not start is never stopped. The daemon goes on queuing what the mirror shows; Start works the queue."""
+    loop.pause()
     try:
         from .models import hotswap
         hotswap.stop_all()

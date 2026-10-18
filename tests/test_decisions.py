@@ -130,3 +130,21 @@ def test_s4_two_steps_replacing_one_picture_are_refused_not_folded():
 
 def test_s7_this_systems_ink_on_its_own_picture_goes_with_it():
     assert hasattr(H, "_ink_on")                                        # kept: placement and cleanup are the host's
+
+
+def test_an_erase_pointing_at_nothing_goes_back_to_the_model(monkeypatch):
+    # the frog page: the rulings take the prompt off (mark:1..2), and the model added an erase step pointing at "all
+    # the handwriting marks" that grounding found nowhere. Run, it failed and rule 10 put the prompt back; now the plan
+    # is refused before anything is done, and the model is told why
+    J.begin(doc="d", page=1)
+    monkeypatch.setattr(H, "_at_ground", lambda whats: {})
+    monkeypatch.setattr(H, "_off_steps", lambda steps: None)
+    monkeypatch.setattr(H, "_resolve_lines", lambda what: what)
+    monkeypatch.setattr(H, "_pictures", lambda doc, page, hidden_too=False: [])
+    steps = ST.build(ST.erase_steps([{"id": "mark:1", "because": "request"}, {"id": "mark:2", "because": "request"}])
+                     + [{"do": "erase", "what": "the prompt", "answers": ["mark:1", "mark:2"],
+                         "at": "all the handwriting marks on the page"},
+                        {"do": "coloring", "what": "a frog", "answers": ["mark:1"], "size": "full"}])
+    out = H._plan(steps, [{"id": "mark:1", "is": "request", "then": "erase"},
+                          {"id": "mark:2", "is": "request", "then": "erase"}])
+    assert "all the handwriting marks on the page" in out["error"] and "drop this step" in out["error"]

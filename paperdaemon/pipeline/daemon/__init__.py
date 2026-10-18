@@ -127,9 +127,18 @@ def heartbeat(tick, note):
         pass
 
 
+def _mirror_complete():
+    try:
+        from paperdaemon.remarkable import sync as _sync
+        return bool(_sync.mirrored())
+    except Exception:
+        return False
+
+
 def batch(todo):
-    """One job per PAGE: each tagged page that is new or changed is its own job, in notebook order and then page
-    order, so every page gets its own look and its own record."""
+    """One job per PAGE: each tagged page that is new or changed is its own job -- CHANGED PAGES FIRST, then new
+    ones (the user's rule), each in notebook order and then page order -- so every page gets its own look and its
+    own record."""
     order, by_doc = [], {}
     for q in todo:
         d = q["doc_id"]
@@ -138,14 +147,15 @@ def batch(todo):
             order.append(d)
         by_doc[d].append(q)
     out = []
-    for d in order:
-        for row in sorted(by_doc[d], key=lambda q: (q["page"] or 0)):
-            job = dict(row)
-            job["batch"] = [row]
-            job["keys"] = [row["key"]]
-            job["bkey"] = row["key"]
-            job["fp"] = row["state"]["sha"]
-            out.append(job)
+    rows = [r for d in order for r in sorted(by_doc[d], key=lambda q: (q["page"] or 0))]
+    rows.sort(key=lambda q: 0 if (q.get("why") == "changed" or q["status"] in ("REOPENED", "RETAGGED")) else 1)
+    for row in rows:
+        job = dict(row)
+        job["batch"] = [row]
+        job["keys"] = [row["key"]]
+        job["bkey"] = row["key"]
+        job["fp"] = row["state"]["sha"]
+        out.append(job)
     return out
 
 
@@ -488,6 +498,7 @@ def finish_job(attempts):
             e = led["entries"].get(k)
             if e:
                 e["status"] = "pending"
+                e["why"] = "changed"
                 e["handled_sha"] = None
                 e["handled_raw"] = None
                 touched = True
@@ -556,7 +567,12 @@ def main():
             # minutes on a job that had finished in under a second
             with rm_scan.locked():
                 led = rm_scan.load()
-                queue = rm_scan.classify(rm_scan.scan(), led)
+                # THE START IS A COMPLETE MIRROR: the first look files every tagged page as it is, so taken while the
+                # mirror is still filling, the pages copied after it would all look new
+                if "watching_since" not in led and not _mirror_complete():
+                    queue = []
+                else:
+                    queue = rm_scan.classify(rm_scan.scan(), led)
                 fp = json.dumps({k: {kk: vv for kk, vv in v.items() if kk != "last_seen"}
                                  for k, v in led["entries"].items()}, sort_keys=True)
                 if fp != last_fp or cycles % 60 == 0:
@@ -588,6 +604,9 @@ def main():
                 log("scan recovered after %d error(s)" % err_state["n"])
                 err_state.update(sig=None, n=0, last=0.0, since=0.0)
 
+        for d_ in sorted(set(q["doc"] for q in queue if q.get("too_many"))):
+            log("  %s: more than %d pages new or changed at once -- none is a job; recorded as they are"
+                % (d_, rm_scan.NOTEBOOK_CAP))
         todo = [q for q in queue if q["status"] in ("NEW", "PENDING", "REOPENED", "RETAGGED")]
         # A PAGE TAGGED FOR MORE THAN ONE LINEUP is nobody's job: the daemon says so on the page, once, and settles it
         # (it comes back when its tags are one lineup's again)

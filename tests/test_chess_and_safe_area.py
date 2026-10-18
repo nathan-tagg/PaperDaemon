@@ -138,11 +138,11 @@ def test_every_kind_of_content_starts_below_the_toolbar(tmp_path):
         print(json.dumps(out))
     """)
     top = d["safe"][1]
-    assert top >= 140                                              # the toolbar covers about the top 122 px
+    assert top >= 115                                              # the toolbar zone ends at 115, measured on the tablet
     assert d["plan"] == d["safe"]
     assert min(d["placed_tops"]) >= top
     assert d["messages"] >= top and d["scene"][1] >= top
-    assert d["pdf_first_row"] >= d["pdf_safe_top"] > 100
+    assert d["pdf_first_row"] >= d["pdf_safe_top"] == round(115.0 * 1404 / 1620)   # the same line, on a PDF page
 
 
 def test_the_talk_strip_keeps_one_face_and_accepts_the_cast_marks(tmp_path):
