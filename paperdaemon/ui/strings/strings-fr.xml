@@ -511,10 +511,6 @@ Ensuite, guide-moi pour installer SearXNG si besoin, écris le fichier .bat avec
   <string name="ov.tab.terminal">Terminal</string>
   <string name="q.intro">La prochaine tâche est en haut. Faites glisser une tâche par sa poignée pour changer le moment où elle s'exécute.</string>
   <string name="q.empty">Rien n'attend. Étiquetez une page sur votre tablette et sa tâche apparaît ici.</string>
-  <string name="q.changed">Page modifiée</string>
-  <string name="q.new">Nouvelle page</string>
-  <string name="q.working">En cours</string>
-  <string name="q.paused">La suivante quand vous appuyez sur Démarrer</string>
   <string name="q.move">Déplacer {name}</string>
   <string name="q.drag">Faites glisser pour changer l'ordre, ou utilisez les flèches du clavier</string>
   <string name="q.remove">Retirer {name} de la file d'attente</string>
@@ -558,6 +554,8 @@ Ensuite, guide-moi pour installer SearXNG si besoin, écris le fichier .bat avec
   <string name="fm.tags">Étiquettes</string>
   <string name="fm.tags_of">Étiquettes de {name}</string>
   <string name="fm.tag_add">Ajouter une étiquette</string>
+  <string name="fm.menu">Ajouter, nouveau carnet ou dossier</string>
+  <string name="fm.add">Ajouter</string>
   <string name="fm.untag">Retirer l'étiquette {tag}</string>
   <string name="fm.delete_q">Supprimer {name} ?</string>
   <string name="fm.delete_body">Il va à la corbeille, comme sur la tablette.</string>

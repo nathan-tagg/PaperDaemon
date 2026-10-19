@@ -511,10 +511,6 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="ov.tab.terminal">Terminale</string>
   <string name="q.intro">Il prossimo lavoro è in cima. Trascina un lavoro per la sua maniglia per cambiare quando viene eseguito.</string>
   <string name="q.empty">Non c'è niente in attesa. Aggiungi un tag a una pagina sul tablet e il suo lavoro compare qui.</string>
-  <string name="q.changed">Pagina modificata</string>
-  <string name="q.new">Pagina nuova</string>
-  <string name="q.working">In corso</string>
-  <string name="q.paused">Il prossimo quando premi Avvia</string>
   <string name="q.move">Sposta {name}</string>
   <string name="q.drag">Trascina per cambiare l'ordine, oppure usa i tasti freccia</string>
   <string name="q.remove">Togli {name} dalla coda</string>
@@ -558,6 +554,8 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="fm.tags">Etichette</string>
   <string name="fm.tags_of">Etichette di {name}</string>
   <string name="fm.tag_add">Aggiungi un'etichetta</string>
+  <string name="fm.menu">Aggiungi, nuovo quaderno o cartella</string>
+  <string name="fm.add">Aggiungi</string>
   <string name="fm.untag">Rimuovi l'etichetta {tag}</string>
   <string name="fm.delete_q">Eliminare {name}?</string>
   <string name="fm.delete_body">Va nel cestino, come sul tablet.</string>

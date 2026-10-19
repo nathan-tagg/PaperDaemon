@@ -511,10 +511,6 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="ov.tab.terminal">Terminal</string>
   <string name="q.intro">The next job is at the top. Drag a job by its handle to change when it runs.</string>
   <string name="q.empty">Nothing is waiting. Tag a page on your tablet and its job shows up here.</string>
-  <string name="q.changed">Changed page</string>
-  <string name="q.new">New page</string>
-  <string name="q.working">Working on it</string>
-  <string name="q.paused">Next when you press Start</string>
   <string name="q.move">Move {name}</string>
   <string name="q.drag">Drag to change the order, or use the arrow keys</string>
   <string name="q.remove">Remove {name} from the queue</string>
@@ -558,6 +554,8 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="fm.tags">Tags</string>
   <string name="fm.tags_of">Tags of {name}</string>
   <string name="fm.tag_add">Add a tag</string>
+  <string name="fm.menu">Add, new notebook or folder</string>
+  <string name="fm.add">Add</string>
   <string name="fm.untag">Remove the tag {tag}</string>
   <string name="fm.delete_q">Delete {name}?</string>
   <string name="fm.delete_body">It goes to the trash, as on the tablet.</string>

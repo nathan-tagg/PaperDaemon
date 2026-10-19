@@ -532,10 +532,6 @@
   <string name="ov.tab.terminal">الطرفية</string>
   <string name="q.intro">المهمة التالية في الأعلى. اسحب مهمة من مقبضها لتغيير موعد تشغيلها.</string>
   <string name="q.empty">لا شيء ينتظر. ضع وسمًا على صفحة في جهازك اللوحي وستظهر مهمتها هنا.</string>
-  <string name="q.changed">صفحة تغيّرت</string>
-  <string name="q.new">صفحة جديدة</string>
-  <string name="q.working">قيد العمل</string>
-  <string name="q.paused">التالية عند الضغط على بدء</string>
   <string name="q.move">نقل {name}</string>
   <string name="q.drag">اسحب لتغيير الترتيب، أو استخدم مفاتيح الأسهم</string>
   <string name="q.remove">إزالة {name} من قائمة الانتظار</string>
@@ -579,6 +575,8 @@
   <string name="fm.tags">الوسوم</string>
   <string name="fm.tags_of">وسوم {name}</string>
   <string name="fm.tag_add">إضافة وسم</string>
+  <string name="fm.menu">إضافة دفتر أو مجلد جديد</string>
+  <string name="fm.add">إضافة</string>
   <string name="fm.untag">إزالة الوسم {tag}</string>
   <string name="fm.delete_q">حذف {name}؟</string>
   <string name="fm.delete_body">يذهب إلى سلة المهملات، كما على الجهاز اللوحي.</string>

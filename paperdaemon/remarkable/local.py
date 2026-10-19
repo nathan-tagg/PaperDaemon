@@ -65,6 +65,15 @@ def _save_content(doc, c):
     paths.write_json_atomic(os.path.join(M, doc + ".content"), c)
 
 
+def sync_request():
+    """The false mirror syncs: the daemon looks at its pages' ink as it is now (ledger.py, _held_state)."""
+    from paperdaemon import ledger
+    p = ledger.sync_request_path()
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    with open(p, "w", encoding="utf-8") as f:
+        f.write(str(_now()))
+
+
 def _touch(u):
     """The item's modified time is now (its cover and the library's order follow)."""
     p = os.path.join(M, u + ".metadata")
@@ -313,7 +322,15 @@ def scene_of(doc, page_no):
     """The page as the editor holds it (see the module's note)."""
     from rmscene import read_tree
     from paperdaemon.pipeline.page import typed as TY
+    from paperdaemon.pipeline.page import render as R
     path = _rm(doc, page_no)
+    # A PAGE OF A PDF OR A BOOK: drawn on as the tablet allows (no typing there), its page under the ink (source.png)
+    kind, _src, idx = R.source_page(doc, page_no)
+    source = kind if kind in ("pdf", "epub") and idx is not None else None
+    if not os.path.exists(path):                     # never written on: no page file yet, the page's own frame
+        w, h = R.page_frame(doc, page_no)
+        return {"paperSize": [w, h], "layers": [{"label": "Layer 1", "visible": True, "lines": []}], "text": None,
+                "textVisible": True, "templateVisible": True, "template": page_template(doc, page_no), "source": source}
     data = open(path, "rb").read()
     blocks = list(read_blocks(io.BytesIO(data)))
     info = next((b for b in blocks if isinstance(b, ss.SceneInfo)), None)
@@ -354,10 +371,12 @@ def scene_of(doc, page_no):
         text = None
     size = list(info.paper_size) if info is not None and info.paper_size else [1620, 2160]
     lww = lambda v, d: (v.value if isinstance(v, LwwValue) else v) if v is not None else d
+    if source:
+        size = list(R.page_frame(doc, page_no))
     return {"paperSize": size, "layers": layers, "text": text,
             "textVisible": bool(lww(getattr(info, "root_document_visible", None), True)),
             "templateVisible": bool(lww(getattr(info, "background_visible", None), True)),
-            "template": page_template(doc, page_no)}
+            "template": page_template(doc, page_no), "source": source}
 
 
 def _enum(kind, v):
@@ -371,7 +390,8 @@ def write_scene(doc, page_no, scene):
     """The page made anew from the editor's scene, its header blocks kept. -> the number of strokes written."""
     _guard()
     path = _rm(doc, page_no)
-    old = list(read_blocks(io.BytesIO(open(path, "rb").read())))
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    old = list(read_blocks(io.BytesIO(open(path, "rb").read()))) if os.path.exists(path) else []
     head = [b for b in old if isinstance(b, (ss.AuthorIdsBlock, ss.MigrationInfoBlock))]
     info = next((b for b in old if isinstance(b, ss.SceneInfo)), None)
     if not any(isinstance(b, ss.AuthorIdsBlock) for b in head):

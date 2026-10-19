@@ -758,6 +758,12 @@ def run_job(job):
             log("JOB %s p%s -- sprompt page, not a request; skipped without a look" % (name, page))
             continue
         log("JOB %s p%s (%s)" % (name, page, k[:13]))
+        try:
+            from paperdaemon import paths as _paths
+            from paperdaemon.pipeline.host import steps as _ST
+            _ST.begin(os.path.join(_paths.state_dir(), "run", "progress.json"), doc_id, page)
+        except Exception:
+            pass
         use_lineup(lineup_for(e.get("tag")))
         S.use_trigger(e.get("tag"))               # a page the job adds is tagged for the same lineup
         outcome, note, dt, _ = converse(doc_id, page, name, [k], conflict=job.get("conflict"))
@@ -786,6 +792,11 @@ def run_job(job):
                 log("  the page changed while the job worked, and not by the job -- it goes back in the queue")
             S.mark(k, outcome, note, failed=bool(JOB.failed))
         log("  %s in %ds -- %s" % (outcome.upper(), dt, note[:110]))
+        try:
+            from paperdaemon.pipeline.host import steps as _ST
+            _ST.end()
+        except Exception:
+            pass
 
 
 # --------------------------------------------------------------- the job loop (host-driven)

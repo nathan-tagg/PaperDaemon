@@ -604,6 +604,34 @@ def _extract(doc, m, c, inh=None):
     return [it for it in best.values() if it.get("page_id") not in skip]
 
 
+# THE FALSE MIRROR SYNCS AS THE TABLET DOES: its page editor saves as the user draws, so the daemon would see a page
+# half written. There a page's ink counts as of the last sync -- Ctrl+S in the editor, closing a document, or an action
+# like tagging or importing (remarkable/local.py touches sync_request()) -- and the scan keeps each page's fingerprint
+# from then until the next. Only the scan is held back: everything else reads a page as it is.
+_HELD = {}
+_SYNC = {"seen": None}
+
+
+def sync_request_path():
+    return os.path.join(paths.false_mirror_state_dir(), "sync-request")
+
+
+def _held_state(doc, pid):
+    if not paths.local_only():
+        return page_state(doc, pid)
+    try:
+        mt = os.stat(sync_request_path()).st_mtime_ns
+    except OSError:
+        mt = None
+    if mt != _SYNC["seen"]:
+        _SYNC["seen"] = mt
+        _HELD.clear()
+    key = (doc, pid)
+    if key not in _HELD:
+        _HELD[key] = page_state(doc, pid)
+    return _HELD[key]
+
+
 def scan():
     out = []
     for f in os.listdir(RM):
@@ -635,7 +663,7 @@ def scan():
             # synthetic state. It must carry every key page_state() returns --
             # omitting "raw" here put the daemon into a 1 Hz KeyError loop the
             # moment a whole document was tagged.
-            e["state"] = (page_state(it["doc_id"], it["page_id"])
+            e["state"] = (_held_state(it["doc_id"], it["page_id"])
                           if it["scope"] == "page"
                           else {"exists": True, "size": 0, "sha": None,
                                 "raw": None, "empty": False})
@@ -822,7 +850,7 @@ def _keep_queue(led, found, now):
 
 def queue(state=None):
     """The queue, in the order its jobs will be worked: [{key, notebook, doc_id, page, status (working | pending),
-    why (changed | new), queued}]."""
+    why (changed | new), queued, tags (the tag that sent the page)}]."""
     led = load() if state is None else state
     out = []
     for k in led.get("queue") or []:
@@ -830,7 +858,8 @@ def queue(state=None):
         if e:
             out.append({"key": k, "notebook": e.get("doc") or "", "doc_id": e.get("doc_id"), "page": e.get("page"),
                         "status": e.get("status"), "why": e.get("why") or "new",
-                        "queued": e.get("queued_at") or e.get("first_seen")})
+                        "queued": e.get("queued_at") or e.get("first_seen"),
+                        "tags": [t for t in [e.get("tag") or ""] if t]})
     return out
 
 

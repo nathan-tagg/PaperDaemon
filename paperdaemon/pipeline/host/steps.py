@@ -261,6 +261,51 @@ def erase_targets(what):
     return out
 
 
+# ----------------------------------------------------------------- the job's progress, for the window
+# THE HOST KNOWS ITS STEPS once the plan is in: the window shows a bar on the page's cover and in the viewer (tablet.js),
+# moving as steps finish. The host names the page when a job starts (begin); before the plan the bar has no count.
+PROGRESS = {"path": None, "doc": None, "page": None}
+
+
+def _write_progress(done=None, total=None):
+    import json
+    import os
+    import time
+    p = PROGRESS["path"]
+    if not p:
+        return
+    try:
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        tmp = p + ".part"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({"doc": PROGRESS["doc"], "page": PROGRESS["page"], "done": done, "total": total, "at": time.time()}, f)
+        os.replace(tmp, p)
+    except OSError:
+        pass
+
+
+def begin(path, doc, page):
+    PROGRESS.update(path=path, doc=doc, page=page)
+    _write_progress()
+
+
+def report(steps):
+    """The plan's steps, done or failed of all, to the window."""
+    steps = steps or []
+    _write_progress(sum(1 for s in steps if s.get("status") in ("done", "failed")), len(steps))
+
+
+def end():
+    import os
+    p = PROGRESS["path"]
+    PROGRESS.update(path=None, doc=None, page=None)
+    if p:
+        try:
+            os.remove(p)
+        except OSError:
+            pass
+
+
 # ----------------------------------------------------------------- walking the list
 def current(steps):
     """The step being worked on: the first that is not finished."""
@@ -327,6 +372,7 @@ def finish(steps, step, ok=True, note=""):
     step["status"] = "done" if ok else "failed"
     if note:
         step["note"] = str(note)[:200]
+    report(steps)
     return current(steps)
 
 
@@ -342,4 +388,5 @@ def insert_before(steps, cur, raw):
     steps.insert(at, s)
     for n, q in enumerate(steps, 1):
         q["id"] = n
+    report(steps)
     return s

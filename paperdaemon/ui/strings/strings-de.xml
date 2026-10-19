@@ -511,10 +511,6 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="ov.tab.terminal">Terminal</string>
   <string name="q.intro">Der nächste Auftrag steht oben. Zieh einen Auftrag an seinem Griff, um zu ändern, wann er läuft.</string>
   <string name="q.empty">Nichts wartet. Versieh eine Seite auf deinem Tablet mit einem Tag, und ihr Auftrag erscheint hier.</string>
-  <string name="q.changed">Geänderte Seite</string>
-  <string name="q.new">Neue Seite</string>
-  <string name="q.working">Wird bearbeitet</string>
-  <string name="q.paused">Als Nächstes, sobald du Start drückst</string>
   <string name="q.move">{name} verschieben</string>
   <string name="q.drag">Ziehen, um die Reihenfolge zu ändern, oder die Pfeiltasten verwenden</string>
   <string name="q.remove">{name} aus der Warteschlange nehmen</string>
@@ -558,6 +554,8 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="fm.tags">Tags</string>
   <string name="fm.tags_of">Tags von {name}</string>
   <string name="fm.tag_add">Tag hinzufügen</string>
+  <string name="fm.menu">Hinzufügen, neues Notizbuch oder neuer Ordner</string>
+  <string name="fm.add">Hinzufügen</string>
   <string name="fm.untag">Tag {tag} entfernen</string>
   <string name="fm.delete_q">{name} löschen?</string>
   <string name="fm.delete_body">Es kommt in den Papierkorb, wie auf dem Tablet.</string>

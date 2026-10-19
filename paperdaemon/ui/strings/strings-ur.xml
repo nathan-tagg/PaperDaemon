@@ -511,10 +511,6 @@
   <string name="ov.tab.terminal">ٹرمینل</string>
   <string name="q.intro">اگلا کام سب سے اوپر ہے۔ کوئی کام کب چلے، یہ بدلنے کے لیے اسے اس کے ہینڈل سے گھسیٹیں۔</string>
   <string name="q.empty">کچھ انتظار میں نہیں۔ اپنے ٹیبلیٹ پر کسی صفحے کو ٹیگ کریں، اس کا کام یہاں نظر آئے گا۔</string>
-  <string name="q.changed">بدلا ہوا صفحہ</string>
-  <string name="q.new">نیا صفحہ</string>
-  <string name="q.working">کام جاری ہے</string>
-  <string name="q.paused">اسٹارٹ دبانے پر اگلا</string>
   <string name="q.move">{name} منتقل کریں</string>
   <string name="q.drag">ترتیب بدلنے کے لیے گھسیٹیں، یا تیر والی کلیدیں استعمال کریں</string>
   <string name="q.remove">{name} کو قطار سے نکالیں</string>
@@ -558,6 +554,8 @@
   <string name="fm.tags">ٹیگ</string>
   <string name="fm.tags_of">{name} کے ٹیگ</string>
   <string name="fm.tag_add">ٹیگ شامل کریں</string>
+  <string name="fm.menu">شامل کریں، نئی نوٹ بک یا فولڈر</string>
+  <string name="fm.add">شامل کریں</string>
   <string name="fm.untag">ٹیگ {tag} ہٹائیں</string>
   <string name="fm.delete_q">{name} حذف کریں؟</string>
   <string name="fm.delete_body">یہ ٹیبلیٹ کی طرح کوڑے دان میں جاتا ہے۔</string>

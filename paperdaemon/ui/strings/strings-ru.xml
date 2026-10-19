@@ -525,10 +525,6 @@
   <string name="ov.tab.terminal">Терминал</string>
   <string name="q.intro">Следующее задание — вверху. Перетащите задание за ручку, чтобы изменить, когда оно выполнится.</string>
   <string name="q.empty">Ничего не ждёт. Поставьте тег на страницу на планшете, и её задание появится здесь.</string>
-  <string name="q.changed">Изменённая страница</string>
-  <string name="q.new">Новая страница</string>
-  <string name="q.working">Выполняется</string>
-  <string name="q.paused">Следующее, когда нажмёте «Старт»</string>
   <string name="q.move">Переместить {name}</string>
   <string name="q.drag">Перетащите, чтобы изменить порядок, или используйте клавиши со стрелками</string>
   <string name="q.remove">Убрать {name} из очереди</string>
@@ -572,6 +568,8 @@
   <string name="fm.tags">Метки</string>
   <string name="fm.tags_of">Метки «{name}»</string>
   <string name="fm.tag_add">Добавить метку</string>
+  <string name="fm.menu">Добавить: новый блокнот или папку</string>
+  <string name="fm.add">Добавить</string>
   <string name="fm.untag">Убрать метку {tag}</string>
   <string name="fm.delete_q">Удалить «{name}»?</string>
   <string name="fm.delete_body">Он попадёт в корзину, как на планшете.</string>

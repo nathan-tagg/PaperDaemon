@@ -76,3 +76,25 @@ it, the same screen over the false mirror's library.
 #### Scenario: Creating a false mirror
 - **WHEN** the user confirms the dialog
 - **THEN** a False Mirror tab appears in the rail directly below Mirror
+
+### Requirement: The false mirror syncs as the tablet does
+In the false mirror the daemon SHALL see a page's ink as of the last sync: Ctrl+S in the page editor, or closing the
+document. The editor SHALL keep saving as the user draws, and between syncs the daemon SHALL see each page as it was
+at the last sync, never half drawn.
+
+#### Scenario: Drawing, then Ctrl+S
+- **WHEN** the user draws a request on a tagged false-mirror page and has not synced
+- **THEN** no job starts; after Ctrl+S (or closing the document) the page is a job
+
+### Requirement: The viewer's bar is the tablet's toolbar
+On a page, the viewer's bar SHALL hold on its left the page editor's tools where the page can be edited (pen, pen,
+text, eraser, layers; selection and capture, when they come, between eraser and layers), and on its right the tag
+button, the page grid and the page arrows. In the page grid its right SHALL hold the chapters, the grid and Go to
+page. The tag button SHALL open the tags used before as pills (on a false-mirror page: pressed for the page's own, a
+press adding or removing it) and, in the false mirror, a field with Add. A false-mirror page of a PDF or a book SHALL
+take drawing and no typing, as on the tablet. The false mirror's New notebook, New folder and Import SHALL be in a
+menu at the top right of its screen.
+
+#### Scenario: A book page in the false mirror
+- **WHEN** the user opens a page of a book in the false mirror
+- **THEN** the bar shows the pens, the eraser and layers, no text tool, and the user can draw on the page

@@ -511,10 +511,6 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="ov.tab.terminal">Terminal</string>
   <string name="q.intro">Tugas berikutnya ada di paling atas. Seret tugas lewat pegangannya untuk mengubah kapan tugas itu berjalan.</string>
   <string name="q.empty">Tidak ada yang menunggu. Beri tag pada halaman di tablet Anda dan tugasnya muncul di sini.</string>
-  <string name="q.changed">Halaman berubah</string>
-  <string name="q.new">Halaman baru</string>
-  <string name="q.working">Sedang dikerjakan</string>
-  <string name="q.paused">Berikutnya saat Anda menekan Mulai</string>
   <string name="q.move">Pindahkan {name}</string>
   <string name="q.drag">Seret untuk mengubah urutan, atau gunakan tombol panah</string>
   <string name="q.remove">Keluarkan {name} dari antrean</string>
@@ -558,6 +554,8 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="fm.tags">Tag</string>
   <string name="fm.tags_of">Tag {name}</string>
   <string name="fm.tag_add">Tambahkan tag</string>
+  <string name="fm.menu">Tambah, buku catatan atau folder baru</string>
+  <string name="fm.add">Tambah</string>
   <string name="fm.untag">Hapus tag {tag}</string>
   <string name="fm.delete_q">Hapus {name}?</string>
   <string name="fm.delete_body">Masuk ke tempat sampah, seperti di tablet.</string>

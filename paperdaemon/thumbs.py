@@ -102,19 +102,19 @@ def page_key(doc, page, live=None):
     return hashlib.sha1("|".join(parts).encode()).hexdigest()[:16]
 
 
-def path_for(doc, page, size, top=False, live=None):
+def path_for(doc, page, size, top=False, live=None, square=False):
     key = page_key(doc, page, live)
     if key is None:
         return None
-    return os.path.join(folder(), doc, "%s-%d%s.webp" % (key, size, "-top" if top else ""))
+    return os.path.join(folder(), doc, "%s-%d%s%s.webp" % (key, size, "-top" if top else "", "-sq" if square else ""))
 
 
-def draw(doc, page, size, top=False, live=None):
+def draw(doc, page, size, top=False, live=None, square=False):
     """Page `page` of `doc` as a picture `size` pixels at most on its long side (`top`: the top of the page in a 3:4
     card, `size` wide), from the cache or drawn now -> its path. Raises when it cannot be drawn."""
     from PIL import Image
     from .pipeline.page import render as R
-    out = path_for(doc, page, size, top, live)
+    out = path_for(doc, page, size, top, live, square)
     if out is None:
         raise ValueError("there is no page %d" % page)
     if os.path.isfile(out):
@@ -122,7 +122,7 @@ def draw(doc, page, size, top=False, live=None):
     os.makedirs(os.path.dirname(out), exist_ok=True)
     tmp = out[:-5] + ".%d.full.png" % threading.get_ident()
     try:
-        R.render(doc, page, tmp, blank_ok=True, displayed=True)   # as the tablet shows it; unwritten pages too
+        R.render(doc, page, tmp, blank_ok=True, displayed=True, square=square)   # as the tablet shows it; unwritten pages too
         with Image.open(tmp) as im:
             if top:
                 w, h = im.size

@@ -77,9 +77,14 @@
   async function load() {
     if (!S.lineup) return;
     const want = S.lineup;
-    const [jobs, e] = await PD.safe(PD.api("GET", "/jobs?limit=200&lineup=" + encodeURIComponent(want)));
+    const q = "/jobs?limit=200&lineup=" + encodeURIComponent(want);
+    const [jobs, e] = await PD.safe(PD.api("GET", q));
+    // BOTH MIRRORS' JOBS: the false mirror's are its engine's to tell, and the list sorts them in with the rest
+    const fm = ((PD.status || {}).false_mirror || {}).exists;
+    const [fjobs] = fm ? await PD.safe(PD.api("GET", "/fm" + q)) : [null];
     if (want !== S.lineup) return;                     // another lineup was picked while this was read
-    if (jobs) S.jobs = Array.isArray(jobs) ? jobs : jobs.jobs || [];
+    const rows = x => (Array.isArray(x) ? x : (x && x.jobs) || []);
+    if (jobs) S.jobs = rows(jobs).concat(rows(fjobs));
     S.err = e && !jobs ? PD.errText(e) : "";
     render();
   }

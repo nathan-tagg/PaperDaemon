@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.35
+
+- The notebook viewer's bar is laid out as the tablet's toolbar: the page editor's pens, text, eraser and layers on the
+  left, the tag button, the page grid and the page arrows on the right; in the page grid, the chapters, the grid and
+  Go to page. The tag button lists the tags used before as pills, and a field to add one.
+- A page opens at its top as the tablet shows it, in the tablet's screen, and the page zoom stays centered.
+- Pages of PDFs and books can be drawn on (not typed on), as on the tablet.
+- The queue shows each job's handle, the tag that sent it, and its cross at the right.
+- Typing starts below the ink when the line it would go on runs over strokes.
+- Ctrl+S, or closing a document, syncs: only then are its changes a job.
+
 ## 0.1.34
 
 - The notebook viewer is the same size at every zoom of the window: it no longer runs off the top and bottom when the

@@ -511,10 +511,6 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="ov.tab.terminal">Terminal</string>
   <string name="q.intro">Công việc tiếp theo ở trên cùng. Kéo một công việc bằng tay cầm của nó để đổi lúc nó chạy.</string>
   <string name="q.empty">Không có gì đang chờ. Gắn thẻ một trang trên máy tính bảng và công việc của nó sẽ hiện ở đây.</string>
-  <string name="q.changed">Trang đã đổi</string>
-  <string name="q.new">Trang mới</string>
-  <string name="q.working">Đang làm</string>
-  <string name="q.paused">Tiếp theo khi bạn bấm Bắt đầu</string>
   <string name="q.move">Di chuyển {name}</string>
   <string name="q.drag">Kéo để đổi thứ tự, hoặc dùng các phím mũi tên</string>
   <string name="q.remove">Gỡ {name} khỏi hàng đợi</string>
@@ -558,6 +554,8 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="fm.tags">Thẻ</string>
   <string name="fm.tags_of">Thẻ của {name}</string>
   <string name="fm.tag_add">Thêm thẻ</string>
+  <string name="fm.menu">Thêm, sổ tay hoặc thư mục mới</string>
+  <string name="fm.add">Thêm</string>
   <string name="fm.untag">Gỡ thẻ {tag}</string>
   <string name="fm.delete_q">Xóa {name}?</string>
   <string name="fm.delete_body">Nó vào thùng rác, như trên máy tính bảng.</string>

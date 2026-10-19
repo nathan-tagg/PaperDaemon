@@ -511,10 +511,6 @@
   <string name="ov.tab.terminal">ターミナル</string>
   <string name="q.intro">次のジョブがいちばん上です。ジョブをハンドルでドラッグすると、実行の順番を変えられます。</string>
   <string name="q.empty">待っているものはありません。タブレットのページにタグを付けると、そのジョブがここに表示されます。</string>
-  <string name="q.changed">変更されたページ</string>
-  <string name="q.new">新しいページ</string>
-  <string name="q.working">作業中</string>
-  <string name="q.paused">開始を押すと次に実行</string>
   <string name="q.move">{name} を移動</string>
   <string name="q.drag">ドラッグするか矢印キーで順番を変えられます</string>
   <string name="q.remove">{name} をキューから外す</string>
@@ -558,6 +554,8 @@
   <string name="fm.tags">タグ</string>
   <string name="fm.tags_of">{name} のタグ</string>
   <string name="fm.tag_add">タグを追加</string>
+  <string name="fm.menu">追加（新しいノートブックやフォルダー）</string>
+  <string name="fm.add">追加</string>
   <string name="fm.untag">タグ {tag} を外す</string>
   <string name="fm.delete_q">{name} を削除しますか？</string>
   <string name="fm.delete_body">タブレットと同じく、ゴミ箱に移ります。</string>

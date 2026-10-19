@@ -143,6 +143,7 @@ def _plan(plan_steps, rulings=(), places=None):
     if not plan_steps:
         return {"error": "steps is empty. Say what this job does, in order, one step each; if the page asks for "
                          "nothing, skip()."}
+    ST.report(plan_steps)                             # the window's bar now counts the steps
     # A NEW PICTURE TAKES THE PLACE OF ONE THE PLAN ERASES: a chart, calendar or picture step with no placement of
     # its own takes the topmost erased picture's place (stacked, it would go below everything still on the page),
     # and the redo code below does the rest.

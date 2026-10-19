@@ -107,3 +107,36 @@ def test_convert_with_the_tablet(tmp_path):
     assert d["pdf"] == "%PDF the tablet's" and d["margins"] == 125
     assert d["pages"] == 4 and d["ink_page_kept"] == "ink"
     assert d["tablet_copy"] == []
+
+
+HELD = textwrap.dedent("""
+    import json, os, time
+    from paperdaemon import ledger as S
+    from paperdaemon.remarkable import local
+    pid = "p1"
+    path = os.path.join(S.RM, "nb", pid + ".rm")
+    first = S.scan()[0]["state"]["sha"]
+    open(path, "ab").write(b"x" * 64)                       # the editor saves a stroke: not synced yet
+    held = S.scan()[0]["state"]["sha"]
+    time.sleep(0.05); local.sync_request()                   # Ctrl+S
+    after = S.scan()[0]["state"]["sha"]
+    print(json.dumps({"first": first, "held": held, "after": after}))
+""")
+
+
+def test_the_false_mirror_daemon_sees_ink_as_of_the_last_sync(tmp_path):
+    home = tmp_path / "home"
+    fm = home / "false-mirror"
+    (fm / "nb").mkdir(parents=True)
+    (home / "false-mirror-state").mkdir()
+    (fm / "nb.metadata").write_text(json.dumps({"visibleName": "Nb", "parent": "", "type": "DocumentType"}))
+    (fm / "nb.content").write_text(json.dumps({"fileType": "notebook", "tags": [{"name": "PaperDaemon", "timestamp": 1}],
+                                              "cPages": {"pages": [{"id": "p1", "idx": {"value": "ba"}}]}}))
+    (fm / "nb" / "p1.rm").write_bytes(b"reMarkable .lines file, version=6          " + b"\0" * 32)
+    env = dict(os.environ, PAPERDAEMON_HOME=str(home), RM_MIRROR=str(fm), RM_CACHE=str(fm), RM_LOCAL_ONLY="1",
+               RM_STATE=str(home / "false-mirror-state"), RM_TRIGGERS='["PaperDaemon"]')
+    out = subprocess.run([sys.executable, "-c", HELD], env=env, capture_output=True, text=True, timeout=300, cwd=ROOT)
+    assert out.returncode == 0, out.stderr[-2000:]
+    d = json.loads(out.stdout.strip().splitlines()[-1])
+    assert d["held"] == d["first"]                         # drawn but not synced: the daemon sees the page as it was
+    assert d["after"] != d["first"]                        # synced: it sees the new ink

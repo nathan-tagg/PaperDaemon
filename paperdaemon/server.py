@@ -784,7 +784,7 @@ def get_library_doc(doc: str):
             "page_tags": [by_page.get(p.get("id"), []) for p in _live(c)]}
 
 
-def _page_png(doc, page, size, top=False):
+def _page_png(doc, page, size, top=False, square=False):
     """Page `page` (1-based) of a document drawn from the Mirror, `size` pixels at most on its long side, from the page
     picture cache (thumbs.py) -> (path, None) or (None, error response)."""
     from .remarkable import library
@@ -794,7 +794,7 @@ def _page_png(doc, page, size, top=False):
     if not library.items().get(doc):
         return None, JSONResponse({"error": "not in the Mirror"}, status_code=404)
     try:
-        return thumbs.draw(doc, page, size, top), None
+        return thumbs.draw(doc, page, size, top, square=square), None
     except Exception as ex:
         return None, JSONResponse({"error": "could not draw it: %s" % str(ex)[:160]}, status_code=404)
 
@@ -898,22 +898,42 @@ def get_library_thumb(doc: str, page: int):
 
 @app.get(API + "/library/{doc}/page/{page}/frame")
 def get_library_page_frame(doc: str, page: int):
-    """The page's own frame in page units, {w, h}: the page picture is exactly w wide (x from -w/2 to w/2) and runs from
-    the top down to h, or past it to the lowest ink. The viewer places the picture on the tablet's screen with it."""
+    """The page's own frame in page units, {w, h, top}: the page picture is exactly w wide (x from -w/2 to w/2) and runs
+    from `top` (0, or above it where ink sits above the page's top) down to h, or past it to the lowest ink. The viewer
+    places the picture on the tablet's screen with it."""
     from .pipeline.page import render as R
     try:
         w, h = R.page_frame(doc, page)
+        top = R.displayed_top(doc, page)
     except Exception:
         return JSONResponse({"error": "no such page"}, status_code=404)
-    return {"w": float(w), "h": float(h)}
+    return {"w": float(w), "h": float(h), "top": float(top)}
+
+
+@app.get(API + "/library/{doc}/page/{page}/source.png")
+def get_library_page_source(doc: str, page: int):
+    """The PDF's or book's page under a page, alone, the page's frame in size, for the page editor; 404 for a notebook
+    page."""
+    import io as _io
+    from .pipeline.page import render as R
+    try:
+        im = R.source_image(doc, page)
+    except Exception:
+        im = None
+    if im is None:
+        return JSONResponse({"error": "no source page"}, status_code=404)
+    b = _io.BytesIO()
+    im.save(b, format="PNG")
+    return Response(content=b.getvalue(), media_type="image/png")
 
 
 @app.get(API + "/library/{doc}/page/{page}.png")
-def get_library_page(doc: str, page: int):
-    """One page, large, for the notebook view."""
+def get_library_page(doc: str, page: int, square: bool = False):
+    """One page, large, for the notebook view (`square`: across the whole drawable square, as wide as the page is
+    tall, for the viewer's tablet screen)."""
     if page < 1:
         return JSONResponse({"error": "pages count from 1"}, status_code=400)
-    out, err = _page_png(doc, page, 2160)
+    out, err = _page_png(doc, page, 2160, square=square)
     return err or FileResponse(out, media_type="image/webp")
 
 
@@ -1063,6 +1083,21 @@ def get_jobs(limit: int = 50, lineup: str = ""):
     if lineup:
         rows = [r for r in rows if r["lineup"] == lineup][:max(1, min(int(limit), 1000))]
     return rows
+
+
+@app.get(API + "/progress")
+def get_progress():
+    """The page a job is working on and how far it is: {doc, page, done, total} (done and total null until the
+    model's plan is in), or null when no job is being worked."""
+    p = os.path.join(paths.state_dir(), "run", "progress.json")
+    try:
+        with open(p, encoding="utf-8") as f:
+            got = json.load(f)
+    except (OSError, ValueError):
+        return None
+    if not any(e.get("status") == "working" and e.get("doc_id") == got.get("doc") for e in ledger.entries().values()):
+        return None                                   # a host that stopped mid-job left it behind
+    return got
 
 
 @app.get(API + "/queue")
@@ -1350,6 +1385,14 @@ def put_library_scene(doc: str, page: int, body: dict = Body(...)):
     if not _doc_ok(doc):
         return _bad("not a document id")
     return _local(lambda: {"strokes": local.write_scene(doc, page, body)})
+
+
+@app.post(API + "/library/sync")
+def post_library_sync():
+    """The false mirror syncs (Ctrl+S in the page editor, or a document closed): the daemon looks at its pages' ink as
+    it is now. Between syncs it sees each page as at the last one, never half drawn."""
+    from .remarkable import local
+    return _local(lambda: (local.sync_request(), {"synced": True})[1])
 
 
 @app.put(API + "/library/{doc}/page/{page}/template")

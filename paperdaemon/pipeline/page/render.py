@@ -359,6 +359,31 @@ def page_frame(doc, page_no):
     return (PAGE_W, PAGE_H)
 
 
+def source_image(doc, page_no):
+    """The page of the PDF or book under a page, alone (no ink, no text), the page's frame in size: what the page
+    editor draws its ink on. -> a PIL image, or None for a page with no source page."""
+    from PIL import Image
+    kind, path, idx = source_page(doc, page_no)
+    if kind not in ("pdf", "epub") or idx is None:
+        return None
+    pw, ph = page_frame(doc, page_no)
+    canvas = Image.new("RGB", (int(round(pw)), int(round(ph))), "white")
+    _paste_source(canvas, doc, page_no, (pw, ph), lambda p, _h=pw / 2: (p.x + _h, p.y))
+    return canvas
+
+
+def displayed_top(doc, page_no):
+    """Where the displayed picture of a page starts, in page units: 0, or above it when strokes or pictures sit above
+    the page's top (render(displayed=True) starts there)."""
+    ys = [p.y for L in strokes(doc, page_no) for p in L.points]
+    try:
+        from paperdaemon.pipeline.page import images as _IM
+        ys += [im["box"][1] for im in _IM.items(doc, page_no) if im.get("path")]
+    except Exception:
+        pass
+    return min([0.0] + ys)
+
+
 def px_width(L, pt):
     fam = L.tool.name.split("_")[0]
     return max(1.0, pt.width * WSCALE.get(fam, WSCALE_DEFAULT))
@@ -604,8 +629,9 @@ def _draw(d, L, col, pts):
 
 
 def render(doc, page_no, out, typed=True, hide=None, hide_typed=None, hide_images=None,
-           mark_typed=False, blank_ok=False, displayed=False):
-    """Render a page to PNG -- strokes AND typed text.
+           mark_typed=False, blank_ok=False, displayed=False, square=False):
+    """Render a page to PNG -- strokes AND typed text. `square` (with `displayed`): across the whole drawable square,
+    as wide as the page is tall (what the tablet shows when zoomed out), not only the frame's width.
 
     TYPED TEXT IS DRAWN BY DEFAULT, and that is not a nicety. This renderer used
     to draw strokes only, so on a page with typed text every preview showed the
@@ -619,6 +645,7 @@ def render(doc, page_no, out, typed=True, hide=None, hide_typed=None, hide_image
     only when you specifically want ink alone.
     """
     _VIEW.on = bool(displayed)
+    _VIEW.square = bool(square)
     try:
         return _render(doc, page_no, out, typed, hide, hide_typed, hide_images, mark_typed, blank_ok, displayed)
     finally:
@@ -683,10 +710,15 @@ def _render(doc, page_no, out, typed, hide, hide_typed, hide_images, mark_typed,
         # widen the picture or put a margin beside the page. Ink below makes it taller, to its own bottom and no
         # further (content that ends at the page's foot ends at the screen's, with no strip under it). Ink above
         # the top is off the page.
+        # INK ABOVE THE TOP IS KEPT: a page smaller than the screen lets the tablet draw above its top (measured: a
+        # 200 x 266 page holds strokes up to y -61), so the picture starts at the highest thing on the page
+        # (displayed_top); the viewer opens on the page's top (y 0) and scrolling up shows what is above it
         _pw, _ph = _page
-        _half = _pw / 2
+        _half = (max(_pw, _ph) if getattr(_VIEW, "square", False) else _pw) / 2
         _low = max([p.y for L in S for p in L.points] + [e[1] for e in _extra] + [_ph])
-        W, H, T = int(round(2 * _half)), int(round(max(_ph, _low))), (lambda p, _h=_half: (p.x + _h, p.y))
+        _top = min([0.0] + [p.y for L in S for p in L.points] + [im["box"][1] for im in _imgs])
+        W, H = int(round(2 * _half)), int(round(max(_ph, _low) - _top))
+        T = (lambda p, _h=_half, _t=_top: (p.x + _h, p.y - _t))
     else:
         W, H, T = _frame(S, _page, extra=_extra)
     canvas = Image.new("RGB", (W, H), "white")

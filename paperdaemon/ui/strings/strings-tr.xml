@@ -511,10 +511,6 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="ov.tab.terminal">Terminal</string>
   <string name="q.intro">Sıradaki iş en üstte. Bir işin ne zaman çalışacağını değiştirmek için onu tutamacından sürükleyin.</string>
   <string name="q.empty">Bekleyen bir şey yok. Tabletinizde bir sayfaya etiket koyun, işi burada görünür.</string>
-  <string name="q.changed">Değişen sayfa</string>
-  <string name="q.new">Yeni sayfa</string>
-  <string name="q.working">Üzerinde çalışılıyor</string>
-  <string name="q.paused">Başlat'a bastığınızda sıradaki</string>
   <string name="q.move">{name} taşı</string>
   <string name="q.drag">Sırayı değiştirmek için sürükleyin ya da ok tuşlarını kullanın</string>
   <string name="q.remove">{name} kuyruktan çıkar</string>
@@ -558,6 +554,8 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="fm.tags">Etiketler</string>
   <string name="fm.tags_of">{name} etiketleri</string>
   <string name="fm.tag_add">Etiket ekle</string>
+  <string name="fm.menu">Ekle, yeni defter veya klasör</string>
+  <string name="fm.add">Ekle</string>
   <string name="fm.untag">{tag} etiketini kaldır</string>
   <string name="fm.delete_q">{name} silinsin mi?</string>
   <string name="fm.delete_body">Tabletteki gibi çöp kutusuna gider.</string>

@@ -511,10 +511,6 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="ov.tab.terminal">Terfynell</string>
   <string name="q.intro">Mae'r dasg nesaf ar y brig. Llusgwch dasg wrth ei handlen i newid pryd mae'n rhedeg.</string>
   <string name="q.empty">Does dim yn aros. Tagiwch dudalen ar eich llechen ac mae ei thasg yn ymddangos yma.</string>
-  <string name="q.changed">Tudalen wedi newid</string>
-  <string name="q.new">Tudalen newydd</string>
-  <string name="q.working">Wrthi'n gweithio arni</string>
-  <string name="q.paused">Nesaf pan wasgwch Dechrau</string>
   <string name="q.move">Symud {name}</string>
   <string name="q.drag">Llusgwch i newid y drefn, neu defnyddiwch y bysellau saeth</string>
   <string name="q.remove">Tynnu {name} o'r ciw</string>
@@ -558,6 +554,8 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="fm.tags">Tagiau</string>
   <string name="fm.tags_of">Tagiau {name}</string>
   <string name="fm.tag_add">Ychwanegu tag</string>
+  <string name="fm.menu">Ychwanegu, llyfr nodiadau neu ffolder newydd</string>
+  <string name="fm.add">Ychwanegu</string>
   <string name="fm.untag">Tynnu'r tag {tag}</string>
   <string name="fm.delete_q">Dileu {name}?</string>
   <string name="fm.delete_body">Mae'n mynd i'r sbwriel, fel ar y llechen.</string>

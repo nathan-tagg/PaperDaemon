@@ -511,10 +511,6 @@
   <string name="ov.tab.terminal">টার্মিনাল</string>
   <string name="q.intro">পরের কাজটি সবার ওপরে। কোনো কাজ কখন চলবে বদলাতে তার হাতল ধরে টেনে নিন।</string>
   <string name="q.empty">কিছুই অপেক্ষায় নেই। ট্যাবলেটে কোনো পাতায় ট্যাগ দিন, তার কাজ এখানে দেখা যাবে।</string>
-  <string name="q.changed">বদলানো পাতা</string>
-  <string name="q.new">নতুন পাতা</string>
-  <string name="q.working">কাজ চলছে</string>
-  <string name="q.paused">শুরু চাপলেই পরেরটি</string>
   <string name="q.move">{name} সরান</string>
   <string name="q.drag">ক্রম বদলাতে টেনে নিন, বা তীর-কী ব্যবহার করুন</string>
   <string name="q.remove">{name} সারি থেকে সরান</string>
@@ -558,6 +554,8 @@
   <string name="fm.tags">ট্যাগ</string>
   <string name="fm.tags_of">{name}-এর ট্যাগ</string>
   <string name="fm.tag_add">একটি ট্যাগ যোগ করুন</string>
+  <string name="fm.menu">যোগ করুন, নতুন নোটবুক বা ফোল্ডার</string>
+  <string name="fm.add">যোগ করুন</string>
   <string name="fm.untag">{tag} ট্যাগ সরান</string>
   <string name="fm.delete_q">{name} মুছবেন?</string>
   <string name="fm.delete_body">এটি ট্যাবলেটের মতোই ট্র্যাশে যায়।</string>

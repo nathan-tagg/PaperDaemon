@@ -511,10 +511,6 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="ov.tab.terminal">Terminal</string>
   <string name="q.intro">Neste jobb står øverst. Dra en jobb i håndtaket for å endre når den kjøres.</string>
   <string name="q.empty">Ingenting venter. Sett et merke på en side på nettbrettet, så dukker jobben opp her.</string>
-  <string name="q.changed">Endret side</string>
-  <string name="q.new">Ny side</string>
-  <string name="q.working">Jobber med den</string>
-  <string name="q.paused">Neste når du trykker Start</string>
   <string name="q.move">Flytt {name}</string>
   <string name="q.drag">Dra for å endre rekkefølgen, eller bruk piltastene</string>
   <string name="q.remove">Ta {name} ut av køen</string>
@@ -558,6 +554,8 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="fm.tags">Merker</string>
   <string name="fm.tags_of">Merker for {name}</string>
   <string name="fm.tag_add">Legg til et merke</string>
+  <string name="fm.menu">Legg til, ny notatbok eller mappe</string>
+  <string name="fm.add">Legg til</string>
   <string name="fm.untag">Fjern merket {tag}</string>
   <string name="fm.delete_q">Slette {name}?</string>
   <string name="fm.delete_body">Den havner i papirkurven, som på nettbrettet.</string>

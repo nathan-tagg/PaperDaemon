@@ -511,10 +511,6 @@
   <string name="ov.tab.terminal">终端</string>
   <string name="q.intro">下一个任务在最上面。按住任务的把手拖动，就能改变它运行的时间。</string>
   <string name="q.empty">没有在等待的任务。在平板上给一页加上标签，它的任务就会出现在这里。</string>
-  <string name="q.changed">已修改的页面</string>
-  <string name="q.new">新页面</string>
-  <string name="q.working">正在处理</string>
-  <string name="q.paused">按下开始后接着运行</string>
   <string name="q.move">移动 {name}</string>
   <string name="q.drag">拖动以改变顺序，或使用方向键</string>
   <string name="q.remove">将 {name} 移出队列</string>
@@ -558,6 +554,8 @@
   <string name="fm.tags">标签</string>
   <string name="fm.tags_of">{name} 的标签</string>
   <string name="fm.tag_add">添加标签</string>
+  <string name="fm.menu">添加：新笔记本或文件夹</string>
+  <string name="fm.add">添加</string>
   <string name="fm.untag">移除标签 {tag}</string>
   <string name="fm.delete_q">删除 {name}？</string>
   <string name="fm.delete_body">它会进入回收站，与平板上一样。</string>

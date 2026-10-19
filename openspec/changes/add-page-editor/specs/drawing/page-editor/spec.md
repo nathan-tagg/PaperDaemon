@@ -127,3 +127,11 @@ return to 1x when clicked.
 #### Scenario: Undoing an erase
 - **WHEN** the user erases across two strokes and presses Ctrl+Z
 - **THEN** both strokes are whole again
+
+### Requirement: Typing starts below the ink in its way
+When the user starts typing with no caret and the line the text would go on runs over strokes in the text column,
+the editor SHALL add empty paragraphs and start the text in the first paragraph below the lowest of those strokes.
+
+#### Scenario: A drawing across the first line
+- **WHEN** a page has a stroke across the first text line and the user starts typing
+- **THEN** the text starts on the first paragraph below the stroke

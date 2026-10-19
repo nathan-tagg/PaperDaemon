@@ -76,17 +76,15 @@
     if (S.qErr) { PD.html(box, '<p class="msg err">' + esc(S.qErr) + "</p>"); return; }
     if (!S.queue) { PD.html(box, '<p class="sub">' + esc(PD.t("common.reading")) + "</p>"); return; }
     if (!S.queue.length) { PD.html(box, '<p class="tab-note">' + esc(PD.t("q.empty")) + "</p>"); return; }
-    const paused = !(S.loop && S.loop.running);
     PD.html(box, '<p class="tab-note">' + esc(PD.t("q.intro")) + '</p><ol class="queue">' + S.queue.map((j, i) => {
       const busy = j.status === "working", name = j.notebook + (j.page ? " · " + PD.t("job.page", { n: j.page }) : "");
+      // a row: the handle (on the job being worked too, which cannot move), the notebook and page, the tags that sent
+      // it, and the cross at the right
       return '<li class="qrow' + (busy ? " busy" : "") + '" data-i="' + i + '">' +
-        (busy ? '<span class="grip-gap"></span>'
-              : '<button type="button" class="grip" draggable="true" data-i="' + i + '" aria-label="' + esc(PD.t("q.move", { name })) +
-                '" title="' + esc(PD.t("q.drag")) + '">' + GRIP + "</button>") +
+        '<button type="button" class="grip"' + (busy ? " disabled" : ' draggable="true"') + ' data-i="' + i + '" aria-label="' + esc(PD.t("q.move", { name })) +
+          '" title="' + esc(PD.t("q.drag")) + '">' + GRIP + "</button>" +
         '<span class="qname"><strong>' + esc(j.notebook) + "</strong>" + (j.page ? '<span class="meta">' + esc(PD.t("job.page", { n: j.page })) + "</span>" : "") + "</span>" +
-        '<span class="chip">' + esc(PD.t(j.why === "changed" ? "q.changed" : "q.new")) + "</span>" +
-        (j.fm ? '<span class="chip page">' + esc(PD.t("fm.label")) + "</span>" : "") +
-        '<span class="meta qstate">' + (busy ? esc(PD.t(paused ? "q.paused" : "q.working")) : "") + "</span>" +
+        '<span class="qtags">' + (j.tags || []).map(t => '<span class="chip">' + esc(t) + "</span>").join("") + "</span>" +
         // ONE CONTROL for every job: a waiting one leaves the queue; the one being worked is stopped at once and
         // thrown away
         '<button type="button" class="icon-btn qdrop" data-drop="' + esc(j.key) + '" aria-label="' + esc(PD.t(busy ? "q.abandon" : "q.remove", { name })) +

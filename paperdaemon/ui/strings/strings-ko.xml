@@ -511,10 +511,6 @@
   <string name="ov.tab.terminal">터미널</string>
   <string name="q.intro">다음 작업이 맨 위에 있습니다. 작업을 손잡이로 끌어서 실행 순서를 바꿀 수 있습니다.</string>
   <string name="q.empty">기다리는 작업이 없습니다. 태블릿에서 페이지에 태그를 달면 그 작업이 여기에 나타납니다.</string>
-  <string name="q.changed">바뀐 페이지</string>
-  <string name="q.new">새 페이지</string>
-  <string name="q.working">작업 중</string>
-  <string name="q.paused">시작을 누르면 다음 차례</string>
   <string name="q.move">{name} 옮기기</string>
   <string name="q.drag">끌어서 순서를 바꾸거나 화살표 키를 사용하세요</string>
   <string name="q.remove">{name} 대기열에서 빼기</string>
@@ -558,6 +554,8 @@
   <string name="fm.tags">태그</string>
   <string name="fm.tags_of">{name}의 태그</string>
   <string name="fm.tag_add">태그 추가</string>
+  <string name="fm.menu">추가, 새 노트북 또는 폴더</string>
+  <string name="fm.add">추가</string>
   <string name="fm.untag">태그 {tag} 제거</string>
   <string name="fm.delete_q">{name}을(를) 삭제할까요?</string>
   <string name="fm.delete_body">태블릿에서처럼 휴지통으로 갑니다.</string>
