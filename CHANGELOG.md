@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.36
+
+- Typing starts below the lowest ink on the page, unless the cursor was put somewhere else.
+- A stroke wins over typing: the text cursor goes as the pen goes down, and the keyboard waits until the pen lifts.
+- Anything landing on an open page lets the text cursor go, as Esc does; the next key starts below the ink.
+- An open page takes in what a job writes to it, and the editor no longer saves over a job's strokes.
+
 ## 0.1.35
 
 - The notebook viewer's bar is laid out as the tablet's toolbar: the page editor's pens, text, eraser and layers on the

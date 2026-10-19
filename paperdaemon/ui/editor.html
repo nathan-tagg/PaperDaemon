@@ -422,12 +422,11 @@ span.lname { cursor: default; }
     return c;
   }
   let sid = 0;
-  function drawLine(c, L) {
+  function drawLine(c, L, id) {
     const P = prepared(L), k = dpr * SS * scale(), xy = new Float64Array(L.points.length * 2);
     L.points.forEach((p, i) => { const [sx, sy] = toScreen(p.x, p.y); xy[2 * i] = sx * dpr * SS; xy[2 * i + 1] = sy * dpr * SS; });
-    const w = P.widths.map(v => v * k);
-    sid += 1;
-    if (P.kind === RF_HIGHLIGHTER) highlighterShape(c, xy, w, P.rgba, sid); else penShape(c, xy, w, P.kind, P.rgba, sid);
+    const w = P.widths.map(v => v * k), s = id || ++sid;
+    if (P.kind === RF_HIGHLIGHTER) highlighterShape(c, xy, w, P.rgba, s); else penShape(c, xy, w, P.kind, P.rgba, s);
   }
   function downsample(c, x0 = 0, y0 = 0, W = cv.width, H = cv.height) {   // a region of the canvas, averaged down
     const out = ctx.createImageData(W, H), o = out.data, k2 = SS * SS;
@@ -464,6 +463,12 @@ span.lname { cursor: default; }
     base = canvasFor();
     for (const Ly of page.layers) if (Ly.visible) for (const L of Ly.lines) drawLine(base, L);
     shown = downsample(base);
+    if (live) {                                               // A KEY WHILE A STROKE IS DRAWN shows now: the page anew, with the
+      work = { ...base, px: base.px.slice(), stamp: base.stamp.slice() };   // stroke so far over it, and the stroke goes on
+      drawLine(work, live, liveSid);
+      ctx.putImageData(downsample(work), 0, 0);
+      return;
+    }
     paint();
   }
   let rebuildFrame = 0;
@@ -725,22 +730,19 @@ span.lname { cursor: default; }
   function startTyping() {                                    // a key that types, with no caret: the end of the text
     if (page.source) return;                                  // a PDF's or a book's page takes no typing
     const T = page.text, P = T.paras, L = textLayout;
-    // TYPING STARTS BELOW THE INK: when the line the text would go on runs over strokes in the column, empty paragraphs
-    // take it below the lowest of them, so the page reads back and forth between the user and the lineup
+    // TYPING STARTS BELOW THE INK: when there are strokes in the column on or below the line the text would go on, empty
+    // paragraphs take it below the lowest of them, so the page reads back and forth between the user and the lineup. A
+    // caret the user places (a click, the arrows) stays where it is put; anything landing on the page lets it go
+    // (contentLanded), so the next key comes back here.
     const lastP = L.paras.length ? L.paras[L.paras.length - 1] : null;
     const lineTop = lastP ? lastP.lines[lastP.lines.length - 1].y - 5 : T.y;
-    const lineBot = lastP ? lineTop + lastP.st.lead : T.y + STYLE.body.lead;
     const x0 = T.x, x1 = T.x + T.width;
-    let inkBottom = -Infinity, over = false;
+    let inkBottom = -Infinity;
     for (const Lyr of page.layers) {
       if (!Lyr.visible) continue;
-      for (const ln of Lyr.lines) for (const p of ln.points) {
-        if (p.x < x0 || p.x > x1) continue;
-        if (p.y > inkBottom) inkBottom = p.y;
-        if (p.y >= lineTop && p.y <= lineBot) over = true;
-      }
+      for (const ln of Lyr.lines) for (const p of ln.points) if (p.x >= x0 && p.x <= x1 && p.y > inkBottom) inkBottom = p.y;
     }
-    if (over) {
+    if (inkBottom >= lineTop) {
       edit(() => {
         // each new paragraph starts 70 below the one before (its line and the paragraph step); the caret goes in the
         // first that starts below the ink
@@ -890,8 +892,17 @@ span.lname { cursor: default; }
     }
   }
   setInterval(() => { if (editing() && !live) { caretOn = !caretOn; paint(); } }, 530);
+  // ANYTHING LANDING ON THE PAGE LETS THE TEXT GO, as Esc does: a stroke the user draws, the daemon's ink arriving, and
+  // whatever else comes to be placed on a page (a capture, a paste of ink). The next key then starts typing afresh, below
+  // the ink (startTyping). Typing itself is not a landing.
+  function contentLanded() { if (editing()) { setCursors([]); paint(); } }
 
   // ================================================================ the pointer
+  // WHILE A STROKE IS DRAWN THE KEYBOARD IS OFF: no key, paste or shortcut reaches the page until the pen lifts
+  const penDown = e => { if (live) { e.preventDefault(); e.stopImmediatePropagation(); } };
+  window.addEventListener("keydown", penDown, true);
+  window.addEventListener("keypress", penDown, true);
+  document.addEventListener("paste", penDown, true);
   const local = e => { const r = vp.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   vp.addEventListener("pointerdown", e => {
     if (e.button !== 0 || e.target === zoomBtn) return;
@@ -913,6 +924,7 @@ span.lname { cursor: default; }
     if (tool === "eraser") { erasing = { layer: layer(), removed: [], added: [], last: [x, y] }; eraserAt = [x, y]; }
     else {
       if (!drawable(x, y)) return;                            // as on the tablet: no stroke starts in the gray
+      contentLanded();                                        // the stroke wins: the text lets go as the pen goes down
       live = newLine(pickers[tool]); live.points.push(pointOf(live, x, y));
       work = { ...base, px: base.px.slice(), stamp: base.stamp.slice() }; liveSid = ++sid;
     }
@@ -948,6 +960,7 @@ span.lname { cursor: default; }
       const at = layer().lines.length; layer().lines.push(live);
       record({ type: "lines", layer: layer(), removed: [], added: [{ line: live, at }] }); lastType = null;
       live = null;
+      contentLanded();
       // on the top layer the working copy is the page; under another layer, the layers above are drawn over it again
       if (activeLayer === page.layers.length - 1 || page.layers.slice(activeLayer + 1).every(Ly => !Ly.visible || !Ly.lines.length)) {
         base = work; work = null; shown = downsample(base); paint();
@@ -1208,22 +1221,95 @@ span.lname { cursor: default; }
   const saved = document.getElementById("saved");
   let lastWritten = null, saveTimer = 0, loaded = false;
 
+  const lineIn = ln => ({
+    itemId: [2, page.nextId++], pen: ln.pen || "FINELINER_2", penCode: ln.penCode, color: ln.color, colorRgba: ln.colorRgba,
+    thicknessScale: ln.thicknessScale, startingLength: 0, width: (ln.points[0] || [])[4] || 16,
+    points: ln.points.map(p => ({ x: p[0], y: p[1], speed: p[2], direction: p[3], width: p[4], pressure: p[5] })) });
+  function textIn(tx) {
+    const col = Object.keys(COLUMNS).find(k => Math.abs(COLUMNS[k][1] - tx.width) < 1) || "wide";
+    return { column: col, x: tx.x, y: tx.y, width: tx.width, paras: (tx.paras || []).map(p => ({ style: p.style, list: p.list,
+      chars: [].concat(...(p.runs || []).map(r => [...r.text].map(c => ({ c, b: !!r.bold, i: !!r.italic })))) })) };
+  }
   function fromScene(sc) {
     page.paperSize = sc.paperSize || [1620, 2160];
     page.source = sc.source || null;                           // "pdf" or "epub": a page of a PDF or a book
-    page.layers = (sc.layers || []).map((L, i) => ({ nodeId: [0, 11 + i], label: L.label, visible: L.visible, lines: (L.lines || []).map(ln => ({
-      itemId: [2, page.nextId++], pen: ln.pen || "FINELINER_2", penCode: ln.penCode, color: ln.color, colorRgba: ln.colorRgba,
-      thicknessScale: ln.thicknessScale, startingLength: 0, width: (ln.points[0] || [])[4] || 16,
-      points: ln.points.map(p => ({ x: p[0], y: p[1], speed: p[2], direction: p[3], width: p[4], pressure: p[5] })) })) }));
+    page.layers = (sc.layers || []).map((L, i) => ({ nodeId: [0, 11 + i], label: L.label, visible: L.visible, lines: (L.lines || []).map(lineIn) }));
     if (!page.layers.length) page.layers = [{ nodeId: [0, 11], label: "Layer 1", visible: true, lines: [] }];
     activeLayer = page.layers.length - 1;
-    const tx = sc.text;
-    if (tx) {
-      const col = Object.keys(COLUMNS).find(k => Math.abs(COLUMNS[k][1] - tx.width) < 1) || "wide";
-      page.text = { column: col, x: tx.x, y: tx.y, width: tx.width, paras: (tx.paras || []).map(p => ({ style: p.style, list: p.list,
-        chars: [].concat(...(p.runs || []).map(r => [...r.text].map(c => ({ c, b: !!r.bold, i: !!r.italic })))) })) };
-    }
+    if (sc.text) page.text = textIn(sc.text);
     page.textVisible = sc.textVisible !== false; page.templateVisible = sc.templateVisible !== false; page.template = sc.template || "Blank";
+  }
+
+  // WHAT THE PAGE HOLDS, in a form that reads the same from the editor and from the file: a stroke by its pen, color and
+  // points (to a tenth of a unit, as the file keeps them in single precision), the text by its paragraphs and runs
+  const lineKey = ln => JSON.stringify([ln.penCode, ln.color, (ln.points || []).map(p => Array.isArray(p)
+    ? [Math.round(p[0] * 10), Math.round(p[1] * 10)] : [Math.round(p.x * 10), Math.round(p.y * 10)])]);
+  const textShape = t => !t || !t.paras.length ? "" : JSON.stringify([Math.round(t.x), Math.round(t.y), Math.round(t.width),
+    t.paras.map(p => [p.style, p.list || null, p.chars.map(c => c.c + (c.b ? "b" : "") + (c.i ? "i" : "")).join("\u0001")])]);
+  const shapeOf = sc => ({                                     // a scene (the file's, as the engine sends it) as keys
+    layers: (sc.layers || []).map(L => ({ label: L.label, visible: L.visible !== false, lines: (L.lines || []).map(lineKey) })),
+    text: sc.text ? textShape(textIn(sc.text)) : "",
+    meta: JSON.stringify([sc.paperSize || [1620, 2160], sc.textVisible !== false, sc.templateVisible !== false, sc.template || "Blank"]) });
+  const shapeOfPage = () => ({
+    layers: page.layers.map(L => ({ label: L.label, visible: L.visible !== false, lines: L.lines.map(lineKey) })),
+    text: textShape(page.text),
+    meta: JSON.stringify([page.paperSize, page.textVisible, page.templateVisible, page.template]) });
+  let known = null;                                            // the page's file as this editor last read or wrote it
+
+  // THE DAEMON WRITES TO AN OPEN PAGE: a job's ink, its typed text, the request it swept. The editor looks at the file
+  // every few seconds and before every save, and takes in what changed there since it last read or wrote it: strokes
+  // added or removed on each layer, a new layer, the text (when the user has not changed it here meanwhile), the page's
+  // template and visibility. What the user did here is kept. New ink lets the text go (contentLanded).
+  function takeIn(sc) {
+    const there = shapeOf(sc), was = known;
+    known = there;
+    if (!was || JSON.stringify(there) === JSON.stringify(was)) return false;
+    let landed = false, changed = false;
+    there.layers.forEach((TL, i) => {
+      const WL = was.layers[i] || { lines: [] }, src = sc.layers[i];
+      let L = page.layers[i];
+      if (!L) { L = { nodeId: [2, page.nextId++], label: TL.label, visible: TL.visible, lines: [] }; page.layers.push(L); changed = true; }
+      const left = new Map();                                  // the strokes the file had, by key, counted
+      for (const k of WL.lines) left.set(k, (left.get(k) || 0) + 1);
+      TL.lines.forEach((k, j) => {
+        if (left.get(k)) { left.set(k, left.get(k) - 1); return; }
+        L.lines.push(lineIn(src.lines[j])); landed = true;     // a stroke the file has gained
+      });
+      for (const [k, n] of left) for (let m = 0; m < n; m++) { // a stroke the file has lost (an erased request)
+        const at = L.lines.findIndex(ln => lineKey(ln) === k);
+        if (at >= 0) { L.lines.splice(at, 1); changed = true; }
+      }
+      if (was.layers[i] && TL.visible !== WL.visible) { L.visible = TL.visible; changed = true; }
+    });
+    if (there.text !== was.text && textShape(page.text) === was.text) {
+      page.text = sc.text ? textIn(sc.text) : { ...page.text, paras: [] };
+      setCursors([]); landed = true;
+    }
+    if (there.meta !== was.meta) {
+      page.paperSize = sc.paperSize || page.paperSize; page.textVisible = sc.textVisible !== false;
+      page.templateVisible = sc.templateVisible !== false;
+      if ((sc.template || "Blank") !== page.template) { page.template = sc.template || "Blank"; loadTemplate(); }
+      changed = true;
+    }
+    if (landed) contentLanded();
+    if (landed || changed) _rebuild();
+    return landed || changed;
+  }
+  let looking = null, saving = false;
+  function lookAtFile() {                                      // one look at a time; a save waits for the one under way
+    if (!looking) looking = look().finally(() => { looking = null; });
+    return looking;
+  }
+  async function look() {
+    if (!loaded || saving || live || erasing) return;
+    try {
+      const r = await fetch(SCENE, { headers: { Authorization: "Bearer " + token() } });
+      if (r.ok && !live && !erasing) {
+        if (takeIn(await r.json()) && JSON.stringify(shapeOfPage()) !== JSON.stringify(known)) {
+          clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 700);
+        }
+      }
+    } catch (e) { /* the engine is away: the next look */ }
   }
 
   function toScene() {
@@ -1246,17 +1332,22 @@ span.lname { cursor: default; }
   async function saveNow(leaving) {
     clearTimeout(saveTimer);
     if (!loaded) return;
+    if (JSON.stringify(toScene()) === lastWritten) return;
+    if (!leaving) await lookAtFile();                         // what the daemon wrote meanwhile is kept, not written over
     const body = JSON.stringify(toScene());
     if (body === lastWritten) return;
     lastWritten = body;
     saved.textContent = "…";
+    saving = true;                                            // no look while the file is being written
     try {
       const r = await fetch(SCENE, { method: "PUT", keepalive: !!leaving, body,
         headers: { Authorization: "Bearer " + token(), "Content-Type": "application/json" } });
       saved.textContent = r.ok ? "" : "Not saved: " + r.status;
-      if (!r.ok) lastWritten = null;
+      if (r.ok) known = shapeOf(JSON.parse(body)); else lastWritten = null;
     } catch (e) { saved.textContent = "Not saved"; lastWritten = null; }
+    saving = false;
   }
+  setInterval(() => { if (!document.hidden) lookAtFile(); }, 2000);
   // every change is a rebuild: a save follows it, once the page has been still for a moment
   const _rebuild = rebuild;
   rebuild = function () { _rebuild(); clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 700); };
@@ -1355,7 +1446,8 @@ span.lname { cursor: default; }
     try {
       const r = await fetch(SCENE, { headers: { Authorization: "Bearer " + token() } });
       if (!r.ok) throw new Error(r.status + " " + (await r.text()).slice(0, 120));
-      fromScene(await r.json());
+      const sc = await r.json();
+      fromScene(sc); known = shapeOf(sc);
       loadTemplate(); loadSource();
       loaded = true;
       lastWritten = JSON.stringify(toScene());

@@ -128,10 +128,26 @@ return to 1x when clicked.
 - **WHEN** the user erases across two strokes and presses Ctrl+Z
 - **THEN** both strokes are whole again
 
-### Requirement: Typing starts below the ink in its way
-When the user starts typing with no caret and the line the text would go on runs over strokes in the text column,
-the editor SHALL add empty paragraphs and start the text in the first paragraph below the lowest of those strokes.
+### Requirement: Typing starts below the ink
+When the user starts typing with no caret and there are strokes in the text column on or below the line the text would
+go on, the editor SHALL add empty paragraphs and start the text in the first paragraph below the lowest of those
+strokes. A caret the user places (a click, the arrow keys) SHALL stay where it is put. Anything landing on the page
+while the user types (a stroke the user draws, the daemon's ink, and whatever else comes to be placed on a page) SHALL
+let the caret go, as Esc does, so the next key starts typing below the ink again. A stroke wins over typing: the caret
+SHALL go as the pen goes down, and no key or paste SHALL reach the page until the pen lifts.
 
-#### Scenario: A drawing across the first line
-- **WHEN** a page has a stroke across the first text line and the user starts typing
-- **THEN** the text starts on the first paragraph below the stroke
+#### Scenario: A drawing below the text
+- **WHEN** a page has a line of text and, well below it, a drawing, and the user starts typing
+- **THEN** the text starts on the first paragraph below the drawing
+
+#### Scenario: The daemon's ink lands while the user types
+- **WHEN** the user is typing on an open page and a job writes strokes below the text
+- **THEN** the strokes appear on the open page, the caret goes, and the next key starts typing below them
+
+### Requirement: An open page takes in what the daemon writes
+While a page is open in the editor, the editor SHALL take in what is written to the page's file from elsewhere (a job's
+strokes and text, a request the job swept), keeping what the user did in the editor, and SHALL never write over it.
+
+#### Scenario: A job answers an open page
+- **WHEN** a job writes strokes to a page open in the editor and the user then draws and the editor saves
+- **THEN** the page's file holds both the job's strokes and the user's
