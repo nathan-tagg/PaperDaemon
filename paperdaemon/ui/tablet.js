@@ -144,6 +144,8 @@
         body.className = "viewer-page editing";
         body.innerHTML = '<iframe class="page-editor" title="' + esc(PD.t("viewer.page", { n: S.page })) + '" src="/ui/editor.html#doc=' +
           encodeURIComponent(S.doc.id) + "&page=" + S.page + "&base=" + encodeURIComponent(base) + '"></iframe>';
+        const efr = $("iframe.page-editor", body);
+        efr.addEventListener("load", () => efr.focus());      // the keys go to the page from the start, no click first
         return;
       }
       body.className = "viewer-page";
@@ -180,12 +182,28 @@
     // pointer's height, always centered across (always opening at 1x); Shift + scroll moves across a zoomed page until
     // the zoom changes, and the pill says the zoom (click: 1x). The view opens on the page's top as the tablet shows it.
     const SCREEN_W = 1620, SCREEN_H = 2160, ZMIN = 0.5, ZMAX = 5;
+    // THE VIEWER IS AS TALL AS THE PORT. The port is the Paper Pro's screen, 3:4, as large as the window allows (by its
+    // height or its width, whichever runs out first, within 92% x 94% of the window, whatever the UI zoom); the viewer is
+    // the port and its title and bar, never taller, and at least wide enough for the bar.
+    function sizeViewer() {
+      const dlg = $("#" + VIEWER); if (!dlg || !dlg.open) return;
+      const body = $(".viewer-page", dlg); if (!body) return;
+      const z = PD.uiZoom || 1, availW = window.innerWidth * 0.92 / z, availH = window.innerHeight * 0.94 / z;
+      for (let pass = 0; pass < 2; pass++) {                  // the bar can wrap at a new width: measured again
+        const chrome = dlg.offsetHeight - body.clientHeight, side = dlg.offsetWidth - body.clientWidth;
+        const vh = Math.max(240, Math.min(availH - chrome, (availW - side) * 4 / 3)), vw = vh * 0.75;
+        dlg.style.width = Math.min(availW, Math.max(vw + side, 560)) + "px";
+        dlg.style.height = (chrome + vh) + "px";
+      }
+    }
+    window.addEventListener("resize", sizeViewer);
+    window.addEventListener("pd-zoom", sizeViewer);
     function placePage(fresh, anchor) {
       const dlg = $("#" + VIEWER); if (!dlg || S.view !== "page") return;
       const body = $(".viewer-page", dlg), port = $(".page-port", body), img = $(".page-frame img", body);
       if (!port || !img || !img.naturalWidth || !S.frame) return;
       const stage = $(".page-stage", port), paper = $(".page-paper", port), frame = $(".page-frame", port);
-      const pad = 16, bw = body.clientWidth - 2 * pad, bh = body.clientHeight - 2 * pad;   // the scrollbar has its own room
+      const bw = body.clientWidth, bh = body.clientHeight;      // the scrollbar has its own room, beside the port
       const vw = Math.max(120, Math.min(bw, bh * 0.75)), vh = vw * 4 / 3;
       const z = S.zoom || 1, s = vw * z / SCREEN_W;                                            // CSS pixels per page unit
       // the picture is the drawable square wide (as wide as the page is tall) and starts at `top` (0, or above the page's
@@ -195,7 +213,9 @@
       const U = Math.max(paperW, SCREEN_W / z);                                                // the stage's width in units
       // THE TOP OF THE VIEW IS THE PAGE'S TOP AS THE TABLET SHOWS IT: a small page shows above its file's y 0 (measured:
       // the frame box of a 200 x 266 page starts at y -61), so the view opens at the picture's top
-      const stageH = Math.max(vh, downTo * s);
+      // THE PAGE ALWAYS SCROLLS, as on the tablet: on down until the view's top reaches the page's foot (or a screen down,
+      // for a page shorter than the screen), whether or not anything is written there
+      const stageH = Math.max(vh, downTo * s) + vh;
       // what was under the pointer, in page units, to keep it there
       let keep = null;
       if (anchor) {
@@ -288,7 +308,22 @@
       const fr = editorFrame(); if (!fr || !fr.contentWindow) return;
       const r = fr.getBoundingClientRect(), k = r.width ? fr.contentWindow.innerWidth / r.width : 1;
       fr.contentWindow.postMessage({ pd: "editor-press", tool: b.dataset.tool, x: (b.getBoundingClientRect().left - r.left) * k }, location.origin);
+      fr.focus();
     }
+    // TYPING NEEDS NO CLICK ON THE PAGE: a key pressed anywhere in the viewer outside a field (after a press in the bar, say)
+    // goes to the editor, as if pressed there, and the keys follow it there. Esc stays the viewer's.
+    document.addEventListener("keydown", e => {
+      const fr = editorFrame(), dlg = $("#" + VIEWER);
+      if (!fr || !fr.contentWindow || !dlg || !dlg.open || e.key === "Escape" || e.defaultPrevented) return;
+      if (document.querySelector("#keys-sheet[open]")) return;     // the shortcuts sheet is over the page: its keys are its own
+      const t = e.target;
+      if (t && t.closest && t.closest("input, textarea, select, [contenteditable]")) return;
+      if (e.key === "Tab" || e.getModifierState(e.key)) return;     // Tab, and a modifier pressed on its own, stay here
+      e.preventDefault();
+      fr.contentWindow.postMessage({ pd: "editor-key", key: e.key, code: e.code, ctrlKey: e.ctrlKey, shiftKey: e.shiftKey,
+                                     altKey: e.altKey, metaKey: e.metaKey }, location.origin);
+      fr.focus();
+    });
 
     // A JOB'S PROGRESS, as the host reports it (GET /progress): a bar over the bottom edge of the document's cover, and
     // along the bottom of the viewer when that document is open; no count until the model's plan is in
@@ -360,7 +395,8 @@
       if (!dlg) {
         dlg = document.createElement("dialog");
         dlg.id = VIEWER; dlg.className = "viewer";
-        dlg.innerHTML = '<div class="viewer-head"><span class="viewer-title"></span><button type="button" class="link-btn" data-v="close">' + esc(PD.t("common.close")) + "</button></div>" +
+        dlg.innerHTML = '<div class="viewer-head"><span class="viewer-name"><span class="viewer-title"></span><button type="button" class="keys-q" data-v="keys" title="' +
+          esc(PD.t("keys.open")) + '" aria-label="' + esc(PD.t("keys.open")) + '">?</button></span><button type="button" class="link-btn" data-v="close">' + esc(PD.t("common.close")) + "</button></div>" +
           '<div class="viewer-bar"><span class="viewer-tools"></span><span class="viewer-tags"></span><span class="viewer-nav"></span></div>' +
           '<div class="viewer-page" tabindex="-1" autofocus></div>';
         dlg.addEventListener("click", async e => {
@@ -383,8 +419,12 @@
           if (v === "close") dlg.close();
           else if (v === "prev" || v === "next") go(S.page + (v === "next" ? 1 : -1));
           else if (v === "retry") paintBody();
-          else if (v === "zoom1") { S.zoom = 1; placePage(true); showZoom(); }
+          else if (v === "zoom1") {                       // back to 1x where it is: the middle of the view stays put
+            const br = $(".viewer-page", dlg).getBoundingClientRect();
+            S.zoom = 1; placePage(false, { x: br.left + br.width / 2, y: br.top + br.height / 2 }); showZoom();
+          }
           else if (v === "tagpop") { S.tagPop = !S.tagPop; paintBar(); paintTagPop(); }
+          else if (v === "keys") PD.openShortcuts(!!editorFrame());
           else if (v === "tagadd") addTypedTag();
           else if (v === "newpage") {
             const [got] = await PD.safe(api("POST", "/library/" + S.doc.id + "/pages", { after: S.page }));
@@ -394,6 +434,7 @@
         });
         dlg.addEventListener("wheel", wheelPage, { passive: false });
         new ResizeObserver(() => placePage(false)).observe($(".viewer-page", dlg));
+        new ResizeObserver(sizeViewer).observe($(".viewer-bar", dlg));    // a bar that wraps makes the viewer taller
         dlg.addEventListener("keydown", e => {
           if (e.target.matches("[data-tag-add]")) {
             if (e.key === "Enter") { e.preventDefault(); addTypedTag(); }
@@ -431,7 +472,7 @@
         }, true));
       }
       dlg.showModal();
-      paintBar(); paintBody();
+      paintBar(); paintBody(); sizeViewer();
       PD.safe(api("GET", "/library/" + x)).then(([d]) => { if (S.doc && S.doc.id === x) { S.tags = d; paintBar(); } });
       PD.safe(api("GET", "/library/" + x + "/chapters")).then(([c]) => {
         if (!S.doc || S.doc.id !== x) return;

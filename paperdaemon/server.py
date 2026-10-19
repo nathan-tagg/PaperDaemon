@@ -231,6 +231,7 @@ def status():
         mirror = {"complete": False}
     return {"version": __version__, "tablet": tablet, "pull": _pull, "mirror": mirror, "secrets": _secret_flags(),
             "loop": loop.status(), "lineup": settings.active(s)["name"], "first_run": _first_run(),
+            "can_start": settings.startable(s),
             "false_mirror": {"exists": paths.false_mirror_exists(), "up": bool(_fm.get("port"))}}
 
 
@@ -1085,6 +1086,29 @@ def get_jobs(limit: int = 50, lineup: str = ""):
     return rows
 
 
+@app.post(API + "/fill")
+async def post_fill(request: Request, w: int, h: int, ppg: float, flat: int = 0):
+    """THE PAGE EDITOR'S FILL, painted by the decomposer itself: the area (w x h grid pixels, one bit each, rows packed
+    as numpy.packbits does, the request's body) through its ring planner in C (fastdecomp rmfast.fill, as rm_model runs
+    it), placed on the area's own grid. -> {"strokes": [{"pts": [[x, y], ...], "field": width field, "pen": code}]},
+    points in grid pixels (a pixel's center at its index), each ring a stroke; `flat` paints as the highlighter."""
+    data = await request.body()
+    if w <= 0 or h <= 0 or w * h > 16_000_000 or len(data) < (w * h + 7) // 8 or not 0 < ppg < 1000:
+        return JSONResponse({"error": "the area does not fit its size"}, status_code=400)
+
+    def run():
+        import numpy as np
+        from PIL import Image
+        from .pipeline.decompose.fastdecomp import rmfast
+        from .pipeline.decompose.reference import rm_paint
+        bits = np.unpackbits(np.frombuffer(data, np.uint8))[: w * h].reshape(h, w)
+        mask = Image.fromarray((bits * 255).astype(np.uint8), "L")
+        out = rmfast.fill(mask, (0, 0, 0, 255), float(ppg), (0, 0, w, h), (0, 0), (w, h), 1 if flat else 0, rm_paint)
+        return {"strokes": [{"pts": [[float(x), float(y)] for x, y in pts], "field": int(field[0]), "pen": int(pen)}
+                            for pts, field, pen, *_ in out]}
+    return await run_in_threadpool(run)
+
+
 @app.get(API + "/progress")
 def get_progress():
     """The page a job is working on and how far it is: {doc, page, done, total} (done and total null until the
@@ -1192,11 +1216,19 @@ def post_notepad_wipe(doc: str):
 def post_decompose(body: dict = Body(...)):
     from . import studio
     try:
-        out, _strokes = studio.decompose(body.get("image"), body.get("width"), job=str(body.get("job") or "")[:64] or None)
+        out, strokes = studio.decompose(body.get("image"), body.get("width"), preview=not body.get("strokes"),
+                                        job=str(body.get("job") or "")[:64] or None)
     except (ValueError, OSError) as ex:
         return _bad(str(ex)[:300])
     except Exception as ex:
         return _bad("%s: %s" % (type(ex).__name__, str(ex)[:300]), 502)
+    if body.get("strokes"):                   # THE STROKES THEMSELVES, for the page editor's paste as strokes (Ctrl+Shift+V)
+        out["lines"] = [{"pts": [[float(x), float(y)] for x, y in st[0]], "widths": [int(round(w)) for w in st[1]],
+                         "pen": getattr(st[2], "name", str(st[2])), "penCode": int(st[2]), "color": int(st[3]),
+                         # the page keeps a color as four numbers, alpha last: the decomposer's three, opaque
+                         "colorRgba": ([int(v) for v in st[4]] + [255])[:4] if len(st) > 4 and st[4] else None} for st in strokes]
+        # the picture lies centered in a square `box` wide, its longest side the box's, from the decomposer's top
+        out["center"] = [0.0, studio.TOP + out["box"] / 2.0]
     return out
 
 
@@ -1377,6 +1409,36 @@ def get_library_scene(doc: str, page: int):
     if not paths.local_only():
         return _bad("pages are edited in the False Mirror only", 404)
     return _local(local.scene_of, doc, page)
+
+
+@app.get(API + "/library/{doc}/page/{page}/picture/{name}")
+def get_library_picture(doc: str, page: int, name: str):
+    """A picture placed on the page (a capture, a pasted image), its file as it is: the page editor draws it."""
+    from .remarkable import local
+    if not _doc_ok(doc):
+        return _bad("not a document id")
+    if not paths.local_only():
+        return _bad("pages are edited in the False Mirror only", 404)
+    try:
+        p = local.picture_path(doc, page, name)
+    except ValueError as ex:
+        return _bad(str(ex)[:200])
+    if not p:
+        return _bad("no such picture", 404)
+    return FileResponse(p, media_type="image/png" if p.endswith(".png") else "image/jpeg")
+
+
+@app.post(API + "/library/{doc}/page/{page}/picture")
+async def post_library_picture(doc: str, page: int, request: Request):
+    """A new picture for the page (PNG or JPEG bytes, the request's body), kept beside it under a name of its own:
+    -> {name, width, height}. The page editor places it on the page with its next save."""
+    from .remarkable import local
+    if not _doc_ok(doc):
+        return _bad("not a document id")
+    data = await request.body()
+    if not data or len(data) > 40_000_000:
+        return _bad("a picture of up to 40 MB")
+    return await run_in_threadpool(_local, lambda: local.add_picture(doc, page, data))
 
 
 @app.put(API + "/library/{doc}/page/{page}/scene")

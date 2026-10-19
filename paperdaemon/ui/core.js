@@ -557,6 +557,7 @@
     PD.uiZoom = z;
     document.documentElement.style.zoom = z === 1 ? "" : String(z);
     document.documentElement.style.setProperty("--pd-zoom", String(z));
+    window.dispatchEvent(new Event("pd-zoom"));                  // what is sized in script against the window, again
     try { localStorage.setItem("pd.zoom", String(z)); } catch (e) { /* this window only */ }
   };
   const step = dir => {

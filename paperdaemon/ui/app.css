@@ -270,7 +270,7 @@ pre.snippet.pad-text { white-space: pre-wrap; padding: var(--s3) var(--s4); font
 .doc-card .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .doc-card.nocover .cover { background: var(--field); }
 .doc-card .name { margin-top: var(--s1); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* the notebook viewer: nearly the window's height, the page controls above the page */
+/* the notebook viewer: the page controls above the page; sized in script to the Paper Pro's port (tablet.js sizeViewer) */
 dialog.viewer { width: min(calc(92vw / var(--pd-zoom, 1)), calc(1100px / var(--pd-zoom, 1))); height: calc(94vh / var(--pd-zoom, 1)); max-height: calc(94vh / var(--pd-zoom, 1)); max-width: none; padding: 0; border: 1px solid var(--edge); background: var(--paper-sunk); color: var(--ink); }
 dialog.viewer::backdrop { background: var(--shade); }
 .viewer { display: none; }
@@ -459,7 +459,7 @@ textarea.field { height: auto; padding: 8px 10px; }
 .page-frame { position: relative; display: inline-block; line-height: 0; }
 /* the page on the tablet's screen (tablet.js placePage): the port is the Paper Pro's screen, its stage the page in page
    units at the zoom; the viewer scrolls down a long page, the port across a zoomed one */
-.viewer-page:has(> .page-port) { display: block; overflow-x: hidden; overflow-y: auto; padding: 16px; scrollbar-gutter: stable both-edges; }
+.viewer-page:has(> .page-port) { display: block; overflow-x: hidden; overflow-y: auto; padding: 0; scrollbar-gutter: stable both-edges; }
 .page-port { position: relative; margin: 0 auto; overflow: hidden; background: rgb(142, 142, 142); box-shadow: 0 0 0 1px var(--edge); }
 .page-stage { position: relative; }
 .page-paper { position: absolute; top: 0; background: #FFFFFF; }
@@ -574,3 +574,26 @@ html, .viewer-page, .script-help-body, .terminal, textarea, .chapter-list { scro
 .drop-here { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; pointer-events: none;
   background: rgba(20, 18, 20, 0.72); border: 2px dashed var(--mark); color: var(--ink); font-size: 20px; }
 .drop-here[hidden] { display: none; }
+/* the ? by the document's name, and the shortcuts sheet it opens over the viewer (shortcuts.js) */
+.viewer-name { display: inline-flex; align-items: baseline; gap: var(--s2); min-width: 0; }
+.keys-q { width: 18px; height: 18px; flex: none; align-self: center; display: inline-grid; place-items: center; padding: 0; border: 1px solid var(--edge);
+  border-radius: 50%; background: transparent; color: var(--ink-2); font: 600 11px/1 var(--font-ui, inherit); cursor: pointer; }
+.keys-q:hover, .keys-q:focus-visible { color: var(--ink); border-color: var(--ink-2); }
+dialog.keys-sheet { width: min(calc(640px / var(--pd-zoom, 1)), calc(90vw / var(--pd-zoom, 1))); max-width: none; max-height: none; box-sizing: border-box; padding: 0;
+  border: 1px solid var(--edge); background: var(--paper); color: var(--ink); }
+dialog.keys-sheet[open] { display: grid; grid-template-rows: auto minmax(0, 1fr); }
+dialog.keys-sheet::backdrop { background: rgba(0, 0, 0, 0.35); }
+.keys-head { display: flex; align-items: baseline; justify-content: space-between; padding: var(--s4) var(--s5) var(--s3); border-bottom: 1px solid var(--rule); }
+.keys-title { font-weight: 600; }
+.keys-body { overflow-y: auto; padding: var(--s2) var(--s5) var(--s5); }
+.keys-body h3 { margin: var(--s4) 0 var(--s2); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+ul.keys { list-style: none; margin: 0; padding: 0; }
+ul.keys li { display: grid; grid-template-columns: 22px minmax(0, 13em) minmax(0, 1fr); gap: var(--s3); align-items: center; padding: 5px 0; }
+ul.keys .ki svg { width: 20px; height: 20px; display: block; color: var(--ink-2); }
+ul.keys .kk { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+ul.keys .kc { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+ul.keys kbd { font: 600 11px/1 var(--font-ui, inherit); letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 5px;
+  border: 1px solid var(--edge); border-bottom-width: 2px; border-radius: 4px; background: var(--field, transparent); color: var(--ink); }
+ul.keys .kplus, ul.keys .kor { color: var(--ink-3); font-size: 11px; }
+ul.keys .kn { color: var(--ink-2); line-height: 1.35; }
+ul.keys .kn strong { color: var(--ink); font-weight: 600; }

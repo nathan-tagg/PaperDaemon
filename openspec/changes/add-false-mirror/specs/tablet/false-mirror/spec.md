@@ -98,3 +98,20 @@ menu at the top right of its screen.
 #### Scenario: A book page in the false mirror
 - **WHEN** the user opens a page of a book in the false mirror
 - **THEN** the bar shows the pens, the eraser and layers, no text tool, and the user can draw on the page
+
+### Requirement: The viewer is the tablet's screen
+The viewer SHALL hold a port the Paper Pro's screen's shape (3:4), as large as the window allows by its height or its
+width, within the window at every UI zoom, and SHALL be no taller than the port with its title and bar.
+
+#### Scenario: A tall window
+- **WHEN** the window is taller than it is wide
+- **THEN** the port is as wide as the window allows and the viewer is only as tall as the port and its bar
+
+### Requirement: Start waits for a lineup that could take a page
+The Daemon screen's Start SHALL show as Paused and be disabled while no lineup could take a page (none has a tag, or its
+text model has no location, or a model on this computer has no start script), its hover saying so; passing the lineup's
+test SHALL NOT be needed.
+
+#### Scenario: No tags
+- **WHEN** no lineup has a tag
+- **THEN** the button reads Paused, cannot be pressed, and its hover says no lineup is ready

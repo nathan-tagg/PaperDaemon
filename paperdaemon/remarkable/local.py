@@ -12,6 +12,7 @@ strokes under their layer, the root text block), keeping the page's header block
 import io
 import json
 import os
+import re
 import time
 import uuid
 
@@ -330,7 +331,8 @@ def scene_of(doc, page_no):
     if not os.path.exists(path):                     # never written on: no page file yet, the page's own frame
         w, h = R.page_frame(doc, page_no)
         return {"paperSize": [w, h], "layers": [{"label": "Layer 1", "visible": True, "lines": []}], "text": None,
-                "textVisible": True, "templateVisible": True, "template": page_template(doc, page_no), "source": source}
+                "textVisible": True, "templateVisible": True, "template": page_template(doc, page_no), "source": source,
+                "images": []}
     data = open(path, "rb").read()
     blocks = list(read_blocks(io.BytesIO(data)))
     info = next((b for b in blocks if isinstance(b, ss.SceneInfo)), None)
@@ -376,7 +378,75 @@ def scene_of(doc, page_no):
     return {"paperSize": size, "layers": layers, "text": text,
             "textVisible": bool(lww(getattr(info, "root_document_visible", None), True)),
             "templateVisible": bool(lww(getattr(info, "background_visible", None), True)),
-            "template": page_template(doc, page_no), "source": source}
+            "template": page_template(doc, page_no), "source": source, "images": pictures_of(doc, page_no, data)}
+
+
+# ---------------------------------------------------------------- pictures on a page
+# THE EDITOR SHOWS AND KEEPS A PAGE'S PICTURES (captures, a pasted image, the daemon's coloring pages and chess pieces):
+# each is its file beside the page (<doc>/<page>/<name>) and its four corners on the page, as the tablet stores them
+# (pipeline/page/images.py reads and writes the blocks). A save writes them back after the strokes, on Layer 1 at their
+# page corners, each with its own asset and hash.
+PICTURE_NAME = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpg)$")
+
+
+def pictures_of(doc, page_no, data=None):
+    """[{name, key, quad: [[x, y] x 4]}] of the page's live pictures, in page coordinates, lowest first."""
+    from paperdaemon.pipeline.page import images as IM
+    try:
+        pid = page_id(doc, page_no)
+        got = IM.items(doc, page_no, page_id=pid)
+    except Exception:
+        return []
+    out = []
+    for im in got:
+        if im.get("name") and PICTURE_NAME.match(im["name"]) and im.get("path"):
+            out.append({"name": im["name"], "key": im.get("hash") or "", "quad": [[float(x), float(y)] for x, y in im["quad"]]})
+    return out
+
+
+def picture_path(doc, page_no, name):
+    """The file of a picture on the page, or None."""
+    if not PICTURE_NAME.match(name or ""):
+        return None
+    p = os.path.join(M, doc, page_id(doc, page_no), name)
+    return p if os.path.isfile(p) else None
+
+
+def add_picture(doc, page_no, data):
+    """A new picture's file (PNG or JPEG bytes) beside the page, under a name of its own. -> {name, width, height}."""
+    _guard()
+    from PIL import Image
+    with Image.open(io.BytesIO(data)) as im:
+        kind, (w, h) = (im.format or "").upper(), im.size
+    if kind not in ("PNG", "JPEG"):
+        raise ValueError("a picture is a PNG or a JPEG")
+    name = str(uuid.uuid4()) + (".png" if kind == "PNG" else ".jpg")
+    folder = os.path.join(M, doc, page_id(doc, page_no))
+    os.makedirs(folder, exist_ok=True)
+    paths.write_atomic(os.path.join(folder, name), data)
+    return {"name": name, "width": w, "height": h}
+
+
+def _picture_blocks(doc, page_no, pictures, layer, nid):
+    """The asset and item blocks of the scene's pictures, as raw bytes in the tablet's form, and how many."""
+    import hashlib
+    from paperdaemon.pipeline.page import images as IM
+    out, n = b"", 0
+    for pic in pictures or []:
+        name, quad = pic.get("name"), pic.get("quad") or []
+        if not picture_path(doc, page_no, name) or len(quad) != 4:
+            continue
+        try:
+            h = bytes.fromhex(pic.get("key") or "")
+        except ValueError:
+            h = b""
+        if len(h) != 16:
+            h = hashlib.md5(name.encode("ascii")).digest()
+        asset, item = nid(), nid()
+        out += IM.asset_block(h, name, (asset.part1, asset.part2))
+        out += IM.item_block_quad((layer.part1, layer.part2), (item.part1, item.part2), (asset.part1, asset.part2), h, quad)
+        n += 1
+    return out, n
 
 
 def _enum(kind, v):
@@ -445,10 +515,15 @@ def write_scene(doc, page_no, scene):
     blocks += ([info] if info is not None else []) + tree + groups + placed + ([text] if text else []) + strokes
     buf = io.BytesIO()
     write_blocks(buf, blocks)
-    data = buf.getvalue()
+    pics, npics = _picture_blocks(doc, page_no, scene.get("images"), nodes[0], nid)
+    data = buf.getvalue() + pics
     back = [b for b in read_blocks(io.BytesIO(data)) if isinstance(b, ss.SceneLineItemBlock)]
     if len(back) != count:
         raise RuntimeError("the page did not read back: %d strokes written, %d read" % (count, len(back)))
+    if npics:
+        from paperdaemon.pipeline.page import images as IM
+        if len([im for im in IM.parse(data) if not im["deleted"]]) != npics:
+            raise RuntimeError("the page's pictures did not read back")
     paths.write_atomic(path, data)
     _touch(doc)
     return count

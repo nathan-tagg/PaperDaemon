@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.1.37
+
+- The page editor shows a page's pictures, turned ones too, and keeps them through every save.
+- Select and Capture share a slot right of the eraser. Select takes strokes in a loop, to move, resize and turn (Shift:
+  on the clock's hours) by its frame and the handle above it. Capture copies what a loop holds, pixel for pixel, to the
+  clipboard, and a click selects a picture.
+- Ctrl+C and Ctrl+X put strokes on the Windows clipboard as strokes and as a picture; Ctrl+V puts strokes back as strokes
+  and an image as a picture, under the pointer; Ctrl+Shift+V puts an image down as strokes, decomposed at its size.
+- Shapes by number: 2 circle, 3 triangle, 4 square, 5 rectangle, 6 arrow, by two clicks; 1 is the pen.
+- Shift or Ctrl and clicks set corners (a line, or a closed shape); Ctrl+Shift puts the edges on the clock's hours.
+- Alt+click fills an area with the pen in hand, as the decomposer fills a zone.
+- Right-click erases what it passes over; with Shift whole strokes; with Ctrl+Shift a zone. The eraser has a Zone mode.
+- A stroke wins over typing; typing starts below the ink; anything landing on the page lets the text go; Backspace with
+  no cursor goes back into the text.
+- An open page takes in what a job writes to it.
+- The page always scrolls, with a bar that fades; the middle button autoscrolls; the zoom pill keeps the view's place.
+- The viewer is the tablet's screen, 3:4, as large as the window allows.
+- A ? by a document's name opens every shortcut, each with its icon.
+- Start shows as paused while no lineup could take a page.
+- A lone stroke is saved on its own.
+
 ## 0.1.36
 
 - Typing starts below the lowest ink on the page, unless the cursor was put somewhere else.

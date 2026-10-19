@@ -218,3 +218,49 @@ def test_an_epub_imports_as_the_desktop_app_files_a_book():
     assert got["n"] == got["pages"] >= 4                            # chapter two starts a page of its own, and a blank ends it
     assert got["size"] == [445.0, 594.0] and got["margins"] == 125  # the tablet's book page and settings
     assert got["redirs"] == list(range(got["pages"]))
+
+
+def test_a_pages_pictures_round_trip_through_the_editor_scene():
+    """The editor shows and keeps a page's pictures: one added beside the page and placed by a scene (upright, and
+    turned) reads back at its corners; a second save keeps them; a scene without one takes it off the page."""
+    got = _run("""
+        import io, json
+        from PIL import Image
+        from paperdaemon.remarkable import local
+        doc = local.new_notebook("Pictures")
+        buf = io.BytesIO(); Image.new("RGB", (40, 20), (200, 30, 30)).save(buf, "PNG")
+        a = local.add_picture(doc, 1, buf.getvalue())
+        buf = io.BytesIO(); Image.new("RGB", (10, 10), (0, 0, 200)).save(buf, "JPEG")
+        b = local.add_picture(doc, 1, buf.getvalue())
+        scene = local.scene_of(doc, 1)
+        scene["layers"][0]["lines"] = [{"penCode": 17, "color": 0, "colorRgba": None, "thicknessScale": 1,
+                                        "points": [[-100, 300, 0, 0, 8, 128], [100, 300, 0, 0, 8, 128]]}]
+        up = [[-200, 400], [200, 400], [200, 600], [-200, 600]]
+        turned = [[0, 800], [100, 900], [0, 1000], [-100, 900]]
+        scene["images"] = [{"name": a["name"], "quad": up}, {"name": b["name"], "quad": turned},
+                           {"name": "not-a-picture.png", "quad": up}]
+        n = local.write_scene(doc, 1, scene)
+        first = local.scene_of(doc, 1)
+        local.write_scene(doc, 1, first)
+        second = local.scene_of(doc, 1)
+        second["images"] = second["images"][1:]
+        local.write_scene(doc, 1, second)
+        third = local.scene_of(doc, 1)
+        try:
+            local.add_picture(doc, 1, b"not an image")
+            refused = False
+        except Exception:
+            refused = True
+        print(json.dumps({"a": a, "n": n, "first": first["images"], "second": second["images"], "third": third["images"],
+                          "strokes": len(third["layers"][0]["lines"]), "refused": refused}))
+    """)
+    assert got["a"]["width"] == 40 and got["a"]["height"] == 20 and got["a"]["name"].endswith(".png")
+    assert got["n"] == 1
+    first = got["first"]
+    assert [im["name"] for im in first] == [got["a"]["name"], first[1]["name"]] and first[1]["name"].endswith(".jpg")
+    assert first[0]["quad"] == [[-200, 400], [200, 400], [200, 600], [-200, 600]]
+    assert first[1]["quad"] == [[0, 800], [100, 900], [0, 1000], [-100, 900]]
+    assert all(len(im["key"]) == 32 for im in first)
+    assert [im["quad"] for im in got["second"]] == [first[1]["quad"]]
+    assert [im["name"] for im in got["third"]] == [first[1]["name"]] and got["strokes"] == 1
+    assert got["refused"] is True

@@ -44,11 +44,21 @@ html, body { margin: 0; height: 100%; background: var(--paper-sunk); color: var(
 /* IN THE VIEWER (embedded): the tools are in the viewer's bar, so this bar goes; a menu opens at the top of the frame,
    right under the button pressed there, and the saved state sits at its top right */
 .embedded .bar { display: none; }
+.embedded .body { padding: 0; }
 .embedded .pop { top: 2px; }
 .embedded #saved { position: absolute; right: 12px; top: 4px; z-index: 4; font-size: 13px; color: var(--ink-3); }
 .viewport { position: relative; overflow: hidden; touch-action: none; cursor: crosshair; }
 .viewport.typing { cursor: text; }
 canvas { display: block; }
+/* where the view is, down the page: a thin bar at the page's right edge, its thumb dragged to scroll */
+.vscroll { position: absolute; right: 2px; top: 3px; bottom: 3px; width: 12px; z-index: 3; opacity: 0;
+           transition: opacity 0.45s ease; }                 /* out slowly, once the page is still */
+/* the middle button's autoscroll: its mark where it was pressed, a dot with the ways the page can go */
+.automark { position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px; z-index: 4; pointer-events: none; }
+.vscroll.on, .vscroll:hover, .vscroll.drag { opacity: 1; transition-duration: 0.12s; }
+.vscroll i { position: absolute; right: 3px; width: 5px; border-radius: 3px; background: rgba(0, 0, 0, 0.30);
+             box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55); transition: width 0.12s ease, right 0.12s ease, background 0.12s ease; }
+.vscroll:hover i, .vscroll.drag i { right: 2px; width: 8px; border-radius: 4px; background: rgba(0, 0, 0, 0.46); }
 .zoom { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); padding: 4px 12px; border-radius: 14px;
   background: rgba(30, 28, 30, 0.85); color: #F2EEE6; font: 15px var(--font-ui); border: 0; cursor: pointer;
   opacity: 0; transition: opacity 300ms; pointer-events: none; }
@@ -72,6 +82,8 @@ canvas { display: block; }
 .sw.split { overflow: hidden; display: grid; grid-template-rows: 1fr 1fr; }
 .sw.split i { display: block; }
 .pop.wide { width: 300px; }
+.pop.narrow { width: 158px; }                       /* two choices: Select and Capture */
+.grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; }
 .lsec + .lsec { border-top: 1px solid var(--rule); }
 .lrow { display: flex; align-items: center; height: 48px; padding: 0 8px; gap: 2px; color: var(--ink); }
 .lrow.on { background: var(--ink); color: var(--paper-sunk); }
@@ -109,7 +121,7 @@ span.lname { cursor: default; }
     <span id="saved"></span>
     <div class="pop" id="pop" hidden></div>
   </div>
-  <div class="body"><div class="viewport" id="vp"><canvas id="cv"></canvas><button class="zoom" id="zoom" title="Back to 1x"></button></div></div>
+  <div class="body"><div class="viewport" id="vp"><canvas id="cv"></canvas><button class="zoom" id="zoom" title="Back to 1x"></button><div class="vscroll" id="vscroll"><i></i></div></div></div>
 </div>
 <script>
 "use strict";
@@ -120,6 +132,7 @@ span.lname { cursor: default; }
     paperSize: [1620, 2160],
     layers: [{ nodeId: [0, 11], label: "Layer 1", visible: true, lines: [] }],
     text: { column: "wide", x: -576, y: 234, width: 1152, paras: [] },            // RootTextBlock: one block, one column
+    images: [],                                                                    // pictures: {name, key, quad (4 corners)}
     textVisible: true, templateVisible: true, template: "Blank",                  // SceneInfo's root_document_visible and
                                                                                    // background_visible; the template is named in .content
     nextId: 1,                                                                         // PaperDaemon writes as author 2
@@ -379,7 +392,8 @@ span.lname { cursor: default; }
   let vpW = 0, vpH = 0, dpr = 1, SS = 2, base = null, shown = null, live = null, textLayout = null;
   function layout() {
     // the frame the viewer gives it: the bar on top, the page below at the Paper Pro's 3:4, as large as fits
-    const maxW = window.innerWidth - 32, maxH = window.innerHeight - document.getElementById("bar").offsetHeight - document.getElementById("note").offsetHeight - 32;
+    const m = document.body.classList.contains("embedded") ? 0 : 32;   // in the viewer the frame is the port: no margin
+    const maxW = window.innerWidth - m, maxH = window.innerHeight - document.getElementById("bar").offsetHeight - document.getElementById("note").offsetHeight - m;
     vpH = Math.max(200, Math.floor(Math.min(maxH, maxW * 4 / 3)));
     vpW = Math.floor(vpH * 3 / 4);
     vp.style.width = vpW + "px"; vp.style.height = vpH + "px";
@@ -402,7 +416,8 @@ span.lname { cursor: default; }
                 cy0: Math.max(0, Math.ceil(ay * k - 0.5)), cy1: H - 1 };
     for (let y = c.cy0; y <= c.cy1; y++) if (c.cx1 >= c.cx0) px.fill(255, (y * W + c.cx0) * 3, (y * W + c.cx1 + 1) * 3);
     const withText = page.textVisible && page.text.paras.length, withTemplate = page.templateVisible && tplImg;
-    if ((withText || withTemplate || srcImg) && c.cx1 >= c.cx0 && c.cy0 <= c.cy1) {
+    const withPictures = page.images.some(im => pictures.get(im.name));
+    if ((withText || withTemplate || srcImg || withPictures) && c.cx1 >= c.cx0 && c.cy0 <= c.cy1) {
       const off = document.createElement("canvas"); off.width = W; off.height = H;
       const g = off.getContext("2d");
       g.beginPath(); g.rect(c.cx0, c.cy0, c.cx1 - c.cx0 + 1, c.cy1 - c.cy0 + 1); g.clip();       // text, too, only in the square
@@ -412,6 +427,7 @@ span.lname { cursor: default; }
       // a PDF's or a book's page first, the frame wide from its top (source.png)
       if (srcImg) g.drawImage(srcImg, -page.paperSize[0] / 2, 0, page.paperSize[0], page.paperSize[1]);
       if (withTemplate) g.drawImage(tplImg, -page.paperSize[0] / 2, 0, page.paperSize[0], page.paperSize[1]);
+      if (withPictures) drawPictures(g);
       if (withText) drawText(g, textLayout);
       const t = g.getImageData(0, 0, W, H).data;
       for (let q = 0, i = 0; q < t.length; q += 4, i += 3) {
@@ -461,8 +477,9 @@ span.lname { cursor: default; }
   function rebuild() {
     textLayout = layoutText();
     base = canvasFor();
-    for (const Ly of page.layers) if (Ly.visible) for (const L of Ly.lines) drawLine(base, L);
+    for (const Ly of page.layers) if (Ly.visible) for (const L of Ly.lines) if (!hiddenLines.has(L)) drawLine(base, L);
     shown = downsample(base);
+    footSeen = footOf();
     if (live) {                                               // A KEY WHILE A STROKE IS DRAWN shows now: the page anew, with the
       work = { ...base, px: base.px.slice(), stamp: base.stamp.slice() };   // stroke so far over it, and the stroke goes on
       drawLine(work, live, liveSid);
@@ -474,10 +491,11 @@ span.lname { cursor: default; }
   let rebuildFrame = 0;
   const rebuildSoon = () => { cancelAnimationFrame(rebuildFrame); rebuildFrame = requestAnimationFrame(rebuild); };
   function paint() {
+    paintScroll();
     if (live) return;                                         // the stroke being drawn paints its own patches
     ctx.putImageData(shown, 0, 0);
     ctx.save(); ctx.scale(dpr, dpr);
-    drawSelection(); drawCaret(); drawEraser();
+    drawSelection(); drawCaret(); drawEraser(); drawShaping(); drawPick();
     ctx.restore();
   }
 
@@ -486,6 +504,8 @@ span.lname { cursor: default; }
   function apply(a, forward) {
     if (a.type === "text") { const s = forward ? a.after : a.before; page.text = clone(s.text); setCursors(clone(s.cursors)); return; }
     if (a.type === "layers") { const s = forward ? a.after : a.before; setLayers(s); return; }
+    pick = null;                                              // what was selected may be gone or elsewhere
+    if (a.type === "pics") { page.images = clone(forward ? a.after : a.before); loadPictures(); return; }
     const lines = a.layer.lines, take = forward ? a.removed : a.added, put_ = forward ? a.added : a.removed;
     for (const e of take) { const i = lines.indexOf(e.line); if (i >= 0) lines.splice(i, 1); }
     for (const e of [...put_].sort((x, y) => x.at - y.at)) lines.splice(Math.min(e.at, lines.length), 0, e.line);
@@ -531,10 +551,23 @@ span.lname { cursor: default; }
     }
     return out;
   }
+  // a stroke's bounds, kept with it (its points never change: an erase makes new strokes), so a stroke nowhere near the
+  // eraser is passed over without looking at its points
+  const boxes = new WeakMap();
+  function boxOf(L) {
+    let b = boxes.get(L);
+    if (!b) {
+      b = [Infinity, Infinity, -Infinity, -Infinity];
+      for (const q of L.points) { if (q.x < b[0]) b[0] = q.x; if (q.y < b[1]) b[1] = q.y; if (q.x > b[2]) b[2] = q.x; if (q.y > b[3]) b[3] = q.y; }
+      boxes.set(L, b);
+    }
+    return b;
+  }
   function eraseAt(x, y) {                                    // on the layer in hand; true when something went
     const lines = erasing.layer.lines, before = erasing.removed.length;
     for (const L of [...lines]) {
-      const reach = ERASER_R + widthOf(L) / 2, P = L.points;
+      const reach = ERASER_R + widthOf(L) / 2, P = L.points, bx = boxOf(L);
+      if (x < bx[0] - reach || x > bx[2] + reach || y < bx[1] - reach || y > bx[3] + reach) continue;
       const hit = P.some((q, i) => {
         const b = P[Math.min(i + 1, P.length - 1)], dx = b.x - q.x, dy = b.y - q.y, L2 = dx * dx + dy * dy;
         const t = L2 ? Math.max(0, Math.min(1, ((x - q.x) * dx + (y - q.y) * dy) / L2)) : 0;
@@ -544,11 +577,9 @@ span.lname { cursor: default; }
       const at = lines.indexOf(L);
       lines.splice(at, 1);
       erasing.removed.push({ line: L, at });
-      if (eraseMode === "stroke") continue;
-      const runs = []; let cur = [];                          // what it passes over: the line breaks where the eraser crossed it
-      for (const q of resample(P, 2)) { if (near(q.x, q.y, x, y, reach)) { if (cur.length > 1) runs.push(cur); cur = []; } else cur.push(q); }
-      if (cur.length > 1) runs.push(cur);
-      runs.forEach((run, j) => {
+      if ((erasing.mode || eraseMode) === "stroke") continue;
+      // what it passes over: the line breaks where the eraser crossed it, its own points kept on either side
+      cutOut(P, q => near(q.x, q.y, x, y, reach)).forEach((run, j) => {
         const piece = Object.assign({}, L, { itemId: [2, page.nextId++], points: run });
         lines.splice(at + j, 0, piece);
         erasing.added.push({ line: piece, at: at + j });
@@ -556,8 +587,203 @@ span.lname { cursor: default; }
     }
     return erasing.removed.length > before;
   }
+  // ERASING A ZONE: a loop drawn with the eraser, and every point of every stroke inside it goes (on the layer in hand). A
+  // stroke is cut where it crosses the loop; what lies outside stays, the pieces as strokes of their own.
+  let zone = null;
+  const inside = (x, y, poly) => {
+    let c = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const [xi, yi] = poly[i], [xj, yj] = poly[j];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c;
+    }
+    return c;
+  };
+  function eraseZone(Ly, poly) {
+    if (poly.length < 3) return;
+    const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const removed = [], added = [], lines = Ly.lines;
+    for (const L of [...lines]) {
+      if (!L.points.some(q => q.x >= x0 && q.x <= x1 && q.y >= y0 && q.y <= y1 && inside(q.x, q.y, poly))
+          && !resample(L.points, 2).some(q => q.x >= x0 && q.x <= x1 && q.y >= y0 && q.y <= y1 && inside(q.x, q.y, poly))) continue;
+      const at = lines.indexOf(L);
+      lines.splice(at, 1); removed.push({ line: L, at });
+      cutOut(L.points, q => inside(q.x, q.y, poly)).forEach((run, j) => {
+        const piece = Object.assign({}, L, { itemId: [2, page.nextId++], points: run });
+        lines.splice(at + j, 0, piece); added.push({ line: piece, at: at + j });
+      });
+    }
+    if (removed.length) { record({ type: "lines", layer: Ly, removed, added }); lastType = null; }
+  }
+  // the runs of a stroke outside what is erased (`ins`): its own points, and a point where it crosses the edge (found to a
+  // fraction of a unit along the segment), so only what is inside goes
+  function cutOut(P, ins) {
+    const at =(a, b, t) => Object.assign({}, b, { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+    const cross = (a, b, t0, t1, s0) => {                     // the outside side of the crossing between t0 and t1
+      for (let k = 0; k < 14; k++) { const m = (t0 + t1) / 2; if (ins(at(a, b, m)) === s0) t0 = m; else t1 = m; }
+      return at(a, b, s0 ? t1 : t0);
+    };
+    const runs = []; let cur = [], state = ins(P[0]);
+    if (!state) cur.push(P[0]);
+    for (let i = 1; i < P.length; i++) {
+      const a = P[i - 1], b = P[i], n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 2));
+      let t0 = 0;
+      for (let j = 1; j <= n; j++) {
+        const t = j / n, s = ins(at(a, b, t));
+        if (s !== state) {
+          const e = cross(a, b, t0, t, state);
+          if (!state) { cur.push(e); if (cur.length > 1) runs.push(cur); cur = []; } else cur = [e];
+          state = s;
+        }
+        t0 = t;
+      }
+      if (!state) cur.push(b);
+    }
+    if (cur.length > 1) runs.push(cur);
+    return runs;
+  }
+
+  // SHAPES WITH THE PEN IN HAND, by the keys held: Shift or Ctrl and a click sets corners, and letting go of the keys
+  // draws them: two corners a line, more a closed shape (as does clicking the first corner again). Ctrl and Shift together
+  // snap each edge to the clock's hours, every 30 degrees. Alt and a click fills the enclosed area under the click. They
+  // are ordinary strokes of the pen in hand, drawn and erased like any other.
+  let poly = null;
+  const CLOCK = Math.PI / 6;
+  const onTheHour = ([ax, ay], [x, y]) => {                    // the corner put on the nearest hour from the one before
+    const d = Math.hypot(x - ax, y - ay), a = Math.round(Math.atan2(y - ay, x - ax) / CLOCK) * CLOCK;
+    return [ax + d * Math.cos(a), ay + d * Math.sin(a)];
+  };
+  const cornerAt = (e, p) => poly && poly.pts.length && e.ctrlKey && e.shiftKey ? onTheHour(poly.pts[poly.pts.length - 1], p) : p;
+  const penWidth = pk => { const pen = PEN[pk.pen], ts = pen.sizes === false ? 1 : pk.size + 1; return widthOf({ pen: pen.pen, width: pen.per * ts }); };
+  function strokeOf(pk, pts, step = 4) {                      // a stroke of the pen through the points, a point every `step` units
+    const L = newLine(pk);
+    L.points = resample(pts.map(([x, y]) => ({ x, y })), step).map(p => pointOf(L, p.x, p.y));
+    return L;
+  }
+  function addStrokes(list) {
+    const Ly = layer(), added = [];
+    for (const L of list) { if (!L.points.length) continue; added.push({ line: L, at: Ly.lines.length }); Ly.lines.push(L); }
+    if (!added.length) return;
+    record({ type: "lines", layer: Ly, removed: [], added }); lastType = null;
+    contentLanded(); rebuild();
+  }
+  function closePoly() {
+    if (!poly) return;
+    const p = poly; poly = null;
+    if (p.pts.length >= 3) addStrokes([strokeOf(p.pk, p.pts.concat([p.pts[0]]))]);
+    else if (p.pts.length === 2) addStrokes([strokeOf(p.pk, p.pts)]);
+    else paint();
+  }
+  window.addEventListener("keyup", e => {
+    if ((e.key === "Control" || e.key === "Shift") && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); closePoly(); }
+  });
+  window.addEventListener("blur", () => { if (poly) closePoly(); });
+  // SHAPES BY NUMBER, with a pen in hand and no text being typed: 1 the pen as it is, 2 a circle, 3 a triangle, 4 a
+  // square, 5 a rectangle, 6 an arrow. The pointer becomes the shape; the first click sets one corner or edge, the
+  // second the other (Shift puts the second on the clock's hours from the first), and the pen is back to 1. A circle
+  // spans the two clicks as its diameter; a triangle is equilateral, its tip the first click and the middle of the side
+  // across the second; a square has the clicks as its diagonal; a rectangle as opposite corners, upright; an arrow runs
+  // from the first to the second, its head there. Each is one stroke of the pen in hand.
+  let shapeKind = 1, shapeAt = null, shapeHover = null;
+  const SHAPE_NAMES = { 2: "circle", 3: "triangle", 4: "square", 5: "rectangle", 6: "arrow" };
+  function setShape(k) {
+    shapeKind = k; shapeAt = shapeHover = null;
+    if (k > 1) vp.dataset.shape = SHAPE_NAMES[k]; else delete vp.dataset.shape;
+    paint();
+  }
+  function shapePoints(kind, [ax, ay], [bx, by]) {
+    const dx = bx - ax, dy = by - ay;
+    if (kind === 2) {
+      const cx = (ax + bx) / 2, cy = (ay + by) / 2, r = Math.hypot(dx, dy) / 2, a0 = Math.atan2(ay - cy, ax - cx), out = [];
+      for (let i = 0; i <= 72; i++) { const a = a0 + i / 72 * 2 * Math.PI; out.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); }
+      return out;
+    }
+    if (kind === 3) {
+      const h = Math.hypot(dx, dy) || 1, nx = -dy / h, ny = dx / h, half = h / Math.sqrt(3);
+      return [[ax, ay], [bx + nx * half, by + ny * half], [bx - nx * half, by - ny * half], [ax, ay]];
+    }
+    if (kind === 4) {
+      const mx = (ax + bx) / 2, my = (ay + by) / 2, hx = dx / 2, hy = dy / 2;
+      return [[ax, ay], [mx - hy, my + hx], [bx, by], [mx + hy, my - hx], [ax, ay]];
+    }
+    if (kind === 5) return [[ax, ay], [bx, ay], [bx, by], [ax, by], [ax, ay]];
+    const L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, head = Math.min(L * 0.3, 90), t = Math.PI / 6.5;
+    const barb = s => [bx - head * (ux * Math.cos(t) - s * uy * Math.sin(t)), by - head * (uy * Math.cos(t) + s * ux * Math.sin(t))];
+    return [[ax, ay], [bx, by], barb(1), [bx, by], barb(-1)];
+  }
+  // THE POINTERS: a small cross for the pens, and for a shape the shape itself around a dot where the click lands
+  (() => {
+    const cur = body => 'url("data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 21 21"><g fill="none" stroke-linecap="round" stroke-linejoin="round">' +
+      '<g stroke="#fff" stroke-width="3">' + body + '</g><g stroke="#000" stroke-width="1.2">' + body + "</g></g></svg>") + '") 10 10, crosshair';
+    const cross = '<path d="M10.5 5.5v10M5.5 10.5h10"/>', dot = '<path d="M10.5 10.5h.01"/>';
+    const looks = { circle: '<circle cx="10.5" cy="10.5" r="6.5"/>', triangle: '<path d="M10.5 3.5l6.8 12H3.7z"/>', square: '<rect x="4.5" y="4.5" width="12" height="12"/>',
+                    rectangle: '<rect x="2.5" y="6" width="16" height="9"/>', arrow: '<path d="M4 17L17 4M17 4h-6M17 4v6"/>' };
+    let css = ".viewport { cursor: " + cur(cross) + "; }\n";
+    for (const [k, v] of Object.entries(looks)) css += '.viewport[data-shape="' + k + '"] { cursor: ' + cur(v + dot) + "; }\n";
+    const st = document.createElement("style"); st.textContent = css; document.head.append(st);
+  })();
+  // A FILL: the area of one color under the click, as the page shows it now (bounded by ink, text and the edge of what is
+  // on screen: a fill never reaches past the view), painted by the decomposer itself: the engine runs its ring planner
+  // in C (POST /fill, fastdecomp rmfast.fill) on the area and sends back its rings, the first fine and on the edge, each
+  // deeper one wider. Every ring is a stroke of the pen in hand at the planner's width. Without the engine (the editor
+  // opened from its file) there is no fill, and the page says so.
+  async function fillAt(pk, x, y) {
+    if (!shown) return;
+    const W = shown.width, H = shown.height, d = shown.data;
+    const [sx, sy] = toScreen(x, y), px = Math.round(sx * dpr), py = Math.round(sy * dpr);
+    if (px < 0 || py < 0 || px >= W || py >= H) return;
+    const q0 = (py * W + px) * 4, r0 = d[q0], g0 = d[q0 + 1], b0 = d[q0 + 2];
+    const mask = new Uint8Array(W * H), stack = [py * W + px];
+    const same = i => { const q = i * 4; return Math.abs(d[q] - r0) <= 24 && Math.abs(d[q + 1] - g0) <= 24 && Math.abs(d[q + 2] - b0) <= 24; };
+    mask[py * W + px] = 1;
+    let x0 = px, x1 = px, y0 = py, y1 = py;
+    while (stack.length) {
+      const i = stack.pop(), cx = i % W, cy = (i - cx) / W;
+      if (cx < x0) x0 = cx; if (cx > x1) x1 = cx; if (cy < y0) y0 = cy; if (cy > y1) y1 = cy;
+      for (const n of [cx > 0 ? i - 1 : -1, cx < W - 1 ? i + 1 : -1, cy > 0 ? i - W : -1, cy < H - 1 ? i + W : -1]) {
+        if (n >= 0 && !mask[n] && same(n)) { mask[n] = 1; stack.push(n); }
+      }
+    }
+    // the area on its own grid, the screen's device pixels cropped to it, a bit each (rows packed as numpy.packbits);
+    // a grid pixel is ppg page units
+    const gw = x1 - x0 + 1, gh = y1 - y0 + 1, bits = new Uint8Array(Math.ceil(gw * gh / 8));
+    for (let r = 0, k = 0; r < gh; r++) for (let c = 0; c < gw; c++, k++) if (mask[(y0 + r) * W + x0 + c]) bits[k >> 3] |= 128 >> (k & 7);
+    const ppg = 1 / (scale() * dpr), flat = PEN[pk.pen].pen.startsWith("HIGHLIGHTER") ? 1 : 0;
+    let got;
+    try {
+      const r = await fetch("/api/v1/fill?w=" + gw + "&h=" + gh + "&ppg=" + ppg + "&flat=" + flat, { method: "POST", body: bits,
+        headers: { Authorization: "Bearer " + token(), "Content-Type": "application/octet-stream" } });
+      if (!r.ok) throw new Error(r.status);
+      got = await r.json();
+    } catch (e) {                                             // say why, truly: opened from its file this page reaches no
+      saved.textContent = location.protocol === "file:" ? "Fill works in the app's page editor, not in this file"   // engine;
+        : String(e.message) === "404" ? "This PaperDaemon has no fill yet" : "Fill failed: " + e.message;   // an older one has none
+      setTimeout(() => { saved.textContent = ""; }, 3500); return;
+    }
+    const onPage = (gx, gy) => toPage((x0 + gx + .5) / dpr, (y0 + gy + .5) / dpr);
+    addStrokes(got.strokes.map(ring => {
+      const L = newLine(pk);
+      L.width = ring.field;
+      L.points = ring.pts.map(([gx, gy]) => pointOf(L, ...onPage(gx, gy)));
+      return L;
+    }));
+  }
+  function drawShaping() {
+    const line = pts => { ctx.beginPath(); pts.forEach(([x, y], i) => { const [a, b] = toScreen(x, y); i ? ctx.lineTo(a, b) : ctx.moveTo(a, b); }); };
+    if (zone) {
+      ctx.save(); ctx.setLineDash([5, 4]); ctx.strokeStyle = "rgba(0,0,0,0.6)"; ctx.lineWidth = 1;
+      line(zone.pts.concat([zone.pts[0]])); ctx.stroke(); ctx.restore();
+    }
+    const ink = pk => { ctx.strokeStyle = "rgba(0,0,0,0.55)"; ctx.lineWidth = Math.max(1, penWidth(pk) * scale()); ctx.lineCap = "round"; ctx.lineJoin = "round"; };
+    if (shapeAt && shapeHover) { ink(pickers[tool] || pickers.a); line(shapePoints(shapeKind, shapeAt, shapeHover)); ctx.stroke(); }
+    if (poly) {
+      ink(poly.pk); line(poly.pts.concat(poly.hover ? [poly.hover] : [])); ctx.stroke();
+      ctx.fillStyle = "rgba(208,128,106,0.9)";
+      for (const [x, y] of poly.pts) { const [a, b] = toScreen(x, y); ctx.fillRect(a - 2.5, b - 2.5, 5, 5); }
+    }
+  }
   function drawEraser() {
-    if (!eraserAt || tool !== "eraser") return;
+    if (!eraserAt || tool !== "eraser" || eraseMode === "zone") return;
     const [ex, ey] = toScreen(eraserAt[0], eraserAt[1]);
     ctx.strokeStyle = "rgba(0,0,0,0.45)"; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.arc(ex, ey, ERASER_R * scale(), 0, Math.PI * 2); ctx.stroke();
@@ -899,16 +1125,41 @@ span.lname { cursor: default; }
 
   // ================================================================ the pointer
   // WHILE A STROKE IS DRAWN THE KEYBOARD IS OFF: no key, paste or shortcut reaches the page until the pen lifts
-  const penDown = e => { if (live) { e.preventDefault(); e.stopImmediatePropagation(); } };
+  const penDown = e => {
+    if (e.key === "Escape" && shapeKind > 1 && !live) { setShape(1); e.preventDefault(); e.stopImmediatePropagation(); return; }
+    if (e.key === "Escape" && poly && !live) { poly = null; paint(); e.preventDefault(); e.stopImmediatePropagation(); return; }   // Esc drops the corners set
+    if (live || zone) { e.preventDefault(); e.stopImmediatePropagation(); }
+  };
   window.addEventListener("keydown", penDown, true);
   window.addEventListener("keypress", penDown, true);
   document.addEventListener("paste", penDown, true);
   const local = e => { const r = vp.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   vp.addEventListener("pointerdown", e => {
-    if (e.button !== 0 || e.target === zoomBtn) return;
+    if (auto) { e.preventDefault(); stopAuto(); return; }     // any press ends the autoscroll, and does nothing else
+    if (e.button === 1) { e.preventDefault(); startAuto(e); return; }
+    if ((e.button !== 0 && e.button !== 2) || e.target === zoomBtn || e.target.closest(".vscroll")) return;
     if (popFor) { popFor = null; paintPop(); }
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();   // keys belong to the page now
+    window.focus();                                           // in the viewer too, so a key let go is heard here
     const [x, y] = toPage(...local(e));
+    if (e.button === 2) {                                     // RIGHT-CLICK IS THE ERASER, whatever is in hand: what it passes
+      e.preventDefault();                                     // over; with Shift whole strokes; with Ctrl + Shift a zone
+      if (!layer().visible) return;
+      contentLanded();
+      if (e.ctrlKey && e.shiftKey) { zone = { layer: layer(), pts: [[x, y]] }; pointer = e.pointerId; vp.setPointerCapture(e.pointerId); paint(); return; }
+      erasing = { layer: layer(), removed: [], added: [], last: [x, y], mode: e.shiftKey ? "stroke" : "area" };
+      pointer = e.pointerId; vp.setPointerCapture(e.pointerId);
+      if (eraseAt(x, y)) rebuild(); else paint();
+      return;
+    }
+    if (shapeKind > 1 && pickers[tool]) {                     // a shape: the first click one corner or edge, the second the other
+      e.preventDefault();
+      if (!shapeAt) { if (!drawable(x, y) || !layer().visible) return; contentLanded(); shapeAt = [x, y]; shapeHover = [x, y]; paint(); return; }
+      const end = e.shiftKey ? onTheHour(shapeAt, [x, y]) : [x, y], kind = shapeKind;
+      if (Math.hypot(end[0] - shapeAt[0], end[1] - shapeAt[1]) > 2) addStrokes([strokeOf(pickers[tool], shapePoints(kind, shapeAt, end))]);
+      setShape(1); return;
+    }
+    if (tool === "pick" && e.button === 0 && !(e.ctrlKey && e.altKey)) { e.preventDefault(); pickDown(e, x, y); return; }
     if (e.ctrlKey && e.altKey) {                              // Ctrl+Alt+click: one more cursor, whatever the tool
       const hit = hitText(x, y);
       if (hit) { setCursors(cursors.concat([{ caret: hit, anchor: null }])); caretOn = true; paint(); }
@@ -921,6 +1172,20 @@ span.lname { cursor: default; }
       placeCaret(x, y); caretOn = true; pointer = e.pointerId; vp.setPointerCapture(e.pointerId); paint(); return;
     }
     if (!layer().visible) return;                               // a hidden layer can't be drawn on or erased
+    if (tool === "eraser" && eraseMode === "zone") {
+      contentLanded(); zone = { layer: layer(), pts: [[x, y]] }; pointer = e.pointerId; vp.setPointerCapture(e.pointerId); paint(); return;
+    }
+    if (tool !== "eraser" && pickers[tool]) {                 // the keys held make a shape of the pen in hand
+      if (e.altKey && !e.ctrlKey) { e.preventDefault(); if (drawable(x, y)) fillAt(pickers[tool], x, y); return; }
+      if (e.ctrlKey || e.shiftKey) {
+        e.preventDefault();
+        if (!drawable(x, y)) return;
+        if (!poly) { contentLanded(); poly = { pk: pickers[tool], pts: [[x, y]], hover: null }; paint(); return; }
+        const [fx, fy] = poly.pts[0];
+        if (poly.pts.length >= 3 && Math.hypot(x - fx, y - fy) * scale() < 8) { closePoly(); return; }
+        poly.pts.push(cornerAt(e, [x, y])); paint(); return;
+      }
+    }
     if (tool === "eraser") { erasing = { layer: layer(), removed: [], added: [], last: [x, y] }; eraserAt = [x, y]; }
     else {
       if (!drawable(x, y)) return;                            // as on the tablet: no stroke starts in the gray
@@ -932,8 +1197,14 @@ span.lname { cursor: default; }
     if (erasing) { if (eraseAt(x, y)) rebuild(); else paint(); } else { ctx.putImageData(shown, 0, 0); drawTail(live); }
   });
   vp.addEventListener("pointermove", e => {
+    if (pickMove(e)) return;
     if (tool === "eraser") eraserAt = toPage(...local(e));
+    // the keys let go where this page did not hear it (in the viewer around it): the pointer moving without them is enough
+    if (poly && !e.ctrlKey && !e.shiftKey) closePoly();
+    if (poly) { poly.hover = cornerAt(e, toPage(...local(e))); paint(); }
+    if (shapeAt) { const q = toPage(...local(e)); shapeHover = e.shiftKey ? onTheHour(shapeAt, q) : q; paint(); }
     if (e.pointerId !== pointer) { if (tool === "eraser") paint(); return; }
+    if (zone) { for (const ev of (e.getCoalescedEvents ? e.getCoalescedEvents() : [e])) zone.pts.push(toPage(...local(ev))); paint(); return; }
     if (tool === "text") {                                    // a drag selects
       const hit = hitText(...toPage(...local(e))), c = primary();
       if (hit && c) { if (!c.anchor) c.anchor = { ...c.caret }; c.caret = hit; use(c); paint(); }
@@ -950,12 +1221,16 @@ span.lname { cursor: default; }
         erasing.last = [x, y];
       }
     }
-    if (erasing) { if (gone) rebuild(); else paint(); }       // redrawn only when something was erased
+    if (erasing) { if (gone) rebuildSoon(); else paint(); }   // redrawn only when something was erased, once a frame at most
   });
+  vp.addEventListener("contextmenu", e => e.preventDefault());
+  vp.addEventListener("mousedown", e => { if (e.button === 1) e.preventDefault(); });   // no autoscroll on the page
   vp.addEventListener("pointerleave", () => { eraserAt = null; paint(); });
   function finish(e) {
     if (e.pointerId !== pointer) return;
     pointer = null;
+    if (pickUp()) return;
+    if (zone) { const z = zone; zone = null; eraseZone(z.layer, z.pts); rebuild(); return; }
     if (live) {
       const at = layer().lines.length; layer().lines.push(live);
       record({ type: "lines", layer: layer(), removed: [], added: [{ line: live, at }] }); lastType = null;
@@ -963,7 +1238,7 @@ span.lname { cursor: default; }
       contentLanded();
       // on the top layer the working copy is the page; under another layer, the layers above are drawn over it again
       if (activeLayer === page.layers.length - 1 || page.layers.slice(activeLayer + 1).every(Ly => !Ly.visible || !Ly.lines.length)) {
-        base = work; work = null; shown = downsample(base); paint();
+        base = work; work = null; shown = downsample(base); paint(); saveSoon();   // drawn in place: the save is still due
       } else { work = null; rebuild(); }
     }
     if (erasing) {
@@ -995,6 +1270,9 @@ span.lname { cursor: default; }
     text: svg('<path d="M5 7V4.5h14V7"/><path d="M12 4.5V19.5"/><path d="M9 19.5h6"/>'),
     eraser: svg('<path d="M9.5 20H20"/><path d="M4.4 14.6 13.6 5.4a1.5 1.5 0 0 1 2.1 0l3.9 3.9a1.5 1.5 0 0 1 0 2.1L11 20H8.2l-3.8-3.8a1.1 1.1 0 0 1 0-1.6z"/><path d="M8.6 10.4 14.6 16.4"/>'),
     eraseStroke: svg('<path d="M3 16c3-7 6.5-9.5 9.5-5.5S17.5 13 21 7"/><path d="M13 3.5l5 5M18 3.5l-5 5" stroke-width="1.7"/>'),
+    eraseZone: svg('<path d="M5 9c0-3.5 3.5-5.5 7.5-5.5S20 6 20 10s-3 7.5-8 7.5S5 13.5 5 9z" stroke-dasharray="2 2.4"/><path d="M8 11c2-2.5 3.5-2.5 5 0s3 2.5 4 0"/>'),
+    select: svg('<path d="M6 10c0-3.3 3-5.5 7-5.5s7 2.2 7 5.5-3 5.5-7 5.5c-1.2 0-2.4-.2-3.4-.6" stroke-dasharray="2 2.2"/><path d="M9.6 14.9C8 15.8 7.3 17.4 8 19"/><circle cx="8.2" cy="19.6" r="1.1"/>'),
+    capture: svg('<path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><circle cx="12" cy="12" r="3.2"/>'),
     erasePass: svg('<path d="M3 16c3-7 6.5-9.5 9.5-5.5S17.5 13 21 7" stroke-dasharray="1.6 2.6"/><circle cx="12.3" cy="11" r="3.6"/>'),
     layers: svg('<path d="M12 4 21 9l-9 5-9-5z"/><path d="M3 13.5l9 5 9-5"/>'),
     eye: svg('<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>'),
@@ -1029,7 +1307,7 @@ span.lname { cursor: default; }
     const pen = k => {
       const pk = pickers[k], c = choiceOf(pk), ring = c[4] ? " ring" : "";
       const dotBg = c[4] ? (c[0] === "Black" ? "#000" : "#fff") : rgb(c[3]);
-      return '<button class="ib" data-tool="' + k + '" aria-pressed="' + (tool === k) + '" aria-label="' + PEN[pk.pen].name + '" title="' + PEN[pk.pen].name + '">' +
+      return '<button class="ib" data-tool="' + k + '" aria-pressed="' + (tool === k) + '" aria-label="' + PEN[pk.pen].name + '" title="' + PEN[pk.pen].name + SHAPE_KEYS + '">' +
         ICON[pk.pen] + '<span class="dot' + ring + '" style="background:' + dotBg + '"></span></button>';
     };
     // (the pages grid is the viewer's, beside its page numbers: the editor's bar starts with the pens)
@@ -1037,10 +1315,13 @@ span.lname { cursor: default; }
     controls.innerHTML = pen("a") + pen("b") +
       (page.source ? "" : '<button class="ib" data-tool="text" aria-pressed="' + (tool === "text") + '" aria-label="Text" title="Text">' + ICON.text + "</button>") +
       '<button class="ib" data-tool="eraser" aria-pressed="' + (tool === "eraser") + '" aria-label="Eraser" title="Eraser">' + ICON.eraser + "</button>" +
+      '<button class="ib" data-tool="pick" aria-pressed="' + (tool === "pick") + '" aria-label="' + (pickMode === "capture" ? "Capture" : "Select") + '" title="' +
+        (pickMode === "capture" ? "Capture" : "Select") + '">' + (pickMode === "capture" ? ICON.capture : ICON.select) + "</button>" +
       '<button class="ib" data-tool="layers" aria-pressed="' + (popFor === "layers") + '" aria-label="Layers" title="Layers">' + ICON.layers + "</button>";
     vp.classList.toggle("typing", tool === "text");
     sendTools();
   }
+  const SHAPE_KEYS = "\n2 circle, 3 triangle, 4 square, 5 rectangle, 6 arrow: two clicks (Shift: on the hours); 1 the pen\nShift or Ctrl + click: corners; let go for a line (two) or a shape (more)\nCtrl + Shift: edges on the clock's hours\nAlt + click: fill";
   const cell = (attrs, pressed, inner, label, cls) => '<button class="cell ' + (cls || "") + '" ' + attrs + ' aria-pressed="' + pressed + '" aria-label="' + label + '" title="' + label + '">' + inner + "</button>";
   function paintPop() {
     const lb = controls.querySelector('[data-tool="layers"]');
@@ -1048,6 +1329,7 @@ span.lname { cursor: default; }
     sendTools();
     if (!popFor) { pop.hidden = true; return; }
     pop.classList.toggle("wide", popFor === "layers");
+    pop.classList.toggle("narrow", popFor === "pick");
     const btn = controls.querySelector('[data-tool="' + popFor + '"]');
     pop.style.left = (EMBED && popX !== null ? Math.max(0, popX - 2) : Math.max(0, btn.offsetLeft - 2)) + "px";
     if (popFor === "layers") {
@@ -1067,10 +1349,15 @@ span.lname { cursor: default; }
         '<div class="lrow">' + eye('data-tvis="template"', page.templateVisible, "Template") + '<span class="lname">Template</span>' +
         '<button class="lb" data-tmpl="1" aria-label="Templates" title="' + tplTitle() + '"' + (tplLocked ? ' aria-disabled="true"' : "") + ">" + ICON.template + "</button></div>" +
         '</div><div class="lsec"><button class="lrow lnew" data-lop="add">' + ICON.plusCircle + "<span>New layer</span></button></div>";
+    } else if (popFor === "pick") {
+      pop.innerHTML = '<div class="sec"><h3>' + (pickMode === "capture" ? "Capture" : "Select") + '</h3><div class="grid2">' +
+        cell('data-pickmode="select"', pickMode === "select", ICON.select + "<span>Select</span>", "Select strokes with a loop") +
+        cell('data-pickmode="capture"', pickMode === "capture", ICON.capture + "<span>Capture</span>", "Capture what a loop holds, or select a picture") + "</div></div>";
     } else if (popFor === "eraser") {
       pop.innerHTML = '<div class="sec"><h3>Eraser</h3><div class="grid3">' +
         cell('data-erase="stroke"', eraseMode === "stroke", ICON.eraseStroke + "<span>Strokes</span>", "Erase whole strokes") +
-        cell('data-erase="area"', eraseMode === "area", ICON.erasePass + "<span>Passing</span>", "Erase what it passes over") + "</div></div>";
+        cell('data-erase="area"', eraseMode === "area", ICON.erasePass + "<span>Passing</span>", "Erase what it passes over") +
+        cell('data-erase="zone"', eraseMode === "zone", ICON.eraseZone + "<span>Zone</span>", "Erase what is inside a loop") + "</div></div>";
     } else if (popFor === "text") {
       // the four styles, each shown in its own face; the one at the cursor is pressed
       const col = page.text.column, here = editing() && page.text.paras[caret.p] ? page.text.paras[caret.p].style : "body";
@@ -1096,12 +1383,14 @@ span.lname { cursor: default; }
     const t = b.dataset.tool;
     if (t === "grid") return;
     if (t === "layers") { popFor = popFor === "layers" ? null : "layers"; paintControls(); paintPop(); return; }   // a menu, not a tool
+    if (tool !== t) { setShape(1); clearPick(); vp.style.cursor = ""; }
     if (tool === t) popFor = popFor === t ? null : t; else { tool = t; popFor = null; }   // the tablet's way: the tool in hand again
     paintControls(); paintPop(); paint();
   });
   pop.addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b) return;
     if (b.dataset.erase) eraseMode = b.dataset.erase;
+    if (b.dataset.pickmode) { if (pickMode !== b.dataset.pickmode) clearPick(); pickMode = b.dataset.pickmode; }
     if (b.dataset.lact !== undefined) { activeLayer = Number(b.dataset.lact); paintPop(); return; }
     if (b.dataset.tvis) { const k = b.dataset.tvis === "text" ? "textVisible" : "templateVisible"; layerEdit(() => { page[k] = !page[k]; }); return; }
     if (b.dataset.tmpl) { if (tplLocked) return; popFor = null; paintPop(); paintControls(); openTemplates(); return; }
@@ -1149,14 +1438,101 @@ span.lname { cursor: default; }
     zoomBtn.classList.add("on"); clearTimeout(zoomTimer);
     zoomTimer = setTimeout(() => zoomBtn.classList.remove("on"), 2500);
   }
-  function clampView() {
-    if (view.zoom <= 1) { view.cx = 0; view.top = 0; return; }
-    const w = SCREEN_W / view.zoom / 2, edge = Math.max(half(), SCREEN_W / 2);
-    view.cx = Math.max(-edge + w, Math.min(edge - w, view.cx));
-    view.top = Math.max(0, view.top);
+  // THE PAGE ALWAYS SCROLLS, as on the tablet (and as the viewer's page does): down until the view's top reaches the
+  // page's foot, or the lowest ink or text past it, or a screen down for a page shorter than the screen
+  function footOf() {
+    let foot = page.paperSize[1];
+    for (const Ly of page.layers) for (const L of Ly.lines) for (const q of L.points) if (q.y > foot) foot = q.y;
+    const T = textLayout && textLayout.paras.length ? textLayout.paras[textLayout.paras.length - 1] : null;
+    return T ? Math.max(foot, T.bottom) : foot;
   }
+  function clampView() {
+    if (view.zoom <= 1) view.cx = 0;
+    else {
+      const w = SCREEN_W / view.zoom / 2, edge = Math.max(half(), SCREEN_W / 2);
+      view.cx = Math.max(-edge + w, Math.min(edge - w, view.cx));
+    }
+    view.top = Math.max(0, Math.min(Math.max(vpH / scale(), footOf()), view.top));
+  }
+  // THE SCROLLBAR: the thumb is the screen's share of all there is to scroll through, at the view's place in it
+  const vscroll = document.getElementById("vscroll"), thumb = vscroll.firstElementChild;
+  let footSeen = 0;                                          // the foot as of the last rebuild (footOf walks every point)
+  function paintScroll() {
+    if (!vpH) return;
+    const screen = vpH / scale(), all = Math.max(screen, footSeen || page.paperSize[1]) + screen;
+    thumb.style.height = Math.max(24, vpH * screen / all - 4) + "px";
+    thumb.style.top = (vpH - 4) * view.top / all + "px";
+  }
+  // THE MIDDLE BUTTON'S AUTOSCROLL, as a browser's: a press drops a mark (a dot with the ways the page can go: up and down,
+  // and across too past 1x), and the page runs toward the pointer, the faster the farther it is from the mark. Pressed
+  // and let go it keeps on until the next press (or Esc, or the wheel); held and moved, it ends when let go.
+  let auto = null;
+  const DEAD = 10;                                            // pixels around the mark where the page stands still
+  const arrows = across => '<svg viewBox="0 0 30 30" width="30" height="30"><circle cx="15" cy="15" r="13.5" fill="rgba(255,255,255,0.92)" stroke="rgba(0,0,0,0.55)"/>' +
+    '<circle cx="15" cy="15" r="2" fill="#000"/><path d="M15 4.5l3.2 4H11.8zM15 25.5l3.2-4H11.8z" fill="#000"/>' +
+    (across ? '<path d="M4.5 15l4-3.2v6.4zM25.5 15l-4-3.2v6.4z" fill="#000"/>' : "") + "</svg>";
+  function startAuto(e) {
+    const [x, y] = local(e);
+    auto = { x, y, mx: x, my: y, held: true, moved: false, mark: document.createElement("div") };
+    auto.mark.className = "automark"; auto.mark.innerHTML = arrows(view.zoom > 1);
+    auto.mark.style.left = x + "px"; auto.mark.style.top = y + "px";
+    vp.append(auto.mark);
+    vp.style.cursor = "all-scroll";
+    requestAnimationFrame(autoTick);
+  }
+  function stopAuto() {
+    if (!auto) return;
+    auto.mark.remove(); auto = null; vp.style.cursor = "";
+  }
+  function autoTick() {
+    if (!auto) return;
+    const across = view.zoom > 1, dx = across ? auto.mx - auto.x : 0, dy = auto.my - auto.y;
+    const run = v => Math.sign(v) * Math.max(0, Math.abs(v) - DEAD) * 0.15;   // CSS pixels a frame
+    const sx = run(dx), sy = run(dy);
+    if (sx || sy) {
+      view.cx += sx / scale(); view.top += sy / scale();
+      clampView(); showScroll(); rebuildSoon();
+    }
+    // the pointer says which way the page runs, as a browser's does
+    const ns = sy < 0 ? "n" : sy > 0 ? "s" : "", ew = sx < 0 ? "w" : sx > 0 ? "e" : "";
+    vp.style.cursor = ns || ew ? ns + ew + "-resize" : "all-scroll";
+    requestAnimationFrame(autoTick);
+  }
+  window.addEventListener("pointermove", e => {
+    if (!auto) return;
+    [auto.mx, auto.my] = local(e);
+    if (auto.held && Math.hypot(auto.mx - auto.x, auto.my - auto.y) > DEAD * 2) auto.moved = true;
+  }, true);
+  window.addEventListener("pointerup", e => {
+    if (!auto || e.button !== 1) return;
+    auto.held = false;
+    if (auto.moved) stopAuto();                               // held and moved: it ends when let go
+  }, true);
+  window.addEventListener("keydown", e => { if (auto && e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); stopAuto(); } }, true);
+  window.addEventListener("wheel", () => stopAuto(), true);
+  window.addEventListener("blur", () => stopAuto());
+  // the bar is seen while the page moves, and fades a moment after it stops (on hover and while dragged it stays)
+  let scrollTimer = 0;
+  function showScroll() {
+    vscroll.classList.add("on"); clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => vscroll.classList.remove("on"), 700);
+  }
+  thumb.addEventListener("pointerdown", e => {
+    e.preventDefault(); e.stopPropagation();
+    const y0 = e.clientY, top0 = view.top, screen = vpH / scale(), all = Math.max(screen, footOf()) + screen;
+    vscroll.classList.add("drag"); thumb.setPointerCapture(e.pointerId);
+    const move = ev => { view.top = top0 + (ev.clientY - y0) * all / vpH; clampView(); showScroll(); rebuildSoon(); };
+    const up = () => { vscroll.classList.remove("drag"); showScroll(); thumb.removeEventListener("pointermove", move); thumb.removeEventListener("pointerup", up); };
+    thumb.addEventListener("pointermove", move); thumb.addEventListener("pointerup", up);
+  });
   window.addEventListener("wheel", e => {
-    if (!e.ctrlKey) return;
+    if (!e.ctrlKey) {                                         // the wheel scrolls the page; Shift (or sideways) across
+      e.preventDefault();
+      if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) view.cx += (e.deltaX || e.deltaY) / scale();
+      else view.top += e.deltaY / scale();
+      clampView(); showScroll(); rebuildSoon();
+      return;
+    }
     e.preventDefault();
     const r = vp.getBoundingClientRect();
     const over = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
@@ -1164,16 +1540,27 @@ span.lname { cursor: default; }
     const [px, py] = toPage(sx, sy);
     view.zoom = Math.max(0.5, Math.min(5, view.zoom * Math.exp(-e.deltaY * 0.0015)));
     view.cx = px - (sx - vpW / 2) / scale(); view.top = py - sy / scale();
-    clampView(); showZoom(); rebuildSoon();
+    clampView(); showZoom(); showScroll(); rebuildSoon();
   }, { passive: false });
-  zoomBtn.addEventListener("click", () => { view.zoom = 1; view.cx = 0; view.top = 0; showZoom(); rebuild(); });
+  zoomBtn.addEventListener("click", () => {                  // back to 1x where it is: the middle of the view stays put
+    const mid = view.top + vpH / scale() / 2;
+    view.zoom = 1; view.cx = 0; view.top = mid - vpH / scale() / 2;
+    clampView(); showZoom(); showScroll(); rebuild();
+  });
   window.addEventListener("keydown", e => {
     if (e.target.closest && e.target.closest("select")) return;
     if (e.key === "Escape" && popFor) { popFor = null; paintPop(); return; }
     const ctrl = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
     if (ctrl && k === "z" && !e.shiftKey) { e.preventDefault(); undo(); return; }
     if (ctrl && (k === "y" || (k === "z" && e.shiftKey))) { e.preventDefault(); redo(); return; }
+    if (!editing() && !ctrl && !e.altKey && pickers[tool] && /^[1-6]$/.test(e.key)) { e.preventDefault(); setShape(Number(e.key)); return; }
     if (!editing() && !ctrl && !e.altKey && (e.key.length === 1 || e.key === "Enter")) startTyping();
+    // BACKSPACE (or Delete) WITH NO CARET goes back into the text at its end, to take back what was typed last: no new
+    // line below the ink for it, as a typed key makes
+    if (!editing() && !e.altKey && (e.key === "Backspace" || e.key === "Delete") && !page.source && page.text.paras.length) {
+      const P = page.text.paras, p = P.length - 1;
+      setCursors([{ caret: { p, o: P[p].chars.length }, anchor: null }]); caretOn = true;
+    }
     if (editing() && textKey(e)) e.preventDefault();
   });
   // the page's frame is the page's own; the face is the tablet's when present, else the substitute, and the note says so
@@ -1215,6 +1602,360 @@ span.lname { cursor: default; }
     paintNote(); rebuild();
   }
 
+
+  // ================================================================ select and capture
+  // ONE SLOT IN THE BAR FOR BOTH, as on the tablet: its menu picks Select or Capture, and the button shows the one in hand.
+  // SELECT: a loop drawn round strokes of the layer in hand selects them (those with most of their points inside); the
+  // selection's frame moves by its inside, scales by its corners (keeping its shape) and turns by the handle above it
+  // (Shift: on the clock's hours). While it is dragged the strokes are drawn as plain lines over the page without them, and only
+  // when it is let go are their points (and widths) changed, so a big selection moves as smoothly as a small one.
+  // CAPTURE: a loop copies what the page shows inside it, pixel for pixel, to the Windows clipboard as a picture; a click
+  // on a picture placed on the page selects it, to move, scale and turn the same way.
+  // Delete or Backspace removes what is selected, Esc lets it go; Ctrl+C and Ctrl+X put it on the clipboard (strokes as
+  // strokes PaperDaemon reads back, and as a picture any program can paste), Ctrl+V puts back what is there, centered
+  // under the pointer: strokes as strokes, selected; an image as a picture; Ctrl+Shift+V an image as strokes, decomposed
+  // at its own size.
+  let pickMode = "select", pick = null, pickDrag = null, pickLoop = null, lastAt = null, pasteAsStrokes = false;
+  const hiddenLines = new Set(), hiddenPics = new Set();
+  // the turning handle's pointer: a circling arrow, as the old Office suites showed it
+  const TURN_CURSOR = 'url("data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">' +
+    '<g fill="none" stroke-linecap="round" stroke-linejoin="round"><g stroke="#fff" stroke-width="4"><path d="M18.5 12a6.5 6.5 0 1 1-2.2-4.9"/><path d="M17 3.5v4h-4"/></g>' +
+    '<g stroke="#000" stroke-width="1.6"><path d="M18.5 12a6.5 6.5 0 1 1-2.2-4.9"/><path d="M17 3.5v4h-4"/></g></g></svg>') + '") 12 12, grab';
+  const rot = ([x, y], a) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];
+  function frameOfPoints(pts) {                               // an upright frame round points, a little room kept
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const [x, y] of pts) { if (x < x0) x0 = x; if (y < y0) y0 = y; if (x > x1) x1 = x; if (y > y1) y1 = y; }
+    const pad = 6;
+    return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, w: Math.max(4, x1 - x0 + 2 * pad), h: Math.max(4, y1 - y0 + 2 * pad), a: 0 };
+  }
+  function frameOfQuad(q) {                                   // a picture's frame from its corners
+    const [[x0, y0], [x1, y1], , [x3, y3]] = q;
+    return { cx: (q[0][0] + q[2][0]) / 2, cy: (q[0][1] + q[2][1]) / 2, w: Math.hypot(x1 - x0, y1 - y0), h: Math.hypot(x3 - x0, y3 - y0), a: Math.atan2(y1 - y0, x1 - x0) };
+  }
+  const corners = f => [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) => { const [x, y] = rot([sx * f.w / 2, sy * f.h / 2], f.a); return [f.cx + x, f.cy + y]; });
+  function mapper(f0, f1) {                                   // a point of the old frame to the same place in the new one
+    const s = f1.w / f0.w;
+    return ([x, y]) => { const [lx, ly] = rot([x - f0.cx, y - f0.cy], -f0.a); const [mx, my] = rot([lx * s, ly * s], f1.a); return [f1.cx + mx, f1.cy + my]; };
+  }
+  function selectStrokes(lines, layerRef) {
+    if (!lines.length) { pick = null; paint(); return; }
+    pick = { kind: "strokes", layer: layerRef, lines, frame: frameOfPoints(lines.flatMap(L => L.points.map(p => [p.x, p.y]))) };
+    contentLanded(); paint();
+  }
+  function selectPicture(i) {
+    pick = { kind: "picture", index: i, frame: frameOfQuad(page.images[i].quad) };
+    contentLanded(); paint();
+  }
+  function clearPick() { if (pick) { pick = null; paint(); } }
+  // where the handles are, on the screen: the four corners, and the turning handle above the top's middle
+  function handlesOf(f) {
+    const c = corners(f).map(p => toScreen(...p));
+    const [ux, uy] = rot([0, -1], f.a), topMid = toScreen(...[f.cx + rot([0, -f.h / 2], f.a)[0], f.cy + rot([0, -f.h / 2], f.a)[1]]);
+    return { c, turn: [topMid[0] + ux * 26, topMid[1] + uy * 26], topMid };
+  }
+  function hitPick(sx, sy) {
+    if (!pick) return null;
+    const H = handlesOf(pick.frame);
+    if (Math.hypot(sx - H.turn[0], sy - H.turn[1]) <= 9) return { op: "turn" };
+    for (let k = 0; k < 4; k++) if (Math.hypot(sx - H.c[k][0], sy - H.c[k][1]) <= 9) return { op: "scale", k };
+    const [px, py] = toPage(sx, sy), f = pick.frame, [lx, ly] = rot([px - f.cx, py - f.cy], -f.a);
+    if (Math.abs(lx) <= f.w / 2 && Math.abs(ly) <= f.h / 2) return { op: "move" };
+    return null;
+  }
+  function pictureAt(x, y) {                                  // the topmost picture under a point
+    for (let i = page.images.length - 1; i >= 0; i--) {
+      const f = frameOfQuad(page.images[i].quad), [lx, ly] = rot([x - f.cx, y - f.cy], -f.a);
+      if (Math.abs(lx) <= f.w / 2 && Math.abs(ly) <= f.h / 2) return i;
+    }
+    return -1;
+  }
+  function pickDown(e, x, y) {
+    const [sx, sy] = local(e), hit = hitPick(sx, sy);
+    pointer = e.pointerId; vp.setPointerCapture(e.pointerId);
+    if (hit) {                                                // a handle or the inside: the selection moves, scales or turns
+      pickDrag = { ...hit, start: [x, y], f0: { ...pick.frame } };
+      if (pick.kind === "strokes") { pick.lines.forEach(L => hiddenLines.add(L)); }
+      else hiddenPics.add(page.images[pick.index]);
+      rebuild(); return;
+    }
+    if (pickMode === "capture") {                             // a click on a picture selects it; a loop captures
+      const i = pictureAt(x, y);
+      if (i >= 0) { selectPicture(i); pickDrag = { op: "move", start: [x, y], f0: { ...pick.frame } }; hiddenPics.add(page.images[i]); rebuild(); return; }
+    }
+    pick = null;
+    pickLoop = { pts: [[x, y]] };
+    paint();
+  }
+  function pickMove(e) {
+    const [sx, sy] = local(e), [x, y] = toPage(sx, sy);
+    lastAt = [x, y];
+    if (pickLoop && e.pointerId === pointer) {
+      for (const ev of (e.getCoalescedEvents ? e.getCoalescedEvents() : [e])) pickLoop.pts.push(toPage(...local(ev)));
+      paint(); return true;
+    }
+    if (pickDrag && e.pointerId === pointer) {
+      const d = pickDrag, f0 = d.f0, f = { ...f0 };
+      if (d.op === "move") { f.cx = f0.cx + x - d.start[0]; f.cy = f0.cy + y - d.start[1]; }
+      else if (d.op === "turn") {
+        let a = f0.a + Math.atan2(y - f0.cy, x - f0.cx) - Math.atan2(d.start[1] - f0.cy, d.start[0] - f0.cx);
+        if (e.shiftKey) a = Math.round(a / CLOCK) * CLOCK;          // Shift: on the clock's hours, as everywhere
+        f.a = a;
+      } else {                                                // a corner: about the corner across, the frame keeping its shape
+        const C = corners(f0), opp = C[(d.k + 2) % 4], diag = [C[d.k][0] - opp[0], C[d.k][1] - opp[1]];
+        const s = Math.max(0.02, ((x - opp[0]) * diag[0] + (y - opp[1]) * diag[1]) / (diag[0] * diag[0] + diag[1] * diag[1]));
+        f.w = f0.w * s; f.h = f0.h * s; f.cx = opp[0] + diag[0] * s / 2; f.cy = opp[1] + diag[1] * s / 2;
+      }
+      pick.frame = f; paint(); return true;
+    }
+    if (tool === "pick" && e.pointerId !== pointer) {         // the pointer says what a press would do here
+      const hit = hitPick(sx, sy);
+      vp.style.cursor = hit ? (hit.op === "move" ? "move" : hit.op === "turn" ? TURN_CURSOR : (hit.k % 2 ? "nesw-resize" : "nwse-resize"))
+        : (pickMode === "capture" && pictureAt(x, y) >= 0 ? "pointer" : "");
+    }
+    return false;
+  }
+  function pickUp() {
+    if (pickLoop) {
+      const loop = pickLoop.pts; pickLoop = null;
+      if (loop.length < 3) { paint(); return true; }
+      if (pickMode === "capture") { captureLoop(loop); paint(); return true; }
+      const Ly = layer(), within = L => L.points.filter(q => inside(q.x, q.y, loop)).length * 2 >= L.points.length;
+      selectStrokes(Ly.lines.filter(within), Ly);
+      return true;
+    }
+    if (pickDrag) {
+      const d = pickDrag; pickDrag = null;
+      hiddenLines.clear(); hiddenPics.clear();
+      const f0 = d.f0, f1 = pick.frame;
+      if (f0.cx === f1.cx && f0.cy === f1.cy && f0.w === f1.w && f0.a === f1.a) { rebuild(); return true; }
+      const m = mapper(f0, f1), s = f1.w / f0.w;
+      if (pick.kind === "strokes") {                          // the strokes made anew where the frame now is, one undo step
+        const Ly = pick.layer, removed = [], added = [];
+        pick.lines = pick.lines.map(L => {
+          const at = Ly.lines.indexOf(L); if (at < 0) return L;
+          const N = Object.assign({}, L, { itemId: [2, page.nextId++], width: Math.max(1, Math.round(L.width * s)),
+            points: L.points.map(p => { const [nx, ny] = m([p.x, p.y]); return { ...p, x: nx, y: ny, width: Math.max(1, Math.round(p.width * s)) }; }) });
+          Ly.lines[at] = N; removed.push({ line: L, at }); added.push({ line: N, at });
+          return N;
+        });
+        record({ type: "lines", layer: Ly, removed, added }); lastType = null;
+      } else {
+        const before = clone(page.images);
+        page.images[pick.index].quad = page.images[pick.index].quad.map(m);
+        record({ type: "pics", before, after: clone(page.images) }); lastType = null;
+      }
+      rebuild(); return true;
+    }
+    return false;
+  }
+  function deletePick() {
+    if (!pick) return;
+    if (pick.kind === "strokes") {
+      const Ly = pick.layer, removed = [];
+      for (const L of pick.lines) { const at = Ly.lines.indexOf(L); if (at >= 0) removed.push({ line: L, at }); }
+      for (const r of removed.slice().sort((a, b) => b.at - a.at)) Ly.lines.splice(r.at, 1);
+      record({ type: "lines", layer: Ly, removed, added: [] }); lastType = null;
+    } else {
+      const before = clone(page.images);
+      page.images.splice(pick.index, 1);
+      record({ type: "pics", before, after: clone(page.images) }); lastType = null;
+    }
+    pick = null; rebuild();
+  }
+  function drawPick() {                                       // the loop being drawn, and the selection's frame and handles
+    if (pickLoop) {
+      ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = "rgba(0,0,0,0.65)"; ctx.lineWidth = 1;
+      ctx.beginPath(); pickLoop.pts.forEach(([x, y], i) => { const [a, b] = toScreen(x, y); i ? ctx.lineTo(a, b) : ctx.moveTo(a, b); });
+      ctx.closePath(); ctx.stroke(); ctx.restore();
+    }
+    if (!pick) return;
+    if (pickDrag) {                                           // while dragged: the strokes as plain lines, the picture as itself
+      const m = mapper(pickDrag.f0, pick.frame), k = pick.frame.w / pickDrag.f0.w;
+      if (pick.kind === "strokes") {
+        ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round";
+        for (const L of pick.lines) {
+          const P = prepared(L), c = P.rgba || [0, 0, 0, 255];
+          ctx.strokeStyle = "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + (P.kind === RF_HIGHLIGHTER ? 0.45 : 1) + ")";
+          ctx.lineWidth = Math.max(1, widthOf(L) * k * scale());
+          ctx.beginPath(); L.points.forEach((p, i) => { const [a, b] = toScreen(...m([p.x, p.y])); i ? ctx.lineTo(a, b) : ctx.moveTo(a, b); }); ctx.stroke();
+        }
+        ctx.restore();
+      } else {
+        const im = page.images[pick.index], img = pictures.get(im.name);
+        if (img) {
+          const q = im.quad.map(m).map(p => toScreen(...p)), w = img.naturalWidth || 1, h = img.naturalHeight || 1;
+          ctx.save(); ctx.transform((q[1][0] - q[0][0]) / w, (q[1][1] - q[0][1]) / w, (q[3][0] - q[0][0]) / h, (q[3][1] - q[0][1]) / h, q[0][0], q[0][1]);
+          ctx.drawImage(img, 0, 0); ctx.restore();
+        }
+      }
+    }
+    const C = corners(pick.frame).map(p => toScreen(...p)), H = handlesOf(pick.frame);
+    ctx.save(); ctx.strokeStyle = "rgba(208,128,106,0.95)"; ctx.lineWidth = 1.5; ctx.setLineDash([5, 3]);
+    ctx.beginPath(); C.forEach(([a, b], i) => i ? ctx.lineTo(a, b) : ctx.moveTo(a, b)); ctx.closePath(); ctx.stroke();
+    ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(...H.topMid); ctx.lineTo(...H.turn); ctx.stroke();
+    ctx.fillStyle = "#fff";
+    for (const [a, b] of C) { ctx.fillRect(a - 4.5, b - 4.5, 9, 9); ctx.strokeRect(a - 4.5, b - 4.5, 9, 9); }
+    ctx.beginPath(); ctx.arc(H.turn[0], H.turn[1], 5.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+
+  // ---------------------------------------------------------------- the clipboard
+  const tell = (t, ms) => { saved.textContent = t; setTimeout(() => { if (saved.textContent === t) saved.textContent = ""; }, ms || 1800); };
+  function strokesPicture(lines) {                            // the strokes alone as a PNG data URL, on clear ground
+    const f = frameOfPoints(lines.flatMap(L => L.points.map(p => [p.x, p.y]))), k = Math.min(2, 2400 / Math.max(f.w, f.h));
+    const cv2 = document.createElement("canvas"); cv2.width = Math.ceil(f.w * k); cv2.height = Math.ceil(f.h * k);
+    const g = cv2.getContext("2d"); g.lineCap = "round"; g.lineJoin = "round";
+    for (const L of lines) {
+      const P = prepared(L), c = P.rgba || [0, 0, 0, 255];
+      g.strokeStyle = "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + (P.kind === RF_HIGHLIGHTER ? 0.45 : 1) + ")";
+      g.lineWidth = Math.max(1, widthOf(L) * k);
+      g.beginPath(); L.points.forEach((p, i) => { const x = (p.x - f.cx + f.w / 2) * k, y = (p.y - f.cy + f.h / 2) * k; i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
+    }
+    return cv2.toDataURL("image/png");
+  }
+  function copyPick(e) {                                      // into the copy's own clipboard data, so Windows holds it
+    if (!pick) return false;
+    if (pick.kind === "strokes") {
+      const f = pick.frame, lines = pick.lines.map(L => ({ pen: L.pen, penCode: L.penCode, color: L.color, colorRgba: L.colorRgba, thicknessScale: L.thicknessScale,
+        points: L.points.map(p => [p.x - f.cx, p.y - f.cy, p.speed, p.direction, p.width, p.pressure]) }));
+      const data = btoa(unescape(encodeURIComponent(JSON.stringify({ lines }))));
+      e.clipboardData.setData("text/html", '<img src="' + strokesPicture(pick.lines) + '" data-pd-strokes="' + data + '">');
+      e.preventDefault(); return true;
+    }
+    const im = page.images[pick.index], img = pictures.get(im.name);
+    if (img && navigator.clipboard && window.ClipboardItem) {  // a picture: the image itself, as any program takes it
+      const c2 = document.createElement("canvas"); c2.width = img.naturalWidth; c2.height = img.naturalHeight; c2.getContext("2d").drawImage(img, 0, 0);
+      c2.toBlob(b => { if (b) navigator.clipboard.write([new ClipboardItem({ "image/png": b })]).catch(() => {}); }, "image/png");
+    }
+    e.preventDefault(); return true;
+  }
+  document.addEventListener("copy", e => { if (!editing() && copyPick(e)) tell("Copied"); });
+  document.addEventListener("cut", e => { if (!editing() && copyPick(e)) deletePick(); });
+  function captureLoop(loop) {                                // what the page shows inside the loop, pixel for pixel
+    if (!shown) return;
+    const dev = loop.map(p => toScreen(...p).map(v => v * dpr));
+    const xs = dev.map(p => p[0]), ys = dev.map(p => p[1]);
+    const x0 = Math.max(0, Math.floor(Math.min(...xs))), y0 = Math.max(0, Math.floor(Math.min(...ys)));
+    const x1 = Math.min(shown.width, Math.ceil(Math.max(...xs))), y1 = Math.min(shown.height, Math.ceil(Math.max(...ys)));
+    if (x1 - x0 < 2 || y1 - y0 < 2) return;
+    const full = document.createElement("canvas"); full.width = shown.width; full.height = shown.height; full.getContext("2d").putImageData(shown, 0, 0);
+    const out = document.createElement("canvas"); out.width = x1 - x0; out.height = y1 - y0;
+    const g = out.getContext("2d");
+    g.beginPath(); dev.forEach(([x, y], i) => i ? g.lineTo(x - x0, y - y0) : g.moveTo(x - x0, y - y0)); g.closePath(); g.clip();
+    g.drawImage(full, -x0, -y0);
+    out.toBlob(b => {
+      if (!b || !navigator.clipboard || !window.ClipboardItem) { tell("The clipboard is not open to this page"); return; }
+      navigator.clipboard.write([new ClipboardItem({ "image/png": b })]).then(() => tell("Captured"), () => tell("The capture could not reach the clipboard"));
+    }, "image/png");
+  }
+  // PASTE, when no text is being typed: strokes back as strokes; an image as a picture (Ctrl+Shift+V: as strokes)
+  window.addEventListener("keydown", e => {
+    if ((e.ctrlKey || e.metaKey) && (e.key === "v" || e.key === "V")) pasteAsStrokes = e.shiftKey;
+  }, true);
+  const pasteAt = () => lastAt || toPage(vpW / 2, vpH / 2);
+  document.addEventListener("paste", async e => {
+    if (editing()) return;
+    const cd = e.clipboardData; if (!cd) return;
+    const html = cd.getData("text/html") || "", m = /data-pd-strokes="([^"]+)"/.exec(html);
+    const asStrokes = pasteAsStrokes; pasteAsStrokes = false;
+    if (m && !asStrokes) {                                    // our own strokes, back as strokes, selected
+      e.preventDefault();
+      let got; try { got = JSON.parse(decodeURIComponent(escape(atob(m[1])))); } catch (err) { return; }
+      const [cx, cy] = pasteAt(), Ly = layer();
+      const lines = (got.lines || []).map(ln => lineIn({ ...ln, points: ln.points.map(p => [p[0] + cx, p[1] + cy, p[2], p[3], p[4], p[5]]) }));
+      addStrokes(lines); if (tool !== "pick") { tool = "pick"; pickMode = "select"; paintControls(); }
+      selectStrokes(lines, Ly); return;
+    }
+    let blob = null;
+    for (const it of cd.items || []) if (it.kind === "file" && /^image\//.test(it.type)) { blob = it.getAsFile(); break; }
+    if (!blob) {                                              // an image that came as markup: an SVG, or an <img> of a data URL
+      const text = cd.getData("text/plain") || "", svg = /<svg[\s\S]*<\/svg>/i.exec(text) || /<svg[\s\S]*<\/svg>/i.exec(html);
+      const src = /<img[^>]+src="(data:image\/[^"]+)"/i.exec(html);
+      if (svg) blob = new Blob([svg[0]], { type: "image/svg+xml" });
+      else if (src) blob = await (await fetch(src[1])).blob();
+    }
+    if (!blob) return;
+    e.preventDefault();
+    const [cx, cy] = pasteAt();
+    const img = await loadBlob(blob); if (!img) { tell("That image could not be read"); return; }
+    const u = 1 / (scale() * dpr), w = img.naturalWidth * u, h = img.naturalHeight * u;  // a pixel of it, a pixel of the screen
+    if (asStrokes) { pasteDecomposed(img, cx, cy, w, h); return; }
+    const png = await toPng(img), r = await fetch("/api/v1" + BASE + "/library/" + encodeURIComponent(DOC) + "/page/" + PAGE + "/picture",
+      { method: "POST", body: png, headers: { Authorization: "Bearer " + token(), "Content-Type": "image/png" } }).catch(() => null);
+    if (!r || !r.ok) { tell(location.protocol === "file:" ? "Pictures go on the page in the app's page editor, not in this file" : "The picture could not be kept"); return; }
+    const { name } = await r.json(), before = clone(page.images);
+    page.images.push({ name, key: "", quad: [[cx - w / 2, cy - h / 2], [cx + w / 2, cy - h / 2], [cx + w / 2, cy + h / 2], [cx - w / 2, cy + h / 2]] });
+    record({ type: "pics", before, after: clone(page.images) }); lastType = null;
+    await loadPictures(); rebuild();
+    tool = "pick"; pickMode = "capture"; paintControls(); selectPicture(page.images.length - 1);
+  });
+  async function loadBlob(blob) {
+    try { const img = new Image(), url = URL.createObjectURL(blob); await new Promise((ok, no) => { img.onload = ok; img.onerror = no; img.src = url; }); return img; }
+    catch (e) { return null; }
+  }
+  function toPng(img) {                                       // whatever came (SVG, JPEG, WebP) as a PNG the tablet takes
+    const c2 = document.createElement("canvas"); c2.width = Math.max(1, img.naturalWidth || 300); c2.height = Math.max(1, img.naturalHeight || 150);
+    c2.getContext("2d").drawImage(img, 0, 0, c2.width, c2.height);
+    return new Promise(ok => c2.toBlob(ok, "image/png"));
+  }
+  async function pasteDecomposed(img, cx, cy, w, h) {        // Ctrl+Shift+V: the decomposer's strokes, at the image's own size
+    tell("Decomposing…", 60000);
+    const png = await toPng(img), data = await new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(png); });
+    const longest = Math.max(w, h), width = Math.round(Math.max(200, Math.min(1200, longest)));
+    let got;
+    try {
+      const r = await fetch("/api/v1/decompose", { method: "POST", headers: { Authorization: "Bearer " + token(), "Content-Type": "application/json" },
+        body: JSON.stringify({ image: data, width, strokes: true }) });
+      if (!r.ok) throw new Error(r.status);
+      got = await r.json();
+    } catch (e) { tell(location.protocol === "file:" ? "Paste as strokes works in the app's page editor, not in this file" : "The image could not be decomposed"); return; }
+    const k = longest / got.box, [ox, oy] = got.center, Ly = layer();
+    const lines = got.lines.map(st => lineIn({ pen: st.pen, penCode: st.penCode, color: st.color, colorRgba: st.colorRgba, thicknessScale: 1,
+      points: st.pts.map(([x, y], i) => [cx + (x - ox) * k, cy + (y - oy) * k, 0, 0, Math.max(1, Math.round((st.widths[i] || st.widths[0] || 8) * k)), 128]) }));
+    tell("");
+    addStrokes(lines); tool = "pick"; pickMode = "select"; paintControls(); selectStrokes(lines, Ly);
+  }
+  window.addEventListener("keydown", e => {                  // what is selected: Delete or Backspace removes it, Esc lets it go
+    if (!pick || editing() || live) return;
+    if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); e.stopImmediatePropagation(); deletePick(); }
+    else if (e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); clearPick(); }
+  }, true);
+
+  // ================================================================ the page's pictures
+  // A PAGE'S PICTURES (captures, pasted images, the daemon's coloring pages and chess pieces) are drawn over the template
+  // and under the ink and the text, each by its four corners (so a turned one turns), and kept through every save
+  const pictures = new Map();                                // name -> the loaded image (null while it loads)
+  const picturesIn = sc => (sc.images || []).filter(im => im && im.name && (im.quad || []).length === 4)
+    .map(im => ({ name: im.name, key: im.key || "", quad: im.quad.map(p => [Number(p[0]), Number(p[1])]) }));
+  const picturesKey = list => JSON.stringify(list.map(im => [im.name, im.quad.map(p => [Math.round(p[0] * 10), Math.round(p[1] * 10)])]));
+  function pictureUrl(name) {
+    return "/api/v1" + BASE + "/library/" + encodeURIComponent(DOC) + "/page/" + PAGE + "/picture/" + encodeURIComponent(name);
+  }
+  async function loadPictures() {
+    const want = page.images.map(im => im.name).filter(n => !pictures.has(n));
+    if (!want.length) return;
+    want.forEach(n => pictures.set(n, null));
+    await Promise.all(want.map(async n => {
+      try {
+        const r = await fetch(pictureUrl(n), { headers: { Authorization: "Bearer " + token() } });
+        if (!r.ok) throw new Error(r.status);
+        const img = new Image(), url = URL.createObjectURL(await r.blob());
+        await new Promise((ok, no) => { img.onload = ok; img.onerror = no; img.src = url; });
+        pictures.set(n, img);
+      } catch (e) { pictures.delete(n); }
+    }));
+    rebuild();
+  }
+  function drawPictures(g) {                                  // on the page's own transform: corners top left, top right, bottom right, bottom left
+    for (const im of page.images) {
+      const img = pictures.get(im.name); if (!img || hiddenPics.has(im)) continue;
+      const [[x0, y0], [x1, y1], , [x3, y3]] = im.quad, w = img.naturalWidth || 1, h = img.naturalHeight || 1;
+      g.save();
+      g.transform((x1 - x0) / w, (y1 - y0) / w, (x3 - x0) / h, (y3 - y0) / h, x0, y0);
+      g.drawImage(img, 0, 0);
+      g.restore();
+    }
+  }
   // ================================================================ the page from the false mirror, and back
   const Q = new URLSearchParams(location.hash.slice(1)), DOC = Q.get("doc"), PAGE = Number(Q.get("page") || 1), BASE = Q.get("base") || "/fm";
   const SCENE = "/api/v1" + BASE + "/library/" + encodeURIComponent(DOC) + "/page/" + PAGE + "/scene";
@@ -1238,6 +1979,7 @@ span.lname { cursor: default; }
     activeLayer = page.layers.length - 1;
     if (sc.text) page.text = textIn(sc.text);
     page.textVisible = sc.textVisible !== false; page.templateVisible = sc.templateVisible !== false; page.template = sc.template || "Blank";
+    page.images = picturesIn(sc); loadPictures();
   }
 
   // WHAT THE PAGE HOLDS, in a form that reads the same from the editor and from the file: a stroke by its pen, color and
@@ -1249,11 +1991,13 @@ span.lname { cursor: default; }
   const shapeOf = sc => ({                                     // a scene (the file's, as the engine sends it) as keys
     layers: (sc.layers || []).map(L => ({ label: L.label, visible: L.visible !== false, lines: (L.lines || []).map(lineKey) })),
     text: sc.text ? textShape(textIn(sc.text)) : "",
-    meta: JSON.stringify([sc.paperSize || [1620, 2160], sc.textVisible !== false, sc.templateVisible !== false, sc.template || "Blank"]) });
+    meta: JSON.stringify([sc.paperSize || [1620, 2160], sc.textVisible !== false, sc.templateVisible !== false, sc.template || "Blank"]),
+    pics: picturesKey(picturesIn(sc)) });
   const shapeOfPage = () => ({
     layers: page.layers.map(L => ({ label: L.label, visible: L.visible !== false, lines: L.lines.map(lineKey) })),
     text: textShape(page.text),
-    meta: JSON.stringify([page.paperSize, page.textVisible, page.templateVisible, page.template]) });
+    meta: JSON.stringify([page.paperSize, page.textVisible, page.templateVisible, page.template]),
+    pics: picturesKey(page.images) });
   let known = null;                                            // the page's file as this editor last read or wrote it
 
   // THE DAEMON WRITES TO AN OPEN PAGE: a job's ink, its typed text, the request it swept. The editor looks at the file
@@ -1284,6 +2028,9 @@ span.lname { cursor: default; }
     if (there.text !== was.text && textShape(page.text) === was.text) {
       page.text = sc.text ? textIn(sc.text) : { ...page.text, paras: [] };
       setCursors([]); landed = true;
+    }
+    if (there.pics !== was.pics && picturesKey(page.images) === was.pics) {     // pictures the daemon placed or took
+      page.images = picturesIn(sc); loadPictures(); landed = true;
     }
     if (there.meta !== was.meta) {
       page.paperSize = sc.paperSize || page.paperSize; page.textVisible = sc.textVisible !== false;
@@ -1322,6 +2069,7 @@ span.lname { cursor: default; }
       return out;
     };
     return { paperSize: page.paperSize, textVisible: page.textVisible, templateVisible: page.templateVisible, template: page.template,
+             images: page.images.map(im => ({ name: im.name, key: im.key, quad: im.quad.map(p => p.slice()) })),
              layers: page.layers.map(L => ({ label: L.label, visible: L.visible, lines: L.lines.map(ln => ({
                pen: ln.pen, penCode: ln.penCode, color: ln.color, colorRgba: ln.colorRgba, thicknessScale: ln.thicknessScale,
                points: ln.points.map(p => [p.x, p.y, p.speed, p.direction, p.width, p.pressure]) })) })),
@@ -1350,7 +2098,8 @@ span.lname { cursor: default; }
   setInterval(() => { if (!document.hidden) lookAtFile(); }, 2000);
   // every change is a rebuild: a save follows it, once the page has been still for a moment
   const _rebuild = rebuild;
-  rebuild = function () { _rebuild(); clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 700); };
+  function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 700); }
+  rebuild = function () { _rebuild(); saveSoon(); };
   window.addEventListener("pagehide", () => saveNow(true));
   // SYNC, as the tablet does when a document is closed: the page saved now, then the daemon told to look (Ctrl+S here,
   // or the viewer closing the document). Until then the daemon sees the page as at the last sync.
@@ -1468,10 +2217,15 @@ span.lname { cursor: default; }
         const b = controls.querySelector('[data-tool="' + d.tool + '"]');
         if (b) b.click();
       } else if (d.pd === "editor-close" && popFor) { popFor = null; paintPop(); paintControls(); }
+      else if (d.pd === "editor-key") {                        // a key pressed in the viewer outside the page: as if here
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: d.key, code: d.code, ctrlKey: d.ctrlKey, shiftKey: d.shiftKey,
+                                                            altKey: d.altKey, metaKey: d.metaKey, cancelable: true }));
+      }
     });
   }
   paintControls(); layout(); findFaces(); loadPage(); checkTemplates();
   window.editorPage = page;                                  // the page's data, for a look from outside
+  window.editorView = view;                                  // and where it is scrolled and zoomed to
 })();
 </script>
 </body>

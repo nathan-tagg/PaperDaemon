@@ -134,7 +134,8 @@ go on, the editor SHALL add empty paragraphs and start the text in the first par
 strokes. A caret the user places (a click, the arrow keys) SHALL stay where it is put. Anything landing on the page
 while the user types (a stroke the user draws, the daemon's ink, and whatever else comes to be placed on a page) SHALL
 let the caret go, as Esc does, so the next key starts typing below the ink again. A stroke wins over typing: the caret
-SHALL go as the pen goes down, and no key or paste SHALL reach the page until the pen lifts.
+SHALL go as the pen goes down, and no key or paste SHALL reach the page until the pen lifts. Backspace or Delete with
+no caret SHALL go back into the text at its end and act there, adding no line below the ink.
 
 #### Scenario: A drawing below the text
 - **WHEN** a page has a line of text and, well below it, a drawing, and the user starts typing
@@ -151,3 +152,117 @@ strokes and text, a request the job swept), keeping what the user did in the edi
 #### Scenario: A job answers an open page
 - **WHEN** a job writes strokes to a page open in the editor and the user then draws and the editor saves
 - **THEN** the page's file holds both the job's strokes and the user's
+
+### Requirement: Erasing a zone
+The eraser SHALL offer Zone beside Strokes and Passing: a loop drawn with it SHALL erase every point of the strokes on
+the layer in hand that lies inside the loop, and only those. A stroke crossing the loop SHALL be cut where it crosses,
+what lies outside staying as strokes of their own.
+
+#### Scenario: A loop across a line
+- **WHEN** the user draws a zone loop over the middle of a long line
+- **THEN** the middle of the line is gone and its two ends stay, each cut at the loop
+
+### Requirement: Shapes and fills with the pen in hand
+With a pen in hand, Shift or Ctrl and clicks SHALL set corners, drawn when the keys are let go: two corners a line, more
+a closed shape (as is clicking the first corner again; Esc drops them). Ctrl and Shift together SHALL put each edge on
+the clock's hours, every 30 degrees. Alt and a click SHALL fill the area of one
+color under the click, bounded by what the page shows and never past the view. They SHALL be ordinary strokes of the
+pen in hand, a fill laid in overlapping rows joined into one stroke where they touch, so a highlighter's fill does not
+darken where its rows meet. Typing SHALL never start from these keys.
+
+#### Scenario: Filling a drawn ring
+- **WHEN** the user draws a ring with the fineliner and Alt-clicks inside it
+- **THEN** the inside of the ring is filled in fineliner, up to the ring
+
+### Requirement: Typing needs no click
+Opened in the viewer, the page editor SHALL take the keys at once, and a key pressed in the viewer outside a field
+(after a press in its bar, say) SHALL reach the page as if pressed there.
+
+#### Scenario: Typing on opening
+- **WHEN** the user opens a notebook page in the false mirror and types
+- **THEN** the text appears on the page without a click first
+
+### Requirement: Right-click erases
+A right-click or right-drag on the page SHALL erase, whatever tool is in hand, and leave that tool in hand: what it
+passes over; with Shift whole strokes; with Ctrl and Shift a zone, the loop it draws.
+
+#### Scenario: Erasing with the pen in hand
+- **WHEN** the user, drawing with the fineliner, Shift-right-drags across a stroke
+- **THEN** the stroke is gone and the fineliner is still in hand
+
+### Requirement: A fill is the decomposer's
+A fill SHALL be painted by the decomposer itself: the engine runs its ring planner in C (fastdecomp rf_fill) on the
+area, and its rings (closed, at rising depths from the area's edge, the first fine and on the edge, each level wider and
+deeper) SHALL each be a stroke of the pen in hand at the planner's width. Without the engine (the editor opened from its
+file) or with one that has no fill there SHALL be no fill, and the page SHALL say which.
+
+#### Scenario: Filling an ellipse
+- **WHEN** the user Alt-clicks inside a drawn ellipse
+- **THEN** it fills with rings that follow its edge inward, not rows
+
+### Requirement: The page always scrolls
+The page SHALL scroll down, in the editor and in the viewer alike, whether or not anything is written below: until the
+view's top reaches the page's foot (or the lowest ink or text past it), or a screen down for a page shorter than the
+screen. A thin bar on the page at its right edge SHALL show where the view is, in sight while the page moves and fading a
+moment after it stops (and while hovered or dragged), and dragging it SHALL scroll. The middle button SHALL autoscroll
+as a browser does: a press drops a mark (a dot with the ways the page can go: up and down at every zoom, across too
+past 1x) and the page runs toward the pointer, faster the farther it is; pressed and let go it keeps on until the next
+press, Esc or the wheel, and held and moved it ends when let go. The press that ends it does nothing else.
+
+#### Scenario: An empty page
+- **WHEN** the user scrolls down on an empty page
+- **THEN** the view moves down until its top is at the page's foot
+
+### Requirement: Shapes by number
+With a pen in hand and no text being typed, the keys 1 to 6 SHALL choose what a click makes: 1 the pen's own strokes, 2
+a circle, 3 a triangle, 4 a square, 5 a rectangle, 6 an arrow, the pointer showing the shape. The first click SHALL set
+one corner or edge and the second the other (Shift putting it on the clock's hours from the first), a preview following
+the pointer between them; the shape SHALL be one stroke of the pen in hand, and the keys SHALL go back to 1 after it. A
+circle SHALL span the clicks as its diameter, a triangle be equilateral with its tip at the first click and the middle
+of the side across at the second, a square have the clicks as its diagonal, a rectangle as upright opposite corners,
+and an arrow run from the first click to its head at the second. Esc SHALL drop a shape begun and go back to 1.
+
+#### Scenario: A circle
+- **WHEN** the user presses 2 and clicks twice on the page
+- **THEN** a circle spanning the two clicks is drawn in the pen in hand, and the next click draws with the pen again
+
+### Requirement: The shortcuts sheet
+A ? by the document's name in the viewer SHALL open, over the viewer, a sheet of every key and click the viewer and the
+page editor answer to: a list per kind (moving around, pages, and where the editor is open drawing, shapes, erasing and
+typing), each item's bullet the icon of what it does, then its keys in capitals, then the action and a line on it, in
+the window's language. Esc or Close SHALL close the sheet and leave the viewer open.
+
+#### Scenario: Opening the sheet over a notebook page
+- **WHEN** the user presses ? by a False Mirror notebook's name
+- **THEN** the sheet lists the viewer's and the editor's shortcuts, and Esc closes only the sheet
+
+### Requirement: The page's pictures
+The editor SHALL draw a page's pictures (captures, pasted images, the daemon's pictures) by their four corners, over the
+template and under the ink and text, and SHALL keep them through every save, written back as the tablet stores them.
+
+#### Scenario: Drawing on a page with a picture
+- **WHEN** the user draws a stroke on a page that holds a turned picture
+- **THEN** the stroke is saved and the picture stays, its corners as they were
+
+### Requirement: Select and capture
+One slot in the bar, right of the eraser, SHALL hold Select and Capture, its menu choosing between them. Select SHALL take
+the strokes of the layer in hand that a drawn loop holds (most of their points inside), framed, to move by the frame's
+inside, scale by its corners (strokes and their widths alike) and turn by the handle above it (Shift: on the clock's
+hours), each change one undo step; while dragged the strokes SHALL be drawn as plain lines and changed only when let go.
+Capture SHALL copy what the page shows inside a drawn loop, pixel for pixel, to the system clipboard as a picture; a click
+on a picture SHALL select it, to move, scale and turn the same way. Delete or Backspace SHALL remove what is selected and
+Esc let it go.
+
+#### Scenario: Turning a selection
+- **WHEN** the user selects a flat stroke and turns the frame's handle a quarter, with Shift
+- **THEN** the stroke stands upright
+
+### Requirement: The clipboard
+Ctrl+C and Ctrl+X SHALL put selected strokes on the system clipboard both as strokes PaperDaemon reads back and as a
+picture any program takes, and a selected picture as its image. With no text being typed, Ctrl+V SHALL put back, centered
+under the pointer, strokes as strokes (selected) or an image (PNG, JPEG, SVG and the like) as a picture at one screen pixel
+a pixel; Ctrl+Shift+V SHALL put an image down as strokes, decomposed at the same size.
+
+#### Scenario: Copying strokes to another page
+- **WHEN** the user selects strokes, presses Ctrl+C, opens another page and presses Ctrl+V
+- **THEN** the same strokes land under the pointer, selected

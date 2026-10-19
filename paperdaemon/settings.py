@@ -249,6 +249,18 @@ def tags_of(lu):
     return [str(t.get("name") or "").strip() for t in (lu.get("tags") or []) if str(t.get("name") or "").strip()]
 
 
+def startable(s):
+    """True when some lineup could take a page: it has a tag, and its text model somewhere to run (a model on this
+    computer with its start script). Whether the model answers or passes the lineup's test does not count here."""
+    from . import scripts
+    for lu in s.get("lineups") or []:
+        m = lu.get("text") or {}
+        url = str(m.get("location") or "").strip()
+        if tags_of(lu) and url and (not loopback(url) or scripts.has_script(m)):
+            return True
+    return False
+
+
 def all_tags(s):
     """Every lineup's tags -> [(tag, lineup name)], in the lineups' order and each lineup's own order."""
     return [(t, lu.get("name")) for lu in s.get("lineups") or [] for t in tags_of(lu)]

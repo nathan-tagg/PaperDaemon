@@ -699,6 +699,22 @@ def item_block(layer_id, item_id, asset_id, hash16, box):
     return _block(15, body, 2, 2)
 
 
+def item_block_quad(layer_id, item_id, asset_id, hash16, quad):
+    """item_block for a picture at any four corners (turned, as the tablet turns one): quad = the corners of the
+    picture's top left, top right, bottom right and bottom left, in that order."""
+    uv = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
+    verts = b"\x10" + b"".join(struct.pack("<4f", float(x), float(y), u, v) for (x, y), (u, v) in zip(quad, uv))
+    tris = b"\x06" + struct.pack("<6I", 0, 1, 2, 2, 3, 0)
+    value = (b"\x07"
+             + _sub(1, _id(1, *item_id) + _sub(2, hash16))
+             + _id(2, *asset_id)
+             + _sub(3, verts)
+             + _sub(4, tris))
+    body = (_id(1, *layer_id) + _id(2, *item_id) + _id(3, 0, 0) + _id(4, 0, 0)
+            + _u4(5, 0) + _sub(6, value))
+    return _block(15, body, 2, 2)
+
+
 def insert(doc, page_no, png_path, box, page_id=None):
     """Place a picture on a notebook page the way the app does. Returns what was written.
 

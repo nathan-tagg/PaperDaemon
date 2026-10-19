@@ -64,6 +64,9 @@
     let html;
     if (S.starting) html = '<button type="button" class="btn" disabled aria-busy="true">' + esc(PD.t(on ? "loop.pausing" : "loop.starting")) + "</button>";
     else if (on) html = '<button type="button" class="btn" data-act="stop">' + esc(PD.t("loop.pause")) + "</button>";
+    // NO LINEUP COULD TAKE A PAGE (no tag, or a model on this computer without its start script): paused, and no start
+    else if (PD.status && PD.status.can_start === false)
+      html = '<button type="button" class="btn" disabled title="' + esc(PD.t("loop.cannot_start")) + '">' + esc(PD.t("loop.paused")) + "</button>";
     else html = '<button type="button" class="btn primary" data-act="start">' + esc(PD.t("loop.start")) + "</button>";
     PD.html($("#ov-controls", R), '<div class="actions">' + html + "</div>");
   }
