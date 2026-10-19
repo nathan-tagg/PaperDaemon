@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.32
 
 - Imports take EPUBs as well as PDFs, and are easy: Import opens the file chooser at once (several files at a time), or
   drop the files on the screen. Each is named by its file and lands in the folder that is open. A book is filed as the
