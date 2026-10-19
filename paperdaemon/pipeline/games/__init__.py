@@ -224,7 +224,7 @@ def place_talk(doc, page_no, state, lines, page_id=None, workdir=None):
     lines = talk_lines([l for l in lines if l and l[0] != "narrator"])
     if not lines:
         return None
-    x0, y0, x1, y1 = CH.talk_box(tuple(state["board"]["box"]))
+    x0, y0, x1, y1 = CH.talk_box(tuple(state["board"]["box"]), state["board"].get("top"))
     w = x1 - x0
     path = os.path.join(workdir or os.path.join(paths.state_dir(), "rm-queue"), "_game_talk_%d.png" % int(time.time() * 1000))
     png = dialog_png(state, lines, path, width=w)

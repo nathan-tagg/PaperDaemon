@@ -136,9 +136,9 @@ def _mirror_complete():
 
 
 def batch(todo):
-    """One job per PAGE: each tagged page that is new or changed is its own job -- CHANGED PAGES FIRST, then new
-    ones (the user's rule), each in notebook order and then page order -- so every page gets its own look and its
-    own record."""
+    """One job per PAGE: each tagged page that is new or changed is its own job, in the ledger's queue order (changed
+    pages ahead of new ones, as the user may have reordered it; ledger._keep_queue), so every page gets its own look
+    and its own record."""
     order, by_doc = [], {}
     for q in todo:
         d = q["doc_id"]
@@ -149,6 +149,8 @@ def batch(todo):
     out = []
     rows = [r for d in order for r in sorted(by_doc[d], key=lambda q: (q["page"] or 0))]
     rows.sort(key=lambda q: 0 if (q.get("why") == "changed" or q["status"] in ("REOPENED", "RETAGGED")) else 1)
+    # THE LEDGER'S QUEUE DECIDES (the user may have reordered it); a page not in it yet keeps the order above
+    rows.sort(key=lambda q: q["rank"] if q.get("rank") is not None else 10 ** 9)
     for row in rows:
         job = dict(row)
         job["batch"] = [row]
@@ -187,42 +189,17 @@ def sync(why="", doc_id=None):
         return SYNC_OK
     from paperdaemon.remarkable import sync as cloud
     try:
-        changed = list(cloud.changed_files())
-        docs = ({doc_id} if doc_id else
-                {n.split("/")[0].split(".")[0] for n, _, _ in changed})
-        # Which PAGES actually changed, so stamping does not tell the device to
-        # re-fetch every page of a long notebook.
-        touched = {}
-        for n, _, _ in changed:
-            if "/" in n and n.endswith(".rm"):
-                d, f = n.replace("\\", "/").split("/", 1)
-                touched.setdefault(d.split(".")[0], set()).add(f[:-3])
-        if not docs:
-            return SYNC_OK
-        owed = False
-        for d in docs:
-            # STAMP BEFORE PUSHING. A new .rm blob alone is invisible to the
-            # device: it compares `lastModified` on the document and `modifed`
-            # on the page, and both still hold whatever the TABLET last wrote.
-            # Measured -- a drawing sat in the cloud matching the mirror
-            # exactly and never appeared on the tablet across repeated syncs,
-            # because nothing told the device the page had changed.
-            try:
-                t = cloud.touch(d, sorted(touched.get(d, [])) or None)
-                if t.get("files"):
-                    log("  stamped %s: %s" % (d[:8], ", ".join(t["files"])[:60]))
-            except Exception as ex:
-                log("  stamp failed for %s: %s" % (d[:8], str(ex)[:70]))
-            r = cloud.push_doc(d, dry_run=False)
-            # new files too: a page the host ADDED is in new_files, and logging only `files` made a
-            # successful push of two new coloring pages read as if they had been left behind
-            log("  pushed %s: %s%s" % (d[:8], r.get("files") or r.get("skipped"),
+        # THE ONE WAY TO THE TABLET (sync.push_pending): every document the mirror holds that the cloud does not --
+        # created by a job, or changed -- goes up here, new ones first
+        got = cloud.push_pending(log=log)
+        for d, r in got["pushed"]:
+            r = r or {}
+            log("  pushed %s: %s%s" % (d[:8], r.get("files") or r.get("skipped") or r.get("error"),
                                         ("; new: %s" % r["new_files"]) if r.get("new_files") else ""))
             if r.get("theirs"):
                 # the tablet changed some of these since the last pull: pull them, then push what is still ours
                 log("  the tablet changed %s meanwhile; pulling before pushing the rest" % ", ".join(r["theirs"])[:80])
-                owed = True
-        if owed:
+        if got["owed"]:
             PENDING["sync"], PENDING["at"] = True, time.time()     # the engine pulls the tablet's change; then again
             return SYNC_FAIL
         PENDING["sync"] = False
@@ -283,10 +260,11 @@ def note(doc_name, page_no, message):
         log("  cannot write a note (%s)" % e)
         return False
     try:
+        from paperdaemon.pipeline.page import render as R
         _backup_page(doc_name, page_no)
-        d = A.Drawing()
-        y = SIG.draw_footer(d, message, content_bottom=content_bottom(doc_name,
-                                                                     page_no))
+        frame = R.page_frame(R.find_doc(doc_name), page_no)              # the page's own tablet's frame
+        d = A.Drawing(*[int(round(v)) for v in frame])
+        y = SIG.draw_footer(d, message, content_bottom=content_bottom(doc_name, page_no), frame=frame)
         res = d.write_rm(doc_name, page_no, keep_existing=True)
         log("  noted on %s p%s at y=%.0f (%s strokes)"
             % (doc_name, page_no, y, res.get("strokes") if
@@ -482,7 +460,12 @@ def finish_job(attempts):
             # job's last 20 s, or before its commit, was taken for the job's own write and swallowed.
             # Such a page is re-queued, exactly as a late edit is.
             checked = ent.pop("checked", None)
-            if ent.pop("requeue", None):
+            if ent.pop("abandoned", None):
+                # THE USER ABANDONED IT: what changed on the page was the job's own writing, now put back
+                requeue.discard(r["key"])
+                ent.pop("requeue", None)
+                touched = True
+            elif ent.pop("requeue", None):
                 requeue.add(r["key"])
                 touched = True
             elif checked:

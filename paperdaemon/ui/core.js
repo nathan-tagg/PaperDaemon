@@ -146,6 +146,17 @@
     throw new ApiError(why || (r.status + " " + r.statusText), r.status, route);
   };
 
+  /** A request whose body is raw bytes (an imported file), answered in JSON like PD.api. */
+  PD.apiRaw = async (method, path, bytes, type) => {
+    const r = await fetch("/api/v1" + path, { method, body: bytes,
+      headers: { "Authorization": "Bearer " + pair, "Content-Type": type || "application/octet-stream" } });
+    const text = await r.text();
+    let d = {};
+    try { d = text ? JSON.parse(text) : {}; } catch (e) { d = { raw: text }; }
+    if (r.ok) return d;
+    throw new ApiError(reason(d) || (r.status + " " + r.statusText), r.status, method + " " + path.split("?")[0]);
+  };
+
   /** [value, error]: never throws, so a screen can show what failed where it failed. */
   PD.safe = async p => { try { return [await p, null]; } catch (e) { return [null, e]; } };
   PD.errText = e => (e && e.message) || String(e || "");

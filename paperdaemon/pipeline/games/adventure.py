@@ -38,9 +38,10 @@ import os
 import re
 import time
 from paperdaemon.pipeline.games import chess as CH
+from paperdaemon.pipeline.page import tablets as TB
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-PAGE_W, PAGE_H = 1620, 2160
+PAGE_W, PAGE_H = 1620, 2160      # its pages are designed at a Paper Pro page (tablets.picture_page fits them)
 
 ABILITIES = ("STR", "DEX", "CON", "INT", "WIS", "CHA")
 ABILITY_NAMES = {"STR": "Strength", "DEX": "Dexterity", "CON": "Constitution", "INT": "Intelligence",
@@ -783,10 +784,11 @@ SCENE_BOX = ((PAGE_W - _SCENE_SIDE) // 2, int(CH.TOP), (PAGE_W + _SCENE_SIDE) //
 TEXT_TOP, WRITE_TOP = 1300, 1810            # the story, then the player's space
 
 
-def scene_frame_page():
-    """The picture's box in the page's own coordinates (x from the center), for the strokes."""
+def scene_frame_page(s=1.0):
+    """The picture's box in the page's own coordinates (x from the center), for the strokes; `s` scales the designed
+    page to the page's own tablet (tablets.picture_page)."""
     x0, y0, x1, y1 = SCENE_BOX
-    return (x0 - PAGE_W / 2.0, float(y0), x1 - PAGE_W / 2.0, float(y1))
+    return ((x0 - PAGE_W / 2.0) * s, y0 * s, (x1 - PAGE_W / 2.0) * s, y1 * s)
 
 
 def turn_png(state, scene, out, roll_line="", n=None):
@@ -1014,7 +1016,7 @@ def _log(log, msg):
 def _put_full(doc, page_no, page_id, png, kind, state):
     """A page-sized picture (the sheet, a turn's page) -> its placement."""
     from paperdaemon.pipeline.page import images as IM
-    box = (-PAGE_W / 2.0, 0.0, PAGE_W / 2.0, float(PAGE_H))
+    box = TB.picture_page(TB.frame_of(doc, page_no))[0]           # the page's own tablet's frame
     r = IM.insert(doc, page_no, png, box, page_id=page_id)
     IM.record_placement(r["doc"], page_no, r["name"], box, hash=r["hash"], kind=kind, game=state["id"])
     return {"page_id": page_id, "hash": r["hash"], "name": r["name"], "box": list(box)}
@@ -1027,9 +1029,10 @@ def _draw_scene(doc, page_no, scene_png):
     # THE PAGE'S OWN COORDINATES, x = 0 at the center. SCENE_BOX is in the turn picture's pixels (x from
     # the left edge); handing it over as it is would put the whole scene half a page to the right of its
     # frame, more than half of it off the page.
-    x0, y0, x1, y1 = scene_frame_page()
+    frame = TB.frame_of(doc, page_no)
+    x0, y0, x1, y1 = scene_frame_page(TB.picture_page(frame)[1])
     strokes, info, secs = M.decompose_into(scene_png, int(x1 - x0), int(y1 - y0), origin=(x0, y0))
-    d = A.Drawing(PAGE_W, PAGE_H)
+    d = A.Drawing(*[int(round(v)) for v in frame])
     d.strokes = list(strokes)
     d.write_rm(doc, page_no, keep_existing=True)
     return len(strokes), secs
@@ -1104,9 +1107,6 @@ def _paint_scene(paint, state, pic, prev_png, present=(), newcomers=(), log=None
         return None
 
 
-FULL_BOX = (-PAGE_W / 2.0, 0.0, PAGE_W / 2.0, float(PAGE_H))
-
-
 def _page_no(doc, page_id):
     from paperdaemon.pipeline.page import render as R
     live = [p["id"] for p in R.live_pages(doc)]
@@ -1124,7 +1124,7 @@ def _clear_page(doc, page_id):
     if pno is None:
         raise RuntimeError("the game's page is gone from the notebook")
     try:
-        IM.remove_in_box(doc, pno, FULL_BOX, page_id=page_id)
+        IM.remove_in_box(doc, pno, TB.picture_page(TB.frame_of(doc, pno))[0], page_id=page_id)
     except Exception:
         pass
     path = os.path.join(R.RM, doc, page_id + ".rm")
@@ -1223,8 +1223,8 @@ def _redraw_log(doc, state, workdir):
 # The hero's journal is a page with links to a characters page, a quests page and a lore page; the characters page
 # has an image of each character, a link on the image takes the reader to a page detailing that person (their class,
 # if known, name, etc.). A notebook page cannot hold a link; a PDF can (rm_pdfdoc.write_pdf's GoTo links, which the
-# tablet follows). So the journal is a PDF document of its own beside the notebook, rebuilt IN PLACE whenever what it
-# shows changes. It shows ONLY what the hero
+# tablet follows). So the journal is a PDF document of its own beside the notebook, rebuilt IN PLACE in the mirror
+# whenever what it shows changes, and pushed with the job like everything else. It shows ONLY what the hero
 # knows -- never a secret or an unrevealed class.
 def journal_name(state):
     return "Ink Adventure: %s - Journal" % state["title"]
@@ -1416,7 +1416,6 @@ def update_journal(state, log=None):
     time). Never fails a turn: a journal that could not be made is logged and tried again next turn."""
     try:
         import hashlib
-        from paperdaemon.remarkable import sync as C
         from paperdaemon.pipeline.page import pdf as PD
         sig = hashlib.sha1(json.dumps([state.get("title"), state.get("cast"), state.get("quests"), state.get("lore")],
                                       sort_keys=True, default=str).encode()).hexdigest()
@@ -1428,11 +1427,9 @@ def update_journal(state, log=None):
         os.makedirs(out_dir, exist_ok=True)
         pdf = PD.write_pdf(pages, os.path.join(out_dir, "journal-%s.pdf" % state["id"]), links=links)
         meta = json.load(open(os.path.join(PD.MIRROR, state["doc"] + ".metadata"), encoding="utf-8"))
+        # staged in the mirror only: it reaches the tablet with the job's own push (sync.push_pending)
         doc, page_ids = PD.stage(journal_name(state), pdf, folder=meta.get("parent") or "", doc=jr.get("doc"),
                                  page_ids=jr.get("page_ids"))
-        pushed = C.push_new_doc(doc, dry_run=os.environ.get("RM_HOST_DRY_DOCS") == "1")
-        if isinstance(pushed, dict) and "already exists" in str(pushed.get("error", "")):
-            pushed = C.push_doc(doc, dry_run=os.environ.get("RM_HOST_DRY_DOCS") == "1")
         state["journal"] = {"doc": doc, "page_ids": {str(k): v for k, v in page_ids.items()}, "sig": sig, "pages": len(pages)}
         _log(log, "  adventure: the journal is %d pages" % len(pages))
     except Exception as ex:
@@ -1780,14 +1777,6 @@ def start(what, ask_text, paint=None, log=None, workdir=None, parent=None, doc=N
     state["turns"].append({"n": 1, "page_id": state["page_id"], "scene": scene,
                            "picture": os.path.basename(kept) if kept else None, "action": None, "check": None, "notes": []})
     CH.save_state(state)
-    if not inline:
-        # a NEW notebook: the job's own commit pushes the page that asked, not this one (an inline game's pages
-        # are in the notebook that asked, and go with that commit)
-        try:
-            from paperdaemon.remarkable import sync as C
-            C.push_new_doc(doc, dry_run=os.environ.get("RM_HOST_DRY_DOCS") == "1")
-        except Exception as ex:
-            _log(log, "  adventure: the new notebook was not pushed yet: %s" % str(ex)[:120])
     _log(log, "  adventure: %s started (%s)" % (title, hero_line(hero)[:120]))
     return state, doc
 
@@ -1800,12 +1789,12 @@ def read_action(doc, page_no, ask_vision, workdir, names=()):
     from PIL import Image
     png = os.path.join(workdir, "_adv_read_%d.png" % int(time.time() * 1000))
     try:
-        R.render(doc, page_no, png)
+        R.render(doc, page_no, png, displayed=True)             # the page as shown: one pixel a page unit
         with Image.open(png) as im:
-            # the box only (page px): the story and the picture above it are not the player's words
+            # the box only: the story and the picture above it are not the player's words
             w, h = im.size
-            sx, sy = w / float(PAGE_W), h / float(PAGE_H)
-            im.crop((0, int(WRITE_TOP * sy), w, h)).save(png)
+            s = TB.picture_page(TB.frame_of(doc, page_no))[1]
+            im.crop((0, int(WRITE_TOP * s), w, h)).save(png)
         reply = ask_vision(READ_PROMPT.format(names=", ".join(names) or "none yet"), png)
     finally:
         try:

@@ -56,13 +56,17 @@
 
   // ---- the rail and the router
 
+  // THE RAIL, in this order and one list (no dividing line): Daemon, Mirror, False Mirror (once there is one),
+  // Decompose, Lineup, Settings
+  const RAIL = ["overview", "tablet", "fmirror", "decompose", "models", "settings"];
+
   function railHtml() {
-    const items = g => PD.order.filter(id => PD.screens[id].group === g).map(id => {
+    const items = RAIL.filter(id => PD.screens[id]).map(id => {
       const s = PD.screens[id];
       return '<li><a href="#' + id + '" data-screen="' + id + '">' + esc(s.label) + ' <span class="state"></span></a></li>';
     }).join("");
     return '<nav class="rail" aria-label="PaperDaemon"><a class="wordmark" href="#overview">PaperDaemon</a>' +
-      '<ul class="nav">' + items(0) + '</ul><ul class="nav">' + items(1) + "</ul>" +
+      '<ul class="nav">' + items + "</ul>" +
       '<div class="rail-foot"><p class="meta">' + (SHOW_ENGINE_ADDRESS ? esc(PD.t("rail.engine_on")) + ' <code id="rail-engine"></code><br>' : "") +
       '<span id="rail-version"></span></p></div></nav>' +
       '<main class="page" id="main" tabindex="-1"></main>';
@@ -75,6 +79,11 @@
     const st = PD.status || {};
     $$(".nav a[data-screen]").forEach(a => {
       const s = PD.screens[a.dataset.screen];
+      // a screen that is not there yet (the False Mirror before it is made) has no place in the rail; one that goes
+      // while it is open leaves the window on Settings, where it went
+      const gone = !!(s.hidden && s.hidden(st));
+      a.parentElement.hidden = gone;
+      if (gone && current === s) PD.go("settings");
       const html = (s.rail && s.rail(st)) || "";
       const el = $(".state", a);
       el.className = "state" + (s.railNum ? " num" : "");

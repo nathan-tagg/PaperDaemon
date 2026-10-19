@@ -102,6 +102,15 @@ CALL = textwrap.dedent('''
 ''')
 
 
+def _free_port():
+    # THE TEST'S OWN PORT, never one of the user's: 8791 is the image server's, and with it running the stub could
+    # not listen and the call went to the user's server
+    import socket
+    with socket.socket() as so:
+        so.bind(("127.0.0.1", 0))
+        return so.getsockname()[1]
+
+
 def _stub(tmp_path, port, mode):
     path = tmp_path / "stub.py"
     path.write_text(STUB, encoding="utf-8")
@@ -118,9 +127,10 @@ def _call(tmp_path, port):
 
 
 def test_a_looping_reply_is_stopped_by_repetition(tmp_path):
-    stub = _stub(tmp_path, 8791, "loop")
+    port = _free_port()
+    stub = _stub(tmp_path, port, "loop")
     try:
-        out, err = _call(tmp_path, 8791).communicate()
+        out, err = _call(tmp_path, port).communicate()
         assert json.loads(out.strip().splitlines()[-1])["finish"] == "runaway", err[-800:]
     finally:
         stub.kill()
@@ -128,8 +138,9 @@ def test_a_looping_reply_is_stopped_by_repetition(tmp_path):
 
 
 def test_a_stalled_server_is_waited_for_until_its_process_ends(tmp_path):
-    stub = _stub(tmp_path, 8792, "stall")
-    call = _call(tmp_path, 8792)
+    port = _free_port()
+    stub = _stub(tmp_path, port, "stall")
+    call = _call(tmp_path, port)
     try:
         time.sleep(8.0)
         assert call.poll() is None                  # still waiting: no clock ended it

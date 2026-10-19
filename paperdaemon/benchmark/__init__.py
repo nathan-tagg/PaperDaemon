@@ -245,9 +245,16 @@ def _set(case_id, **kw):
 
 
 def prepare(state, all_cases):
-    """A fresh state folder and mirror holding the fixture notebooks. -> the mirror's path."""
+    """A fresh state folder and mirror holding the fixture notebooks. -> the mirror's path.
+
+    THE START IS ALREADY BEHIND THE RUN: its ledger says when PaperDaemon began watching, so the fixture pages are
+    pages met after the start -- new pages, each a job (ledger.classify). Without it the daemon waited for the first
+    look at a complete mirror, which a fixture mirror never is, and the run sat waiting forever."""
+    import json
     mirror = os.path.join(state, "mirror")
     os.makedirs(mirror, exist_ok=True)
+    with open(os.path.join(state, "rm-ledger.json"), "w", encoding="utf-8") as f:
+        json.dump({"version": 1, "entries": {}, "watching_since": 0}, f)
     for c in all_cases:
         src = os.path.join(cases_dir(), c["id"], "mirror")
         for n in os.listdir(src):

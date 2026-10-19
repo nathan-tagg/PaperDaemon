@@ -72,6 +72,8 @@ DEFAULT_LINEUP = "Lineup 1"
 SCHEMA = [
     {"path": "tablet.inbox", "type": "text", "default": "", "label": "Decompose inbox",
      "help": "The notebook, by its path on the tablet, that Send to Tablet adds pages to; empty until chosen."},
+    {"path": "false_mirror.inbox", "type": "text", "default": "", "label": "False Mirror decompose inbox",
+     "help": "The notebook, by its path in the False Mirror, that Send to Tablet also adds pages to; empty until chosen."},
     {"path": "location.name", "type": "text", "default": "", "label": "Location",
      "help": "The city picked on the Overview, for the weather, holidays and sunrise on calendars; its coordinates and holiday region below come with it."},
     {"path": "location.lat", "type": "number", "default": None, "min": -90, "max": 90, "label": "Latitude",

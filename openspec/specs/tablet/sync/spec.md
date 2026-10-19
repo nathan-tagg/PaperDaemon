@@ -56,6 +56,20 @@ dropped connection, waiting longer between repeated failures.
 - **WHEN** the notification connection closes
 - **THEN** PaperDaemon reconnects, and backs off further after each failure in a row
 
+### Requirement: One way to the tablet
+Everything PaperDaemon changes SHALL reach the cloud through one push: a job SHALL only write to the mirror, and
+the daemon SHALL push after the job is recorded -- new folders first, then new documents, then the documents that
+changed. The window's own sends (Decompose to the inbox) SHALL use the same push. No step of a job SHALL push on
+its own. A benchmark run SHALL push nothing.
+
+#### Scenario: An adventure's journal
+- **WHEN** an adventure's turn rebuilds its journal document
+- **THEN** the journal is written to the mirror and reaches the tablet with the job's push, not before
+
+#### Scenario: A job abandoned before its push
+- **WHEN** the user abandons a job that had already written to its notebook and made a new document
+- **THEN** nothing of it reaches the tablet
+
 ### Requirement: No permanent deletes
 No PaperDaemon write SHALL remove a document from the cloud library. Moving a document to the trash SHALL
 be the furthest any write goes.

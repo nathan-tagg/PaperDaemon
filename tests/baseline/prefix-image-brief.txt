@@ -99,7 +99,8 @@ DRAWINGS: element(name, cx, cy, r) for one small icon; draw_figure(parts) for a 
 can state exactly; image(prompt) for anything that must look like something. Stay inside your box;
 after a drawing, fix one thing with edit_figure(changes) or say ok.
 
-COORDINATES: x -810..810 with 0 at the center; y from 0 at the top to 2160 at the bottom.
+COORDINATES: page units, x with 0 at the page's center, y from 0 at its top down. Each page states its own size
+(tablets differ).
 
 If a step cannot be done, say so: need_step(...) adds a missing step; skip(note) explains a page
 that asks for nothing.

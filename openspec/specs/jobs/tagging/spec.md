@@ -20,7 +20,8 @@ keys).
 
 ### Requirement: Tags are unique
 No tag SHALL belong to two lineups, and none SHALL be the ignore or the standing instructions tag, matched
-without regard to case. The ignore and standing instructions tags SHALL be set in Settings, for every lineup.
+without regard to case. The ignore and standing instructions tags SHALL be set in the tablet's settings (Tablet, the gear), for every
+lineup.
 
 #### Scenario: Taken
 - **WHEN** the user saves a lineup with a tag another lineup owns

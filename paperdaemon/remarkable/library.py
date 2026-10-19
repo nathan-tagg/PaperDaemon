@@ -2,13 +2,11 @@ r"""Folders on the tablet: find or make one, and file a document into it.
 
 A folder in the cloud is a single `.metadata` of type CollectionType; a document
 is in a folder when its own `.metadata` names that folder as `parent`. So making
-a folder is one new item (rm_cloud.push_new_doc) and moving a document is one
-changed file (rm_cloud.push_doc). Nothing else about the document changes -- its
-pages, ink and PDF are not touched.
+a folder is one new item and moving a document is one changed file. Nothing else
+about the document changes -- its pages, ink and PDF are not touched.
 
-Every write is its own root move under the generation compare-and-swap. If the
-tablet syncs in between, the move is refused (412) and simply retried against the
-new root; nothing is lost either way.
+Both are written to the mirror only; they reach the tablet with the next push
+(sync.push_pending), the one way anything does.
 
     f = ensure_path("Projects/Reports/2026/09 September")
     move(doc_uuid, f)
@@ -52,23 +50,6 @@ def children(parent, kind=None):
             if m.get("parent", "") == parent and (kind is None or m.get("type") == kind)}
 
 
-def _retry(fn, what):
-    for attempt in range(8):
-        try:
-            plan = fn()
-        except RC.CloudBusy:
-            # 429: the sync API rations requests. Wait it out, longer each time.
-            time.sleep(15 * (attempt + 1))
-            continue
-        code = plan.get("root_put")
-        if code == 200 or plan.get("skipped"):
-            return plan
-        if plan.get("error"):
-            raise RuntimeError("%s: %s" % (what, plan["error"]))
-        time.sleep(2 + 2 * attempt)        # someone moved the root; go again
-    raise RuntimeError("%s: root move kept being refused" % what)
-
-
 def ensure_folder(name, parent=""):
     """The folder called `name` directly inside `parent`, made if missing."""
     for u, m in children(parent, "CollectionType").items():
@@ -80,8 +61,7 @@ def ensure_folder(name, parent=""):
           "parent": parent, "pinned": False, "source": "",
           "type": "CollectionType", "visibleName": name}
     paths.write_json_atomic(os.path.join(M, u + ".metadata"), md)
-    _retry(lambda: RC.push_new_doc(u, dry_run=os.environ.get("RM_HOST_DRY_DOCS") == "1"), "create folder %r" % name)
-    return u
+    return u                           # in the mirror; it reaches the tablet with the next push (sync.push_pending)
 
 
 def ensure_path(path):
@@ -94,16 +74,16 @@ def ensure_path(path):
 
 
 def move(doc, folder):
-    """File `doc` into `folder`. Pushes whenever the CLOUD differs, so a move
-    interrupted after the local edit is finished by running it again."""
+    """File `doc` into `folder`, in the mirror; the move reaches the tablet with the next push (sync.push_pending).
+    -> True when it moved."""
     path = os.path.join(M, doc + ".metadata")
     md = json.load(open(path, encoding="utf-8"))
-    if md.get("parent") != folder:
-        md["parent"] = folder
-        md["lastModified"] = str(int(time.time() * 1000))
-        paths.write_json_atomic(path, md)
-    plan = _retry(lambda: RC.push_doc(doc, dry_run=os.environ.get("RM_HOST_DRY_DOCS") == "1"), "move %s" % doc[:8])
-    return not plan.get("skipped")
+    if md.get("parent") == folder:
+        return False
+    md["parent"] = folder
+    md["lastModified"] = str(int(time.time() * 1000))
+    paths.write_json_atomic(path, md)
+    return True
 
 
 # ==================================================================================================

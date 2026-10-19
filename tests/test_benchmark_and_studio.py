@@ -90,8 +90,17 @@ SEND = textwrap.dedent("""
     pushed = []
     C.pull = lambda *a, **k: {}
     C.touch = lambda doc, pages=None, when=None: None
-    C.push_new_doc = lambda doc, dry_run=True: pushed.append(("new", doc, dry_run)) or {"root_put": 200}
-    C.push_doc = lambda doc, dry_run=True: pushed.append(("doc", doc, dry_run)) or {"root_put": 200}
+    def landed(doc):
+        # what a real push records: the document is known to the cloud, its files as they went up
+        import hashlib
+        st = C._state()
+        st["docs"][doc] = "h"
+        for name, path in C._local_files(doc).items():
+            st["files"][name] = hashlib.sha256(open(path, "rb").read()).hexdigest()
+        C._save_state(st)
+        return {"root_put": 200}
+    C.push_new_doc = lambda doc, dry_run=True: pushed.append(("new", doc, dry_run)) or landed(doc)
+    C.push_doc = lambda doc, dry_run=True: pushed.append(("doc", doc, dry_run)) or landed(doc)
     line = ([(-100.0 + i, 400.0 + i) for i in range(30)], [4.0] * 30, A.Pen.FINELINER_2, A.PenColor.BLACK, None)
     studio.decompose = lambda image, width=None, preview=True: ({"strokes": 1}, [line])
     s = settings.load()

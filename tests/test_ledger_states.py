@@ -159,3 +159,92 @@ def test_a_page_skipped_for_two_lineups_is_worked_once_its_tags_are_one_lineups(
     assert status(f, led) == "SKIPPED"                         # still two lineups: left alone, no second note
     assert status(found(), led) == "PENDING"                   # one lineup's now: worked, though nothing changed
     assert "tag_conflict" not in led["entries"]["aaaaaaaa/bbbbbbbb"]
+
+
+def test_the_queue_puts_changed_pages_ahead_of_new_ones_and_keeps_the_users_order(tmp_path, monkeypatch):
+    led = {"entries": {}, "watching_since": 0}
+    pg = lambda k, **kw: dict(found(key=k, **kw), doc_id="doc-" + k[:8])
+    ledger.classify([pg("aaaaaaaa/p1"), pg("aaaaaaaa/p2")], led)                 # two new pages
+    assert led["queue"] == ["aaaaaaaa/p1", "aaaaaaaa/p2"]
+    for k in ("bbbbbbbb/p1",):
+        led["entries"][k] = {"status": "done", "handled_sha": "s1", "handled_tag_ts": "100", "doc_id": "doc-bbbbbbbb"}
+    q = ledger.classify([pg("aaaaaaaa/p1"), pg("aaaaaaaa/p2"), pg("bbbbbbbb/p1", sha="s2")], led)   # an edit
+    assert led["queue"] == ["bbbbbbbb/p1", "aaaaaaaa/p1", "aaaaaaaa/p2"]                         # goes first
+    assert [f["rank"] for f in q] == [1, 2, 0]
+    # the user drags the last new page to the front; the next look keeps their order
+    monkeypatch.setattr(ledger, "load", lambda: led)
+    monkeypatch.setattr(ledger, "save", lambda l: None)
+    monkeypatch.setattr(ledger, "locked", lambda: __import__("contextlib").nullcontext())
+    ledger.reorder(["aaaaaaaa/p2", "bbbbbbbb/p1", "aaaaaaaa/p1"])
+    ledger.classify([pg("aaaaaaaa/p1"), pg("aaaaaaaa/p2"), pg("bbbbbbbb/p1", sha="s2")], led)
+    assert led["queue"] == ["aaaaaaaa/p2", "bbbbbbbb/p1", "aaaaaaaa/p1"]
+    # the job being worked stays first, whatever the order asked for
+    led["entries"]["aaaaaaaa/p2"].update(status="working", claim_owner="daemon", claim_at=10 ** 12)
+    assert [r["key"] for r in ledger.reorder(["aaaaaaaa/p1", "aaaaaaaa/p2"])] == ["aaaaaaaa/p2", "aaaaaaaa/p1", "bbbbbbbb/p1"]
+    # done, it leaves the queue
+    led["entries"]["aaaaaaaa/p2"].update(status="done", handled_sha="s1", handled_tag_ts="100")
+    ledger.classify([pg("aaaaaaaa/p1"), pg("aaaaaaaa/p2"), pg("bbbbbbbb/p1", sha="s2")], led)
+    assert led["queue"] == ["aaaaaaaa/p1", "bbbbbbbb/p1"]
+
+
+def test_a_job_taken_out_of_the_queue_stays_out_until_its_page_changes(monkeypatch):
+    led = {"entries": {}, "watching_since": 0}
+    pg = lambda k, **kw: dict(found(key=k, **kw), doc_id="doc-" + k[:8])
+    ledger.classify([pg("aaaaaaaa/p1"), pg("aaaaaaaa/p2")], led)
+    monkeypatch.setattr(ledger, "load", lambda: led)
+    monkeypatch.setattr(ledger, "save", lambda l: None)
+    monkeypatch.setattr(ledger, "locked", lambda: __import__("contextlib").nullcontext())
+    monkeypatch.setattr(ledger, "page_state", lambda doc, pid: {"sha": "s1", "raw": "raw-s1"})
+    assert [r["key"] for r in ledger.drop("aaaaaaaa/p1")] == ["aaaaaaaa/p2"]
+    q = ledger.classify([pg("aaaaaaaa/p1"), pg("aaaaaaaa/p2")], led)
+    assert q[0]["status"] == "SKIPPED" and led["queue"] == ["aaaaaaaa/p2"]          # not queued again
+    q = ledger.classify([pg("aaaaaaaa/p1", sha="s2"), pg("aaaaaaaa/p2")], led)        # the user writes on it
+    assert q[0]["status"] == "REOPENED" and led["queue"][0] == "aaaaaaaa/p1"
+    led["entries"]["aaaaaaaa/p2"].update(status="working")
+    assert ledger.drop("aaaaaaaa/p2") is None                                         # the job being worked stays
+
+
+def test_an_abandoned_job_is_settled_and_not_queued_again_for_its_own_writes(monkeypatch):
+    led = {"entries": {}, "watching_since": 0}
+    pg = lambda k, **kw: dict(found(key=k, **kw), doc_id="doc-" + k[:8])
+    ledger.classify([pg("aaaaaaaa/p1"), pg("aaaaaaaa/p2")], led)
+    led["entries"]["aaaaaaaa/p1"].update(status="working", claim_owner="daemon", claim_at=500, started_at=500)
+    monkeypatch.setattr(ledger, "load", lambda: led)
+    monkeypatch.setattr(ledger, "save", lambda l: None)
+    monkeypatch.setattr(ledger, "locked", lambda: __import__("contextlib").nullcontext())
+    monkeypatch.setattr(ledger, "page_state", lambda doc, pid: {"sha": "s1", "raw": "raw-s1"})
+    asked = []
+    assert ledger.abandon("aaaaaaaa/p2", revert=lambda d, s: asked.append(d)) is None      # not the job being worked
+    q = ledger.abandon("aaaaaaaa/p1", revert=lambda d, s: asked.append((d, s)) or ["x.rm"])
+    assert asked == [("doc-aaaaaaaa", 500)] and [r["key"] for r in q] == ["aaaaaaaa/p2"]
+    e = led["entries"]["aaaaaaaa/p1"]
+    assert e["status"] == "skipped" and e["abandoned"] and "claim_owner" not in e and e["handled_sha"] == "s1"
+    assert ledger.classify([pg("aaaaaaaa/p1"), pg("aaaaaaaa/p2")], led)[0]["status"] == "SKIPPED"
+
+
+def test_reverting_puts_back_only_what_was_written_since_the_job_began(tmp_path, monkeypatch):
+    import hashlib, os, time
+    from paperdaemon.remarkable import sync
+    monkeypatch.setattr(sync, "MIRROR", str(tmp_path))
+    doc = "d0c"
+    (tmp_path / doc).mkdir()
+    cloud = {"d0c/p1.rm": b"cloud page 1", "d0c/p2.rm": b"cloud page 2", "d0c.content": b"cloud content"}
+    files = {n: hashlib.sha256(b).hexdigest() for n, b in cloud.items()}
+    for n, b in cloud.items():
+        (tmp_path / n.replace("/", os.sep)).write_bytes(b)
+    (tmp_path / "d0c" / "p2.rm").write_bytes(b"an earlier job's unpushed write")
+    old = time.time() - 100
+    os.utime(tmp_path / "d0c" / "p2.rm", (old, old))
+    since = time.time() - 10
+    (tmp_path / "d0c" / "p1.rm").write_bytes(b"the abandoned job's write")
+    (tmp_path / "d0c.content").write_bytes(b"content with a page the job added")
+    (tmp_path / "d0c" / "new-page.rm").write_bytes(b"a page the job added")
+    monkeypatch.setattr(sync, "_state", lambda: {"files": files})
+    by_hash = {h: cloud[n] for n, h in files.items()}
+    monkeypatch.setattr(sync, "get_blob", lambda t, h, name: by_hash[h])
+    got = sync.revert_since(doc, since, token="t")
+    assert sorted(got) == ["d0c.content", "d0c/new-page.rm", "d0c/p1.rm"]
+    assert (tmp_path / "d0c" / "p1.rm").read_bytes() == b"cloud page 1"
+    assert (tmp_path / "d0c.content").read_bytes() == b"cloud content"
+    assert not (tmp_path / "d0c" / "new-page.rm").exists()
+    assert (tmp_path / "d0c" / "p2.rm").read_bytes() == b"an earlier job's unpushed write"     # older: left alone

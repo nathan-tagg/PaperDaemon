@@ -84,7 +84,21 @@ def board_box_for(safe=_SAFE):
     return (cx - side / 2.0, by1 - side, cx + side / 2.0, by1)
 
 
-BOARD_BOX = board_box_for()                           # (-740, 542, 740, 2022) on a notebook page
+BOARD_BOX = board_box_for()                           # (-754, 514, 754, 2022) on a Paper Pro page
+
+
+def page_board(doc, page_id):
+    """A new game's board on THIS page: (board box, the top of the talk strip), from the safe area of the frame the
+    page's tablet wrote (tablets.TABLETS) -- a reMarkable 2's page is smaller than a Paper Pro's, a Move's narrower.
+    The Paper Pro's when the page cannot be read."""
+    try:
+        from paperdaemon.pipeline import page as P
+        from paperdaemon.pipeline.page import render as R
+        n = [p["id"] for p in R.live_pages(doc)].index(page_id) + 1
+        safe = P.safe_area(R.page_frame(doc, n))
+        return board_box_for(safe), float(safe[1])
+    except Exception:
+        return BOARD_BOX, TOP
 
 
 def margin_of(state):
@@ -96,10 +110,12 @@ def margin_of(state):
     return int(b.get("margin", LEGACY_MARGIN))
 
 
-def talk_box(board_box=BOARD_BOX):
-    """Where the opponent's talk strip goes: from the top of the safe area down to the pieces it has
-    taken, starting at the board's left edge and no wider than the board."""
-    return (float(board_box[0]), TOP, float(board_box[2]), float(board_box[1]) - 2 * CAP_GAP - CAP)
+def talk_box(board_box=BOARD_BOX, top=None):
+    """Where the opponent's talk strip goes: from the top of the safe area (`top`, the game page's own; the Paper
+    Pro's by default) down to the pieces it has taken, starting at the board's left edge and no wider than the
+    board."""
+    return (float(board_box[0]), TOP if top is None else float(top), float(board_box[2]),
+            float(board_box[1]) - 2 * CAP_GAP - CAP)
 
 
 # ------------------------------------------------------------------------------ 1. randomness
@@ -698,6 +714,7 @@ def new_game(doc, page_id, user_color="w", persona="", traits=None, elo=1500, se
     board = chess.Board(fen) if fen else chess.Board()
     seed = seed or new_seed()
     now = int(time.time())
+    box, top = page_board(doc, page_id)
     st = {"game": "chess", "version": 1, "id": game_id or "chess-" + seed[:8],
           "doc": doc, "page_id": page_id,
           "start_fen": board.fen(), "fen": board.fen(), "history": [],
@@ -706,7 +723,7 @@ def new_game(doc, page_id, user_color="w", persona="", traits=None, elo=1500, se
           "strength": {"elo": int(elo)},
           "colors": {"user": user_color, "engine": "b" if user_color == "w" else "w"},
           "flipped": user_color == "b",
-          "board": {"hash": None, "name": None, "box": list(BOARD_BOX), "margin": 0, "labels": "outside"},
+          "board": {"hash": None, "name": None, "box": list(box), "top": top, "margin": 0, "labels": "outside"},
           "pieces": {}, "captured": {"w": [], "b": []},
           "status": "playing", "result": None, "created": now, "updated": now}
     for sq, pc in sorted(board.piece_map().items()):
@@ -1169,8 +1186,9 @@ def redraw(doc, page_no, state, page_id=None):
              if im["hash"] in mine and im.get("item")]
     if items:
         IM.remove_items(doc, page_no, items, page_id=page_id)
-    state["board"]["box"] = list(BOARD_BOX)
-    state["board"].update(margin=0, labels="outside")  # drawn again from scratch: today's board
+    box, top = page_board(doc, page_id or state.get("page_id"))
+    state["board"]["box"] = list(box)
+    state["board"].update(margin=0, labels="outside", top=top)  # drawn again from scratch: today's board
     setup_page(doc, page_no, state, page_id)
 
 

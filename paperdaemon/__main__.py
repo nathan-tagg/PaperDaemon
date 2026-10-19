@@ -54,6 +54,50 @@ def uninstall_cleanup():
     return 0
 
 
+def _parent_alive(pid):
+    """True while process `pid` runs (Windows: a handle that is not yet signaled)."""
+    if sys.platform != "win32":
+        try:
+            os.kill(pid, 0)
+            return True
+        except OSError:
+            return False
+    import ctypes
+    k = ctypes.windll.kernel32
+    h = k.OpenProcess(0x00100000, False, pid)          # SYNCHRONIZE
+    if not h:
+        return False
+    try:
+        return k.WaitForSingleObject(h, 0) == 0x102        # WAIT_TIMEOUT: still running
+    finally:
+        k.CloseHandle(h)
+
+
+def false_mirror_engine(port):
+    """THE FALSE MIRROR'S ENGINE: the same API over the false mirror's library and state, on 127.0.0.1 only, with the
+    cloud switched off. The engine starts it, hands it its pairing token (PAPERDAEMON_PAIRING_TOKEN) and passes the
+    False Mirror tab's requests to it; it ends when the engine that started it ends."""
+    from . import paths
+    lib, state = paths.false_mirror_dir(), paths.false_mirror_state_dir()
+    if not os.path.isdir(lib) or not os.path.isdir(state):     # only the Create button makes them
+        print("there is no false mirror")
+        return 1
+    # before anything reads where the mirror is (the modules take it when they are first imported)
+    os.environ.update(RM_MIRROR=lib, RM_CACHE=lib, RM_STATE=state, RM_LOCAL_ONLY="1")
+    from . import server, thumbs
+    server.serve(port, ["127.0.0.1"])
+    if not server.wait_up(port):
+        print("the false mirror's engine could not start on port %d" % port)
+        return 1
+    thumbs.wake()
+    parent = int(os.environ.get("PAPERDAEMON_PARENT") or 0)
+    import time
+    while True:
+        time.sleep(3)
+        if parent and not _parent_alive(parent):
+            return 0
+
+
 def _streams():
     """A windowed build started without output handles has no streams: print() would fail. Output goes
     nowhere, and errors to <data>/logs/engine.err."""
@@ -81,6 +125,8 @@ def main(argv=None):
     _streams()
     if argv[:1] == ["--run-pipeline"]:
         return run_pipeline(argv[1:])
+    if argv[:1] == ["--false-mirror"] and len(argv) > 1:
+        return false_mirror_engine(int(argv[1]))
 
     from . import __version__, scripts, server, settings
     ap = argparse.ArgumentParser(prog="paperdaemon", description="PaperDaemon %s" % __version__)
@@ -100,6 +146,7 @@ def main(argv=None):
     from . import keeper, thumbs
     thumbs.wake()                    # the page pictures the Mirror has no picture for yet; ends when done
     keeper.start()                   # the Mirror kept current for as long as PaperDaemon runs
+    server.fm_start()                # the false mirror's engine, when there is a false mirror
     if args.announce:
         import json
         server._engine["announced"] = True

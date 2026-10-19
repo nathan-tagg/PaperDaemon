@@ -53,6 +53,11 @@ Tablet loop and jobs
   POST   /loop/start             loop status (below)       POST /loop/stop -> loop status
   GET    /loop                   {running, msg, lineup (in use), restart_pending, busy, card, halves}
   GET    /jobs?limit=50          [{key, notebook, doc_id, page, status, note, started, finished}], newest first
+  GET    /queue                  [{key, notebook, doc_id, page, status, why, queued}], in the order they will be worked
+  POST   /queue/order            {keys: [...]} -> the queue: the user's order for the waiting jobs
+  POST   /queue/drop             {key} -> the queue: a waiting job taken out (its page settled until it changes)
+  POST   /queue/abandon          {key} -> the queue: the job being worked stopped at once and thrown away (what it
+                                 had written to its notebook put back from the cloud)
 
 Notepads
   GET    /notepads               [{doc, notebook, entries, chars}]
@@ -225,7 +230,163 @@ def status():
     except Exception:
         mirror = {"complete": False}
     return {"version": __version__, "tablet": tablet, "pull": _pull, "mirror": mirror, "secrets": _secret_flags(),
-            "loop": loop.status(), "lineup": settings.active(s)["name"], "first_run": _first_run()}
+            "loop": loop.status(), "lineup": settings.active(s)["name"], "first_run": _first_run(),
+            "false_mirror": {"exists": paths.false_mirror_exists(), "up": bool(_fm.get("port"))}}
+
+
+# ---------------------------------------------------------------- the false mirror
+# A library on this computer only, answered by the daemon as the tablet's is. Its own engine (python -m paperdaemon
+# --false-mirror PORT, __main__.false_mirror_engine) serves the same API over it with the cloud switched off; the
+# False Mirror tab's requests come here as /fm/... and go on to it unchanged, so every library route, picture and
+# cache is the same code over the other folder.
+
+_fm = {"proc": None, "port": None}
+_fm_lock = threading.Lock()
+
+
+def _free_port():
+    import socket
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def fm_start():
+    """The false mirror's engine, when there is a false mirror and it is not running."""
+    with _fm_lock:
+        if not paths.false_mirror_exists() or (_fm["proc"] is not None and _fm["proc"].poll() is None):
+            return
+        import subprocess
+        port = _free_port()
+        env = dict(os.environ, PAPERDAEMON_PAIRING_TOKEN=pairing_token(), PAPERDAEMON_PARENT=str(os.getpid()))
+        cmd = ([sys.executable, "--false-mirror", str(port)] if loop.FROZEN
+               else [sys.executable, "-m", "paperdaemon", "--false-mirror", str(port)])
+        logs = os.path.join(paths.false_mirror_state_dir(), "logs")
+        os.makedirs(logs, exist_ok=True)
+        with open(os.path.join(logs, "engine.out"), "ab") as out:
+            kw = dict(env=env, stdin=subprocess.DEVNULL, stdout=out, stderr=subprocess.STDOUT)
+            if sys.platform == "win32":
+                kw["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+            _fm["proc"] = subprocess.Popen(cmd, **kw)
+        _fm["port"] = port
+    wait_up(port, timeout=30)
+
+
+def fm_stop():
+    with _fm_lock:
+        p, _fm["proc"], _fm["port"] = _fm["proc"], None, None
+    if p is not None:
+        loop.end(p)
+
+
+import atexit as _atexit
+_atexit.register(fm_stop)
+
+
+@app.api_route(API + "/fm/{rest:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def fm_proxy(rest: str, request: Request):
+    """A False Mirror request, passed on to the false mirror's engine as it came."""
+    if not _fm.get("port"):
+        await run_in_threadpool(fm_start)
+    if not _fm.get("port"):
+        return JSONResponse({"error": "there is no false mirror"}, status_code=404)
+    import urllib.error
+    import urllib.request
+    url = "http://127.0.0.1:%d%s/%s" % (_fm["port"], API, rest) + (("?" + request.url.query) if request.url.query else "")
+    body = await request.body()
+    req = urllib.request.Request(url, data=body or None, method=request.method)
+    for h in ("authorization", "content-type"):
+        if request.headers.get(h):
+            req.add_header(h, request.headers[h])
+
+    def go():
+        try:
+            with urllib.request.urlopen(req, timeout=600) as r:
+                return r.status, r.read(), r.headers.get("content-type") or "application/octet-stream"
+        except urllib.error.HTTPError as ex:
+            return ex.code, ex.read(), ex.headers.get("content-type") or "application/json"
+    try:
+        code, data, ctype = await run_in_threadpool(go)
+    except OSError as ex:
+        return JSONResponse({"error": "the false mirror's engine did not answer: %s" % str(ex)[:160]}, status_code=502)
+    # the job abandoned is the false mirror's host's: that host is the one to stop (its engine runs no loop)
+    if rest == "queue/abandon" and request.method == "POST" and code == 200:
+        await run_in_threadpool(lambda: loop.restart_host(who="fm-host"))
+    return Response(content=data, status_code=code, media_type=ctype)
+
+
+@app.post(API + "/false-mirror")
+def post_false_mirror():
+    """Create the false mirror: its library and state folders, a first notebook, its engine, and its halves of the
+    loop when the loop runs."""
+    if paths.local_only():
+        return _bad("not here", 404)
+    if not paths.false_mirror_exists():
+        os.makedirs(paths.false_mirror_state_dir(), exist_ok=True)
+        # THE FALSE MIRROR IS WATCHED FROM THE MOMENT IT IS MADE: its ledger starts now, so every page made or changed
+        # in it from here on is a job -- also one made while its daemon was not running yet (ledger.classify)
+        paths.write_json_atomic(os.path.join(paths.false_mirror_state_dir(), "rm-ledger.json"),
+                                {"version": 1, "entries": {}, "watching_since": int(time.time())})
+        os.makedirs(paths.false_mirror_dir())
+        from . import studio
+        from .pipeline import TEMPLATES
+        import uuid as _uuid
+        studio._new_notebook(paths.false_mirror_dir(), os.path.dirname(TEMPLATES), str(_uuid.uuid4()), "Notebook", "",
+                             int(time.time() * 1000))
+    fm_start()
+    loop.start_false_mirror()
+    return status()
+
+
+@app.post(API + "/false-mirror/export")
+def post_false_mirror_export(body: dict = Body(...)):
+    """A false-mirror document exported as a PDF into the user's Downloads folder (a new name when one is taken)
+    -> {path, name}."""
+    doc = str(body.get("doc") or "")
+    if paths.local_only() or not _doc_ok(doc):
+        return _bad("not a document id")
+    import urllib.request
+    fm_start()
+    if not _fm.get("port"):
+        return _bad("there is no false mirror", 404)
+    req = urllib.request.Request("http://127.0.0.1:%d%s/library/%s/export.pdf" % (_fm["port"], API, doc))
+    req.add_header("Authorization", "Bearer " + pairing_token())
+    try:
+        with urllib.request.urlopen(req, timeout=600) as r:
+            data = r.read()
+    except Exception as ex:
+        return _bad("the document could not be exported: %s" % str(ex)[:200], 502)
+    name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", str(body.get("name") or "Document")).strip(" .") or "Document"
+    folder = os.path.join(os.path.expanduser("~"), "Downloads")
+    os.makedirs(folder, exist_ok=True)
+    path, n = os.path.join(folder, name + ".pdf"), 1
+    while os.path.exists(path):
+        n += 1
+        path = os.path.join(folder, "%s (%d).pdf" % (name, n))
+    with open(path, "wb") as f:
+        f.write(data)
+    return {"path": path, "name": os.path.basename(path)}
+
+
+@app.delete(API + "/false-mirror")
+def delete_false_mirror():
+    """Delete the false mirror: its halves and engine stop, then its folders go, and its inbox setting is cleared."""
+    if paths.local_only():
+        return _bad("not here", 404)
+    import shutil
+    loop.stop_false_mirror()
+    fm_stop()
+    for d in (paths.false_mirror_dir(), paths.false_mirror_state_dir()):
+        for _ in range(10):                          # a process just ended may hold a file for a moment
+            shutil.rmtree(d, ignore_errors=True)
+            if not os.path.exists(d):
+                break
+            time.sleep(0.5)
+    s = settings.load()
+    if (s.get("false_mirror") or {}).get("inbox"):
+        s["false_mirror"]["inbox"] = ""
+        settings.save(s)
+    return status()
 
 
 @app.get(API + "/settings")
@@ -876,6 +1037,61 @@ def get_jobs(limit: int = 50, lineup: str = ""):
     return rows
 
 
+@app.get(API + "/queue")
+def get_queue():
+    """The jobs waiting and the one being worked, in the order the daemon hands them over."""
+    return ledger.queue()
+
+
+@app.post(API + "/queue/order")
+def post_queue_order(body: dict = Body(...)):
+    """The user's order for the waiting jobs; the job being worked stays first."""
+    keys = body.get("keys") if isinstance(body, dict) else None
+    if not isinstance(keys, list) or not all(isinstance(k, str) for k in keys):
+        return JSONResponse({"error": "keys: the queue's keys, in the order wanted"}, status_code=400)
+    return ledger.reorder(keys)
+
+
+@app.post(API + "/queue/drop")
+def post_queue_drop(body: dict = Body(...)):
+    """A waiting job taken out of the queue; the job being worked cannot be."""
+    key = body.get("key") if isinstance(body, dict) else None
+    out = ledger.drop(key) if isinstance(key, str) else None
+    if out is None:
+        return JSONResponse({"error": "not a waiting job"}, status_code=400)
+    return out
+
+
+@app.post(API + "/queue/abandon")
+def post_queue_abandon(body: dict = Body(...)):
+    """The job being worked, stopped at once and thrown away: the host ends (and with it the job's model call and
+    drawing), what the job wrote to its notebook goes back to the cloud's copy, the page is settled, and the host
+    starts again for the next job (unless paused). A job writes its page at its commit, its last step; what some
+    steps write before it (a game clearing its page, pages a job adds) is what is put back. A document a job pushed
+    as its own (an adventure's journal) is already on the tablet and stays."""
+    from .remarkable import sync
+    key = body.get("key") if isinstance(body, dict) else None
+    if not isinstance(key, str) or (ledger.load()["entries"].get(key) or {}).get("status") != "working":
+        return JSONResponse({"error": "not the job being worked"}, status_code=400)
+    loop.restart_host(then_start=False)
+    try:
+        out = ledger.abandon(key, revert=lambda doc, since: sync.revert_since(doc, since) + sync.drop_new_since(since))
+    finally:
+        q = os.path.join(paths.state_dir(), "rm-queue")
+        for n in (os.listdir(q) if os.path.isdir(q) else []):
+            if n.endswith(".json"):
+                try:
+                    with open(os.path.join(q, n), encoding="utf-8") as f:
+                        if key in (json.load(f).get("keys") or []):
+                            os.remove(os.path.join(q, n))
+                except (OSError, ValueError):
+                    pass
+        loop.restart_host()
+    if out is None:
+        return JSONResponse({"error": "not the job being worked"}, status_code=400)
+    return out
+
+
 @app.get(API + "/notepads")
 def get_notepads():
     return notepad.notepads()
@@ -942,13 +1158,182 @@ def get_decompose_progress(job: str = ""):
 
 @app.post(API + "/decompose/send")
 def post_decompose_send(body: dict = Body(...)):
+    """SEND TO TABLET LANDS IN EVERY INBOX: the Mirror's (tablet.inbox) and, when there is a false mirror with an inbox
+    of its own (false_mirror.inbox), the false mirror's too. Nobody is asked to pick. -> {sent, mirror?, false_mirror?,
+    errors}."""
     from . import studio
+    if paths.local_only():                            # the false mirror's engine: its own inbox only
+        try:
+            return studio.send(body.get("image"), body.get("width"))
+        except (ValueError, OSError) as ex:
+            return _bad(str(ex)[:300])
+        except Exception as ex:
+            return _bad("%s: %s" % (type(ex).__name__, str(ex)[:300]), 502)
+    s = settings.load()
+    real = bool(str((s.get("tablet") or {}).get("inbox") or "").strip())
+    fake = paths.false_mirror_exists() and bool(str((s.get("false_mirror") or {}).get("inbox") or "").strip())
+    if not real and not fake:
+        return _bad("set an inbox in the Settings tab first")
+    out, errors = {"sent": False}, []
+    if real:
+        try:
+            out["mirror"] = studio.send(body.get("image"), body.get("width"), s)
+            out["sent"] = True
+        except Exception as ex:
+            errors.append("Mirror: %s" % str(ex)[:200])
+    if fake:
+        code, got = _fm_call("POST", "/decompose/send", body)
+        if code == 200:
+            out["false_mirror"] = got
+            out["sent"] = True
+        else:
+            errors.append("False Mirror: %s" % ((got or {}).get("error") if isinstance(got, dict) else got))
+    out["errors"] = errors
+    if not out["sent"]:
+        return _bad("; ".join(errors)[:300], 502)
+    out.update({k: v for k, v in (out.get("mirror") or out.get("false_mirror") or {}).items() if k in ("doc", "page")})
+    return out
+
+
+def _fm_call(method, path, body=None, timeout=600):
+    """One request to the false mirror's engine, from this engine -> (status, the decoded JSON or the raw text)."""
+    import urllib.error
+    import urllib.request
+    fm_start()
+    if not _fm.get("port"):
+        return 404, {"error": "there is no false mirror"}
+    req = urllib.request.Request("http://127.0.0.1:%d%s%s" % (_fm["port"], API, path), method=method,
+                                 data=json.dumps(body).encode() if body is not None else None)
+    req.add_header("Authorization", "Bearer " + pairing_token())
+    req.add_header("Content-Type", "application/json")
     try:
-        return studio.send(body.get("image"), body.get("width"))
-    except (ValueError, OSError) as ex:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            code, raw = r.status, r.read()
+    except urllib.error.HTTPError as ex:
+        code, raw = ex.code, ex.read()
+    except OSError as ex:
+        return 502, {"error": str(ex)[:200]}
+    try:
+        return code, json.loads(raw)
+    except ValueError:
+        return code, raw.decode("utf-8", "replace")[:300]
+
+
+# ---------------------------------------------------------------- the false mirror's own edits (remarkable/local.py)
+# Answered only by the false mirror's engine (its requests reach it as /fm/...); the Mirror's engine refuses them all.
+
+def _local(fn, *a):
+    from .remarkable import local
+    try:
+        return fn(*a)
+    except local.NotHere as ex:
+        return _bad(str(ex), 404)
+    except (ValueError, KeyError, OSError) as ex:
         return _bad(str(ex)[:300])
-    except Exception as ex:
-        return _bad("%s: %s" % (type(ex).__name__, str(ex)[:300]), 502)
+
+
+def _doc_ok(u):
+    return bool(re.fullmatch(r"[0-9a-fA-F-]{36}", u or ""))
+
+
+@app.post(API + "/library/notebook")
+def post_library_notebook(body: dict = Body(default={})):
+    from .remarkable import local
+    return _local(lambda: {"id": local.new_notebook(str(body.get("name") or ""), str(body.get("parent") or ""))})
+
+
+@app.post(API + "/library/folder")
+def post_library_folder(body: dict = Body(default={})):
+    from .remarkable import local
+    return _local(lambda: {"id": local.new_folder(str(body.get("name") or ""), str(body.get("parent") or ""))})
+
+
+@app.post(API + "/library/import")
+async def post_library_import(request: Request, name: str = "", parent: str = ""):
+    """A PDF, its bytes the request's body, into folder `parent`."""
+    from .remarkable import local
+    data = await request.body()
+    return await run_in_threadpool(_local, lambda: {"id": local.import_pdf(name, data, parent)})
+
+
+@app.post(API + "/library/{doc}/pages")
+def post_library_page(doc: str, body: dict = Body(default={})):
+    from .remarkable import local
+    if not _doc_ok(doc):
+        return _bad("not a document id")
+    return _local(lambda: {"page": local.new_page(doc, body.get("after"))})
+
+
+@app.get(API + "/library/{doc}/export.pdf")
+def get_library_export(doc: str):
+    from .remarkable import local
+    if not _doc_ok(doc):
+        return _bad("not a document id")
+    got = _local(local.export_pdf, doc)
+    return got if isinstance(got, JSONResponse) else Response(content=got, media_type="application/pdf")
+
+
+@app.post(API + "/library/{u}/move")
+def post_library_move(u: str, body: dict = Body(default={})):
+    from .remarkable import local
+    if not _doc_ok(u):
+        return _bad("not an id")
+    return _local(lambda: {"moved": local.move(u, str(body.get("parent") or ""))})
+
+
+@app.delete(API + "/library/{u}")
+def delete_library_item(u: str):
+    from .remarkable import local
+    if not _doc_ok(u):
+        return _bad("not an id")
+    return _local(lambda: {"deleted": local.delete(u)})
+
+
+@app.put(API + "/library/{u}/tags")
+def put_library_tags(u: str, body: dict = Body(default={})):
+    from .remarkable import local
+    if not _doc_ok(u):
+        return _bad("not an id")
+    return _local(lambda: (local.set_tags(u, body.get("tags") or []), {"tags": body.get("tags") or []})[1])
+
+
+@app.put(API + "/library/{doc}/page/{page}/tags")
+def put_library_page_tags(doc: str, page: int, body: dict = Body(default={})):
+    from .remarkable import local
+    if not _doc_ok(doc):
+        return _bad("not a document id")
+    return _local(lambda: (local.set_page_tags(doc, page, body.get("tags") or []), {"tags": body.get("tags") or []})[1])
+
+
+@app.get(API + "/library/{doc}/page/{page}/scene")
+def get_library_scene(doc: str, page: int):
+    """One page as the page editor holds it (remarkable/local.scene_of): the false mirror's pages only."""
+    from .remarkable import local
+    if not _doc_ok(doc):
+        return _bad("not a document id")
+    if not paths.local_only():
+        return _bad("pages are edited in the False Mirror only", 404)
+    return _local(local.scene_of, doc, page)
+
+
+@app.put(API + "/library/{doc}/page/{page}/scene")
+def put_library_scene(doc: str, page: int, body: dict = Body(...)):
+    from .remarkable import local
+    if not _doc_ok(doc):
+        return _bad("not a document id")
+    return _local(lambda: {"strokes": local.write_scene(doc, page, body)})
+
+
+@app.get(API + "/fonts/{name}")
+def get_font(name: str):
+    """One of the tablet's faces from the content folder (never shipped: the user's own desktop app's), for the page
+    editor's typed text; 404 when it is not installed."""
+    if not re.fullmatch(r"[A-Za-z0-9-]{1,64}", name):
+        return _bad("not a font name")
+    p = paths.font_file(name)
+    if not p:
+        return JSONResponse({"error": "not installed"}, status_code=404)
+    return FileResponse(p, media_type="font/ttf")
 
 
 # ---------------------------------------------------------------- the benchmark
@@ -1099,7 +1484,9 @@ def _text_upstream(s):
     (adapters.api_base: a server's address takes /v1, a location naming its API's path is used as it is)."""
     m = slots.slot("text", s)
     base = adapters.api_base(m.get("location") or "") if (m.get("location") or "").strip() else ""
-    headers = {"Content-Type": "application/json"}
+    # UNCOMPRESSED: the proxy passes the answer's bytes on as they come, without the server's Content-Encoding, so a
+    # gzipped error (llama.cpp compresses its error replies) reached the host as "HTTP 400: \x1f\x8b..." -- unreadable
+    headers = {"Content-Type": "application/json", "Accept-Encoding": "identity"}
     key = vault.get(slots.key_of("text", m))
     if key:
         headers["Authorization"] = "Bearer " + key

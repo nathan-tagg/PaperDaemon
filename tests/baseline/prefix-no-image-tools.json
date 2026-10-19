@@ -1197,7 +1197,7 @@
   "type": "function",
   "function": {
    "name": "draw_figure",
-   "description": "DRAW something yourself by listing the parts it is made of: lines, circles, ellipses, arcs, rectangles, polylines. One call for the whole figure, inside your box. A house is a box and a triangle; a bicycle is two circles and a frame. Coordinates are page coordinates: x -800..800 (0 = center), y 160..2150 (larger y is further DOWN).",
+   "description": "DRAW something yourself by listing the parts it is made of: lines, circles, ellipses, arcs, rectangles, polylines. One call for the whole figure, inside your box. A house is a box and a triangle; a bicycle is two circles and a frame. Coordinates are page coordinates: x from the page's center (0), y from its top (larger y is further DOWN), within the page's size as the page states it.",
    "parameters": {
     "type": "object",
     "properties": {

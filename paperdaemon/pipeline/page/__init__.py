@@ -233,13 +233,21 @@ def report(cmp_):
 TOP_MARGIN = 115.0
 
 
-def safe_area(frame=(1620.0, 2160.0)):
+def safe_area(frame=(1620.0, 2160.0), fitted=False):
     """The safe area on a page of this frame (width, height): the same margins, scaled with the
     page's width. A PDF page is shown fitted to the screen as a notebook page is, so its margins
     fall where the notebook's do -- and a 157.5 x 210 mm PDF page is 1404 wide, where the notebook's
-    x -800..800 ran ~100 past each side and its y 2150 ~280 past the foot."""
+    x -800..800 ran ~100 past each side and its y 2150 ~280 past the foot.
+
+    A TABLET'S OWN PAGE (tablets.TABLETS) is in that tablet's screen pixels, and a toolbar is the same size in the hand
+    whatever the screen: its margins scale with the pixel density (a Paper Pro Move's 264 ppi against the Paper Pro's
+    229), not with the width -- scaled by width, the Move's top would sit at 68, under its toolbar. Measured on the
+    Paper Pro only; the others' are this scaling, not a measurement. `fitted`: a PDF page, shown fitted to the screen
+    whatever its size -- scaled with the width, as above, even when its frame happens to equal a tablet's."""
+    from paperdaemon.pipeline.page import tablets as TB
     fw, fh = float(frame[0]), float(frame[1])
-    s = fw / 1620.0
+    t = None if fitted else TB.of_frame(frame)
+    s = t["ppi"] / float(TB.DEFAULT[3]) if t else fw / 1620.0
     return (-fw / 2.0 + 10.0 * s, TOP_MARGIN * s, fw / 2.0 - 10.0 * s, fh - 10.0 * s)
 
 

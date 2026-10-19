@@ -273,8 +273,8 @@ TOOLS = [
  ("draw_figure", "DRAW something yourself by listing the parts it is made of: lines, circles, "
   "ellipses, arcs, rectangles, polylines. One call for the whole figure, inside your box. A house "
   "is a box and a triangle; a bicycle is two circles and a frame. Coordinates are page coordinates: "
-  "x %d..%d (0 = center), y %d..%d " % (H._safe()[0], H._safe()[2], H._safe()[1], H._safe()[3]) +
-  "(larger y is further DOWN).", {"parts": H.PART_SCHEMA}, t_draw_figure),
+  "x from the page's center (0), y from its top (larger y is further DOWN), within the page's size "
+  "as the page states it.", {"parts": H.PART_SCHEMA}, t_draw_figure),
  ("edit_figure", "Change SOME parts of the figure you drew, leaving the rest alone -- e.g. "
   "[{\"index\":3,\"cy\":720},{\"index\":7,\"delete\":true}]. Part numbers come back from "
   "draw_figure.", {"changes": {"type": "array", "items": {"type": "object"}}}, t_edit_figure),

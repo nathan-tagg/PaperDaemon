@@ -41,6 +41,8 @@ WIRING = {
     "RM_PY": "the interpreter the children run under",
     "RM_STUDIO": "the engine's picture surface for the host",
     "RM_STUDIO_TOKEN": "the token for the engine's host surfaces",
+    "RM_LOCAL_ONLY": "1 in a process working the false mirror: nothing is pulled from or pushed to the cloud",
+    "PAPERDAEMON_PARENT": "the engine that started the false mirror's engine, which ends when it does",
 }
 
 # Developer switches: for measuring and debugging; nothing a user sets.

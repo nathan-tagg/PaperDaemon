@@ -95,7 +95,14 @@ def live_pages(c):
 
 
 # ------------------------------------------------------------------- transport
+class LocalOnly(RuntimeError):
+    """A cloud call from a process working the false mirror: a bug, never a request to send."""
+
+
 def _call(method, path, token, filename=None, body=None, ctype=None, tries=3):
+    if paths.local_only():
+        # THE FALSE MIRROR NEVER REACHES THE CLOUD: every request to it goes through here, and none is made
+        raise LocalOnly("the false mirror never reaches the cloud (%s %s)" % (method, path))
     last = None
     for _ in range(tries):
         try:
@@ -151,6 +158,8 @@ def put_blob(token, data, filename, hash=None):
     (.docSchema) is the merkle hash over its children, which must be passed explicitly -- the server
     answers the content hash with 400 "invalid hash". A burst of uploads draws 429s, so a busy
     answer backs off (doubling, five times) rather than failing the whole push."""
+    if paths.local_only():
+        raise LocalOnly("the false mirror never reaches the cloud (upload %s)" % filename)
     h = hash or hashlib.sha256(data).hexdigest()
     hd = {"authorization": "Bearer " + token, "rm-filename": filename,
           "x-goog-hash": goog_hash(data)}
@@ -254,6 +263,27 @@ PING_AFTER = 20.0
 PONG_WAIT = 10.0
 
 
+# THE TABLETS AN ACCOUNT HAS, AS THE SERVICE SHOWS THEM: one library for every device, and a change notification
+# that names the device it came from (sourceDeviceID, sourceDeviceDesc -- "remarkable" for a tablet -- and a name when
+# the message carries one). Kept as they are seen, in <state>/devices-seen.json, so how several tablets of one
+# account look is read off real messages rather than guessed.
+def note_device(attrs):
+    try:
+        path = os.path.join(paths.state_dir(), "devices-seen.json")
+        try:
+            with open(path, encoding="utf-8") as f:
+                seen = json.load(f)
+        except (OSError, ValueError):
+            seen = {}
+        d = seen.setdefault(str(attrs.get("sourceDeviceID")), {"first": int(time.time()), "events": 0})
+        d.update(desc=attrs.get("sourceDeviceDesc") or d.get("desc"), last=int(time.time()), events=d["events"] + 1,
+                 name=attrs.get("deviceName") or attrs.get("sourceDeviceName") or d.get("name"),
+                 fields=sorted(set(d.get("fields") or []) | set(attrs)))
+        paths.write_json_atomic(path, seen)
+    except Exception:
+        pass                                   # a record of who changed what never stops the channel
+
+
 def notify_host(token=None):
     """Ask discovery where notifications live, as the official apps do."""
     st, b = _call("GET", "/discovery/v1/endpoints", token or user_token())
@@ -288,6 +318,8 @@ class Notifier(object):
     def _connect(self):
         import socket
         import ssl
+        if paths.local_only():
+            raise LocalOnly("the false mirror never listens to the cloud")
         host = notify_host()
         key = base64.b64encode(os.urandom(16)).decode()
         req = ("GET %s HTTP/1.1" + CRLF + "Host: %s" + CRLF +
@@ -372,6 +404,8 @@ class Notifier(object):
                                 "message", {}).get("attributes", {})
                         except Exception:
                             attrs = {}
+                        if attrs.get("sourceDeviceID"):
+                            note_device(attrs)
                         if attrs.get("event") == "SyncComplete":
                             self.events += 1
                             if self.on_change:
@@ -416,8 +450,9 @@ def _state():
 
 
 def mirrored():
-    """True once a pull has finished: the Mirror holds the whole library as of its last root."""
-    return bool(_state().get("root"))
+    """True once a pull has finished: the Mirror holds the whole library as of its last root. A false mirror is whole
+    from the start: nothing ever arrives in it from elsewhere."""
+    return paths.local_only() or bool(_state().get("root"))
 
 
 def _save_state(st):
@@ -658,6 +693,123 @@ def changed_files(doc_uuid=None):
         if h != known:
             out.append((name, known, h))
     return out
+
+
+def revert_since(doc_uuid, since, token=None):
+    """Undo what was written to one document in the mirror since `since` (seconds) and never pushed: each of its
+    files changed since then goes back to the bytes the cloud has, and each file of it the cloud never had (a page or
+    a picture a job added) goes. Writes from before `since` -- an earlier job's push still owed -- are left alone.
+    For a job the user abandons. -> [file names put back or removed]."""
+    st = _state()
+    out, t = [], None
+    for name, known, _h in changed_files(doc_uuid):
+        path = os.path.join(MIRROR, name.replace("/", os.sep))
+        if os.path.getmtime(path) < since:
+            continue
+        t = t or token or user_token()
+        data = get_blob(t, known, name)
+        if hashlib.sha256(data).hexdigest() != known:
+            raise RuntimeError("corrupt download: %s" % name)
+        _write_atomic(name, data)
+        out.append(name)
+    top = os.path.join(MIRROR, doc_uuid)
+    for dirpath, _dirs, files in os.walk(top):
+        for fn in files:
+            path = os.path.join(dirpath, fn)
+            name = doc_uuid + "/" + os.path.relpath(path, top).replace(os.sep, "/")
+            if name not in st["files"] and os.path.getmtime(path) >= since:
+                os.remove(path)
+                out.append(name)
+    return out
+
+
+def drop_new_since(since):
+    """Remove every document the cloud never had that was made in the mirror since `since` (seconds): what an
+    abandoned job created (a new notebook, a PDF document, a folder) goes with it. -> [document ids]."""
+    st, out = _state(), []
+    for f in os.listdir(MIRROR):
+        if not f.endswith(".metadata"):
+            continue
+        u = f[:-len(".metadata")]
+        path = os.path.join(MIRROR, f)
+        if u in st.get("docs", {}) or os.path.getmtime(path) < since:
+            continue
+        for g in os.listdir(MIRROR):
+            if g.split(".")[0] == u and os.path.isfile(os.path.join(MIRROR, g)):
+                os.remove(os.path.join(MIRROR, g))
+        if os.path.isdir(os.path.join(MIRROR, u)):
+            import shutil
+            shutil.rmtree(os.path.join(MIRROR, u))
+        out.append(u)
+    return out
+
+
+# ------------------------------------------------------------------- the one way to the tablet
+# EVERYTHING REACHES THE TABLET THROUGH push_pending. A job only writes to the mirror; the daemon pushes after the
+# job is recorded, and the window's own sends (Decompose > send to the inbox) push the same way. Nothing else calls
+# push_doc or push_new_doc: a job that pushed mid-way (an adventure's journal did) put on the tablet what an
+# abandoned job could no longer take back.
+def unpushed():
+    """What the mirror holds that the cloud does not: (new documents, folders first and each folder before the
+    folders inside it, [ids]; changed documents, {id: page ids touched})."""
+    st = _state()
+    known = st.get("docs", {})
+    new, meta = [], {}
+    for f in sorted(os.listdir(MIRROR)):
+        if f.endswith(".metadata") and f[:-len(".metadata")] not in known:
+            u = f[:-len(".metadata")]
+            try:
+                with open(os.path.join(MIRROR, f), encoding="utf-8") as fh:
+                    meta[u] = json.load(fh)
+            except (OSError, ValueError):
+                continue
+            new.append(u)
+
+    def depth(u, n=0):
+        p = (meta.get(u) or {}).get("parent")
+        return depth(p, n + 1) if p in meta and n < 64 else n
+    new.sort(key=lambda u: ((meta[u].get("type") != "CollectionType"), depth(u)))
+    changed = {}
+    for n, _, _ in changed_files():
+        d = n.replace("\\", "/").split("/")[0].split(".")[0]
+        if d in new:
+            continue
+        pages = changed.setdefault(d, set())
+        if "/" in n and n.endswith(".rm"):
+            pages.add(n.split("/", 1)[1][:-3])
+    return new, changed
+
+
+def push_pending(dry_run=False, log=None):
+    """Push everything unpushed (unpushed()): new documents created, changed ones stamped -- so the tablet re-fetches
+    the pages edited -- and updated. -> {"pushed": [(id, result)], "owed": True when the tablet changed some of
+    them meanwhile (the next pull brings its change, and they go again)}.
+
+    A BENCHMARK NEVER REACHES THE TABLET: its mirror is a copy of fixture notebooks the cloud never had, all of them
+    "new" -- RM_HOST_DRY_DOCS=1 (the benchmark's environment) means nothing goes up at all, not even a dry look."""
+    if os.environ.get("RM_HOST_DRY_DOCS") == "1" or paths.local_only():      # the false mirror: never the cloud
+        return {"pushed": [], "owed": False}
+    new, changed = unpushed()
+    out, owed = [], False
+    for u in new:
+        r = push_new_doc(u, dry_run=dry_run)
+        if isinstance(r, dict) and "already exists" in str(r.get("error", "")):
+            r = push_doc(u, dry_run=dry_run)
+        out.append((u, r))
+    for d, pages in sorted(changed.items()):
+        if not dry_run:
+            try:
+                t_ = touch(d, sorted(pages) or None)
+                if log and t_.get("files"):
+                    log("  stamped %s: %s" % (d[:8], ", ".join(t_["files"])[:60]))
+            except Exception as ex:
+                if log:
+                    log("  stamp failed for %s: %s" % (d[:8], str(ex)[:70]))
+        r = push_doc(d, dry_run=dry_run)
+        out.append((d, r))
+        if isinstance(r, dict) and r.get("theirs"):
+            owed = True
+    return {"pushed": out, "owed": owed}
 
 
 # PaperDaemon never permanently deletes. Trashing (parent = "trash", pushed) is the ceiling of its

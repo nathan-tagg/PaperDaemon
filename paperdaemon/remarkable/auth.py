@@ -58,6 +58,9 @@ def claims(jwt):
 def user_token(force=False):
     if not force and _TOKEN["jwt"] and time.time() < _TOKEN["exp"] - 300:
         return _TOKEN["jwt"]
+    from .. import paths
+    if paths.local_only():                         # the false mirror never signs in to the cloud
+        raise RuntimeError("the false mirror never reaches the cloud (sign-in)")
     r = urllib.request.Request("https://%s/token/json/2/user/new" % AUTH, method="POST")
     r.add_header("Authorization", "Bearer " + device_token())
     try:

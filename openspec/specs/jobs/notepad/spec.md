@@ -41,9 +41,9 @@ Emptying a notepad SHALL delete its contents with no copy kept.
 - **THEN** no file in PaperDaemon's data folder holds its old entries
 
 ### Requirement: The notepads are shown in the app
-The app SHALL have a notepad screen that lists every notebook with a notepad, with its number of
-entries and when the last was written. Notebooks in the trash SHALL NOT be listed. For the notebook the
-user picks, the screen SHALL show the entries newest first. Each entry SHALL show:
+The app SHALL show the notepads as Notes, a tab of the Daemon screen, that lists every notebook with a
+notepad by its name. Notebooks in the trash SHALL NOT be listed. For the notebook the user picks, the tab
+SHALL show the entries newest first, as entries only. Each entry SHALL show:
 - when it was written
 - its page, by its current number, or as a page no longer in the notebook
 - what was asked, and what the job did
@@ -51,7 +51,7 @@ user picks, the screen SHALL show the entries newest first. Each entry SHALL sho
 New entries SHALL appear as jobs finish, without a reload.
 
 #### Scenario: Reading a notebook's notepad
-- **WHEN** the user opens the notepad screen and picks a notebook
+- **WHEN** the user opens Daemon > Notes and picks a notebook
 - **THEN** its entries are listed newest first, each with its time, its page's current number, what
   was asked and what was done
 

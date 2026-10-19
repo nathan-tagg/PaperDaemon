@@ -210,6 +210,8 @@ def signature(x, y, height=34.0, dash=True):
 # stamp on an envelope; the same note dropped next to the user's handwriting is
 # the daemon editing their notebook. The band below SAFE_BOTTOM holds nothing the
 # user ever put there, so nothing of theirs can be pushed around or overlapped.
+# ON THE PAGE'S OWN FRAME (tablets.TABLETS): the numbers below are a Paper Pro page's (1620 x 2160); a page of
+# another tablet keeps the same distances from its own bottom and left edge (_gutter).
 PAGE_BOTTOM = 2160.0
 SAFE_BOTTOM = 2060.0
 FOOTER_Y = 2112.0             # baseline: below the safe zone, above the edge
@@ -217,29 +219,36 @@ FOOTER_MAX = 2136.0           # never closer than this to the paper edge
 FOOTER_X = -690.0
 
 
-def footer_baseline(content_bottom=None, gap=26.0):
+def _gutter(frame):
+    """(baseline, lowest baseline, left x) of the footer on a page of this frame: the Paper Pro's distances from the
+    bottom and the left edge."""
+    w, h = (float(v) for v in (frame or (1620.0, PAGE_BOTTOM)))
+    return h - (PAGE_BOTTOM - FOOTER_Y), h - (PAGE_BOTTOM - FOOTER_MAX), -w / 2.0 + (810.0 + FOOTER_X)
+
+
+def footer_baseline(content_bottom=None, gap=26.0, frame=None):
     """Where the footer sits, given the lowest thing already on the page.
 
     Normally just FOOTER_Y. If a drawing runs past the safe zone into the
     gutter, the footer steps down to clear it, and stops at FOOTER_MAX rather
     than walking off the paper.
     """
-    y = FOOTER_Y
+    y, low, _x = _gutter(frame)
     if content_bottom is not None and content_bottom + gap > y:
         y = content_bottom + gap
-    return min(y, FOOTER_MAX)
+    return min(y, low)
 
 
-def draw_footer(d, message, content_bottom=None, height=26.0, x=FOOTER_X,
-                width=8):
+def draw_footer(d, message, content_bottom=None, height=26.0, x=None,
+                width=8, frame=None):
     """Stamp one line plus the signature into the gutter of a Drawing.
 
     Follows the house convention: rm_text draws into a Drawing, so this does
     too. Returns the baseline used, so the caller can record what it wrote.
     """
     from paperdaemon.pipeline.draw import lettering as T
-    y = footer_baseline(content_bottom)
-    cur = x
+    y = footer_baseline(content_bottom, frame=frame)
+    cur = x if x is not None else _gutter(frame)[2]
     if message:
         cur += T.text(d, message, x, y, size=height, width=width)
         cur += height * 0.9

@@ -67,11 +67,34 @@ once the user changes it afterward.
 - **THEN** none of the forty pages is dispatched, and a page the user writes on afterward is
 
 ### Requirement: Changed pages go first
-When the daemon hands the next job over, a page that changed SHALL go before a page that is new.
+When a job joins the queue, a page that changed SHALL go in before the first page that is new, and a new
+page at the end.
 
 #### Scenario: A follow-up and a new page
 - **WHEN** the user adds a page with a request and writes a follow-up on an answered page
 - **THEN** the follow-up is worked first
+
+### Requirement: The user can reorder the queue
+The Daemon screen's Queue SHALL list the jobs in the order they will be worked, the next first, each by its
+notebook, its page and whether the page is new or changed. The user SHALL be able to drag a waiting job by
+its handle, or move it with the arrow keys, to another place; the daemon SHALL hand the jobs over in that
+order, and the order SHALL survive a restart. The job being worked SHALL be grayed out, have no handle,
+and stay first.
+
+#### Scenario: Moving a job up
+- **WHEN** three jobs wait and the user drags the last one to the top
+- **THEN** it is the next job handed over, and the job being worked is not interrupted
+
+### Requirement: The user can take a job out of the queue
+Every job in the Queue SHALL have one control to take it out. A waiting job SHALL leave the queue, its page
+settled as it is, until the page changes again. The job being worked SHALL be stopped at once and abandoned:
+the host SHALL end, what the job wrote to its notebook since it started SHALL be put back from the cloud,
+anything it created SHALL be removed, its page SHALL be settled as it is, and the host SHALL start again for
+the next job unless paused.
+
+#### Scenario: Abandoning a game that cleared its page
+- **WHEN** a chess game has cleared the page that asked for it and the user takes the job out
+- **THEN** the page is as it was before the job, and the next job starts
 
 ### Requirement: A new ledger starts from what is already there
 When the daemon starts with an empty ledger, as on PaperDaemon's first run or after the ledger was reset,

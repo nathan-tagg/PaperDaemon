@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page editor</title>
+<style>
+/* The page editor, first step: a page drawn live from its data, not a picture of it. A blank Paper Pro page in the
+   viewer's dialog, at 1x of the Paper Pro's screen; pens that draw as they move (an upright pen at a steady 50%
+   pressure), an eraser, undo and redo, and Ctrl + scroll to zoom from 0.5x to 5x. */
+:root {
+  --paper: #242124; --paper-sunk: #1C1A1C; --field: #2E2A2F; --ink: #BDB6AA; --ink-2: #9A9389; --rule: #3A353C;
+  --edge: #6C6670; --mark: #D0806A; --shade: rgba(0, 0, 0, 0.5);
+  --font-ui: "Times New Roman", Times, serif;
+}
+html, body { margin: 0; height: 100%; background: #141214; color: var(--ink); font-family: var(--font-ui); overflow: hidden; }
+.backdrop { position: fixed; inset: 0; background: var(--shade); }
+/* THE DIALOG is sized from the window alone (vw / vh), so the app's own zoom changes the controls, never the page */
+.dialog { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); background: var(--paper-sunk);
+  border: 1px solid var(--edge); display: flex; flex-direction: column; }
+.head { display: flex; align-items: center; justify-content: space-between; padding: 14px 22px 0; font-weight: 600; font-size: 17px; }
+.bar { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 10px 22px 10px; border-bottom: 1px solid var(--rule); font-size: 15px; color: var(--ink-2); }
+.body { position: relative; flex: 1; display: grid; place-items: center; padding: 16px; }
+.viewport { position: relative; background: #8E8E8E; overflow: hidden; touch-action: none; cursor: crosshair; }
+canvas { display: block; }
+.zoom { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); padding: 4px 12px; border-radius: 14px;
+  background: rgba(30, 28, 30, 0.85); color: #F2EEE6; font: 15px var(--font-ui); border: 0; cursor: pointer;
+  opacity: 0; transition: opacity 300ms; pointer-events: none; }
+.zoom.on { opacity: 1; pointer-events: auto; }
+/* THE PAGE CONTROLS: tabs docked against the dialog's right side, outside it, so the dialog's centering is untouched;
+   the first tab's top lines up with the rule under the bar */
+.dock { position: absolute; left: 100%; display: flex; flex-direction: column; gap: 0; }
+.tab { width: 44px; height: 44px; display: grid; place-items: center; padding: 0; background: var(--paper-sunk);
+  border: 1px solid var(--edge); border-left: 0; color: var(--ink-2); cursor: pointer; }
+.tab + .tab { border-top: 0; }
+.tab:first-child { border-top-right-radius: 6px; }
+.tab:last-child { border-bottom-right-radius: 6px; }
+.tab[aria-pressed="true"] { background: var(--paper); color: var(--ink); box-shadow: inset 3px 0 0 var(--mark); }
+.tab svg { width: 22px; height: 22px; display: block; }
+</style>
+</head>
+<body>
+<div class="backdrop"></div>
+<div class="dialog" id="dlg" role="dialog" aria-label="Blank page">
+  <div class="head"><span>Blank page</span></div>
+  <div class="bar" id="bar"><span>Page 1 of 1</span></div>
+  <div class="body" id="body">
+    <div class="viewport" id="vp"><canvas id="cv"></canvas><button class="zoom" id="zoom" title="Back to 1x"></button></div>
+  </div>
+  <div class="dock" id="dock">
+    <button class="tab" data-tool="pen-a" aria-label="Pen, black" aria-pressed="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M4 20l1.5-5L16 4.5l3.5 3.5L9 18.5z"/><path d="M14 6.5l3.5 3.5"/><circle cx="19" cy="19" r="2.6" fill="#111" stroke="#F2EEE6" stroke-width="1"/></svg></button>
+    <button class="tab" data-tool="pen-b" aria-label="Pen, red" aria-pressed="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M4 20l1.5-5L16 4.5l3.5 3.5L9 18.5z"/><path d="M14 6.5l3.5 3.5"/><circle cx="19" cy="19" r="2.6" fill="#C23132" stroke="#F2EEE6" stroke-width="1"/></svg></button>
+    <button class="tab" data-tool="eraser" aria-label="Eraser" aria-pressed="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M9 20h11"/><path d="M4.5 14.5l9-9 6 6-8.5 8.5H9z"/><path d="M8.5 10.5l6 6"/></svg></button>
+  </div>
+</div>
+<script>
+"use strict";
+(() => {
+  // ---- THE PAGE AS DATA: its frame and its strokes, in page units (x from the center, y from the top) -- the same
+  // units the page file stores. A Paper Pro page: 1620 x 2160. Its drawable surface runs as wide as the page is tall,
+  // centered (measured on the tablet: the white ends at x = +-1080 on a Paper Pro page); a stroke cannot start past it.
+  const page = { w: 1620, h: 2160, strokes: [] };
+  const SCREEN_W = 1620;                        // the Paper Pro's screen at 1x, in page units
+  // A pen as the tablet stores it, held upright at a steady 50% pressure: the fineliner at size 3 is width 24 in the
+  // file, the same at every pressure; drawn at 0.144 page units per width unit (the renderer's measured scale)
+  const PENS = { "pen-a": { tool: "fineliner", color: "#000000", width: 24 }, "pen-b": { tool: "fineliner", color: "#C23132", width: 24 } };
+  const WIDTH_SCALE = 0.144, ERASER_R = 18;
+  let tool = "pen-a";
+
+  // ---- the view: the zoom, and the page point at the viewport's top middle
+  const view = { zoom: 1, cx: 0, top: 0 };
+  const vp = document.getElementById("vp"), cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+  const dlg = document.getElementById("dlg"), dock = document.getElementById("dock"), bar = document.getElementById("bar");
+  const zoomBtn = document.getElementById("zoom");
+  let vpW = 0, vpH = 0, dpr = 1;
+
+  // THE DIALOG: as large as the window allows, its viewport exactly the Paper Pro's 3:4 screen
+  function layout() {
+    const maxW = window.innerWidth * 0.92, maxH = window.innerHeight * 0.94;
+    const chrome = 14 + 24 + 10 + 34 + 1 + 32;            // head, bar and the body's padding
+    vpH = Math.floor(Math.min(maxH - chrome, (maxW - 32) * 4 / 3));
+    vpW = Math.floor(vpH * 3 / 4);
+    dlg.style.width = (vpW + 32) + "px";
+    vp.style.width = vpW + "px"; vp.style.height = vpH + "px";
+    dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(vpW * dpr); cv.height = Math.round(vpH * dpr);
+    cv.style.width = vpW + "px"; cv.style.height = vpH + "px";
+    // the dock's first tab lines up with the rule under the bar
+    dock.style.top = (bar.offsetTop + bar.offsetHeight - 1) + "px";
+    draw();
+  }
+
+  const scale = () => vpW / (SCREEN_W / view.zoom);         // CSS pixels per page unit
+  const toScreen = (x, y) => [vpW / 2 + (x - view.cx) * scale(), (y - view.top) * scale()];
+  const toPage = (sx, sy) => [view.cx + (sx - vpW / 2) / scale(), view.top + sy / scale()];
+  const drawable = (x, y) => Math.abs(x) <= page.h / 2 && y >= 0 && y <= page.h;
+
+  function draw() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = "#8E8E8E";                            // beyond the drawable surface: the tablet's gray
+    ctx.fillRect(0, 0, vpW, vpH);
+    const [x0, y0] = toScreen(-page.h / 2, 0), [x1, y1] = toScreen(page.h / 2, page.h);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    for (const s of page.strokes) drawStroke(s);
+    if (live) drawStroke(live);
+  }
+
+  function drawStroke(s) {
+    const p = s.points;
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = Math.max(0.6, s.width * WIDTH_SCALE * scale());
+    ctx.beginPath();
+    const [ax, ay] = toScreen(p[0][0], p[0][1]);
+    ctx.moveTo(ax, ay);
+    if (p.length === 1) ctx.lineTo(ax + 0.01, ay);
+    for (let i = 1; i < p.length; i++) { const [bx, by] = toScreen(p[i][0], p[i][1]); ctx.lineTo(bx, by); }
+    ctx.stroke();
+  }
+
+  // ---- UNDO AND REDO: every change is an action that can be taken back and done again
+  const undone = [], done = [];
+  function apply(a, forward) {
+    if (a.type === "add") {
+      if (forward) page.strokes.push(a.stroke); else page.strokes.splice(page.strokes.indexOf(a.stroke), 1);
+    } else if (a.type === "erase") {
+      if (forward) for (const e of a.items) page.strokes.splice(page.strokes.indexOf(e.stroke), 1);
+      else for (const e of [...a.items].reverse()) page.strokes.splice(e.at, 0, e.stroke);
+    }
+  }
+  function record(a) { done.push(a); undone.length = 0; }
+  function undo() { const a = done.pop(); if (a) { apply(a, false); undone.push(a); draw(); } }
+  function redo() { const a = undone.pop(); if (a) { apply(a, true); done.push(a); draw(); } }
+
+  // ---- THE PEN AND THE ERASER, as the pointer moves
+  let live = null, erasing = null, pointer = null;
+  function hits(s, x, y) {
+    const r = ERASER_R + s.width * WIDTH_SCALE / 2, p = s.points;
+    for (let i = 0; i < p.length; i++) {
+      const [ax, ay] = p[i], [bx, by] = p[Math.min(i + 1, p.length - 1)];
+      const dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy;
+      const t = L ? Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / L)) : 0;
+      const ex = ax + t * dx - x, ey = ay + t * dy - y;
+      if (ex * ex + ey * ey <= r * r) return true;
+    }
+    return false;
+  }
+  function eraseAt(x, y) {
+    for (const s of [...page.strokes]) {
+      if (hits(s, x, y)) { erasing.items.push({ stroke: s, at: page.strokes.indexOf(s) }); page.strokes.splice(page.strokes.indexOf(s), 1); }
+    }
+  }
+  const local = e => { const r = vp.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+
+  vp.addEventListener("pointerdown", e => {
+    if (e.button !== 0 || e.target === zoomBtn) return;
+    const [x, y] = toPage(...local(e));
+    if (tool === "eraser") {
+      erasing = { type: "erase", items: [] };
+    } else {
+      if (!drawable(x, y)) return;                        // as on the tablet: no stroke starts in the gray
+      const pen = PENS[tool];
+      live = { tool: pen.tool, color: pen.color, width: pen.width, pressure: 0.5, tilt: 90, points: [[x, y]] };
+    }
+    pointer = e.pointerId;
+    vp.setPointerCapture(e.pointerId);
+    if (erasing) eraseAt(x, y);
+    draw();
+  });
+  vp.addEventListener("pointermove", e => {
+    if (e.pointerId !== pointer) return;
+    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    for (const ev of evs) {
+      const [x, y] = toPage(...local(ev));
+      if (live) live.points.push([x, y]); else if (erasing) eraseAt(x, y);
+    }
+    draw();
+  });
+  function finish(e) {
+    if (e.pointerId !== pointer) return;
+    pointer = null;
+    if (live) { page.strokes.push(live); record({ type: "add", stroke: live }); live = null; }
+    if (erasing) { if (erasing.items.length) record(erasing); erasing = null; }
+    draw();
+  }
+  vp.addEventListener("pointerup", finish);
+  vp.addEventListener("pointercancel", finish);
+
+  // ---- ZOOM: Ctrl + scroll wheel, 0.5x to 5x, held on the cursor when it is over the page, else on the top middle;
+  // the zoom shows while it changes, and a click on it goes back to 1x
+  let zoomTimer = 0;
+  function showZoom() {
+    zoomBtn.textContent = (Math.round(view.zoom * 10) / 10).toFixed(1) + "×";
+    zoomBtn.classList.add("on");
+    clearTimeout(zoomTimer);
+    zoomTimer = setTimeout(() => zoomBtn.classList.remove("on"), 2500);
+  }
+  function clampView() {
+    if (view.zoom <= 1) { view.cx = 0; view.top = 0; return; }
+    const half = SCREEN_W / view.zoom / 2, edge = page.h / 2;
+    view.cx = Math.max(-edge + half, Math.min(edge - half, view.cx));
+    view.top = Math.max(0, Math.min(page.h - vpH / scale(), view.top));
+  }
+  function zoomTo(z, sx, sy) {
+    const [px, py] = toPage(sx, sy);
+    view.zoom = Math.max(0.5, Math.min(5, z));
+    view.cx = px - (sx - vpW / 2) / scale();
+    view.top = py - sy / scale();
+    clampView(); showZoom(); draw();
+  }
+  window.addEventListener("wheel", e => {
+    if (!e.ctrlKey) return;
+    e.preventDefault();                                   // the window's own zoom stays where it is
+    const r = vp.getBoundingClientRect();
+    const over = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+    const [sx, sy] = over ? [e.clientX - r.left, e.clientY - r.top] : [vpW / 2, 0];
+    zoomTo(view.zoom * Math.exp(-e.deltaY * 0.0015), sx, sy);
+  }, { passive: false });
+  zoomBtn.addEventListener("click", () => { view.zoom = 1; view.cx = 0; view.top = 0; showZoom(); draw(); });
+
+  // ---- keys and tools
+  window.addEventListener("keydown", e => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    const k = e.key.toLowerCase();
+    if (k === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
+    else if (k === "y" || (k === "z" && e.shiftKey)) { e.preventDefault(); redo(); }
+  });
+  dock.addEventListener("click", e => {
+    const b = e.target.closest(".tab"); if (!b) return;
+    tool = b.dataset.tool;
+    dock.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-pressed", String(t === b)));
+  });
+
+  window.addEventListener("resize", layout);
+  layout();
+  window.editorPage = page;                               // for checking from outside: the page's data
+})();
+</script>
+</body>
+</html>

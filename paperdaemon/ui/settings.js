@@ -1,37 +1,25 @@
 "use strict";
-/* Settings: the user's preferences (language, and how temperatures, times and weeks are written), PaperDaemon's own
-   settings (the reMarkable login, the decompose inbox, the location, how often the tablet is checked, the ignore and
-   standing instructions tags, network access, the social sites), and tools (checking for an update, sending the logs
-   to the inbox). Once the Mirror is built and until every preference is chosen, the rail item carries a lightbulb
-   and the page a note asking for a moment. */
+/* Settings: the window's language and the preferences for the pages (how they write temperatures, times and weeks,
+   the decompose inboxes, the location, the ignore and standing instructions tags) -- one set for every tablet, since
+   they all share one library -- then PaperDaemon's own settings (the reMarkable login, network access, the social
+   sites), and tools (checking for an update, sending the logs to the inbox).
+
+   THE FALSE MIRROR IS FOUND BY WAITING: a minute on this screen without leaving it, and its setting fades in at the
+   bottom. Once there is a false mirror the setting shows at once, to delete it; deleting it turns it back into
+   Create False Mirror, and the next visit waits the minute again. */
 (() => {
   const { $, esc, line } = PD;
   const t = PD.t;
   let R = null;
-  const S = { s: null, notebooks: null, places: new Map() };
-  const SITES = [["reddit", "Reddit"], ["hackernews", "Hacker News"], ["bluesky", "Bluesky"], ["4chan", "4chan"], ["mastodon", "Mastodon"]];
-  // pathLength="1" on each line: the bulb can draw itself, stroke by stroke, the first time it appears (.draw)
+  const S = { s: null, places: new Map(), books: null, fmBooks: null, revealed: false, timer: 0 };
   const BULB = '<svg viewBox="0 0 16 16" aria-hidden="true"><path pathLength="1" d="M8 1.5a4.5 4.5 0 0 0-2.6 8.2c.4.3.6.7.6 1.1V12h4v-1.2c0-.4.2-.8.6-1.1A4.5 4.5 0 0 0 8 1.5z"/><path pathLength="1" d="M6 13.5h4M6.8 15h2.4"/></svg>';
-
-  /** A preference not chosen yet, and the Mirror is built: time to ask (softly). */
-  PD.needsPrefs = (st, settings) => {
-    const p = (settings || PD.settings || {}).prefs || {};
-    const m = PD.mirrorState(st || PD.status);
-    const built = !!((st || PD.status || {}).mirror || {}).complete && !m.first;      // the FIRST copy only
-    return built && !(p.temperature && p.clock && p.week_start) && !noteSeen();   // until all three are chosen
-  };
-  // the note has been read: it stayed on screen its whole 20 seconds once (see paintNote); then it, and the rail's
-  // lightbulb, are gone for good
-  const NOTE_SEEN = "pd.prefs-note-seen";
-  function noteSeen() {
-    try { return localStorage.getItem(NOTE_SEEN) === "1"; } catch (e) { return !!PD.prefsNoteSeen; }
-  }
-
+  const fmExists = () => !!((PD.status || {}).false_mirror || {}).exists;
+  const SITES = [["reddit", "Reddit"], ["hackernews", "Hacker News"], ["bluesky", "Bluesky"], ["4chan", "4chan"], ["mastodon", "Mastodon"]];
   async function save(path, value, msgEl) {
     const [s, e] = await PD.safe(PD.saveSettings(st => { PD.setK(st, path, value); }));
     if (s) S.s = s;
     if (msgEl) { msgEl.textContent = e ? PD.errText(e) : ""; msgEl.className = "hint" + (e ? " attn" : ""); }
-    paintNote(); PD.paintRail();
+    PD.paintRail();
     return !e;
   }
 
@@ -58,40 +46,11 @@
     paintLogin(r.text, r.bad);
   }
 
-  // THE NOTE EXPIRES: a bar along its bottom edge runs down over 20 seconds while Settings is open; when it is gone,
-  // so is the note. Leaving Settings takes the note away, so the next visit starts the 20 seconds again.
-  // `arriving`: it appears while Settings is open (the first copy of the library just finished), so it slides down
-  // into place and its bulb draws itself; on opening Settings it is simply there
-  function paintNote(arriving) {
-    const box = $("#st-note", R); if (!box) return;
-    if (!PD.needsPrefs(PD.status, S.s)) { box.innerHTML = ""; return; }
-    if (box.querySelector(".notice")) return;                  // already showing: its bar keeps running
-    box.innerHTML = '<div class="notice soft' + (arriving ? " arriving" : "") + '" role="status"><span class="bulb draw">' +
-      BULB + "</span><span>" + esc(t("settings.note")) +
-      '</span><i class="notice-timer" aria-hidden="true"></i></div>';
-    box.querySelector(".notice-timer").addEventListener("animationend", () => {
-      try { localStorage.setItem(NOTE_SEEN, "1"); } catch (e) { PD.prefsNoteSeen = true; }
-      paintNote(); PD.paintRail();
-    });
-  }
-
-  const choice = (id, path, opts, none = true) => '<span class="select"><select class="field" id="' + id + '" data-path="' + path + '">' +
-    (none ? '<option value="">' + esc(t("common.choose")) + "</option>" : "") +
-    opts.map(([v, l]) => '<option value="' + v + '">' + esc(l) + "</option>").join("") + "</select></span>";
   // a row: its label, with a "?" to the label's right when there is more to say, and its control
   const row = (label, help, control) => '<div class="row"><div class="label">' + esc(label) + (help ? PD.helpTip(help) : "") +
     '</div><div class="control">' + control + "</div></div>";
 
-  // ---- the two type-aheads: an existing notebook for the inbox, a city of the world for the location
-
-  async function notebooks() {
-    if (S.notebooks) return S.notebooks;
-    const [all] = await PD.safe(PD.api("GET", "/library"));
-    const by = new Map((all || []).map(d => [d.id, d]));
-    const path = d => { const n = [d.name]; for (let p = by.get(d.parent), k = 0; p && k < 64; p = by.get(p.parent), k++) n.unshift(p.name); return n.join("/"); };
-    S.notebooks = (all || []).filter(d => d.type === "document" && d.kind === "notebook" && !String(d.parent).startsWith("trash")).map(path).sort((a, b) => a.localeCompare(b));
-    return S.notebooks;
-  }
+  // ---- the language type-ahead
 
   function wireLookups() {
     PD.wireTypeahead(R, async (q, input) => {
@@ -100,14 +59,17 @@
         const k = q.toLowerCase(), all = PD.LANGUAGES.map(PD.languageLabel);
         return all.includes(q) ? all : all.filter(l => !k || l.toLowerCase().includes(k));
       }
-      if (el && el.id === "st-inbox") {
+      if (el && (el.id === "st-inbox" || el.id === "st-fm-inbox")) {
         const k = q.toLowerCase();
-        return (await notebooks()).filter(p => !k || p.toLowerCase().includes(k));
+        return (await notebooks(el.id === "st-fm-inbox" ? "/fm" : "")).filter(p => !k || p.toLowerCase().includes(k));
       }
-      if (q.trim().length < 2) return [];
-      const [list] = await PD.safe(PD.api("GET", "/places?q=" + encodeURIComponent(q)));
-      (list || []).forEach(p => S.places.set(p.label, p));
-      return (list || []).map(p => p.label);
+      if (el && el.id === "st-loc") {
+        if (q.trim().length < 2) return [];
+        const [list] = await PD.safe(PD.api("GET", "/places?q=" + encodeURIComponent(q)));
+        (list || []).forEach(p => S.places.set(p.label, p));
+        return (list || []).map(p => p.label);
+      }
+      return [];
     });
     $("#st-lang", R).addEventListener("change", async e => {
       const msg = $("#st-lang-msg", R), was = PD.getK(S.s, "prefs.language") || "en";
@@ -115,25 +77,6 @@
       if (!code) { e.target.value = PD.languageLabel(was); msg.textContent = t("settings.language.pick"); msg.className = "hint attn"; return; }
       msg.textContent = "";
       if (code !== was && await save("prefs.language", code, msg)) PD.useLanguage(code);
-    });
-    $("#st-inbox", R).addEventListener("change", async e => {
-      const v = e.target.value.trim(), msg = $("#st-inbox-msg", R), was = PD.getK(S.s, "tablet.inbox") || "";
-      if (v === was) return;
-      if (!(await notebooks()).includes(v)) { e.target.value = was; msg.textContent = t("settings.inbox.pick"); msg.className = "hint attn"; return; }
-      if (await save("tablet.inbox", v, msg)) paintTools();
-    });
-    $("#st-loc", R).addEventListener("change", async e => {
-      const v = e.target.value.trim(), msg = $("#st-loc-msg", R), was = PD.getK(S.s, "location.name") || "";
-      if (v === was) return;
-      const p = S.places.get(v);
-      if (!p) { e.target.value = was; msg.textContent = t("settings.location.pick"); msg.className = "hint attn"; return; }
-      const [s, err] = await PD.safe(PD.saveSettings(st => {
-        PD.setK(st, "location.name", p.label); PD.setK(st, "location.lat", p.lat);
-        PD.setK(st, "location.lon", p.lon); PD.setK(st, "location.holidays", p.holidays);
-      }));
-      if (s) S.s = s;
-      if (err) e.target.value = was;
-      msg.textContent = err ? PD.errText(err) : ""; msg.className = "hint" + (err ? " attn" : "");
     });
   }
 
@@ -194,6 +137,163 @@
     if (el.isConnected) { el.classList.remove("out"); show(landed()); }
   }
 
+  // ---- the preferences for the pages (they were the tablet's gear; one set for every tablet now)
+
+  const choice = (id, path, opts) => '<span class="select"><select class="field" id="' + id + '" data-path="' + path + '">' +
+    '<option value="">' + esc(t("common.choose")) + "</option>" +
+    opts.map(([v, l]) => '<option value="' + v + '">' + esc(l) + "</option>").join("") + "</select></span>";
+
+  /** The notebooks of a library as paths ("Folder/Notebook"): the Mirror's, or the false mirror's (base "/fm"). */
+  async function notebooks(base) {
+    const key = base ? "fmBooks" : "books";
+    if (S[key]) return S[key];
+    const [list] = await PD.safe(PD.api("GET", base + "/library"));
+    const by = new Map((list || []).map(d => [d.id, d]));
+    const name = d => { const n = [d.name]; for (let p = by.get(d.parent), k = 0; p && k < 64; p = by.get(p.parent), k++) n.unshift(p.name); return n.join("/"); };
+    S[key] = (list || []).filter(d => d.type === "document" && d.kind === "notebook" && !String(d.parent).startsWith("trash")).map(name).sort((a, b) => a.localeCompare(b));
+    return S[key];
+  }
+
+  function prefsRows() {
+    return row(t("settings.temperature"), t("settings.temperature.help"), choice("st-temp", "prefs.temperature",
+        [["fahrenheit", t("settings.temperature.f")], ["celsius", t("settings.temperature.c")]])) +
+      row(t("settings.clock"), "", choice("st-clock", "prefs.clock", [["12", t("settings.clock.12")], ["24", t("settings.clock.24")]])) +
+      row(t("settings.week"), "", choice("st-week", "prefs.week_start", [["sunday", t("day.sunday")], ["monday", t("day.monday")], ["saturday", t("day.saturday")]])) +
+      row(t("settings.inbox"), t("settings.inbox.help"),
+        '<input class="field w-l" id="st-inbox" data-ta="[]" spellcheck="false" placeholder="' + esc(t("settings.inbox.placeholder")) +
+        '"><p class="hint" id="st-inbox-msg" role="status"></p>') +
+      // the false mirror's own inbox, right under the Mirror's: the same control; Send to Tablet lands in both
+      '<div id="st-fm-inbox-row"' + (fmExists() ? "" : " hidden") + ">" + row(t("fm.inbox"), t("fm.inbox.help"),
+        '<input class="field w-l" id="st-fm-inbox" data-ta="[]" spellcheck="false" placeholder="' + esc(t("settings.inbox.placeholder")) +
+        '"><p class="hint" id="st-fm-inbox-msg" role="status"></p>') + "</div>" +
+      row(t("settings.location"), t("settings.location.help"),
+        '<input class="field w-l" id="st-loc" data-ta="[]" spellcheck="false" placeholder="' + esc(t("settings.location.placeholder")) +
+        '"><p class="hint" id="st-loc-msg" role="status"></p>') +
+      row(t("settings.ignore"), t("settings.ignore.help"),
+        '<input class="field mono w-m" id="st-ignore" spellcheck="false" autocomplete="off"><p class="hint" id="st-ignore-msg" role="status"></p>') +
+      row(t("settings.sprompt"), t("settings.sprompt.help"),
+        '<input class="field mono w-m" id="st-sprompt" spellcheck="false" autocomplete="off"><p class="hint" id="st-sprompt-msg" role="status"></p>');
+  }
+
+  function wirePrefs() {
+    ["prefs.temperature", "prefs.clock", "prefs.week_start"].forEach(p =>
+      R.querySelector('[data-path="' + p + '"]').addEventListener("change", e => save(p, e.target.value).then(() => paintNote())));
+    const pickBook = (inp, path, base) => inp.addEventListener("change", async e => {
+      const val = e.target.value.trim(), msg = $("#" + inp.id + "-msg", R), was = PD.getK(S.s, path) || "";
+      if (val === was) return;
+      if (val && !(await notebooks(base)).includes(val)) { e.target.value = was; msg.textContent = t("settings.inbox.pick"); msg.className = "hint attn"; return; }
+      await save(path, val, msg);
+      paintTools();
+    });
+    pickBook($("#st-inbox", R), "tablet.inbox", "");
+    pickBook($("#st-fm-inbox", R), "false_mirror.inbox", "/fm");
+    $("#st-loc", R).addEventListener("change", async e => {
+      const val = e.target.value.trim(), msg = $("#st-loc-msg", R), was = PD.getK(S.s, "location.name") || "";
+      if (val === was) return;
+      const p = S.places.get(val);
+      if (!p) { e.target.value = was; msg.textContent = t("settings.location.pick"); msg.className = "hint attn"; return; }
+      const [s2, err] = await PD.safe(PD.saveSettings(st => {
+        PD.setK(st, "location.name", p.label); PD.setK(st, "location.lat", p.lat);
+        PD.setK(st, "location.lon", p.lon); PD.setK(st, "location.holidays", p.holidays);
+      }));
+      if (s2) S.s = s2;
+      if (err) e.target.value = was;
+      msg.textContent = err ? PD.errText(err) : ""; msg.className = "hint" + (err ? " attn" : "");
+    });
+    [["st-ignore", "tags.ignore", "ignore"], ["st-sprompt", "tags.sprompt", "sprompt"]].forEach(([el, path, dflt]) =>
+      $("#" + el, R).addEventListener("change", async e => {
+        const val = e.target.value.trim();
+        if (!val) e.target.value = PD.getK(S.s, path) || dflt;
+        else if (!await save(path, val, $("#" + el + "-msg", R))) e.target.value = PD.getK(S.s, path) || dflt;
+      }));
+  }
+
+  function fillPrefs() {
+    const v = S.s || {};
+    ["prefs.temperature", "prefs.clock", "prefs.week_start"].forEach(p => {
+      R.querySelector('[data-path="' + p + '"]').value = PD.getK(v, p) || (PD.regionDefaults || {})[p.split(".")[1]] || "";
+    });
+    $("#st-inbox", R).value = PD.getK(v, "tablet.inbox") || "";
+    $("#st-fm-inbox", R).value = PD.getK(v, "false_mirror.inbox") || "";
+    $("#st-fm-inbox-row", R).hidden = !fmExists();
+    $("#st-loc", R).value = PD.getK(v, "location.name") || "";
+    $("#st-ignore", R).value = PD.getK(v, "tags.ignore") || "ignore";
+    $("#st-sprompt", R).value = PD.getK(v, "tags.sprompt") || "sprompt";
+  }
+
+  // THE REMINDER: once the Mirror is built and until every preference is chosen, the rail item carries a lightbulb and
+  // the page a note asking for a moment. THE NOTE EXPIRES: a bar along its bottom edge runs down over 20 seconds while
+  // the screen is open; when it is gone, so is the note (and the lightbulb, for good). Leaving the screen takes the
+  // note away, so the next visit starts the 20 seconds again.
+  const NOTE_SEEN = "pd.prefs-note-seen";
+  function noteSeen() {
+    try { return localStorage.getItem(NOTE_SEEN) === "1"; } catch (e) { return !!PD.prefsNoteSeen; }
+  }
+  PD.needsPrefs = (st, settings) => {
+    const p = (settings || S.s || PD.settings || {}).prefs || {};
+    const m = PD.mirrorState(st || PD.status);
+    const built = !!((st || PD.status || {}).mirror || {}).complete && !m.first;
+    return built && !(p.temperature && p.clock && p.week_start) && !noteSeen();
+  };
+
+  function paintNote() {
+    const box = R && $("#st-note", R); if (!box) return;
+    if (!PD.needsPrefs(PD.status, S.s)) { box.innerHTML = ""; PD.paintRail(); return; }
+    if (box.querySelector(".notice")) return;
+    box.innerHTML = '<div class="notice soft" role="status"><span class="bulb draw">' + BULB + "</span><span>" + esc(t("settings.note")) +
+      '</span><i class="notice-timer" aria-hidden="true"></i></div>';
+    box.querySelector(".notice-timer").addEventListener("animationend", () => {
+      try { localStorage.setItem(NOTE_SEEN, "1"); } catch (e) { PD.prefsNoteSeen = true; }
+      paintNote(); PD.paintRail();
+    });
+  }
+
+  // ---- the false mirror (found by waiting)
+
+  function paintFalseMirror() {
+    const box = $("#st-fm", R); if (!box) return;
+    const exists = fmExists();
+    if (!exists && !S.revealed) { box.hidden = true; box.classList.remove("haunt"); return; }
+    box.hidden = false;
+    box.innerHTML = '<h2 id="st-h-fm">' + esc(t("fm.label")) + "</h2>" + row(t("fm.label"), t("fm.help"),
+      exists ? '<button type="button" class="btn danger" data-act="fm-delete">' + esc(t("fm.delete")) + "</button>"
+             : '<button type="button" class="btn" data-act="fm-create">' + esc(t("fm.create_mirror")) + "</button>") +
+      '<p class="hint" id="st-fm-msg" role="status"></p>';
+  }
+
+  function haunt() {
+    // a minute without leaving: the setting comes up out of nothing, slowly
+    if (R.hidden || fmExists()) return;
+    S.revealed = true;
+    paintFalseMirror();
+    $("#st-fm", R).classList.add("haunt");
+  }
+
+  async function createFalseMirror(btn) {
+    const ok = await PD.confirm({ title: t("fm.create_q"), body: [esc(t("fm.create_body1")), esc(t("fm.create_body2"))],
+                                  action: t("fm.create_mirror"), danger: false });
+    if (!ok) return;
+    const msg = $("#st-fm-msg", R);
+    const [st, e] = await PD.safe(PD.busy(btn, () => PD.api("POST", "/false-mirror")));
+    if (e) { msg.textContent = PD.errText(e); msg.className = "hint attn"; return; }
+    PD.status = st; PD.paintRail(); document.dispatchEvent(new CustomEvent("pd:status", { detail: st }));
+    S.fmBooks = null;
+    paintFalseMirror(); fillPrefs();
+  }
+
+  async function deleteFalseMirror(btn) {
+    const ok = await PD.confirm({ title: t("fm.delete_mirror_q"), body: [esc(t("fm.delete_mirror_body"))], action: t("fm.delete"), danger: true });
+    if (!ok) return;
+    const msg = $("#st-fm-msg", R);
+    const [st, e] = await PD.safe(PD.busy(btn, () => PD.api("DELETE", "/false-mirror")));
+    if (e) { msg.textContent = PD.errText(e); msg.className = "hint attn"; return; }
+    PD.status = st; PD.paintRail(); document.dispatchEvent(new CustomEvent("pd:status", { detail: st }));
+    const [s] = await PD.safe(PD.loadSettings()); if (s) S.s = s;
+    S.revealed = true;                       // back to Create False Mirror, for the rest of this visit
+    S.fmBooks = null;
+    paintFalseMirror(); fillPrefs();
+  }
+
   // ---- tools
 
   function paintTools() {
@@ -232,16 +332,11 @@
 
   function fill() {
     const s = S.s || {};
-    ["prefs.temperature", "prefs.clock", "prefs.week_start"].forEach(p => { const el = R.querySelector('[data-path="' + p + '"]'); if (el) el.value = PD.getK(s, p) || (PD.regionDefaults || {})[p.split(".")[1]] || ""; });
     $("#st-lang", R).value = PD.languageLabel(PD.getK(s, "prefs.language") || "en");
-    $("#st-inbox", R).value = PD.getK(s, "tablet.inbox") || "";
-    $("#st-loc", R).value = PD.getK(s, "location.name") || "";
     $("#st-net", R).checked = PD.getK(s, "network.allowed") !== false;
-    $("#st-ignore", R).value = PD.getK(s, "tags.ignore") || "ignore";
-    $("#st-sprompt", R).value = PD.getK(s, "tags.sprompt") || "sprompt";
     const sites = PD.getK(s, "social.sites") || [];
     R.querySelectorAll("[data-site]").forEach(el => { el.checked = sites.includes(el.dataset.site); el.disabled = !$("#st-net", R).checked; });
-    paintNote(); paintTools(); paintLogin();
+    paintTools(); paintLogin();
   }
 
   PD.screen("settings", {
@@ -254,23 +349,10 @@
       R.innerHTML = '<header class="page-head"><h1>' + esc(t("settings.label")) + '</h1></header><div id="st-note"></div>' +
         '<section class="section" aria-labelledby="st-h-prefs"><h2 id="st-h-prefs">' + esc(t("settings.prefs")) + "</h2>" +
         row("", t("settings.language.help"), '<input class="field w-l" id="st-lang" data-ta="[]" spellcheck="false"><p class="hint" id="st-lang-msg" role="status"></p>') +
-        row(t("settings.temperature"), t("settings.temperature.help"), choice("st-temp", "prefs.temperature",
-          [["fahrenheit", t("settings.temperature.f")], ["celsius", t("settings.temperature.c")]])) +
-        row(t("settings.clock"), "", choice("st-clock", "prefs.clock", [["12", t("settings.clock.12")], ["24", t("settings.clock.24")]])) +
-        row(t("settings.week"), "", choice("st-week", "prefs.week_start", [["sunday", t("day.sunday")], ["monday", t("day.monday")], ["saturday", t("day.saturday")]])) +
+        prefsRows() +
         "</section>" +
         '<section class="section" aria-labelledby="st-h-set"><h2 id="st-h-set">' + esc(t("settings.label")) + "</h2>" +
         row(t("settings.remarkable"), "", '<div id="st-login"></div>') +
-        row(t("settings.inbox"), t("settings.inbox.help"),
-          '<input class="field w-l" id="st-inbox" data-ta="[]" spellcheck="false" placeholder="' + esc(t("settings.inbox.placeholder")) +
-          '"><p class="hint" id="st-inbox-msg" role="status"></p>') +
-        row(t("settings.location"), t("settings.location.help"),
-          '<input class="field w-l" id="st-loc" data-ta="[]" spellcheck="false" placeholder="' + esc(t("settings.location.placeholder")) +
-          '"><p class="hint" id="st-loc-msg" role="status"></p>') +
-        row(t("settings.ignore"), t("settings.ignore.help"),
-          '<input class="field mono w-m" id="st-ignore" spellcheck="false" autocomplete="off"><p class="hint" id="st-ignore-msg" role="status"></p>') +
-        row(t("settings.sprompt"), t("settings.sprompt.help"),
-          '<input class="field mono w-m" id="st-sprompt" spellcheck="false" autocomplete="off"><p class="hint" id="st-sprompt-msg" role="status"></p>') +
         row(t("settings.network"), t("settings.network.help"),
           '<label class="check-label"><input type="checkbox" id="st-net"> ' + esc(t("settings.network.allow")) +
           '</label><p class="hint" id="st-net-msg" role="status"></p>') +
@@ -286,16 +368,11 @@
           '<p class="hint" id="st-upd-msg" role="status"></p>') +
         row(t("settings.logs"), t("settings.logs.help"),
           '<button type="button" class="btn" data-act="logs">' + esc(t("settings.logs.send")) + '</button><p class="hint" id="st-logs-msg" role="status"></p>') +
-        "</section>";
-      R.querySelectorAll("select[data-path]").forEach(el => el.addEventListener("change", async () => {
-        await save(el.dataset.path, el.value);
-      }));
-      [["st-ignore", "tags.ignore", "ignore"], ["st-sprompt", "tags.sprompt", "sprompt"]].forEach(([id, path, dflt]) =>
-        $("#" + id, R).addEventListener("change", async e => {
-          const v = e.target.value.trim();
-          if (!v) e.target.value = PD.getK(S.s, path) || dflt;
-          else if (!await save(path, v, $("#" + id + "-msg", R))) e.target.value = PD.getK(S.s, path) || dflt;
-        }));
+        "</section>" +
+        '<section class="section fm-section" id="st-fm" aria-labelledby="st-h-fm" hidden></section>';
+      wirePrefs();
+      PD.on(R, "click", "[data-act=fm-create]", (e, el) => createFalseMirror(el));
+      PD.on(R, "click", "[data-act=fm-delete]", (e, el) => deleteFalseMirror(el));
       $("#st-net", R).addEventListener("change", async e => {
         await save("network.allowed", e.target.checked, $("#st-net-msg", R));
         R.querySelectorAll("[data-site]").forEach(el => { el.disabled = !e.target.checked; });
@@ -311,13 +388,21 @@
       lr.insertAdjacentHTML("afterbegin", '<span id="st-lang-label">' + esc(t("settings.language")) + "</span>");
     },
     async show() {
-      S.notebooks = null;
+      // the minute starts now; leaving the screen stops it (hide)
+      clearTimeout(S.timer);
+      S.revealed = false;
+      S.timer = setTimeout(haunt, 60000);
+      S.books = S.fmBooks = null;
       const [s] = await PD.safe(PD.loadSettings());
       S.s = s || PD.settings;
-      fill();
+      fill(); fillPrefs(); paintNote(); paintFalseMirror();
       cycleLanguageLabel();
     },
-    poll() { paintNote(true); if (!R.querySelector("#st-login .hint")) paintLogin(); },
-    hide() { const box = $("#st-note", R); if (box) box.innerHTML = ""; },     // away from Settings: the timer starts over
+    hide() {
+      clearTimeout(S.timer);
+      S.revealed = false;
+      const box = R && $("#st-note", R); if (box) box.innerHTML = "";        // away from the screen: the note's 20 seconds start over
+    },
+    poll() { if (!R.querySelector("#st-login .hint")) paintLogin(); },
   });
 })();

@@ -130,9 +130,62 @@ def environment(s=None, port=8770, token="", state=None, mirror=None):
     return env
 
 
+def fm_environment(s=None, port=8770, token=""):
+    """What the false mirror's daemon and host are told: the same as the Mirror's, over the false mirror's library
+    and its own state, with the cloud switched off and its own decompose inbox."""
+    s = s or S.load()
+    state = paths.false_mirror_state_dir()          # made by the Create button, never here
+    env = environment(s, port, token, state=state, mirror=paths.false_mirror_dir())
+    env.update(RM_LOCAL_ONLY="1", RM_INBOX=str((s.get("false_mirror") or {}).get("inbox") or ""))
+    return env
+
+
+def fm_logs():
+    return os.path.join(paths.false_mirror_state_dir(), "logs")
+
+
+# who -> (the module, whether it works the false mirror): the Mirror's halves, and the false mirror's when it exists
+ROLES = {"daemon": ("paperdaemon.pipeline.daemon", False), "host": ("paperdaemon.pipeline.host", False),
+         "fm-daemon": ("paperdaemon.pipeline.daemon", True), "fm-host": ("paperdaemon.pipeline.host", True)}
+
+
+def _spawn_role(who, s=None):
+    module, fm = ROLES[who]
+    s = s or S.load()
+    if fm:
+        return spawn(who[3:], module, fm_environment(s, _run["port"], _run["token"]), fm_logs())
+    return spawn(who, module, environment(s, _run["port"], _run["token"]))
+
+
+def _start_false_mirror(s):
+    """The false mirror's daemon and host, when it exists (called with the lock held)."""
+    if not paths.false_mirror_exists() or "fm-host" in _procs:
+        return
+    env = fm_environment(s, _run["port"], _run["token"])
+    for who, proc in spawn_halves(env, state=paths.false_mirror_state_dir(), logs=fm_logs()).items():
+        _procs["fm-" + who] = dict(proc=proc, started=time.time(), fails=0, next=0.0, gave_up=None)
+
+
+def start_false_mirror():
+    """A false mirror was just created: its halves join a running loop."""
+    with _lock:
+        if _run["on"]:
+            _start_false_mirror(S.load())
+
+
+def stop_false_mirror():
+    """The false mirror is being deleted: its halves stop first."""
+    with _lock:
+        for who in ("fm-daemon", "fm-host"):
+            st = _procs.pop(who, None)
+            if st:
+                end(st.get("proc"))
+
+
 def _env_key(s):
     """What the halves are started with: when a settings change alters it, they restart."""
-    return json.dumps({"run": run_content(s), "tags": S.all_tags(s), "fixed": S.fixed_tags(s), "inbox": s["tablet"].get("inbox")},
+    return json.dumps({"run": run_content(s), "tags": S.all_tags(s), "fixed": S.fixed_tags(s), "inbox": s["tablet"].get("inbox"),
+                       "fm_inbox": (s.get("false_mirror") or {}).get("inbox")},
                       sort_keys=True)
 
 
@@ -244,23 +297,26 @@ def start(port, token, s=None):
     s = s or S.load()
     with _lock:
         if _run["on"] and _run["paused"]:
-            # PAUSED: the daemon kept queuing; the host comes back and works the queue
+            # PAUSED: the daemons kept queuing; the hosts come back and work the queues
             _run.update(paused=False, msg="running", code="running", args={})
-            st = _procs.get("host")
-            if st is not None and st["proc"].poll() is not None:
-                st.update(proc=spawn("host", dict(HALVES)["host"], environment(s, _run["port"], _run["token"])),
-                          started=time.time(), fails=0, next=0.0, gave_up=None)
+            for who in ("host", "fm-host"):
+                st = _procs.get(who)
+                if st is not None and st["proc"].poll() is not None:
+                    st.update(proc=_spawn_role(who, s), started=time.time(), fails=0, next=0.0, gave_up=None)
             return status()
         if _run["on"]:
             return status()
         got = check(s)
-        if got:
+        # THE FALSE MIRROR NEEDS NO TABLET: without a login only its halves run
+        if got and not paths.false_mirror_exists():
             _run.update(msg=got[1], code=got[0], args=got[2])
             return status()
         _run.update(on=True, port=int(port), token=token, msg="running", code="running", args={}, env_key=_env_key(s))
-        env = environment(s, port, token)
-        for who, proc in spawn_halves(env).items():
-            _procs[who] = dict(proc=proc, started=time.time(), fails=0, next=0.0, gave_up=None)
+        if not got:
+            env = environment(s, port, token)
+            for who, proc in spawn_halves(env).items():
+                _procs[who] = dict(proc=proc, started=time.time(), fails=0, next=0.0, gave_up=None)
+        _start_false_mirror(s)
         if _run["thread"] is None:
             th = threading.Thread(target=_supervise, name="loop-supervisor", daemon=True)
             th.start()
@@ -274,10 +330,22 @@ def pause():
         if not _run["on"]:
             return status()
         _run.update(paused=True, msg="paused", code="paused", args={})
-        st = _procs.get("host")
+        for who in ("host", "fm-host"):
+            st = _procs.get(who)
+            if st is not None:
+                end(st.get("proc"))
+    return status()
+
+
+def restart_host(then_start=True, who="host"):
+    """A host ends at once -- the job it is working is abandoned (see server's /queue/abandon) -- and, unless the
+    loop is paused or `then_start` is False, starts again for the next job. `who`: "host" (the Mirror's) or "fm-host"."""
+    with _lock:
+        st = _procs.get(who)
         if st is not None:
             end(st.get("proc"))
-    return status()
+        if then_start and st is not None and _run["on"] and not _run["paused"]:
+            st.update(proc=_spawn_role(who), started=time.time(), fails=0, next=0.0, gave_up=None)
 
 
 def stop():
@@ -303,6 +371,14 @@ def status():
             out["halves"][who] = {"pid": p.pid if p else None, "alive": bool(p is not None and p.poll() is None),
                                   "started": st["started"] if st else None, "fails": st["fails"] if st else 0,
                                   "gave_up": st.get("gave_up") if st else None, "tail": tail(who)}
+        # the false mirror's halves, when it has them
+        for who in ("fm-daemon", "fm-host"):
+            st = _procs.get(who)
+            if st is None:
+                continue
+            p = st["proc"]
+            out["halves"][who] = {"pid": p.pid, "alive": p.poll() is None, "started": st["started"], "fails": st["fails"],
+                                  "gave_up": st.get("gave_up"), "tail": tail(who[3:], fm_logs())}
     return out
 
 
@@ -315,13 +391,11 @@ def _apply():
         key = _env_key(s)
         if key != _run["env_key"]:
             _run["env_key"] = key
-            env = environment(s, _run["port"], _run["token"])
-            for who in ("host", "daemon"):
+            for who in ("host", "daemon", "fm-host", "fm-daemon"):
                 st = _procs.get(who)
-                if st is not None and not (who == "host" and _run["paused"]):
+                if st is not None and not (who.endswith("host") and _run["paused"]):
                     end(st["proc"])
-                    st.update(proc=spawn(who, dict(HALVES)[who], env), started=time.time(), fails=0, next=0.0,
-                              gave_up=None)
+                    st.update(proc=_spawn_role(who, s), started=time.time(), fails=0, next=0.0, gave_up=None)
 
 
 def settings_saved():
@@ -339,13 +413,12 @@ def _supervise():
             continue
         try:
             now = time.time()
-            env = None
             with _lock:
                 if _run["pending"] and busy() is None:
                     _apply()
-                for who, module in HALVES:
+                for who in list(_procs):
                     st = _procs.get(who)
-                    if st is None or not _run["on"] or (who == "host" and _run["paused"]):
+                    if st is None or not _run["on"] or (who.endswith("host") and _run["paused"]):
                         continue
                     if st["proc"].poll() is None:
                         if now - st["started"] > 60:
@@ -359,8 +432,7 @@ def _supervise():
                                          "lines it printed in logs/%s.out" % (who, FAILS_MAX, who))
                         _run.update(msg=st["gave_up"], code="gave_up", args={"who": who, "n": FAILS_MAX})
                         continue
-                    env = env or environment(S.load(), _run["port"], _run["token"])
-                    st["proc"], st["started"] = spawn(who, module, env), now
+                    st["proc"], st["started"] = _spawn_role(who), now
                     st["next"] = now + BACKOFF0 * (2 ** (st["fails"] - 1))
         except Exception as ex:
             _run.update(msg="supervisor: %s" % str(ex)[:200], code="supervisor", args={"why": str(ex)[:200]})

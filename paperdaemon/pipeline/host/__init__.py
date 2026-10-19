@@ -149,7 +149,14 @@ def _reset(doc, page, keys):
     from paperdaemon.pipeline import page as _P
     _begin_job(doc=doc, page=page, page_id=_page_id(doc, page), keys=keys)
     JOB.draw = _drawing()
-    JOB.safe = _P.safe_area(_frame())          # this page's safe area: a PDF page is not 1620 wide
+    # this page's safe area: a PDF page is not 1620 wide, and it is shown fitted to the screen (not in a tablet's own
+    # pixels, as a notebook page is)
+    try:
+        from paperdaemon.pipeline.page import render as _R
+        fitted = _R.source_page(doc, page)[0] in ("pdf", "epub")
+    except Exception:
+        fitted = False
+    JOB.safe = _P.safe_area(_frame(), fitted=fitted)
 
 
 def _warn(where, ex):
@@ -671,7 +678,8 @@ DRAWINGS: element(name, cx, cy, r) for one small icon; draw_figure(parts) for a 
 can state exactly; image(prompt) for anything that must look like something. Stay inside your box;
 after a drawing, fix one thing with edit_figure(changes) or say ok.
 
-COORDINATES: x -810..810 with 0 at the center; y from 0 at the top to 2160 at the bottom.
+COORDINATES: page units, x with 0 at the page's center, y from 0 at its top down. Each page states its own size
+(tablets differ).
 
 If a step cannot be done, say so: need_step(...) adds a missing step; skip(note) explains a page
 that asks for nothing."""
@@ -1042,12 +1050,18 @@ class Host:
 
     def serve(self):
         self.start()
+        from paperdaemon import paths as _paths
         while True:
             job = self.next_job()
             if job is None:
                 time.sleep(1)
                 continue
-            self.work(job)
+            # ONE JOB AT A TIME ACROSS THE MIRRORS: the Mirror's host and the false mirror's share the model, so a job
+            # waits here while the other host works one (the lock is the data folder's; the system frees it if a
+            # host dies)
+            with _paths.one_job():
+                if os.path.exists(job["_path"]):          # still queued: not abandoned while it waited
+                    self.work(job)
 
 
 def main():

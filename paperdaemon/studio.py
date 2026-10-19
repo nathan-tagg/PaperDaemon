@@ -220,9 +220,20 @@ def _next_key(keys):
     return chr(ord("b") + i // 26) + letters[i % 26]
 
 
-def _blank_page_bytes(pipeline):
+def _blank_page_bytes(pipeline, mirror=None):
+    """A new notebook's blank page: derived from a page of the user's own library in their tablet's frame
+    (tablets.library_page), or the bundled Paper Pro page when the library has none."""
     from rmscene import read_blocks, write_blocks
     from rmscene import scene_stream as ss
+    if mirror:
+        from paperdaemon.pipeline.page import tablets as TB
+        src = TB.library_page(mirror)
+        if src:
+            try:
+                from paperdaemon.remarkable import library as F
+                return F.blank_page_bytes(src)
+            except Exception:
+                pass
     with open(os.path.join(pipeline, "rm-templates", "blank-page.rm"), "rb") as f:
         data = f.read()
     blocks = [b for b in read_blocks(io.BytesIO(data))
@@ -282,11 +293,22 @@ def _inbox_pages(s, count, now):
                                   if os.path.exists(os.path.join(mirror, doc, q["id"] + ".rm"))]
     pages = content["cPages"]["pages"]
     pids = []
+    # A NEW PAGE IN ITS NOTEBOOK'S FRAME: copied from the inbox's own last page, the tablet it lives on; a new inbox's
+    # from the user's library (_blank_page_bytes)
+    blank = None
+    live = [q for q in pages if not q.get("deleted")]
+    if live:
+        try:
+            from paperdaemon.remarkable import library as F
+            blank = F.blank_page_bytes(os.path.join(mirror, doc, live[-1]["id"] + ".rm"))
+        except Exception:
+            blank = None
+    blank = blank or _blank_page_bytes(pipeline, mirror)
     for _ in range(count):
         pid = str(uuid.uuid4())
         key = _next_key([p["idx"]["value"] for p in pages if "idx" in p])
         with open(os.path.join(mirror, doc, pid + ".rm"), "wb") as f:
-            f.write(_blank_page_bytes(pipeline))
+            f.write(blank)
         pages.append({"id": pid, "idx": {"timestamp": "1:2", "value": key}, "modifed": str(now),
                       "template": {"timestamp": "1:1", "value": "Blank"}})
         pids.append(pid)
@@ -315,21 +337,34 @@ def _push_inbox(doc, pids, created):
                                      for p in content["cPages"]["pages"]
                                      if os.path.exists(os.path.join(mirror, doc, p["id"] + ".rm"))))
     paths.write_atomic(cpath, json.dumps(content, indent=4))
-    C.touch(doc, list(pids))
-    push = C.push_new_doc if created else C.push_doc
-    out = push(doc, dry_run=False)
+    if paths.local_only():
+        return                             # the false mirror's inbox: written, and that is the whole of it
+    # THE ONE WAY TO THE TABLET (sync.push_pending): the inbox (and its folder, when it was just made) goes up with
+    # everything else the mirror holds that the cloud does not
+    def ours():
+        got = dict(C.push_pending()["pushed"])
+        return got.get(doc) or {}
+    out = ours()
     for _ in range(4):                     # the tablet syncing mid-push moves the generation
-        if (out or {}).get("root_put") == 200:
+        if out.get("root_put") == 200:
             break
         time.sleep(2)
-        out = push(doc, dry_run=False)
-    if (out or {}).get("root_put") != 200:
+        out = ours()
+    if out.get("root_put") != 200:
         raise RuntimeError("the push did not go through: %r" % (out,))
+
+
+def _settings():
+    """The settings, with the inbox this mirror's: in the false mirror's engine, its own decompose inbox."""
+    s = S.load()
+    if paths.local_only():
+        s["tablet"] = dict(s.get("tablet") or {}, inbox=str((s.get("false_mirror") or {}).get("inbox") or ""))
+    return s
 
 
 def send(image, width=None, s=None):
     """Append a page with the picture's strokes to the inbox notebook and push it. -> {sent, doc, page}."""
-    s = s or S.load()
+    s = s or _settings()
     if not str((s.get("tablet") or {}).get("inbox") or "").strip():
         raise ValueError("set an inbox in the Settings tab first")
     _res, strokes = decompose(image, width, preview=False)
@@ -337,9 +372,17 @@ def send(image, width=None, s=None):
     from paperdaemon.remarkable import sync as C
     from paperdaemon.pipeline import page as PG
     with _lock:
-        C.pull()
+        if not paths.local_only():
+            C.pull()
         doc, [(page_no, pid)], created = _inbox_pages(s, 1, int(time.time() * 1000))
-        d = A.Drawing(PAGE_W, PAGE_H)
+        # THE INBOX PAGE'S OWN TABLET: the strokes were laid out on a Paper Pro page; another tablet's page has them
+        # scaled to its width (tablets.picture_page)
+        from paperdaemon.pipeline.page import tablets as TB
+        frame = TB.frame_of(doc, page_no)
+        k = TB.picture_page(frame)[1]
+        if abs(k - 1.0) > 1e-6:
+            strokes = [([(x * k, y * k) for x, y in st[0]], [w * k for w in st[1]]) + tuple(st[2:]) for st in strokes]
+        d = A.Drawing(*[int(round(v)) for v in frame])
         d.strokes = list(strokes)
         w = d.write_rm(doc, page_no)
         if not (w or {}).get("written"):
@@ -411,14 +454,16 @@ def send_logs(s=None):
     from paperdaemon.pipeline.page import images as IM
     from paperdaemon.remarkable import sync as C
     with _lock:
-        C.pull()
+        if not paths.local_only():
+            C.pull()
         doc, made, created = _inbox_pages(s, len(pictures), int(time.time() * 1000))
         for (page_no, pid), im in zip(made, pictures):
             fd, png = tempfile.mkstemp(suffix=".png", dir=paths.sub("tmp"))
             os.close(fd)
             try:
                 im.save(png)
-                IM.insert(doc, page_no, png, (-PAGE_W / 2.0, 0.0, PAGE_W / 2.0, float(PAGE_H)), page_id=pid)
+                from paperdaemon.pipeline.page import tablets as TB
+                IM.insert(doc, page_no, png, TB.picture_page(TB.frame_of(doc, page_no))[0], page_id=pid)
             finally:
                 try:
                     os.remove(png)

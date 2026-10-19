@@ -29,8 +29,7 @@ from paperdaemon.pipeline.page import render as R
 from PIL import Image, ImageDraw
 import math
 
-W, H = 1620, 2160
-OX = W / 2.0                      # page x=0 is the CENTER of the sheet
+PAGE_W, PAGE_H = 1620, 2160      # a Paper Pro page, for a page whose frame cannot be read; x=0 is the CENTER
 GAP = 55.0
 COARSE_AT = 20000                 # above this many strokes, a page is a traced picture (see marks)
 
@@ -209,6 +208,11 @@ def overlay(doc, page_no, out_png, gap=GAP, hide=None):
     """
     ms = marks(doc, page_no, gap, hide)
     lines = _lines(doc, page_no, hide)
+    try:                                   # the page's own frame: each tablet writes its own (tablets.TABLETS)
+        W, H = (int(round(v)) for v in R.page_frame(doc, page_no))
+    except Exception:
+        W, H = PAGE_W, PAGE_H
+    OX = W / 2.0
     im = Image.new("RGB", (W, H), "white")
     dr = ImageDraw.Draw(im)
 

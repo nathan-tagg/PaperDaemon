@@ -260,3 +260,47 @@ def test_files_a_stopped_pull_left_are_recorded_not_fetched_again(cloud):
     (cloud.mirror.parent / "safety" / "mirror-state.json").unlink()   # the record lost, the files still here
     got = sync.pull()
     assert got["downloaded"] == [] and not list((cloud.mirror.parent / "safety").glob("conflicts/*"))
+
+
+def test_everything_reaches_the_tablet_one_way_new_folders_first(tmp_path, monkeypatch):
+    # a job only writes to the mirror: a new folder, a new document in it, and a page changed in a known notebook. The
+    # one push sends the folder, then the document, then the changed notebook (stamped first)
+    import hashlib, json, os
+    from paperdaemon.remarkable import sync
+    monkeypatch.setattr(sync, "MIRROR", str(tmp_path))
+    meta = lambda u, kind, parent="": (tmp_path / (u + ".metadata")).write_text(
+        json.dumps({"type": kind, "parent": parent, "visibleName": u}))
+    meta("known", "DocumentType")
+    (tmp_path / "known").mkdir()
+    (tmp_path / "known" / "p1.rm").write_bytes(b"edited")
+    meta("newdoc", "DocumentType", "newfolder")
+    meta("newfolder", "CollectionType")
+    st = {"docs": {"known": "h"}, "files": {"known/p1.rm": hashlib.sha256(b"cloud").hexdigest(),
+                                            "known.metadata": hashlib.sha256((tmp_path / "known.metadata").read_bytes()).hexdigest()}}
+    monkeypatch.setattr(sync, "_state", lambda: st)
+    new, changed = sync.unpushed()
+    assert new == ["newfolder", "newdoc"] and changed == {"known": {"p1"}}
+    calls = []
+    monkeypatch.setattr(sync, "push_new_doc", lambda u, dry_run=True: calls.append(("new", u)) or {"root_put": 200})
+    monkeypatch.setattr(sync, "push_doc", lambda u, dry_run=True: calls.append(("push", u)) or {"root_put": 200})
+    monkeypatch.setattr(sync, "touch", lambda u, pages=None: calls.append(("stamp", u, tuple(pages or ()))) or {})
+    got = sync.push_pending()
+    assert calls == [("new", "newfolder"), ("new", "newdoc"), ("stamp", "known", ("p1",)), ("push", "known")]
+    assert not got["owed"]
+
+
+def test_nothing_but_the_one_push_talks_to_the_cloud():
+    # push_doc, push_new_doc and touch are called from sync.push_pending only: a job that pushed mid-way could not
+    # be taken back when the user abandoned it
+    import pathlib, re
+    root = pathlib.Path(__file__).resolve().parents[1] / "paperdaemon"
+    hits = [str(p.relative_to(root)) for p in root.rglob("*.py")
+            if p.name != "sync.py" and re.search(r"\b(push_doc|push_new_doc)\(|\.touch\(", p.read_text(encoding="utf-8"))]
+    assert hits == []
+
+
+def test_a_benchmark_never_pushes(monkeypatch):
+    from paperdaemon.remarkable import sync
+    monkeypatch.setenv("RM_HOST_DRY_DOCS", "1")
+    monkeypatch.setattr(sync, "unpushed", lambda: (_ for _ in ()).throw(AssertionError("looked at the cloud")))
+    assert sync.push_pending() == {"pushed": [], "owed": False}

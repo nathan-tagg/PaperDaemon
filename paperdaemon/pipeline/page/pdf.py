@@ -291,19 +291,7 @@ def source(doc, page_no):
 # pixel for pixel. That is what this module does: it fits each picture onto a white 1404 x 1872 canvas,
 # writes a PDF with one such page per picture (FlateDecode, no JPEG ringing on line art), stages
 # the document the way the app would (.content, .metadata, .pagedata, a blank .rm per page derived
-# from a real device page), and pushes it to the cloud with rm_cloud.push_new_doc.
-#
-#     import rm_pdfdoc as PD
-#     doc = PD.make_doc("Charts", ["a.png", "b.png"], folder="Reports")
-#     # -> {"doc": uuid, "pages": 2, "pdf": ..., "pushed": {...}}
-#
-# `images` may be paths or PIL images; `captions` (optional, one per image) are set at the foot of
-# the page in the tablet's own lettering (RemarkableMono). `folder` is a uuid or a name path.
-# `dry_run=True` stages and reports without uploading. Re-running with the same `doc` restages
-# that document in place (page ids kept positionally) and pushes with push_doc.
-#
-# Command line:
-#     python rm_pdfdoc.py --name "Charts" --folder Reports a.png b.png [--dry-run]
+# from a real device page) in the mirror. It reaches the tablet with the job's own push (sync.push_pending).
 # ==================================================================================================
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -327,7 +315,7 @@ def safe_top():
     """The top of this module's page's safe area, in its pixels."""
     try:
         from paperdaemon.pipeline import page as P
-        return int(round(P.safe_area((PAGE_W, PAGE_H))[1]))
+        return int(round(P.safe_area((PAGE_W, PAGE_H), fitted=True)[1]))
     except Exception:                          # without the rmscene stack: the same margin, scaled
         return int(round(115.0 * PAGE_W / 1620.0))
 
@@ -597,27 +585,3 @@ def stage(name, pdf_path, folder="", doc=None, page_ids=None):
     paths.write_atomic(os.path.join(MIRROR, doc + ".pagedata"), "Blank\n" * n_pages)
     return doc, page_ids
 
-
-def make_doc(name, images, folder="", captions=None, out_dir=None, dry_run=False, doc=None,
-             page_ids=None, tops=None):
-    """Render, stage and push. Returns a dict with the doc uuid, page count, pdf path, push result."""
-    from paperdaemon.remarkable import sync as C
-    out_dir = out_dir or os.path.join(paths.state_dir(), "rm-pdfdoc")
-    os.makedirs(out_dir, exist_ok=True)
-    pages = []
-    for i, im in enumerate(images):
-        cap = captions[i] if captions and i < len(captions) else None
-        top = tops[i] if tops and i < len(tops) else None
-        pages.append(page_image(im, caption=cap, top=top))
-    safe = "".join(ch if ch.isalnum() else "-" for ch in name)[:40]
-    pdf = write_pdf(pages, os.path.join(out_dir, safe + ".pdf"))
-    doc, page_ids = stage(name, pdf, folder, doc=doc, page_ids=page_ids)
-    res = {"doc": doc, "pages": len(pages), "pdf": pdf, "page_ids": page_ids,
-           "bytes": os.path.getsize(pdf)}
-    # new to the cloud -> create; already there -> update in place. The cloud decides, not the
-    # mirror: a staged-but-never-pushed document must still be CREATED.
-    pushed = C.push_new_doc(doc, dry_run=dry_run)
-    if isinstance(pushed, dict) and "already exists" in str(pushed.get("error", "")):
-        pushed = C.push_doc(doc, dry_run=dry_run)
-    res["pushed"] = pushed
-    return res

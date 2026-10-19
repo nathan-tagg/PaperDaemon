@@ -19,9 +19,11 @@ import os
 import re
 import time
 from paperdaemon.pipeline.games import chess as CH
+from paperdaemon.pipeline.page import tablets as TB
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-PAGE_W, PAGE_H = 1620, 2160
+
+PAGE_W, PAGE_H = 1620, 2160      # the page's picture is designed at a Paper Pro page (tablets.picture_page fits it)
 # the header starts at the top of the page's safe area (below the tablet's toolbar), the thread under it
 HEAD_TOP = int(CH.TOP)
 THREAD_TOP, THREAD_BOTTOM, BOX_TOP = HEAD_TOP + 140, 1770, 1800
@@ -180,9 +182,10 @@ def page_png(state, first, out):
     return out
 
 
-def box_page():
-    """The writing box in page coordinates (x from the center)."""
-    return (M - 10 - PAGE_W / 2.0, float(BOX_TOP), PAGE_W / 2.0 - M + 10, float(PAGE_H - 30))
+def box_page(doc=None, page_no=None):
+    """The writing box in page coordinates (x from the center), on this page's own frame (tablets.picture_page)."""
+    s = TB.picture_page(TB.frame_of(doc, page_no))[1] if doc else 1.0
+    return ((M - 10 - PAGE_W / 2.0) * s, BOX_TOP * s, (PAGE_W / 2.0 - M + 10) * s, (PAGE_H - 30) * s)
 
 
 # ------------------------------------------------------------------------------ the model's prompts
@@ -285,7 +288,7 @@ def _draw(doc, page_no, page_id, state, workdir=None):
     png = os.path.join(workdir, "_chat_%d.png" % int(time.time() * 1000))
     try:
         page_png(state, state["first"].get(page_id, 0), png)
-        box = (-PAGE_W / 2.0, 0.0, PAGE_W / 2.0, float(PAGE_H))
+        box = TB.picture_page(TB.frame_of(doc, page_no))[0]       # the page's own tablet's frame
         r = IM.insert(doc, page_no, png, box, page_id=page_id)
         IM.record_placement(r["doc"], page_no, r["name"], box, hash=r["hash"], kind="messages", game=state["id"])
         state.setdefault("picture", {})[page_id] = {"hash": r["hash"], "name": r["name"], "box": list(box)}
@@ -302,10 +305,11 @@ def _read(doc, page_no, ask_vision, workdir):
     from PIL import Image
     png = os.path.join(workdir, "_chat_read_%d.png" % int(time.time() * 1000))
     try:
-        R.render(doc, page_no, png)
+        R.render(doc, page_no, png, displayed=True)             # the page as shown: one pixel a page unit
         with Image.open(png) as im:
             w, h = im.size
-            im.crop((0, int(BOX_TOP * h / float(PAGE_H)), w, h)).save(png)
+            top = box_page(doc, page_no)[1]
+            im.crop((0, int(top), w, h)).save(png)
         reply = ask_vision(READ_PROMPT, png)
     finally:
         try:
@@ -319,7 +323,7 @@ def _read(doc, page_no, ask_vision, workdir):
 def _erase_box(doc, page_no):
     """The player's ink in the box, gone once it is read (it is their bubble now)."""
     from paperdaemon.pipeline import page as ER
-    x0, y0, x1, y1 = box_page()
+    x0, y0, x1, y1 = box_page(doc, page_no)
 
     def inside(L):
         pts = getattr(L, "points", None) or []

@@ -1,0 +1,1214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page editor</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400;0,700;1,400;1,700&family=Gelasio:ital,wght@0,400;0,700;1,400;1,700&display=swap">
+<style>
+/* The page editor, in the False Mirror's viewer (tablet.js opens it in a frame: #doc=<id>&page=<n>&base=/fm). It loads
+   the page from the false mirror's engine and saves it back as it changes (remarkable/local.py: scene_of, write_scene),
+   only when what it would write differs from what it last wrote. Made from docs/design/mockups/editor-v3.html
+   (openspec/changes/add-page-editor). THE PAGE IS .rm DATA, DRAWN BY PaperDaemon'S OWN RENDERER
+   (fastdecomp/render.c and render.py, ported line for line). What the tablet showed us, and this page follows:
+   * fixed units: strokes, text sizes, spacing and the three text columns are the same on every frame;
+   * the drawable square, as wide as the page is tall, centered: ink and text past it are kept and not shown;
+   * typed text is one centered column (wide 1152, medium 936, narrow 740) from y 234, in four styles; lists are body text;
+   * two pen pickers; the one in hand opens its menu: nine pens, three sizes (none for the highlighter), and the pen's
+     colors (nine; the highlighter six; the shader eight);
+   * the eraser takes whole strokes, or what it passes over; text and ink are separate layers.
+   The tablet's faces are used when they are beside this file in rm-fonts/ (never in the repository); otherwise the
+   substitute: Arimo and Gelasio, openly licensed and cut to the widths of Arial and Georgia, the closest measured. */
+:root {
+  --paper: #242124; --paper-sunk: #1C1A1C; --field: #2E2A2F; --ink: #BDB6AA; --ink-2: #9A9389; --ink-3: #6F6970;
+  --rule: #3A353C; --edge: #6C6670; --mark: #D0806A; --shade: rgba(0, 0, 0, 0.5);
+  --font-ui: "Times New Roman", Times, serif;
+}
+html, body { margin: 0; height: 100%; background: var(--paper-sunk); color: var(--ink); font-family: var(--font-ui); overflow: hidden; }
+.dialog { position: absolute; inset: 0; background: var(--paper-sunk); display: flex; flex-direction: column; }
+.note { padding: 4px 22px 0; font-size: 13px; color: var(--ink-3); }
+.note:empty { display: none; }
+.bar { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 22px;
+  border-bottom: 1px solid var(--rule); font-size: 15px; color: var(--ink-2); }
+.controls { display: flex; gap: 4px; align-items: center; }
+.sep { width: 1px; height: 22px; background: var(--rule); margin: 0 6px; }
+/* EVEN SIZES, so an icon centers on whole pixels at every zoom: a 36 x 36 button, a 24 x 24 icon */
+.ib { position: relative; width: 36px; height: 36px; padding: 0; display: grid; place-items: center; background: transparent;
+  border: 0; border-radius: 3px; color: var(--ink); cursor: pointer; box-sizing: border-box; }
+.ib:hover { background: var(--field); }
+.ib[aria-pressed="true"] { background: var(--ink); color: var(--paper-sunk); }      /* the tool in hand, inverted */
+.ib svg { width: 24px; height: 24px; display: block; }
+.ib .dot { position: absolute; right: 1px; top: 1px; width: 10px; height: 10px; border-radius: 50%; box-sizing: border-box; }
+.dot.ring { border: 1.5px solid currentColor; }
+.body { position: relative; flex: 1; display: grid; place-items: center; padding: 16px; }
+.viewport { position: relative; overflow: hidden; touch-action: none; cursor: crosshair; }
+.viewport.typing { cursor: text; }
+canvas { display: block; }
+.zoom { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); padding: 4px 12px; border-radius: 14px;
+  background: rgba(30, 28, 30, 0.85); color: #F2EEE6; font: 15px var(--font-ui); border: 0; cursor: pointer;
+  opacity: 0; transition: opacity 300ms; pointer-events: none; }
+.zoom.on { opacity: 1; pointer-events: auto; }
+/* a tool's menu, laid out as the tablet's: a title, then sections of 3-wide grids, each choice an icon or a dot over its name */
+.pop { position: absolute; z-index: 5; top: calc(100% - 4px); width: 228px; background: var(--paper); border: 1px solid var(--edge);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55); }
+.pop[hidden] { display: none; }
+.sec { padding: 12px 12px 10px; }
+.sec + .sec { border-top: 1px solid var(--rule); }
+.sec h3 { margin: 0 0 8px 4px; font: 600 15px var(--font-ui); color: var(--ink); }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+.cell { height: 64px; display: grid; place-items: center; align-content: center; gap: 4px; background: transparent; border: 0;
+  color: var(--ink); cursor: pointer; font: 14px var(--font-ui); padding: 0; }
+.cell.short { height: 52px; }
+.cell:hover { background: var(--field); }
+.cell[aria-pressed="true"] { background: var(--ink); color: var(--paper-sunk); }
+.cell svg { width: 26px; height: 26px; display: block; }
+.sw { width: 18px; height: 18px; border-radius: 50%; box-sizing: border-box; }
+.sw.ring { border: 1.5px solid currentColor; }
+.sw.split { overflow: hidden; display: grid; grid-template-rows: 1fr 1fr; }
+.sw.split i { display: block; }
+.pop.wide { width: 300px; }
+.lsec + .lsec { border-top: 1px solid var(--rule); }
+.lrow { display: flex; align-items: center; height: 48px; padding: 0 8px; gap: 2px; color: var(--ink); }
+.lrow.on { background: var(--ink); color: var(--paper-sunk); }
+.lb { width: 36px; height: 36px; flex: none; display: grid; place-items: center; background: transparent; border: 0; color: inherit; cursor: pointer; padding: 0; }
+.lb svg { width: 22px; height: 22px; }
+.lb.sm svg { width: 18px; height: 18px; }
+.lb.off { opacity: 0.35; cursor: default; }
+.lname { flex: 1; height: 100%; display: flex; align-items: center; padding: 0 10px; background: transparent; border: 0; color: inherit; font: 15px var(--font-ui); text-align: left; cursor: pointer; }
+span.lname { cursor: default; }
+.lnew { width: 100%; border: 0; background: transparent; cursor: pointer; font: 15px var(--font-ui); gap: 10px; padding: 0 14px; }
+.lnew:hover, .lname:hover { background: var(--field); }
+.lrow.on .lname:hover { background: transparent; }
+.lnew svg { width: 22px; height: 22px; }
+.cell.off { opacity: 0.35; cursor: default; }
+.cell.off:hover { background: transparent; }
+</style>
+</head>
+<body>
+<div class="dialog" id="dlg">
+  <div class="note" id="note"></div>
+  <div class="bar" id="bar">
+    <span class="controls" id="controls"></span>
+    <span id="saved"></span>
+    <div class="pop" id="pop" hidden></div>
+  </div>
+  <div class="body"><div class="viewport" id="vp"><canvas id="cv"></canvas><button class="zoom" id="zoom" title="Back to 1x"></button></div></div>
+</div>
+<script>
+"use strict";
+(() => {
+  // ================================================================ THE PAGE: .rm data
+  const COLUMNS = { narrow: [-370, 740], medium: [-468, 936], wide: [-576, 1152] };   // x, width: the same on every frame
+  const page = {
+    paperSize: [1620, 2160],
+    layers: [{ nodeId: [0, 11], label: "Layer 1", visible: true, lines: [] }],
+    text: { column: "wide", x: -576, y: 234, width: 1152, paras: [] },            // RootTextBlock: one block, one column
+    textVisible: true, templateVisible: true, template: "Blank",                  // SceneInfo's root_document_visible and
+                                                                                   // background_visible; the template is named in .content
+    nextId: 1,                                                                         // PaperDaemon writes as author 2
+  };
+  let activeLayer = 0;                                         // the layer the pens and the eraser work on
+  const layer = () => page.layers[activeLayer];
+  const SCREEN_W = 1620;                                                               // what the Paper Pro shows at 1x
+
+  // ================================================================ PENS AND COLORS
+  // The tablet's 3 x 3 order. STORED WIDTH at 50% pressure per thickness scale (1 / 2 / 3): the fineliner's 8 and the
+  // highlighter's 120 are the tablet's own, the marker's read off the user's strokes; the rest are PLACEHOLDERS until
+  // each pen's strokes are read from a synced page (tasks 2.3). How every pen is drawn is the renderer's.
+  const PENS = [
+    { id: "ballpoint", pen: "BALLPOINT_2", code: 15, name: "Ballpoint pen", per: 8 },
+    { id: "fineliner", pen: "FINELINER_2", code: 17, name: "Fineliner", per: 8 },
+    { id: "highlighter", pen: "HIGHLIGHTER_2", code: 18, name: "Highlighter", per: 120, sizes: false },
+    { id: "pencil", pen: "PENCIL_2", code: 14, name: "Pencil", per: 12 },
+    { id: "mechanical", pen: "MECHANICAL_PENCIL_2", code: 13, name: "Mechanical pencil", per: 6 },
+    { id: "calligraphy", pen: "CALIGRAPHY", code: 21, name: "Calligraphy pen", per: 16 },
+    { id: "marker", pen: "MARKER_2", code: 16, name: "Marker", per: 20 },
+    { id: "shader", pen: "SHADER", code: 23, name: "Shader", per: 60 },
+    { id: "brush", pen: "PAINTBRUSH_2", code: 12, name: "Paintbrush", per: 24 },
+  ];
+  const PEN = Object.fromEntries(PENS.map(p => [p.id, p]));
+  const SIZES = ["Thin", "Medium", "Thick"];
+  // render.py's tables: ENUM, the pens' ink (D3: the tablet's pens are pure colors; this stays until that is decided);
+  // HL_ENUM, the highlighters' washes
+  const ENUM = { 0: [0, 0, 0], 1: [144, 144, 144], 2: [255, 255, 255], 3: [254, 253, 96], 4: [169, 250, 92], 5: [255, 85, 207],
+                 6: [48, 74, 224], 7: [194, 49, 50], 8: [191, 191, 191], 9: [255, 255, 255], 10: [145, 218, 113], 11: [116, 210, 232],
+                 12: [192, 127, 210], 13: [250, 231, 25] };
+  const HL_ENUM = { 3: [255, 237, 117], 13: [255, 237, 117], 4: [172, 255, 133], 10: [172, 255, 133], 5: [242, 158, 255],
+                    12: [242, 158, 255], 6: [190, 234, 254], 11: [190, 234, 254], 1: [199, 199, 198], 8: [199, 199, 198] };
+  // each pen's colors as its menu offers them: the stored color, the stored RGBA when the color is one, and the swatch the
+  // tablet's menu shows (sampled from its screen share)
+  const PEN_COLORS = [
+    ["Black", 0, null, [0, 0, 0], true], ["Gray", 1, null, [148, 146, 148]], ["White", 2, null, [255, 255, 255], true],
+    ["Blue", 6, null, [0, 0, 255]], ["Red", 7, null, [255, 0, 0]], ["Green", 4, null, [0, 255, 0]],
+    ["Yellow", 3, null, [255, 255, 0]], ["Cyan", 11, null, [0, 255, 255]], ["Magenta", 12, null, [255, 0, 255]],
+  ];
+  const HL_COLORS = [                          // the orange's storage is unread (tasks 2.4): kept as color 9 with its RGBA
+    ["Yellow", 3, null, HL_ENUM[3]], ["Blue", 6, null, HL_ENUM[6]], ["Pink", 5, null, HL_ENUM[5]],
+    ["Orange", 9, [255, 195, 140, 255], [255, 195, 140]], ["Green", 4, null, HL_ENUM[4]], ["Gray", 1, null, HL_ENUM[1]],
+  ];
+  const SH_TOP = { Gray: [128, 128, 128], Orange: [255, 178, 0], Magenta: [198, 125, 214], Blue: [49, 73, 231], Red: [198, 48, 49],
+                   Green: [148, 219, 115], Yellow: [255, 231, 24], Cyan: [115, 211, 239] };
+  const SH_CODE = { Gray: 1, Orange: 9, Magenta: 12, Blue: 6, Red: 7, Green: 4, Yellow: 3, Cyan: 11 };
+  const SH_COLORS = Object.keys(SH_TOP).map(n => [n, SH_CODE[n], SH_TOP[n].concat([96]), SH_TOP[n], false, true]);  // shader: the renderer's alpha
+  const colorsOf = id => id === "highlighter" ? HL_COLORS : id === "shader" ? SH_COLORS : PEN_COLORS;
+  const WSCALE = { HIGHLIGHTER: 0.25 }, WSCALE_DEFAULT = 0.144, PENCIL_FAMILY = ["PENCIL", "MECHANICAL"];
+
+  const pickers = { a: { pen: "fineliner", size: 1, pick: 0 }, b: { pen: "highlighter", size: 0, pick: 0 } };
+  let tool = "a", eraseMode = "stroke", popFor = null;
+  const choiceOf = pk => { const cs = colorsOf(pk.pen); return cs[Math.min(pk.pick, cs.length - 1)]; };
+
+  // ================================================================ THE RENDERER, ported from fastdecomp/render.c
+  const RF_PEN = 0, RF_HIGHLIGHTER = 1, RF_SHADER = 2;
+  const loPx = v => { const f = Math.floor(v - 0.5); return f < -1 ? -1 : f; };
+  const hiPx = v => Math.ceil(v - 0.5);
+  function put(c, x, y, kind, rgba, sid) {
+    if (x < c.cx0 || x > c.cx1 || y < c.cy0 || y > c.cy1) return;          // the drawable square only: past it, kept and not shown
+    const i = (y * c.W + x) * 3, p = c.px;
+    if (kind === RF_PEN) { p[i] = rgba[0]; p[i + 1] = rgba[1]; p[i + 2] = rgba[2]; }
+    else if (kind === RF_HIGHLIGHTER) {
+      if (rgba[0] < p[i]) p[i] = rgba[0]; if (rgba[1] < p[i + 1]) p[i + 1] = rgba[1]; if (rgba[2] < p[i + 2]) p[i + 2] = rgba[2];
+    } else {
+      const s = y * c.W + x;
+      if (c.stamp[s] === sid) return;
+      c.stamp[s] = sid;
+      const a = rgba[3] / 255;
+      for (let k = 0; k < 3; k++) p[i + k] = Math.round(p[i + k] + (rgba[k] - p[i + k]) * a);
+    }
+  }
+  function capsule(c, ax, ay, bx, by, r, kind, rgba, sid) {
+    if (!(r > 0)) return;
+    let x0 = loPx(Math.min(ax, bx) - r), x1 = hiPx(Math.max(ax, bx) + r);
+    let y0 = loPx(Math.min(ay, by) - r), y1 = hiPx(Math.max(ay, by) + r);
+    if (x0 < 0) x0 = 0; if (y0 < 0) y0 = 0; if (x1 > c.W - 1) x1 = c.W - 1; if (y1 > c.H - 1) y1 = c.H - 1;
+    const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy, r2 = r * r;
+    for (let y = y0; y <= y1; y++) {
+      const py = y + 0.5;
+      for (let x = x0; x <= x1; x++) {
+        const px = x + 0.5;
+        let t = 0;
+        if (L2 > 0) { t = ((px - ax) * dx + (py - ay) * dy) / L2; t = t < 0 ? 0 : (t > 1 ? 1 : t); }
+        const ex = px - (ax + t * dx), ey = py - (ay + t * dy);
+        if (ex * ex + ey * ey <= r2) put(c, x, y, kind, rgba, sid);
+      }
+    }
+  }
+  function convex(c, qx, qy, kind, rgba, sid) {
+    const n = qx.length;
+    let mnx = qx[0], mxx = qx[0], mny = qy[0], mxy = qy[0], area = 0;
+    for (let i = 0; i < n; i++) {
+      mnx = Math.min(mnx, qx[i]); mxx = Math.max(mxx, qx[i]); mny = Math.min(mny, qy[i]); mxy = Math.max(mxy, qy[i]);
+      const j = (i + 1) % n; area += qx[i] * qy[j] - qx[j] * qy[i];
+    }
+    if (Math.abs(area) < 1e-12) return;
+    const sgn = area > 0 ? 1 : -1;
+    let x0 = loPx(mnx), x1 = hiPx(mxx), y0 = loPx(mny), y1 = hiPx(mxy);
+    if (x0 < 0) x0 = 0; if (y0 < 0) y0 = 0; if (x1 > c.W - 1) x1 = c.W - 1; if (y1 > c.H - 1) y1 = c.H - 1;
+    for (let y = y0; y <= y1; y++) {
+      const py = y + 0.5;
+      for (let x = x0; x <= x1; x++) {
+        const px = x + 0.5;
+        let inside = true;
+        for (let i = 0; i < n && inside; i++) {
+          const j = (i + 1) % n;
+          const e = sgn * ((qx[j] - qx[i]) * (py - qy[i]) - (qy[j] - qy[i]) * (px - qx[i]));
+          if (e < 0) inside = false;
+          else if (e === 0) { const ex = (qx[j] - qx[i]) * sgn, ey = (qy[j] - qy[i]) * sgn; if (!(ey > 0 || (ey === 0 && ex < 0))) inside = false; }
+        }
+        if (inside) put(c, x, y, kind, rgba, sid);
+      }
+    }
+  }
+  function penShape(c, xy, w, kind, rgba, sid) {
+    const n = w.length;
+    if (n === 1) { capsule(c, xy[0], xy[1], xy[0], xy[1], w[0] / 2, kind, rgba, sid); return; }
+    for (let i = 0; i + 1 < n; i++) capsule(c, xy[2 * i], xy[2 * i + 1], xy[2 * i + 2], xy[2 * i + 3], (w[i] + w[i + 1]) / 4, kind, rgba, sid);
+  }
+  function highlighterShape(c, xy, w, rgba, sid) {
+    const sx = [], sy = [], sw = [];
+    for (let i = 0; i < w.length; i++) {
+      const m = sx.length;
+      if (m && Math.abs(xy[2 * i] - sx[m - 1]) <= 1e-6 && Math.abs(xy[2 * i + 1] - sy[m - 1]) <= 1e-6) continue;
+      sx.push(xy[2 * i]); sy.push(xy[2 * i + 1]); sw.push(w[i]);
+    }
+    const m = sx.length;
+    if (m < 2) return;
+    const dx = [], dy = [], hw = [];
+    for (let i = 0; i + 1 < m; i++) {
+      const ex = sx[i + 1] - sx[i], ey = sy[i + 1] - sy[i], L = Math.sqrt(ex * ex + ey * ey);
+      dx[i] = ex / L; dy[i] = ey / L; hw[i] = (sw[i] + sw[i + 1]) / 4;
+    }
+    for (let i = 0; i + 1 < m; i++) {
+      const nx = -dy[i] * hw[i], ny = dx[i] * hw[i];
+      convex(c, [sx[i] + nx, sx[i + 1] + nx, sx[i + 1] - nx, sx[i] - nx], [sy[i] + ny, sy[i + 1] + ny, sy[i + 1] - ny, sy[i] - ny], RF_HIGHLIGHTER, rgba, sid);
+    }
+    for (let i = 1; i + 1 < m; i++) {
+      const cross = dx[i - 1] * dy[i] - dy[i - 1] * dx[i];
+      if (Math.abs(cross) < 1e-6) continue;
+      const s = cross > 0 ? -1 : 1;
+      convex(c, [sx[i], sx[i] + s * (-dy[i - 1]) * hw[i - 1], sx[i] + s * (-dy[i]) * hw[i]],
+                [sy[i], sy[i] + s * dx[i - 1] * hw[i - 1], sy[i] + s * dx[i] * hw[i]], RF_HIGHLIGHTER, rgba, sid);
+    }
+  }
+  function pencilTone(rgb, pressure) { const k = 0.6 + 0.4 * Math.min(1, Math.max(0, pressure)); return rgb.map(v => Math.trunc(255 - (255 - v) * k)); }
+  function prepared(L) {                                      // render.py's preparation of a line
+    const fam = L.pen.split("_")[0], scaleW = WSCALE[fam] || WSCALE_DEFAULT;
+    const widths = L.points.map(p => Math.max(1, p.width * scaleW));
+    if (L.pen === "SHADER") return { kind: RF_SHADER, rgba: L.colorRgba || [128, 128, 128, 96], widths };
+    if (L.pen.startsWith("HIGHLIGHTER")) return { kind: RF_HIGHLIGHTER, rgba: (L.colorRgba ? L.colorRgba.slice(0, 3) : (HL_ENUM[L.color] || [255, 237, 117])), widths };
+    let col = ENUM[L.color] || [0, 0, 0];
+    if (PENCIL_FAMILY.includes(fam)) col = pencilTone(col, L.points.reduce((a, p) => a + p.pressure, 0) / L.points.length / 255);
+    return { kind: RF_PEN, rgba: col, widths };
+  }
+
+  // ================================================================ TYPED TEXT: typed.py's layout, in fixed units
+  // Four styles. Title is HEADING, Section BOLD and Body PLAIN, at typed.py's sizes; Header is measured off the tablet's
+  // screen (serif, lines about 56 apart) and stored as BASIC until the synced test page says which code it is (D6).
+  const STYLE = {
+    title:   { name: "Title",   code: 2, face: "serif", size: 64, bold: false, lead: 76, before: 64, after: 22 },
+    header:  { name: "Header",  code: 0, face: "serif", size: 47, bold: false, lead: 56, before: 20, after: 25 },
+    section: { name: "Section", code: 3, face: "sans",  size: 36, bold: true,  lead: 45, before: 20, after: 25 },
+    body:    { name: "Body",    code: 1, face: "sans",  size: 32, bold: false, lead: 45, before: 0,  after: 25 },
+  };
+  const LIST_CODE = { bullet: 4, bullet2: 5, check: 6, checked: 7, number: 10 };
+  let tabletFace = false, useTablet = false;
+  const family = face => useTablet ? (face === "serif" ? '"PD Tablet Serif"' : '"PD Tablet Sans"')
+                                   : (face === "serif" ? "Gelasio, Georgia, serif" : "Arimo, Arial, sans-serif");
+  const fontOf = (style, b, i) => { const st = STYLE[style]; return (i ? "italic " : "") + (b || st.bold ? "700 " : "400 ") + st.size + "px " + family(st.face); };
+  const meas = document.createElement("canvas").getContext("2d");
+  function width(chars, s, e, style) {                         // the advance of chars[s, e), run by run
+    let w = 0, k = s;
+    while (k < e) {
+      let j = k; const b = chars[k].b, i = chars[k].i;
+      while (j < e && chars[j].b === b && chars[j].i === i) j++;
+      meas.font = fontOf(style, b, i);
+      w += meas.measureText(chars.slice(k, j).map(c => c.c).join("")).width;
+      k = j;
+    }
+    return w;
+  }
+  function wrap(chars, style, available) {                     // typed.py's wrap, as [start, end) rows over the characters
+    const tokens = []; let s = 0;
+    for (let k = 1; k <= chars.length; k++)
+      if (k === chars.length || /\s/.test(chars[k].c) !== /\s/.test(chars[k - 1].c)) { tokens.push([s, k]); s = k; }
+    const rows = []; let ls = 0, le = 0;
+    for (const [ts, te] of tokens) {
+      if (width(chars, ls, te, style) <= available) { le = te; continue; }
+      const space = /\s/.test(chars[ts].c);
+      if (le > ls) { rows.push([ls, le]); ls = le; if (space) { rows[rows.length - 1][1] = te; ls = le = te; continue; } }
+      for (let k = ts; k < te; k++) { if (le > ls && width(chars, ls, k + 1, style) > available) { rows.push([ls, le]); ls = le; } le = k + 1; }
+    }
+    rows.push([ls, le]);
+    return rows;
+  }
+  function layoutText() {
+    const T = page.text, out = []; let y = T.y, number = 0;
+    T.paras.forEach((p, idx) => {
+      const st = STYLE[p.style], list = p.style === "body" ? p.list : null;
+      if (idx && st.before) y += st.before;
+      const indent = list === "bullet2" ? 96 : list ? 48 : 0;
+      number = list === "number" ? number + 1 : 0;
+      const rows = wrap(p.chars, p.style, T.width - indent - 8);
+      const lines = rows.map(([s, e], i) => ({ s, e, x: T.x + indent + 4, y: y + i * st.lead + 5 }));
+      out.push({ p, idx, lines, top: y, bottom: y + rows.length * st.lead, list, number, st });
+      y += rows.length * st.lead + st.after;
+    });
+    return { paras: out, bottom: out.length ? y - 25 : T.y };
+  }
+  // the text, drawn into its own layer in page units: under the ink, as the tablet stacks them
+  function drawText(g, L) {
+    g.fillStyle = "#000"; g.strokeStyle = "#000"; g.textBaseline = "alphabetic";
+    for (const P of L.paras) {
+      for (let r = 0; r < P.lines.length; r++) {
+        const ln = P.lines[r], chars = P.p.chars;
+        let x = ln.x, k = ln.s;
+        g.font = fontOf(P.p.style, false, false);
+        const base = ln.y + g.measureText("Hg").fontBoundingBoxAscent;
+        while (k < ln.e) {
+          let j = k; const b = chars[k].b, i = chars[k].i;
+          while (j < ln.e && chars[j].b === b && chars[j].i === i) j++;
+          g.font = fontOf(P.p.style, b, i);
+          const t = chars.slice(k, j).map(c => c.c).join("");
+          g.fillText(t, x, base); x += g.measureText(t).width; k = j;
+        }
+        if (P.list === "checked") {                            // every line struck through
+          let e = ln.e; while (e > ln.s && /\s/.test(chars[e - 1].c)) e--;
+          g.lineWidth = 1; g.beginPath(); g.moveTo(ln.x, ln.y + 20); g.lineTo(ln.x + width(chars, ln.s, e, P.p.style), ln.y + 20); g.stroke();
+        }
+        if (r) continue;
+        const x0 = ln.x, cy = ln.y + 21;
+        if (P.list === "bullet" || P.list === "bullet2") {
+          g.lineWidth = 1; g.beginPath(); g.arc(x0 - 23, cy, 3, 0, Math.PI * 2);
+          if (P.list === "bullet") g.fill(); else g.stroke();
+        } else if (P.list === "check" || P.list === "checked") {
+          g.lineWidth = 2;
+          if (P.list === "checked") {
+            g.fillRect(x0 - 40, ln.y + 9, 24, 24);
+            g.strokeStyle = "#fff"; g.beginPath(); g.moveTo(x0 - 36, ln.y + 21); g.lineTo(x0 - 29, ln.y + 28); g.lineTo(x0 - 19, ln.y + 14); g.stroke();
+            g.strokeStyle = "#000";
+          } else g.strokeRect(x0 - 39, ln.y + 10, 22, 22);
+        } else if (P.list === "number") {
+          g.font = fontOf("body", false, false);
+          const m = P.number + ".";
+          g.fillText(m, x0 - 16 - g.measureText(m).width, base);
+        }
+      }
+    }
+  }
+
+  // ================================================================ the view, and drawing the page
+  const view = { zoom: 1, cx: 0, top: 0 };
+  const vp = document.getElementById("vp"), cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+  const dlg = document.getElementById("dlg"), zoomBtn = document.getElementById("zoom");
+  let vpW = 0, vpH = 0, dpr = 1, SS = 2, base = null, shown = null, live = null, textLayout = null;
+  function layout() {
+    // the frame the viewer gives it: the bar on top, the page below at the Paper Pro's 3:4, as large as fits
+    const maxW = window.innerWidth - 32, maxH = window.innerHeight - document.getElementById("bar").offsetHeight - document.getElementById("note").offsetHeight - 32;
+    vpH = Math.max(200, Math.floor(Math.min(maxH, maxW * 4 / 3)));
+    vpW = Math.floor(vpH * 3 / 4);
+    vp.style.width = vpW + "px"; vp.style.height = vpH + "px";
+    dpr = window.devicePixelRatio || 1;
+    SS = dpr >= 2 ? 1 : 2;                                    // twice the screen's pixels, averaged down, as render.py draws for a screen
+    cv.width = Math.round(vpW * dpr); cv.height = Math.round(vpH * dpr);
+    cv.style.width = vpW + "px"; cv.style.height = vpH + "px";
+    rebuild();
+  }
+  const scale = () => vpW / (SCREEN_W / view.zoom);           // CSS pixels per page unit
+  const toScreen = (x, y) => [vpW / 2 + (x - view.cx) * scale(), (y - view.top) * scale()];
+  const toPage = (sx, sy) => [view.cx + (sx - vpW / 2) / scale(), view.top + sy / scale()];
+  const half = () => page.paperSize[1] / 2;
+  const drawable = (x, y) => Math.abs(x) <= half() && y >= 0;  // the square, and the page extends downward
+
+  function canvasFor() {                                      // gray, the white of the drawable square, then the text layer
+    const W = cv.width * SS, H = cv.height * SS, k = dpr * SS, px = new Uint8ClampedArray(W * H * 3).fill(142);
+    const [ax, ay] = toScreen(-half(), 0), [bx] = toScreen(half(), 0);
+    const c = { W, H, px, stamp: new Int32Array(W * H), cx0: Math.max(0, Math.ceil(ax * k - 0.5)), cx1: Math.min(W - 1, Math.floor(bx * k - 0.5)),
+                cy0: Math.max(0, Math.ceil(ay * k - 0.5)), cy1: H - 1 };
+    for (let y = c.cy0; y <= c.cy1; y++) if (c.cx1 >= c.cx0) px.fill(255, (y * W + c.cx0) * 3, (y * W + c.cx1 + 1) * 3);
+    if (page.textVisible && page.text.paras.length && c.cx1 >= c.cx0 && c.cy0 <= c.cy1) {
+      const off = document.createElement("canvas"); off.width = W; off.height = H;
+      const g = off.getContext("2d");
+      g.beginPath(); g.rect(c.cx0, c.cy0, c.cx1 - c.cx0 + 1, c.cy1 - c.cy0 + 1); g.clip();       // text, too, only in the square
+      const s = k * scale();
+      g.setTransform(s, 0, 0, s, (vpW / 2 - view.cx * scale()) * k, -view.top * scale() * k);
+      drawText(g, textLayout);
+      const t = g.getImageData(0, 0, W, H).data;
+      for (let q = 0, i = 0; q < t.length; q += 4, i += 3) {
+        const a = t[q + 3]; if (!a) continue;
+        for (let ch = 0; ch < 3; ch++) px[i + ch] = Math.round(px[i + ch] + (t[q + ch] - px[i + ch]) * a / 255);
+      }
+    }
+    return c;
+  }
+  let sid = 0;
+  function drawLine(c, L) {
+    const P = prepared(L), k = dpr * SS * scale(), xy = new Float64Array(L.points.length * 2);
+    L.points.forEach((p, i) => { const [sx, sy] = toScreen(p.x, p.y); xy[2 * i] = sx * dpr * SS; xy[2 * i + 1] = sy * dpr * SS; });
+    const w = P.widths.map(v => v * k);
+    sid += 1;
+    if (P.kind === RF_HIGHLIGHTER) highlighterShape(c, xy, w, P.rgba, sid); else penShape(c, xy, w, P.kind, P.rgba, sid);
+  }
+  function downsample(c, x0 = 0, y0 = 0, W = cv.width, H = cv.height) {   // a region of the canvas, averaged down
+    const out = ctx.createImageData(W, H), o = out.data, k2 = SS * SS;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      let r = 0, g = 0, b = 0;
+      for (let j = 0; j < SS; j++) { const row = (((y0 + y) * SS + j) * c.W + (x0 + x) * SS) * 3; for (let i = 0; i < SS; i++) { r += c.px[row + 3 * i]; g += c.px[row + 3 * i + 1]; b += c.px[row + 3 * i + 2]; } }
+      const q = (y * W + x) * 4;
+      o[q] = (r + k2 / 2) / k2; o[q + 1] = (g + k2 / 2) / k2; o[q + 2] = (b + k2 / 2) / k2; o[q + 3] = 255;
+    }
+    return out;
+  }
+  // A STROKE BEING DRAWN goes onto a working copy one segment at a time, and only that patch of the screen is redrawn. The
+  // result is the stroke drawn whole: a pen's capsules, a highlighter's darkening and a shader's once-per-stroke stamp do
+  // not depend on the order their parts are drawn in.
+  let work = null, liveSid = 0;
+  function drawTail(L) {
+    const n = L.points.length, from = Math.max(0, n - 3), P = prepared(L), k = dpr * SS * scale();
+    const pts = L.points.slice(from), xy = new Float64Array(pts.length * 2);
+    let mnx = Infinity, mny = Infinity, mxx = -Infinity, mxy = -Infinity;
+    pts.forEach((p, i) => {
+      const [sx, sy] = toScreen(p.x, p.y); xy[2 * i] = sx * dpr * SS; xy[2 * i + 1] = sy * dpr * SS;
+      mnx = Math.min(mnx, xy[2 * i]); mxx = Math.max(mxx, xy[2 * i]); mny = Math.min(mny, xy[2 * i + 1]); mxy = Math.max(mxy, xy[2 * i + 1]);
+    });
+    const w = P.widths.slice(from).map(v => v * k), pad = Math.max(...w) + 2;
+    if (n === 1 && P.kind !== RF_HIGHLIGHTER) penShape(work, xy, w, P.kind, P.rgba, liveSid);
+    else if (P.kind === RF_HIGHLIGHTER) highlighterShape(work, xy, w, P.rgba, liveSid);
+    else penShape(work, xy.slice(xy.length - 4), w.slice(w.length - 2), P.kind, P.rgba, liveSid);
+    const x0 = Math.max(0, Math.floor((mnx - pad) / SS)), y0 = Math.max(0, Math.floor((mny - pad) / SS));
+    const x1 = Math.min(cv.width, Math.ceil((mxx + pad) / SS)), y1 = Math.min(cv.height, Math.ceil((mxy + pad) / SS));
+    if (x1 > x0 && y1 > y0) ctx.putImageData(downsample(work, x0, y0, x1 - x0, y1 - y0), x0, y0);
+  }
+  function rebuild() {
+    textLayout = layoutText();
+    base = canvasFor();
+    for (const Ly of page.layers) if (Ly.visible) for (const L of Ly.lines) drawLine(base, L);
+    shown = downsample(base);
+    paint();
+  }
+  let rebuildFrame = 0;
+  const rebuildSoon = () => { cancelAnimationFrame(rebuildFrame); rebuildFrame = requestAnimationFrame(rebuild); };
+  function paint() {
+    if (live) return;                                         // the stroke being drawn paints its own patches
+    ctx.putImageData(shown, 0, 0);
+    ctx.save(); ctx.scale(dpr, dpr);
+    drawSelection(); drawCaret(); drawEraser();
+    ctx.restore();
+  }
+
+  // ================================================================ undo and redo, for ink and text alike
+  const done = [], undone = [];
+  function apply(a, forward) {
+    if (a.type === "text") { const s = forward ? a.after : a.before; page.text = clone(s.text); setCursors(clone(s.cursors)); return; }
+    if (a.type === "layers") { const s = forward ? a.after : a.before; setLayers(s); return; }
+    const lines = a.layer.lines, take = forward ? a.removed : a.added, put_ = forward ? a.added : a.removed;
+    for (const e of take) { const i = lines.indexOf(e.line); if (i >= 0) lines.splice(i, 1); }
+    for (const e of [...put_].sort((x, y) => x.at - y.at)) lines.splice(Math.min(e.at, lines.length), 0, e.line);
+  }
+  function record(a) { done.push(a); undone.length = 0; }
+  // LAYERS: the page's layer nodes, painted bottom to top; the pens and the eraser work on the one in hand
+  const snapLayers = () => ({ list: page.layers.map(L => ({ L, visible: L.visible, label: L.label, lines: L.lines.slice() })), active: activeLayer,
+                              text: page.textVisible, template: page.templateVisible });
+  function setLayers(s) {
+    page.layers = s.list.map(x => { x.L.visible = x.visible; x.L.label = x.label; x.L.lines = x.lines.slice(); return x.L; }); activeLayer = s.active;
+    page.textVisible = s.text; page.templateVisible = s.template;
+  }
+  function layerEdit(fn) {
+    const before = snapLayers(); fn(); const after = snapLayers();
+    record({ type: "layers", before, after }); lastType = null; rebuild(); paintPop();
+  }
+  function addLayer() {
+    let n = page.layers.length + 1;
+    while (page.layers.some(L => L.label === "Layer " + n)) n++;
+    page.layers.splice(activeLayer + 1, 0, { nodeId: [2, page.nextId++], label: "Layer " + n, visible: true, lines: [] });
+    activeLayer += 1;
+  }
+  function undo() { const a = done.pop(); if (a) { apply(a, false); undone.push(a); rebuild(); } }
+  function redo() { const a = undone.pop(); if (a) { apply(a, true); done.push(a); rebuild(); } }
+  const clone = o => JSON.parse(JSON.stringify(o));
+
+  // ================================================================ pens and the eraser
+  function newLine(pk) {                                      // as the tablet stores it: an upright pen at a steady 50% pressure
+    const pen = PEN[pk.pen], c = choiceOf(pk), ts = pen.sizes === false ? 1 : pk.size + 1;
+    return { itemId: [2, page.nextId++], pen: pen.pen, penCode: pen.code, color: c[1], colorRgba: c[2],
+             thicknessScale: ts, startingLength: 0, width: pen.per * ts, points: [] };
+  }
+  const pointOf = (L, x, y) => ({ x, y, speed: 0, direction: 0, width: L.width, pressure: 128 });
+  const ERASER_R = 22;
+  let erasing = null, pointer = null, eraserAt = null;
+  const near = (x, y, ax, ay, r) => (x - ax) * (x - ax) + (y - ay) * (y - ay) <= r * r;
+  const widthOf = L => L.width * (WSCALE[L.pen.split("_")[0]] || WSCALE_DEFAULT);
+  function resample(pts, step) {
+    const out = [pts[0]];
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i], d = Math.hypot(b.x - a.x, b.y - a.y), n = Math.ceil(d / step);
+      for (let j = 1; j <= n; j++) out.push(Object.assign({}, b, { x: a.x + (b.x - a.x) * j / n, y: a.y + (b.y - a.y) * j / n }));
+    }
+    return out;
+  }
+  function eraseAt(x, y) {                                    // on the layer in hand; true when something went
+    const lines = erasing.layer.lines, before = erasing.removed.length;
+    for (const L of [...lines]) {
+      const reach = ERASER_R + widthOf(L) / 2, P = L.points;
+      const hit = P.some((q, i) => {
+        const b = P[Math.min(i + 1, P.length - 1)], dx = b.x - q.x, dy = b.y - q.y, L2 = dx * dx + dy * dy;
+        const t = L2 ? Math.max(0, Math.min(1, ((x - q.x) * dx + (y - q.y) * dy) / L2)) : 0;
+        return near(x, y, q.x + t * dx, q.y + t * dy, reach);
+      });
+      if (!hit) continue;
+      const at = lines.indexOf(L);
+      lines.splice(at, 1);
+      erasing.removed.push({ line: L, at });
+      if (eraseMode === "stroke") continue;
+      const runs = []; let cur = [];                          // what it passes over: the line breaks where the eraser crossed it
+      for (const q of resample(P, 2)) { if (near(q.x, q.y, x, y, reach)) { if (cur.length > 1) runs.push(cur); cur = []; } else cur.push(q); }
+      if (cur.length > 1) runs.push(cur);
+      runs.forEach((run, j) => {
+        const piece = Object.assign({}, L, { itemId: [2, page.nextId++], points: run });
+        lines.splice(at + j, 0, piece);
+        erasing.added.push({ line: piece, at: at + j });
+      });
+    }
+    return erasing.removed.length > before;
+  }
+  function drawEraser() {
+    if (!eraserAt || tool !== "eraser") return;
+    const [ex, ey] = toScreen(eraserAt[0], eraserAt[1]);
+    ctx.strokeStyle = "rgba(0,0,0,0.45)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(ex, ey, ERASER_R * scale(), 0, Math.PI * 2); ctx.stroke();
+  }
+
+  // ================================================================ typing
+  // A caret is {p: paragraph, o: character offset}. With the text tool a click places it; a click below the text adds empty
+  // paragraphs down to that line (how the tablet makes space). Without it, a key that types puts the caret at the end of
+  // the text, whatever pen is in hand, and the pen keeps drawing. Text never moves or removes ink.
+  // There may be many cursors (Ctrl+Alt+Up/Down, Ctrl+Alt+click), the last the one placed most recently. Every key works at
+  // each in turn: `caret` and `anchor` are the one being worked on, and the others are held by the characters beside them,
+  // so an edit at one never knocks another out of place.
+  let cursors = [], caret = null, anchor = null, caretOn = true, typingB = false, typingI = false;
+  const editing = () => cursors.length > 0;
+  const paraLen = p => page.text.paras[p].chars.length;
+  const cmp = (a, b) => a.p - b.p || a.o - b.o;
+  const selOf = c => c.anchor && cmp(c.anchor, c.caret) ? (cmp(c.anchor, c.caret) < 0 ? [c.anchor, c.caret] : [c.caret, c.anchor]) : null;
+  const selection = () => selOf({ caret, anchor });
+  const use = c => { caret = { ...c.caret }; anchor = c.anchor ? { ...c.anchor } : null; };
+  const primary = () => cursors[cursors.length - 1];
+  function setCursors(list) {                                // one cursor per place, the latest kept
+    const seen = new Set(), kept = [];
+    for (let j = list.length - 1; j >= 0; j--) { const k = list[j].caret.p + ":" + list[j].caret.o; if (!seen.has(k)) { seen.add(k); kept.unshift(list[j]); } }
+    cursors = kept;
+    if (cursors.length) use(primary()); else caret = anchor = null;
+  }
+  function ref(pos) {                                         // a place, held by the character after it (or before it, at an end)
+    const P = page.text.paras[pos.p]; if (!P) return null;
+    if (pos.o < P.chars.length) return { ch: P.chars[pos.o], after: false };
+    return P.chars.length ? { ch: P.chars[P.chars.length - 1], after: true } : { para: P };
+  }
+  function where() {
+    const chars = new Map(), paras = new Map();
+    page.text.paras.forEach((P, p) => { paras.set(P, p); P.chars.forEach((c, o) => chars.set(c, [p, o])); });
+    return { chars, paras };
+  }
+  function resolve(r, W) {
+    if (!r) return null;
+    if (r.ch) { const at = W.chars.get(r.ch); return at ? { p: at[0], o: at[1] + (r.after ? 1 : 0) } : null; }
+    const p = W.paras.get(r.para); return p === undefined ? null : { p, o: 0 };
+  }
+  function each(fn) {                                         // fn at every cursor, last in the text first; fn gets its rank
+    const order = cursors.map((_, i) => i).sort((a, b) => cmp(cursors[b].caret, cursors[a].caret));
+    const rank = new Map(order.map((i, n) => [i, order.length - 1 - n]));
+    for (const i of order) {
+      const others = cursors.map((c, j) => j === i ? null : { caret: ref(c.caret), anchor: c.anchor ? ref(c.anchor) : null });
+      use(cursors[i]); fn(rank.get(i));
+      cursors[i] = { caret: { ...caret }, anchor: anchor ? { ...anchor } : null };
+      const W = where();
+      others.forEach((o, j) => { if (o) cursors[j] = { caret: resolve(o.caret, W) || { ...caret }, anchor: o.anchor ? resolve(o.anchor, W) : null }; });
+    }
+    setCursors(cursors);
+  }
+  const parasOfCursors = () => [...new Set(cursors.flatMap(c => {
+    const s = selOf(c) || [c.caret, c.caret], out = [];
+    for (let p = s[0].p; p <= s[1].p; p++) out.push(p);
+    return out;
+  }))].sort((a, b) => a - b);
+  function lineOf(P, o) { for (let i = 0; i < P.lines.length; i++) if (o < P.lines[i].e || i === P.lines.length - 1) return i; return 0; }
+  function caretPoint(c) {
+    const P = textLayout.paras[c.p], i = lineOf(P, c.o), ln = P.lines[i];
+    return { x: ln.x + width(P.p.chars, ln.s, Math.min(c.o, ln.e), P.p.style), y: ln.y, h: P.st.lead - 4, line: i };
+  }
+  function hitText(x, y) {
+    const L = textLayout;
+    if (!L.paras.length) return null;
+    if (y < L.paras[0].top) return { p: 0, o: 0 };
+    for (const P of L.paras) {
+      if (y >= P.bottom + P.st.after) continue;
+      const i = Math.max(0, Math.min(P.lines.length - 1, Math.floor((y - P.top) / P.st.lead))), ln = P.lines[i];
+      let best = ln.s, bd = Infinity;
+      for (let o = ln.s; o <= ln.e; o++) { const d = Math.abs(ln.x + width(P.p.chars, ln.s, o, P.p.style) - x); if (d < bd) { bd = d; best = o; } }
+      return { p: P.idx, o: best };
+    }
+    return null;                                              // below the text
+  }
+  function checkboxAt(x, y) {
+    for (const P of textLayout.paras) {
+      if (P.list !== "check" && P.list !== "checked") continue;
+      const ln = P.lines[0];
+      if (x >= ln.x - 44 && x <= ln.x - 12 && y >= ln.y + 5 && y <= ln.y + 37) return P.idx;
+    }
+    return -1;
+  }
+  const snap = () => ({ text: clone(page.text), cursors: clone(cursors) });
+  const where_ = s => s.cursors.map(c => c.caret.p).join();
+  let lastType = null;
+  function edit(fn, kind) {                                   // one undoable text edit; typing runs coalesce into one
+    const before = snap(); fn(); const after = snap();
+    const top = done[done.length - 1];
+    if (kind === "type" && top && top === lastType && where_(top.after) === where_(before)) top.after = after;
+    else { const a = { type: "text", before, after }; record(a); lastType = kind === "type" ? a : null; }
+    caretOn = true; rebuild();
+  }
+  function placeCaret(x, y) {
+    const hit = hitText(x, y);
+    if (hit) { setCursors([{ caret: hit, anchor: null }]); return; }
+    edit(() => {                                              // below the text: empty paragraphs down to the clicked line
+      const T = page.text, L = textLayout;
+      let top = L.paras.length ? L.paras[L.paras.length - 1].bottom + 25 : T.y, n = 0;
+      do { T.paras.push({ style: "body", list: null, chars: [] }); n++; top += 70; } while (top <= y && n < 400);
+      setCursors([{ caret: { p: T.paras.length - 1, o: 0 }, anchor: null }]);
+    });
+  }
+  function deleteSelection() {
+    const sel = selection(); if (!sel) return false;
+    const [a, b] = sel, P = page.text.paras;
+    P[a.p].chars = P[a.p].chars.slice(0, a.o).concat(P[b.p].chars.slice(b.o));
+    P.splice(a.p + 1, b.p - a.p);
+    caret = { ...a }; anchor = null; return true;
+  }
+  function insert(str) {
+    const T = page.text;
+    if (!T.paras.length) { T.paras.push({ style: "body", list: null, chars: [] }); caret = { p: 0, o: 0 }; }
+    const parts = str.replace(/\r/g, "").split("\n");
+    parts.forEach((part, n) => {
+      if (n) split();
+      const P = T.paras[caret.p], add = [...part].map(c => ({ c: c === "\t" ? " " : c, b: typingB, i: typingI }));
+      P.chars.splice(caret.o, 0, ...add); caret.o += add.length;
+    });
+    const P = T.paras[caret.p];                               // typed list marks at a body paragraph's start
+    if (P.style === "body" && !P.list && caret.o === P.chars.length) {
+      const t = P.chars.map(c => c.c).join(""), m = { "- ": "bullet", "* ": "bullet", "1. ": "number", "[ ] ": "check", "[x] ": "checked" }[t];
+      if (m) { P.list = m; P.chars = []; caret.o = 0; }
+    }
+  }
+  function split() {
+    const T = page.text, P = T.paras[caret.p];
+    if (P.list && !P.chars.length) { P.list = null; return; }  // Enter on an empty list item ends the list
+    const rest = P.chars.splice(caret.o);
+    T.paras.splice(caret.p + 1, 0, { style: "body", list: P.list === "checked" ? "check" : P.list, chars: rest });   // a title or header is followed by body
+    caret = { p: caret.p + 1, o: 0 };
+  }
+  function backspace() {
+    if (deleteSelection()) return;
+    const T = page.text, P = T.paras[caret.p];
+    if (caret.o > 0) { P.chars.splice(caret.o - 1, 1); caret.o--; return; }
+    if (P.list) { P.list = P.list === "bullet2" ? "bullet" : null; return; }
+    if (caret.p === 0) return;
+    const prev = T.paras[caret.p - 1], o = prev.chars.length;
+    prev.chars = prev.chars.concat(P.chars); T.paras.splice(caret.p, 1); caret = { p: caret.p - 1, o };
+  }
+  function del() {
+    if (deleteSelection()) return;
+    const T = page.text, P = T.paras[caret.p];
+    if (caret.o < P.chars.length) { P.chars.splice(caret.o, 1); return; }
+    if (caret.p + 1 < T.paras.length) { P.chars = P.chars.concat(T.paras[caret.p + 1].chars); T.paras.splice(caret.p + 1, 1); }
+  }
+  // Ctrl+Backspace: back to the start of the word (and the spaces after it); Ctrl+Delete: through the word and the spaces
+  // that follow. At a paragraph's edge they join paragraphs, as Backspace and Delete do.
+  const space = c => /\s/.test(c.c);
+  function wordBack() {
+    if (deleteSelection()) return;
+    const chars = page.text.paras[caret.p].chars;
+    if (caret.o === 0) { backspace(); return; }
+    let o = caret.o;
+    while (o > 0 && space(chars[o - 1])) o--;
+    while (o > 0 && !space(chars[o - 1])) o--;
+    chars.splice(o, caret.o - o); caret.o = o;
+  }
+  function wordForward() {
+    if (deleteSelection()) return;
+    const chars = page.text.paras[caret.p].chars;
+    if (caret.o === chars.length) { del(); return; }
+    let o = caret.o;
+    while (o < chars.length && !space(chars[o])) o++;
+    while (o < chars.length && space(chars[o])) o++;
+    chars.splice(caret.o, o - caret.o);
+  }
+  function startTyping() {                                    // a key that types, with no caret: the end of the text
+    const P = page.text.paras;
+    setCursors([{ caret: P.length ? { p: P.length - 1, o: P[P.length - 1].chars.length } : { p: 0, o: 0 }, anchor: null }]);
+  }
+  function neighbor(c, dir) {                                 // the place on the line above or below, nearest across
+    const pt = caretPoint(c), P = textLayout.paras[c.p];
+    let tp = c.p, ti = pt.line + dir;
+    if (ti < 0) { tp--; if (tp < 0) return null; ti = textLayout.paras[tp].lines.length - 1; }
+    else if (ti >= P.lines.length) { tp++; if (tp >= textLayout.paras.length) return null; ti = 0; }
+    const Q = textLayout.paras[tp], ln = Q.lines[ti];
+    let best = ln.s, bd = Infinity;
+    for (let o = ln.s; o <= ln.e; o++) { const d = Math.abs(ln.x + width(Q.p.chars, ln.s, o, Q.p.style) - pt.x); if (d < bd) { bd = d; best = o; } }
+    return { p: tp, o: best };
+  }
+  // the arrows, Home and End; with Ctrl by word (left, right), by paragraph (up, down) and to the text's ends (Home, End);
+  // with Shift they select
+  function move(key, shift, ctrl) {
+    if (shift && !anchor) anchor = { ...caret };
+    if (!shift) {
+      const sel = selection();
+      if (sel && !ctrl && (key === "ArrowLeft" || key === "ArrowRight")) { caret = { ...(key === "ArrowLeft" ? sel[0] : sel[1]) }; anchor = null; return; }
+      anchor = null;
+    }
+    const T = page.text, n = T.paras.length, chars = T.paras[caret.p].chars;
+    if (key === "ArrowLeft") {
+      if (caret.o === 0) { if (caret.p > 0) caret = { p: caret.p - 1, o: paraLen(caret.p - 1) }; return; }
+      if (!ctrl) { caret.o--; return; }
+      while (caret.o > 0 && space(chars[caret.o - 1])) caret.o--;
+      while (caret.o > 0 && !space(chars[caret.o - 1])) caret.o--;
+    } else if (key === "ArrowRight") {
+      if (caret.o === chars.length) { if (caret.p + 1 < n) caret = { p: caret.p + 1, o: 0 }; return; }
+      if (!ctrl) { caret.o++; return; }
+      while (caret.o < chars.length && !space(chars[caret.o])) caret.o++;
+      while (caret.o < chars.length && space(chars[caret.o])) caret.o++;
+    } else if (key === "Home" || key === "End") {
+      if (ctrl) { caret = key === "Home" ? { p: 0, o: 0 } : { p: n - 1, o: paraLen(n - 1) }; return; }
+      const P = textLayout.paras[caret.p], ln = P.lines[lineOf(P, caret.o)]; caret.o = key === "Home" ? ln.s : ln.e;
+    } else if (ctrl) {
+      if (key === "ArrowUp") { if (caret.o > 0) caret.o = 0; else if (caret.p > 0) caret = { p: caret.p - 1, o: 0 }; }
+      else if (caret.p + 1 < n) caret = { p: caret.p + 1, o: 0 }; else caret.o = chars.length;
+    } else {
+      const to = neighbor(caret, key === "ArrowUp" ? -1 : 1);
+      if (to) caret = to;
+    }
+  }
+  function addLineCursor(dir) {                               // Ctrl+Alt+Up/Down: one more cursor, beyond the outermost
+    const places = cursors.map(c => c.caret).sort(cmp), from = dir < 0 ? places[0] : places[places.length - 1];
+    const to = neighbor(from, dir);
+    if (to) setCursors(cursors.concat([{ caret: to, anchor: null }]));
+  }
+  function moveParas(dir) {                                   // Alt+Up/Down: the cursors' paragraphs move past their neighbor
+    const T = page.text, ps = parasOfCursors();
+    if (dir < 0 ? ps[0] === 0 : ps[ps.length - 1] === T.paras.length - 1) return;
+    const refs = cursors.map(c => ({ caret: ref(c.caret), anchor: c.anchor ? ref(c.anchor) : null }));
+    for (const p of dir < 0 ? ps : [...ps].reverse()) [T.paras[p + dir], T.paras[p]] = [T.paras[p], T.paras[p + dir]];
+    const W = where();
+    setCursors(cursors.map((c, i) => ({ caret: resolve(refs[i].caret, W) || c.caret, anchor: refs[i].anchor ? resolve(refs[i].anchor, W) : null })));
+  }
+  function textOf(sel) {
+    const [a, b] = sel, P = page.text.paras, out = [];
+    for (let p = a.p; p <= b.p; p++) out.push(P[p].chars.slice(p === a.p ? a.o : 0, p === b.p ? b.o : P[p].chars.length).map(c => c.c).join(""));
+    return out.join("\n");
+  }
+  const selections = () => cursors.map(selOf).filter(Boolean).sort((a, b) => cmp(a[0], b[0]));
+  function toggleFormat(key) {
+    const sels = selections();
+    if (!sels.length) { if (key === "b") typingB = !typingB; else typingI = !typingI; return; }
+    edit(() => {
+      const P = page.text.paras, chosen = [];
+      for (const [a, b] of sels) for (let p = a.p; p <= b.p; p++) chosen.push(...P[p].chars.slice(p === a.p ? a.o : 0, p === b.p ? b.o : P[p].chars.length));
+      const on = !chosen.every(c => c[key]);
+      chosen.forEach(c => { c[key] = on; });
+    });
+  }
+  const eachPara = fn => edit(() => parasOfCursors().forEach(p => fn(page.text.paras[p])));   // once per paragraph
+  function textKey(e) {
+    const k = e.key, ctrl = e.ctrlKey || e.metaKey, alt = e.altKey;
+    if (k === "Escape") { setCursors(cursors.length > 1 ? [primary()] : []); paint(); return true; }
+    if (alt && (k === "ArrowUp" || k === "ArrowDown")) {
+      const dir = k === "ArrowUp" ? -1 : 1;
+      if (ctrl) { addLineCursor(dir); caretOn = true; paint(); } else edit(() => moveParas(dir));
+      return true;
+    }
+    if (alt) return false;
+    if (ctrl && "1234".includes(k)) {
+      const style = ["title", "header", "section", "body"][Number(k) - 1];
+      eachPara(P => { P.style = style; if (style !== "body") P.list = null; }); return true;
+    }
+    if (ctrl && (k === "b" || k === "i")) { toggleFormat(k); return true; }
+    if (ctrl && k === "a") { const n = page.text.paras.length; if (n) { setCursors([{ anchor: { p: 0, o: 0 }, caret: { p: n - 1, o: paraLen(n - 1) } }]); paint(); } return true; }
+    if (ctrl && k === "Enter") { eachPara(P => { if (P.list === "check") P.list = "checked"; else if (P.list === "checked") P.list = "check"; }); return true; }
+    if (ctrl && k === "Backspace") { edit(() => each(wordBack)); return true; }      // with or without Shift
+    if (ctrl && k === "Delete") { edit(() => each(wordForward)); return true; }
+    if (k.startsWith("Arrow") || k === "Home" || k === "End") { each(() => move(k, e.shiftKey, ctrl)); caretOn = true; paint(); return true; }
+    if (ctrl) return false;                                   // Ctrl+C, X and V arrive as copy, cut and paste
+    if (k === "Backspace") { edit(() => each(backspace)); return true; }
+    if (k === "Delete") { edit(() => each(del)); return true; }
+    if (k === "Enter") { edit(() => each(() => { deleteSelection(); split(); })); return true; }
+    if (k === "Tab") { eachPara(P => { if (P.list === "bullet" && !e.shiftKey) P.list = "bullet2"; else if (P.list === "bullet2" && e.shiftKey) P.list = "bullet"; }); return true; }
+    if (k.length === 1) { edit(() => each(() => { deleteSelection(); insert(k); }), k === " " ? "space" : "type"); return true; }
+    return false;
+  }
+  // the clipboard: every selection, in order, one per line; pasting as many lines as there are cursors gives each its own
+  document.addEventListener("copy", e => { const s = selections(); if (editing() && s.length) { e.clipboardData.setData("text/plain", s.map(textOf).join("\n")); e.preventDefault(); } });
+  document.addEventListener("cut", e => {
+    const s = selections(); if (!editing() || !s.length) return;
+    e.clipboardData.setData("text/plain", s.map(textOf).join("\n")); e.preventDefault(); edit(() => each(deleteSelection));
+  });
+  document.addEventListener("paste", e => {
+    if (!editing()) return;
+    const t = e.clipboardData.getData("text/plain").replace(/\r/g, ""), lines = t.split("\n"); e.preventDefault();
+    if (!t) return;
+    const spread = cursors.length > 1 && lines.length === cursors.length;
+    edit(() => each(rank => { deleteSelection(); insert(spread ? lines[rank] : t); }));
+  });
+  function drawCaret() {
+    if (!editing() || !caretOn || !textLayout.paras.length) return;
+    ctx.fillStyle = "#000";
+    for (const c of cursors) {
+      if (selOf(c) || !textLayout.paras[c.caret.p]) continue;
+      const pt = caretPoint(c.caret), [sx, sy] = toScreen(pt.x, pt.y + 2);
+      ctx.fillRect(Math.round(sx), sy, 1.5, pt.h * scale());
+    }
+  }
+  function drawSelection() {
+    if (!editing()) return;
+    ctx.fillStyle = "rgba(208, 128, 106, 0.35)";
+    for (const sel of selections()) drawSel(sel);
+  }
+  function drawSel(sel) {
+    for (const P of textLayout.paras) {
+      if (P.idx < sel[0].p || P.idx > sel[1].p) continue;
+      for (const ln of P.lines) {
+        const s = Math.max(ln.s, P.idx === sel[0].p ? sel[0].o : 0), e = Math.min(ln.e, P.idx === sel[1].p ? sel[1].o : Infinity);
+        if (e < s || (e === s && P.lines.length > 1)) continue;
+        const x0 = ln.x + width(P.p.chars, ln.s, s, P.p.style), x1 = ln.x + width(P.p.chars, ln.s, e, P.p.style) + (e === s ? 8 : 0);
+        const [ax, ay] = toScreen(x0, ln.y), [bx, by] = toScreen(x1, ln.y + P.st.lead - 4);
+        ctx.fillRect(ax, ay, bx - ax, by - ay);
+      }
+    }
+  }
+  setInterval(() => { if (editing() && !live) { caretOn = !caretOn; paint(); } }, 530);
+
+  // ================================================================ the pointer
+  const local = e => { const r = vp.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  vp.addEventListener("pointerdown", e => {
+    if (e.button !== 0 || e.target === zoomBtn) return;
+    if (popFor) { popFor = null; paintPop(); }
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();   // keys belong to the page now
+    const [x, y] = toPage(...local(e));
+    if (e.ctrlKey && e.altKey) {                              // Ctrl+Alt+click: one more cursor, whatever the tool
+      const hit = hitText(x, y);
+      if (hit) { setCursors(cursors.concat([{ caret: hit, anchor: null }])); caretOn = true; paint(); }
+      return;
+    }
+    if (tool === "text") {
+      const box = checkboxAt(x, y);
+      if (box >= 0) { edit(() => { const P = page.text.paras[box]; P.list = P.list === "check" ? "checked" : "check"; }); return; }
+      if (!drawable(x, y)) return;
+      placeCaret(x, y); caretOn = true; pointer = e.pointerId; vp.setPointerCapture(e.pointerId); paint(); return;
+    }
+    if (!layer().visible) return;                               // a hidden layer can't be drawn on or erased
+    if (tool === "eraser") { erasing = { layer: layer(), removed: [], added: [], last: [x, y] }; eraserAt = [x, y]; }
+    else {
+      if (!drawable(x, y)) return;                            // as on the tablet: no stroke starts in the gray
+      live = newLine(pickers[tool]); live.points.push(pointOf(live, x, y));
+      work = { ...base, px: base.px.slice(), stamp: base.stamp.slice() }; liveSid = ++sid;
+    }
+    pointer = e.pointerId; vp.setPointerCapture(e.pointerId);
+    if (erasing) { if (eraseAt(x, y)) rebuild(); else paint(); } else { ctx.putImageData(shown, 0, 0); drawTail(live); }
+  });
+  vp.addEventListener("pointermove", e => {
+    if (tool === "eraser") eraserAt = toPage(...local(e));
+    if (e.pointerId !== pointer) { if (tool === "eraser") paint(); return; }
+    if (tool === "text") {                                    // a drag selects
+      const hit = hitText(...toPage(...local(e))), c = primary();
+      if (hit && c) { if (!c.anchor) c.anchor = { ...c.caret }; c.caret = hit; use(c); paint(); }
+      return;
+    }
+    const co = e.getCoalescedEvents ? e.getCoalescedEvents() : [], evs = co.length ? co : [e];
+    let gone = false;
+    for (const ev of evs) {
+      const [x, y] = toPage(...local(ev));
+      if (live) { live.points.push(pointOf(live, x, y)); drawTail(live); }
+      else if (erasing) {                                     // the eraser sweeps the whole way between two samples
+        const [lx, ly] = erasing.last, n = Math.max(1, Math.ceil(Math.hypot(x - lx, y - ly) / (ERASER_R / 2)));
+        for (let i = 1; i <= n; i++) if (eraseAt(lx + (x - lx) * i / n, ly + (y - ly) * i / n)) gone = true;
+        erasing.last = [x, y];
+      }
+    }
+    if (erasing) { if (gone) rebuild(); else paint(); }       // redrawn only when something was erased
+  });
+  vp.addEventListener("pointerleave", () => { eraserAt = null; paint(); });
+  function finish(e) {
+    if (e.pointerId !== pointer) return;
+    pointer = null;
+    if (live) {
+      const at = layer().lines.length; layer().lines.push(live);
+      record({ type: "lines", layer: layer(), removed: [], added: [{ line: live, at }] }); lastType = null;
+      live = null;
+      // on the top layer the working copy is the page; under another layer, the layers above are drawn over it again
+      if (activeLayer === page.layers.length - 1 || page.layers.slice(activeLayer + 1).every(Ly => !Ly.visible || !Ly.lines.length)) {
+        base = work; work = null; shown = downsample(base); paint();
+      } else { work = null; rebuild(); }
+    }
+    if (erasing) {
+      const made = new Set(erasing.added.map(x => x.line)), gone = new Set(erasing.removed.map(x => x.line)), lines = erasing.layer.lines;
+      erasing.added = erasing.added.filter(x => !gone.has(x.line)).map(x => ({ line: x.line, at: lines.indexOf(x.line) }));
+      erasing.removed = erasing.removed.filter(x => !made.has(x.line));
+      if (erasing.added.length || erasing.removed.length) { record({ type: "lines", layer: erasing.layer, removed: erasing.removed, added: erasing.added }); lastType = null; }
+      erasing = null; rebuild();
+    }
+  }
+  vp.addEventListener("pointerup", finish);
+  vp.addEventListener("pointercancel", finish);
+
+  // ================================================================ PaperDaemon's own icons, drawn for this page
+  const svg = (body, fill) => '<svg viewBox="0 0 24 24" fill="' + (fill || "none") + '" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + body + "</svg>";
+  // each pen is its head over a short collar, so the tip, the part that tells them apart, has most of the icon
+  const COLLAR = '<path d="M6 21v-2.6c0-2 2.7-3.2 6-3.2s6 1.2 6 3.2V21"/>';
+  const ICON = {
+    grid: svg('<rect x="4" y="4" width="6.5" height="6.5" rx="1"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1"/>'),
+    ballpoint: svg(COLLAR + '<path d="M8 15.2 11 7h2l3 8.2"/><circle cx="12" cy="5.2" r="1.6" fill="currentColor"/>'),
+    fineliner: svg(COLLAR + '<path d="M8.5 15.2V10.5h7v4.7"/><path d="M11 10.5V3.5h2v7"/>'),
+    highlighter: svg(COLLAR + '<path d="M7.5 15.2V9l9-4.5v10.7"/><path d="M7.5 9l9-4.5V9l-9 4.5z" fill="currentColor"/>'),
+    pencil: svg(COLLAR + '<path d="M7.5 15.2 12 3.5l4.5 11.7"/><path d="M10.4 7.7 12 3.5l1.6 4.2z" fill="currentColor"/><path d="M10.3 15.2V18.6M13.7 15.2V18.6"/>'),
+    mechanical: svg(COLLAR + '<path d="M8 15.2 10.2 9h3.6l2.2 6.2"/><path d="M11 9V6.5h2V9"/><path d="M12 6.5V2.8"/>'),
+    calligraphy: svg('<path d="M12 2.8 17.5 10 15 20H9L6.5 10z"/><path d="M12 2.8V9"/><circle cx="12" cy="10.6" r="1.3"/><path d="M9 20h6"/>'),
+    marker: svg(COLLAR + '<path d="M8 15.2 9.4 10h5.2l1.4 5.2"/><path d="M9.6 10 12 3.5l2.4 6.5z" fill="currentColor"/>'),
+    shader: svg(COLLAR + '<path d="M9 15.2c0-5 1.3-9.4 3-12.2 1.7 2.8 3 7.2 3 12.2z" fill="currentColor"/>'),
+    brush: svg(COLLAR + '<path d="M12 3c3.4 3.8 4.4 7.2 3.7 9.4-.5 1.5-2 2.4-3.7 2.4s-3.2-.9-3.7-2.4C7.6 10.2 8.6 6.8 12 3z" fill="currentColor"/>'),
+    text: svg('<path d="M5 7V4.5h14V7"/><path d="M12 4.5V19.5"/><path d="M9 19.5h6"/>'),
+    eraser: svg('<path d="M9.5 20H20"/><path d="M4.4 14.6 13.6 5.4a1.5 1.5 0 0 1 2.1 0l3.9 3.9a1.5 1.5 0 0 1 0 2.1L11 20H8.2l-3.8-3.8a1.1 1.1 0 0 1 0-1.6z"/><path d="M8.6 10.4 14.6 16.4"/>'),
+    eraseStroke: svg('<path d="M3 16c3-7 6.5-9.5 9.5-5.5S17.5 13 21 7"/><path d="M13 3.5l5 5M18 3.5l-5 5" stroke-width="1.7"/>'),
+    erasePass: svg('<path d="M3 16c3-7 6.5-9.5 9.5-5.5S17.5 13 21 7" stroke-dasharray="1.6 2.6"/><circle cx="12.3" cy="11" r="3.6"/>'),
+    layers: svg('<path d="M12 4 21 9l-9 5-9-5z"/><path d="M3 13.5l9 5 9-5"/>'),
+    eye: svg('<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>'),
+    eyeOff: svg('<path d="M3 10.5c2.4 3 5.5 4.5 9 4.5s6.6-1.5 9-4.5"/><path d="M6 13.4 4.6 16M10 14.8 9.5 17.6M14 14.8l.5 2.8M18 13.4l1.4 2.6"/>'),
+    template: svg('<rect x="5" y="3.5" width="14" height="17" rx="1"/><path d="M5 9.5h14M11 9.5v11M11 15h8"/>'),
+    mergeDown: svg('<path d="M4 15.5l8 4.5 8-4.5"/><path d="M12 3.5v9.5"/><path d="M8.5 9.5 12 13l3.5-3.5"/>'),
+    plusCircle: svg('<circle cx="12" cy="12" r="8.5"/><path d="M12 8v8M8 12h8"/>'),
+    plus: svg('<path d="M12 5v14M5 12h14"/>'),
+    trash: svg('<path d="M4.5 7h15"/><path d="M9.5 7V4.5h5V7"/><path d="M6.5 7l1 13h9l1-13"/>'),
+    up: svg('<path d="M6 14l6-6 6 6"/>'),
+    down: svg('<path d="M6 10l6 6 6-6"/>'),
+    narrow: svg('<path d="M9 6h6M9 10h6M9 14h6M9 18h4"/>'),
+    medium: svg('<path d="M7 6h10M7 10h10M7 14h10M7 18h7"/>'),
+    wide: svg('<path d="M4 6h16M4 10h16M4 14h16M4 18h11"/>'),
+  };
+  const sizeIcon = i => svg('<path d="M7 17 17 7" stroke-width="' + [1.4, 2.8, 4.6][i] + '"/>');
+  const rgb = a => "rgb(" + a.join(",") + ")";
+  function swatch(c, cls) {
+    if (c[5]) return '<span class="sw split ' + (cls || "") + '"><i style="background:' + rgb(c[3]) + '"></i><i style="background:' + rgb(c[3].map(v => Math.round(v * 0.62))) + '"></i></span>';
+    return '<span class="sw ' + (c[4] ? "ring " : "") + (cls || "") + '" style="background:' + (c[4] ? (c[0] === "Black" ? "#000" : "#fff") : rgb(c[3])) + '"></span>';
+  }
+
+  // ================================================================ the bar and the menus
+  const controls = document.getElementById("controls"), pop = document.getElementById("pop");
+  function paintControls() {
+    const pen = k => {
+      const pk = pickers[k], c = choiceOf(pk), ring = c[4] ? " ring" : "";
+      const dotBg = c[4] ? (c[0] === "Black" ? "#000" : "#fff") : rgb(c[3]);
+      return '<button class="ib" data-tool="' + k + '" aria-pressed="' + (tool === k) + '" aria-label="' + PEN[pk.pen].name + '" title="' + PEN[pk.pen].name + '">' +
+        ICON[pk.pen] + '<span class="dot' + ring + '" style="background:' + dotBg + '"></span></button>';
+    };
+    // (the pages grid is the viewer's, beside its page numbers: the editor's bar starts with the pens)
+    controls.innerHTML = pen("a") + pen("b") +
+      '<button class="ib" data-tool="text" aria-pressed="' + (tool === "text") + '" aria-label="Text" title="Text">' + ICON.text + "</button>" +
+      '<button class="ib" data-tool="eraser" aria-pressed="' + (tool === "eraser") + '" aria-label="Eraser" title="Eraser">' + ICON.eraser + "</button>" +
+      '<button class="ib" data-tool="layers" aria-pressed="' + (popFor === "layers") + '" aria-label="Layers" title="Layers">' + ICON.layers + "</button>";
+    vp.classList.toggle("typing", tool === "text");
+  }
+  const cell = (attrs, pressed, inner, label, cls) => '<button class="cell ' + (cls || "") + '" ' + attrs + ' aria-pressed="' + pressed + '" aria-label="' + label + '" title="' + label + '">' + inner + "</button>";
+  function paintPop() {
+    const lb = controls.querySelector('[data-tool="layers"]');
+    if (lb) lb.setAttribute("aria-pressed", popFor === "layers");     // the layers button is pressed while its menu is open
+    if (!popFor) { pop.hidden = true; return; }
+    pop.classList.toggle("wide", popFor === "layers");
+    const btn = controls.querySelector('[data-tool="' + popFor + '"]');
+    pop.style.left = Math.max(0, btn.offsetLeft - 2) + "px";
+    if (popFor === "layers") {
+      // as the tablet lists them: the drawing layers, top first, then Text, then Template, then New layer. The layer in hand
+      // is inverted and carries its own up, down and delete.
+      const eye = (attr, on, name) => '<button class="lb" ' + attr + ' aria-label="' + (on ? "Hide " : "Show ") + name + '" title="' + (on ? "Hide" : "Show") + '">' + ICON[on ? "eye" : "eyeOff"] + "</button>";
+      const last = page.layers.length - 1;
+      const rows = page.layers.map((L, i) => ({ L, i })).reverse().map(({ L, i }) => {
+        const on = i === activeLayer, small = (op, ic, label, off) => '<button class="lb sm' + (off ? " off" : "") + '" data-lop="' + op + '" aria-label="' + label + '" title="' + label + '">' + ICON[ic] + "</button>";
+        return '<div class="lrow' + (on ? " on" : "") + '">' + eye('data-lvis="' + i + '"', L.visible, L.label) +
+          '<button class="lname" data-lact="' + i + '">' + L.label + "</button>" +
+          (on ? small("up", "up", "Move the layer up", i === last) + small("down", "down", "Move the layer down", i === 0) +
+                small("merge", "mergeDown", "Collapse into the layer below", i === 0) + small("del", "trash", "Delete the layer", !last) : "") + "</div>";
+      }).join("");
+      pop.innerHTML = '<div class="lsec">' + rows +
+        '<div class="lrow">' + eye('data-tvis="text"', page.textVisible, "Text") + '<span class="lname">Text</span></div>' +
+        '<div class="lrow">' + eye('data-tvis="template"', page.templateVisible, "Template") + '<span class="lname">Template</span>' +
+        '<button class="lb" data-tmpl="1" aria-label="Templates" title="Templates">' + ICON.template + "</button></div>" +
+        '</div><div class="lsec"><button class="lrow lnew" data-lop="add">' + ICON.plusCircle + "<span>New layer</span></button></div>";
+    } else if (popFor === "eraser") {
+      pop.innerHTML = '<div class="sec"><h3>Eraser</h3><div class="grid3">' +
+        cell('data-erase="stroke"', eraseMode === "stroke", ICON.eraseStroke + "<span>Strokes</span>", "Erase whole strokes") +
+        cell('data-erase="area"', eraseMode === "area", ICON.erasePass + "<span>Passing</span>", "Erase what it passes over") + "</div></div>";
+    } else if (popFor === "text") {
+      // the four styles, each shown in its own face; the one at the cursor is pressed
+      const col = page.text.column, here = editing() && page.text.paras[caret.p] ? page.text.paras[caret.p].style : "body";
+      const glyph = s => { const st = STYLE[s]; return '<span style="font:' + (st.bold ? "700 " : "400 ") + Math.round(st.size * 0.42) + "px " + family(st.face).replace(/"/g, "'") + ';line-height:26px">' + (s === "body" ? "t" : "T") + "</span>"; };
+      pop.innerHTML = '<div class="sec"><h3>' + STYLE[here].name + '</h3><div class="grid3" style="grid-template-columns:repeat(4,1fr)">' +
+        ["title", "header", "section", "body"].map(s => cell('data-style="' + s + '"', here === s, glyph(s) + "<span>" + STYLE[s].name + "</span>", STYLE[s].name)).join("") +
+        '</div></div><div class="sec"><h3>' + col[0].toUpperCase() + col.slice(1) + ' column</h3><div class="grid3">' +
+        ["narrow", "medium", "wide"].map(c => cell('data-col="' + c + '"', col === c, ICON[c], c[0].toUpperCase() + c.slice(1) + " column", "short")).join("") +
+        "</div></div>";
+    } else {
+      const pk = pickers[popFor], pen = PEN[pk.pen];
+      pop.innerHTML = '<div class="sec"><h3>' + pen.name + '</h3><div class="grid3">' +
+        PENS.map(p => cell('data-pen="' + p.id + '"', pk.pen === p.id, ICON[p.id], p.name, "short")).join("") + "</div></div>" +
+        (pen.sizes === false ? "" : '<div class="sec"><h3>' + SIZES[pk.size] + '</h3><div class="grid3">' +
+          [0, 1, 2].map(i => cell('data-size="' + i + '"', pk.size === i, sizeIcon(i), SIZES[i], "short")).join("") + "</div></div>") +
+        '<div class="sec"><div class="grid3">' +
+        colorsOf(pk.pen).map((c, i) => cell('data-pick="' + i + '"', choiceOf(pk) === c, swatch(c) + "<span>" + c[0] + "</span>", c[0])).join("") + "</div></div>";
+    }
+    pop.hidden = false;
+  }
+  controls.addEventListener("click", e => {
+    const b = e.target.closest("[data-tool]"); if (!b) return;
+    const t = b.dataset.tool;
+    if (t === "grid") return;
+    if (t === "layers") { popFor = popFor === "layers" ? null : "layers"; paintControls(); paintPop(); return; }   // a menu, not a tool
+    if (tool === t) popFor = popFor === t ? null : t; else { tool = t; popFor = null; }   // the tablet's way: the tool in hand again
+    paintControls(); paintPop(); paint();
+  });
+  pop.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.erase) eraseMode = b.dataset.erase;
+    if (b.dataset.lact !== undefined) { activeLayer = Number(b.dataset.lact); paintPop(); return; }
+    if (b.dataset.tvis) { const k = b.dataset.tvis === "text" ? "textVisible" : "templateVisible"; layerEdit(() => { page[k] = !page[k]; }); return; }
+    if (b.dataset.tmpl) return;                              // the template picker: next
+    if (b.dataset.lvis !== undefined) { const i = Number(b.dataset.lvis); layerEdit(() => { page.layers[i].visible = !page.layers[i].visible; }); return; }
+    if (b.dataset.lop && !b.classList.contains("off")) {
+      const op = b.dataset.lop, i = activeLayer, Ls = page.layers;
+      layerEdit(() => {
+        if (op === "add") addLayer();
+        else if (op === "del") { Ls.splice(i, 1); activeLayer = Math.max(0, i - 1); }
+        else if (op === "merge") {                            // collapse down, as the tablet does: the strokes made anew on the
+          const below = Ls[i - 1];                            // layer below, over its own, and this layer gone
+          for (const L of Ls[i].lines) below.lines.push(Object.assign({}, L, { itemId: [2, page.nextId++], points: L.points.map(p => ({ ...p })) }));
+          Ls.splice(i, 1); activeLayer = i - 1;
+        }
+        else { const j = op === "up" ? i + 1 : i - 1; [Ls[i], Ls[j]] = [Ls[j], Ls[i]]; activeLayer = j; }
+      });
+      return;
+    }
+    if (b.dataset.style) {                                    // the style for the cursors' paragraphs (with none, the end of the text)
+      const style = b.dataset.style;
+      if (!editing()) startTyping();
+      edit(() => {
+        if (!page.text.paras.length) page.text.paras.push({ style: "body", list: null, chars: [] });
+        parasOfCursors().forEach(p => { const P = page.text.paras[p]; if (P) { P.style = style; if (style !== "body") P.list = null; } });
+      });
+    }
+    if (b.dataset.col) {
+      const c = b.dataset.col;
+      edit(() => { page.text.column = c; page.text.x = COLUMNS[c][0]; page.text.width = COLUMNS[c][1]; });
+    }
+    const pk = pickers[popFor];
+    if (pk && b.dataset.pen) { pk.pen = b.dataset.pen; if (pk.pick >= colorsOf(pk.pen).length) pk.pick = 0; }
+    if (pk && b.dataset.size) pk.size = Number(b.dataset.size);
+    if (pk && b.dataset.pick) pk.pick = Number(b.dataset.pick);
+    paintControls(); paintPop();
+  });
+  document.addEventListener("pointerdown", e => {
+    if (popFor && !e.target.closest("#pop") && !e.target.closest("#controls")) { popFor = null; paintPop(); }
+  });
+
+  // ================================================================ zoom, keys, frames and faces
+  let zoomTimer = 0;
+  function showZoom() {
+    zoomBtn.textContent = (Math.round(view.zoom * 10) / 10).toFixed(1) + "×";
+    zoomBtn.classList.add("on"); clearTimeout(zoomTimer);
+    zoomTimer = setTimeout(() => zoomBtn.classList.remove("on"), 2500);
+  }
+  function clampView() {
+    if (view.zoom <= 1) { view.cx = 0; view.top = 0; return; }
+    const w = SCREEN_W / view.zoom / 2, edge = Math.max(half(), SCREEN_W / 2);
+    view.cx = Math.max(-edge + w, Math.min(edge - w, view.cx));
+    view.top = Math.max(0, view.top);
+  }
+  window.addEventListener("wheel", e => {
+    if (!e.ctrlKey) return;
+    e.preventDefault();
+    const r = vp.getBoundingClientRect();
+    const over = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+    const [sx, sy] = over ? [e.clientX - r.left, e.clientY - r.top] : [vpW / 2, 0];
+    const [px, py] = toPage(sx, sy);
+    view.zoom = Math.max(0.5, Math.min(5, view.zoom * Math.exp(-e.deltaY * 0.0015)));
+    view.cx = px - (sx - vpW / 2) / scale(); view.top = py - sy / scale();
+    clampView(); showZoom(); rebuildSoon();
+  }, { passive: false });
+  zoomBtn.addEventListener("click", () => { view.zoom = 1; view.cx = 0; view.top = 0; showZoom(); rebuild(); });
+  window.addEventListener("keydown", e => {
+    if (e.target.closest && e.target.closest("select")) return;
+    if (e.key === "Escape" && popFor) { popFor = null; paintPop(); return; }
+    const ctrl = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
+    if (ctrl && k === "z" && !e.shiftKey) { e.preventDefault(); undo(); return; }
+    if (ctrl && (k === "y" || (k === "z" && e.shiftKey))) { e.preventDefault(); redo(); return; }
+    if (!editing() && !ctrl && !e.altKey && (e.key.length === 1 || e.key === "Enter")) startTyping();
+    if (editing() && textKey(e)) e.preventDefault();
+  });
+  // the page's frame is the page's own; the face is the tablet's when present, else the substitute, and the note says so
+  const note = document.getElementById("note");
+  function paintNote() {
+    note.textContent = tabletFace ? "" : "The tablet's faces aren't installed beside this page: typed text is in the substitute faces, Arimo and Gelasio.";
+  }
+  // THE TABLET'S FACES, from the user's own desktop app through the engine (never shipped): fetched with the window's
+  // token, since a font link cannot carry one
+  const P = window.parent && window.parent.PD;
+  const token = () => (P && P.pairing && P.pairing.token) || "";
+  const FACES = [["PD Tablet Sans", "reMarkableSans-Regular", "400", "normal"], ["PD Tablet Sans", "reMarkableSans-Bold", "700", "normal"],
+                 ["PD Tablet Sans", "reMarkableSans-RegularItalic", "400", "italic"], ["PD Tablet Sans", "reMarkableSans-BoldItalic", "700", "italic"],
+                 ["PD Tablet Serif", "reMarkableSerifSmall-Regular", "400", "normal"], ["PD Tablet Serif", "reMarkableSerifSmall-Bold", "700", "normal"],
+                 ["PD Tablet Serif", "reMarkableSerifSmall-RegularItalic", "400", "italic"], ["PD Tablet Serif", "reMarkableSerifSmall-BoldItalic", "700", "italic"]];
+  async function findFaces() {
+    const got = await Promise.all(FACES.map(async ([fam, file, weight, style]) => {
+      try {
+        const r = await fetch("/api/v1/fonts/" + file, { headers: { Authorization: "Bearer " + token() } });
+        if (!r.ok) return false;
+        const f = new FontFace(fam, await r.arrayBuffer(), { weight, style });
+        await f.load(); document.fonts.add(f);
+        return true;
+      } catch (e) { return false; }
+    }));
+    await Promise.all(['32px Arimo', '64px Gelasio'].map(f => document.fonts.load(f).catch(() => [])));
+    tabletFace = got[0] && got[4];
+    useTablet = tabletFace;
+    paintNote(); rebuild();
+  }
+
+  // ================================================================ the page from the false mirror, and back
+  const Q = new URLSearchParams(location.hash.slice(1)), DOC = Q.get("doc"), PAGE = Number(Q.get("page") || 1), BASE = Q.get("base") || "/fm";
+  const SCENE = "/api/v1" + BASE + "/library/" + encodeURIComponent(DOC) + "/page/" + PAGE + "/scene";
+  const saved = document.getElementById("saved");
+  let lastWritten = null, saveTimer = 0, loaded = false;
+
+  function fromScene(sc) {
+    page.paperSize = sc.paperSize || [1620, 2160];
+    page.layers = (sc.layers || []).map((L, i) => ({ nodeId: [0, 11 + i], label: L.label, visible: L.visible, lines: (L.lines || []).map(ln => ({
+      itemId: [2, page.nextId++], pen: ln.pen || "FINELINER_2", penCode: ln.penCode, color: ln.color, colorRgba: ln.colorRgba,
+      thicknessScale: ln.thicknessScale, startingLength: 0, width: (ln.points[0] || [])[4] || 16,
+      points: ln.points.map(p => ({ x: p[0], y: p[1], speed: p[2], direction: p[3], width: p[4], pressure: p[5] })) })) }));
+    if (!page.layers.length) page.layers = [{ nodeId: [0, 11], label: "Layer 1", visible: true, lines: [] }];
+    activeLayer = page.layers.length - 1;
+    const tx = sc.text;
+    if (tx) {
+      const col = Object.keys(COLUMNS).find(k => Math.abs(COLUMNS[k][1] - tx.width) < 1) || "wide";
+      page.text = { column: col, x: tx.x, y: tx.y, width: tx.width, paras: (tx.paras || []).map(p => ({ style: p.style, list: p.list,
+        chars: [].concat(...(p.runs || []).map(r => [...r.text].map(c => ({ c, b: !!r.bold, i: !!r.italic })))) })) };
+    }
+    page.textVisible = sc.textVisible !== false; page.templateVisible = sc.templateVisible !== false; page.template = sc.template || "Blank";
+  }
+
+  function toScene() {
+    const runs = chars => {
+      const out = [];
+      for (const ch of chars) {
+        const last = out[out.length - 1];
+        if (last && last.bold === ch.b && last.italic === ch.i) last.text += ch.c; else out.push({ text: ch.c, bold: ch.b, italic: ch.i });
+      }
+      return out;
+    };
+    return { paperSize: page.paperSize, textVisible: page.textVisible, templateVisible: page.templateVisible, template: page.template,
+             layers: page.layers.map(L => ({ label: L.label, visible: L.visible, lines: L.lines.map(ln => ({
+               pen: ln.pen, penCode: ln.penCode, color: ln.color, colorRgba: ln.colorRgba, thicknessScale: ln.thicknessScale,
+               points: ln.points.map(p => [p.x, p.y, p.speed, p.direction, p.width, p.pressure]) })) })),
+             text: page.text.paras.length ? { x: page.text.x, y: page.text.y, width: page.text.width,
+               paras: page.text.paras.map(p => ({ style: p.style, list: p.list, runs: runs(p.chars) })) } : null };
+  }
+
+  async function saveNow(leaving) {
+    clearTimeout(saveTimer);
+    if (!loaded) return;
+    const body = JSON.stringify(toScene());
+    if (body === lastWritten) return;
+    lastWritten = body;
+    saved.textContent = "…";
+    try {
+      const r = await fetch(SCENE, { method: "PUT", keepalive: !!leaving, body,
+        headers: { Authorization: "Bearer " + token(), "Content-Type": "application/json" } });
+      saved.textContent = r.ok ? "" : "Not saved: " + r.status;
+      if (!r.ok) lastWritten = null;
+    } catch (e) { saved.textContent = "Not saved"; lastWritten = null; }
+  }
+  // every change is a rebuild: a save follows it, once the page has been still for a moment
+  const _rebuild = rebuild;
+  rebuild = function () { _rebuild(); clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 700); };
+  window.addEventListener("pagehide", () => saveNow(true));
+
+  async function loadPage() {
+    try {
+      const r = await fetch(SCENE, { headers: { Authorization: "Bearer " + token() } });
+      if (!r.ok) throw new Error(r.status + " " + (await r.text()).slice(0, 120));
+      fromScene(await r.json());
+      loaded = true;
+      lastWritten = JSON.stringify(toScene());
+    } catch (e) { note.textContent = "This page could not be read: " + e.message; }
+    paintControls(); layout();
+  }
+
+  window.addEventListener("resize", layout);
+  paintControls(); layout(); findFaces(); loadPage();
+  window.editorPage = page;                                  // the page's data, for a look from outside
+})();
+</script>
+</body>
+</html>

@@ -103,6 +103,64 @@ def state_dir():
     return os.environ.get("RM_STATE") or data_dir()
 
 
+# THE FALSE MIRROR: a library kept only on this computer, beside the Mirror (a sibling folder, never inside it), with
+# its own job state beside it. The daemon answers it as it answers the tablet; nothing of it reaches the cloud.
+def false_mirror_dir():
+    """The false mirror's library (not created here: it exists only once the user creates it)."""
+    return os.path.join(data_dir(), "false-mirror")
+
+
+def false_mirror_state_dir():
+    """The false mirror's job state: its ledger, queue, notes and logs."""
+    return os.path.join(data_dir(), "false-mirror-state")
+
+
+def false_mirror_exists():
+    return os.path.isdir(false_mirror_dir())
+
+
+def local_only():
+    """True in a process working the false mirror: nothing is pulled from or pushed to the cloud."""
+    return os.environ.get("RM_LOCAL_ONLY") == "1"
+
+
+class one_job(object):
+    """ONE JOB AT A TIME, ACROSS EVERY MIRROR: a host holds this lock (a file in the data folder, shared by the
+    Mirror's host and the false mirror's) while it works a job, so two jobs never load the model at once. The system
+    lets go of it when the process ends, however it ends."""
+
+    def __init__(self):
+        self.f = None
+
+    def __enter__(self):
+        import time
+        path = os.path.join(sub("run"), "one-job.lock")
+        self.f = open(path, "a+b")
+        while True:
+            try:
+                if sys.platform == "win32":
+                    import msvcrt
+                    self.f.seek(0)
+                    msvcrt.locking(self.f.fileno(), msvcrt.LK_NBLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(self.f.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                return self
+            except OSError:
+                time.sleep(1)
+
+    def __exit__(self, *exc):
+        try:
+            if sys.platform == "win32":
+                import msvcrt
+                self.f.seek(0)
+                msvcrt.locking(self.f.fileno(), msvcrt.LK_UNLCK, 1)
+        except OSError:
+            pass
+        self.f.close()
+        return False
+
+
 def cache_dir(*parts):
     """A cache folder under the data folder, created on first use."""
     return sub("cache", *parts)

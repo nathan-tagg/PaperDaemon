@@ -1,15 +1,11 @@
 "use strict";
-/* Notepads: each notebook's memory of its jobs. Pick a notebook, read its entries, wipe it. */
+/* Notes (Daemon > Notes): each notebook's memory of its jobs. Pick a notebook, read its entries, wipe it. A panel of
+   the Daemon screen, not a screen of its own: PD.notes.mount(el), show(), poll(). */
 (() => {
-  const { $, $$, esc, line } = PD;
+  const { $, esc } = PD;
   let R = null;
-  const S = { list: null, err: "", doc: null, text: null, textErr: "", wipeErr: "", view: "entries", all: false, wiped: null, find: "", count: null };
+  const S = { list: null, err: "", doc: null, text: null, textErr: "", wipeErr: "", all: false, wiped: null };
   const SHOWN = 40;
-
-  PD.prefetch.push(async () => {
-    const [d] = await PD.safe(PD.api("GET", "/notepads"));
-    if (Array.isArray(d)) { S.count = d.length; PD.paintRail(); }
-  });
 
   /** The engine's entries -> what the list shows: {date, hasTime, page (its label), asked, did}. */
   function blocksOf(entries) {
@@ -21,17 +17,12 @@
     });
   }
 
-  function summary(n) { return PD.t("np.summary", { entries: PD.count("count.entry", n.entries || 0), chars: PD.n(n.chars || 0) }); }
-
   function listHtml() {
     if (S.err) return '<p class="notice attn" role="alert"><strong>' + esc(PD.t("np.list_unreadable")) + "</strong> " + esc(S.err) + "</p>";
     if (!S.list) return '<p class="sub" style="margin-top: var(--s3)">' + esc(PD.t("np.reading_list")) + "</p>";
-    const q = S.find.trim().toLowerCase();
-    const items = S.list.filter(n => !q || String(n.notebook || n.doc).toLowerCase().includes(q));
-    return '<ul class="booklist">' + items.map(n =>
+    return '<ul class="booklist">' + S.list.map(n =>
       '<li><button type="button" data-doc="' + esc(n.doc) + '"' + (n.doc === S.doc ? ' aria-current="true"' : "") + "><strong>" + esc(n.notebook || n.doc) +
-      '</strong><span class="meta num">' + esc(summary(n)) + "</span></button></li>").join("") + "</ul>" +
-      (q && !items.length ? '<p class="meta">' + esc(PD.t("np.no_match")) + "</p>" : "");
+      "</strong></button></li>").join("") + "</ul>";
   }
 
   function entriesHtml(text) {
@@ -51,7 +42,7 @@
     }
     out += "</ol>";
     if (blocks.length > SHOWN) {
-      out += '<p class="actions" style="margin-top: var(--s3)"><button type="button" class="btn" data-act="more">' +
+      out += '<p class="actions" style="margin-top: var(--s3)"><button type="button" class="btn" data-np="more">' +
         esc(S.all ? PD.t("np.show_fewer") : PD.count("np.show_older", blocks.length - SHOWN)) + "</button></p>";
     }
     return out;
@@ -65,18 +56,13 @@
       return '<header class="padhead"><div><h2>' + esc(name) + '</h2></div></header>' + PD.empty("notepad",
         "<strong>" + esc(PD.t("np.wiped_at", { time: PD.clock(new Date()) })) + "</strong> " + esc(PD.t("np.wiped_body", { name })));
     }
-    const head = '<header class="padhead"><div><h2>' + esc(name) + '</h2><p class="meta num">' + esc(summary(n)) + "</p></div>" +
-      '<div class="actions"><button type="button" class="btn quiet small" data-act="copy">' + esc(PD.t("np.copy")) + "</button>" +
-      '<button type="button" class="btn danger small" data-act="wipe">' + esc(PD.t("np.wipe")) + "</button></div></header>";
+    const head = '<header class="padhead"><div><h2>' + esc(name) + "</h2></div>" +
+      '<div class="actions"><button type="button" class="btn danger small" data-np="wipe">' + esc(PD.t("np.wipe")) + "</button></div></header>";
     const wipeNote = S.wipeErr ? '<p class="notice attn" role="alert" style="margin-top: var(--s4)"><strong>' + esc(PD.t("np.not_wiped")) + "</strong> " + esc(S.wipeErr) + "</p>" : "";
     if (S.textErr) return head + '<p class="notice attn" role="alert" style="margin-top: var(--s4)"><strong>' + esc(PD.t("np.unreadable")) + "</strong> " + esc(S.textErr) + "</p>";
     if (S.text == null) return head + wipeNote + '<p class="sub" style="margin-top: var(--s4)">' + esc(PD.t("np.reading")) + "</p>";
     if (!S.text.trim()) return head + wipeNote + PD.empty("notepad", "<strong>" + esc(PD.t("np.empty")) + "</strong>");
-    return head + wipeNote + '<div class="spread tight"><div class="seg small" role="group" aria-label="' + esc(PD.t("np.show")) + '">' +
-      '<button type="button" data-view="entries" aria-pressed="' + (S.view === "entries") + '">' + esc(PD.t("np.entries")) + "</button>" +
-      '<button type="button" data-view="text" aria-pressed="' + (S.view === "text") + '">' + esc(PD.t("np.as_text")) + "</button></div>" +
-      "</div>" +
-      '<div class="shown">' + (S.view === "entries" ? entriesHtml(S.text) : '<pre class="snippet pad-text">' + esc(S.text) + "</pre>") + "</div>";
+    return head + wipeNote + '<div class="shown">' + entriesHtml(S.text) + "</div>";
   }
 
   function render() {
@@ -91,7 +77,7 @@
   async function loadList() {
     const [d, e] = await PD.safe(PD.api("GET", "/notepads"));
     if (e) { S.err = PD.errText(e); S.list = S.list || null; }
-    else { S.err = ""; S.list = Array.isArray(d) ? d : d.notepads || []; S.count = S.list.length; PD.paintRail(); }
+    else { S.err = ""; S.list = Array.isArray(d) ? d : d.notepads || []; }
     if (S.list && S.doc && !S.list.some(n => n.doc === S.doc)) { S.doc = null; S.text = null; }
     if (S.list && !S.doc && S.list.length) await open(S.list[0].doc);
     render();
@@ -119,32 +105,24 @@
     if (e) { S.wipeErr = PD.errText(e); render(); return; }
     S.wiped = doc; S.text = ""; S.textErr = ""; S.wipeErr = "";
     const [d] = await PD.safe(PD.api("GET", "/notepads"));
-    if (Array.isArray(d)) { S.list = d; S.count = d.length; PD.paintRail(); }
+    if (Array.isArray(d)) S.list = d;
     render();
   }
 
-  PD.screen("notepads", {
-    label: PD.t("np.label"), group: 0, railNum: true,
-    rail() { return S.count != null ? esc(String(S.count)) : ""; },
+  PD.notes = {
     mount(root) {
       R = root;
-      R.innerHTML =
-        '<header class="page-head"><h1>' + esc(PD.t("np.label")) + "</h1>" +
-        "<p>" + esc(PD.t("np.intro")) + "</p></header>" +
+      R.innerHTML = '<p class="tab-note">' + esc(PD.t("np.intro")) + "</p>" +
         '<div id="np-none"></div><div class="pads"><aside class="books" aria-label="' + esc(PD.t("np.books")) + '">' +
-        '<input class="field" type="search" id="np-find" placeholder="' + esc(PD.t("np.find")) + '" aria-label="' + esc(PD.t("np.find")) + '" autocomplete="off">' +
         '<div id="np-list"></div></aside><div id="np-pad" aria-live="polite"></div></div>';
-      $("#np-find", R).addEventListener("input", e => { S.find = e.target.value; render(); });
       PD.on(R, "click", "button[data-doc]", (e, el) => open(el.dataset.doc));
-      PD.on(R, "click", "button[data-view]", (e, el) => { S.view = el.dataset.view; render(); });
-      PD.on(R, "click", "button[data-act]", async (e, el) => {
-        const a = el.dataset.act;
+      PD.on(R, "click", "button[data-np]", (e, el) => {
+        const a = el.dataset.np;
         if (a === "more") { S.all = !S.all; render(); }
         else if (a === "wipe") wipe();
-        else if (a === "copy") { const ok = await PD.copy(S.text || ""); el.textContent = PD.t(ok ? "common.copied" : "common.copy_failed"); setTimeout(() => { el.textContent = PD.t("np.copy"); }, 1500); }
       });
     },
-    show() { S.find = ""; const f = $("#np-find", R); if (f) f.value = ""; render(); loadList(); },
+    show() { render(); loadList(); },
     async poll() { if (S.doc && !S.wiped) { const [d] = await PD.safe(PD.api("GET", "/notepads/" + encodeURIComponent(S.doc))); if (d && S.doc) { const t = d.text || ""; if (t !== S.text) { S.text = t; S.entries = d.entries || []; loadList(); } } } },
-  });
+  };
 })();

@@ -788,7 +788,115 @@ def classify(found, led):
             gone.append(k)
     for k in gone:
         del entries[k]
+    _keep_queue(led, queue, now)
     return queue
+
+
+# THE QUEUE: the order the daemon hands jobs over in, kept in the ledger (`queue`, a list of keys) so the user can
+# reorder it (Daemon > Queue) and it survives a restart. A job joins it once its page has something on it: a CHANGED
+# page goes in ahead of the first new one, a NEW page at the end. The job being worked stays at the front until it is
+# done. Each found page carries its place as `rank`.
+def _keep_queue(led, found, now):
+    entries = led["entries"]
+    waiting = set(f["key"] for f in found if f["status"] == "WAITING")
+    live = set(f["key"] for f in found)
+    q = [k for k in led.get("queue") or []
+         if entries.get(k, {}).get("status") == "working"
+         or (entries.get(k, {}).get("status") == "pending" and k in live and k not in waiting)]
+    for f in found:
+        k, e = f["key"], entries.get(f["key"]) or {}
+        if k in q or f["status"] not in ("NEW", "PENDING", "REOPENED", "RETAGGED") or e.get("status") != "pending":
+            continue
+        e["queued_at"] = now
+        if e.get("why") == "changed":
+            at = next((i for i, k2 in enumerate(q) if entries.get(k2, {}).get("why") != "changed"
+                       and entries.get(k2, {}).get("status") != "working"), len(q))
+            q.insert(at, k)
+        else:
+            q.append(k)
+    led["queue"] = q
+    rank = dict((k, i) for i, k in enumerate(q))
+    for f in found:
+        f["rank"] = rank.get(f["key"])
+
+
+def queue(state=None):
+    """The queue, in the order its jobs will be worked: [{key, notebook, doc_id, page, status (working | pending),
+    why (changed | new), queued}]."""
+    led = load() if state is None else state
+    out = []
+    for k in led.get("queue") or []:
+        e = led["entries"].get(k)
+        if e:
+            out.append({"key": k, "notebook": e.get("doc") or "", "doc_id": e.get("doc_id"), "page": e.get("page"),
+                        "status": e.get("status"), "why": e.get("why") or "new",
+                        "queued": e.get("queued_at") or e.get("first_seen")})
+    return out
+
+
+def reorder(keys):
+    """The user's order for the waiting jobs (Daemon > Queue): the job being worked stays first, the keys given come
+    next in that order, and any job not named keeps its place after them. -> the queue."""
+    with locked():
+        led = load()
+        q = led.get("queue") or []
+        working = [k for k in q if led["entries"].get(k, {}).get("status") == "working"]
+        named = [k for k in keys if k in q and k not in working]
+        led["queue"] = working + named + [k for k in q if k not in working and k not in named]
+        save(led)
+    return queue(led)
+
+
+REMOVED = "removed from the queue by you: not a job; an edit brings it back"
+ABANDONED = "stopped and abandoned by you: what it had written was put back; an edit brings it back"
+
+
+def abandon(key, revert):
+    """The user stops the job being worked and throws it away (Daemon > Queue). The host is already stopped;
+    `revert(doc_id, since)` puts back what the job wrote to its notebook since it started. The page is then
+    settled as it is, like a removed job, and marked so the daemon does not queue it again for the job's own
+    writes. -> the queue, or None when the key is not the job being worked."""
+    with locked():
+        led = load()
+        e = led["entries"].get(key)
+        if not e or e.get("status") != "working":
+            return None
+        since = e.get("started_at") or e.get("claim_at") or 0
+    put_back = revert(e.get("doc_id"), since) if e.get("doc_id") else []
+    with locked():
+        led = load()
+        e = led["entries"].get(key)
+        try:
+            st = page_state(e.get("doc_id"), e.get("page_id"))
+        except Exception:
+            st = {}
+        e.update(status="skipped", why=None, note=ABANDONED, completed_at=int(time.time()), handled_sha=st.get("sha"),
+                 handled_raw=st.get("raw"), handled_tag_ts=e.get("tag_ts"), abandoned=True, put_back=len(put_back))
+        e.pop("claim_owner", None)
+        e.pop("claim_at", None)
+        led["queue"] = [k for k in led.get("queue") or [] if k != key]
+        save(led)
+    return queue(led)
+
+
+def drop(key):
+    """The user takes a waiting job out of the queue (Daemon > Queue): its page is settled at its content now, as a
+    skipped page, so it is not queued again until it changes. The job being worked cannot be. -> the queue, or None
+    when the key is not a waiting job."""
+    with locked():
+        led = load()
+        e = led["entries"].get(key)
+        if not e or e.get("status") != "pending":
+            return None
+        try:
+            st = page_state(e.get("doc_id"), e.get("page_id"))
+        except Exception:
+            st = {}
+        e.update(status="skipped", why=None, note=REMOVED, completed_at=int(time.time()), handled_sha=st.get("sha"),
+                 handled_raw=st.get("raw"), handled_tag_ts=e.get("tag_ts"))
+        led["queue"] = [k for k in led.get("queue") or [] if k != key]
+        save(led)
+    return queue(led)
 
 
 def _page_deleted(e):

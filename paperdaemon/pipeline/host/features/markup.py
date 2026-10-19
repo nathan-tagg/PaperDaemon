@@ -22,7 +22,7 @@ MARK_PEN = 13                    # the lettering pen: a circle or an underline i
 def _from_view(at):
     """The model's grounding on the page image it was shown -> page units: (x, y) for a point,
     (x0, y0, x1, y1) for a box. Grounding is on a 0-1000 grid each way, whatever the image's size."""
-    w, h = JOB.view or (1620.0, 2160.0)
+    w, h = JOB.view or H._frame()
     xs = [float(v) / 1000.0 * w - w / 2.0 for v in at[0::2]]
     ys = [float(v) / 1000.0 * h for v in at[1::2]]
     if len(at) == 2:

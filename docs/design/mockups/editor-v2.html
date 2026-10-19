@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page editor v2</title>
+<style>
+/* The page editor, v2. THE PAGE IS .rm DATA: Layer 1 and its lines, each line what the page file stores (its pen,
+   color, thickness scale, item id, and per point x, y, speed, direction, width, pressure). IT IS DRAWN BY PaperDaemon's
+   OWN RENDERER, ported line for line from fastdecomp/render.c and render.py: a pixel inked when its center is inside
+   the stroke's exact shape, pens as capsules of each segment's mean width, the highlighter flat-ended with outer
+   bevels as a per-channel minimum, the shader a once-per-pixel wash, a pencil toned by its pressure, widths at 0.144
+   (the highlighter's 0.25) of the stored width, the measured colors; drawn at twice the size and averaged down, as
+   the renderer draws for a screen.
+
+   The controls sit in the dialog's bar beside the pages grid: two pen pickers (tap the one in hand again for its pen,
+   size and color), the eraser (tap again: erase what it passes over, or whole strokes). Ctrl+Z undoes, Ctrl+Y or
+   Ctrl+Shift+Z redoes; Ctrl + scroll zooms from 0.5x to 5x. Every pen is held upright at a steady 50% pressure. */
+:root {
+  --paper: #242124; --paper-sunk: #1C1A1C; --field: #2E2A2F; --ink: #BDB6AA; --ink-2: #9A9389; --ink-3: #6F6970;
+  --rule: #3A353C; --edge: #6C6670; --mark: #D0806A; --shade: rgba(0, 0, 0, 0.5);
+  --font-ui: "Times New Roman", Times, serif;
+}
+html, body { margin: 0; height: 100%; background: #141214; color: var(--ink); font-family: var(--font-ui); overflow: hidden; }
+.backdrop { position: fixed; inset: 0; background: var(--shade); }
+.dialog { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); background: var(--paper-sunk);
+  border: 1px solid var(--edge); display: flex; flex-direction: column; }
+.head { display: flex; align-items: center; justify-content: space-between; padding: 14px 22px 0; font-weight: 600; font-size: 17px; }
+.bar { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 22px;
+  border-bottom: 1px solid var(--rule); font-size: 15px; color: var(--ink-2); }
+.controls { display: flex; gap: 6px; align-items: center; }
+.sep { width: 1px; height: 22px; background: var(--rule); margin: 0 4px; }
+/* EVEN SIZES, so an icon centers on whole pixels at every zoom: a 32 x 32 button, a 20 x 20 icon */
+.ib { position: relative; width: 32px; height: 32px; padding: 0; display: grid; place-items: center; background: transparent;
+  border: 1px solid var(--edge); border-radius: 3px; color: var(--ink-2); cursor: pointer; box-sizing: border-box; }
+.ib:hover { color: var(--ink); }
+.ib[aria-pressed="true"] { background: var(--field); color: var(--ink); border-color: var(--ink-3); box-shadow: inset 0 -2px 0 var(--mark); }
+.ib svg { width: 20px; height: 20px; display: block; }
+.ib .dot { position: absolute; right: 3px; bottom: 3px; width: 8px; height: 8px; border-radius: 50%; border: 1px solid #F2EEE6; box-sizing: border-box; }
+.body { position: relative; flex: 1; display: grid; place-items: center; padding: 16px; }
+.viewport { position: relative; overflow: hidden; touch-action: none; cursor: crosshair; }
+canvas { display: block; }
+.zoom { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); padding: 4px 12px; border-radius: 14px;
+  background: rgba(30, 28, 30, 0.85); color: #F2EEE6; font: 15px var(--font-ui); border: 0; cursor: pointer;
+  opacity: 0; transition: opacity 300ms; pointer-events: none; }
+.zoom.on { opacity: 1; pointer-events: auto; }
+.pop { position: absolute; z-index: 5; top: calc(100% + 6px); background: var(--paper); border: 1px solid var(--edge);
+  border-radius: 6px; padding: 10px; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55); display: grid; gap: 10px; }
+.pop[hidden] { display: none; }
+.row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; max-width: 330px; }
+.row + .row { border-top: 1px solid var(--rule); padding-top: 10px; }
+.sw { width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; padding: 0; cursor: pointer; box-sizing: border-box;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35); }
+.sw[aria-pressed="true"] { border-color: var(--mark); }
+.size i { display: block; border-radius: 50%; background: currentColor; }
+</style>
+</head>
+<body>
+<div class="backdrop"></div>
+<div class="dialog" id="dlg" role="dialog" aria-label="Blank page">
+  <div class="head"><span>Blank page</span></div>
+  <div class="bar" id="bar">
+    <span class="controls" id="controls"></span>
+    <span>Page 1 of 1</span>
+    <div class="pop" id="pop" hidden></div>
+  </div>
+  <div class="body"><div class="viewport" id="vp"><canvas id="cv"></canvas><button class="zoom" id="zoom" title="Back to 1x"></button></div></div>
+</div>
+<script>
+"use strict";
+(() => {
+  // ================================================================ THE PAGE: .rm data
+  // A Paper Pro page (SceneInfo paper_size 1620 x 2160) with Layer 1, as a page the tablet makes. Its drawable surface
+  // is as wide as the page is tall, centered (measured on the tablet); ink beyond it is kept but not shown.
+  const page = {
+    paperSize: [1620, 2160],
+    layers: [{ nodeId: [0, 11], label: "Layer 1", visible: true, lines: [] }],
+    nextId: 1,                                        // PaperDaemon writes as author 2: item ids (2, n)
+  };
+  const layer = () => page.layers[0];
+  const SCREEN_W = 1620;
+
+  // ================================================================ PENS AND COLORS, as the file stores them
+  // rmscene's Pen and PenColor values. STORED WIDTH at a steady 50% pressure, per thickness scale (S / M / L = 1 / 2 / 3):
+  // the fineliner 8 per step and the highlighter 120 per step are the tablet's own (render.py); the marker's is read
+  // off the user's strokes; the rest are PLACEHOLDERS until each pen's strokes are measured -- how they are drawn is
+  // exact, the width they store is not yet.
+  const PENS = [
+    { id: "ballpoint", pen: "BALLPOINT_2", code: 15, name: "Ballpoint", per: 8, measured: false },
+    { id: "fineliner", pen: "FINELINER_2", code: 17, name: "Fineliner", per: 8, measured: true },
+    { id: "marker", pen: "MARKER_2", code: 16, name: "Marker", per: 20, measured: true },
+    { id: "pencil", pen: "PENCIL_2", code: 14, name: "Pencil", per: 12, measured: false },
+    { id: "mechanical", pen: "MECHANICAL_PENCIL_2", code: 13, name: "Mechanical pencil", per: 6, measured: false },
+    { id: "brush", pen: "PAINTBRUSH_2", code: 12, name: "Paintbrush", per: 24, measured: false },
+    { id: "calligraphy", pen: "CALIGRAPHY", code: 21, name: "Calligraphy pen", per: 16, measured: false },
+    { id: "highlighter", pen: "HIGHLIGHTER_2", code: 18, name: "Highlighter", per: 120, measured: true },
+    { id: "shader", pen: "SHADER", code: 23, name: "Shader", per: 60, measured: false },
+  ];
+  const PEN = Object.fromEntries(PENS.map(p => [p.id, p]));
+  // render.py ENUM: the pens' colors as the desktop app draws them; HL_ENUM: the highlighters' washes
+  const ENUM = { 0: [0, 0, 0], 1: [144, 144, 144], 2: [255, 255, 255], 3: [254, 253, 96], 4: [169, 250, 92], 5: [255, 85, 207],
+                 6: [48, 74, 224], 7: [194, 49, 50], 8: [191, 191, 191], 9: [255, 255, 255], 10: [145, 218, 113], 11: [116, 210, 232],
+                 12: [192, 127, 210], 13: [250, 231, 25] };
+  const HL_ENUM = { 3: [255, 237, 117], 13: [255, 237, 117], 4: [172, 255, 133], 10: [172, 255, 133], 5: [242, 158, 255],
+                    12: [242, 158, 255], 6: [190, 234, 254], 11: [190, 234, 254], 1: [199, 199, 198], 8: [199, 199, 198] };
+  const COLOR_NAME = { 0: "black", 1: "gray", 2: "white", 3: "yellow", 4: "green", 5: "pink", 6: "blue", 7: "red", 10: "green 2",
+                       11: "cyan", 12: "magenta", 13: "yellow 2" };
+  // a pen's choices: {color code, rgba (a highlighter's own color, stored in color_rgba), name}
+  function choices(id) {
+    if (id === "highlighter")
+      return [3, 4, 5, 6, 1].map(c => ({ color: c, rgba: null, name: COLOR_NAME[c] }))
+        .concat([{ color: 9, rgba: [255, 195, 140, 255], name: "orange" }]);
+    if (id === "shader") return [{ color: 1, rgba: [128, 128, 128, 96], name: "gray" }];
+    return [0, 1, 2, 6, 7, 4, 3, 5, 11, 12, 10, 13].map(c => ({ color: c, rgba: null, name: COLOR_NAME[c] }));
+  }
+  const WSCALE = { HIGHLIGHTER: 0.25 }, WSCALE_DEFAULT = 0.144, PENCIL_FAMILY = ["PENCIL", "MECHANICAL"];
+
+  const pickers = { a: { pen: "fineliner", size: 2, pick: 0 }, b: { pen: "ballpoint", size: 1, pick: 4 } };
+  let tool = "a", eraseMode = "area", popFor = null;
+  const choiceOf = pk => choices(pk.pen)[Math.min(pk.pick, choices(pk.pen).length - 1)];
+  const css = c => "rgb(" + (c.rgba || (PEN.highlighter && false) || ENUM[c.color]).slice(0, 3).join(",") + ")";
+  function swatchOf(pk) {
+    const c = choiceOf(pk);
+    if (c.rgba) return "rgb(" + c.rgba.slice(0, 3).join(",") + ")";
+    return "rgb(" + (pk.pen === "highlighter" ? HL_ENUM[c.color] : ENUM[c.color]).join(",") + ")";
+  }
+
+  // ================================================================ THE RENDERER, ported from fastdecomp/render.c
+  // put / capsule / convex / pen / highlighter, unchanged in what they do; a canvas of RGB bytes at `ss` times the
+  // screen's pixels, averaged down; the shader's stamp so it washes a pixel once per stroke.
+  const RF_PEN = 0, RF_HIGHLIGHTER = 1, RF_SHADER = 2;
+  const loPx = v => { const f = Math.floor(v - 0.5); return f < -1 ? -1 : f; };
+  const hiPx = v => Math.ceil(v - 0.5);
+  function put(c, x, y, kind, rgba, sid) {
+    if (x < c.cx0 || x > c.cx1 || y < c.cy0 || y > c.cy1) return;          // the drawable surface only: ink past it is not shown
+    const i = (y * c.W + x) * 3, p = c.px;
+    if (kind === RF_PEN) { p[i] = rgba[0]; p[i + 1] = rgba[1]; p[i + 2] = rgba[2]; }
+    else if (kind === RF_HIGHLIGHTER) {
+      if (rgba[0] < p[i]) p[i] = rgba[0]; if (rgba[1] < p[i + 1]) p[i + 1] = rgba[1]; if (rgba[2] < p[i + 2]) p[i + 2] = rgba[2];
+    } else {
+      const s = y * c.W + x;
+      if (c.stamp[s] === sid) return;
+      c.stamp[s] = sid;
+      const a = rgba[3] / 255;
+      for (let k = 0; k < 3; k++) p[i + k] = Math.round(p[i + k] + (rgba[k] - p[i + k]) * a);
+    }
+  }
+  function capsule(c, ax, ay, bx, by, r, kind, rgba, sid) {
+    if (!(r > 0)) return;
+    let x0 = loPx(Math.min(ax, bx) - r), x1 = hiPx(Math.max(ax, bx) + r);
+    let y0 = loPx(Math.min(ay, by) - r), y1 = hiPx(Math.max(ay, by) + r);
+    if (x0 < 0) x0 = 0; if (y0 < 0) y0 = 0; if (x1 > c.W - 1) x1 = c.W - 1; if (y1 > c.H - 1) y1 = c.H - 1;
+    const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy, r2 = r * r;
+    for (let y = y0; y <= y1; y++) {
+      const py = y + 0.5;
+      for (let x = x0; x <= x1; x++) {
+        const px = x + 0.5;
+        let t = 0;
+        if (L2 > 0) { t = ((px - ax) * dx + (py - ay) * dy) / L2; t = t < 0 ? 0 : (t > 1 ? 1 : t); }
+        const ex = px - (ax + t * dx), ey = py - (ay + t * dy);
+        if (ex * ex + ey * ey <= r2) put(c, x, y, kind, rgba, sid);
+      }
+    }
+  }
+  function convex(c, qx, qy, kind, rgba, sid) {
+    const n = qx.length;
+    let mnx = qx[0], mxx = qx[0], mny = qy[0], mxy = qy[0], area = 0;
+    for (let i = 0; i < n; i++) {
+      mnx = Math.min(mnx, qx[i]); mxx = Math.max(mxx, qx[i]); mny = Math.min(mny, qy[i]); mxy = Math.max(mxy, qy[i]);
+      const j = (i + 1) % n; area += qx[i] * qy[j] - qx[j] * qy[i];
+    }
+    if (Math.abs(area) < 1e-12) return;
+    const sgn = area > 0 ? 1 : -1;
+    let x0 = loPx(mnx), x1 = hiPx(mxx), y0 = loPx(mny), y1 = hiPx(mxy);
+    if (x0 < 0) x0 = 0; if (y0 < 0) y0 = 0; if (x1 > c.W - 1) x1 = c.W - 1; if (y1 > c.H - 1) y1 = c.H - 1;
+    for (let y = y0; y <= y1; y++) {
+      const py = y + 0.5;
+      for (let x = x0; x <= x1; x++) {
+        const px = x + 0.5;
+        let inside = true;
+        for (let i = 0; i < n && inside; i++) {
+          const j = (i + 1) % n;
+          const e = sgn * ((qx[j] - qx[i]) * (py - qy[i]) - (qy[j] - qy[i]) * (px - qx[i]));
+          if (e < 0) inside = false;
+          else if (e === 0) { const ex = (qx[j] - qx[i]) * sgn, ey = (qy[j] - qy[i]) * sgn; if (!(ey > 0 || (ey === 0 && ex < 0))) inside = false; }
+        }
+        if (inside) put(c, x, y, kind, rgba, sid);
+      }
+    }
+  }
+  function penShape(c, xy, w, kind, rgba, sid) {
+    const n = w.length;
+    if (n === 1) { capsule(c, xy[0], xy[1], xy[0], xy[1], w[0] / 2, kind, rgba, sid); return; }
+    for (let i = 0; i + 1 < n; i++) capsule(c, xy[2 * i], xy[2 * i + 1], xy[2 * i + 2], xy[2 * i + 3], (w[i] + w[i + 1]) / 4, kind, rgba, sid);
+  }
+  function highlighterShape(c, xy, w, rgba, sid) {
+    const sx = [], sy = [], sw = [];
+    for (let i = 0; i < w.length; i++) {
+      const m = sx.length;
+      if (m && Math.abs(xy[2 * i] - sx[m - 1]) <= 1e-6 && Math.abs(xy[2 * i + 1] - sy[m - 1]) <= 1e-6) continue;
+      sx.push(xy[2 * i]); sy.push(xy[2 * i + 1]); sw.push(w[i]);
+    }
+    const m = sx.length;
+    if (m < 2) return;
+    const dx = [], dy = [], hw = [];
+    for (let i = 0; i + 1 < m; i++) {
+      const ex = sx[i + 1] - sx[i], ey = sy[i + 1] - sy[i], L = Math.sqrt(ex * ex + ey * ey);
+      dx[i] = ex / L; dy[i] = ey / L; hw[i] = (sw[i] + sw[i + 1]) / 4;
+    }
+    for (let i = 0; i + 1 < m; i++) {
+      const nx = -dy[i] * hw[i], ny = dx[i] * hw[i];
+      convex(c, [sx[i] + nx, sx[i + 1] + nx, sx[i + 1] - nx, sx[i] - nx], [sy[i] + ny, sy[i + 1] + ny, sy[i + 1] - ny, sy[i] - ny], RF_HIGHLIGHTER, rgba, sid);
+    }
+    for (let i = 1; i + 1 < m; i++) {
+      const cross = dx[i - 1] * dy[i] - dy[i - 1] * dx[i];
+      if (Math.abs(cross) < 1e-6) continue;
+      const s = cross > 0 ? -1 : 1;
+      convex(c, [sx[i], sx[i] + s * (-dy[i - 1]) * hw[i - 1], sx[i] + s * (-dy[i]) * hw[i]],
+                [sy[i], sy[i] + s * dx[i - 1] * hw[i - 1], sy[i] + s * dx[i] * hw[i]], RF_HIGHLIGHTER, rgba, sid);
+    }
+  }
+  // render.py's preparation of a line: its kind, its color (a pencil toned by pressure), widths at the family's scale
+  function pencilTone(rgb, pressure) { const k = 0.6 + 0.4 * Math.min(1, Math.max(0, pressure)); return rgb.map(v => Math.trunc(255 - (255 - v) * k)); }
+  function prepared(L) {
+    const fam = L.pen.split("_")[0], scaleW = WSCALE[fam] || WSCALE_DEFAULT;
+    const widths = L.points.map(p => Math.max(1, p.width * scaleW));     // page units
+    if (L.pen === "SHADER") return { kind: RF_SHADER, rgba: L.colorRgba || [128, 128, 128, 96], widths };
+    if (L.pen.startsWith("HIGHLIGHTER")) return { kind: RF_HIGHLIGHTER, rgba: (L.colorRgba ? L.colorRgba.slice(0, 3) : (HL_ENUM[L.color] || [255, 237, 117])), widths };
+    let col = ENUM[L.color] || [0, 0, 0];
+    if (PENCIL_FAMILY.includes(fam)) col = pencilTone(col, L.points.reduce((a, p) => a + p.pressure, 0) / L.points.length / 255);
+    return { kind: RF_PEN, rgba: col, widths };
+  }
+
+  // ================================================================ the view, and drawing the page
+  const view = { zoom: 1, cx: 0, top: 0 };
+  const vp = document.getElementById("vp"), cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+  const dlg = document.getElementById("dlg"), zoomBtn = document.getElementById("zoom");
+  let vpW = 0, vpH = 0, dpr = 1, SS = 2, base = null, live = null;
+  function layout() {
+    const maxW = window.innerWidth * 0.92, maxH = window.innerHeight * 0.94, chrome = 14 + 24 + 20 + 34 + 1 + 32;
+    vpH = Math.floor(Math.min(maxH - chrome, (maxW - 32) * 4 / 3));
+    vpW = Math.floor(vpH * 3 / 4);
+    dlg.style.width = Math.max(vpW + 32, 560) + "px";
+    vp.style.width = vpW + "px"; vp.style.height = vpH + "px";
+    dpr = window.devicePixelRatio || 1;
+    SS = dpr >= 2 ? 1 : 2;                                  // twice the screen's pixels, averaged down (render.py, displayed)
+    cv.width = Math.round(vpW * dpr); cv.height = Math.round(vpH * dpr);
+    cv.style.width = vpW + "px"; cv.style.height = vpH + "px";
+    rebuild();
+  }
+  const scale = () => vpW / (SCREEN_W / view.zoom);           // CSS pixels per page unit
+  const toScreen = (x, y) => [vpW / 2 + (x - view.cx) * scale(), (y - view.top) * scale()];
+  const toPage = (sx, sy) => [view.cx + (sx - vpW / 2) / scale(), view.top + sy / scale()];
+  const drawable = (x, y) => Math.abs(x) <= page.paperSize[1] / 2 && y >= 0 && y <= page.paperSize[1];
+
+  // a working canvas: the gray, the white drawable surface, then the lines, at SS x the device's pixels
+  function canvasFor() {
+    const W = cv.width * SS, H = cv.height * SS, k = dpr * SS, px = new Uint8ClampedArray(W * H * 3).fill(142);
+    const [ax, ay] = toScreen(-page.paperSize[1] / 2, 0), [bx, by] = toScreen(page.paperSize[1] / 2, page.paperSize[1]);
+    const c = { W, H, px, stamp: new Int32Array(W * H), cx0: Math.max(0, Math.ceil(ax * k - 0.5)), cx1: Math.min(W - 1, Math.floor(bx * k - 0.5)),
+                cy0: Math.max(0, Math.ceil(ay * k - 0.5)), cy1: Math.min(H - 1, Math.floor(by * k - 0.5)) };
+    for (let y = c.cy0; y <= c.cy1; y++) px.fill(255, (y * W + c.cx0) * 3, (y * W + c.cx1 + 1) * 3);
+    return c;
+  }
+  let sid = 0;
+  function drawLine(c, L) {
+    const P = prepared(L), k = dpr * SS * scale(), xy = new Float64Array(L.points.length * 2);
+    L.points.forEach((p, i) => { const [sx, sy] = toScreen(p.x, p.y); xy[2 * i] = sx * dpr * SS; xy[2 * i + 1] = sy * dpr * SS; });
+    const w = P.widths.map(v => v * k);
+    sid += 1;
+    if (P.kind === RF_HIGHLIGHTER) highlighterShape(c, xy, w, P.rgba, sid); else penShape(c, xy, w, P.kind, P.rgba, sid);
+  }
+  function show(c) {
+    const W = cv.width, H = cv.height, out = ctx.createImageData(W, H), o = out.data, k2 = SS * SS;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      let r = 0, g = 0, b = 0;
+      for (let j = 0; j < SS; j++) { const row = ((y * SS + j) * c.W + x * SS) * 3; for (let i = 0; i < SS; i++) { r += c.px[row + 3 * i]; g += c.px[row + 3 * i + 1]; b += c.px[row + 3 * i + 2]; } }
+      const q = (y * W + x) * 4;
+      o[q] = (r + k2 / 2) / k2; o[q + 1] = (g + k2 / 2) / k2; o[q + 2] = (b + k2 / 2) / k2; o[q + 3] = 255;
+    }
+    ctx.putImageData(out, 0, 0);
+  }
+  // the page in its layers' order, each layer's lines in theirs; kept as `base` so a stroke being drawn goes over a copy
+  function rebuild() {
+    base = canvasFor();
+    for (const Ly of page.layers) if (Ly.visible) for (const L of Ly.lines) drawLine(base, L);
+    paint();
+  }
+  function paint() {
+    if (!live) { show(base); drawEraser(); return; }
+    const c = { ...base, px: base.px.slice(), stamp: base.stamp.slice() };
+    drawLine(c, live);
+    show(c);
+  }
+  let eraserAt = null;
+  function drawEraser() {
+    if (!eraserAt || tool !== "eraser") return;
+    const [ex, ey] = toScreen(eraserAt[0], eraserAt[1]);
+    ctx.save(); ctx.scale(dpr, dpr); ctx.strokeStyle = "rgba(0,0,0,0.45)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(ex, ey, ERASER_R * scale(), 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+  }
+
+  // ================================================================ undo and redo
+  const done = [], undone = [];
+  function apply(a, forward) {
+    const lines = layer().lines, take = forward ? a.removed : a.added, put_ = forward ? a.added : a.removed;
+    for (const e of take) { const i = lines.indexOf(e.line); if (i >= 0) lines.splice(i, 1); }
+    for (const e of [...put_].sort((x, y) => x.at - y.at)) lines.splice(Math.min(e.at, lines.length), 0, e.line);
+  }
+  function record(a) { done.push(a); undone.length = 0; }
+  function undo() { const a = done.pop(); if (a) { apply(a, false); undone.push(a); rebuild(); } }
+  function redo() { const a = undone.pop(); if (a) { apply(a, true); done.push(a); rebuild(); } }
+
+  // ================================================================ pens and the eraser
+  // A NEW LINE, as the tablet would store it from an upright pen at a steady 50% pressure: pressure 128 of 255, the
+  // pen's stored width at its thickness scale, speed 0, direction 0
+  function newLine(pk, x, y) {
+    const pen = PEN[pk.pen], c = choiceOf(pk), ts = pk.size + 1;
+    return { itemId: [2, page.nextId++], pen: pen.pen, penCode: pen.code, color: c.color, colorRgba: c.rgba,
+             thicknessScale: ts, startingLength: 0, width: pen.per * ts, points: [] };
+  }
+  const pointOf = (L, x, y) => ({ x, y, speed: 0, direction: 0, width: L.width, pressure: 128 });
+  const ERASER_R = 22;
+  let erasing = null, pointer = null;
+  const near = (x, y, ax, ay, r) => (x - ax) * (x - ax) + (y - ay) * (y - ay) <= r * r;
+  const widthOf = L => L.width * (WSCALE[L.pen.split("_")[0]] || WSCALE_DEFAULT);
+  function resample(pts, step) {
+    const out = [pts[0]];
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i], d = Math.hypot(b.x - a.x, b.y - a.y), n = Math.ceil(d / step);
+      for (let j = 1; j <= n; j++) out.push(Object.assign({}, b, { x: a.x + (b.x - a.x) * j / n, y: a.y + (b.y - a.y) * j / n }));
+    }
+    return out;
+  }
+  function eraseAt(x, y) {
+    const lines = layer().lines;
+    for (const L of [...lines]) {
+      const reach = ERASER_R + widthOf(L) / 2, P = L.points;
+      const hit = P.some((q, i) => {
+        const b = P[Math.min(i + 1, P.length - 1)], dx = b.x - q.x, dy = b.y - q.y, L2 = dx * dx + dy * dy;
+        const t = L2 ? Math.max(0, Math.min(1, ((x - q.x) * dx + (y - q.y) * dy) / L2)) : 0;
+        return near(x, y, q.x + t * dx, q.y + t * dy, reach);
+      });
+      if (!hit) continue;
+      const at = lines.indexOf(L);
+      lines.splice(at, 1);
+      erasing.removed.push({ line: L, at });
+      if (eraseMode === "stroke") continue;
+      // ERASE WHAT IT PASSES OVER: the line breaks where the eraser crossed it; what is left stays, as new lines
+      const runs = []; let cur = [];
+      for (const q of resample(P, 2)) { if (near(q.x, q.y, x, y, reach)) { if (cur.length > 1) runs.push(cur); cur = []; } else cur.push(q); }
+      if (cur.length > 1) runs.push(cur);
+      runs.forEach((run, j) => {
+        const piece = Object.assign({}, L, { itemId: [2, page.nextId++], points: run });
+        lines.splice(at + j, 0, piece);
+        erasing.added.push({ line: piece, at: at + j });
+      });
+    }
+  }
+  const local = e => { const r = vp.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  vp.addEventListener("pointerdown", e => {
+    if (e.button !== 0 || e.target === zoomBtn) return;
+    if (popFor) { popFor = null; paintPop(); }
+    const [x, y] = toPage(...local(e));
+    if (tool === "eraser") { erasing = { removed: [], added: [], last: [x, y] }; eraserAt = [x, y]; }
+    else {
+      if (!drawable(x, y)) return;                          // as on the tablet: no stroke starts in the gray
+      live = newLine(pickers[tool], x, y); live.points.push(pointOf(live, x, y));
+    }
+    pointer = e.pointerId; vp.setPointerCapture(e.pointerId);
+    if (erasing) { eraseAt(x, y); rebuild(); } else paint();
+  });
+  vp.addEventListener("pointermove", e => {
+    if (tool === "eraser") eraserAt = toPage(...local(e));
+    if (e.pointerId !== pointer) { if (tool === "eraser") paint(); return; }
+    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    for (const ev of evs) {
+      const [x, y] = toPage(...local(ev));
+      if (live) live.points.push(pointOf(live, x, y));
+      else if (erasing) {                                    // the eraser sweeps the whole way between two samples
+        const [lx, ly] = erasing.last || [x, y], n = Math.max(1, Math.ceil(Math.hypot(x - lx, y - ly) / (ERASER_R / 2)));
+        for (let i = 1; i <= n; i++) eraseAt(lx + (x - lx) * i / n, ly + (y - ly) * i / n);
+        erasing.last = [x, y];
+      }
+    }
+    if (erasing) rebuild(); else paint();
+  });
+  vp.addEventListener("pointerleave", () => { eraserAt = null; paint(); });
+  function finish(e) {
+    if (e.pointerId !== pointer) return;
+    pointer = null;
+    if (live) {
+      const at = layer().lines.length; layer().lines.push(live);
+      record({ removed: [], added: [{ line: live, at }] });
+      drawLine(base, live); live = null; paint();
+    }
+    if (erasing) {
+      const made = new Set(erasing.added.map(e => e.line)), gone = new Set(erasing.removed.map(e => e.line));
+      erasing.added = erasing.added.filter(e => !gone.has(e.line)).map(e => ({ line: e.line, at: layer().lines.indexOf(e.line) }));
+      erasing.removed = erasing.removed.filter(e => !made.has(e.line));
+      if (erasing.added.length || erasing.removed.length) record(erasing);
+      erasing = null; rebuild();
+    }
+  }
+  vp.addEventListener("pointerup", finish);
+  vp.addEventListener("pointercancel", finish);
+
+  // ================================================================ the controls, siblings of the pages grid
+  const ICON = {
+    grid: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2.5" y="2.5" width="6" height="6"/><rect x="11.5" y="2.5" width="6" height="6"/><rect x="2.5" y="11.5" width="6" height="6"/><rect x="11.5" y="11.5" width="6" height="6"/></svg>',
+    ballpoint: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M3 17l1-3.5 9-9 2.5 2.5-9 9z"/><path d="M3 17l1.6-.4"/></svg>',
+    fineliner: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M2.5 17.5l2.5-1 10-10-1.5-1.5-10 10z"/><path d="M12 5l3 3"/></svg>',
+    marker: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M3 17l2-4 8-8 2 2-8 8z"/><path d="M3 17l2.5-1.5"/><path d="M11 7l2 2" stroke-width="3"/></svg>',
+    pencil: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M3 17l1-4 9-9 3 3-9 9z"/><path d="M4 13l3 3"/><path d="M11.5 5.5l3 3"/></svg>',
+    mechanical: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M2.5 17.5l1.5-1.5"/><path d="M4 16l1-3 8.5-8.5 2 2L7 15z"/><path d="M13.5 4.5l1-1 2 2-1 1"/></svg>',
+    brush: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M9 11l6.5-7.5 1 1L9 11"/><path d="M8.5 11.5c-2 0-3.5 1.5-3.5 3.5 0 1-1 2-2.5 2 3.5 1 7.5-.5 7-4z"/></svg>',
+    calligraphy: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M10 2.5l4 6-4 9-4-9z"/><path d="M10 17.5V9"/><circle cx="10" cy="8.5" r="1"/></svg>',
+    highlighter: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M5 15l-1 2.5h4L9 16"/><path d="M5 15l4 1 7.5-7.5-5-5L4 11z"/></svg>',
+    shader: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><circle cx="8" cy="12" r="5" fill="currentColor" fill-opacity="0.25"/><path d="M11 9l5.5-5.5"/></svg>',
+    eraser: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M8 17h9"/><path d="M3.5 12.5l7.5-7.5 5 5-7 7H7.5z"/><path d="M7 9l5 5"/></svg>',
+    eraseArea: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 14c3-6 6-8 9-4s5 1 7-3" stroke-dasharray="2 2"/><circle cx="11" cy="11" r="3.2"/></svg>',
+    eraseStroke: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 14c3-6 6-8 9-4s5 1 7-3" stroke-dasharray="2 2"/><path d="M8 4l4 4M12 4l-4 4"/></svg>',
+  };
+  const controls = document.getElementById("controls"), pop = document.getElementById("pop");
+  function paintControls() {
+    const pen = k => '<button class="ib" data-tool="' + k + '" aria-pressed="' + (tool === k) + '" aria-label="' + PEN[pickers[k].pen].name +
+      '" title="' + PEN[pickers[k].pen].name + '">' + ICON[pickers[k].pen] + '<span class="dot" style="background:' + swatchOf(pickers[k]) + '"></span></button>';
+    controls.innerHTML = '<button class="ib" data-tool="grid" aria-label="Pages" title="Pages">' + ICON.grid + "</button>" +
+      '<span class="sep"></span>' + pen("a") + pen("b") +
+      '<button class="ib" data-tool="eraser" aria-pressed="' + (tool === "eraser") + '" aria-label="Eraser" title="Eraser">' +
+      ICON[eraseMode === "area" ? "eraser" : "eraseStroke"] + "</button>";
+  }
+  function paintPop() {
+    if (!popFor) { pop.hidden = true; return; }
+    const btn = controls.querySelector('[data-tool="' + popFor + '"]');
+    pop.style.left = btn.offsetLeft + "px";
+    if (popFor === "eraser") {
+      pop.innerHTML = '<div class="row">' + [["area", "eraseArea", "Erase what it passes over"], ["stroke", "eraseStroke", "Erase whole strokes"]].map(([m, ic, n]) =>
+        '<button class="ib" data-erase="' + m + '" aria-pressed="' + (eraseMode === m) + '" aria-label="' + n + '" title="' + n + '">' + ICON[ic] + "</button>").join("") + "</div>";
+    } else {
+      const pk = pickers[popFor];
+      pop.innerHTML = '<div class="row">' + PENS.map(p => '<button class="ib" data-pen="' + p.id + '" aria-pressed="' + (pk.pen === p.id) +
+        '" aria-label="' + p.name + '" title="' + p.name + '">' + ICON[p.id] + "</button>").join("") + "</div>" +
+        '<div class="row">' + [0, 1, 2].map(i => '<button class="ib size" data-size="' + i + '" aria-pressed="' + (pk.size === i) +
+        '" aria-label="' + ["Small", "Medium", "Large"][i] + '" title="' + ["Small", "Medium", "Large"][i] + '"><i style="width:' + (4 + i * 4) + "px;height:" + (4 + i * 4) + 'px"></i></button>').join("") + "</div>" +
+        '<div class="row">' + choices(pk.pen).map((c, i) => {
+          const rgb = c.rgba ? c.rgba.slice(0, 3) : (pk.pen === "highlighter" ? HL_ENUM[c.color] : ENUM[c.color]);
+          return '<button class="sw" data-pick="' + i + '" aria-pressed="' + (choiceOf(pk) === choices(pk.pen)[i] || pk.pick === i) + '" aria-label="' + c.name +
+            '" title="' + c.name + '" style="background:rgb(' + rgb.join(",") + ')"></button>';
+        }).join("") + "</div>";
+    }
+    pop.hidden = false;
+  }
+  controls.addEventListener("click", e => {
+    const b = e.target.closest("[data-tool]"); if (!b) return;
+    const t = b.dataset.tool;
+    if (t === "grid") return;
+    if (tool === t) popFor = popFor === t ? null : t; else { tool = t; popFor = null; }   // the tablet's way: tap the tool in hand again
+    paintControls(); paintPop(); paint();
+  });
+  pop.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.erase) eraseMode = b.dataset.erase;
+    const pk = pickers[popFor];
+    if (pk && b.dataset.pen) { pk.pen = b.dataset.pen; if (pk.pick >= choices(pk.pen).length) pk.pick = 0; }
+    if (pk && b.dataset.size) pk.size = Number(b.dataset.size);
+    if (pk && b.dataset.pick) pk.pick = Number(b.dataset.pick);
+    paintControls(); paintPop();
+  });
+  document.addEventListener("pointerdown", e => {
+    if (popFor && !e.target.closest("#pop") && !e.target.closest("#controls")) { popFor = null; paintPop(); }
+  });
+
+  // ================================================================ zoom and keys
+  let zoomTimer = 0;
+  function showZoom() {
+    zoomBtn.textContent = (Math.round(view.zoom * 10) / 10).toFixed(1) + "×";
+    zoomBtn.classList.add("on"); clearTimeout(zoomTimer);
+    zoomTimer = setTimeout(() => zoomBtn.classList.remove("on"), 2500);
+  }
+  function clampView() {
+    if (view.zoom <= 1) { view.cx = 0; view.top = 0; return; }
+    const half = SCREEN_W / view.zoom / 2, edge = page.paperSize[1] / 2;
+    view.cx = Math.max(-edge + half, Math.min(edge - half, view.cx));
+    view.top = Math.max(0, Math.min(page.paperSize[1] - vpH / scale(), view.top));
+  }
+  let zoomFrame = 0;
+  window.addEventListener("wheel", e => {
+    if (!e.ctrlKey) return;
+    e.preventDefault();
+    const r = vp.getBoundingClientRect();
+    const over = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+    const [sx, sy] = over ? [e.clientX - r.left, e.clientY - r.top] : [vpW / 2, 0];
+    const [px, py] = toPage(sx, sy);
+    view.zoom = Math.max(0.5, Math.min(5, view.zoom * Math.exp(-e.deltaY * 0.0015)));
+    view.cx = px - (sx - vpW / 2) / scale(); view.top = py - sy / scale();
+    clampView(); showZoom();
+    cancelAnimationFrame(zoomFrame); zoomFrame = requestAnimationFrame(rebuild);
+  }, { passive: false });
+  zoomBtn.addEventListener("click", () => { view.zoom = 1; view.cx = 0; view.top = 0; showZoom(); rebuild(); });
+  window.addEventListener("keydown", e => {
+    if (e.key === "Escape" && popFor) { popFor = null; paintPop(); return; }
+    if (!(e.ctrlKey || e.metaKey)) return;
+    const k = e.key.toLowerCase();
+    if (k === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
+    else if (k === "y" || (k === "z" && e.shiftKey)) { e.preventDefault(); redo(); }
+  });
+
+  window.addEventListener("resize", layout);
+  paintControls(); layout();
+  window.editorPage = page;                                  // the page's data, for a look from outside
+})();
+</script>
+</body>
+</html>

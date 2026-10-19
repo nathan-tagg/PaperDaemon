@@ -26,6 +26,20 @@ SHALL work the same way for every harness.
 - **WHEN** two text models ask for a bar chart of the same data
 - **THEN** the host draws the same chart both times
 
+### Requirement: Every tablet's page is laid out in its own frame
+A page SHALL be laid out in the frame its tablet wrote into it: a Paper Pro's 1620 x 2160, a Paper Pro
+Move's 954 x 1696, a reMarkable 2's or a Paper Pure's 1404 x 1872. The model SHALL be told the page's own
+size, and nothing about the tablet: a frame does not say which tablet made the page (a Paper Pro has
+written a 1404 x 1872 page). The safe area's margins SHALL
+scale with the tablet's pixel density, and a PDF page's with its width, since it is shown fitted. A page
+drawn as one picture (a chat, an adventure, the Decompose inbox) SHALL be fitted to the page's width from
+its top. A page PaperDaemon adds SHALL be in its notebook's frame, and a notebook it makes from nothing in
+the frame of the user's own library.
+
+#### Scenario: A chess game on a Paper Pro Move
+- **WHEN** a game starts on a Paper Pro Move's page
+- **THEN** the board is square, inside that page's safe area with its labels, and below its toolbar
+
 ### Requirement: Everything stays inside the safe area, below the toolbar
 Every kind of content the host or a game puts on a page -- words, charts, calendars, pictures, game pages,
 the pages of documents it makes -- SHALL stay inside the page's safe area, whose top clears the tablet's

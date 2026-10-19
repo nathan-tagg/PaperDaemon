@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.31
+
+- Something waits at the bottom of Settings, for whoever waits there long enough.
+- The Tablet tab is now Mirror. Every tablet on an account shares one library, so its settings (temperatures, times,
+  weeks, the decompose inbox, the location, the ignore and standing instructions tags) are in Settings, one set for
+  all of them; the gear is gone.
+- The Daemon screen has three tabs: Queue, Notes and Terminal. Drag a waiting job to reorder the queue; the cross
+  takes a waiting job out, or stops the job being worked at once and leaves its page as it was.
+- Notes are the notebooks' notepads, tidied: search, entries or plain text, Copy text.
+- A tagged folder shows a tag on its icon, and the path shows each folder's tags.
+- Pages keep their own tablet's frame: a page made on a reMarkable 2, Paper Pure or Paper Pro Move is laid out,
+  answered and previewed in that frame.
+- Everything PaperDaemon writes reaches the tablet one way, through the same push: game journals and the decompose
+  inbox included.
+- A text server that answered compressed no longer shows as "HTTP 400" with garbage after it.
+
 ## 0.1.30
 
 - What becomes a job: after PaperDaemon's first look at a complete mirror, every new or changed tagged page is a

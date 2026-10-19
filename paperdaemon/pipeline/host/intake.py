@@ -15,6 +15,7 @@ from paperdaemon.pipeline.host import steps as ST
 from paperdaemon.pipeline.host.job import JOB
 from paperdaemon.pipeline.host.job import UNSET
 from paperdaemon.pipeline.page import render as R
+from paperdaemon.pipeline.page import tablets as TB
 from paperdaemon.pipeline.page import typed as TY
 from paperdaemon.pipeline import host as H
 
@@ -215,14 +216,15 @@ def _typed_line_spans(tb, p):
 # The model binds what it sees on the page image to a place far better than to a number in a list, so a step
 # may carry `at`: the model's grounding on the page image, which the host resolves on the page.
 def _frame():
-    """This job's page frame in page units, (width, height): 1620 x 2160 on a notebook page; on a
-    PDF page, the PDF page at rm_render.PDF_SCALE (1404 x 1872 only for a 157.5 x 210 mm page). A
-    render fills the frame, so an image pixel maps to page units by the ratio of the sizes."""
+    """This job's page frame in page units, (width, height): on a notebook page, the frame the tablet that made it
+    wrote (tablets.TABLETS: 1620 x 2160 on a Paper Pro); on a PDF page, the PDF page at rm_render.PDF_SCALE (1404 x
+    1872 only for a 157.5 x 210 mm page). A render fills the frame, so an image pixel maps to page units by the ratio
+    of the sizes."""
     if JOB.frame is UNSET:
         try:
             JOB.frame = tuple(float(v) for v in R.page_frame(JOB.doc, JOB.page))
         except Exception:
-            JOB.frame = (1620.0, 2160.0)
+            JOB.frame = tuple(float(v) for v in TB.DEFAULT[1])
     return JOB.frame
 
 
@@ -325,7 +327,7 @@ def page_image(doc, page, note):
         render_failed = ("THE PAGE COULD NOT BE RENDERED (%s). The image below is BLANK because "
                          "of that failure, NOT because the page is empty. Do not place anything "
                          "by looking at it -- say so and stop." % type(ex).__name__)
-        base = Image.new("RGB", (1620, 2160), "white")
+        base = Image.new("RGB", tuple(int(v) for v in H._frame()), "white")
     for _im in JOB.images or []:
         # a pending picture, where commit() will put it -- under the draft ink, like the device
         try:
@@ -403,8 +405,8 @@ def describe_png(path):
         with Image.open(path) as im:
             iw, ih = im.size
     except Exception:
-        iw, ih = 1620, 2160
-    fw, fh = H._frame() if JOB.doc else (1620.0, 2160.0)
+        iw, ih = (int(v) for v in H._frame())
+    fw, fh = H._frame()
     sx, sy = fw / max(1, iw), fh / max(1, ih)
     out = []
     for r in rows[:60]:
@@ -414,8 +416,8 @@ def describe_png(path):
         out.append("  y=%4d x=%5d size~%2d  %s" % (y, x, size, r["text"][:120]))
     if not out:
         return "THE PAGE, READ BY OCR: nothing legible -- blank, or only marks that are not text."
-    return ("THE PAGE, READ BY OCR (page coordinates: x -810..810 with 0 at the center, y 0 at "
-            "the top; each line is its baseline, left edge and approximate size):\n" + "\n".join(out))
+    return ("THE PAGE, READ BY OCR (page coordinates: x %d..%d with 0 at the center, y 0 at the top; each line is "
+            "its baseline, left edge and approximate size):\n" % (-fw / 2, fw / 2) + "\n".join(out))
 
 
 def describe_page(doc, page):
@@ -441,7 +443,7 @@ def job_context(doc, page, name):
     picture of the page goes with it. The model reads text exactly and pictures approximately, and
     an id cannot be misquoted."""
     L = ["This is %s page %s. It changed, which is why you were woken. Today is %s; the time is %s."
-         % (name, page, time.strftime("%A %d %B %Y"), time.strftime("%H:%M"))]
+         % (name, page, time.strftime("%A %d %B %Y"), time.strftime("%H:%M")), TB.coordinates(H._frame())]
     try:
         numbers = dict((p["id"], i + 1) for i, p in enumerate(R.live_pages(doc)))
     except Exception:

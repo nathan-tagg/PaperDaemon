@@ -48,7 +48,7 @@ p.msg:empty { display: none; }   /* an empty message line takes no room: buttons
 .pads { display: grid; grid-template-columns: 216px minmax(0, 1fr); gap: var(--s6); align-items: start; margin-top: var(--s5); }
 .books { position: sticky; top: var(--s5); }
 .books .field { width: 100%; }
-.booklist { list-style: none; margin: var(--s3) 0 0; padding: 0; border-top: 1px solid var(--ink); }
+.booklist { list-style: none; margin: 0; padding: 0; }
 .booklist li { border-bottom: 1px solid var(--rule); }
 .booklist button {
   display: block; width: 100%; text-align: start; font: inherit; color: inherit; background: transparent; cursor: pointer;
@@ -62,7 +62,7 @@ p.msg:empty { display: none; }   /* an empty message line takes no room: buttons
 .books > .meta { margin-top: var(--s3); }
 .books > .actions { margin-top: var(--s4); }
 
-.padhead { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s4); padding-bottom: var(--s2); border-bottom: 1px solid var(--ink); }
+.padhead { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s4); padding-bottom: var(--s2); }
 .padhead .meta { margin-top: 2px; overflow-wrap: anywhere; }
 .padhead code { font-size: 12px; }
 .padhead .actions { flex: none; padding-top: 3px; }
@@ -149,6 +149,38 @@ pre.snippet.pad-text { white-space: pre-wrap; padding: var(--s3) var(--s4); font
   background: var(--paper-sunk); color: var(--ink-2); font: inherit; cursor: pointer; }
 .ftab:hover { color: var(--ink); }
 .ftab[aria-selected="true"] { background: var(--paper); color: var(--ink); font-weight: 600; border-bottom-color: var(--paper); }
+/* the library (Mirror, False Mirror): the box of files, and the False Mirror's own controls */
+.lib-box { margin-top: var(--s5); }
+.page-head .head-acts { display: flex; gap: var(--s2); margin-inline-start: auto; }
+.page-head:has(.head-acts) { display: flex; align-items: center; gap: var(--s4); }
+.folder.picked, .doc-card.picked .cover { outline: 2px solid var(--mark); outline-offset: 2px; }
+/* THE MENU OF WHAT IS SELECTED slides down over the top of the window, as the tablet's does: fixed, so nothing on the
+   screen moves for it */
+.pick-menu { position: fixed; top: 0; inset-inline: 0; z-index: 30; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3);
+  padding: var(--s3) var(--s5); background: var(--paper); border-bottom: 1px solid var(--edge); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  transform: translateY(-110%); transition: transform 0.22s ease-out; visibility: hidden; }
+.pick-menu.open { transform: none; visibility: visible; }
+.pick-menu .pick-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40%; }
+.pick-menu .pick-acts { display: flex; gap: var(--s2); align-items: center; margin-inline-start: auto; }
+.pick-menu .pick-msg { flex-basis: 100%; margin: 0; }
+.pick-menu .pick-msg:empty { display: none; }
+.chip-x { margin-inline-start: 4px; padding: 0 2px; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.chip-x:hover { color: var(--ink); }
+.tag-add { width: 9em; height: 22px; padding: 0 6px; font-size: 12.5px; }
+.tag-edit { display: flex; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s3); min-height: 22px; }
+.move-list { display: grid; gap: var(--s2); max-height: 50vh; overflow-y: auto; margin-bottom: var(--s3); }
+.field-row { display: grid; gap: var(--s1); margin: var(--s3) 0; }
+.viewer-page.editing { padding: 0; overflow: hidden; align-items: stretch; }
+.page-editor { flex: 1; width: 100%; height: 100%; border: 0; display: block; }
+/* the False Mirror's setting, come up out of nothing after a minute on Settings */
+.fm-section.haunt { animation: haunt 6s ease-out both; }
+@keyframes haunt {
+  0% { opacity: 0; filter: blur(6px); letter-spacing: 0.3em; }
+  60% { opacity: 0.55; filter: blur(1.5px); }
+  100% { opacity: 1; filter: none; letter-spacing: normal; }
+}
+@media (prefers-reduced-motion: reduce) { .fm-section.haunt { animation-duration: 0.01s; } .pick-menu { transition: none; } }
+#ov-terms .term-about { margin: var(--s3) 0; }
 .fpanel { padding: var(--s5); border: 1px solid var(--edge); border-top: 0; }
 .script-box { display: grid; gap: var(--s1); margin-top: var(--s4); color: var(--ink-2); }
 .script-box textarea { width: 100%; box-sizing: border-box; resize: vertical; }
@@ -222,12 +254,15 @@ pre.snippet.pad-text { white-space: pre-wrap; padding: var(--s3) var(--s4); font
 .crumbs .crumb { font-size: inherit; }
 .crumbs [aria-current] { color: var(--ink); font-weight: 600; }
 .crumbs .sep { color: var(--ink-3); }
+.crumb-tags { display: inline-flex; flex-wrap: wrap; gap: 4px; align-self: center; }
 .folders { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--s3); margin-bottom: var(--s6); }
 .folder { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); border: 1px solid var(--rule); border-radius: 4px;
   background: var(--field); color: var(--ink); font: inherit; text-align: start; cursor: pointer; min-width: 0; }
 .folder:hover { border-color: var(--edge); }
 .folder svg { width: 22px; height: 18px; flex: none; fill: none; stroke: var(--mark); stroke-width: 1.5; }
 .folder span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.folder svg.tagged { width: 18px; height: 18px; margin-inline-start: auto; stroke: var(--ink-2); stroke-width: 2.2; stroke-linejoin: round; }
+.folder svg.tagged circle { fill: var(--ink-2); stroke: none; }
 .doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: var(--s6) var(--s5); }
 .doc-card { display: grid; gap: var(--s1); padding: 0; border: 0; background: none; font: inherit; color: inherit; text-align: start; cursor: pointer; min-width: 0; }
 .doc-card .cover { display: block; aspect-ratio: 3 / 4; background: #F4F4EC; border: 1px solid var(--edge); overflow: hidden; }
@@ -271,11 +306,24 @@ dialog.viewer::backdrop { background: var(--shade); }
 .custom-tag { display: grid; gap: var(--s2); padding: var(--s3) var(--s4); border: 1px solid var(--rule); border-radius: 4px; }
 .custom-tag textarea { width: 100%; box-sizing: border-box; resize: vertical; }
 .tag-card { grid-template-columns: auto 1fr; align-items: start; column-gap: var(--s3); padding-inline-start: var(--s2); }
-.tag-card .grip { align-self: stretch; display: flex; align-items: center; justify-content: center; width: 24px; padding: 0; border: 0;
+.tag-card .grip, .qrow .grip { align-self: stretch; display: flex; align-items: center; justify-content: center; width: 24px; padding: 0; border: 0;
   border-radius: 3px; background: none; color: var(--ink-3); cursor: grab; }
-.tag-card .grip svg { width: 12px; height: 12px; }
-.tag-card .grip:hover, .tag-card .grip:focus-visible { color: var(--ink); background: var(--rule); }
-.tag-card .grip:active { cursor: grabbing; }
+.tag-card .grip svg, .qrow .grip svg { width: 12px; height: 12px; }
+.tag-card .grip:hover, .tag-card .grip:focus-visible, .qrow .grip:hover, .qrow .grip:focus-visible { color: var(--ink); background: var(--rule); }
+.tag-card .grip:active, .qrow .grip:active { cursor: grabbing; }
+.queue { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+.qrow { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto auto auto; align-items: center; column-gap: var(--s3);
+  min-height: 44px; padding: var(--s1) var(--s4) var(--s1) var(--s2); border: 1px solid var(--rule); border-radius: 4px; }
+.qrow .grip-gap { width: 24px; }
+.qrow .qdrop { color: var(--ink-3); }
+.qrow .qdrop svg { stroke-width: 1.6; }
+.qrow .qdrop:hover, .qrow .qdrop:focus-visible { color: var(--ink); }
+.qname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qname strong { font-weight: 600; }
+.qname .meta { margin-inline-start: var(--s3); }
+.qrow.busy > :not(.qdrop) { opacity: .5; }
+.qrow.dragging { opacity: .5; }
+.qrow.over { border-color: var(--mark); }
 .tag-card .tag-fields { display: grid; gap: var(--s2); min-width: 0; }
 .tag-card .tag-name { display: grid; gap: var(--s1); color: var(--ink-2); }
 .tag-card.dragging { opacity: .5; }
