@@ -495,7 +495,7 @@ span.lname { cursor: default; }
     if (live) return;                                         // the stroke being drawn paints its own patches
     ctx.putImageData(shown, 0, 0);
     ctx.save(); ctx.scale(dpr, dpr);
-    drawSelection(); drawCaret(); drawEraser(); drawShaping(); drawPick();
+    drawSelection(); drawCaret(); drawEraser(); drawShaping(); drawPick(); drawDecomposing();
     ctx.restore();
   }
 
@@ -906,7 +906,7 @@ span.lname { cursor: default; }
     });
     const P = T.paras[caret.p];                               // typed list marks at a body paragraph's start
     if (P.style === "body" && !P.list && caret.o === P.chars.length) {
-      const t = P.chars.map(c => c.c).join(""), m = { "- ": "bullet", "* ": "bullet", "1. ": "number", "[ ] ": "check", "[x] ": "checked" }[t];
+      const t = P.chars.map(c => c.c).join(""), m = { "- ": "bullet", "* ": "bullet", "1. ": "number", "[ ] ": "check", "[] ": "check", "[x] ": "checked", "[X] ": "checked" }[t];
       if (m) { P.list = m; P.chars = []; caret.o = 0; }
     }
   }
@@ -1324,6 +1324,7 @@ span.lname { cursor: default; }
   const SHAPE_KEYS = "\n2 circle, 3 triangle, 4 square, 5 rectangle, 6 arrow: two clicks (Shift: on the hours); 1 the pen\nShift or Ctrl + click: corners; let go for a line (two) or a shape (more)\nCtrl + Shift: edges on the clock's hours\nAlt + click: fill";
   const cell = (attrs, pressed, inner, label, cls) => '<button class="cell ' + (cls || "") + '" ' + attrs + ' aria-pressed="' + pressed + '" aria-label="' + label + '" title="' + label + '">' + inner + "</button>";
   function paintPop() {
+    if (EMBED) window.parent.postMessage({ pd: "editor-menu", open: !!popFor }, location.origin);   // so Esc closes it first
     const lb = controls.querySelector('[data-tool="layers"]');
     if (lb) lb.setAttribute("aria-pressed", popFor === "layers");     // the layers button is pressed while its menu is open
     sendTools();
@@ -1615,7 +1616,7 @@ span.lname { cursor: default; }
   // strokes PaperDaemon reads back, and as a picture any program can paste), Ctrl+V puts back what is there, centered
   // under the pointer: strokes as strokes, selected; an image as a picture; Ctrl+Shift+V an image as strokes, decomposed
   // at its own size.
-  let pickMode = "select", pick = null, pickDrag = null, pickLoop = null, lastAt = null, pasteAsStrokes = false;
+  let pickMode = "select", pick = null, pickDrag = null, pickLoop = null, lastAt = null;
   const hiddenLines = new Set(), hiddenPics = new Set();
   // the turning handle's pointer: a circling arrow, as the old Office suites showed it
   const TURN_CURSOR = 'url("data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">' +
@@ -1762,6 +1763,13 @@ span.lname { cursor: default; }
     }
     pick = null; rebuild();
   }
+  function drawDecomposing() {
+    if (!decomposing) return;
+    const { cx, cy, w, h } = decomposing, [x0, y0] = toScreen(cx - w / 2, cy - h / 2), [x1, y1] = toScreen(cx + w / 2, cy + h / 2);
+    ctx.save(); ctx.setLineDash([6, 4]); ctx.strokeStyle = "rgba(0,0,0,0.55)"; ctx.lineWidth = 1.2; ctx.strokeRect(x0, y0, x1 - x0, y1 - y0);
+    ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.font = "14px system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("Decomposing…", (x0 + x1) / 2, (y0 + y1) / 2); ctx.restore();
+  }
   function drawPick() {                                       // the loop being drawn, and the selection's frame and handles
     if (pickLoop) {
       ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = "rgba(0,0,0,0.65)"; ctx.lineWidth = 1;
@@ -1848,37 +1856,60 @@ span.lname { cursor: default; }
       navigator.clipboard.write([new ClipboardItem({ "image/png": b })]).then(() => tell("Captured"), () => tell("The capture could not reach the clipboard"));
     }, "image/png");
   }
-  // PASTE, when no text is being typed: strokes back as strokes; an image as a picture (Ctrl+Shift+V: as strokes)
-  window.addEventListener("keydown", e => {
-    if ((e.ctrlKey || e.metaKey) && (e.key === "v" || e.key === "V")) pasteAsStrokes = e.shiftKey;
-  }, true);
+  // PASTE, when no text is being typed: strokes back as strokes; an image as a picture (Ctrl+Shift+V: as strokes).
+  // Ctrl+V comes as the paste it is. Ctrl+Shift+V does not: the browser pastes it as plain text, the image left out, so
+  // for it (and for a Ctrl+V the viewer around the page passed on, which has no paste of its own) the clipboard is read.
   const pasteAt = () => lastAt || toPage(vpW / 2, vpH / 2);
+  window.addEventListener("keydown", e => {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey || (e.key !== "v" && e.key !== "V") || editing()) return;
+    if (!e.shiftKey && e.isTrusted) return;                   // the paste event takes it
+    e.preventDefault(); e.stopImmediatePropagation();
+    readClipboard(e.shiftKey);
+  }, true);
+  async function readClipboard(asStrokes) {
+    let items;
+    try { items = await navigator.clipboard.read(); }
+    catch (err) { tell("The clipboard could not be read here"); return; }
+    for (const it of items) {
+      const img = it.types.find(t => /^image\//.test(t));
+      if (img) { placeImage(await it.getType(img), asStrokes); return; }
+    }
+    for (const it of items) {
+      if (it.types.includes("text/html")) {
+        const html = await (await it.getType("text/html")).text();
+        if (await pasteFrom(html, "", asStrokes)) return;
+      }
+      if (it.types.includes("text/plain")) {
+        const text = await (await it.getType("text/plain")).text();
+        if (await pasteFrom("", text, asStrokes)) return;
+      }
+    }
+  }
   document.addEventListener("paste", async e => {
     if (editing()) return;
     const cd = e.clipboardData; if (!cd) return;
-    const html = cd.getData("text/html") || "", m = /data-pd-strokes="([^"]+)"/.exec(html);
-    const asStrokes = pasteAsStrokes; pasteAsStrokes = false;
+    for (const it of cd.items || []) if (it.kind === "file" && /^image\//.test(it.type)) { e.preventDefault(); placeImage(it.getAsFile(), false); return; }
+    const html = cd.getData("text/html") || "", text = cd.getData("text/plain") || "";
+    if (/data-pd-strokes=|<svg|<img[^>]+src="data:image\//i.test(html + text)) { e.preventDefault(); pasteFrom(html, text, false); }
+  });
+  async function pasteFrom(html, text, asStrokes) {           // our own strokes, or an image carried as markup -> handled?
+    const m = /data-pd-strokes="([^"]+)"/.exec(html);
     if (m && !asStrokes) {                                    // our own strokes, back as strokes, selected
-      e.preventDefault();
-      let got; try { got = JSON.parse(decodeURIComponent(escape(atob(m[1])))); } catch (err) { return; }
+      let got; try { got = JSON.parse(decodeURIComponent(escape(atob(m[1])))); } catch (err) { return false; }
       const [cx, cy] = pasteAt(), Ly = layer();
       const lines = (got.lines || []).map(ln => lineIn({ ...ln, points: ln.points.map(p => [p[0] + cx, p[1] + cy, p[2], p[3], p[4], p[5]]) }));
       addStrokes(lines); if (tool !== "pick") { tool = "pick"; pickMode = "select"; paintControls(); }
-      selectStrokes(lines, Ly); return;
+      selectStrokes(lines, Ly); return true;
     }
-    let blob = null;
-    for (const it of cd.items || []) if (it.kind === "file" && /^image\//.test(it.type)) { blob = it.getAsFile(); break; }
-    if (!blob) {                                              // an image that came as markup: an SVG, or an <img> of a data URL
-      const text = cd.getData("text/plain") || "", svg = /<svg[\s\S]*<\/svg>/i.exec(text) || /<svg[\s\S]*<\/svg>/i.exec(html);
-      const src = /<img[^>]+src="(data:image\/[^"]+)"/i.exec(html);
-      if (svg) blob = new Blob([svg[0]], { type: "image/svg+xml" });
-      else if (src) blob = await (await fetch(src[1])).blob();
-    }
-    if (!blob) return;
-    e.preventDefault();
+    const svg = /<svg[\s\S]*<\/svg>/i.exec(text) || /<svg[\s\S]*<\/svg>/i.exec(html), src = /<img[^>]+src="(data:image\/[^"]+)"/i.exec(html);
+    if (svg) { placeImage(new Blob([svg[0]], { type: "image/svg+xml" }), asStrokes); return true; }
+    if (src) { placeImage(await (await fetch(src[1])).blob(), asStrokes); return true; }
+    return false;
+  }
+  async function placeImage(blob, asStrokes) {               // under the pointer, a pixel of it a pixel of the screen
     const [cx, cy] = pasteAt();
     const img = await loadBlob(blob); if (!img) { tell("That image could not be read"); return; }
-    const u = 1 / (scale() * dpr), w = img.naturalWidth * u, h = img.naturalHeight * u;  // a pixel of it, a pixel of the screen
+    const u = 1 / (scale() * dpr), w = img.naturalWidth * u, h = img.naturalHeight * u;
     if (asStrokes) { pasteDecomposed(img, cx, cy, w, h); return; }
     const png = await toPng(img), r = await fetch("/api/v1" + BASE + "/library/" + encodeURIComponent(DOC) + "/page/" + PAGE + "/picture",
       { method: "POST", body: png, headers: { Authorization: "Bearer " + token(), "Content-Type": "image/png" } }).catch(() => null);
@@ -1888,7 +1919,7 @@ span.lname { cursor: default; }
     record({ type: "pics", before, after: clone(page.images) }); lastType = null;
     await loadPictures(); rebuild();
     tool = "pick"; pickMode = "capture"; paintControls(); selectPicture(page.images.length - 1);
-  });
+  }
   async function loadBlob(blob) {
     try { const img = new Image(), url = URL.createObjectURL(blob); await new Promise((ok, no) => { img.onload = ok; img.onerror = no; img.src = url; }); return img; }
     catch (e) { return null; }
@@ -1898,8 +1929,11 @@ span.lname { cursor: default; }
     c2.getContext("2d").drawImage(img, 0, 0, c2.width, c2.height);
     return new Promise(ok => c2.toBlob(ok, "image/png"));
   }
+  // WHILE AN IMAGE IS DECOMPOSED its place on the page shows: a dashed frame the image's size, under the pointer, saying so
+  let decomposing = null;
   async function pasteDecomposed(img, cx, cy, w, h) {        // Ctrl+Shift+V: the decomposer's strokes, at the image's own size
-    tell("Decomposing…", 60000);
+    decomposing = { cx, cy, w, h }; paint();
+    tell("Decomposing…", 600000);
     const png = await toPng(img), data = await new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(png); });
     const longest = Math.max(w, h), width = Math.round(Math.max(200, Math.min(1200, longest)));
     let got;
@@ -1908,7 +1942,11 @@ span.lname { cursor: default; }
         body: JSON.stringify({ image: data, width, strokes: true }) });
       if (!r.ok) throw new Error(r.status);
       got = await r.json();
-    } catch (e) { tell(location.protocol === "file:" ? "Paste as strokes works in the app's page editor, not in this file" : "The image could not be decomposed"); return; }
+    } catch (e) {
+      decomposing = null; paint();
+      tell(location.protocol === "file:" ? "Paste as strokes works in the app's page editor, not in this file" : "The image could not be decomposed"); return;
+    }
+    decomposing = null;
     const k = longest / got.box, [ox, oy] = got.center, Ly = layer();
     const lines = got.lines.map(st => lineIn({ pen: st.pen, penCode: st.penCode, color: st.color, colorRgba: st.colorRgba, thicknessScale: 1,
       points: st.pts.map(([x, y], i) => [cx + (x - ox) * k, cy + (y - oy) * k, 0, 0, Math.max(1, Math.round((st.widths[i] || st.widths[0] || 8) * k)), 128]) }));
@@ -2205,6 +2243,13 @@ span.lname { cursor: default; }
   }
 
   window.addEventListener("resize", layout);
+  // ESC CLOSES WHAT IS OPEN FIRST: a menu of the viewer's around the page (its tags) before anything here
+  let viewerMenu = false;
+  window.addEventListener("keydown", e => {
+    if (e.key !== "Escape" || !viewerMenu || !EMBED) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    viewerMenu = false; window.parent.postMessage({ pd: "viewer-menu-close" }, location.origin);
+  }, true);
   if (EMBED) {
     document.body.classList.add("embedded");
     dlg.append(pop);                                         // out of the hidden bar: menus open at the frame's top
@@ -2217,6 +2262,7 @@ span.lname { cursor: default; }
         const b = controls.querySelector('[data-tool="' + d.tool + '"]');
         if (b) b.click();
       } else if (d.pd === "editor-close" && popFor) { popFor = null; paintPop(); paintControls(); }
+      else if (d.pd === "viewer-menu") viewerMenu = !!d.open;
       else if (d.pd === "editor-key") {                        // a key pressed in the viewer outside the page: as if here
         window.dispatchEvent(new KeyboardEvent("keydown", { key: d.key, code: d.code, ctrlKey: d.ctrlKey, shiftKey: d.shiftKey,
                                                             altKey: d.altKey, metaKey: d.metaKey, cancelable: true }));

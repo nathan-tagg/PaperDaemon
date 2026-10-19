@@ -21,6 +21,9 @@
 p.msg:empty { display: none; }   /* an empty message line takes no room: buttons keep their one spacing */
 .msg.attn { color: var(--mark); }
 .rail-foot .meta { overflow-wrap: anywhere; }
+.rail-foot .foot-line { display: flex; align-items: center; gap: var(--s3); min-width: 0; }
+.rail-foot .foot-line .meta { margin: 0; min-width: 0; }
+#rail-loop:empty { display: none; }
 
 /* day headings inside a table */
 .list tr.dayrow td { font: 600 12px/16px var(--font-ui); color: var(--ink-3); padding: var(--s4) var(--s2) var(--s1) var(--s2); border-bottom: 1px solid var(--rule); }
@@ -230,7 +233,8 @@ pre.snippet.pad-text { white-space: pre-wrap; padding: var(--s3) var(--s4); font
   .nav a { border-inline-start: 0; border-bottom: 2px solid transparent; padding: 6px var(--s3); }
   .nav a[aria-current="page"] { border-bottom-color: var(--ink); background: transparent; }
   .nav .state { display: none; }
-  .rail-foot { display: none; }
+  .rail-foot { padding: var(--s2) var(--s4); }     /* narrow: the start and pause stay; the version goes */
+  .rail-foot .meta { display: none; }
   .steplist { display: flex; flex-wrap: wrap; }
   .steplist li { padding: 6px var(--s3); }
   .page { padding: var(--s5) var(--s4) var(--s7); }
@@ -597,3 +601,6 @@ ul.keys kbd { font: 600 11px/1 var(--font-ui, inherit); letter-spacing: 0.04em; 
 ul.keys .kplus, ul.keys .kor { color: var(--ink-3); font-size: 11px; }
 ul.keys .kn { color: var(--ink-2); line-height: 1.35; }
 ul.keys .kn strong { color: var(--ink); font-weight: 600; }
+/* TEXT BOXES AND AREAS TAKE NO RING WHEN FOCUSED: the caret says where typing goes (buttons keep theirs) */
+html input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus, html input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus-visible,
+html textarea:focus, html textarea:focus-visible, html .field:focus-visible, html .code:focus-within { outline: none; }

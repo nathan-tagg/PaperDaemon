@@ -67,8 +67,10 @@
     }).join("");
     return '<nav class="rail" aria-label="PaperDaemon"><a class="wordmark" href="#overview">PaperDaemon</a>' +
       '<ul class="nav">' + items + "</ul>" +
-      '<div class="rail-foot"><p class="meta">' + (SHOW_ENGINE_ADDRESS ? esc(PD.t("rail.engine_on")) + ' <code id="rail-engine"></code><br>' : "") +
-      '<span id="rail-version"></span></p></div></nav>' +
+      // THE DAEMON'S START AND PAUSE, left of the version: there from every screen
+      '<div class="rail-foot"><div class="foot-line"><span id="rail-loop"></span><p class="meta">' +
+      (SHOW_ENGINE_ADDRESS ? esc(PD.t("rail.engine_on")) + ' <code id="rail-engine"></code><br>' : "") +
+      '<span id="rail-version"></span></p></div></div></nav>' +
       '<main class="page" id="main" tabindex="-1"></main>';
   }
 
@@ -91,7 +93,34 @@
     });
     const eng = $("#rail-engine"); if (eng) eng.textContent = location.host;
     const ver = $("#rail-version"); if (ver) ver.textContent = st.version ? PD.t("rail.version", { version: st.version }) : "";
+    paintLoop();
   };
+
+  // START AND PAUSE: Start, or Pause while the daemon runs; a disabled Paused, its hover saying why, while no lineup
+  // could take a page; Starting… or Pausing… while it changes. A start that fails is said on the Daemon screen.
+  const LOOP = { busy: false };
+  PD.loopError = "";
+  function paintLoop() {
+    const box = $("#rail-loop"); if (!box) return;
+    const st = PD.status || {}, on = !!(st.loop && st.loop.running);
+    let html;
+    if (LOOP.busy) html = '<button type="button" class="btn small" disabled aria-busy="true">' + esc(PD.t(on ? "loop.pausing" : "loop.starting")) + "</button>";
+    else if (on) html = '<button type="button" class="btn small" data-loop="stop">' + esc(PD.t("loop.pause")) + "</button>";
+    else if (st.can_start === false)
+      html = '<button type="button" class="btn small" disabled title="' + esc(PD.t("loop.cannot_start")) + '">' + esc(PD.t("loop.paused")) + "</button>";
+    else html = '<button type="button" class="btn small primary" data-loop="start">' + esc(PD.t("loop.start")) + "</button>";
+    PD.html(box, html);
+  }
+  document.addEventListener("click", async e => {
+    const b = e.target.closest && e.target.closest("[data-loop]"); if (!b || LOOP.busy) return;
+    const start = b.dataset.loop === "start";
+    LOOP.busy = true; PD.loopError = ""; paintLoop();
+    const [, err] = await PD.safe(PD.api("POST", start ? "/loop/start" : "/loop/stop"));
+    LOOP.busy = false;
+    if (err) PD.loopError = PD.errText(err);
+    await PD.refreshStatus();
+    document.dispatchEvent(new CustomEvent("pd:loop"));
+  });
 
   PD.refreshStatus = async () => {
     const [st] = await PD.safe(PD.api("GET", "/status"));

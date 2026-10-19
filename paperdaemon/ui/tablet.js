@@ -16,6 +16,7 @@
     chapters: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="2.5" cy="3.5" r="1.2"/><circle cx="2.5" cy="8" r="1.2"/><circle cx="2.5" cy="12.5" r="1.2"/><path d="M6 3.5h8.5M6 8h8.5M6 12.5h8.5"/></svg>',
     tag: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 2h5.8l6.4 6.5-5.7 5.7L2 7.8z"/><circle cx="5" cy="5" r="1"/></svg>',
     menu: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/></svg>',
+    newpage: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 1.5h6l3 3v10h-9z"/><path d="M9.5 1.5v3h3"/><path d="M8 7.5v5M5.5 10h5"/></svg>',
   };
   // a folder's own tags, as the tablet tags it: an icon on the folder, and pills after its name in the path
   // a shopping tag, as the tablet draws one: square corner at the top left with the hole in it, the point at the bottom right
@@ -99,7 +100,8 @@
           '<button type="button" class="btn small" data-v="prev" aria-label="' + esc(PD.t("viewer.prev")) + '"' + (S.page <= 1 ? " disabled" : "") + ">‹</button>" +
           '<span class="viewer-count">' + esc(PD.t("tablet.page_of", { page: S.page, pages: n })) + "</span>" +
           '<button type="button" class="btn small" data-v="next" aria-label="' + esc(PD.t("viewer.next")) + '"' + (S.page >= n ? " disabled" : "") + ">›</button>" +
-          (fm && S.doc.kind === "notebook" ? '<button type="button" class="btn small" data-v="newpage" title="' + esc(PD.t("fm.new_page")) + '">' + esc(PD.t("fm.new_page")) + "</button>" : "")
+          (fm && S.doc.kind === "notebook" ? '<button type="button" class="icon-btn" data-v="newpage" title="' + esc(PD.t("fm.new_page")) + '" aria-label="' +
+            esc(PD.t("fm.new_page")) + '">' + ICON.newpage + "</button>" : "")
         : ((S.chapters || []).length ? tool("chapters", PD.t("viewer.chapters")) : "") + tool("pages", PD.t("viewer.pages")) +
           '<label class="viewer-goto">' + esc(PD.t("viewer.goto", { last: PD.n(n) })) +
           '<input class="field num" type="number" data-goto min="1" max="' + n + '" step="1" value="' + S.page + '" aria-label="' +
@@ -142,7 +144,7 @@
       // renderer and saves the page as it goes)
       if (fm && ["notebook", "pdf", "epub"].includes(S.doc.kind)) {
         body.className = "viewer-page editing";
-        body.innerHTML = '<iframe class="page-editor" title="' + esc(PD.t("viewer.page", { n: S.page })) + '" src="/ui/editor.html#doc=' +
+        body.innerHTML = '<iframe class="page-editor" allow="clipboard-read; clipboard-write" title="' + esc(PD.t("viewer.page", { n: S.page })) + '" src="/ui/editor.html#doc=' +
           encodeURIComponent(S.doc.id) + "&page=" + S.page + "&base=" + encodeURIComponent(base) + '"></iframe>';
         const efr = $("iframe.page-editor", body);
         efr.addEventListener("load", () => efr.focus());      // the keys go to the page from the start, no click first
@@ -185,6 +187,16 @@
     // THE VIEWER IS AS TALL AS THE PORT. The port is the Paper Pro's screen, 3:4, as large as the window allows (by its
     // height or its width, whichever runs out first, within 92% x 94% of the window, whatever the UI zoom); the viewer is
     // the port and its title and bar, never taller, and at least wide enough for the bar.
+    // the width the bar's own content takes in one row, measured at its natural width (its tools stretch to fill the
+    // viewer, so its present width says nothing; this way the viewer can narrow again)
+    function barNeeds(dlg) {
+      const bar = $(".viewer-bar", dlg); if (!bar) return 0;
+      const was = bar.style.width;
+      bar.style.width = "max-content";
+      const w = bar.offsetWidth;
+      bar.style.width = was;
+      return w;
+    }
     function sizeViewer() {
       const dlg = $("#" + VIEWER); if (!dlg || !dlg.open) return;
       const body = $(".viewer-page", dlg); if (!body) return;
@@ -192,7 +204,9 @@
       for (let pass = 0; pass < 2; pass++) {                  // the bar can wrap at a new width: measured again
         const chrome = dlg.offsetHeight - body.clientHeight, side = dlg.offsetWidth - body.clientWidth;
         const vh = Math.max(240, Math.min(availH - chrome, (availW - side) * 4 / 3)), vw = vh * 0.75;
-        dlg.style.width = Math.min(availW, Math.max(vw + side, 560)) + "px";
+        // AS WIDE AS ITS BAR NEEDS, the window allowing: the tools never push a scrollbar onto the viewer
+        const need = barNeeds(dlg) + (dlg.offsetWidth - dlg.clientWidth);
+        dlg.style.width = Math.min(availW, Math.max(vw + side, 560, need)) + "px";
         dlg.style.height = (chrome + vh) + "px";
       }
     }
@@ -270,6 +284,8 @@
     // field and Add for a new one; a pill there puts the tag on the page or takes it off. The Mirror only shows them.
     function paintTagPop() {
       const dlg = $("#" + VIEWER); if (!dlg) return;
+      const efr = editorFrame();                                  // the page hears it too, so Esc there closes this first
+      if (efr && efr.contentWindow) efr.contentWindow.postMessage({ pd: "viewer-menu", open: !!(S.tagPop && S.view === "page") }, location.origin);
       const old = $(".tag-pop", dlg); if (old) old.remove();
       if (!S.tagPop || S.view !== "page") return;
       const btn = $('[data-v="tagpop"]', dlg); if (!btn) return;
@@ -300,7 +316,10 @@
     const editorFrame = () => $("#" + VIEWER + " iframe.page-editor");
     window.addEventListener("message", e => {
       const d = e.data, fr = editorFrame();
-      if (!d || d.pd !== "editor-tools" || !fr || e.source !== fr.contentWindow) return;
+      if (!d || !fr || e.source !== fr.contentWindow) return;
+      if (d.pd === "editor-menu") { S.edMenu = !!d.open; return; }                       // a menu of the editor's is open
+      if (d.pd === "viewer-menu-close") { S.tagPop = false; paintBar(); paintTagPop(); return; }   // Esc pressed in the page
+      if (d.pd !== "editor-tools") return;
       S.edHtml = d.html;
       const span = $("#" + VIEWER + " .ed-tools"); if (span) span.innerHTML = d.html;
     });
@@ -455,6 +474,12 @@
         });
         // back from the editor: the covers and the page pictures show what was drawn
         // CLOSING A FALSE-MIRROR DOCUMENT SYNCS it, as on the tablet: the page editor saves and tells the daemon to look
+        // ESC CLOSES WHAT IS OPEN FIRST: the tags' menu, then the editor's menus, and only then the viewer
+        dlg.addEventListener("cancel", e => {
+          if (S.tagPop) { e.preventDefault(); S.tagPop = false; paintBar(); paintTagPop(); return; }
+          const fr = editorFrame();
+          if (S.edMenu && fr && fr.contentWindow) { e.preventDefault(); S.edMenu = false; fr.contentWindow.postMessage({ pd: "editor-close" }, location.origin); }
+        });
         dlg.addEventListener("close", () => {
           if (!fm) return;
           const fr = editorFrame();

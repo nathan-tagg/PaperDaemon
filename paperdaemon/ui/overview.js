@@ -5,7 +5,7 @@
 (() => {
   const { $, esc } = PD;
   let R = null;
-  const S = { loop: null, starting: false, startError: "", errs: {}, term: "daemon", tab: "queue", queue: null, qErr: "" };
+  const S = { loop: null, startError: "", errs: {}, term: "daemon", tab: "queue", queue: null, qErr: "" };
   const X = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6"/></svg>';
   const GRIP = '<svg viewBox="0 0 12 12" aria-hidden="true"><g fill="currentColor">' +
     [2, 6, 10].map(y => [2, 6, 10].map(x => '<circle cx="' + x + '" cy="' + y + '" r="1.2"/>').join("")).join("") + "</g></svg>";
@@ -31,7 +31,8 @@
 
   function renderIssues() {
     const list = PD.issues(PD.status, S.loop);
-    if (S.startError) list.push({ text: PD.t("issue.not_started", { why: S.startError }), fix: "" });
+    const why = S.startError || PD.loopError;
+    if (why) list.push({ text: PD.t("issue.not_started", { why }), fix: "" });
     PD.html($("#ov-issues", R), list.length ? '<div class="issues" role="alert">' + list.map(i =>
       '<div class="issue"><span class="warn" aria-hidden="true">' + PD.WARN + '</span><span class="issue-text">' + esc(i.text) + "</span>" +
       (i.fix ? '<span class="issue-fix">' + i.fix + "</span>" : "") + "</div>").join("") + "</div>" : "");
@@ -57,19 +58,7 @@
     if (out && stick) out.scrollTop = out.scrollHeight;
   }
 
-  // ---- controls
-
-  function renderControls() {
-    const on = !!(S.loop && S.loop.running);
-    let html;
-    if (S.starting) html = '<button type="button" class="btn" disabled aria-busy="true">' + esc(PD.t(on ? "loop.pausing" : "loop.starting")) + "</button>";
-    else if (on) html = '<button type="button" class="btn" data-act="stop">' + esc(PD.t("loop.pause")) + "</button>";
-    // NO LINEUP COULD TAKE A PAGE (no tag, or a model on this computer without its start script): paused, and no start
-    else if (PD.status && PD.status.can_start === false)
-      html = '<button type="button" class="btn" disabled title="' + esc(PD.t("loop.cannot_start")) + '">' + esc(PD.t("loop.paused")) + "</button>";
-    else html = '<button type="button" class="btn primary" data-act="start">' + esc(PD.t("loop.start")) + "</button>";
-    PD.html($("#ov-controls", R), '<div class="actions">' + html + "</div>");
-  }
+  // (Start and Pause are the rail's, left of the version: app.js paintLoop)
 
   // ---- the queue: next first; the job being worked is grayed out and stays where it is
 
@@ -201,11 +190,11 @@
 
   function render() {
     if (!R) return;
-    renderIssues(); renderTabs(); renderQueue(); renderTerms(); renderControls();
+    renderIssues(); renderTabs(); renderQueue(); renderTerms();
   }
 
   async function act(name) {
-    if (!["setup", "borrow", "steal", "start", "stop"].includes(name)) return;      // a panel's own buttons are not the loop's
+    if (!["setup", "borrow", "steal"].includes(name)) return;      // a panel's own buttons are not these
     if (name === "setup") { PD.reopenSetup(); return; }
     if (name === "borrow" || name === "steal") {
       const [d, e] = await PD.safe(PD.takeLogin(name));
@@ -213,13 +202,8 @@
       else if (d) { const r = PD.loginResult(d, name); if (r.bad) S.startError = r.text; }
       await PD.refreshStatus(); render(); return;
     }
-    S.startError = ""; S.starting = true; renderControls();
-    const p = PD.api("POST", name === "start" ? "/loop/start" : "/loop/stop");
-    p.finally(() => { S.starting = false; });
-    const [, err] = await PD.safe(p);
-    if (err) S.startError = PD.errText(err);
-    await load();
   }
+  document.addEventListener("pd:loop", () => { if (R) load(); });     // started or paused from the rail
 
   PD.screen("overview", {
     label: PD.t("overview.label"), group: 0,
@@ -233,7 +217,7 @@
       R = root;
       S.loop = null;
       R.innerHTML = '<header class="page-head"><h1>' + esc(PD.t("overview.label")) + "</h1></header>" +
-        '<div id="ov-issues"></div><div id="ov-controls" class="controls"></div>' +
+        '<div id="ov-issues"></div>' +
         '<div class="ftabs" role="tablist" id="ov-tabs"></div><div class="fpanel">' +
         '<div id="ov-queue"></div><div id="ov-notes" hidden></div><div id="ov-terms" hidden></div></div>';
       PD.notes.mount($("#ov-notes", R));

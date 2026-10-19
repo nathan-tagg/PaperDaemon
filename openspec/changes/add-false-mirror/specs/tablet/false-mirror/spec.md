@@ -101,14 +101,15 @@ menu at the top right of its screen.
 
 ### Requirement: The viewer is the tablet's screen
 The viewer SHALL hold a port the Paper Pro's screen's shape (3:4), as large as the window allows by its height or its
-width, within the window at every UI zoom, and SHALL be no taller than the port with its title and bar.
+width, within the window at every UI zoom, and SHALL be no taller than the port with its title and bar, and as wide as
+its bar needs (the window allowing), so the bar never scrolls.
 
 #### Scenario: A tall window
 - **WHEN** the window is taller than it is wide
 - **THEN** the port is as wide as the window allows and the viewer is only as tall as the port and its bar
 
 ### Requirement: Start waits for a lineup that could take a page
-The Daemon screen's Start SHALL show as Paused and be disabled while no lineup could take a page (none has a tag, or its
+Start and Pause SHALL sit in the rail's foot, left of the version, on every screen (the Daemon screen holds none). Start SHALL show as Paused and be disabled while no lineup could take a page (none has a tag, or its
 text model has no location, or a model on this computer has no start script), its hover saying so; passing the lineup's
 test SHALL NOT be needed.
 

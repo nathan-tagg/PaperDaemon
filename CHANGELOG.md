@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.38
+
+- Start and Pause are in the rail's foot, left of the version, on every screen.
+- The Select and Capture menu is as wide as its two choices.
+- The viewer widens to fit its bar when the window has room, instead of scrolling.
+- New page is a button with a page and a plus.
+- Ctrl+Shift+V reads the image off the clipboard (the browser had pasted it as plain text, the image dropped), and the
+  page shows where the strokes will land while the image is decomposed.
+- The page editor's frame may use the clipboard, so Capture and Copy reach it in the app.
+- Text boxes and areas show no highlight ring when focused.
+- [] and a space makes a checkbox, as [ ] does; [X] a ticked one, as [x] does.
+- Esc closes an open menu first (the tags, a pen's, the eraser's, the layers', Select's), and only then the document.
+
 ## 0.1.37
 
 - The page editor shows a page's pictures, turned ones too, and keeps them through every save.
