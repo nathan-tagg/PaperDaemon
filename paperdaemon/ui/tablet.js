@@ -141,16 +141,18 @@
         return;
       }
       body.className = "viewer-page";
-      body.innerHTML = '<span class="page-frame"><img alt=""></span>';
+      body.innerHTML = '<div class="page-port"><div class="page-stage"><div class="page-paper"></div><span class="page-frame"><img alt=""></span></div></div>';
       const img = $("img", body), frame = $(".page-frame", body), want = S.page, d = S.doc.id;
       const stale = () => want !== S.page || !S.doc || S.doc.id !== d || S.view !== "page";
+      const [fr] = await PD.safe(api("GET", "/library/" + d + "/page/" + want + "/frame"));
+      if (stale()) return;
       const shown = await PD.loadImage(img, base + "/library/" + d + "/page/" + want + ".png", { holder: body, stale,
         giveUp: h => { h.innerHTML = '<p class="sub viewer-wait">' + esc(PD.t("viewer.not_drawn")) + ' <button type="button" class="link-btn" data-v="retry">' +
           esc(PD.t("common.try_again")) + "</button></p>"; } });
       if (!shown || stale()) return;
       img.alt = PD.t("viewer.page", { n: want });
-      const h = body.clientHeight - 32, w = body.clientWidth - 32;
-      img.style.width = Math.min(w, h * 0.75, img.naturalWidth) + "px";
+      S.frame = fr && fr.w ? fr : { w: SCREEN_W, h: SCREEN_H };
+      placePage(true);
       // THE PAGE'S LINKS, as the tablet follows them: a link to another page goes there, a web link opens the browser
       const [got] = await PD.safe(api("GET", "/library/" + d + "/links/" + want));
       if (stale() || !got || !got.links || !got.links.length) return;
@@ -161,6 +163,79 @@
         return l.go ? '<button type="button" class="page-link" data-go="' + l.go + '" title="' + esc(PD.t("viewer.page", { n: l.go })) + '" aria-label="' + esc(PD.t("viewer.go_to", { n: l.go })) + '" ' + at + "></button>"
           : '<button type="button" class="page-link" data-uri="' + esc(l.uri) + '" title="' + esc(l.uri) + '" aria-label="Open ' + esc(l.uri) + '" ' + at + "></button>";
       }).join(""));
+    }
+
+    // THE PAGE ON THE TABLET'S SCREEN. The page area holds a port the Paper Pro's screen's shape (3:4, as big as the
+    // viewer allows, never smaller) and shows in it what the Paper Pro shows: at 1x, 1620 page units across, centered on
+    // the page's middle (x 0). The paper is as wide as the page is tall (the drawable square measured on the tablet) and
+    // runs on down, as the page does; beside it, the tablet's gray (the page editor's 142). The page picture is exactly the frame
+    // wide. A page longer than the screen stretches the port down (the chin) to the viewer's foot, and then the viewer
+    // scrolls, its scrollbar in the margin beside the port. Ctrl + scroll zooms the page from 0.5x to 5x around the
+    // pointer (always opening at 1x), Shift + scroll moves across a zoomed page, and the pill says the zoom (click: 1x).
+    const SCREEN_W = 1620, SCREEN_H = 2160, ZMIN = 0.5, ZMAX = 5;
+    function placePage(fresh, anchor) {
+      const dlg = $("#" + VIEWER); if (!dlg || S.view !== "page") return;
+      const body = $(".viewer-page", dlg), port = $(".page-port", body), img = $(".page-frame img", body);
+      if (!port || !img || !img.naturalWidth || !S.frame) return;
+      const stage = $(".page-stage", port), paper = $(".page-paper", port), frame = $(".page-frame", port);
+      const pad = 16, bw = body.clientWidth - 2 * pad, bh = body.clientHeight - 2 * pad;   // the scrollbar has its own room
+      const vw = Math.max(120, Math.min(bw, bh * 0.75)), vh = vw * 4 / 3;
+      const z = S.zoom || 1, s = vw * z / SCREEN_W;                                            // CSS pixels per page unit
+      const fw = S.frame.w, imgH = img.naturalHeight * fw / img.naturalWidth;
+      const paperW = Math.max(fw, S.frame.h), downTo = Math.max(S.frame.h, imgH);
+      const U = Math.max(paperW, SCREEN_W / z);                                                // the stage's width in units
+      const stageH = Math.max(vh, downTo * s);
+      // what was under the pointer, in page units, to keep it there
+      let keep = null;
+      if (anchor) {
+        const r = port.getBoundingClientRect(), k = port.offsetWidth ? r.width / port.offsetWidth : 1;
+        const px = (anchor.x - r.left) / k, py = (anchor.y - r.top) / k, old = S.placed;
+        if (old) keep = { px, py, ux: (port.scrollLeft + px) / old.s - old.U / 2, uy: py / old.s, top: body.scrollTop };
+      }
+      port.style.width = vw + "px"; port.style.height = stageH + "px";
+      stage.style.width = U * s + "px"; stage.style.height = stageH + "px";
+      paper.style.left = (U - paperW) / 2 * s + "px"; paper.style.width = paperW * s + "px"; paper.style.height = stageH + "px";
+      frame.style.left = (U - fw) / 2 * s + "px";
+      img.style.width = fw * s + "px";
+      S.placed = { s, U };
+      if (keep) {
+        port.scrollLeft = (keep.ux + U / 2) * s - keep.px;
+        body.scrollTop = keep.top + keep.uy * s - keep.py;
+      } else if (fresh) {
+        port.scrollLeft = (U * s - vw) / 2;
+        body.scrollTop = 0;
+      }
+    }
+    function showZoom() {
+      const dlg = $("#" + VIEWER); if (!dlg) return;
+      let pill = $(".page-zoom", dlg);
+      if (!pill) {
+        pill = document.createElement("button");
+        pill.type = "button"; pill.className = "page-zoom"; pill.dataset.v = "zoom1";
+        dlg.append(pill);
+      }
+      pill.textContent = (Math.round((S.zoom || 1) * 10) / 10).toFixed(1) + "×";
+      pill.title = PD.t("viewer.zoom_reset");
+      pill.style.top = $(".viewer-page", dlg).offsetTop + 10 + "px";
+      pill.classList.add("on");
+      clearTimeout(S.zoomTimer);
+      S.zoomTimer = setTimeout(() => pill.classList.remove("on"), 2500);
+    }
+    function wheelPage(e) {
+      if (S.view !== "page") { if (e.ctrlKey) e.preventDefault(); return; }
+      const port = e.target.closest && e.target.closest(".viewer-page") && $(".page-port", $("#" + VIEWER));
+      if (!port) return;
+      if (e.ctrlKey) {
+        e.preventDefault();
+        S.zoom = Math.max(ZMIN, Math.min(ZMAX, (S.zoom || 1) * Math.exp(-e.deltaY * 0.0015)));
+        const r = port.getBoundingClientRect(), over = e.clientX >= r.left && e.clientX <= r.right;
+        // around the pointer over the page; from the top middle when the pointer is beside it
+        placePage(false, over ? { x: e.clientX, y: Math.max(e.clientY, r.top) } : { x: r.left + r.width / 2, y: Math.max(r.top, 0) });
+        showZoom();
+      } else if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        e.preventDefault();
+        port.scrollLeft += e.deltaX || e.deltaY;
+      }
     }
 
     // THE PAGES OPENED, IN OPENING ORDER: the mouse's back and forward buttons (and Alt+arrows) walk this list, like a
@@ -197,7 +272,7 @@
     }
 
     function openDoc(x) {
-      S.doc = byId(x); S.page = 1; S.tags = null; S.chapters = null; S.hist = [1]; S.hpos = 0;
+      S.doc = byId(x); S.page = 1; S.tags = null; S.chapters = null; S.hist = [1]; S.hpos = 0; S.zoom = 1; S.placed = null;
       S.view = PD.firstTab === "pages" || PD.firstTab === "chapters" ? PD.firstTab : "page"; PD.firstTab = "";
       let dlg = $("#" + VIEWER);
       if (!dlg) {
@@ -219,12 +294,15 @@
           if (v === "close") dlg.close();
           else if (v === "prev" || v === "next") go(S.page + (v === "next" ? 1 : -1));
           else if (v === "retry") paintBody();
+          else if (v === "zoom1") { S.zoom = 1; placePage(true); showZoom(); }
           else if (v === "newpage") {
             const [got] = await PD.safe(api("POST", "/library/" + S.doc.id + "/pages", { after: S.page }));
             if (got) { S.doc.pages = (S.doc.pages || 1) + 1; go(got.page); }
           }
           else if (v === "pages" || v === "chapters") { S.view = S.view === v ? "page" : v; paintBar(); paintBody(); }
         });
+        dlg.addEventListener("wheel", wheelPage, { passive: false });
+        new ResizeObserver(() => placePage(false)).observe($(".viewer-page", dlg));
         dlg.addEventListener("keydown", e => {
           if (e.target.matches("[data-tag-add]")) {
             if (e.key === "Enter" && e.target.value.trim()) { const t = e.target.value.trim(); e.preventDefault(); pageTags(now => now.concat([t])); }

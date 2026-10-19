@@ -143,6 +143,7 @@
   <string name="viewer.goto_aria">Ke halaman, 1 sampai {last}</string>
   <string name="viewer.prev">Halaman sebelumnya</string>
   <string name="viewer.next">Halaman berikutnya</string>
+  <string name="viewer.zoom_reset">Kembali ke 1×</string>
   <string name="viewer.reading_chapters">Membaca bab…</string>
   <string name="viewer.not_drawn">Halaman ini tidak dapat digambar.</string>
   <string name="viewer.page">Halaman {n}</string>

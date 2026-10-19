@@ -142,6 +142,7 @@
   <string name="viewer.goto_aria">Go to page, 1 to {last}</string>
   <string name="viewer.prev">Previous page</string>
   <string name="viewer.next">Next page</string>
+  <string name="viewer.zoom_reset">Back to 1×</string>
   <string name="viewer.reading_chapters">Reading the chapters…</string>
   <string name="viewer.not_drawn">This page could not be drawn.</string>
   <string name="viewer.page">Page {n}</string>

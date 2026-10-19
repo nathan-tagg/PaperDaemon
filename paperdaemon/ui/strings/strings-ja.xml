@@ -143,6 +143,7 @@
   <string name="viewer.goto_aria">ページへ移動、1 から {last}</string>
   <string name="viewer.prev">前のページ</string>
   <string name="viewer.next">次のページ</string>
+  <string name="viewer.zoom_reset">1× に戻す</string>
   <string name="viewer.reading_chapters">章を読み込み中…</string>
   <string name="viewer.not_drawn">このページを描画できませんでした。</string>
   <string name="viewer.page">{n} ページ</string>

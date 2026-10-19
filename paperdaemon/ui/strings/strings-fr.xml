@@ -142,6 +142,7 @@
   <string name="viewer.goto_aria">Aller à la page, de 1 à {last}</string>
   <string name="viewer.prev">Page précédente</string>
   <string name="viewer.next">Page suivante</string>
+  <string name="viewer.zoom_reset">Revenir à 1×</string>
   <string name="viewer.reading_chapters">Lecture des chapitres…</string>
   <string name="viewer.not_drawn">Impossible de dessiner cette page.</string>
   <string name="viewer.page">Page {n}</string>

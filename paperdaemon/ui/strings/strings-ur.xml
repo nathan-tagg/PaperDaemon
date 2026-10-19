@@ -143,6 +143,7 @@
   <string name="viewer.goto_aria">صفحے پر جائیں، 1 سے {last} تک</string>
   <string name="viewer.prev">پچھلا صفحہ</string>
   <string name="viewer.next">اگلا صفحہ</string>
+  <string name="viewer.zoom_reset">واپس 1× پر</string>
   <string name="viewer.reading_chapters">ابواب پڑھے جا رہے ہیں…</string>
   <string name="viewer.not_drawn">یہ صفحہ بنایا نہیں جا سکا۔</string>
   <string name="viewer.page">صفحہ {n}</string>

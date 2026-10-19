@@ -143,6 +143,7 @@
   <string name="viewer.goto_aria">Gehe zu Seite, 1 bis {last}</string>
   <string name="viewer.prev">Vorherige Seite</string>
   <string name="viewer.next">Nächste Seite</string>
+  <string name="viewer.zoom_reset">Zurück auf 1×</string>
   <string name="viewer.reading_chapters">Kapitel werden gelesen…</string>
   <string name="viewer.not_drawn">Diese Seite konnte nicht gezeichnet werden.</string>
   <string name="viewer.page">Seite {n}</string>

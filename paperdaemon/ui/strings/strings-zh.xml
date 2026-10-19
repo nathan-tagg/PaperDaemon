@@ -143,6 +143,7 @@
   <string name="viewer.goto_aria">转到页面，1 到 {last}</string>
   <string name="viewer.prev">上一页</string>
   <string name="viewer.next">下一页</string>
+  <string name="viewer.zoom_reset">恢复到 1×</string>
   <string name="viewer.reading_chapters">正在读取章节…</string>
   <string name="viewer.not_drawn">无法绘制此页面。</string>
   <string name="viewer.page">第 {n} 页</string>

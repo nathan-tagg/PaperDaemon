@@ -143,6 +143,7 @@
   <string name="viewer.goto_aria">Gå til side, 1 til {last}</string>
   <string name="viewer.prev">Forrige side</string>
   <string name="viewer.next">Neste side</string>
+  <string name="viewer.zoom_reset">Tilbake til 1×</string>
   <string name="viewer.reading_chapters">Leser kapitlene…</string>
   <string name="viewer.not_drawn">Kunne ikke tegne denne siden.</string>
   <string name="viewer.page">Side {n}</string>

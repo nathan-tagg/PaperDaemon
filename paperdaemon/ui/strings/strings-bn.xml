@@ -143,6 +143,7 @@
   <string name="viewer.goto_aria">পাতায় যান, 1 থেকে {last}</string>
   <string name="viewer.prev">আগের পাতা</string>
   <string name="viewer.next">পরের পাতা</string>
+  <string name="viewer.zoom_reset">আবার 1×-এ</string>
   <string name="viewer.reading_chapters">অধ্যায়গুলো পড়া হচ্ছে…</string>
   <string name="viewer.not_drawn">এই পাতাটি আঁকা যায়নি।</string>
   <string name="viewer.page">পাতা {n}</string>

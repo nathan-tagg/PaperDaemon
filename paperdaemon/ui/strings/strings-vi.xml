@@ -143,6 +143,7 @@
   <string name="viewer.goto_aria">Đến trang, từ 1 đến {last}</string>
   <string name="viewer.prev">Trang trước</string>
   <string name="viewer.next">Trang sau</string>
+  <string name="viewer.zoom_reset">Về lại 1×</string>
   <string name="viewer.reading_chapters">Đang đọc các chương…</string>
   <string name="viewer.not_drawn">Không thể vẽ trang này.</string>
   <string name="viewer.page">Trang {n}</string>

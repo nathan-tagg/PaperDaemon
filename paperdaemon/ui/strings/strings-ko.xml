@@ -143,6 +143,7 @@
   <string name="viewer.goto_aria">페이지로 이동, 1부터 {last}까지</string>
   <string name="viewer.prev">이전 페이지</string>
   <string name="viewer.next">다음 페이지</string>
+  <string name="viewer.zoom_reset">1×로 되돌리기</string>
   <string name="viewer.reading_chapters">장을 읽는 중…</string>
   <string name="viewer.not_drawn">이 페이지를 그릴 수 없습니다.</string>
   <string name="viewer.page">{n}쪽</string>

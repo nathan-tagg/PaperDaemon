@@ -168,7 +168,7 @@ pre.snippet.pad-text { white-space: pre-wrap; padding: var(--s3) var(--s4); font
 .chip-x:hover { color: var(--ink); }
 .tag-add { width: 9em; height: 22px; padding: 0 6px; font-size: 12.5px; }
 .tag-edit { display: flex; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s3); min-height: 22px; }
-.move-list { display: grid; gap: var(--s2); max-height: 50vh; overflow-y: auto; margin-bottom: var(--s3); }
+.move-list { display: grid; gap: var(--s2); max-height: calc(50vh / var(--pd-zoom, 1)); overflow-y: auto; margin-bottom: var(--s3); }
 .field-row { display: grid; gap: var(--s1); margin: var(--s3) 0; }
 .viewer-page.editing { padding: 0; overflow: hidden; align-items: stretch; }
 .page-editor { flex: 1; width: 100%; height: 100%; border: 0; display: block; }
@@ -271,7 +271,7 @@ pre.snippet.pad-text { white-space: pre-wrap; padding: var(--s3) var(--s4); font
 .doc-card.nocover .cover { background: var(--field); }
 .doc-card .name { margin-top: var(--s1); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* the notebook viewer: nearly the window's height, the page controls above the page */
-dialog.viewer { width: min(92vw, 1100px); height: 94vh; max-height: 94vh; padding: 0; border: 1px solid var(--edge); background: var(--paper-sunk); color: var(--ink); }
+dialog.viewer { width: min(calc(92vw / var(--pd-zoom, 1)), calc(1100px / var(--pd-zoom, 1))); height: calc(94vh / var(--pd-zoom, 1)); max-height: calc(94vh / var(--pd-zoom, 1)); max-width: none; padding: 0; border: 1px solid var(--edge); background: var(--paper-sunk); color: var(--ink); }
 dialog.viewer::backdrop { background: var(--shade); }
 .viewer { display: none; }
 .viewer[open] { display: grid; grid-template-rows: auto auto minmax(0, 1fr); }
@@ -427,11 +427,22 @@ textarea.field { height: auto; padding: 8px 10px; }
 .viewer-page.img-wait::after { position: fixed; }
 /* a page and its links: each link a tappable box over the page, as on the tablet */
 .page-frame { position: relative; display: inline-block; line-height: 0; }
+/* the page on the tablet's screen (tablet.js placePage): the port is the Paper Pro's screen, its stage the page in page
+   units at the zoom; the viewer scrolls down a long page, the port across a zoomed one */
+.viewer-page:has(> .page-port) { display: block; overflow-x: hidden; overflow-y: auto; padding: 16px; scrollbar-gutter: stable both-edges; }
+.page-port { position: relative; margin: 0 auto; overflow: hidden; background: rgb(142, 142, 142); box-shadow: 0 0 0 1px var(--edge); }
+.page-stage { position: relative; }
+.page-paper { position: absolute; top: 0; background: #FFFFFF; }
+.page-port .page-frame { position: absolute; top: 0; }
+.viewer-page .page-port img { max-width: none; box-shadow: none; display: block; }
+.page-zoom { position: absolute; left: 50%; transform: translateX(-50%); z-index: 3; padding: 4px 12px; border-radius: 14px;
+  background: rgba(30, 28, 30, 0.85); color: #F2EEE6; border: 0; cursor: pointer; opacity: 0; transition: opacity 300ms; pointer-events: none; }
+.page-zoom.on { opacity: 1; pointer-events: auto; }
 .page-link { position: absolute; padding: 0; border: 0; background: transparent; cursor: pointer; }
 .page-link:hover, .page-link:focus-visible { background: rgba(208, 128, 106, 0.18); outline: 1px solid var(--mark); }
 /* the start script help: a wider sheet that scrolls, and the note shown where the pointer is */
-dialog.sheet.wide { width: min(720px, calc(100vw - 48px)); }
-.script-help-body { max-height: 60vh; overflow-y: auto; padding-inline-end: var(--s3); line-height: 1.5; }
+dialog.sheet.wide { width: min(720px, calc(100vw / var(--pd-zoom, 1) - 48px)); }
+.script-help-body { max-height: calc(60vh / var(--pd-zoom, 1)); overflow-y: auto; padding-inline-end: var(--s3); line-height: 1.5; }
 .script-help-body h3 { margin: var(--s4) 0 var(--s2); font-size: 15px; }
 .script-help-body ol, .script-help-body ul { margin: 0 0 var(--s2); padding-inline-start: 1.4em; }
 .script-help-body li { margin: 4px 0; }

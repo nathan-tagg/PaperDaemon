@@ -143,6 +143,7 @@
   <string name="viewer.goto_aria">Sayfaya git, 1 ile {last} arası</string>
   <string name="viewer.prev">Önceki sayfa</string>
   <string name="viewer.next">Sonraki sayfa</string>
+  <string name="viewer.zoom_reset">1×'e dön</string>
   <string name="viewer.reading_chapters">Bölümler okunuyor…</string>
   <string name="viewer.not_drawn">Bu sayfa çizilemedi.</string>
   <string name="viewer.page">Sayfa {n}</string>

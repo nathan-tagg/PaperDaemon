@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.34
+
+- The notebook viewer is the same size at every zoom of the window: it no longer runs off the top and bottom when the
+  window is zoomed in, or shrinks when it is zoomed out. Only its controls and words follow the window's zoom.
+- A page shows as the Paper Pro shows it: its screen's shape, at 1x what the tablet shows at 1x, the tablet's gray past
+  the paper. A page longer than the screen runs down to the viewer's foot, then scrolls.
+- Ctrl + scroll over the viewer zooms the page, from 0.5x to 5x around the pointer, not the window; the zoom shows at
+  the top while it changes, and clicking it goes back to 1x. Shift + scroll moves across a zoomed page.
+
 ## 0.1.33
 
 - PaperDaemon reads books itself, laid out as the tablet lays them out: the same pages, lines and pictures, the faces a

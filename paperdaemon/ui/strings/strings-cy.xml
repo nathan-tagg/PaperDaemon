@@ -143,6 +143,7 @@
   <string name="viewer.goto_aria">Mynd i dudalen, 1 i {last}</string>
   <string name="viewer.prev">Tudalen flaenorol</string>
   <string name="viewer.next">Tudalen nesaf</string>
+  <string name="viewer.zoom_reset">Yn ôl i 1×</string>
   <string name="viewer.reading_chapters">Yn darllen y penodau…</string>
   <string name="viewer.not_drawn">Doedd dim modd tynnu'r dudalen hon.</string>
   <string name="viewer.page">Tudalen {n}</string>

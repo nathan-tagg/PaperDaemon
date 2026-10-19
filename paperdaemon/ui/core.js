@@ -550,9 +550,13 @@
   const STEPS = [0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3];
   let at = 1;
   try { at = Number(localStorage.getItem("pd.zoom")) || 1; } catch (e) { /* the default */ }
+  // CSS zoom multiplies the window's own units (vh, vw) too: what is sized against the window divides by --pd-zoom, so
+  // the notebook viewer fills the same share of the window at every zoom and only its controls and words grow
   const apply = z => {
     at = z;
+    PD.uiZoom = z;
     document.documentElement.style.zoom = z === 1 ? "" : String(z);
+    document.documentElement.style.setProperty("--pd-zoom", String(z));
     try { localStorage.setItem("pd.zoom", String(z)); } catch (e) { /* this window only */ }
   };
   const step = dir => {
@@ -570,6 +574,8 @@
   window.addEventListener("wheel", e => {
     if (!e.ctrlKey) return;
     e.preventDefault();
+    // over the open notebook viewer, Ctrl + scroll zooms the PAGE (tablet.js), never the window
+    if (e.target && e.target.closest && e.target.closest("dialog.viewer[open]")) return;
     step(e.deltaY < 0 ? 1 : -1);
   }, { passive: false, capture: true });
 })();

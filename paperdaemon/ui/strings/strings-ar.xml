@@ -143,6 +143,7 @@
   <string name="viewer.goto_aria">الانتقال إلى صفحة، من 1 إلى {last}</string>
   <string name="viewer.prev">الصفحة السابقة</string>
   <string name="viewer.next">الصفحة التالية</string>
+  <string name="viewer.zoom_reset">العودة إلى 1×</string>
   <string name="viewer.reading_chapters">جارٍ قراءة الفصول…</string>
   <string name="viewer.not_drawn">تعذّر رسم هذه الصفحة.</string>
   <string name="viewer.page">الصفحة {n}</string>

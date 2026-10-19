@@ -896,6 +896,18 @@ def get_library_thumb(doc: str, page: int):
     return err or FileResponse(out, media_type="image/webp")
 
 
+@app.get(API + "/library/{doc}/page/{page}/frame")
+def get_library_page_frame(doc: str, page: int):
+    """The page's own frame in page units, {w, h}: the page picture is exactly w wide (x from -w/2 to w/2) and runs from
+    the top down to h, or past it to the lowest ink. The viewer places the picture on the tablet's screen with it."""
+    from .pipeline.page import render as R
+    try:
+        w, h = R.page_frame(doc, page)
+    except Exception:
+        return JSONResponse({"error": "no such page"}, status_code=404)
+    return {"w": float(w), "h": float(h)}
+
+
 @app.get(API + "/library/{doc}/page/{page}.png")
 def get_library_page(doc: str, page: int):
     """One page, large, for the notebook view."""
