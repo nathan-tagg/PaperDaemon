@@ -43,6 +43,9 @@ WIRING = {
     "RM_STUDIO_TOKEN": "the token for the engine's host surfaces",
     "RM_LOCAL_ONLY": "1 in a process working the false mirror: nothing is pulled from or pushed to the cloud",
     "PAPERDAEMON_PARENT": "the engine that started the false mirror's engine, which ends when it does",
+    "RM_FACES": "tablet or own: the faces a process sets typed text and books in (the false mirror's, chosen by the engine)",
+    "QT_QPA_PLATFORM": "offscreen, set by a book's layout child for Qt (remarkable/books.py)",
+    "QT_QPA_FONTDIR": "the folder of faces a book's layout child gives Qt, so it sees no others",
 }
 
 # Developer switches: for measuring and debugging; nothing a user sets.

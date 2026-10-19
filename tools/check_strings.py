@@ -121,7 +121,8 @@ def main():
                 problems.append("strings-%s.xml has %s, which English lacks" % (code, n))
     # a name passed around before it is looked up (a table of states, a dialog's parts) counts as used too, and so
     # does a count's .one/.other when the count's name appears
-    js = "".join(open(f, encoding="utf-8").read() for f in glob.glob(os.path.join(UI, "*.js")))
+    # (the page editor is a page of its own, in a frame, and looks its words up through the window's PD.t)
+    js = "".join(open(f, encoding="utf-8").read() for f in glob.glob(os.path.join(UI, "*.js")) + glob.glob(os.path.join(UI, "*.html")))
     quoted = set(re.findall(r"\"([\w.\-]+)\"", js))
     # names the ENGINE sends (the Test tab's rows, the loop's state): used when the engine's code quotes the part
     # after the prefix, or the whole name

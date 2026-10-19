@@ -41,6 +41,15 @@ each under its own license.
   race, armor and spell names and rules in `paperdaemon/pipeline/games/adventure.py`, a small subset, reworded
   into data. This work includes material taken from the System Reference Document 5.1 ("SRD 5.1") by Wizards
   of the Coast LLC.
+- **Noto Sans, Noto Sans Mono and Noto Sans Hebrew** (SIL Open Font License 1.1, The Noto Project Authors,
+  <https://github.com/notofonts>), the tablet's own versions (2.015, 2.014, 3.001 full), unchanged, for laying out
+  books as the tablet does: `paperdaemon/content/book-fonts/noto` with `OFL.txt`.
+- **EB Garamond** (SIL Open Font License 1.1, The EB Garamond Project Authors, <https://github.com/google/fonts>),
+  the published variable font, unchanged, for books when the reMarkable desktop app's own build is not on the
+  computer: `paperdaemon/content/book-fonts/eb-garamond` with `OFL.txt`.
+- **Arimo and Gelasio** (SIL Open Font License 1.1, <https://github.com/google/fonts>), PaperDaemon's own faces for
+  typed text: fixed Regular, Bold, Italic and Bold Italic cut from the published variable fonts with fontTools'
+  instancer, in `paperdaemon/content/typed-fonts` with each family's `OFL.txt`.
 - **OpenSpec** (MIT, <https://github.com/Fission-AI/OpenSpec>): the specifications in `openspec/` are written in
   its format and checked with its command-line tool. It is a development tool and is not part of the app.
 
@@ -52,5 +61,9 @@ each under its own license.
   BSD, Apache-2.0, HPND or similar). Their license files are gathered into the app's `engine/licenses` folder
   at build time. The packages the decomposer's Python reference runs on (Numba, OpenCV, SciPy, scikit-image,
   Shapely) are development dependencies only and are left out of the app.
+- **Qt for Python (PySide6-Essentials) and Qt 6.10.3** (GNU Lesser General Public License version 3, The Qt
+  Company), which lay books out as the tablet lays them out: shipped as the unmodified libraries of the published
+  wheel, loaded at run time, so they can be replaced with another build of the same version. Their license files are
+  in the app's `engine/licenses` folder; Qt's source is at <https://download.qt.io/official_releases/qt/>.
 - **The desktop shell**: Tauri 2 and its Rust crates (MIT or Apache-2.0), Microsoft's WebView2 runtime
   bootstrapper, and the installer made with NSIS (zlib license) and nsis-tauri-utils (MIT or Apache-2.0).

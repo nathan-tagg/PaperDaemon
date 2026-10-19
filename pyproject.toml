@@ -1,6 +1,6 @@
 [project]
 name = "paperdaemon"
-version = "0.1.32"
+version = "0.1.33"
 description = "A reMarkable assistant: it watches your tablet for tagged pages and answers them with the models you choose."
 readme = "README.md"
 license = "Apache-2.0"
@@ -29,6 +29,7 @@ dependencies = [
     "winrt-windows-foundation-collections>=3.2.1 ; sys_platform == 'win32'",
     "httpx>=0.28.1",
     "holidays>=0.106",
+    "pyside6-essentials==6.10.3",
 ]
 
 [project.scripts]

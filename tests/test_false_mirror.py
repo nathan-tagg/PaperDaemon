@@ -191,29 +191,30 @@ def _epub(chapters):
     return b.getvalue()
 
 
-@pytest.mark.skipif(not any(os.path.isfile(os.path.join(r, "Microsoft", "Edge", "Application", "msedge.exe"))
-                            for r in filter(None, (os.environ.get("ProgramFiles(x86)"), os.environ.get("ProgramFiles")))),
-                    reason="laying out a book needs Microsoft Edge")
-def test_an_epub_imports_as_the_tablet_files_a_book():
+def test_an_epub_imports_as_the_desktop_app_files_a_book():
     import base64
     book = _epub([("One", "The first chapter. " * 40), ("Two", "The second chapter. " * 400)])
     got = _run("""
         import base64, json, os
-        from paperdaemon.remarkable import local, library
+        from paperdaemon.remarkable import local, library, books
         data = base64.b64decode(%r)
         doc = local.import_file("Test book", data, "")
         c = json.load(open(os.path.join(library.M, doc + ".content")))
         from paperdaemon.pipeline.page import render as R
         kind, path, idx = R.source_page(doc, 2)
         import pypdfium2 as pdfium
-        pd = pdfium.PdfDocument(os.path.join(library.M, doc + ".pdf"))
-        w, h = pd[0].get_size(); n = len(pd); t1 = pd[0].get_textpage().get_text_range(); last = pd[n - 1].get_textpage().get_text_range()
+        pd = pdfium.PdfDocument(path)
+        w, h = pd[0].get_size(); n = len(pd)
         pd.close()
         print(json.dumps({"type": c["fileType"], "pages": c["pageCount"], "epub": os.path.getsize(os.path.join(library.M, doc + ".epub")),
-                          "kind": kind, "idx": idx, "ratio": h / w, "n": n, "first": t1[:40], "last": last[-60:]}))
+                          "pdf_in_mirror": os.path.exists(os.path.join(library.M, doc + ".pdf")),
+                          "in_cache": os.path.commonpath([path, os.path.join(os.environ["PAPERDAEMON_HOME"], "cache")]) != "",
+                          "kind": kind, "idx": idx, "size": [w, h], "n": n, "margins": c.get("margins"),
+                          "redirs": [p["redir"]["value"] for p in c["cPages"]["pages"]]}))
     """ % base64.b64encode(book).decode())
     assert got["type"] == "epub" and got["epub"] > 0
-    assert got["kind"] == "pdf" and got["idx"] == 1                 # an EPUB's page is drawn from its PDF, as the tablet's
-    assert got["n"] == got["pages"] >= 3                            # chapter two starts a page of its own and runs on
-    assert abs(got["ratio"] - 4 / 3) < 0.01                         # the Paper Pro's shape
-    assert "One" in got["first"] and "second chapter" in got["last"]
+    assert not got["pdf_in_mirror"]                                 # filed as the desktop app files it: no PDF
+    assert got["kind"] == "pdf" and got["idx"] == 1                 # drawn from PaperDaemon's own layout, kept in the cache
+    assert got["n"] == got["pages"] >= 4                            # chapter two starts a page of its own, and a blank ends it
+    assert got["size"] == [445.0, 594.0] and got["margins"] == 125  # the tablet's book page and settings
+    assert got["redirs"] == list(range(got["pages"]))

@@ -146,7 +146,9 @@ def arguments(clean=False, dist=DIST):
     for mod in ("paperdaemon.studio", "paperdaemon.benchmark", "paperdaemon.benchmark.fixtures",
                 "paperdaemon.desktop", "paperdaemon.remarkable.sync", "paperdaemon.remarkable.desktop_token",
                 "paperdaemon.reader", "httpx", "uvicorn.logging", "uvicorn.loops.auto", "uvicorn.protocols.http.auto",
-                "uvicorn.lifespan.on"):
+                "uvicorn.lifespan.on",
+                # books (remarkable/books.py): Qt's text engine and PDF writer, run offscreen by `--books`
+                "paperdaemon.remarkable.books", "paperdaemon.remarkable.convert", "PySide6.QtCore", "PySide6.QtGui"):
         args += ["--hidden-import", mod]
     # THE WHOLE STANDARD LIBRARY: a harness in the user's llm folder is Python the app loads at start, and may
     # import anything Python ships, not only what the engine happens to use

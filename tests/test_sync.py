@@ -291,11 +291,13 @@ def test_everything_reaches_the_tablet_one_way_new_folders_first(tmp_path, monke
 
 def test_nothing_but_the_one_push_talks_to_the_cloud():
     # push_doc, push_new_doc and touch are called from sync.push_pending only: a job that pushed mid-way could not
-    # be taken back when the user abandoned it
+    # be taken back when the user abandoned it. The one exception is not a job: convert.py sends a false-mirror book to
+    # the tablet to be converted (the user's setting), and deletes it again (add-epub-reading, D5)
     import pathlib, re
     root = pathlib.Path(__file__).resolve().parents[1] / "paperdaemon"
     hits = [str(p.relative_to(root)) for p in root.rglob("*.py")
-            if p.name != "sync.py" and re.search(r"\b(push_doc|push_new_doc)\(|\.touch\(", p.read_text(encoding="utf-8"))]
+            if p.name not in ("sync.py", "convert.py")
+            and re.search(r"\b(push_doc|push_new_doc)\(|\.touch\(", p.read_text(encoding="utf-8"))]
     assert hits == []
 
 

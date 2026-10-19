@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Page editor</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400;0,700;1,400;1,700&family=Gelasio:ital,wght@0,400;0,700;1,400;1,700&display=swap">
 <style>
 /* The page editor, in the False Mirror's viewer (tablet.js opens it in a frame: #doc=<id>&page=<n>&base=/fm). It loads
    the page from the false mirror's engine and saves it back as it changes (remarkable/local.py: scene_of, write_scene),
@@ -17,8 +16,9 @@
    * two pen pickers; the one in hand opens its menu: nine pens, three sizes (none for the highlighter), and the pen's
      colors (nine; the highlighter six; the shader eight);
    * the eraser takes whole strokes, or what it passes over; text and ink are separate layers.
-   The tablet's faces are used when they are beside this file in rm-fonts/ (never in the repository); otherwise the
-   substitute: Arimo and Gelasio, openly licensed and cut to the widths of Arial and Georgia, the closest measured. */
+   The tablet's faces are used when the false mirror is set in them (an account signed in, its faces taken from the
+   desktop app, never in the repository); otherwise PaperDaemon's own: Arimo and Gelasio, openly licensed and cut to
+   the widths of Arial and Georgia, the closest measured, shipped with PaperDaemon and served by the engine. */
 :root {
   --paper: #242124; --paper-sunk: #1C1A1C; --field: #2E2A2F; --ink: #BDB6AA; --ink-2: #9A9389; --ink-3: #6F6970;
   --rule: #3A353C; --edge: #6C6670; --mark: #D0806A; --shade: rgba(0, 0, 0, 0.5);
@@ -1010,7 +1010,7 @@ span.lname { cursor: default; }
       pop.innerHTML = '<div class="lsec">' + rows +
         '<div class="lrow">' + eye('data-tvis="text"', page.textVisible, "Text") + '<span class="lname">Text</span></div>' +
         '<div class="lrow">' + eye('data-tvis="template"', page.templateVisible, "Template") + '<span class="lname">Template</span>' +
-        '<button class="lb" data-tmpl="1" aria-label="Templates" title="Templates">' + ICON.template + "</button></div>" +
+        '<button class="lb" data-tmpl="1" aria-label="Templates" title="' + tplTitle() + '"' + (tplLocked ? ' aria-disabled="true"' : "") + ">" + ICON.template + "</button></div>" +
         '</div><div class="lsec"><button class="lrow lnew" data-lop="add">' + ICON.plusCircle + "<span>New layer</span></button></div>";
     } else if (popFor === "eraser") {
       pop.innerHTML = '<div class="sec"><h3>Eraser</h3><div class="grid3">' +
@@ -1049,7 +1049,7 @@ span.lname { cursor: default; }
     if (b.dataset.erase) eraseMode = b.dataset.erase;
     if (b.dataset.lact !== undefined) { activeLayer = Number(b.dataset.lact); paintPop(); return; }
     if (b.dataset.tvis) { const k = b.dataset.tvis === "text" ? "textVisible" : "templateVisible"; layerEdit(() => { page[k] = !page[k]; }); return; }
-    if (b.dataset.tmpl) { popFor = null; paintPop(); paintControls(); openTemplates(); return; }
+    if (b.dataset.tmpl) { if (tplLocked) return; popFor = null; paintPop(); paintControls(); openTemplates(); return; }
     if (b.dataset.lvis !== undefined) { const i = Number(b.dataset.lvis); layerEdit(() => { page.layers[i].visible = !page.layers[i].visible; }); return; }
     if (b.dataset.lop && !b.classList.contains("off")) {
       const op = b.dataset.lop, i = activeLayer, Ls = page.layers;
@@ -1124,7 +1124,7 @@ span.lname { cursor: default; }
   // the page's frame is the page's own; the face is the tablet's when present, else the substitute, and the note says so
   const note = document.getElementById("note");
   function paintNote() {
-    note.textContent = tabletFace ? "" : "The tablet's faces aren't installed beside this page: typed text is in the substitute faces, Arimo and Gelasio.";
+    note.textContent = tabletFace ? "" : "Typed text is in PaperDaemon's own faces, Arimo and Gelasio.";
   }
   // THE TABLET'S FACES, from the user's own desktop app through the engine (never shipped): fetched with the window's
   // token, since a font link cannot carry one
@@ -1134,6 +1134,10 @@ span.lname { cursor: default; }
                  ["PD Tablet Sans", "reMarkableSans-RegularItalic", "400", "italic"], ["PD Tablet Sans", "reMarkableSans-BoldItalic", "700", "italic"],
                  ["PD Tablet Serif", "reMarkableSerifSmall-Regular", "400", "normal"], ["PD Tablet Serif", "reMarkableSerifSmall-Bold", "700", "normal"],
                  ["PD Tablet Serif", "reMarkableSerifSmall-RegularItalic", "400", "italic"], ["PD Tablet Serif", "reMarkableSerifSmall-BoldItalic", "700", "italic"]];
+  const OWN = [["Arimo", "Arimo-Regular", "400", "normal"], ["Arimo", "Arimo-Bold", "700", "normal"],
+               ["Arimo", "Arimo-Italic", "400", "italic"], ["Arimo", "Arimo-BoldItalic", "700", "italic"],
+               ["Gelasio", "Gelasio-Regular", "400", "normal"], ["Gelasio", "Gelasio-Bold", "700", "normal"],
+               ["Gelasio", "Gelasio-Italic", "400", "italic"], ["Gelasio", "Gelasio-BoldItalic", "700", "italic"]];
   async function findFaces() {
     const got = await Promise.all(FACES.map(async ([fam, file, weight, style]) => {
       try {
@@ -1144,7 +1148,13 @@ span.lname { cursor: default; }
         return true;
       } catch (e) { return false; }
     }));
-    await Promise.all(['32px Arimo', '64px Gelasio'].map(f => document.fonts.load(f).catch(() => [])));
+    // PaperDaemon's own faces, from the engine (shipped with PaperDaemon; nothing is fetched from anywhere else)
+    await Promise.all(OWN.map(async ([fam, file, weight, style]) => {
+      try {
+        const r = await fetch("/api/v1/fonts/own/" + file, { headers: { Authorization: "Bearer " + token() } });
+        if (r.ok) { const f = new FontFace(fam, await r.arrayBuffer(), { weight, style }); await f.load(); document.fonts.add(f); }
+      } catch (e) { /* the canvas falls back to the system's Arial and Georgia */ }
+    }));
     tabletFace = got[0] && got[4];
     useTablet = tabletFace;
     paintNote(); rebuild();
@@ -1210,8 +1220,20 @@ span.lname { cursor: default; }
   window.addEventListener("pagehide", () => saveNow(true));
 
   // ================================================================ the page's template
-  // drawn from the engine's reading of the user's own desktop app (never shipped), as SVG at the page's frame
-  let tplImg = null;
+  // drawn from the engine's reading of the user's own desktop app (never shipped), as SVG at the page's frame. TEMPLATES
+  // COME WITH AN ACCOUNT (add-epub-reading, D6): without one the engine answers 403, no template is drawn, and the
+  // Template control only says, on hover, to sign in
+  let tplImg = null, tplLocked = false;
+  const tplTitle = () => tplLocked ? ((window.parent && window.parent.PD && window.parent.PD.t) ? window.parent.PD.t("editor.template_signin")
+                                                                                                : "Sign in to a reMarkable account to see and choose templates.")
+                                   : "Templates";
+  async function checkTemplates() {
+    try {
+      const r = await fetch("/api/v1/templates", { headers: { Authorization: "Bearer " + token() } });
+      tplLocked = r.status === 403;
+    } catch (e) { tplLocked = false; }
+    paintControls();
+  }
   async function loadTemplate() {
     tplImg = null;
     const file = page.template;
@@ -1268,7 +1290,7 @@ span.lname { cursor: default; }
   }
 
   window.addEventListener("resize", layout);
-  paintControls(); layout(); findFaces(); loadPage();
+  paintControls(); layout(); findFaces(); loadPage(); checkTemplates();
   window.editorPage = page;                                  // the page's data, for a look from outside
 })();
 </script>

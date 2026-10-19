@@ -136,7 +136,9 @@ def fm_environment(s=None, port=8770, token=""):
     s = s or S.load()
     state = paths.false_mirror_state_dir()          # made by the Create button, never here
     env = environment(s, port, token, state=state, mirror=paths.false_mirror_dir())
-    env.update(RM_LOCAL_ONLY="1", RM_INBOX=str((s.get("false_mirror") or {}).get("inbox") or ""))
+    from .remarkable import books
+    env.update(RM_LOCAL_ONLY="1", RM_INBOX=str((s.get("false_mirror") or {}).get("inbox") or ""),
+               RM_FACES=books.false_mirror_faces(s))
     return env
 
 
@@ -182,10 +184,18 @@ def stop_false_mirror():
                 end(st.get("proc"))
 
 
+def _fm_faces(s):
+    try:
+        from .remarkable import books
+        return books.false_mirror_faces(s)
+    except Exception:
+        return "own"
+
+
 def _env_key(s):
     """What the halves are started with: when a settings change alters it, they restart."""
     return json.dumps({"run": run_content(s), "tags": S.all_tags(s), "fixed": S.fixed_tags(s), "inbox": s["tablet"].get("inbox"),
-                       "fm_inbox": (s.get("false_mirror") or {}).get("inbox")},
+                       "fm_inbox": (s.get("false_mirror") or {}).get("inbox"), "fm_faces": _fm_faces(s)},
                       sort_keys=True)
 
 
@@ -406,6 +416,18 @@ def settings_saved():
             _run["pending"] = True
 
 
+_convert = {"thread": None, "last": 0.0}
+CONVERT_EVERY = 30                                   # seconds between looks for the false mirror's books to convert
+
+
+def _convert_tick():
+    try:
+        from .remarkable import convert
+        convert.tick()
+    except Exception as ex:
+        _run.update(msg="convert: %s" % str(ex)[:200])
+
+
 def _supervise():
     while True:
         time.sleep(2)
@@ -413,6 +435,12 @@ def _supervise():
             continue
         try:
             now = time.time()
+            # the false mirror's books, converted by the tablet (remarkable/convert.py): its cloud work is the engine's
+            th = _convert["thread"]
+            if now - _convert["last"] >= CONVERT_EVERY and (th is None or not th.is_alive()):
+                _convert["last"] = now
+                _convert["thread"] = threading.Thread(target=_convert_tick, daemon=True)
+                _convert["thread"].start()
             with _lock:
                 if _run["pending"] and busy() is None:
                     _apply()

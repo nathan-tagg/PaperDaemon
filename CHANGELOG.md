@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.33
+
+- PaperDaemon reads books itself, laid out as the tablet lays them out: the same pages, lines and pictures, the faces a
+  book carries kept for the books after it. A book the tablet has not sent its pages of yet shows its text instead of
+  blank paper, and its chapters land on the right pages. The tablet's own pages of a book arriving never start a job.
+- Imported books no longer need Microsoft Edge: nothing outside PaperDaemon lays them out.
+- Without a reMarkable account, typed text and books are set in PaperDaemon's own faces, and templates wait for an
+  account; signing in says first that typed text may shift slightly. The page editor loads its faces from PaperDaemon,
+  never from the internet.
+- Imported books can be converted by the tablet itself: a setting sends each one, for a moment, to the tablet's
+  library, brings its pages back, and removes it there.
+
 ## 0.1.32
 
 - Imports take EPUBs as well as PDFs, and are easy: Import opens the file chooser at once (several files at a time), or

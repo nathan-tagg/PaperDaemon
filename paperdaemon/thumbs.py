@@ -93,6 +93,9 @@ def page_key(doc, page, live=None):
         src = os.path.join(library.M, doc + ext)
         if os.path.exists(src):
             parts.append(_stat(src))
+    if os.path.exists(os.path.join(library.M, doc + ".epub")) and not os.path.exists(os.path.join(library.M, doc + ".pdf")):
+        from .remarkable import books                    # a book PaperDaemon lays out: drawn again when its faces change
+        parts.append("faces:" + books.mode())
     pics = os.path.join(library.M, doc, pid)            # pictures placed on the page
     if os.path.isdir(pics):
         parts.append(_stat(pics) + ":" + ",".join(sorted(os.listdir(pics))))

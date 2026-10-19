@@ -219,20 +219,43 @@ def of(mirror, doc, live):
     """The chapters of document `doc` in `mirror`, whose shown pages are `live` (sync.live_pages)."""
     import os
     import pypdfium2
-    pdf = os.path.join(mirror, doc + ".pdf")
-    if not os.path.isfile(pdf):
-        return []
     where = {}
     for i, pg in enumerate(live):
         idx = (pg.get("redir") or {}).get("value")
         if idx is not None:
             where.setdefault(int(idx), i + 1)
+    pdf = os.path.join(mirror, doc + ".pdf")
+    epub = os.path.join(mirror, doc + ".epub")
+    if not os.path.isfile(pdf):
+        # a book PaperDaemon lays out itself: its layout knows the page every link of the contents lands on
+        if not os.path.isfile(epub):
+            return []
+        try:
+            from paperdaemon.remarkable import books
+            import json as _json
+            try:
+                with open(os.path.join(mirror, doc + ".content"), encoding="utf-8") as f:
+                    content = _json.load(f)
+            except (OSError, ValueError):
+                content = {}
+            _laid, index = books.lay_out(epub, books.settings_of(content))
+            toc, _opf = _epub_toc(epub)
+        except Exception:
+            return []
+        anchors = index.get("anchors") or {}
+        out = []
+        for title, level, href in toc:
+            at = anchors.get(href) if href else None
+            if at is None and href:
+                at = anchors.get(href.partition("#")[0])
+            if at is not None and int(at) in where:
+                out.append({"title": title, "page": where[int(at)], "level": level})
+        return out
     from paperdaemon.pdflock import LOCK
     with LOCK:                                       # PDFium is not safe on two threads at once
         pd = pypdfium2.PdfDocument(pdf)
         try:
             found = _pdf_outline(pd)
-            epub = os.path.join(mirror, doc + ".epub")
             if not found and os.path.isfile(epub):
                 try:
                     with zipfile.ZipFile(epub) as z:

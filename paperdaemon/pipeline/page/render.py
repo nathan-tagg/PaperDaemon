@@ -409,11 +409,19 @@ def source_page(doc, page_no):
         return kind, None, None
     idx = (pages[page_no - 1].get("redir") or {}).get("value")
     if kind == "epub":
-        # the cloud keeps an EPUB with its PDF rendition beside it -- the tablet's own pages, which the ink was
-        # written on -- so an EPUB page is that PDF's page, and its ink lines up exactly
+        # the tablet lays a book out and sends its pages as a PDF beside the EPUB -- the pages the ink was written on --
+        # so an EPUB page is that PDF's page; until the tablet has sent one (and always in the false mirror, unless the
+        # tablet converted it) PaperDaemon lays the book out as the tablet does (remarkable/books.py)
         pdf = os.path.join(RM, doc + ".pdf")
         if os.path.exists(pdf):
             return "pdf", pdf, idx
+        try:
+            from paperdaemon.remarkable import books
+            laid = books.rendition(doc, RM)
+        except Exception:
+            laid = None
+        if laid:
+            return "pdf", laid, idx
     path = os.path.join(RM, doc + "." + kind)
     return kind, (path if os.path.exists(path) else None), idx
 
@@ -435,9 +443,7 @@ def _paste_source(canvas, doc, page_no, page, T):
     if path is None:
         return "%s SOURCE MISSING -- ink shown on blank paper" % kind.upper()
     if kind == "epub":
-        # An EPUB is reflowable: the device lays it out with its own engine at
-        # its own font size. There is no page image to recover, so say so
-        # loudly rather than render a blank sheet that looks complete.
+        # the book could not be laid out: say so loudly rather than render a blank sheet that looks complete
         return "EPUB TEXT NOT RENDERED -- ink is shown without the book text"
     try:
         import pypdfium2 as pdfium

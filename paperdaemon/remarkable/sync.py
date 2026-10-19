@@ -1026,6 +1026,40 @@ def push_new_doc(doc_uuid, dry_run=True):
     return plan
 
 
+@_one_at_a_time
+def delete_doc(doc_uuid):
+    """Remove a document from the cloud OUTRIGHT -- its line taken out of the root index, in one root move; not moved to
+    the trash -- and its files from the mirror. Only for a document PaperDaemon itself put there (a book sent to the
+    tablet to be converted for the false mirror). -> {"deleted": bool} or {"error": ...}."""
+    t = user_token()
+    root, gen = get_root(t)
+    tree = get_blob(t, root, "root.docSchema").decode()
+    troot, tdocs = tree.splitlines()[0], tree.splitlines()[1:]
+    ndocs = [l for l in tdocs if l.split(":")[2] != doc_uuid]
+    if len(ndocs) == len(tdocs):
+        out = {"deleted": False, "why": "not in the cloud"}
+    else:
+        ntree = "\n".join([troot] + ndocs) + "\n"
+        nrhash = index_hash([l.split(":")[0] for l in ndocs])
+        _upload(t, [(ntree.encode(), "root.docSchema", nrhash)])
+        code, body = put_root(t, nrhash, gen, broadcast=True)
+        if code != 200:
+            return {"error": "the cloud refused the root move (%s)" % code}
+        stt = _state()
+        stt.update(root=nrhash, generation=json.loads(body)["generation"],
+                   docs={k: v for k, v in stt["docs"].items() if k != doc_uuid},
+                   files={k: v for k, v in stt["files"].items() if not k.startswith(doc_uuid)})
+        _save_state(stt)
+        out = {"deleted": True}
+    import shutil
+    for f in os.listdir(MIRROR):
+        if f.startswith(doc_uuid + "."):
+            p = os.path.join(MIRROR, f)
+            shutil.rmtree(p, ignore_errors=True) if os.path.isdir(p) else os.remove(p)
+    shutil.rmtree(os.path.join(MIRROR, doc_uuid), ignore_errors=True)
+    return out
+
+
 def touch(doc_uuid, page_ids=None, when=None):
     """Say the document CHANGED, so the tablet re-fetches the pages that were edited.
 

@@ -258,7 +258,10 @@ def fm_start():
             return
         import subprocess
         port = _free_port()
-        env = dict(os.environ, PAPERDAEMON_PAIRING_TOKEN=pairing_token(), PAPERDAEMON_PARENT=str(os.getpid()))
+        from .remarkable import books
+        env = dict(os.environ, PAPERDAEMON_PAIRING_TOKEN=pairing_token(), PAPERDAEMON_PARENT=str(os.getpid()),
+                   RM_FACES=books.false_mirror_faces())
+        _fm["faces"] = env["RM_FACES"]
         cmd = ([sys.executable, "--false-mirror", str(port)] if loop.FROZEN
                else [sys.executable, "-m", "paperdaemon", "--false-mirror", str(port)])
         logs = os.path.join(paths.false_mirror_state_dir(), "logs")
@@ -277,6 +280,15 @@ def fm_stop():
         p, _fm["proc"], _fm["port"] = _fm["proc"], None, None
     if p is not None:
         loop.end(p)
+
+
+def fm_refresh():
+    """The false mirror's engine started again when the faces its pages are set in have changed (the setting, or an
+    account signed in or out): a page is drawn as its own library shows it."""
+    from .remarkable import books
+    if _fm.get("port") and _fm.get("faces") != books.false_mirror_faces():
+        fm_stop()
+        threading.Thread(target=fm_start, daemon=True).start()
 
 
 import atexit as _atexit
@@ -400,6 +412,7 @@ def put_settings(body: dict = Body(...)):
     try:
         saved = settings.save(body)
         loop.settings_saved()                        # a running daemon and host take the change up when idle
+        fm_refresh()
         return {"settings": saved, "secrets": _secret_flags()}
     except ValueError as ex:
         return _bad(str(ex))
@@ -411,6 +424,7 @@ def put_secret(name: str, body: dict = Body(...)):
         return _bad("unknown secret", 404)
     if name == "device_token":
         auth.set_device_token(body.get("value"))
+        fm_refresh()
     else:
         vault.put(SECRETS[name], body.get("value"))
     return {"secrets": _secret_flags()}
@@ -433,6 +447,7 @@ def delete_secret(name: str):
     vault.delete(SECRETS[name])
     if name == "device_token":
         auth.forget_user_token()
+        fm_refresh()
     return {"secrets": _secret_flags()}
 
 
@@ -574,6 +589,7 @@ def tablet_desktop_token(body: dict = Body(default={})):
     except Exception as ex:
         return {"found": True, "set": False, "error": str(ex)[:160]}
     out = {"found": True, "set": vault.has(auth.DEVICE_KEY)}
+    fm_refresh()
     if mode == "steal" and out["set"]:
         out["removed"] = desktop_token.remove_login()
     return out
@@ -1350,15 +1366,28 @@ def _templates():
     return templates
 
 
+def _signed_in():
+    """Templates, like the tablet's faces, come with a signed-in account (add-epub-reading, D6)."""
+    try:
+        return bool(auth.describe().get("set"))
+    except Exception:
+        return False
+
+
 @app.get(API + "/templates")
 def get_templates():
-    """Every portrait template there is, defaults and rM Methods, Blank first -> [{name, file, source, icon, drawn}]."""
+    """Every portrait template there is, defaults and rM Methods, Blank first -> [{name, file, source, icon, drawn}];
+    403 {"signin": true} without an account signed in."""
+    if not _signed_in():
+        return JSONResponse({"error": "sign in to a reMarkable account for templates", "signin": True}, status_code=403)
     return _templates().catalog()
 
 
 @app.get(API + "/templates/{file}.svg")
 def get_template_svg(file: str, w: int = 1620, h: int = 2160):
     """One template drawn on a w x h page, as SVG (empty for Blank and for those the app draws in its own code)."""
+    if not _signed_in():
+        return JSONResponse({"error": "sign in to a reMarkable account for templates", "signin": True}, status_code=403)
     T = _templates()
     entry = next((t for t in T.catalog() if t["file"] == file), None)
     if entry is None:
@@ -1367,14 +1396,26 @@ def get_template_svg(file: str, w: int = 1620, h: int = 2160):
     return Response(content=T.svg(T.definition(entry), w, h), media_type="image/svg+xml")
 
 
+@app.get(API + "/fonts/own/{name}")
+def get_own_font(name: str):
+    """One of PaperDaemon's own typed-text faces (shipped: Arimo, Gelasio), for the page editor."""
+    m = re.fullmatch(r"(Arimo|Gelasio)-(Regular|Bold|Italic|BoldItalic)", name)
+    if not m:
+        return _bad("not one of PaperDaemon's faces")
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "content", "typed-fonts", m.group(1).lower(), name + ".ttf")
+    return FileResponse(p, media_type="font/ttf") if os.path.isfile(p) else JSONResponse({"error": "missing"}, status_code=404)
+
+
 @app.get(API + "/fonts/{name}")
 def get_font(name: str):
     """One of the tablet's faces from the content folder (never shipped: the user's own desktop app's), for the page
-    editor's typed text; 404 when it is not installed."""
+    editor's typed text; 404 when it is not installed, or when the false mirror is set in PaperDaemon's own faces (no
+    account signed in, or its setting)."""
+    from .remarkable import books
     if not re.fullmatch(r"[A-Za-z0-9-]{1,64}", name):
         return _bad("not a font name")
     p = paths.font_file(name)
-    if not p:
+    if not p or books.false_mirror_faces() != "tablet":
         return JSONResponse({"error": "not installed"}, status_code=404)
     return FileResponse(p, media_type="font/ttf")
 

@@ -255,10 +255,33 @@
     const exists = fmExists();
     if (!exists && !S.revealed) { box.hidden = true; box.classList.remove("haunt"); return; }
     box.hidden = false;
+    // with an account: the faces its pages are set in; with a built Mirror too: converting its books with the tablet
+    const signed = !!((PD.status || {}).tablet || {}).set, built = !!((PD.status || {}).mirror || {}).complete;
+    const v = S.s || PD.settings || {};
     box.innerHTML = '<h2 id="st-h-fm">' + esc(t("fm.label")) + "</h2>" + row(t("fm.label"), t("fm.help"),
       exists ? '<button type="button" class="btn danger" data-act="fm-delete">' + esc(t("fm.delete")) + "</button>"
              : '<button type="button" class="btn" data-act="fm-create">' + esc(t("fm.create_mirror")) + "</button>") +
-      '<p class="hint" id="st-fm-msg" role="status"></p>';
+      '<p class="hint" id="st-fm-msg" role="status"></p>' +
+      (exists && signed ? row(t("fm.faces"), t("fm.faces.help"),
+        choice("st-fm-faces", "false_mirror.faces", [["tablet", t("fm.faces.tablet")], ["own", t("fm.faces.own")]]) +
+        '<p class="hint" id="st-fm-faces-msg" role="status"></p>') : "") +
+      (exists && signed && built ? row(t("fm.convert"), t("fm.convert.help"),
+        '<label class="check-label"><input type="checkbox" id="st-fm-convert"> ' + esc(t("fm.convert")) +
+        '</label><p class="hint" id="st-fm-convert-msg" role="status"></p>') : "");
+    const faces = $("#st-fm-faces", R);
+    if (faces) {
+      faces.value = PD.getK(v, "false_mirror.faces") || "tablet";
+      faces.addEventListener("change", e => save("false_mirror.faces", e.target.value, $("#st-fm-faces-msg", R)));
+    }
+    const conv = $("#st-fm-convert", R);
+    if (conv) {
+      conv.checked = !!PD.getK(v, "false_mirror.convert");
+      conv.addEventListener("change", async e => {
+        if (e.target.checked && !await PD.confirm({ title: t("fm.convert_q"), body: [esc(t("fm.convert_body1")), esc(t("fm.convert_body2"))],
+                                                    action: t("fm.convert_on"), danger: false })) { e.target.checked = false; return; }
+        if (!await save("false_mirror.convert", e.target.checked, $("#st-fm-convert-msg", R))) e.target.checked = !e.target.checked;
+      });
+    }
   }
 
   function haunt() {

@@ -658,9 +658,27 @@ FACES=tuple(f'{family}-{weight}{italic}' for family in ('reMarkableSans','reMark
 SUPPORTED={0,1,2,3,4,5,6,7,10}
 SCALE=4
 
+# PaperDaemon's own faces, shipped (OFL): Arimo and Gelasio, cut to the widths of Arial and Georgia, the closest
+# measured to reMarkable Sans and reMarkable Serif Small. A page is set in them where its library uses PaperDaemon's own
+# faces (no account, or the false mirror's setting: remarkable/books.mode), so it is drawn as that library shows it.
+OWN_DIR=Path(__file__).resolve().parents[2]/'content'/'typed-fonts'
+OWN={'reMarkableSans':('arimo','Arimo'),'reMarkableSerifSmall':('gelasio','Gelasio')}
+
+def own_faces():
+    from paperdaemon.remarkable import books
+    return books.mode()=='own'
+
+def face_path(name):
+    """The file of a face as this library sets it: the tablet's, or PaperDaemon's own in its place."""
+    if own_faces():
+        family,_,style=name.partition('-')
+        folder,own=OWN[family]
+        return OWN_DIR/folder/f'{own}-{style}.ttf'
+    return FONT_DIR/(name+'.ttf')
+
 def fonts_available():
     """True when every face this layout draws with is installed."""
-    return all((FONT_DIR/(n+'.ttf')).is_file() for n in FACES)
+    return all(face_path(n).is_file() for n in FACES)
 
 @lru_cache(maxsize=32)
 def supported_characters(path):
@@ -674,8 +692,8 @@ def font(style,bold=False,italic=False):
     size=64 if style==2 else 36 if style==3 else 32
     weight='Bold' if bold or style==3 else 'Regular'
     name=family+'-'+weight+('Italic' if italic else '')
-    path=FONT_DIR/(name+'.ttf')
-    if not path.is_file():raise FileNotFoundError(f'required font not installed: {name} (looked in {FONT_DIR}); refusing to substitute')
+    path=face_path(name)
+    if not path.is_file():raise FileNotFoundError(f'required font not installed: {name} (looked for {path}); refusing to substitute')
     return ImageFont.truetype(str(path),size*SCALE)
 
 def groups(chars):

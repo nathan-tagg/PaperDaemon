@@ -127,6 +127,9 @@ def main(argv=None):
         return run_pipeline(argv[1:])
     if argv[:1] == ["--false-mirror"] and len(argv) > 1:
         return false_mirror_engine(int(argv[1]))
+    if argv[:1] == ["--books"]:                    # a book laid out as the tablet lays it out (remarkable/books.py)
+        from .remarkable import books
+        return books.main(argv[1:])
 
     from . import __version__, scripts, server, settings
     ap = argparse.ArgumentParser(prog="paperdaemon", description="PaperDaemon %s" % __version__)

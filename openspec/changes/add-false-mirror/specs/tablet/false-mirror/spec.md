@@ -39,7 +39,7 @@ delete it, in a dialog saying its notebooks will be gone, and SHALL delete it on
 The False Mirror tab SHALL offer New notebook, New page, Import and, for notebooks, Export, placed where
 the screen's own controls are. Import SHALL take PDFs and EPUBs, several at a time, from the file chooser it
 opens at once or from files dropped on the screen, each named by its file and landing in the folder open in the false
-mirror; an EPUB SHALL be filed as the tablet files a book, the book and a PDF of its pages at the Paper Pro's size.
+mirror; an EPUB SHALL be filed as the desktop app files a book, without a PDF, and read by PaperDaemon (add-epub-reading).
 A long press on a notebook SHALL select it, and a menu with Export,
 Move and Delete SHALL slide down from the top of the screen over the content, moving nothing on the
 screen. Export SHALL write the notebook as a PDF. Tags on folders, notebooks and pages SHALL be set and

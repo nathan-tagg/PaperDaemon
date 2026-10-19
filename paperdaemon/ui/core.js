@@ -481,8 +481,10 @@
   /** Ask, then take the desktop app's login. -> the API's answer ({found, set, removed?}), or null when canceled. */
   PD.takeLogin = async mode => {
     const m = LOGIN[mode];
-    const ok = await PD.confirm({ title: PD.t(m.title), body: [esc(PD.t(m.body))], disclaimer: PD.PRIVACY,
-                                  action: PD.t(m.action), danger: m.danger });
+    // with a False Mirror, signing in moves its typed text into the tablet's faces: said before, not after
+    const fm = !!((PD.status || {}).false_mirror || {}).exists;
+    const ok = await PD.confirm({ title: PD.t(m.title), body: [esc(PD.t(m.body))].concat(fm ? [esc(PD.t("fm.signin_shift"))] : []),
+                                  disclaimer: PD.PRIVACY, action: PD.t(m.action), danger: m.danger });
     return ok ? PD.api("POST", "/tablet/desktop-token", { mode }) : null;
   };
 

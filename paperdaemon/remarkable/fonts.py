@@ -1,10 +1,11 @@
 """The tablet's own typefaces, taken from the reMarkable desktop app installed on this computer.
 
-Typed text on a page is set in reMarkable Sans and reMarkable Serif Small. Those faces belong to reMarkable and
-PaperDaemon does not ship them; the desktop app (which every PaperDaemon user has, since the login comes from it)
-carries them inside its program file. `extract()` finds each embedded TrueType file there and copies it, unchanged,
-into PaperDaemon's content folder (rm-fonts), named by the face's own PostScript name. They never leave the
-computer. Without the desktop app the pages are drawn with the older lettering model, as before.
+Typed text on a page is set in reMarkable Sans and reMarkable Serif Small, and a book that names no face is set in
+the app's EB Garamond. Those faces are not PaperDaemon's to ship; the desktop app (which every PaperDaemon user has,
+since the login comes from it) carries them inside its program file. `extract()` finds each embedded TrueType file
+there and copies it, unchanged, into PaperDaemon's content folder (rm-fonts), named by the face's own PostScript name.
+They never leave the computer. Without the desktop app typed text is drawn with the older lettering model, and books
+are set in the published EB Garamond (books.py says so).
 """
 
 import os
@@ -121,32 +122,40 @@ def _ps_name(font_bytes):
     return n or None
 
 
+# The faces taken: reMarkable's own, and the app's EB Garamond, the face a book is set in when it names none. The app
+# keeps EB Garamond packed among its Qt resources (variable fonts: EBGaramond-Regular and EBGaramond-Italic); it is the
+# app's own build, which no published EB Garamond matches table for table, so books are laid out exactly only with it.
+WANTED = ("reMarkable", "EBGaramond")
+
+
 def extract(dest=None, programs=None):
-    """Copy the faces out of the first desktop app found into `dest` (default: the content folder's rm-fonts).
-    Faces already there are left alone. -> the number of faces written (0 when there is no app)."""
-    import mmap
+    """Copy the faces out of the first desktop app found into `dest` (default: the content folder's rm-fonts), from
+    the program file and the Qt resources packed in it. Faces already there are left alone. -> the number of faces
+    written (0 when there is no app)."""
+    from .templates import _blobs
     dest = dest or paths.fonts_dir()
     for exe in programs or app_programs():
         if not os.path.isfile(exe):
             continue
-        with open(exe, "rb") as fh, mmap.mmap(fh.fileno(), 0, access=mmap.ACCESS_READ) as data:
-            found = _fonts_in(data)
-            if not found:
+        with open(exe, "rb") as fh:
+            data = fh.read()
+        found = [(blob, off, ln) for blob in _blobs(data) for off, ln in _fonts_in(blob)]
+        if not found:
+            continue
+        os.makedirs(dest, exist_ok=True)
+        wrote = 0
+        for blob, off, ln in found:
+            face = bytes(blob[off:off + ln])
+            name = _ps_name(face)
+            if not name or not name.startswith(WANTED):
                 continue
-            os.makedirs(dest, exist_ok=True)
-            wrote = 0
-            for off, ln in found:
-                blob = bytes(data[off:off + ln])
-                name = _ps_name(blob)
-                if not name or not name.startswith("reMarkable"):
-                    continue
-                path = os.path.join(dest, name + ".ttf")
-                if os.path.isfile(path):
-                    continue
-                tmp = path + ".part"
-                with open(tmp, "wb") as out:
-                    out.write(blob)
-                os.replace(tmp, path)
-                wrote += 1
-            return wrote
+            path = os.path.join(dest, name + ".ttf")
+            if os.path.isfile(path):
+                continue
+            tmp = path + ".part"
+            with open(tmp, "wb") as out:
+                out.write(face)
+            os.replace(tmp, path)
+            wrote += 1
+        return wrote
     return 0
