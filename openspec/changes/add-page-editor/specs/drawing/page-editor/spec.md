@@ -47,7 +47,7 @@ strokes where it crosses them. It SHALL sweep the whole path between two pointer
 ### Requirement: Typing on the page
 Typing SHALL NOT need the text tool: with no cursor, a key that types SHALL put the cursor at the end of
 the page's text, and the pen in hand SHALL keep drawing. With the text tool, a click SHALL place the
-cursor in the page's text, and a click below the text SHALL add empty paragraphs down to that line. The
+cursor in the page's text, and a click below the text SHALL put it at the end of the text. The
 tool's menu SHALL set the column to narrow, medium or wide for the whole page. Styles, lists, bold,
 italic, cut, copy and paste SHALL be keyboard actions, with no toolbar over selected text; Ctrl+Backspace
 and Ctrl+Delete SHALL delete the word before and after the cursor, with or without Shift. Text and ink
@@ -266,3 +266,21 @@ a pixel; Ctrl+Shift+V SHALL put an image down as strokes, decomposed at the same
 #### Scenario: Copying strokes to another page
 - **WHEN** the user selects strokes, presses Ctrl+C, opens another page and presses Ctrl+V
 - **THEN** the same strokes land under the pointer, selected
+
+### Requirement: Checkboxes take a click from any tool but a pen
+A click on a checkbox with any tool but a pen in hand SHALL tick or untick it, the pointer showing a pointing hand over
+it; a stroke of the eraser passing over a checkbox SHALL NOT tick it. The eraser SHALL have three sizes, as the pens do.
+
+#### Scenario: Ticking with the eraser in hand
+- **WHEN** the user, holding the eraser, clicks a checkbox and then drags the eraser across it
+- **THEN** the click ticks it and the drag leaves it ticked
+
+### Requirement: The editor keeps up
+A text edit SHALL redraw only the band of the page it touched (from the first paragraph changed to the end of the text),
+an eraser only the rows its erased strokes took, and a repaint SHALL copy the page as shown rather than draw it again;
+each SHALL show exactly what a full redraw shows. The editor SHALL not read the page's file to compare it while the user
+is at work, only after a pause and before each save.
+
+#### Scenario: Holding Delete
+- **WHEN** the user holds Delete on a page with text and ink
+- **THEN** each key redraws only the text's band, as fast as the key repeats

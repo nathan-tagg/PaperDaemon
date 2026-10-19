@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.39
+
+- A held key no longer stutters: a text edit redraws only the band it touched (about five times faster), erasing only
+  the rows it took, and a repaint copies the page rather than drawing it again. The page's file is compared for the
+  daemon's writes only after a pause, and always before a save.
+- A checkbox ticks with a click from any tool but a pen, under a pointing hand; an eraser passing over it leaves it be.
+- The eraser has three sizes; the one it had is the medium.
+- A click below the text with the text tool goes to the end of the text, no lines added.
+
 ## 0.1.38
 
 - Start and Pause are in the rail's foot, left of the version, on every screen.
