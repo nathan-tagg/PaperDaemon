@@ -533,9 +533,6 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="fm.new_folder">New folder</string>
   <string name="fm.new_page">New page</string>
   <string name="fm.import">Import</string>
-  <string name="fm.import_into">Into {folder}</string>
-  <string name="fm.file">File (PDF)</string>
-  <string name="fm.choose_file">Choose a PDF to import.</string>
   <string name="fm.name">Name</string>
   <string name="fm.notebook">Notebook</string>
   <string name="fm.folder">Folder</string>
@@ -553,4 +550,10 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="fm.delete_body">It goes to the trash, as on the tablet.</string>
   <string name="fm.delete_folder_body">It goes to the trash with everything in it, as on the tablet.</string>
   <string name="fm.save">Save</string>
+  <string name="fm.import_kinds">Only PDFs and EPUBs can be imported.</string>
+  <string name="fm.importing">Importing {name}…</string>
+  <string name="fm.imported">Imported {name}.</string>
+  <string name="fm.imported_n">Imported {n} files.</string>
+  <string name="fm.import_failed">{name} could not be imported: {why}</string>
+  <string name="fm.drop">Drop PDFs and EPUBs to import them here</string>
 </resources>

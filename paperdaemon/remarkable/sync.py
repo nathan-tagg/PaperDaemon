@@ -39,7 +39,19 @@ STATE = os.path.join(SAFETY, "mirror-state.json")
 # lives at <doc>/<page>/<asset>.png and its .rm only references it, so assets come too; a PDF or
 # EPUB is the document itself, so its source file comes too.
 WANT = (".rm", ".content", ".metadata", ".pagedata", ".pdf", ".epub", ".epubindex",
-        ".png", ".jpg", ".jpeg")
+        ".png", ".jpg", ".jpeg", ".template")
+# A TEMPLATE (rM Methods) is a document of its own whose .template file holds its drawing; kept since 0.1.32. When what
+# the mirror keeps grows, the next pull revisits the documents a new kind belongs to, once, though the cloud did not
+# change them: the template documents pulled before .template was kept.
+WANT_KEY = ",".join(WANT)
+
+
+def _is_template(uuid):
+    try:
+        with open(os.path.join(MIRROR, uuid + ".metadata"), encoding="utf-8") as f:
+            return json.load(f).get("type") == "TemplateType"
+    except (OSError, ValueError):
+        return False
 
 # the server's own hint of how long a user token is good for, in seconds
 TTL_HINT = {"seconds": None}
@@ -596,7 +608,8 @@ def pull(token=None, progress=None, plan=None):
     t = token or user_token()
     root, gen = get_root(t)
     st = _state()
-    if root == st.get("root"):
+    catch_up = st.get("want") != WANT_KEY            # the mirror keeps more than when it was last pulled
+    if root == st.get("root") and not catch_up:
         return {"changed": False, "root": root, "generation": gen}
 
     tree = get_blob(t, root, "root.docSchema").decode()
@@ -620,7 +633,7 @@ def pull(token=None, progress=None, plan=None):
         for line in lines:
             dhash, _, uuid, _, _ = line.split(":")
             docs[uuid] = dhash
-            if st["docs"].get(uuid) == dhash:
+            if st["docs"].get(uuid) == dhash and not (catch_up and _is_template(uuid)):
                 seen.update(k for k in st["files"] if k.split("/")[0].split(".")[0] == uuid)
                 continue                       # this document is untouched
             _pull_document(t, dhash, uuid, st, seen, got, progress)
@@ -638,7 +651,7 @@ def pull(token=None, progress=None, plan=None):
         del st["files"][name]
         dropped.append(name)
 
-    st.update(root=root, generation=gen, docs=docs)
+    st.update(root=root, generation=gen, docs=docs, want=WANT_KEY)
     _save_state(st)
     return {"changed": True, "root": root, "generation": gen, "downloaded": got, "deleted": dropped}
 
@@ -832,7 +845,7 @@ def _local_files(doc_uuid):
     each live page's .rm, and each page's pictures (one folder down, beside the page). A folder is its
     metadata (and .content when it has one) alone."""
     local = {}
-    for suffix in (".content", ".metadata", ".pagedata", ".pdf", ".epub", ".epubindex"):
+    for suffix in (".content", ".metadata", ".pagedata", ".pdf", ".epub", ".epubindex", ".template"):
         f = os.path.join(MIRROR, doc_uuid + suffix)
         if os.path.exists(f):
             local[doc_uuid + suffix] = f

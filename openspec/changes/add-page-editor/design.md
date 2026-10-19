@@ -85,6 +85,11 @@ band about 2170 units wide; the 200 x 266 page shows about 272.
   its own code (`SceneTemplateRenderer` types), so PaperDaemon draws those five itself, matched to the
   tablet.
 - PaperDaemon is portrait only: the landscape (`LS`) templates are left out.
+- Reading them (remarkable/templates.py): the app supplies three names to the formulas, `paperOriginX` (the page's
+  middle, x 0 in its own units), `paperOriginY` and a text's own `textWidth`; its remainder keeps the dividend's sign,
+  as C and JavaScript do. A page records its template in its document's page list by file name ("P Grid medium"), and
+  the rM Methods documents' `.template` files are kept by the pull from 0.1.32 (fetched once for those pulled before).
+  Drawn by PaperDaemon, all 41 definitions match the app's icons.
 - rM Methods templates sync as documents of their own, of type `TemplateType` (`source`
   `com.remarkable.methods`): a JSON body with the name, the author and the icon as base64 SVG. The
   user's library holds five.

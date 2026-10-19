@@ -533,9 +533,6 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="fm.new_folder">Thư mục mới</string>
   <string name="fm.new_page">Trang mới</string>
   <string name="fm.import">Nhập</string>
-  <string name="fm.import_into">Vào {folder}</string>
-  <string name="fm.file">Tệp (PDF)</string>
-  <string name="fm.choose_file">Chọn một PDF để nhập.</string>
   <string name="fm.name">Tên</string>
   <string name="fm.notebook">Sổ tay</string>
   <string name="fm.folder">Thư mục</string>
@@ -553,4 +550,10 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="fm.delete_body">Nó vào thùng rác, như trên máy tính bảng.</string>
   <string name="fm.delete_folder_body">Nó vào thùng rác cùng mọi thứ bên trong, như trên máy tính bảng.</string>
   <string name="fm.save">Lưu</string>
+  <string name="fm.import_kinds">Chỉ có thể nhập PDF và EPUB.</string>
+  <string name="fm.importing">Đang nhập {name}…</string>
+  <string name="fm.imported">Đã nhập {name}.</string>
+  <string name="fm.imported_n">Đã nhập {n} tệp.</string>
+  <string name="fm.import_failed">Không thể nhập {name}: {why}</string>
+  <string name="fm.drop">Thả PDF và EPUB vào đây để nhập</string>
 </resources>

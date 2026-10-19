@@ -16,8 +16,8 @@
 
 ## 3. Templates
 
-- [ ] 3.1 PaperDaemon reads the portrait templates itself, as it reads the fonts: the index, the definitions and the icon font out of the desktop app wherever it is installed (every Program Files, the user's programs folder, the uninstall entry's install location, the running app), and the rM Methods templates from the library; a renderer for the definitions, and the five drawn in code (Calligraphy, Hexagon) matched to the tablet
-- [ ] 3.2 The template picker in the editor: one scrollable screen in the dialog, every template (defaults and rM Methods together, no tabs, no filter) as its icon over its name, the page's template underlined
+- [x] 3.1 PaperDaemon reads the portrait templates itself, as it reads the fonts: the index, the definitions and the icon font out of the desktop app wherever it is installed (every Program Files, the user's programs folder, the uninstall entry's install location, the running app), and the rM Methods templates from the library; a renderer for the definitions, and the five drawn in code (Calligraphy, Hexagon) matched to the tablet Done (remarkable/templates.py) but for those five, which wait on measurements from the tablet; the rM Methods templates come with the next pull (.template files, fetched once for templates pulled before)
+- [x] 3.2 The template picker in the editor: one scrollable screen in the dialog, every template (defaults and rM Methods together, no tabs, no filter) as its icon over its name, the page's template underlined
 - [ ] 3.3 D10: before any render a model sees includes a template, audit and fix every reader of a page (the model's render, layout and safe area, marks and erase grounding, OCR, the decomposer's input, the harnesses' and lineups' page descriptions), checked on real jobs
 
 ## 4. Into the app

@@ -533,9 +533,6 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="fm.new_folder">Nuova cartella</string>
   <string name="fm.new_page">Nuova pagina</string>
   <string name="fm.import">Importa</string>
-  <string name="fm.import_into">In {folder}</string>
-  <string name="fm.file">File (PDF)</string>
-  <string name="fm.choose_file">Scegli un PDF da importare.</string>
   <string name="fm.name">Nome</string>
   <string name="fm.notebook">Quaderno</string>
   <string name="fm.folder">Cartella</string>
@@ -553,4 +550,10 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="fm.delete_body">Va nel cestino, come sul tablet.</string>
   <string name="fm.delete_folder_body">Va nel cestino con tutto ciò che contiene, come sul tablet.</string>
   <string name="fm.save">Salva</string>
+  <string name="fm.import_kinds">Si possono importare solo PDF ed EPUB.</string>
+  <string name="fm.importing">Importazione di {name}…</string>
+  <string name="fm.imported">{name} importato.</string>
+  <string name="fm.imported_n">{n} file importati.</string>
+  <string name="fm.import_failed">Impossibile importare {name}: {why}</string>
+  <string name="fm.drop">Trascina qui PDF ed EPUB per importarli</string>
 </resources>

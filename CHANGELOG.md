@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Imports take EPUBs as well as PDFs, and are easy: Import opens the file chooser at once (several files at a time), or
+  drop the files on the screen. Each is named by its file and lands in the folder that is open. A book is filed as the
+  tablet files one, its pages laid out at the Paper Pro's size.
+- The tablet's page templates, read from the reMarkable desktop app on this computer (never shipped): a page can be
+  given one, chosen from all of them as the tablet's picker shows them, and it is drawn under the page.
+- The rM Methods templates in the library are kept in the Mirror with their drawings.
+
 ## 0.1.31
 
 - Something waits at the bottom of Settings, for whoever waits there long enough.

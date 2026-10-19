@@ -533,9 +533,6 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="fm.new_folder">Ny mappe</string>
   <string name="fm.new_page">Ny side</string>
   <string name="fm.import">Importer</string>
-  <string name="fm.import_into">I {folder}</string>
-  <string name="fm.file">Fil (PDF)</string>
-  <string name="fm.choose_file">Velg en PDF å importere.</string>
   <string name="fm.name">Navn</string>
   <string name="fm.notebook">Notatbok</string>
   <string name="fm.folder">Mappe</string>
@@ -553,4 +550,10 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="fm.delete_body">Den havner i papirkurven, som på nettbrettet.</string>
   <string name="fm.delete_folder_body">Den havner i papirkurven med alt innhold, som på nettbrettet.</string>
   <string name="fm.save">Lagre</string>
+  <string name="fm.import_kinds">Bare PDF- og EPUB-filer kan importeres.</string>
+  <string name="fm.importing">Importerer {name}…</string>
+  <string name="fm.imported">{name} importert.</string>
+  <string name="fm.imported_n">{n} filer importert.</string>
+  <string name="fm.import_failed">{name} kunne ikke importeres: {why}</string>
+  <string name="fm.drop">Slipp PDF- og EPUB-filer her for å importere dem</string>
 </resources>

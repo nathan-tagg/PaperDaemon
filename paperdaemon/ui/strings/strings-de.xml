@@ -533,9 +533,6 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="fm.new_folder">Neuer Ordner</string>
   <string name="fm.new_page">Neue Seite</string>
   <string name="fm.import">Importieren</string>
-  <string name="fm.import_into">In {folder}</string>
-  <string name="fm.file">Datei (PDF)</string>
-  <string name="fm.choose_file">Wähle ein PDF zum Importieren.</string>
   <string name="fm.name">Name</string>
   <string name="fm.notebook">Notizbuch</string>
   <string name="fm.folder">Ordner</string>
@@ -553,4 +550,10 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="fm.delete_body">Es kommt in den Papierkorb, wie auf dem Tablet.</string>
   <string name="fm.delete_folder_body">Er kommt mit allem darin in den Papierkorb, wie auf dem Tablet.</string>
   <string name="fm.save">Speichern</string>
+  <string name="fm.import_kinds">Nur PDFs und EPUBs lassen sich importieren.</string>
+  <string name="fm.importing">{name} wird importiert…</string>
+  <string name="fm.imported">{name} importiert.</string>
+  <string name="fm.imported_n">{n} Dateien importiert.</string>
+  <string name="fm.import_failed">{name} konnte nicht importiert werden: {why}</string>
+  <string name="fm.drop">PDFs und EPUBs hier ablegen, um sie zu importieren</string>
 </resources>

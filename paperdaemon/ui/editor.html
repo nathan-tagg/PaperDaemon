@@ -80,6 +80,18 @@ span.lname { cursor: default; }
 .lnew:hover, .lname:hover { background: var(--field); }
 .lrow.on .lname:hover { background: transparent; }
 .lnew svg { width: 22px; height: 22px; }
+/* the template picker: a screen over the editor, five across, each icon over its name, the page's own underlined */
+.tpl-pick { position: fixed; inset: 0; z-index: 20; background: var(--paper-sunk); display: flex; flex-direction: column; }
+.tpl-pick[hidden] { display: none; }
+.tpl-head { display: flex; align-items: center; gap: 12px; padding: 10px 18px; border-bottom: 1px solid var(--rule); font-weight: 600; font-size: 16px; }
+.tpl-back { width: 32px; height: 32px; border: 0; background: transparent; color: var(--ink); font-size: 22px; cursor: pointer; }
+.tpl-grid { flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 16px 18px; align-content: start; }
+.tpl { display: grid; justify-items: center; gap: 6px; padding: 10px 4px 8px; border: 0; background: transparent; color: var(--ink);
+  font: 14px var(--font-ui); cursor: pointer; border-bottom: 3px solid transparent; }
+.tpl:hover { background: var(--field); }
+.tpl.here { border-bottom-color: var(--ink); }
+.tpl svg, .tpl img { width: 46px; height: 60px; fill: currentColor; }
+.tpl img { filter: invert(0.75); }
 .cell.off { opacity: 0.35; cursor: default; }
 .cell.off:hover { background: transparent; }
 </style>
@@ -384,13 +396,16 @@ span.lname { cursor: default; }
     const c = { W, H, px, stamp: new Int32Array(W * H), cx0: Math.max(0, Math.ceil(ax * k - 0.5)), cx1: Math.min(W - 1, Math.floor(bx * k - 0.5)),
                 cy0: Math.max(0, Math.ceil(ay * k - 0.5)), cy1: H - 1 };
     for (let y = c.cy0; y <= c.cy1; y++) if (c.cx1 >= c.cx0) px.fill(255, (y * W + c.cx0) * 3, (y * W + c.cx1 + 1) * 3);
-    if (page.textVisible && page.text.paras.length && c.cx1 >= c.cx0 && c.cy0 <= c.cy1) {
+    const withText = page.textVisible && page.text.paras.length, withTemplate = page.templateVisible && tplImg;
+    if ((withText || withTemplate) && c.cx1 >= c.cx0 && c.cy0 <= c.cy1) {
       const off = document.createElement("canvas"); off.width = W; off.height = H;
       const g = off.getContext("2d");
       g.beginPath(); g.rect(c.cx0, c.cy0, c.cx1 - c.cx0 + 1, c.cy1 - c.cy0 + 1); g.clip();       // text, too, only in the square
       const s = k * scale();
       g.setTransform(s, 0, 0, s, (vpW / 2 - view.cx * scale()) * k, -view.top * scale() * k);
-      drawText(g, textLayout);
+      // THE TEMPLATE, under everything: the page's frame wide, from its top (the template layer, then text, then ink)
+      if (withTemplate) g.drawImage(tplImg, -page.paperSize[0] / 2, 0, page.paperSize[0], page.paperSize[1]);
+      if (withText) drawText(g, textLayout);
       const t = g.getImageData(0, 0, W, H).data;
       for (let q = 0, i = 0; q < t.length; q += 4, i += 3) {
         const a = t[q + 3]; if (!a) continue;
@@ -1034,7 +1049,7 @@ span.lname { cursor: default; }
     if (b.dataset.erase) eraseMode = b.dataset.erase;
     if (b.dataset.lact !== undefined) { activeLayer = Number(b.dataset.lact); paintPop(); return; }
     if (b.dataset.tvis) { const k = b.dataset.tvis === "text" ? "textVisible" : "templateVisible"; layerEdit(() => { page[k] = !page[k]; }); return; }
-    if (b.dataset.tmpl) return;                              // the template picker: next
+    if (b.dataset.tmpl) { popFor = null; paintPop(); paintControls(); openTemplates(); return; }
     if (b.dataset.lvis !== undefined) { const i = Number(b.dataset.lvis); layerEdit(() => { page.layers[i].visible = !page.layers[i].visible; }); return; }
     if (b.dataset.lop && !b.classList.contains("off")) {
       const op = b.dataset.lop, i = activeLayer, Ls = page.layers;
@@ -1194,11 +1209,58 @@ span.lname { cursor: default; }
   rebuild = function () { _rebuild(); clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 700); };
   window.addEventListener("pagehide", () => saveNow(true));
 
+  // ================================================================ the page's template
+  // drawn from the engine's reading of the user's own desktop app (never shipped), as SVG at the page's frame
+  let tplImg = null;
+  async function loadTemplate() {
+    tplImg = null;
+    const file = page.template;
+    if (!file || file === "Blank") { rebuild(); return; }
+    try {
+      const r = await fetch("/api/v1/templates/" + encodeURIComponent(file) + ".svg?w=" + page.paperSize[0] + "&h=" + page.paperSize[1],
+                            { headers: { Authorization: "Bearer " + token() } });
+      if (!r.ok) throw new Error(r.status);
+      const url = URL.createObjectURL(new Blob([await r.text()], { type: "image/svg+xml" }));
+      const img = new Image();
+      await new Promise((ok, no) => { img.onload = ok; img.onerror = no; img.src = url; });
+      if (page.template === file) tplImg = img;
+    } catch (e) { tplImg = null; }
+    rebuild();
+  }
+
+  // THE TEMPLATE PICKER: one screen over the editor, every template there is (defaults and rM Methods together, no tabs,
+  // no filter) as its icon over its name, the page's own underlined; choosing one sets it and closes the screen
+  async function openTemplates() {
+    let box = document.getElementById("tpl-pick");
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "tpl-pick"; box.className = "tpl-pick";
+      document.body.append(box);
+      box.addEventListener("click", async e => {
+        if (e.target.closest("[data-tpl-close]")) { box.hidden = true; return; }
+        const b = e.target.closest("[data-tpl]"); if (!b) return;
+        const file = b.dataset.tpl;
+        const r = await fetch("/api/v1" + BASE + "/library/" + encodeURIComponent(DOC) + "/page/" + PAGE + "/template", { method: "PUT",
+          headers: { Authorization: "Bearer " + token(), "Content-Type": "application/json" }, body: JSON.stringify({ file }) });
+        if (r.ok) { page.template = file; box.hidden = true; loadTemplate(); }
+      });
+    }
+    box.hidden = false;
+    box.innerHTML = '<div class="tpl-head"><button class="tpl-back" data-tpl-close>‹</button><span>Templates</span></div><div class="tpl-grid">…</div>';
+    let list = [];
+    try { const r = await fetch("/api/v1/templates", { headers: { Authorization: "Bearer " + token() } }); if (r.ok) list = await r.json(); } catch (e) { /* none */ }
+    const icon = t => t.icon && t.icon.d ? '<svg viewBox="' + t.icon.viewBox + '"><path d="' + t.icon.d + '"/></svg>'
+      : t.icon && t.icon.svg ? '<img alt="" src="data:image/svg+xml;base64,' + t.icon.svg + '">' : '<svg viewBox="0 0 30 40"><rect x="1" y="1" width="28" height="38" fill="none" stroke="currentColor"/></svg>';
+    box.querySelector(".tpl-grid").innerHTML = list.length ? list.map(t => '<button class="tpl' + (t.file === page.template ? " here" : "") + '" data-tpl="' + t.file.replace(/"/g, "&quot;") +
+      '" title="' + t.name + '">' + icon(t) + "<span>" + t.name + "</span></button>").join("") : "<p>No templates were found in the reMarkable app on this computer.</p>";
+  }
+
   async function loadPage() {
     try {
       const r = await fetch(SCENE, { headers: { Authorization: "Bearer " + token() } });
       if (!r.ok) throw new Error(r.status + " " + (await r.text()).slice(0, 120));
       fromScene(await r.json());
+      loadTemplate();
       loaded = true;
       lastWritten = JSON.stringify(toScene());
     } catch (e) { note.textContent = "This page could not be read: " + e.message; }

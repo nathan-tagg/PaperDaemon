@@ -533,9 +533,6 @@
   <string name="fm.new_folder">새 폴더</string>
   <string name="fm.new_page">새 페이지</string>
   <string name="fm.import">가져오기</string>
-  <string name="fm.import_into">{folder}(으)로</string>
-  <string name="fm.file">파일(PDF)</string>
-  <string name="fm.choose_file">가져올 PDF를 고르세요.</string>
   <string name="fm.name">이름</string>
   <string name="fm.notebook">노트북</string>
   <string name="fm.folder">폴더</string>
@@ -553,4 +550,10 @@
   <string name="fm.delete_body">태블릿에서처럼 휴지통으로 갑니다.</string>
   <string name="fm.delete_folder_body">태블릿에서처럼 안의 모든 것과 함께 휴지통으로 갑니다.</string>
   <string name="fm.save">저장</string>
+  <string name="fm.import_kinds">PDF와 EPUB만 가져올 수 있습니다.</string>
+  <string name="fm.importing">{name} 가져오는 중…</string>
+  <string name="fm.imported">{name}을(를) 가져왔습니다.</string>
+  <string name="fm.imported_n">파일 {n}개를 가져왔습니다.</string>
+  <string name="fm.import_failed">{name}을(를) 가져오지 못했습니다: {why}</string>
+  <string name="fm.drop">가져올 PDF와 EPUB을 여기에 놓으세요</string>
 </resources>

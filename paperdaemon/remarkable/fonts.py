@@ -10,14 +10,63 @@ computer. Without the desktop app the pages are drawn with the older lettering m
 import os
 import re
 import struct
+import sys
 
 from .. import paths
 
 _TAG = re.compile(rb"[A-Za-z0-9/ ]{4}")
 
 
+def _installed_at():
+    """THE APP WHEREVER IT WAS INSTALLED: the folders Windows records for its uninstaller (every user and this one,
+    both registry views), and the program of an app that is running now."""
+    out = []
+    if sys.platform != "win32":
+        return out
+    try:
+        import winreg
+        for hive in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
+            for sub in (r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+                        r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"):
+                try:
+                    root = winreg.OpenKey(hive, sub)
+                except OSError:
+                    continue
+                with root:
+                    for i in range(winreg.QueryInfoKey(root)[0]):
+                        try:
+                            with winreg.OpenKey(root, winreg.EnumKey(root, i)) as k:
+                                name = str(winreg.QueryValueEx(k, "DisplayName")[0])
+                                if not name.lower().startswith("remarkable"):
+                                    continue
+                                for v in ("InstallLocation", "DisplayIcon"):
+                                    try:
+                                        p = str(winreg.QueryValueEx(k, v)[0]).split(",")[0].strip('"')
+                                    except OSError:
+                                        continue
+                                    # the folder, or a program in it (the icon may be its maintenance tool's)
+                                    folder = os.path.dirname(p) if p.lower().endswith(".exe") else p
+                                    out.append(os.path.join(folder, "reMarkable.exe"))
+                        except OSError:
+                            continue
+    except ImportError:
+        pass
+    try:
+        import subprocess
+        got = subprocess.run(["powershell", "-NoProfile", "-Command",
+                              "(Get-Process reMarkable -ErrorAction SilentlyContinue | Select-Object -First 1).Path"],
+                             capture_output=True, text=True, timeout=15,
+                             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)).stdout.strip()
+        if got:
+            out.append(got)
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return out
+
+
 def app_programs():
-    """Where the desktop app's program file may be, most likely first."""
+    """Where the desktop app's program file may be, most likely first: the usual folders, then wherever Windows says
+    it was installed or it is running from."""
     out = []
     for root in (os.environ.get("ProgramFiles"), os.environ.get("ProgramW6432"), os.environ.get("ProgramFiles(x86)")):
         if root:
@@ -25,6 +74,8 @@ def app_programs():
     local = os.environ.get("LOCALAPPDATA")
     if local:
         out.append(os.path.join(local, "Programs", "reMarkable", "reMarkable.exe"))
+    if not any(os.path.isfile(p) for p in out):
+        out += _installed_at()
     seen, uniq = set(), []
     for p in out:
         if p.lower() not in seen:

@@ -533,9 +533,6 @@
   <string name="fm.new_folder">নতুন ফোল্ডার</string>
   <string name="fm.new_page">নতুন পৃষ্ঠা</string>
   <string name="fm.import">ইমপোর্ট</string>
-  <string name="fm.import_into">{folder}-এ</string>
-  <string name="fm.file">ফাইল (PDF)</string>
-  <string name="fm.choose_file">ইমপোর্ট করতে একটি PDF বেছে নিন।</string>
   <string name="fm.name">নাম</string>
   <string name="fm.notebook">নোটবুক</string>
   <string name="fm.folder">ফোল্ডার</string>
@@ -553,4 +550,10 @@
   <string name="fm.delete_body">এটি ট্যাবলেটের মতোই ট্র্যাশে যায়।</string>
   <string name="fm.delete_folder_body">এটি ভেতরের সবকিছু নিয়ে ট্যাবলেটের মতোই ট্র্যাশে যায়।</string>
   <string name="fm.save">সংরক্ষণ</string>
+  <string name="fm.import_kinds">শুধু PDF ও EPUB ইমপোর্ট করা যায়।</string>
+  <string name="fm.importing">{name} ইমপোর্ট হচ্ছে…</string>
+  <string name="fm.imported">{name} ইমপোর্ট হয়েছে।</string>
+  <string name="fm.imported_n">{n}টি ফাইল ইমপোর্ট হয়েছে।</string>
+  <string name="fm.import_failed">{name} ইমপোর্ট করা যায়নি: {why}</string>
+  <string name="fm.drop">ইমপোর্ট করতে PDF ও EPUB এখানে ছাড়ুন</string>
 </resources>

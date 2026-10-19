@@ -304,3 +304,32 @@ def test_a_benchmark_never_pushes(monkeypatch):
     monkeypatch.setenv("RM_HOST_DRY_DOCS", "1")
     monkeypatch.setattr(sync, "unpushed", lambda: (_ for _ in ()).throw(AssertionError("looked at the cloud")))
     assert sync.push_pending() == {"pushed": [], "owed": False}
+
+
+def test_template_documents_bring_their_drawing_once_the_mirror_keeps_them(cloud, monkeypatch):
+    """A template (rM Methods) is a document whose .template file is its drawing. A mirror pulled before .template was
+    kept gets it on the next pull, though the cloud did not change: the template documents are revisited once."""
+    m = cloud.mirror
+    (m / "tpl.metadata").write_text(json.dumps({"visibleName": "Daily planner", "type": "TemplateType", "parent": ""}), encoding="utf-8")
+    (m / "tpl.content").write_text("{}", encoding="utf-8")
+    (m / "tpl.template").write_text(json.dumps({"name": "Daily planner", "orientation": "portrait", "items": []}), encoding="utf-8")
+    sync.push_new_doc("tpl", dry_run=False)
+    import shutil
+    for f in list(m.iterdir()):
+        shutil.rmtree(f) if f.is_dir() else f.unlink()
+    (m.parent / "safety" / "mirror-state.json").unlink()
+    old = tuple(x for x in sync.WANT if x != ".template")
+    monkeypatch.setattr(sync, "WANT", old)
+    monkeypatch.setattr(sync, "WANT_KEY", ",".join(old))
+    sync.pull()                                                       # an earlier PaperDaemon: no .template kept
+    assert (m / "tpl.metadata").exists() and not (m / "tpl.template").exists()
+    monkeypatch.undo()
+    for name in ("get_root", "get_blob", "put_blob", "put_root"):
+        monkeypatch.setattr(sync, name, getattr(cloud, name))
+    monkeypatch.setattr(sync, "MIRROR", str(m))
+    monkeypatch.setattr(sync, "SAFETY", str(m.parent / "safety"))
+    monkeypatch.setattr(sync, "STATE", str(m.parent / "safety" / "mirror-state.json"))
+    monkeypatch.setattr(sync, "user_token", lambda force=False: "token")
+    got = sync.pull()                                                 # this one: the root has not moved
+    assert got["changed"] and json.loads((m / "tpl.template").read_text(encoding="utf-8"))["name"] == "Daily planner"
+    assert sync.pull()["changed"] is False                            # once, then never again

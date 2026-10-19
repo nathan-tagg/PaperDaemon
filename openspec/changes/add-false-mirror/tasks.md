@@ -22,6 +22,7 @@
 - [x] 3.7 Tags set and removed on folders, notebooks and pages, written as the tablet writes them
 - [x] 3.8 One queue for both mirrors, one job at a time, each job marked with its mirror
 - [x] 3.9 The tablet gear retired: its settings in Settings, one set for every tablet; the False Mirror's decompose inbox under the Mirror's, and Send to Tablet lands in both
+- [x] 3.10 Import made easy, and EPUBs: the chooser at once (several files), or files dropped on the screen; an EPUB laid out by Microsoft Edge (part of Windows; the EPUB libraries that lay out pages are AGPL) at the Paper Pro's size and filed as the tablet files a book
 
 Checked by a headless walk through the real window on a throwaway data folder: the minute's wait, create, the tab,
 new notebook and folder, the long press (nothing moved), tags, export, move, the editor (a stroke and typed text saved

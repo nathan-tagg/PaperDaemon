@@ -533,9 +533,6 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="fm.new_folder">Ffolder newydd</string>
   <string name="fm.new_page">Tudalen newydd</string>
   <string name="fm.import">Mewnforio</string>
-  <string name="fm.import_into">I {folder}</string>
-  <string name="fm.file">Ffeil (PDF)</string>
-  <string name="fm.choose_file">Dewiswch PDF i'w fewnforio.</string>
   <string name="fm.name">Enw</string>
   <string name="fm.notebook">Llyfr nodiadau</string>
   <string name="fm.folder">Ffolder</string>
@@ -553,4 +550,10 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="fm.delete_body">Mae'n mynd i'r sbwriel, fel ar y llechen.</string>
   <string name="fm.delete_folder_body">Mae'n mynd i'r sbwriel gyda phopeth ynddo, fel ar y llechen.</string>
   <string name="fm.save">Cadw</string>
+  <string name="fm.import_kinds">Dim ond PDFs ac EPUBs y gellir eu mewnforio.</string>
+  <string name="fm.importing">Yn mewnforio {name}…</string>
+  <string name="fm.imported">Wedi mewnforio {name}.</string>
+  <string name="fm.imported_n">Wedi mewnforio {n} ffeil.</string>
+  <string name="fm.import_failed">Ni ellid mewnforio {name}: {why}</string>
+  <string name="fm.drop">Gollyngwch PDFs ac EPUBs yma i'w mewnforio</string>
 </resources>

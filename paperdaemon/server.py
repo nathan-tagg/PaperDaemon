@@ -328,12 +328,12 @@ def post_false_mirror():
         paths.write_json_atomic(os.path.join(paths.false_mirror_state_dir(), "rm-ledger.json"),
                                 {"version": 1, "entries": {}, "watching_since": int(time.time())})
         os.makedirs(paths.false_mirror_dir())
-        from . import studio
-        from .pipeline import TEMPLATES
-        import uuid as _uuid
-        studio._new_notebook(paths.false_mirror_dir(), os.path.dirname(TEMPLATES), str(_uuid.uuid4()), "Notebook", "",
-                             int(time.time() * 1000))
+        made = True
+    else:
+        made = False
     fm_start()
+    if made:                                         # a first notebook, with its first page, made by its own engine
+        _fm_call("POST", "/library/notebook", {"name": "Notebook"})
     loop.start_false_mirror()
     return status()
 
@@ -1250,10 +1250,10 @@ def post_library_folder(body: dict = Body(default={})):
 
 @app.post(API + "/library/import")
 async def post_library_import(request: Request, name: str = "", parent: str = ""):
-    """A PDF, its bytes the request's body, into folder `parent`."""
+    """A PDF or an EPUB, its bytes the request's body, into folder `parent`."""
     from .remarkable import local
     data = await request.body()
-    return await run_in_threadpool(_local, lambda: {"id": local.import_pdf(name, data, parent)})
+    return await run_in_threadpool(_local, lambda: {"id": local.import_file(name, data, parent)})
 
 
 @app.post(API + "/library/{doc}/pages")
@@ -1322,6 +1322,49 @@ def put_library_scene(doc: str, page: int, body: dict = Body(...)):
     if not _doc_ok(doc):
         return _bad("not a document id")
     return _local(lambda: {"strokes": local.write_scene(doc, page, body)})
+
+
+@app.put(API + "/library/{doc}/page/{page}/template")
+def put_library_page_template(doc: str, page: int, body: dict = Body(...)):
+    from .remarkable import local
+    if not _doc_ok(doc):
+        return _bad("not a document id")
+    return _local(lambda: (local.set_page_template(doc, page, body.get("file")), {"template": body.get("file")})[1])
+
+
+# ---------------------------------------------------------------- the tablet's page templates (remarkable/templates.py)
+# Borrowed from the user's own desktop app and library, never shipped. Read by the window only: no page a model sees
+# is drawn with its template until every reader of a page treats it as background (add-page-editor, D10).
+
+_tpl = {"tried": False}
+
+
+def _templates():
+    from .remarkable import templates
+    if not os.path.exists(os.path.join(templates.folder(), "index.json")) and not _tpl["tried"]:
+        _tpl["tried"] = True                         # once a run: an app found later is read at the next start
+        try:
+            templates.extract()
+        except Exception:
+            pass
+    return templates
+
+
+@app.get(API + "/templates")
+def get_templates():
+    """Every portrait template there is, defaults and rM Methods, Blank first -> [{name, file, source, icon, drawn}]."""
+    return _templates().catalog()
+
+
+@app.get(API + "/templates/{file}.svg")
+def get_template_svg(file: str, w: int = 1620, h: int = 2160):
+    """One template drawn on a w x h page, as SVG (empty for Blank and for those the app draws in its own code)."""
+    T = _templates()
+    entry = next((t for t in T.catalog() if t["file"] == file), None)
+    if entry is None:
+        return JSONResponse({"error": "no such template"}, status_code=404)
+    w, h = max(100, min(int(w), 10000)), max(100, min(int(h), 10000))
+    return Response(content=T.svg(T.definition(entry), w, h), media_type="image/svg+xml")
 
 
 @app.get(API + "/fonts/{name}")

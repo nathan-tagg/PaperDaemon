@@ -152,6 +152,152 @@ def import_pdf(name, data, parent=""):
     return doc
 
 
+def import_file(name, data, parent=""):
+    """A PDF or an EPUB, told apart by its bytes. -> its id."""
+    _guard()
+    if data.startswith(b"%PDF"):
+        return import_pdf(name, data, parent)
+    if data.startswith(b"PK"):
+        return import_epub(name, data, parent)
+    raise ValueError("only PDF and EPUB files can be imported")
+
+
+# AN EPUB, AS THE TABLET FILES ONE: the book and, beside it, a PDF of its pages, which is what the tablet shows and
+# what ink is written on (render.source_page draws an EPUB's page from it). A false mirror has no tablet to lay the
+# book out, so PaperDaemon does: Microsoft Edge (part of Windows) prints the book's chapters, in reading order, at the
+# Paper Pro's page size, and the prints are joined into one PDF. Edge is used because the EPUB libraries that lay out
+# pages are AGPL, which PaperDaemon's license cannot take.
+PAGE_MM = (179.7, 239.6)            # the Paper Pro's screen, 1620 x 2160 at 229 pixels an inch
+MARGIN_MM = (14, 12)                # top and bottom, then the sides
+
+
+def edge():
+    """Microsoft Edge's program, or None."""
+    for root in (os.environ.get("ProgramFiles(x86)"), os.environ.get("ProgramFiles"), os.environ.get("LOCALAPPDATA")):
+        if root:
+            p = os.path.join(root, "Microsoft", "Edge", "Application", "msedge.exe")
+            if os.path.isfile(p):
+                return p
+    return None
+
+
+def _spine(z):
+    """The book's reading order -> (the OPF's folder, [paths of its documents in the zip])."""
+    import posixpath
+    import re
+    import xml.etree.ElementTree as ET
+    container = ET.fromstring(z.read("META-INF/container.xml"))
+    opf = next(e.get("full-path") for e in container.iter() if e.tag.endswith("rootfile"))
+    root = ET.fromstring(z.read(opf))
+    base = posixpath.dirname(opf)
+    items = {e.get("id"): e.get("href") for e in root.iter() if e.tag.endswith("}item") or e.tag == "item"}
+    order = [e.get("idref") for e in root.iter() if e.tag.endswith("itemref") or e.tag == "itemref"]
+    out = []
+    for i in order:
+        href = items.get(i)
+        if href and re.search(r"\.x?html?$", href.split("#")[0], re.I):
+            out.append(posixpath.normpath(posixpath.join(base, href.split("#")[0])))
+    return base, out
+
+
+def import_epub(name, data, parent=""):
+    _guard()
+    import re
+    import shutil
+    import subprocess
+    import tempfile
+    import zipfile
+    from urllib.request import pathname2url
+    exe = edge()
+    if not exe:
+        raise ValueError("importing a book needs Microsoft Edge, which is not on this computer")
+    with zipfile.ZipFile(io.BytesIO(data)) as z:
+        try:
+            if z.read("mimetype").strip() != b"application/epub+zip":
+                raise ValueError("that is not an EPUB")
+        except KeyError:
+            raise ValueError("that is not an EPUB")
+        _base, spine = _spine(z)
+        if not spine:
+            raise ValueError("the book has no pages to lay out")
+        tmp = tempfile.mkdtemp(prefix="pd-epub-")
+        try:
+            book = os.path.join(tmp, "book")
+            for info in z.infolist():                    # unpacked, never outside its folder
+                dest = os.path.normpath(os.path.join(book, info.filename))
+                if not dest.startswith(os.path.normpath(book) + os.sep) or info.is_dir():
+                    continue
+                os.makedirs(os.path.dirname(dest), exist_ok=True)
+                with open(dest, "wb") as f:
+                    f.write(z.read(info))
+            page = ("<style>@page { size: %.1fmm %.1fmm; margin: %dmm %dmm; } "
+                    "html { -webkit-print-color-adjust: exact; } img, svg { max-width: 100%%; height: auto; } "
+                    "section.pd-chapter + section.pd-chapter { break-before: page; }</style>") % (PAGE_MM + MARGIN_MM)
+            # chapters in one folder print together: one run of Edge for most books
+            groups = []
+            for path in spine:
+                folder = os.path.dirname(path)
+                if groups and groups[-1][0] == folder:
+                    groups[-1][1].append(path)
+                else:
+                    groups.append((folder, [path]))
+            prints = []
+            for n, (folder, paths_) in enumerate(groups):
+                heads, bodies = [], []
+                for p in paths_:
+                    try:
+                        text = open(os.path.join(book, p), encoding="utf-8", errors="replace").read()
+                    except OSError:
+                        continue
+                    m = re.search(r"<head[^>]*>(.*?)</head>", text, re.S | re.I)
+                    for h in re.findall(r"<link[^>]+>|<style[^>]*>.*?</style>", m.group(1) if m else "", re.S | re.I):
+                        if h not in heads:
+                            heads.append(h)
+                    b = re.search(r"<body[^>]*>(.*)</body>", text, re.S | re.I)
+                    bodies.append('<section class="pd-chapter">%s</section>' % (b.group(1) if b else text))
+                page_path = os.path.join(book, folder, "pd-print-%d.html" % n)
+                with open(page_path, "w", encoding="utf-8") as f:
+                    f.write('<!doctype html><html><head><meta charset="utf-8">%s%s</head><body>%s</body></html>'
+                            % ("".join(heads), page, "".join(bodies)))
+                out = os.path.join(tmp, "print-%d.pdf" % n)
+                cmd = [exe, "--headless=new", "--disable-gpu", "--no-first-run", "--no-pdf-header-footer",
+                       "--generate-pdf-document-outline", "--user-data-dir=" + os.path.join(tmp, "edge"),
+                       "--print-to-pdf=" + out, "file:" + pathname2url(page_path)]
+                kw = {"creationflags": getattr(subprocess, "CREATE_NO_WINDOW", 0)} if os.name == "nt" else {}
+                subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=300, **kw)
+                if os.path.isfile(out) and os.path.getsize(out) > 0:
+                    prints.append(out)
+            if not prints:
+                raise ValueError("the book could not be laid out")
+            import pypdfium2 as pdfium
+            from paperdaemon.pdflock import LOCK
+            joined = os.path.join(tmp, "book.pdf")
+            with LOCK:
+                whole = pdfium.PdfDocument.new()
+                try:
+                    for p in prints:
+                        part = pdfium.PdfDocument(p)
+                        try:
+                            whole.import_pages(part)
+                        finally:
+                            part.close()
+                    whole.save(joined)
+                finally:
+                    whole.close()
+            from paperdaemon.pipeline.page import pdf as PDF
+            doc, _pages = PDF.stage((name or "Book").strip() or "Book", joined)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+    paths.write_atomic(os.path.join(M, doc + ".epub"), data)
+    c = _content(doc)
+    c["fileType"] = "epub"
+    c["sizeInBytes"] = str(len(data))
+    _save_content(doc, c)
+    if parent:
+        F.move(doc, parent)
+    return doc
+
+
 def export_pdf(doc):
     """The document as a PDF, every page drawn by PaperDaemon's renderer, in order. -> bytes."""
     _guard()
@@ -203,6 +349,35 @@ def set_page_tags(doc, page_no, tags):
     c["pageTags"] = keep + [was.get(t) or {"name": t, "pageId": pid, "timestamp": now} for t in _clean(tags)]
     _save_content(doc, c)
     _touch(doc)
+
+
+def set_page_template(doc, page_no, file):
+    """A page's template, by its file name as the tablet records it ("P Grid medium"; "Blank" for none)."""
+    _guard()
+    file = str(file or "Blank").strip()[:120] or "Blank"
+    pid = page_id(doc, page_no)
+    c = _content(doc)
+    for p in c["cPages"]["pages"]:
+        if p.get("id") == pid:
+            ts = (p.get("template") or {}).get("timestamp") or "1:1"
+            p["template"] = {"timestamp": ts, "value": file}
+    _save_content(doc, c)
+    pd = os.path.join(M, doc + ".pagedata")
+    if os.path.exists(pd):                         # the older list of each page's template, one a line
+        live = [p["id"] for p in _live(c)]
+        lines = open(pd, encoding="utf-8").read().splitlines()
+        if page_no - 1 < len(lines) and len(lines) == len(live):
+            lines[page_no - 1] = file
+            paths.write_atomic(pd, "\n".join(lines) + "\n")
+    _touch(doc)
+
+
+def page_template(doc, page_no):
+    pid = page_id(doc, page_no)
+    for p in _content(doc)["cPages"]["pages"]:
+        if p.get("id") == pid:
+            return (p.get("template") or {}).get("value") or "Blank"
+    return "Blank"
 
 
 def _clean(tags):
@@ -268,7 +443,7 @@ def scene_of(doc, page_no):
     return {"paperSize": size, "layers": layers, "text": text,
             "textVisible": bool(lww(getattr(info, "root_document_visible", None), True)),
             "templateVisible": bool(lww(getattr(info, "background_visible", None), True)),
-            "template": "Blank"}
+            "template": page_template(doc, page_no)}
 
 
 def _enum(kind, v):

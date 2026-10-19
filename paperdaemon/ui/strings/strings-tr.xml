@@ -533,9 +533,6 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="fm.new_folder">Yeni klasör</string>
   <string name="fm.new_page">Yeni sayfa</string>
   <string name="fm.import">İçe aktar</string>
-  <string name="fm.import_into">{folder} içine</string>
-  <string name="fm.file">Dosya (PDF)</string>
-  <string name="fm.choose_file">İçe aktarmak için bir PDF seçin.</string>
   <string name="fm.name">Ad</string>
   <string name="fm.notebook">Defter</string>
   <string name="fm.folder">Klasör</string>
@@ -553,4 +550,10 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="fm.delete_body">Tabletteki gibi çöp kutusuna gider.</string>
   <string name="fm.delete_folder_body">İçindeki her şeyle birlikte, tabletteki gibi çöp kutusuna gider.</string>
   <string name="fm.save">Kaydet</string>
+  <string name="fm.import_kinds">Yalnızca PDF ve EPUB dosyaları içe aktarılabilir.</string>
+  <string name="fm.importing">{name} içe aktarılıyor…</string>
+  <string name="fm.imported">{name} içe aktarıldı.</string>
+  <string name="fm.imported_n">{n} dosya içe aktarıldı.</string>
+  <string name="fm.import_failed">{name} içe aktarılamadı: {why}</string>
+  <string name="fm.drop">İçe aktarmak için PDF ve EPUB dosyalarını buraya bırakın</string>
 </resources>

@@ -533,9 +533,6 @@ Luego guíame para instalar SearXNG si hace falta, escribe el archivo .bat con u
   <string name="fm.new_folder">Nueva carpeta</string>
   <string name="fm.new_page">Nueva página</string>
   <string name="fm.import">Importar</string>
-  <string name="fm.import_into">En {folder}</string>
-  <string name="fm.file">Archivo (PDF)</string>
-  <string name="fm.choose_file">Elige un PDF para importar.</string>
   <string name="fm.name">Nombre</string>
   <string name="fm.notebook">Cuaderno</string>
   <string name="fm.folder">Carpeta</string>
@@ -553,4 +550,10 @@ Luego guíame para instalar SearXNG si hace falta, escribe el archivo .bat con u
   <string name="fm.delete_body">Va a la papelera, como en la tableta.</string>
   <string name="fm.delete_folder_body">Va a la papelera con todo lo que contiene, como en la tableta.</string>
   <string name="fm.save">Guardar</string>
+  <string name="fm.import_kinds">Solo se pueden importar PDF y EPUB.</string>
+  <string name="fm.importing">Importando {name}…</string>
+  <string name="fm.imported">{name} importado.</string>
+  <string name="fm.imported_n">{n} archivos importados.</string>
+  <string name="fm.import_failed">No se pudo importar {name}: {why}</string>
+  <string name="fm.drop">Suelta aquí PDF y EPUB para importarlos</string>
 </resources>

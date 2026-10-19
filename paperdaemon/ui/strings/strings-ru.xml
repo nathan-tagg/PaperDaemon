@@ -547,9 +547,6 @@
   <string name="fm.new_folder">Новая папка</string>
   <string name="fm.new_page">Новая страница</string>
   <string name="fm.import">Импорт</string>
-  <string name="fm.import_into">В {folder}</string>
-  <string name="fm.file">Файл (PDF)</string>
-  <string name="fm.choose_file">Выберите PDF для импорта.</string>
   <string name="fm.name">Название</string>
   <string name="fm.notebook">Блокнот</string>
   <string name="fm.folder">Папка</string>
@@ -567,4 +564,10 @@
   <string name="fm.delete_body">Он попадёт в корзину, как на планшете.</string>
   <string name="fm.delete_folder_body">Она попадёт в корзину со всем содержимым, как на планшете.</string>
   <string name="fm.save">Сохранить</string>
+  <string name="fm.import_kinds">Импортировать можно только PDF и EPUB.</string>
+  <string name="fm.importing">Импорт «{name}»…</string>
+  <string name="fm.imported">«{name}» импортирован.</string>
+  <string name="fm.imported_n">Импортировано файлов: {n}.</string>
+  <string name="fm.import_failed">Не удалось импортировать «{name}»: {why}</string>
+  <string name="fm.drop">Перетащите сюда PDF и EPUB, чтобы импортировать их</string>
 </resources>

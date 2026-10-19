@@ -310,21 +310,32 @@
       });
     }
 
-    // IMPORT: one button; its dialog holds what there is to choose. What it imports lands in the folder open.
-    function importFile() {
-      const here = S.at ? (byId(S.at) || {}).name : PD.t("tablet.my_files");
-      const dlg = ask(PD.t("fm.import"), '<p>' + esc(PD.t("fm.import_into", { folder: here })) + '</p><label class="field-row"><span>' + esc(PD.t("fm.file")) +
-        '</span><input class="field" type="file" accept=".pdf,application/pdf" data-file></label>' + nameField(""), PD.t("fm.import"), async d => {
-        const f = d.querySelector("[data-file]").files[0];
-        if (!f) throw new Error(PD.t("fm.choose_file"));
-        await PD.apiRaw("POST", base + "/library/import?name=" + encodeURIComponent(d.querySelector("[data-name]").value || f.name.replace(/\.pdf$/i, "")) +
-          "&parent=" + encodeURIComponent(S.at), await f.arrayBuffer(), "application/pdf");
+    // IMPORT, MADE EASY: the button opens the file chooser at once (several files at a time), or files are dropped on
+    // the screen. PDFs and EPUBs, each named by its file, land in the folder open; the line under the head says how it
+    // goes. Nothing to fill in.
+    const IMPORTABLE = /\.(pdf|epub)$/i;
+    async function importFiles(files) {
+      const list = [...files].filter(f => IMPORTABLE.test(f.name));
+      const msg = $("#" + id + "-import", R);
+      const say = (text, bad) => { msg.textContent = text; msg.className = "hint import-msg" + (bad ? " attn" : ""); };
+      if (!list.length) { say(PD.t("fm.import_kinds"), true); return; }
+      const into = S.at, failed = [];
+      for (const f of list) {
+        const name = f.name.replace(IMPORTABLE, "");
+        say(PD.t("fm.importing", { name }));
+        const [, e] = await PD.safe(PD.apiRaw("POST", base + "/library/import?name=" + encodeURIComponent(name) + "&parent=" + encodeURIComponent(into),
+                                               await f.arrayBuffer(), /\.epub$/i.test(f.name) ? "application/epub+zip" : "application/pdf"));
+        if (e) failed.push(PD.t("fm.import_failed", { name, why: PD.errText(e) }));
         await load();
-      });
-      dlg.querySelector("[data-file]").addEventListener("change", e => {
-        const f = e.target.files[0], n = dlg.querySelector("[data-name]");
-        if (f && !n.value) n.value = f.name.replace(/\.pdf$/i, "");
-      });
+      }
+      if (failed.length) say(failed.join(" "), true);
+      else say(list.length === 1 ? PD.t("fm.imported", { name: list[0].name.replace(IMPORTABLE, "") }) : PD.t("fm.imported_n", { n: list.length }));
+    }
+    function importFile() {
+      const pick = document.createElement("input");
+      pick.type = "file"; pick.multiple = true; pick.accept = ".pdf,.epub,application/pdf,application/epub+zip";
+      pick.addEventListener("change", () => { if (pick.files.length) importFiles(pick.files); });
+      pick.click();
     }
 
     // THE MENU OF WHAT IS SELECTED slides down over the top of the screen, as the tablet's does: nothing under it moves
@@ -423,7 +434,8 @@
           '<button type="button" class="btn" data-act="new-notebook">' + esc(PD.t("fm.new_notebook")) + "</button>" +
           '<button type="button" class="btn" data-act="new-folder">' + esc(PD.t("fm.new_folder")) + "</button>" +
           '<button type="button" class="btn" data-act="import">' + esc(PD.t("fm.import")) + "</button></span>" : "") + "</div>" +
-          (fm ? '<div class="pick-menu" id="' + id + '-menu" role="toolbar"></div>' : "") +
+          (fm ? '<p class="hint import-msg" id="' + id + '-import" role="status"></p><div class="pick-menu" id="' + id + '-menu" role="toolbar"></div>' +
+                '<div class="drop-here" id="' + id + '-drop" hidden>' + esc(PD.t("fm.drop")) + "</div>" : "") +
           '<div class="lib-box" id="' + id + '-files"></div>';
         PD.on(root, "click", "[data-at]", (e, el) => { if (S.held) { S.held = false; return; } if (S.picked) { unpick(); } S.at = el.dataset.at; paint(); });
         PD.on(root, "click", "[data-open]", (e, el) => { if (S.held) { S.held = false; return; } if (S.picked) { unpick(); return; } openDoc(el.dataset.open); });
@@ -432,6 +444,18 @@
         PD.on(root, "click", "[data-act=new-folder]", () => newFolder());
         PD.on(root, "click", "[data-act=import]", () => importFile());
         PD.on(root, "click", "[data-pick-act]", (e, el) => pickAct(el.dataset.pickAct));
+        // FILES DROPPED ON THE SCREEN are imported into the folder open
+        const drop = $("#" + id + "-drop", root);
+        let over = 0;
+        const hasFiles = e => [...(e.dataTransfer && e.dataTransfer.types || [])].includes("Files");
+        root.addEventListener("dragenter", e => { if (!hasFiles(e)) return; e.preventDefault(); over++; drop.hidden = false; });
+        root.addEventListener("dragover", e => { if (hasFiles(e)) e.preventDefault(); });
+        root.addEventListener("dragleave", () => { if (--over <= 0) { over = 0; drop.hidden = true; } });
+        root.addEventListener("drop", e => {
+          if (!hasFiles(e)) return;
+          e.preventDefault(); over = 0; drop.hidden = true;
+          importFiles(e.dataTransfer.files);
+        });
         // A LONG PRESS SELECTS: half a second held on a notebook or folder, and the click that ends it does nothing else
         let timer = 0;
         root.addEventListener("pointerdown", e => {

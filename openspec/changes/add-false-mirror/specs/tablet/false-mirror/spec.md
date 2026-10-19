@@ -37,8 +37,10 @@ delete it, in a dialog saying its notebooks will be gone, and SHALL delete it on
 
 ### Requirement: Making and moving things in the false mirror
 The False Mirror tab SHALL offer New notebook, New page, Import and, for notebooks, Export, placed where
-the screen's own controls are. Import SHALL open a dialog with its settings and SHALL always land in the
-folder open in the false mirror. A long press on a notebook SHALL select it, and a menu with Export,
+the screen's own controls are. Import SHALL take PDFs and EPUBs, several at a time, from the file chooser it
+opens at once or from files dropped on the screen, each named by its file and landing in the folder open in the false
+mirror; an EPUB SHALL be filed as the tablet files a book, the book and a PDF of its pages at the Paper Pro's size.
+A long press on a notebook SHALL select it, and a menu with Export,
 Move and Delete SHALL slide down from the top of the screen over the content, moving nothing on the
 screen. Export SHALL write the notebook as a PDF. Tags on folders, notebooks and pages SHALL be set and
 removed there, written as the tablet writes them. None of these controls SHALL appear in the tablet's
@@ -46,8 +48,9 @@ mirror, which SHALL keep showing tags as it does today (the folder's tag mark, t
 covers' and the page's tags) without changing them.
 
 #### Scenario: Importing into a folder
-- **WHEN** the user has the folder Recipes open in the false mirror and imports a PDF
-- **THEN** the PDF becomes a document in Recipes
+- **WHEN** the user has the folder Recipes open in the false mirror and drops a PDF and an EPUB on the screen
+- **THEN** both become documents in Recipes, named by their files, and the book opens on its first chapter with its
+  chapters listed
 
 #### Scenario: Selecting a notebook
 - **WHEN** the user presses and holds a notebook

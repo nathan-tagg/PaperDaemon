@@ -519,3 +519,9 @@ html, .viewer-page, .script-help-body, .terminal, textarea, .chapter-list { scro
   .warn.flash { animation: warn-flash 1.2s ease-in-out 2 !important; }
   #st-lang-label { transition: opacity 0.35s ease !important; }
 }
+/* the False Mirror's imports: how they go, and files held over the screen */
+.import-msg { margin: var(--s2) 0 0; min-height: 0; }
+.import-msg:empty { display: none; }
+.drop-here { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; pointer-events: none;
+  background: rgba(20, 18, 20, 0.72); border: 2px dashed var(--mark); color: var(--ink); font-size: 20px; }
+.drop-here[hidden] { display: none; }

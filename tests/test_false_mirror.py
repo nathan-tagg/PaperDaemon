@@ -163,3 +163,57 @@ def test_the_false_mirror_through_the_engine():
         r = c.delete("/api/v1/false-mirror")
     assert r.status_code == 200 and not r.json()["false_mirror"]["exists"]
     assert not os.path.exists(paths.false_mirror_dir()) and not os.path.exists(paths.false_mirror_state_dir())
+
+
+def _epub(chapters):
+    """A small EPUB 3: its chapters in OEBPS/Text, an image in OEBPS/Images, a nav, a spine."""
+    import base64
+    import io
+    import zipfile
+    png = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==")
+    b = io.BytesIO()
+    with zipfile.ZipFile(b, "w") as z:
+        z.writestr("mimetype", "application/epub+zip", compress_type=zipfile.ZIP_STORED)
+        z.writestr("META-INF/container.xml", '<?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">'
+                   '<rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>')
+        items = "".join('<item id="c%d" href="Text/c%d.xhtml" media-type="application/xhtml+xml"/>' % (i, i) for i in range(len(chapters)))
+        spine = "".join('<itemref idref="c%d"/>' % i for i in range(len(chapters)))
+        z.writestr("OEBPS/content.opf", '<?xml version="1.0"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="id">'
+                   '<metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Test</dc:title><dc:identifier id="id">x</dc:identifier></metadata>'
+                   '<manifest><item id="nav" href="nav.xhtml" properties="nav" media-type="application/xhtml+xml"/>' + items +
+                   '<item id="img" href="Images/dot.png" media-type="image/png"/></manifest><spine>' + spine + '</spine></package>')
+        z.writestr("OEBPS/nav.xhtml", '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><body><nav epub:type="toc"><ol>' +
+                   "".join('<li><a href="Text/c%d.xhtml">%s</a></li>' % (i, t) for i, (t, _) in enumerate(chapters)) + "</ol></nav></body></html>")
+        for i, (title, text) in enumerate(chapters):
+            z.writestr("OEBPS/Text/c%d.xhtml" % i, '<html xmlns="http://www.w3.org/1999/xhtml"><head><title>%s</title></head><body><h1>%s</h1>'
+                       '<img src="../Images/dot.png" alt=""/><p>%s</p></body></html>' % (title, title, text))
+        z.writestr("OEBPS/Images/dot.png", png)
+    return b.getvalue()
+
+
+@pytest.mark.skipif(not any(os.path.isfile(os.path.join(r, "Microsoft", "Edge", "Application", "msedge.exe"))
+                            for r in filter(None, (os.environ.get("ProgramFiles(x86)"), os.environ.get("ProgramFiles")))),
+                    reason="laying out a book needs Microsoft Edge")
+def test_an_epub_imports_as_the_tablet_files_a_book():
+    import base64
+    book = _epub([("One", "The first chapter. " * 40), ("Two", "The second chapter. " * 400)])
+    got = _run("""
+        import base64, json, os
+        from paperdaemon.remarkable import local, library
+        data = base64.b64decode(%r)
+        doc = local.import_file("Test book", data, "")
+        c = json.load(open(os.path.join(library.M, doc + ".content")))
+        from paperdaemon.pipeline.page import render as R
+        kind, path, idx = R.source_page(doc, 2)
+        import pypdfium2 as pdfium
+        pd = pdfium.PdfDocument(os.path.join(library.M, doc + ".pdf"))
+        w, h = pd[0].get_size(); n = len(pd); t1 = pd[0].get_textpage().get_text_range(); last = pd[n - 1].get_textpage().get_text_range()
+        pd.close()
+        print(json.dumps({"type": c["fileType"], "pages": c["pageCount"], "epub": os.path.getsize(os.path.join(library.M, doc + ".epub")),
+                          "kind": kind, "idx": idx, "ratio": h / w, "n": n, "first": t1[:40], "last": last[-60:]}))
+    """ % base64.b64encode(book).decode())
+    assert got["type"] == "epub" and got["epub"] > 0
+    assert got["kind"] == "pdf" and got["idx"] == 1                 # an EPUB's page is drawn from its PDF, as the tablet's
+    assert got["n"] == got["pages"] >= 3                            # chapter two starts a page of its own and runs on
+    assert abs(got["ratio"] - 4 / 3) < 0.01                         # the Paper Pro's shape
+    assert "One" in got["first"] and "second chapter" in got["last"]

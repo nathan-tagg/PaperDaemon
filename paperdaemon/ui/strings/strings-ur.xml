@@ -533,9 +533,6 @@
   <string name="fm.new_folder">نیا فولڈر</string>
   <string name="fm.new_page">نیا صفحہ</string>
   <string name="fm.import">درآمد</string>
-  <string name="fm.import_into">{folder} میں</string>
-  <string name="fm.file">فائل (PDF)</string>
-  <string name="fm.choose_file">درآمد کے لیے ایک PDF چنیں۔</string>
   <string name="fm.name">نام</string>
   <string name="fm.notebook">نوٹ بک</string>
   <string name="fm.folder">فولڈر</string>
@@ -553,4 +550,10 @@
   <string name="fm.delete_body">یہ ٹیبلیٹ کی طرح کوڑے دان میں جاتا ہے۔</string>
   <string name="fm.delete_folder_body">یہ اپنے سب مواد کے ساتھ ٹیبلیٹ کی طرح کوڑے دان میں جاتا ہے۔</string>
   <string name="fm.save">محفوظ کریں</string>
+  <string name="fm.import_kinds">صرف PDF اور EPUB درآمد ہو سکتی ہیں۔</string>
+  <string name="fm.importing">{name} درآمد ہو رہا ہے…</string>
+  <string name="fm.imported">{name} درآمد ہو گیا۔</string>
+  <string name="fm.imported_n">{n} فائلیں درآمد ہو گئیں۔</string>
+  <string name="fm.import_failed">{name} درآمد نہیں ہو سکا: {why}</string>
+  <string name="fm.drop">درآمد کرنے کے لیے PDF اور EPUB یہاں چھوڑیں</string>
 </resources>

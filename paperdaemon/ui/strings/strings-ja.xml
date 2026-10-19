@@ -533,9 +533,6 @@
   <string name="fm.new_folder">新しいフォルダー</string>
   <string name="fm.new_page">新しいページ</string>
   <string name="fm.import">インポート</string>
-  <string name="fm.import_into">{folder} へ</string>
-  <string name="fm.file">ファイル（PDF）</string>
-  <string name="fm.choose_file">インポートする PDF を選んでください。</string>
   <string name="fm.name">名前</string>
   <string name="fm.notebook">ノートブック</string>
   <string name="fm.folder">フォルダー</string>
@@ -553,4 +550,10 @@
   <string name="fm.delete_body">タブレットと同じく、ゴミ箱に移ります。</string>
   <string name="fm.delete_folder_body">タブレットと同じく、中身ごとゴミ箱に移ります。</string>
   <string name="fm.save">保存</string>
+  <string name="fm.import_kinds">インポートできるのは PDF と EPUB だけです。</string>
+  <string name="fm.importing">{name} をインポート中…</string>
+  <string name="fm.imported">{name} をインポートしました。</string>
+  <string name="fm.imported_n">{n} 個のファイルをインポートしました。</string>
+  <string name="fm.import_failed">{name} をインポートできませんでした: {why}</string>
+  <string name="fm.drop">PDF や EPUB をここにドロップするとインポートします</string>
 </resources>

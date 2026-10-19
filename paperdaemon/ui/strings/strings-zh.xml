@@ -533,9 +533,6 @@
   <string name="fm.new_folder">新建文件夹</string>
   <string name="fm.new_page">新建页面</string>
   <string name="fm.import">导入</string>
-  <string name="fm.import_into">到 {folder}</string>
-  <string name="fm.file">文件（PDF）</string>
-  <string name="fm.choose_file">请选择要导入的 PDF。</string>
   <string name="fm.name">名称</string>
   <string name="fm.notebook">笔记本</string>
   <string name="fm.folder">文件夹</string>
@@ -553,4 +550,10 @@
   <string name="fm.delete_body">它会进入回收站，与平板上一样。</string>
   <string name="fm.delete_folder_body">它会连同其中所有内容进入回收站，与平板上一样。</string>
   <string name="fm.save">保存</string>
+  <string name="fm.import_kinds">只能导入 PDF 和 EPUB。</string>
+  <string name="fm.importing">正在导入 {name}…</string>
+  <string name="fm.imported">已导入 {name}。</string>
+  <string name="fm.imported_n">已导入 {n} 个文件。</string>
+  <string name="fm.import_failed">无法导入 {name}：{why}</string>
+  <string name="fm.drop">将 PDF 和 EPUB 拖放到这里即可导入</string>
 </resources>

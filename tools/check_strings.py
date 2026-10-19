@@ -87,6 +87,7 @@ def stray_text():
 # single words that are not words for a person: names, codes, DOM and API vocabulary
 ALLOWED = {"Enter", "Escape", "Tab", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Bearer", "GET", "PUT", "POST",
            "DELETE", "PaperDaemon", "Content-Type", "Authorization", "Home", "End", "Backspace",
+           "Files",                                  # the drag-and-drop type of dropped files (DataTransfer.types)
            "@echo off\\r\\n",                         # a new blank start script's first line: batch code
            # proper names, the same in every language: sites, and each language named in itself
            "Reddit", "Hacker News", "Bluesky", "Mastodon", "English", "Deutsch", "Cymraeg", "Español", "Português",

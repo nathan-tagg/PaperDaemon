@@ -533,9 +533,6 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="fm.new_folder">Folder baru</string>
   <string name="fm.new_page">Halaman baru</string>
   <string name="fm.import">Impor</string>
-  <string name="fm.import_into">Ke {folder}</string>
-  <string name="fm.file">Berkas (PDF)</string>
-  <string name="fm.choose_file">Pilih PDF untuk diimpor.</string>
   <string name="fm.name">Nama</string>
   <string name="fm.notebook">Buku catatan</string>
   <string name="fm.folder">Folder</string>
@@ -553,4 +550,10 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="fm.delete_body">Masuk ke tempat sampah, seperti di tablet.</string>
   <string name="fm.delete_folder_body">Masuk ke tempat sampah beserta seluruh isinya, seperti di tablet.</string>
   <string name="fm.save">Simpan</string>
+  <string name="fm.import_kinds">Hanya PDF dan EPUB yang bisa diimpor.</string>
+  <string name="fm.importing">Mengimpor {name}…</string>
+  <string name="fm.imported">{name} diimpor.</string>
+  <string name="fm.imported_n">{n} berkas diimpor.</string>
+  <string name="fm.import_failed">{name} tidak bisa diimpor: {why}</string>
+  <string name="fm.drop">Lepaskan PDF dan EPUB di sini untuk mengimpornya</string>
 </resources>

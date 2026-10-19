@@ -533,9 +533,6 @@
   <string name="fm.new_folder">नया फ़ोल्डर</string>
   <string name="fm.new_page">नया पन्ना</string>
   <string name="fm.import">इम्पोर्ट</string>
-  <string name="fm.import_into">{folder} में</string>
-  <string name="fm.file">फ़ाइल (PDF)</string>
-  <string name="fm.choose_file">इम्पोर्ट करने के लिए एक PDF चुनें।</string>
   <string name="fm.name">नाम</string>
   <string name="fm.notebook">नोटबुक</string>
   <string name="fm.folder">फ़ोल्डर</string>
@@ -553,4 +550,10 @@
   <string name="fm.delete_body">यह टैबलेट की तरह ही कचरे में जाता है।</string>
   <string name="fm.delete_folder_body">यह अपनी सारी सामग्री के साथ टैबलेट की तरह ही कचरे में जाता है।</string>
   <string name="fm.save">सहेजें</string>
+  <string name="fm.import_kinds">केवल PDF और EPUB इम्पोर्ट किए जा सकते हैं।</string>
+  <string name="fm.importing">{name} इम्पोर्ट हो रहा है…</string>
+  <string name="fm.imported">{name} इम्पोर्ट हो गया।</string>
+  <string name="fm.imported_n">{n} फ़ाइलें इम्पोर्ट हुईं।</string>
+  <string name="fm.import_failed">{name} इम्पोर्ट नहीं हो सका: {why}</string>
+  <string name="fm.drop">इम्पोर्ट करने के लिए PDF और EPUB यहाँ छोड़ें</string>
 </resources>

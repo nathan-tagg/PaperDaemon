@@ -554,9 +554,6 @@
   <string name="fm.new_folder">مجلد جديد</string>
   <string name="fm.new_page">صفحة جديدة</string>
   <string name="fm.import">استيراد</string>
-  <string name="fm.import_into">إلى {folder}</string>
-  <string name="fm.file">ملف (PDF)</string>
-  <string name="fm.choose_file">اختر ملف PDF لاستيراده.</string>
   <string name="fm.name">الاسم</string>
   <string name="fm.notebook">دفتر</string>
   <string name="fm.folder">مجلد</string>
@@ -574,4 +571,10 @@
   <string name="fm.delete_body">يذهب إلى سلة المهملات، كما على الجهاز اللوحي.</string>
   <string name="fm.delete_folder_body">يذهب إلى سلة المهملات بكل ما فيه، كما على الجهاز اللوحي.</string>
   <string name="fm.save">حفظ</string>
+  <string name="fm.import_kinds">لا يمكن استيراد غير ملفات PDF وEPUB.</string>
+  <string name="fm.importing">جارٍ استيراد {name}…</string>
+  <string name="fm.imported">استُورد {name}.</string>
+  <string name="fm.imported_n">استُورد {n} ملفات.</string>
+  <string name="fm.import_failed">تعذّر استيراد {name}: {why}</string>
+  <string name="fm.drop">أفلت ملفات PDF وEPUB هنا لاستيرادها</string>
 </resources>
