@@ -144,6 +144,7 @@
   <string name="viewer.next">Pagina successiva</string>
   <string name="viewer.zoom_reset">Torna a 1×</string>
   <string name="keys.open">Scorciatoie</string>
+  <string name="viewer.notSaved">Non salvato: {why}</string>
   <string name="keys.title">Scorciatoie e comandi</string>
   <string name="keys.k_ctrl">Ctrl</string>
   <string name="keys.k_shift">Maiusc</string>

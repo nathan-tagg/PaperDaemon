@@ -144,6 +144,7 @@
   <string name="viewer.next">Nächste Seite</string>
   <string name="viewer.zoom_reset">Zurück auf 1×</string>
   <string name="keys.open">Tastenkürzel</string>
+  <string name="viewer.notSaved">Nicht gespeichert: {why}</string>
   <string name="keys.title">Tastenkürzel und Befehle</string>
   <string name="keys.k_ctrl">Strg</string>
   <string name="keys.k_shift">Umschalt</string>

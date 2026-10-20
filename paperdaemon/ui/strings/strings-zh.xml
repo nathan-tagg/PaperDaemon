@@ -144,6 +144,7 @@
   <string name="viewer.next">下一页</string>
   <string name="viewer.zoom_reset">恢复到 1×</string>
   <string name="keys.open">快捷键</string>
+  <string name="viewer.notSaved">未保存：{why}</string>
   <string name="keys.title">快捷键与命令</string>
   <string name="keys.k_ctrl">Ctrl</string>
   <string name="keys.k_shift">Shift</string>

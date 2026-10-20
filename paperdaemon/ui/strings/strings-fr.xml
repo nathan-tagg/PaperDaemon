@@ -143,6 +143,7 @@
   <string name="viewer.next">Page suivante</string>
   <string name="viewer.zoom_reset">Revenir à 1×</string>
   <string name="keys.open">Raccourcis</string>
+  <string name="viewer.notSaved">Non enregistré : {why}</string>
   <string name="keys.title">Raccourcis et commandes</string>
   <string name="keys.k_ctrl">Ctrl</string>
   <string name="keys.k_shift">Maj</string>

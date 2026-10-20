@@ -144,6 +144,7 @@
   <string name="viewer.next">다음 페이지</string>
   <string name="viewer.zoom_reset">1×로 되돌리기</string>
   <string name="keys.open">단축키</string>
+  <string name="viewer.notSaved">저장되지 않음: {why}</string>
   <string name="keys.title">단축키와 명령</string>
   <string name="keys.k_ctrl">Ctrl</string>
   <string name="keys.k_shift">Shift</string>

@@ -50,7 +50,7 @@ img, a, svg, canvas { -webkit-user-drag: none; }
 .embedded .bar { display: none; }
 .embedded .body { padding: 0; }
 .embedded .pop { top: 2px; }
-.embedded #saved { position: absolute; right: 12px; top: 4px; z-index: 4; font-size: 13px; color: var(--ink-3); }
+.embedded #saved { display: none; }
 .viewport { position: relative; overflow: hidden; touch-action: none; cursor: crosshair; }
 /* UNTIL THE PAGE HAS LOADED a spinner covers it, and takes every press: nothing is drawn, typed or pasted onto a page
    that is not there yet */
@@ -523,7 +523,12 @@ span.lname { cursor: default; }
       const key = ps.map(p => p.serial).join(",");
       let c = kept.get(key);
       if (c) return c;
-      let nSeg = 0, nTri = 0;
+      c = build(ps, key);
+      kept.set(key, c);
+      return c;
+    }
+    function build(ps, key) {                                 // a chunk's buffers on the card, from its parts
+      let c, nSeg = 0, nTri = 0;
       for (const p of ps) { if (p.tri) nTri += p.tri.length; else nSeg += p.seeds.length; }
       const seg = new Float32Array(nSeg * F), seeds = new Uint32Array(nSeg), tri = new Float32Array(nTri), plan = [], at = new Map();
       let sN = 0, tN = 0;
@@ -545,9 +550,9 @@ span.lname { cursor: default; }
       gl.bindBuffer(gl.ARRAY_BUFFER, c.segBuf); gl.bufferData(gl.ARRAY_BUFFER, seg, gl.STATIC_DRAW);
       gl.bindBuffer(gl.ARRAY_BUFFER, c.seedBuf); gl.bufferData(gl.ARRAY_BUFFER, seeds, gl.STATIC_DRAW);
       gl.bindBuffer(gl.ARRAY_BUFFER, c.triBuf); gl.bufferData(gl.ARRAY_BUFFER, tri, gl.STATIC_DRAW);
-      kept.set(key, c);
       return c;
     }
+    const drop = c => { gl.deleteBuffer(c.segBuf); gl.deleteBuffer(c.seedBuf); gl.deleteBuffer(c.triBuf); };
     function sync(lines) {
       // THE SAME STROKES AS LAST TIME (a pan, a zoom, a swipe in progress): the chunks as they are
       if (lines.length === have.length) {
@@ -579,18 +584,20 @@ span.lname { cursor: default; }
     function hide(lines) {
       for (const L of lines) {
         const p = parts.get(L), c = p && partChunk.get(p), w = c && c.at.get(p);
-        if (!w || !chunks.includes(c)) continue;
+        if (!w || !(chunks.includes(c) || over.includes(c))) continue;
         if (kept.get(c.key) === c) { kept.delete(c.key); zeroed.add(c); }
         gl.bindBuffer(gl.ARRAY_BUFFER, w.tri !== undefined ? c.triBuf : c.segBuf);
         gl.bufferSubData(gl.ARRAY_BUFFER, (w.tri !== undefined ? w.tri : w.seg) * 4, new Float32Array(w.n));
       }
     }
+    // the overlay grows by the pieces new since the last frame, a chunk of their own (its own buffers, never in `kept`);
+    // a piece erased after it is drawn is zeroed where it lies (hide). Its buffers go when the swipe is over (overlay([])).
+    const overHas = new Set();
     function overlay(lines) {
-      over = [];
-      let run = [];
-      for (const L of lines) { run.push(partOf(L)); if (run.length >= 256) { over.push(chunkOf(run)); run = []; } }
-      if (run.length) over.push(chunkOf(run));
-      for (const c of over) c.gen = gen;
+      if (!lines.length) { if (over.length) { over.forEach(drop); over = []; overHas.clear(); } return; }
+      const fresh = [];
+      for (const L of lines) if (!overHas.has(L)) { overHas.add(L); fresh.push(partOf(L)); }
+      if (fresh.length) over.push(build(fresh, ""));
     }
     function bindSegs(c, first) {                             // the per-segment attributes of chunk c, from segment `first` on
       gl.bindBuffer(gl.ARRAY_BUFFER, c.segBuf);
@@ -1261,7 +1268,7 @@ span.lname { cursor: default; }
       }
   }
   function eraseAt(x, y) {                                    // on the layer in hand; true when something went
-    const R = eraserR() + erasing.reach, seen = new Set(), mode = erasing.mode || eraseMode;
+    const R = eraserR() + erasing.reach, seen = new Set(), mode = erasing.mode || eraseMode, made = [];
     let gone = false;
     for (let gx = Math.floor((x - R) / CELL); gx <= Math.floor((x + R) / CELL); gx++)
       for (let gy = Math.floor((y - R) / CELL); gy <= Math.floor((y + R) / CELL); gy++)
@@ -1276,14 +1283,18 @@ span.lname { cursor: default; }
             return near(x, y, q.x + t * dx, q.y + t * dy, reach);
           });
           if (!hit) continue;
-          erasing.dead.add(L); dirtyRows(bx); gone = true;
-          if (mode === "stroke") continue;
-          // what it passes over: the line breaks where the eraser crossed it, its own points kept on either side
+          if (mode === "stroke") { erasing.dead.add(L); dirtyRows(bx); gone = true; continue; }
+          // what it passes over: the line breaks where the eraser crossed it, its own points kept on either side. An eraser
+          // that only grazes it (touching the line between two points, none of the points along it) takes nothing: it stays
           const runs = cutOut(P, q => near(q.x, q.y, x, y, reach), x, y, reach);
-          const made = runs.map(run => Object.assign({}, L, { itemId: [2, page.nextId++], points: run }));
-          erasing.pieces.set(L, made);
-          made.forEach(q => { erasing.alive.add(q); gridAdd(q); });
+          if (runs.length === 1 && runs[0].length === P.length) continue;
+          erasing.dead.add(L); dirtyRows(bx); gone = true;
+          const ps = runs.map(run => Object.assign({}, L, { itemId: [2, page.nextId++], points: run }));
+          erasing.pieces.set(L, ps);
+          made.push(...ps);
         }
+    // the pieces join the grid after the look round: a cell's list is never added to while it is being read
+    for (const q of made) { erasing.alive.add(q); gridAdd(q); }
     if (gone) erasing.dirty = true;
     return gone;
   }
@@ -3072,9 +3083,17 @@ span.lname { cursor: default; }
                paras: page.text.paras.map(p => ({ style: p.style, list: p.list, runs: runs(p.chars) })) } : null };
   }
 
+  // HOW THE SAVING GOES, told to the viewer (by the document's name: a spinner while a save is slow, ! when one failed,
+  // its reason on hover); the editor alone (no viewer) says it in its bar. Never over the page.
+  let saveSlow = 0, saveAgain = false;
+  function saveState(state, why) {
+    if (EMBED) window.parent.postMessage({ pd: "editor-save", state, why: why || "" }, location.origin);
+    else saved.textContent = state === "error" ? "Not saved: " + why : "";
+  }
   async function saveNow(leaving) {
     clearTimeout(saveTimer);
     if (!loaded) return;
+    if (saving && !leaving) { saveAgain = true; return; }    // one save at a time: the next one after it
     if (changes === savedAt) return;                          // nothing changed since the last save
     const at = changes;
     // what the daemon wrote meanwhile is kept, not written over; then the page, once, in the binary form
@@ -3082,14 +3101,17 @@ span.lname { cursor: default; }
     const body = sceneBytes();
     lastWritten = body;
     saving = true;                                            // no look while the file is being written
+    clearTimeout(saveSlow); saveSlow = setTimeout(() => saveState("saving"), 400);
     try {
       const r = await fetch(SCENE, { method: "PUT", keepalive: !!leaving && body.byteLength < 60000, body,
         headers: { Authorization: "Bearer " + token(), "Content-Type": "application/octet-stream" } });
       // not saved: the engine's own reason, so it can be told and put right
-      saved.textContent = r.ok ? "" : "Not saved: " + (await r.json().then(j => j.error, () => "") || r.status);
-      if (r.ok) { setKnown(body); savedAt = at; try { version = (await r.json()).version || ""; } catch (e) { version = ""; } } else lastWritten = null;
-    } catch (e) { saved.textContent = "Not saved"; lastWritten = null; }
+      if (r.ok) { setKnown(body); savedAt = at; try { version = (await r.json()).version || ""; } catch (e) { version = ""; } saveState("ok"); }
+      else { lastWritten = null; saveState("error", await r.json().then(j => j.error, () => "") || String(r.status)); }
+    } catch (e) { lastWritten = null; saveState("error", "the engine did not answer"); }
+    clearTimeout(saveSlow);
     saving = false;
+    if (saveAgain) { saveAgain = false; saveNow(); }
   }
   setInterval(() => { if (!document.hidden) lookAtFile(); }, 2000);
   // every change is a rebuild: a save follows it, once the page has been still for a moment

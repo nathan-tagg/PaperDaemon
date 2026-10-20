@@ -604,8 +604,11 @@ html, .viewer-page, .script-help-body, .terminal, textarea, .chapter-list { scro
 .drop-here[hidden] { display: none; }
 /* the ? by the document's name, and the shortcuts sheet it opens over the viewer (shortcuts.js) */
 .viewer-name { display: inline-flex; align-items: baseline; gap: var(--s2); min-width: 0; }
-.keys-q { width: 18px; height: 18px; flex: none; align-self: center; display: inline-grid; place-items: center; padding: 0; border: 1px solid var(--edge);
-  border-radius: 50%; background: transparent; color: var(--ink-2); font: 600 11px/1 var(--font-ui, inherit); cursor: pointer; }
+.keys-q { width: 14px; height: 14px; flex: none; align-self: center; display: inline-grid; place-items: center; padding: 0; border: 1px solid var(--edge);
+  border-radius: 50%; background: transparent; color: var(--ink-2); font: 600 9px/1 var(--font-ui, inherit); cursor: pointer; }
+.keys-q.saving { border-color: var(--edge); border-top-color: var(--ink-2); animation: keys-spin .8s linear infinite; }
+.keys-q.failed { color: var(--mark); border-color: currentColor; }
+@keyframes keys-spin { to { transform: rotate(1turn); } }
 .keys-q:hover, .keys-q:focus-visible { color: var(--ink); border-color: var(--ink-2); }
 dialog.keys-sheet { width: min(calc(640px / var(--pd-zoom, 1)), calc(90vw / var(--pd-zoom, 1))); max-width: none; max-height: none; box-sizing: border-box; padding: 0;
   border: 1px solid var(--edge); background: var(--paper); color: var(--ink); }

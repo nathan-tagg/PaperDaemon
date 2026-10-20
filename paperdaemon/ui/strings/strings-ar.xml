@@ -144,6 +144,7 @@
   <string name="viewer.next">الصفحة التالية</string>
   <string name="viewer.zoom_reset">العودة إلى 1×</string>
   <string name="keys.open">الاختصارات</string>
+  <string name="viewer.notSaved">لم يُحفظ: {why}</string>
   <string name="keys.title">الاختصارات والأوامر</string>
   <string name="keys.k_ctrl">Ctrl</string>
   <string name="keys.k_shift">Shift</string>

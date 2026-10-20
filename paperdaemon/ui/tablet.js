@@ -324,6 +324,13 @@
       if (!d || !fr || e.source !== fr.contentWindow) return;
       if (d.pd === "editor-menu") { S.edMenu = !!d.open; return; }                       // a menu of the editor's is open
       if (d.pd === "viewer-menu-close") { S.tagPop = false; paintBar(); paintTagPop(); return; }   // Esc pressed in the page
+      if (d.pd === "editor-save") {                         // the ? by the name: a spinner while a save is slow, ! when one failed
+        const q = $("#" + VIEWER + " .keys-q"); if (!q) return;
+        q.classList.toggle("saving", d.state === "saving"); q.classList.toggle("failed", d.state === "error");
+        q.textContent = d.state === "error" ? "!" : d.state === "saving" ? "" : "?";
+        q.title = d.state === "error" ? PD.t("viewer.notSaved", { why: d.why }) : PD.t("keys.open");
+        return;
+      }
       if (d.pd !== "editor-tools") return;
       S.edHtml = d.html;
       const span = $("#" + VIEWER + " .ed-tools"); if (span) span.innerHTML = d.html;

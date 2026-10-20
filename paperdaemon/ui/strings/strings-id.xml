@@ -144,6 +144,7 @@
   <string name="viewer.next">Halaman berikutnya</string>
   <string name="viewer.zoom_reset">Kembali ke 1×</string>
   <string name="keys.open">Pintasan</string>
+  <string name="viewer.notSaved">Tidak tersimpan: {why}</string>
   <string name="keys.title">Pintasan dan perintah</string>
   <string name="keys.k_ctrl">Ctrl</string>
   <string name="keys.k_shift">Shift</string>

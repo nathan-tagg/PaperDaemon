@@ -143,6 +143,7 @@
   <string name="viewer.next">Próxima página</string>
   <string name="viewer.zoom_reset">Voltar a 1×</string>
   <string name="keys.open">Atalhos</string>
+  <string name="viewer.notSaved">Não salvo: {why}</string>
   <string name="keys.title">Atalhos e comandos</string>
   <string name="keys.k_ctrl">Ctrl</string>
   <string name="keys.k_shift">Shift</string>

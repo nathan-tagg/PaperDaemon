@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.46
+
+- Page editor: fixed the eraser freezing and then crashing the app. When the eraser only grazed a stroke, a Passing erase replaced the stroke with an identical copy, over and over, until memory ran out. A graze now takes nothing, and the pieces an erase leaves can no longer feed the same pass.
+- Page editor: during a swipe, the pieces an erase leaves are added to the graphics card a frame's worth at a time and freed when the swipe ends, instead of being rebuilt every frame.
+- Page editor: saves no longer fail with "access is denied" while you drag a large decomp. Saves of a page now run one at a time, and two saves never share a temporary file.
+- Page editor: save status no longer shows over the page. The ? by the document's name turns into a spinner while a save is slow and into ! when one fails (the reason on hover). The ? is smaller.
+
 ## 0.1.45
 
 - Page editor: erasing no longer rebuilds the page during a swipe. An erased stroke is blanked in place on the graphics card, and the pieces a Passing erase leaves are drawn on top; the page is rebuilt once, after the swipe.

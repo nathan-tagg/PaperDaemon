@@ -55,7 +55,9 @@ def write_atomic(path, data):
         data = data.encode("utf-8")
     d = os.path.dirname(os.path.abspath(path))
     os.makedirs(d, exist_ok=True)
-    tmp = "%s.%d.part" % (path, os.getpid())
+    import threading
+    # its own name for each write: two writes of one file at once (two threads of the engine) never share a part file
+    tmp = "%s.%d.%d.part" % (path, os.getpid(), threading.get_ident())
     with open(tmp, "wb") as f:
         f.write(data)
         f.flush()

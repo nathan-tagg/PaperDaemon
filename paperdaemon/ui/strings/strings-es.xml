@@ -143,6 +143,7 @@
   <string name="viewer.next">Página siguiente</string>
   <string name="viewer.zoom_reset">Volver a 1×</string>
   <string name="keys.open">Atajos</string>
+  <string name="viewer.notSaved">No se guardó: {why}</string>
   <string name="keys.title">Atajos y comandos</string>
   <string name="keys.k_ctrl">Ctrl</string>
   <string name="keys.k_shift">Mayús</string>

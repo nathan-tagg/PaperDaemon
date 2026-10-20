@@ -13,6 +13,7 @@ import io
 import json
 import os
 import re
+import threading
 import time
 import uuid
 
@@ -533,7 +534,15 @@ def _line_blocks_in(data):
     return n if pos == end else -1
 
 
+_writing = threading.Lock()                          # one page written at a time: a save never meets another half way
+
+
 def write_scene(doc, page_no, scene):
+    with _writing:
+        return _write_scene(doc, page_no, scene)
+
+
+def _write_scene(doc, page_no, scene):
     """The page made anew from the editor's scene, its header blocks kept. -> the number of strokes written. A stroke's
     points are rows [x, y, speed, direction, width, pressure] or a fastrm.POINT array (the editor's binary form)."""
     from paperdaemon.remarkable import fastrm
