@@ -11,7 +11,10 @@
      RF_PEN          opaque in its color; each segment a capsule of the segment's mean width (round ends and joints)
      RF_HIGHLIGHTER  each segment a rectangle with FLAT ends, plus a bevel triangle across the OUTER corner of every
                      turn (nothing on the inner side); a per-channel MINIMUM ("darken") over what is under it, which
-                     is idempotent, so a stroke crossing itself or one of its own color never darkens twice
+                     is idempotent, so a stroke crossing itself or one of its own color never darkens twice. Its sides
+                     lie WASH_EPS of a target pixel past the width's half: the device paints a wash about a third of a
+                     pixel beyond its exact footprint (measured on the zoomed screen share, 2026-10-01), so washes laid
+                     edge to edge, as the decomposer lays them, leave no pinholes between them
      RF_SHADER       a translucent wash: its color at its alpha over what is under it, ONCE per pixel per stroke
                      (segments of one stroke overlap; another stroke over it deepens it)
      GRAIN           a pen stroke with a DENSITY per point (0..1, 1 solid): the share of its pixels the tablet inks.
@@ -33,6 +36,7 @@
 #include "rmfast.h"
 
 enum { RF_PEN = 0, RF_HIGHLIGHTER = 1, RF_SHADER = 2 };
+#define WASH_EPS 0.35      /* how far past its exact footprint the device paints a wash, in target pixels (see above) */
 
 typedef struct {
     uint8_t *px;          /* the working canvas, RGB, W x H (ss times the target's size) */
@@ -198,7 +202,7 @@ static void highlighter(canvas *c, const double *xy, const double *w, int32_t n,
     for (int32_t i = 0; i + 1 < m; i++) {
         double ex = sx[i + 1] - sx[i], ey = sy[i + 1] - sy[i], L = sqrt(ex * ex + ey * ey);
         dx[i] = ex / L; dy[i] = ey / L;
-        hw[i] = (sw[i] + sw[i + 1]) / 4.0;
+        hw[i] = (sw[i] + sw[i + 1]) / 4.0 + WASH_EPS * c->ss;
     }
     for (int32_t i = 0; i + 1 < m; i++) {
         double nx = -dy[i] * hw[i], ny = dx[i] * hw[i];

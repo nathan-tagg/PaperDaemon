@@ -69,7 +69,7 @@
   <string name="term.empty">Ancora niente.</string>
   <string name="loop.pausing">Pausa in corso…</string>
   <string name="loop.starting">Avvio…</string>
-  <string name="loop.pause">Metti in pausa il daemon (libera la VRAM)</string>
+  <string name="loop.pause">Pausa</string>
   <string name="loop.start">Avvia</string>
   <string name="overview.label">Daemon</string>
   <string name="overview.needs_you">Serve il tuo intervento</string>
@@ -271,6 +271,8 @@
   <string name="dc.size_unit">pixel del tablet, da 200 a 1.600</string>
   <string name="dc.types">PNG, JPEG, WebP</string>
   <string name="dc.decomps">Scomposizioni</string>
+  <string name="dc.range">{from}–{to} di {total}</string>
+  <string name="dc.per_page">Per pagina</string>
   <string name="lineup.unreadable">Impossibile leggere le formazioni.</string>
   <string name="memories.note">Ciò che il modello di questa formazione ha imparato sul lavorare per te: lamentele, correzioni, come vuoi che si facciano le cose. Il modello le salva da solo, mai ciò che scrivi o il lavoro su una pagina (ogni quaderno conserva il proprio contesto nelle sue Note), e ogni lavoro di questa formazione le vede. Qui puoi modificarle o eliminarle.</string>
   <string name="memories.none">Ancora nessuna memoria.</string>
@@ -620,7 +622,6 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="fm.create_body2">Il daemon risponde alle sue pagine esattamente come a quelle del tuo tablet. Nulla viene inviato al cloud né raggiunge il tuo tablet.</string>
   <string name="fm.delete_mirror_q">Eliminare il falso specchio?</string>
   <string name="fm.delete_mirror_body">I suoi quaderni sono solo su questo computer e spariranno. La libreria del tuo tablet non viene toccata.</string>
-  <string name="fm.inbox">Casella di scomposizione del falso specchio</string>
   <string name="fm.inbox.help">Il quaderno del falso specchio a cui Invia al tablet aggiunge anche pagine. Invia al tablet arriva in entrambe le caselle.</string>
   <string name="fm.faces">Caratteri</string>
   <string name="fm.faces.help">I caratteri del testo digitato e dei libri nel falso specchio.</string>

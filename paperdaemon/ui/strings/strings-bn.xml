@@ -69,7 +69,7 @@
   <string name="term.empty">এখনও কিছু নেই।</string>
   <string name="loop.pausing">বিরতি দেওয়া হচ্ছে…</string>
   <string name="loop.starting">চালু হচ্ছে…</string>
-  <string name="loop.pause">ডেমনে বিরতি দিন (VRAM খালি করে)</string>
+  <string name="loop.pause">বিরতি</string>
   <string name="loop.start">চালু করুন</string>
   <string name="overview.label">ডেমন</string>
   <string name="overview.needs_you">কিছু একটায় আপনার মনোযোগ দরকার</string>
@@ -271,6 +271,8 @@
   <string name="dc.size_unit">ট্যাবলেট পিক্সেল, ২০০ থেকে ১,৬০০</string>
   <string name="dc.types">PNG, JPEG, WebP</string>
   <string name="dc.decomps">ডিকম্পোজ করা ছবি</string>
+  <string name="dc.range">{total}-এর মধ্যে {from}–{to}</string>
+  <string name="dc.per_page">প্রতি পাতায়</string>
   <string name="lineup.unreadable">লাইনআপগুলো পড়া যায়নি।</string>
   <string name="memories.note">এই লাইনআপের মডেল আপনার জন্য কাজ করা সম্পর্কে যা শিখেছে: অভিযোগ, সংশোধন, আপনি কাজগুলো কীভাবে চান। মডেল নিজেই এগুলো সংরক্ষণ করে, কখনও আপনার লেখা বা কোনো পাতার কাজ নয় (প্রতিটি নোটবুক নিজের প্রসঙ্গ নিজের নোটে রাখে), এবং এই লাইনআপের প্রতিটি কাজকে এগুলো দেখানো হয়। এখানে যেকোনোটি বদলান বা মুছুন।</string>
   <string name="memories.none">এখনও কোনো স্মৃতি নেই।</string>
@@ -620,7 +622,6 @@
   <string name="fm.create_body2">ডেমন এর পৃষ্ঠাগুলোর উত্তর ঠিক আপনার ট্যাবলেটের মতোই দেয়। এর কিছুই ক্লাউডে পাঠানো হয় না বা আপনার ট্যাবলেটে পৌঁছায় না।</string>
   <string name="fm.delete_mirror_q">নকল মিরর মুছবেন?</string>
   <string name="fm.delete_mirror_body">এর নোটবুকগুলো শুধু এই কম্পিউটারে আছে, এবং সেগুলো চলে যাবে। আপনার ট্যাবলেটের লাইব্রেরি ছোঁয়া হবে না।</string>
-  <string name="fm.inbox">নকল মিররের ডিকম্পোজ ইনবক্স</string>
   <string name="fm.inbox.help">নকল মিররের যে নোটবুকে ট্যাবলেটে পাঠান-ও পৃষ্ঠা যোগ করে। ট্যাবলেটে পাঠান দুটি ইনবক্সেই পৌঁছায়।</string>
   <string name="fm.faces">ফন্ট</string>
   <string name="fm.faces.help">যে ফন্টে নকল মিররের টাইপ করা লেখা আর বই সাজানো হয়।</string>

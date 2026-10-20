@@ -69,7 +69,7 @@
   <string name="term.empty">Rien pour l'instant.</string>
   <string name="loop.pausing">Mise en pause…</string>
   <string name="loop.starting">Démarrage…</string>
-  <string name="loop.pause">Mettre le daemon en pause (libère la VRAM)</string>
+  <string name="loop.pause">Pause</string>
   <string name="loop.start">Démarrer</string>
   <string name="overview.label">Daemon</string>
   <string name="overview.needs_you">Quelque chose demande votre attention</string>
@@ -270,6 +270,8 @@
   <string name="dc.size_unit">pixels de tablette, de 200 à 1 600</string>
   <string name="dc.types">PNG, JPEG, WebP</string>
   <string name="dc.decomps">Décompositions</string>
+  <string name="dc.range">{from}–{to} sur {total}</string>
+  <string name="dc.per_page">Par page</string>
   <string name="lineup.unreadable">Impossible de lire les équipes.</string>
   <string name="memories.note">Ce que le modèle de cette équipe a appris sur la façon de travailler pour vous : plaintes, corrections, la façon dont vous voulez que les choses soient faites. Le modèle les enregistre lui-même, jamais ce que vous écrivez ni le travail d'une page (chaque carnet garde son propre contexte dans ses Notes), et chaque tâche de cette équipe les voit. Modifiez ou supprimez-les ici.</string>
   <string name="memories.none">Aucun souvenir pour l'instant.</string>
@@ -620,7 +622,6 @@ Ensuite, guide-moi pour installer SearXNG si besoin, écris le fichier .bat avec
   <string name="fm.create_body2">Le daemon répond à ses pages exactement comme à celles de votre tablette. Rien n'en est envoyé au cloud ni n'atteint votre tablette.</string>
   <string name="fm.delete_mirror_q">Supprimer le faux miroir ?</string>
   <string name="fm.delete_mirror_body">Ses carnets ne sont que sur cet ordinateur et auront disparu. La bibliothèque de votre tablette n'est pas touchée.</string>
-  <string name="fm.inbox">Boîte de décomposition du faux miroir</string>
   <string name="fm.inbox.help">Le carnet du faux miroir auquel Envoyer à la tablette ajoute aussi des pages. Envoyer à la tablette arrive dans les deux boîtes.</string>
   <string name="fm.faces">Polices</string>
   <string name="fm.faces.help">Les polices du texte saisi et des livres dans le faux miroir.</string>

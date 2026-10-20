@@ -160,10 +160,6 @@
       row(t("settings.inbox"), t("settings.inbox.help"),
         '<input class="field w-l" id="st-inbox" data-ta="[]" spellcheck="false" placeholder="' + esc(t("settings.inbox.placeholder")) +
         '"><p class="hint" id="st-inbox-msg" role="status"></p>') +
-      // the false mirror's own inbox, right under the Mirror's: the same control; Send to Tablet lands in both
-      '<div id="st-fm-inbox-row"' + (fmExists() ? "" : " hidden") + ">" + row(t("fm.inbox"), t("fm.inbox.help"),
-        '<input class="field w-l" id="st-fm-inbox" data-ta="[]" spellcheck="false" placeholder="' + esc(t("settings.inbox.placeholder")) +
-        '"><p class="hint" id="st-fm-inbox-msg" role="status"></p>') + "</div>" +
       row(t("settings.location"), t("settings.location.help"),
         '<input class="field w-l" id="st-loc" data-ta="[]" spellcheck="false" placeholder="' + esc(t("settings.location.placeholder")) +
         '"><p class="hint" id="st-loc-msg" role="status"></p>') +
@@ -173,18 +169,19 @@
         '<input class="field mono w-m" id="st-sprompt" spellcheck="false" autocomplete="off"><p class="hint" id="st-sprompt-msg" role="status"></p>');
   }
 
+  /** An inbox box: a notebook of the Mirror's (base "") or the false mirror's ("/fm"), chosen from the list. */
+  const pickBook = (inp, path, base) => inp.addEventListener("change", async e => {
+    const val = e.target.value.trim(), msg = $("#" + inp.id + "-msg", R), was = PD.getK(S.s, path) || "";
+    if (val === was) return;
+    if (val && !(await notebooks(base)).includes(val)) { e.target.value = was; msg.textContent = t("settings.inbox.pick"); msg.className = "hint attn"; return; }
+    await save(path, val, msg);
+    paintTools();
+  });
+
   function wirePrefs() {
     ["prefs.temperature", "prefs.clock", "prefs.week_start"].forEach(p =>
       R.querySelector('[data-path="' + p + '"]').addEventListener("change", e => save(p, e.target.value).then(() => paintNote())));
-    const pickBook = (inp, path, base) => inp.addEventListener("change", async e => {
-      const val = e.target.value.trim(), msg = $("#" + inp.id + "-msg", R), was = PD.getK(S.s, path) || "";
-      if (val === was) return;
-      if (val && !(await notebooks(base)).includes(val)) { e.target.value = was; msg.textContent = t("settings.inbox.pick"); msg.className = "hint attn"; return; }
-      await save(path, val, msg);
-      paintTools();
-    });
     pickBook($("#st-inbox", R), "tablet.inbox", "");
-    pickBook($("#st-fm-inbox", R), "false_mirror.inbox", "/fm");
     $("#st-loc", R).addEventListener("change", async e => {
       const val = e.target.value.trim(), msg = $("#st-loc-msg", R), was = PD.getK(S.s, "location.name") || "";
       if (val === was) return;
@@ -212,8 +209,6 @@
       R.querySelector('[data-path="' + p + '"]').value = PD.getK(v, p) || (PD.regionDefaults || {})[p.split(".")[1]] || "";
     });
     $("#st-inbox", R).value = PD.getK(v, "tablet.inbox") || "";
-    $("#st-fm-inbox", R).value = PD.getK(v, "false_mirror.inbox") || "";
-    $("#st-fm-inbox-row", R).hidden = !fmExists();
     $("#st-loc", R).value = PD.getK(v, "location.name") || "";
     $("#st-ignore", R).value = PD.getK(v, "tags.ignore") || "ignore";
     $("#st-sprompt", R).value = PD.getK(v, "tags.sprompt") || "sprompt";
@@ -260,12 +255,18 @@
       exists ? '<button type="button" class="btn danger" data-act="fm-delete">' + esc(t("fm.delete")) + "</button>"
              : '<button type="button" class="btn" data-act="fm-create">' + esc(t("fm.create_mirror")) + "</button>") +
       '<p class="hint" id="st-fm-msg" role="status"></p>' +
+      // its own decompose inbox: Send to Tablet lands there too
+      (exists ? row(t("settings.inbox"), t("fm.inbox.help"),
+        '<input class="field w-l" id="st-fm-inbox" data-ta="[]" spellcheck="false" placeholder="' + esc(t("settings.inbox.placeholder")) +
+        '"><p class="hint" id="st-fm-inbox-msg" role="status"></p>') : "") +
       (exists && signed ? row(t("fm.faces"), t("fm.faces.help"),
         choice("st-fm-faces", "false_mirror.faces", [["tablet", t("fm.faces.tablet")], ["own", t("fm.faces.own")]]) +
         '<p class="hint" id="st-fm-faces-msg" role="status"></p>') : "") +
       (exists && signed && built ? row(t("fm.convert"), t("fm.convert.help"),
         '<label class="check-label"><input type="checkbox" id="st-fm-convert"> ' + esc(t("fm.convert")) +
         '</label><p class="hint" id="st-fm-convert-msg" role="status"></p>') : "");
+    const inbox = $("#st-fm-inbox", R);
+    if (inbox) { inbox.value = PD.getK(v, "false_mirror.inbox") || ""; pickBook(inbox, "false_mirror.inbox", "/fm"); }
     const faces = $("#st-fm-faces", R);
     if (faces) {
       faces.value = PD.getK(v, "false_mirror.faces") || "tablet";

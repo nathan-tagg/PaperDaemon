@@ -68,10 +68,13 @@ Places (the Location control)
   GET    /places?q=              [{label, lat, lon, holidays}], best first
 
 Decompose and send
-  POST   /decompose {image (data URL or link), width, job?}  {preview (PNG data URL), strokes, points, seconds, box, width, height}
+  POST   /decompose {image (data URL or link), width, job?, keep?, name?}  {preview (PNG data URL), strokes, points, seconds, box, width, height}
   GET    /decompose/progress?job=                   {state: waiting | running, done: 0..1}
-  POST   /decompose/send {image, width}             {sent, doc, page, created, strokes}
-  POST   /decompose/save {image (PNG data URL), name}  {path, name}: the decomp's picture in the user's Downloads
+  POST   /decompose/send {id} or {image, width}     {sent, doc, page, created, strokes}
+  POST   /decompose/save {id} or {image, name}      {path, name}: the decomp's picture in the user's Downloads
+  GET    /decomps?offset=&limit=                    {total, items}: the kept decomps, newest first
+  GET    /decomps/{id}/preview.png                  a kept decomp's preview, at the tablet's own scale
+  DELETE /decomps/{id}                              {deleted}
   POST   /logs/send                                 {sent, doc, pages, first}: the logs as pages in the inbox
 
 Benchmark
@@ -309,24 +312,26 @@ async def fm_proxy(rest: str, request: Request):
     url = "http://127.0.0.1:%d%s/%s" % (_fm["port"], API, rest) + (("?" + request.url.query) if request.url.query else "")
     body = await request.body()
     req = urllib.request.Request(url, data=body or None, method=request.method)
-    for h in ("authorization", "content-type"):
+    for h in ("authorization", "content-type", "if-none-match"):          # a page's version goes on, and comes back
         if request.headers.get(h):
             req.add_header(h, request.headers[h])
 
     def go():
         try:
             with urllib.request.urlopen(req, timeout=600) as r:
-                return r.status, r.read(), r.headers.get("content-type") or "application/octet-stream"
+                return r.status, r.read(), r.headers.get("content-type") or "application/octet-stream", r.headers.get("etag")
         except urllib.error.HTTPError as ex:
-            return ex.code, ex.read(), ex.headers.get("content-type") or "application/json"
+            return ex.code, ex.read(), ex.headers.get("content-type") or "application/json", ex.headers.get("etag")
     try:
-        code, data, ctype = await run_in_threadpool(go)
+        code, data, ctype, etag = await run_in_threadpool(go)
     except OSError as ex:
         return JSONResponse({"error": "the false mirror's engine did not answer: %s" % str(ex)[:160]}, status_code=502)
     # the job abandoned is the false mirror's host's: that host is the one to stop (its engine runs no loop)
     if rest == "queue/abandon" and request.method == "POST" and code == 200:
         await run_in_threadpool(lambda: loop.restart_host(who="fm-host"))
-    return Response(content=data, status_code=code, media_type=ctype)
+    if code == 304:
+        return Response(status_code=304, headers={"ETag": etag} if etag else None)
+    return Response(content=data, status_code=code, media_type=ctype, headers={"ETag": etag, "Cache-Control": "no-store"} if etag else None)
 
 
 @app.post(API + "/false-mirror")
@@ -1222,8 +1227,10 @@ def post_notepad_wipe(doc: str):
 def post_decompose(body: dict = Body(...)):
     from . import studio
     try:
+        # keep: the Decompose screen's decomps are kept on disk (studio's note), under the picture's name
         out, strokes = studio.decompose(body.get("image"), body.get("width"), preview=not body.get("strokes"),
-                                        job=str(body.get("job") or "")[:64] or None)
+                                        job=str(body.get("job") or "")[:64] or None,
+                                        keep=(str(body.get("name") or "Picture") if body.get("keep") else None))
     except (ValueError, OSError) as ex:
         return _bad(str(ex)[:300])
     except Exception as ex:
@@ -1238,11 +1245,47 @@ def post_decompose(body: dict = Body(...)):
     return out
 
 
+@app.get(API + "/decomps")
+def get_decomps(offset: int = 0, limit: int = 10):
+    """The kept decomps, newest first -> {total, items: [{id, name, strokes, points, seconds, width, height, sent}]}."""
+    from . import studio
+    return studio.decomps_page(offset, limit)
+
+
+@app.get(API + "/decomps/{did}/preview.png")
+def get_decomp_preview(did: str):
+    from . import studio
+    try:
+        return FileResponse(studio.decomp_preview(did), media_type="image/png", headers={"Cache-Control": "max-age=31536000, immutable"})
+    except (ValueError, OSError) as ex:
+        return _bad(str(ex)[:200], 404)
+
+
+@app.delete(API + "/decomps/{did}")
+def delete_decomp(did: str):
+    from . import studio
+    try:
+        studio.delete_decomp(did)
+    except (ValueError, OSError) as ex:
+        return _bad(str(ex)[:200], 404)
+    return {"deleted": did}
+
+
 @app.post(API + "/decompose/save")
 def post_decompose_save(body: dict = Body(...)):
-    """A decomp's picture (the PNG the screen shows, as a data URL) saved into the user's Downloads folder -> {path, name}."""
+    """A decomp's picture saved into the user's Downloads folder -> {path, name}: a kept decomp's (`id`) preview, or a
+    PNG data URL (`image`)."""
     import base64
     import binascii
+    from . import studio
+    if body.get("id"):
+        try:
+            with open(studio.decomp_preview(str(body["id"])), "rb") as f:
+                data = f.read()
+            name = studio.decomp_meta(str(body["id"])).get("name") or "Picture"
+        except (ValueError, OSError) as ex:
+            return _bad(str(ex)[:200], 404)
+        return _to_downloads(os.path.splitext(name)[0] + " decomp", ".png", data)
     image = str(body.get("image") or "")
     if not image.startswith("data:image/png;base64,"):
         return _bad("not a PNG picture")
@@ -1284,7 +1327,7 @@ def post_decompose_send(body: dict = Body(...)):
     from . import studio
     if paths.local_only():                            # the false mirror's engine: its own inbox only
         try:
-            return studio.send(body.get("image"), body.get("width"))
+            return studio.send(body.get("image"), body.get("width"), decomp=body.get("id"))
         except (ValueError, OSError) as ex:
             return _bad(str(ex)[:300])
         except Exception as ex:
@@ -1299,7 +1342,7 @@ def post_decompose_send(body: dict = Body(...)):
     out, errors = {"sent": False}, []
     if real:
         try:
-            out["mirror"] = studio.send(body.get("image"), body.get("width"), s)
+            out["mirror"] = studio.send(body.get("image"), body.get("width"), s, decomp=body.get("id"))
             out["sent"] = True
         except Exception as ex:
             errors.append("Mirror: %s" % str(ex)[:200])
@@ -1314,6 +1357,11 @@ def post_decompose_send(body: dict = Body(...)):
     if not out["sent"]:
         return _bad("; ".join(errors)[:300], 502)
     out.update({k: v for k, v in (out.get("mirror") or out.get("false_mirror") or {}).items() if k in ("doc", "page")})
+    if body.get("id") and out.get("page") is not None:       # a kept decomp remembers the page it landed on
+        try:
+            studio.decomp_sent(str(body["id"]), out["page"])
+        except (ValueError, OSError):
+            pass
     return out
 
 
@@ -1428,14 +1476,32 @@ def put_library_page_tags(doc: str, page: int, body: dict = Body(default={})):
 
 
 @app.get(API + "/library/{doc}/page/{page}/scene")
-def get_library_scene(doc: str, page: int):
-    """One page as the page editor holds it (remarkable/local.scene_of): the false mirror's pages only."""
+def get_library_scene(doc: str, page: int, request: Request):
+    """One page as the page editor holds it (remarkable/local.scene_of): the false mirror's pages only. Its version
+    (local.page_version) comes as the ETag; asked with the same one (If-None-Match), the answer is 304 and the page is
+    not read at all -- the editor looks every few seconds, and a page with a decomp on it is megabytes to read."""
     from .remarkable import local
     if not _doc_ok(doc):
         return _bad("not a document id")
     if not paths.local_only():
         return _bad("pages are edited in the False Mirror only", 404)
-    return _local(local.scene_of, doc, page)
+    try:
+        version = local.page_version(doc, page)
+    except Exception:
+        version = ""
+    if version and request.headers.get("if-none-match") == version:
+        return Response(status_code=304, headers={"ETag": version})
+    if request.query_params.get("form") == "bin":   # the editor's binary form (fastrm's note): the points as the file has them
+        from .remarkable import fastrm
+        got = _local(lambda: local.scene_of(doc, page, arrays=True))
+        if not isinstance(got, dict):
+            return got
+        return Response(fastrm.scene_bytes(got), media_type="application/octet-stream",
+                        headers={"ETag": version, "Cache-Control": "no-store"} if version else {"Cache-Control": "no-store"})
+    got = _local(local.scene_of, doc, page)
+    if isinstance(got, dict) and version:
+        return JSONResponse(got, headers={"ETag": version, "Cache-Control": "no-store"})
+    return got
 
 
 @app.get(API + "/library/{doc}/page/{page}/picture/{name}")
@@ -1469,11 +1535,22 @@ async def post_library_picture(doc: str, page: int, request: Request):
 
 
 @app.put(API + "/library/{doc}/page/{page}/scene")
-def put_library_scene(doc: str, page: int, body: dict = Body(...)):
-    from .remarkable import local
+async def put_library_scene(doc: str, page: int, request: Request):
+    """The page from the editor: its scene as JSON, or in its binary form (application/octet-stream, fastrm's note)."""
+    from .remarkable import local, fastrm
     if not _doc_ok(doc):
         return _bad("not a document id")
-    return _local(lambda: {"strokes": local.write_scene(doc, page, body)})
+    data = await request.body()
+    try:
+        if (request.headers.get("content-type") or "").startswith("application/octet-stream"):
+            scene = fastrm.scene_from_bytes(data)
+        else:
+            scene = json.loads(data)
+    except ValueError as ex:
+        return _bad("the page could not be read: %s" % str(ex)[:200])
+    if not isinstance(scene, dict):
+        return _bad("not a page")
+    return await run_in_threadpool(_local, lambda: {"strokes": local.write_scene(doc, page, scene), "version": local.page_version(doc, page)})
 
 
 @app.post(API + "/library/sync")

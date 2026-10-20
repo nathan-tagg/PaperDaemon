@@ -69,7 +69,7 @@
   <string name="term.empty">Noch nichts.</string>
   <string name="loop.pausing">Wird pausiert…</string>
   <string name="loop.starting">Wird gestartet…</string>
-  <string name="loop.pause">Daemon pausieren (gibt VRAM frei)</string>
+  <string name="loop.pause">Pausieren</string>
   <string name="loop.start">Starten</string>
   <string name="overview.label">Daemon</string>
   <string name="overview.needs_you">Etwas braucht dich</string>
@@ -271,6 +271,8 @@
   <string name="dc.size_unit">Tablet-Pixel, 200 bis 1.600</string>
   <string name="dc.types">PNG, JPEG, WebP</string>
   <string name="dc.decomps">Zerlegungen</string>
+  <string name="dc.range">{from}–{to} von {total}</string>
+  <string name="dc.per_page">Pro Seite</string>
   <string name="lineup.unreadable">Die Aufstellungen konnten nicht gelesen werden.</string>
   <string name="memories.note">Was das Modell dieser Aufstellung über die Arbeit für dich gelernt hat: Beschwerden, Korrekturen, wie du Dinge erledigt haben möchtest. Das Modell speichert sie selbst, nie das, was du schreibst, oder die Arbeit auf einer Seite (jedes Notizbuch behält seinen eigenen Kontext in seinen Notizen), und jeder Auftrag dieser Aufstellung bekommt sie zu sehen. Ändere oder lösche sie hier.</string>
   <string name="memories.none">Noch keine Erinnerungen.</string>
@@ -620,7 +622,6 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="fm.create_body2">Der Daemon beantwortet ihre Seiten genau wie die deines Tablets. Nichts davon wird in die Cloud gesendet oder erreicht dein Tablet.</string>
   <string name="fm.delete_mirror_q">Den falschen Spiegel löschen?</string>
   <string name="fm.delete_mirror_body">Seine Notizbücher liegen nur auf diesem Computer und sind dann weg. Die Bibliothek deines Tablets bleibt unberührt.</string>
-  <string name="fm.inbox">Zerlegen-Eingang des falschen Spiegels</string>
   <string name="fm.inbox.help">Das Notizbuch im falschen Spiegel, dem „An Tablet senden“ ebenfalls Seiten hinzufügt. „An Tablet senden“ landet in beiden Eingängen.</string>
   <string name="fm.faces">Schriften</string>
   <string name="fm.faces.help">Die Schriften, in denen getippter Text und Bücher im falschen Spiegel gesetzt werden.</string>

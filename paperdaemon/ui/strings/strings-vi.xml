@@ -69,7 +69,7 @@
   <string name="term.empty">Chưa có gì.</string>
   <string name="loop.pausing">Đang tạm dừng…</string>
   <string name="loop.starting">Đang khởi động…</string>
-  <string name="loop.pause">Tạm dừng Daemon (Giải phóng VRAM)</string>
+  <string name="loop.pause">Tạm dừng</string>
   <string name="loop.start">Bắt đầu</string>
   <string name="overview.label">Daemon</string>
   <string name="overview.needs_you">Có việc cần bạn</string>
@@ -271,6 +271,8 @@
   <string name="dc.size_unit">điểm ảnh máy tính bảng, từ 200 đến 1.600</string>
   <string name="dc.types">PNG, JPEG, WebP</string>
   <string name="dc.decomps">Bản phân tách</string>
+  <string name="dc.range">{from}–{to} trên {total}</string>
+  <string name="dc.per_page">Mỗi trang</string>
   <string name="lineup.unreadable">Không đọc được các đội hình.</string>
   <string name="memories.note">Những gì mô hình của đội hình này đã học được về cách làm việc cho bạn: phàn nàn, chỉnh sửa, cách bạn muốn mọi việc được làm. Mô hình tự lưu chúng, không bao giờ lưu những gì bạn viết hay nội dung trên một trang (mỗi sổ tay giữ ngữ cảnh riêng trong Ghi chú của nó), và mọi công việc của đội hình này đều được cho xem chúng. Bạn có thể sửa hoặc xóa bất kỳ mục nào tại đây.</string>
   <string name="memories.none">Chưa có ký ức nào.</string>
@@ -620,7 +622,6 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="fm.create_body2">Daemon trả lời các trang của nó đúng như các trang trên máy tính bảng của bạn. Không gì trong đó được gửi lên đám mây hay đến máy tính bảng của bạn.</string>
   <string name="fm.delete_mirror_q">Xóa Bản sao giả?</string>
   <string name="fm.delete_mirror_body">Các sổ tay của nó chỉ có trên máy tính này và sẽ mất. Thư viện trên máy tính bảng của bạn không bị đụng đến.</string>
-  <string name="fm.inbox">Hộp thư phân tách của Bản sao giả</string>
   <string name="fm.inbox.help">Sổ tay trong Bản sao giả mà Gửi đến máy tính bảng cũng thêm trang vào. Gửi đến máy tính bảng đến cả hai hộp thư.</string>
   <string name="fm.faces">Phông chữ</string>
   <string name="fm.faces.help">Phông chữ dùng cho văn bản gõ và sách trong Bản sao giả.</string>

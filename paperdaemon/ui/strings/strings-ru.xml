@@ -73,7 +73,7 @@
   <string name="term.empty">Пока ничего.</string>
   <string name="loop.pausing">Приостановка…</string>
   <string name="loop.starting">Запуск…</string>
-  <string name="loop.pause">Приостановить демон (освобождает видеопамять)</string>
+  <string name="loop.pause">Пауза</string>
   <string name="loop.start">Запустить</string>
   <string name="overview.label">Демон</string>
   <string name="overview.needs_you">Нужно ваше внимание</string>
@@ -279,6 +279,8 @@
   <string name="dc.size_unit">пикселей планшета, от 200 до 1600</string>
   <string name="dc.types">PNG, JPEG, WebP</string>
   <string name="dc.decomps">Разложенные</string>
+  <string name="dc.range">{from}–{to} из {total}</string>
+  <string name="dc.per_page">На странице</string>
   <string name="lineup.unreadable">Не удалось прочитать составы.</string>
   <string name="memories.note">Что модель этого состава узнала о работе для вас: жалобы, исправления, как вы хотите, чтобы всё делалось. Модель сохраняет их сама — никогда не то, что вы пишете, и не работу на странице (каждый блокнот хранит свой контекст в своих Заметках), — и они показываются каждому заданию этого состава. Измените или удалите любое из них здесь.</string>
   <string name="memories.none">Воспоминаний пока нет.</string>
@@ -634,7 +636,6 @@
   <string name="fm.create_body2">Демон отвечает на её страницы точно так же, как на страницы вашего планшета. Ничто из неё не отправляется в облако и не попадает на планшет.</string>
   <string name="fm.delete_mirror_q">Удалить ложное зеркало?</string>
   <string name="fm.delete_mirror_body">Его блокноты есть только на этом компьютере, и они исчезнут. Библиотека вашего планшета не затрагивается.</string>
-  <string name="fm.inbox">Входящие для разложения ложного зеркала</string>
   <string name="fm.inbox.help">Блокнот в ложном зеркале, в который «Отправить на планшет» тоже добавляет страницы. «Отправить на планшет» попадает в оба ящика.</string>
   <string name="fm.faces">Шрифты</string>
   <string name="fm.faces.help">Шрифты, которыми набраны текст и книги в Ложном зеркале.</string>

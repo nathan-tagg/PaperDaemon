@@ -69,7 +69,7 @@
   <string name="term.empty">Nothing yet.</string>
   <string name="loop.pausing">Pausing…</string>
   <string name="loop.starting">Starting…</string>
-  <string name="loop.pause">Pause Daemon (Frees VRAM)</string>
+  <string name="loop.pause">Pause</string>
   <string name="loop.start">Start</string>
   <string name="overview.label">Daemon</string>
   <string name="overview.needs_you">Something needs you</string>
@@ -270,6 +270,8 @@
   <string name="dc.size_unit">tablet pixels, 200 to 1,600</string>
   <string name="dc.types">PNG, JPEG, WebP</string>
   <string name="dc.decomps">Decomps</string>
+  <string name="dc.range">{from}–{to} of {total}</string>
+  <string name="dc.per_page">Per page</string>
   <string name="lineup.unreadable">The lineups could not be read.</string>
   <string name="memories.note">What this lineup's model has learned about working for you: complaints, corrections, how you want things done. The model saves them itself, never what you write or the work on a page (each notebook keeps its own context in its Notes), and every job of this lineup is shown them. Change or delete any of them here.</string>
   <string name="memories.none">No memories yet.</string>
@@ -620,7 +622,6 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="fm.create_body2">The daemon answers its pages exactly as it answers your tablet's. Nothing in it is sent to the cloud or reaches your tablet.</string>
   <string name="fm.delete_mirror_q">Delete the False Mirror?</string>
   <string name="fm.delete_mirror_body">Its notebooks are on this computer only, and they will be gone. Your tablet's library is not touched.</string>
-  <string name="fm.inbox">False Mirror decompose inbox</string>
   <string name="fm.inbox.help">The notebook in the False Mirror that Send to Tablet also adds pages to. Send to Tablet lands in both inboxes.</string>
   <string name="fm.faces">Faces</string>
   <string name="fm.faces.help">The faces typed text and books are set in, in the False Mirror.</string>

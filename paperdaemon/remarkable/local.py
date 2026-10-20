@@ -319,9 +319,38 @@ def _rm(doc, page_no):
     return os.path.join(M, doc, page_id(doc, page_no) + ".rm")
 
 
-def scene_of(doc, page_no):
-    """The page as the editor holds it (see the module's note)."""
-    from rmscene import read_tree
+def _rows(points, arrays):
+    """A stroke's points as the editor takes them: the array itself (arrays), or rows [x, y, speed, direction, width,
+    pressure] -- from a fastrm array in one step, or from rmscene's si.Point list."""
+    import numpy as np
+    from paperdaemon.remarkable import fastrm
+    if isinstance(points, np.ndarray):
+        if arrays:
+            return points
+        cols = [points[k].tolist() for k in ("x", "y", "speed", "direction", "width", "pressure")]
+        return [list(t) for t in zip(*cols)]
+    rows = [[p.x, p.y, p.speed, p.direction, p.width, p.pressure] for p in points]
+    return fastrm.points_of(rows) if arrays else rows
+
+
+def page_version(doc, page_no):
+    """A short stamp of the page as its files are now (the page's .rm, and the notebook's .content, which holds its
+    template): the same stamp, the same page. The editor asks with it, and a page that has not changed is not read."""
+    out = []
+    for p in (_rm(doc, page_no), os.path.join(M, doc + ".content")):
+        try:
+            st = os.stat(p)
+            out.append("%x.%x" % (st.st_mtime_ns, st.st_size))
+        except OSError:
+            out.append("-")
+    return "-".join(out)
+
+
+def scene_of(doc, page_no, arrays=False):
+    """The page as the editor holds it (see the module's note). With `arrays`, each stroke's points are its fastrm.POINT
+    array as read, for the editor's binary form (scene_bytes); else rows [x, y, speed, direction, width, pressure]."""
+    from paperdaemon.remarkable import fastrm
+    from rmscene import SceneTree
     from paperdaemon.pipeline.page import typed as TY
     from paperdaemon.pipeline.page import render as R
     path = _rm(doc, page_no)
@@ -334,9 +363,13 @@ def scene_of(doc, page_no):
                 "textVisible": True, "templateVisible": True, "template": page_template(doc, page_no), "source": source,
                 "images": []}
     data = open(path, "rb").read()
-    blocks = list(read_blocks(io.BytesIO(data)))
+    # THE FILE IS PARSED ONCE: the tree is built from the same blocks (rmscene's read_tree parses it again), and the typed
+    # text's own reader runs only when the page has typed text -- a page with a decomp on it is seconds a parse
+    blocks = list(fastrm.read_blocks(data))         # the strokes' points in one step each (fastrm's note)
     info = next((b for b in blocks if isinstance(b, ss.SceneInfo)), None)
-    tree = read_tree(io.BytesIO(data))
+    tree = SceneTree()
+    ss.build_tree(tree, blocks)
+    typed_here = any(isinstance(b, ss.RootTextBlock) for b in blocks)
 
     def lines_in(group, out):
         for item in group.children.values():
@@ -345,7 +378,7 @@ def scene_of(doc, page_no):
                             "penCode": int(item.tool), "color": int(item.color),
                             "colorRgba": list(item.color_rgba) if getattr(item, "color_rgba", None) else None,
                             "thicknessScale": float(item.thickness_scale),
-                            "points": [[p.x, p.y, p.speed, p.direction, p.width, p.pressure] for p in item.points]})
+                            "points": _rows(item.points, arrays)})
             elif isinstance(item, si.Group):
                 lines_in(item, out)
         return out
@@ -359,7 +392,7 @@ def scene_of(doc, page_no):
         layers = [{"label": "Layer 1", "visible": True, "lines": []}]
     text = None
     try:
-        rec = TY.from_blocks(TY.read_preserved(data), data)
+        rec = TY.from_blocks(TY.read_preserved(data), data) if typed_here else {}
         if rec.get("column"):
             paras = []
             for p in rec["paragraphs"]:
@@ -456,12 +489,43 @@ def _enum(kind, v):
         return int(v)
 
 
+def _leading_blocks(data):
+    """The blocks before the page's first stroke (the header ones write_scene keeps): read up to there and no further,
+    since the strokes after them are most of the file and seconds to read on a page with a decomp."""
+    out = []
+    for b in read_blocks(io.BytesIO(data)):
+        if isinstance(b, ss.SceneLineItemBlock):
+            break
+        out.append(b)
+    return out
+
+
+def _line_blocks_in(data):
+    """The stroke blocks in a page's bytes, counted by walking the blocks' frames (each block: its length, 4 bytes,
+    then 3 bytes of versions and its type), the walk ending exactly at the end -> how many; or -1 when the frames do
+    not add up. It reads none of the blocks, so a page of tens of thousands of strokes checks in milliseconds."""
+    from rmscene.tagged_block_common import HEADER_V6
+    if not data.startswith(HEADER_V6):
+        return -1
+    pos, n, end = len(HEADER_V6), 0, len(data)
+    while pos < end:
+        if pos + 8 > end:
+            return -1
+        size = int.from_bytes(data[pos:pos + 4], "little")
+        if data[pos + 7] == ss.SceneLineItemBlock.BLOCK_TYPE:
+            n += 1
+        pos += 8 + size
+    return n if pos == end else -1
+
+
 def write_scene(doc, page_no, scene):
-    """The page made anew from the editor's scene, its header blocks kept. -> the number of strokes written."""
+    """The page made anew from the editor's scene, its header blocks kept. -> the number of strokes written. A stroke's
+    points are rows [x, y, speed, direction, width, pressure] or a fastrm.POINT array (the editor's binary form)."""
+    from paperdaemon.remarkable import fastrm
     _guard()
     path = _rm(doc, page_no)
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    old = list(read_blocks(io.BytesIO(open(path, "rb").read()))) if os.path.exists(path) else []
+    old = _leading_blocks(open(path, "rb").read()) if os.path.exists(path) else []
     head = [b for b in old if isinstance(b, (ss.AuthorIdsBlock, ss.MigrationInfoBlock))]
     info = next((b for b in old if isinstance(b, ss.SceneInfo)), None)
     if not any(isinstance(b, ss.AuthorIdsBlock) for b in head):
@@ -492,9 +556,9 @@ def write_scene(doc, page_no, scene):
     for L, n in zip(layers, nodes):
         prev = CrdtId(0, 0)
         for ln in L.get("lines") or []:
-            pts = [si.Point(x=float(p[0]), y=float(p[1]), speed=int(p[2]), direction=int(p[3]), width=int(p[4]),
-                            pressure=int(p[5])) for p in ln.get("points") or []]
-            if not pts:
+            pts = ln.get("points")
+            pts = fastrm.points_of(pts) if pts is not None and len(pts) else None    # rows or an array, as one array
+            if pts is None or not len(pts):
                 continue
             rgba = ln.get("colorRgba")
             line = si.Line(color=_enum(si.PenColor, ln.get("color", 0)), tool=_enum(si.Pen, ln.get("penCode", 17)),
@@ -512,14 +576,15 @@ def write_scene(doc, page_no, scene):
     chars = sum(len(r.get("text") or "") for p in ((scene.get("text") or {}).get("paras") or []) for r in p.get("runs") or [])
     blocks = head + [ss.PageInfoBlock(loads_count=1, merges_count=0, text_chars_count=chars,
                                       text_lines_count=len(((scene.get("text") or {}).get("paras")) or []))]
-    blocks += ([info] if info is not None else []) + tree + groups + placed + ([text] if text else []) + strokes
+    blocks += ([info] if info is not None else []) + tree + groups + placed + ([text] if text else [])
     buf = io.BytesIO()
     write_blocks(buf, blocks)
+    fastrm.write_lines(buf, strokes)                 # the strokes last, as rmscene would write them, in bulk (fastrm)
     pics, npics = _picture_blocks(doc, page_no, scene.get("images"), nodes[0], nid)
     data = buf.getvalue() + pics
-    back = [b for b in read_blocks(io.BytesIO(data)) if isinstance(b, ss.SceneLineItemBlock)]
-    if len(back) != count:
-        raise RuntimeError("the page did not read back: %d strokes written, %d read" % (count, len(back)))
+    back = _line_blocks_in(data)
+    if back != count:
+        raise RuntimeError("the page did not read back: %d strokes written, %d read" % (count, back))
     if npics:
         from paperdaemon.pipeline.page import images as IM
         if len([im for im in IM.parse(data) if not im["deleted"]]) != npics:

@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.42
+
+- The page editor stays quick on a page holding a huge decomp: a redraw, a pan or a zoom never saves (only an edit
+  does), the page is read again only when its file changed, and erasing or selecting no longer redraws the whole page
+  or resends its every stroke to the graphics card.
+- A page opens and saves several times faster: its strokes are read and written in bulk, and the editor and the engine
+  pass it in a compact binary form, a quarter of its size as text (a 26,000-stroke page reads in 0.7 s, was 5).
+- Washes are painted a third of a pixel past their exact edge, as the tablet does, so decomps show nearly no pinholes.
+- Decomps are kept on disk, each with its strokes and its preview at the tablet's size, not in memory. They stay
+  until deleted, and the Decompose screen pages through them (10, 50 or 100 a page). Save sits beside Delete.
+- A pasted decomp lands under the pointer, moved in to fit the view, or centered when larger than the view; no stray
+  "Decomposing…" or "…" text.
+- The False Mirror's decompose inbox is in its own settings, labeled Decompose inbox.
+- Start and Pause are one word each and stay on one line with the version.
+- The False Mirror's setting fades in also when Windows' animation effects are off.
+
 ## 0.1.41
 
 - The page editor draws on the graphics card (WebGL2): a pan, a zoom or an edit redraws a page holding a 24,000-stroke

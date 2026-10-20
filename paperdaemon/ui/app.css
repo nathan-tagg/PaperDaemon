@@ -25,9 +25,10 @@ p.msg:empty { display: none; }   /* an empty message line takes no room: buttons
    foot (the start and pause, the version) stays at the bottom over it */
 .rail { overflow-y: auto; scrollbar-width: none; padding-bottom: 0; }
 .rail-foot { position: sticky; bottom: 0; background: var(--paper-sunk); padding-bottom: var(--s4); }
-.rail-foot .meta { overflow-wrap: anywhere; }
+/* one line, whatever the language: the button keeps its size, the version ends in an ellipsis before it ever wraps */
 .rail-foot .foot-line { display: flex; align-items: center; gap: var(--s3); min-width: 0; }
-.rail-foot .foot-line .meta { margin: 0; min-width: 0; }
+.rail-foot .foot-line > #rail-loop { flex: none; }
+.rail-foot .foot-line .meta { margin: 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #rail-loop:empty { display: none; }
 
 /* day headings inside a table */
@@ -140,6 +141,19 @@ pre.snippet.pad-text { white-space: pre-wrap; padding: var(--s3) var(--s4); font
 .decomp .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
 .decomp .meta { font-size: 14px; color: var(--ink-3); }
 .decomp-actions { display: flex; gap: var(--s2); align-items: center; justify-content: space-between; margin-top: var(--s1); }
+.decomp-keep { display: flex; gap: var(--s2); }      /* Delete and Save together at the left; Send to Tablet at the right */
+/* THE DECOMPS' PAGER, on the title's row at its right: the count, the per page, the arrows (the viewer's) and pages */
+.dc-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s4); flex-wrap: wrap;
+  padding-bottom: var(--s2); border-bottom: 1px solid var(--ink); }    /* the section title's own rule, under the row */
+.dc-head h2 { margin: 0; }
+.pager { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
+.pager .pg-count { color: var(--ink-2); margin-inline-end: var(--s3); white-space: nowrap; }
+.pager .pg-per { display: inline-flex; align-items: center; gap: 2px; margin-inline-end: var(--s3); }
+.pager .pg-per .meta { margin-inline-end: var(--s2); }
+.pg-n { min-width: 28px; height: 28px; padding: 0 6px; border: 1px solid transparent; border-radius: var(--radius); background: none;
+  color: var(--ink-2); font: inherit; font-variant-numeric: tabular-nums; cursor: pointer; }
+.pg-n:hover { color: var(--mark); }
+.pg-n.on { border-color: var(--edge); background: var(--field); color: var(--ink); }
 .decomp .sent { font-size: 14px; color: var(--mark); }
 #dc-viewer .viewer-page { display: grid; place-items: center; }
 
@@ -187,7 +201,10 @@ pre.snippet.pad-text { white-space: pre-wrap; padding: var(--s3) var(--s4); font
   60% { opacity: 0.55; filter: blur(1.5px); }
   100% { opacity: 1; filter: none; letter-spacing: normal; }
 }
-@media (prefers-reduced-motion: reduce) { .fm-section.haunt { animation-duration: 0.01s; } .pick-menu { transition: none; } }
+/* WITH REDUCED MOTION (Windows' "Animation effects" off) it still comes up slowly: a fade is not motion, so only the
+   blur and the letters' drift are left out (the page's every other animation stays off) */
+@keyframes haunt-still { 0% { opacity: 0; } 60% { opacity: 0.55; } 100% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .fm-section.haunt { animation: haunt-still 6s ease-out both !important; } .pick-menu { transition: none; } }
 #ov-terms .term-about { margin: var(--s3) 0; }
 .fpanel { padding: var(--s5); border: 1px solid var(--edge); border-top: 0; }
 .script-box { display: grid; gap: var(--s1); margin-top: var(--s4); color: var(--ink-2); }

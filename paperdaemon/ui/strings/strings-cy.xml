@@ -69,7 +69,7 @@
   <string name="term.empty">Dim byd eto.</string>
   <string name="loop.pausing">Yn oedi…</string>
   <string name="loop.starting">Yn dechrau…</string>
-  <string name="loop.pause">Oedi'r daemon (yn rhyddhau VRAM)</string>
+  <string name="loop.pause">Oedi</string>
   <string name="loop.start">Dechrau</string>
   <string name="overview.label">Daemon</string>
   <string name="overview.needs_you">Mae angen eich sylw ar rywbeth</string>
@@ -271,6 +271,8 @@
   <string name="dc.size_unit">picsel llechen, 200 i 1,600</string>
   <string name="dc.types">PNG, JPEG, WebP</string>
   <string name="dc.decomps">Dadelfeniadau</string>
+  <string name="dc.range">{from}–{to} o {total}</string>
+  <string name="dc.per_page">Fesul tudalen</string>
   <string name="lineup.unreadable">Doedd dim modd darllen y timau.</string>
   <string name="memories.note">Yr hyn y mae model y tîm hwn wedi'i ddysgu am weithio i chi: cwynion, cywiriadau, sut rydych am i bethau gael eu gwneud. Mae'r model yn eu cadw ei hun, byth yr hyn rydych yn ei ysgrifennu na'r gwaith ar dudalen (mae pob llyfr nodiadau'n cadw ei gyd-destun ei hun yn ei Nodiadau), ac maent yn cael eu dangos i bob tasg gan y tîm hwn. Newidiwch neu dilëwch unrhyw un ohonynt yma.</string>
   <string name="memories.none">Dim atgofion eto.</string>
@@ -620,7 +622,6 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="fm.create_body2">Mae'r daemon yn ateb ei thudalennau yn union fel rhai eich llechen. Nid oes dim ohoni'n cael ei anfon i'r cwmwl nac yn cyrraedd eich llechen.</string>
   <string name="fm.delete_mirror_q">Dileu'r drych ffug?</string>
   <string name="fm.delete_mirror_body">Mae ei llyfrau nodiadau ar y cyfrifiadur hwn yn unig, a byddant wedi mynd. Ni chyffyrddir â llyfrgell eich llechen.</string>
-  <string name="fm.inbox">Mewnflwch dadelfennu'r drych ffug</string>
   <string name="fm.inbox.help">Y llyfr nodiadau yn y drych ffug y mae Anfon i'r Llechen hefyd yn ychwanegu tudalennau ato. Mae Anfon i'r Llechen yn glanio yn y ddau fewnflwch.</string>
   <string name="fm.faces">Ffontiau</string>
   <string name="fm.faces.help">Y ffontiau y mae testun wedi'i deipio a llyfrau'n cael eu gosod ynddynt yn y Drych ffug.</string>

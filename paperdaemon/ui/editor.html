@@ -291,7 +291,10 @@ span.lname { cursor: default; }
       if (g) g.u0 += Math.hypot(xy[2 * i + 2] - xy[2 * i], xy[2 * i + 3] - xy[2 * i + 1]);
     }
   }
-  function highlighterShape(c, xy, w, rgba, sid) {
+  // a wash's sides lie WASH_EPS of a tablet pixel past its half width, as render.c's (the device paints that far past a
+  // wash's exact footprint, so washes laid edge to edge leave no pinholes); `unit` is the canvas pixels to a tablet pixel
+  const WASH_EPS = 0.35;
+  function highlighterShape(c, xy, w, rgba, sid, unit) {
     const sx = [], sy = [], sw = [];
     for (let i = 0; i < w.length; i++) {
       const m = sx.length;
@@ -303,7 +306,7 @@ span.lname { cursor: default; }
     const dx = [], dy = [], hw = [];
     for (let i = 0; i + 1 < m; i++) {
       const ex = sx[i + 1] - sx[i], ey = sy[i + 1] - sy[i], L = Math.sqrt(ex * ex + ey * ey);
-      dx[i] = ex / L; dy[i] = ey / L; hw[i] = (sw[i] + sw[i + 1]) / 4;
+      dx[i] = ex / L; dy[i] = ey / L; hw[i] = (sw[i] + sw[i + 1]) / 4 + WASH_EPS * (unit || 1);
     }
     for (let i = 0; i + 1 < m; i++) {
       const nx = -dy[i] * hw[i], ny = dx[i] * hw[i];
@@ -435,14 +438,12 @@ span.lname { cursor: default; }
     const F = 12;                                             // floats a segment: ab(4) r+color(4) da db u0 -(4)
     const quad = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, quad);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-    const segVao = gl.createVertexArray(), segBuf = gl.createBuffer(), seedBuf = gl.createBuffer();
+    const segVao = gl.createVertexArray();
     gl.bindVertexArray(segVao);
     gl.bindBuffer(gl.ARRAY_BUFFER, quad); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     for (let i = 1; i <= 4; i++) { gl.enableVertexAttribArray(i); gl.vertexAttribDivisor(i, 1); }
-    const triVao = gl.createVertexArray(), triBuf = gl.createBuffer();
-    gl.bindVertexArray(triVao); gl.bindBuffer(gl.ARRAY_BUFFER, triBuf);
-    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 20, 0);
-    gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 20, 8);
+    const triVao = gl.createVertexArray();                    // each chunk's triangles bound to it as it is drawn
+    gl.bindVertexArray(triVao); gl.enableVertexAttribArray(0); gl.enableVertexAttribArray(1);
     gl.bindVertexArray(null);
     const tex = gl.createTexture(), stencil = gl.createRenderbuffer(), fb = gl.createFramebuffer();
     let texW = 0, texH = 0, readBuf = null;
@@ -467,7 +468,7 @@ span.lname { cursor: default; }
         const dx = new Float64Array(Math.max(0, m - 1)), dy = new Float64Array(Math.max(0, m - 1)), hw = new Float64Array(Math.max(0, m - 1));
         for (let i = 0; i + 1 < m; i++) {
           const ex = sx[i + 1] - sx[i], ey = sy[i + 1] - sy[i], Ln = Math.sqrt(ex * ex + ey * ey);
-          dx[i] = ex / Ln; dy[i] = ey / Ln; hw[i] = (sw[i] + sw[i + 1]) / 4;
+          dx[i] = ex / Ln; dy[i] = ey / Ln; hw[i] = (sw[i] + sw[i + 1]) / 4 + WASH_EPS;   // page units: a tablet pixel each
         }
         for (let i = 0; i + 1 < m; i++) {
           const nx = -dy[i] * hw[i], ny = dx[i] * hw[i];
@@ -499,43 +500,66 @@ span.lname { cursor: default; }
         }
         Object.assign(out, { seg, seeds, grain, alpha: P.kind === RF_SHADER ? P.rgba[3] / 255 : 1 });
       }
+      out.serial = ++serial;
       parts.set(L, out);
       return out;
     }
 
-    // THE PAGE'S SET on the card, and the draws in file order; made again only when the lines drawn change
-    let have = [], plan = [];
-    function sync(lines) {
-      if (lines.length === have.length && lines.every((L, i) => L === have[i] && parts.get(L) && parts.get(L).pts === L.points && parts.get(L).n === L.points.length)) return;
-      const ps = lines.map(partOf);
+    // THE PAGE'S SET ON THE CARD, IN CHUNKS of a few hundred lines, each with its own buffers and its draws in file order.
+    // Where a chunk ends is decided by its last line's part (a random draw on the part's serial), not by its position, so
+    // a line erased, added or changed remakes only the chunk it is in, and the rest of the page stays on the card as it is.
+    let serial = 0, chunks = [], gen = 0;
+    const kept = new Map();                                   // chunk key -> chunk
+    function chunkOf(ps) {
+      const key = ps.map(p => p.serial).join(",");
+      let c = kept.get(key);
+      if (c) return c;
       let nSeg = 0, nTri = 0;
       for (const p of ps) { if (p.tri) nTri += p.tri.length; else nSeg += p.seeds.length; }
-      const seg = new Float32Array(nSeg * F), seeds = new Uint32Array(nSeg), tri = new Float32Array(nTri);
-      let s = 0, t = 0;
-      plan = [];
+      const seg = new Float32Array(nSeg * F), seeds = new Uint32Array(nSeg), tri = new Float32Array(nTri), plan = [];
+      let sN = 0, tN = 0;
       for (const p of ps) {
         if (p.tri) {
-          const first = t / 5; tri.set(p.tri, t); t += p.tri.length;
+          const first = tN / 5; tri.set(p.tri, tN); tN += p.tri.length;
           const last = plan[plan.length - 1];
           if (last && last.type === "hl") last.count += p.tri.length / 5; else plan.push({ type: "hl", first, count: p.tri.length / 5 });
         } else {
-          const first = s; seg.set(p.seg, s * F); seeds.set(p.seeds, s); s += p.seeds.length;
+          const first = sN; seg.set(p.seg, sN * F); seeds.set(p.seeds, sN); sN += p.seeds.length;
           const own = p.kind === RF_SHADER || p.grain, last = plan[plan.length - 1];
           if (!own && last && last.type === "pen") last.count += p.seeds.length;
           else plan.push({ type: own ? "own" : "pen", first, count: p.seeds.length, grain: p.grain, alpha: p.alpha });
         }
       }
-      gl.bindBuffer(gl.ARRAY_BUFFER, segBuf); gl.bufferData(gl.ARRAY_BUFFER, seg, gl.STATIC_DRAW);
-      gl.bindBuffer(gl.ARRAY_BUFFER, seedBuf); gl.bufferData(gl.ARRAY_BUFFER, seeds, gl.STATIC_DRAW);
-      gl.bindBuffer(gl.ARRAY_BUFFER, triBuf); gl.bufferData(gl.ARRAY_BUFFER, tri, gl.STATIC_DRAW);
-      have = lines.slice();
+      c = { key, plan, segBuf: gl.createBuffer(), seedBuf: gl.createBuffer(), triBuf: gl.createBuffer() };
+      gl.bindBuffer(gl.ARRAY_BUFFER, c.segBuf); gl.bufferData(gl.ARRAY_BUFFER, seg, gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER, c.seedBuf); gl.bufferData(gl.ARRAY_BUFFER, seeds, gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER, c.triBuf); gl.bufferData(gl.ARRAY_BUFFER, tri, gl.STATIC_DRAW);
+      kept.set(key, c);
+      return c;
     }
-    function bindSegs(first) {                                // the per-segment attributes, from segment `first` on
-      gl.bindBuffer(gl.ARRAY_BUFFER, segBuf);
+    function sync(lines) {
+      const now = [];
+      let run = [];
+      for (const L of lines) {
+        const p = partOf(L);
+        run.push(p);
+        if (Math.imul(p.serial, 0x9e3779b1) >>> 23 === 0 || run.length >= 1024) { now.push(chunkOf(run)); run = []; }   // about one in 512
+      }
+      if (run.length) now.push(chunkOf(run));
+      gen++;
+      for (const c of now) c.gen = gen;
+      // a chunk not drawn for two draws is off the card (kept that long, the page's survive the selection's picture)
+      for (const [key, c] of kept) if (c.gen < gen - 2) {
+        gl.deleteBuffer(c.segBuf); gl.deleteBuffer(c.seedBuf); gl.deleteBuffer(c.triBuf); kept.delete(key);
+      }
+      chunks = now;
+    }
+    function bindSegs(c, first) {                             // the per-segment attributes of chunk c, from segment `first` on
+      gl.bindBuffer(gl.ARRAY_BUFFER, c.segBuf);
       gl.vertexAttribPointer(1, 4, gl.FLOAT, false, F * 4, first * F * 4);
       gl.vertexAttribPointer(2, 4, gl.FLOAT, false, F * 4, first * F * 4 + 16);
       gl.vertexAttribPointer(3, 4, gl.FLOAT, false, F * 4, first * F * 4 + 32);
-      gl.bindBuffer(gl.ARRAY_BUFFER, seedBuf);
+      gl.bindBuffer(gl.ARRAY_BUFFER, c.seedBuf);
       gl.vertexAttribIPointer(4, 1, gl.UNSIGNED_INT, 0, first * 4);
     }
 
@@ -564,14 +588,16 @@ span.lname { cursor: default; }
       gl.useProgram(segP); gl.uniform2f(uSeg.size, W, H); gl.uniform1f(uSeg.k, k); gl.uniform2f(uSeg.off, ox, oy);
       gl.useProgram(triP); gl.uniform2f(uTri.size, W, H); gl.uniform1f(uTri.k, k); gl.uniform2f(uTri.off, ox, oy);
       let ref = 0;
-      for (const d of plan) {
+      for (const c of chunks) for (const d of c.plan) {
         if (d.type === "hl") {
           gl.useProgram(triP); gl.bindVertexArray(triVao);
+          gl.bindBuffer(gl.ARRAY_BUFFER, c.triBuf);
+          gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 20, 0); gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 20, 8);
           gl.disable(gl.STENCIL_TEST); gl.enable(gl.BLEND); gl.blendEquation(gl.MIN);
           gl.drawArrays(gl.TRIANGLES, d.first, d.count);
           continue;
         }
-        gl.useProgram(segP); gl.bindVertexArray(segVao); bindSegs(d.first);
+        gl.useProgram(segP); gl.bindVertexArray(segVao); bindSegs(c, d.first);
         if (d.type === "pen") {
           gl.disable(gl.STENCIL_TEST); gl.disable(gl.BLEND); gl.uniform1i(uSeg.grain, 0); gl.uniform1f(uSeg.alpha, 1);
         } else {
@@ -612,13 +638,19 @@ span.lname { cursor: default; }
     // text) copied in, the strokes over it, then each ss x ss block averaged down into this canvas, the screen's size,
     // which the editor copies onto its screen. Nothing comes back from the card; readInto() does that, when asked.
     const underTex = gl.createTexture();
+    let underW = 0, underH = 0;
+    /** under: the canvas of what is under the ink, or null when it is as the last one sent (it stays on the card) */
     function page(under, lines, k, ox, oy, sq, ss) {
-      const W = under.width, H = under.height;
+      if (!under && !underW) return false;
+      const W = under ? under.width : underW, H = under ? under.height : underH;
       holds = false;
       if (gl.isContextLost() || !target(W, H)) return false;
       gl.bindTexture(gl.TEXTURE_2D, underTex);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, under);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      if (under) {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, under);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        underW = W; underH = H;
+      }
       gl.bindFramebuffer(gl.FRAMEBUFFER, fb); gl.viewport(0, 0, W, H);
       gl.useProgram(copyP); gl.uniform1i(uCopy.tex, 0); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, underTex);
       gl.disable(gl.BLEND); gl.drawArrays(gl.TRIANGLES, 0, 3);
@@ -860,7 +892,7 @@ span.lname { cursor: default; }
     const P = prepared(L), k = dpr * SS * scale(), xy = new Float64Array(L.points.length * 2);
     L.points.forEach((p, i) => { const [sx, sy] = toScreen(p.x, p.y); xy[2 * i] = sx * dpr * SS; xy[2 * i + 1] = sy * dpr * SS; });
     const w = P.widths.map(v => v * k), s = id || ++sid;
-    if (P.kind === RF_HIGHLIGHTER) highlighterShape(c, xy, w, P.rgba, s);
+    if (P.kind === RF_HIGHLIGHTER) highlighterShape(c, xy, w, P.rgba, s, k);
     else penShape(c, xy, w, P.kind, P.rgba, s, P.dens && { dens: P.dens, seed: P.seed, unit: k, u0: 0 });
   }
   // THE PAGE'S INK, on the graphics card when there is one (GL above), else line by line as drawLine draws it
@@ -910,7 +942,7 @@ span.lname { cursor: default; }
     if (P.dens) for (let i = 1; i < n - 1; i++) u0 += Math.hypot(L.points[i].x - L.points[i - 1].x, L.points[i].y - L.points[i - 1].y) * k;
     const grain = P.dens && { dens: P.dens.slice(n === 1 ? 0 : n - 2), seed: P.seed, unit: k, u0 };
     if (n === 1 && P.kind !== RF_HIGHLIGHTER) penShape(work, xy, w, P.kind, P.rgba, liveSid, grain);
-    else if (P.kind === RF_HIGHLIGHTER) highlighterShape(work, xy, w, P.rgba, liveSid);
+    else if (P.kind === RF_HIGHLIGHTER) highlighterShape(work, xy, w, P.rgba, liveSid, k);
     else penShape(work, xy.slice(xy.length - 4), w.slice(w.length - 2), P.kind, P.rgba, liveSid, grain);
     const x0 = Math.max(0, Math.floor((mnx - pad) / SS)), y0 = Math.max(0, Math.floor((mny - pad) / SS));
     const x1 = Math.min(cv.width, Math.ceil((mxx + pad) / SS)), y1 = Math.min(cv.height, Math.ceil((mxy + pad) / SS));
@@ -920,7 +952,16 @@ span.lname { cursor: default; }
   // the averaging down on the card, the result copied onto the screen's canvas. The editor's own copy of the pixels (base,
   // shown: what a stroke being drawn, a text edit's band, a fill and a capture work on) is made from the card only when
   // one of them needs it (cpuCopy), or when the page is idle.
-  let cpuStale = false, cpuSoon = 0;
+  let cpuStale = false, cpuSoon = 0, underWas = "";
+  const imgIds = new WeakMap(); let imgN = 0;
+  const imgId = im => { if (!im) return 0; if (!imgIds.has(im)) imgIds.set(im, ++imgN); return imgIds.get(im); };
+  const underKey = () => {                                    // what the background is drawn from; "" when it cannot say
+    try {
+      return JSON.stringify([cv.width, cv.height, SS, dpr, vpW, view.zoom, view.cx, view.top, page.paperSize, useTablet,
+        page.textVisible && textShape(page.text), page.templateVisible && imgId(tplImg), imgId(srcImg),
+        page.images.map(im => [im.name, im.quad, imgId(pictures.get(im.name))]), [...hiddenPics].map(im => im.name)]);
+    } catch (e) { return String(Math.random()); }
+  };
   const uc = document.createElement("canvas"), ucg = uc.getContext("2d");      // kept, and drawn over whole each time
   function underCanvas(sq) {                                  // canvasFor's paper and underInk's layers, drawn by the browser
     const W = cv.width * SS, H = cv.height * SS, k = dpr * SS;
@@ -953,7 +994,11 @@ span.lname { cursor: default; }
     const t = performance.now(), sq = squareOf(), s = scale(), u = dpr * SS, lines = [];
     for (const Ly of page.layers) if (Ly.visible) for (const L of Ly.lines) if (!hiddenLines.has(L)) lines.push(L);
     try {
-      if (!GL.page(underCanvas(sq), lines, s * u, (vpW / 2 - view.cx * s) * u, -view.top * s * u, sq, SS)) return false;
+      // what is under the ink, drawn again only when it changed: the view, the text, the template, the pictures
+      const key = underKey();
+      const fresh = key !== underWas;
+      if (!GL.page(fresh ? underCanvas(sq) : null, lines, s * u, (vpW / 2 - view.cx * s) * u, -view.top * s * u, sq, SS)) { underWas = ""; return false; }
+      underWas = key;
     } catch (e) { gpuFailed = true; console.warn("The page editor draws without the graphics card:", e); return false; }
     if (shownCv.width !== cv.width || shownCv.height !== cv.height) { shownCv.width = cv.width; shownCv.height = cv.height; }
     shownCtx.drawImage(GL.canvas, 0, 0); shownDirty = false;
@@ -1012,7 +1057,10 @@ span.lname { cursor: default; }
     for (const e of take) { const i = lines.indexOf(e.line); if (i >= 0) lines.splice(i, 1); }
     for (const e of [...put_].sort((x, y) => x.at - y.at)) lines.splice(Math.min(e.at, lines.length), 0, e.line);
   }
-  function record(a) { done.push(a); undone.length = 0; }
+  // EVERY CHANGE TO THE PAGE COUNTS (an edit, its undo, its redo): a save is due only when the count moved since the
+  // last one, so a redraw, a pan or a zoom never writes -- nor turns a page of tens of thousands of strokes into text
+  let changes = 0, savedAt = 0;
+  function record(a) { done.push(a); undone.length = 0; changes++; }
   // LAYERS: the page's layer nodes, painted bottom to top; the pens and the eraser work on the one in hand
   const snapLayers = () => ({ list: page.layers.map(L => ({ L, visible: L.visible, label: L.label, lines: L.lines.slice() })), active: activeLayer,
                               text: page.textVisible, template: page.templateVisible });
@@ -1030,8 +1078,8 @@ span.lname { cursor: default; }
     page.layers.splice(activeLayer + 1, 0, { nodeId: [2, page.nextId++], label: "Layer " + n, visible: true, lines: [] });
     activeLayer += 1;
   }
-  function undo() { const a = done.pop(); if (a) { apply(a, false); undone.push(a); rebuild(); } }
-  function redo() { const a = undone.pop(); if (a) { apply(a, true); done.push(a); rebuild(); } }
+  function undo() { const a = done.pop(); if (a) { apply(a, false); undone.push(a); changes++; rebuild(); } }
+  function redo() { const a = undone.pop(); if (a) { apply(a, true); done.push(a); changes++; rebuild(); } }
   const clone = o => JSON.parse(JSON.stringify(o));
 
   // ================================================================ pens and the eraser
@@ -1119,8 +1167,11 @@ span.lname { cursor: default; }
   function boxOf(L) {
     let b = boxes.get(L);
     if (!b) {
-      b = [Infinity, Infinity, -Infinity, -Infinity];
-      for (const q of L.points) { if (q.x < b[0]) b[0] = q.x; if (q.y < b[1]) b[1] = q.y; if (q.x > b[2]) b[2] = q.x; if (q.y > b[3]) b[3] = q.y; }
+      b = [Infinity, Infinity, -Infinity, -Infinity, 0];       // and [4], its widest point's width field
+      for (const q of L.points) {
+        if (q.x < b[0]) b[0] = q.x; if (q.y < b[1]) b[1] = q.y; if (q.x > b[2]) b[2] = q.x; if (q.y > b[3]) b[3] = q.y;
+        if (q.width > b[4]) b[4] = q.width;
+      }
       boxes.set(L, b);
     }
     return b;
@@ -1441,7 +1492,7 @@ span.lname { cursor: default; }
   function edit(fn, kind) {                                   // one undoable text edit; typing runs coalesce into one
     const oldLayout = textLayout, before = snap(); fn(); const after = snap();
     const top = done[done.length - 1];
-    if (kind === "type" && top && top === lastType && where_(top.after) === where_(before)) top.after = after;
+    if (kind === "type" && top && top === lastType && where_(top.after) === where_(before)) { top.after = after; changes++; }
     else { const a = { type: "text", before, after }; record(a); lastType = kind === "type" ? a : null; }
     caretOn = true; bandAfterEdit(before.text, oldLayout);
   }
@@ -2221,7 +2272,8 @@ span.lname { cursor: default; }
   function selectStrokes(lines, layerRef) {
     if (floating()) pickLand();                               // the selection before goes back into the page
     if (!lines.length) { pick = null; paint(); return; }
-    pick = { kind: "strokes", layer: layerRef, lines, frame: frameOfPoints(lines.flatMap(L => L.points.map(p => [p.x, p.y]))) };
+    // the frame round the strokes' boxes (each kept with its stroke), not round every point copied out
+    pick = { kind: "strokes", layer: layerRef, lines, frame: frameOfPoints(lines.flatMap(L => { const b = boxOf(L); return [[b[0], b[1]], [b[2], b[3]]]; })) };
     contentLanded(); paint();
   }
   function selectPicture(i) {
@@ -2262,11 +2314,11 @@ span.lname { cursor: default; }
   function spriteOf(lines, frame) {
     const kd = dpr * scale(), k = kd * SS;                    // device pixels, and working pixels, a page unit
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    const P = lines.map(prepared);
-    lines.forEach((L, j) => {
-      const pad = Math.max(...P[j].widths) / 2 + 2;
-      for (const p of L.points) { x0 = Math.min(x0, p.x - pad); y0 = Math.min(y0, p.y - pad); x1 = Math.max(x1, p.x + pad); y1 = Math.max(y1, p.y + pad); }
-    });
+    for (const L of lines) {                                  // each stroke's kept box, with room for the widest a pen draws
+      const b = boxOf(L), pad = Math.max(b[4], L.width) * (WSCALE[L.pen.split("_")[0]] || WSCALE_DEFAULT) * 0.9 + 2;
+      if (b[0] - pad < x0) x0 = b[0] - pad; if (b[1] - pad < y0) y0 = b[1] - pad;
+      if (b[2] + pad > x1) x1 = b[2] + pad; if (b[3] + pad > y1) y1 = b[3] + pad;
+    }
     const ox = Math.floor(x0 * kd) / kd, oy = Math.floor(y0 * kd) / kd;           // the picture's corner, on a device pixel
     const Wd = Math.max(1, Math.ceil((x1 - ox) * kd)), Hd = Math.max(1, Math.ceil((y1 - oy) * kd));
     if (Wd * Hd > 6e7) return null;                           // too big to hold: the drag shows plain lines instead
@@ -2275,10 +2327,10 @@ span.lname { cursor: default; }
     let onCard = false;
     if (GL && !gpuFailed) try { onCard = GL.draw(c, lines, k, -ox * k, -oy * k); } catch (e) { onCard = false; }
     if (!onCard) lines.forEach((L, j) => {
-      const Pj = P[j], xy = new Float64Array(L.points.length * 2);
+      const Pj = prepared(L), xy = new Float64Array(L.points.length * 2);
       L.points.forEach((p, i) => { xy[2 * i] = (p.x - ox) * k; xy[2 * i + 1] = (p.y - oy) * k; });
       const w = Pj.widths.map(v => v * k);
-      if (Pj.kind === RF_HIGHLIGHTER) highlighterShape(c, xy, w, Pj.rgba, j + 1);
+      if (Pj.kind === RF_HIGHLIGHTER) highlighterShape(c, xy, w, Pj.rgba, j + 1, k);
       else penShape(c, xy, w, Pj.kind, Pj.rgba, j + 1, Pj.dens && { dens: Pj.dens, seed: Pj.seed, unit: k, u0: 0 });
     });
     const cv2 = document.createElement("canvas"); cv2.width = Wd; cv2.height = Hd;
@@ -2364,7 +2416,19 @@ span.lname { cursor: default; }
       const loop = pickLoop.pts; pickLoop = null;
       if (loop.length < 3) { paint(); return true; }
       if (pickMode === "capture") { captureLoop(loop); paint(); return true; }
-      const Ly = layer(), within = L => L.points.filter(q => inside(q.x, q.y, loop)).length * 2 >= L.points.length;
+      // a stroke whose box misses the loop's is out at once; the rest are in when half their points are
+      let lx0 = Infinity, ly0 = Infinity, lx1 = -Infinity, ly1 = -Infinity;
+      for (const [x, y] of loop) { if (x < lx0) lx0 = x; if (y < ly0) ly0 = y; if (x > lx1) lx1 = x; if (y > ly1) ly1 = y; }
+      // the loop thinned to 200 corners at most, a stroke judged on 24 of its points at most, spread along it
+      const step = Math.max(1, Math.ceil(loop.length / 200)), ring = loop.filter((_, i) => i % step === 0);
+      const Ly = layer(), within = L => {
+        const b = boxOf(L);
+        if (b[2] < lx0 || b[0] > lx1 || b[3] < ly0 || b[1] > ly1) return false;
+        const P = L.points, m = Math.min(P.length, 24);
+        let n = 0;
+        for (let i = 0; i < m; i++) { const q = P[Math.floor(i * (P.length - 1) / Math.max(1, m - 1))]; if (inside(q.x, q.y, ring)) n++; }
+        return n * 2 >= m;
+      };
       selectStrokes(Ly.lines.filter(within), Ly);
       return true;
     }
@@ -2584,8 +2648,15 @@ span.lname { cursor: default; }
   // WHILE AN IMAGE IS DECOMPOSED its place on the page shows: a dashed frame the image's size, under the pointer, saying so
   let decomposing = null;
   async function pasteDecomposed(img, cx, cy, w, h) {        // Ctrl+Shift+V: the decomposer's strokes, at the image's own size
+    // at most the Decompose screen's 1,600 across its longest side. WHERE IT LANDS, each way on its own: centered on the
+    // pointer; bigger than the view (what is on screen, smaller when zoomed in), centered in the view; fitting but over an
+    // edge, moved in until it is against that edge -- its center as near the pointer as the view allows
+    const longest0 = Math.max(w, h), fit = Math.min(1, 1600 / longest0);
+    w *= fit; h *= fit;
+    const [vx0, vy0] = toPage(0, 0), [vx1, vy1] = toPage(vpW, vpH);
+    const land = (c, size, a, b) => size >= b - a ? (a + b) / 2 : Math.min(Math.max(c, a + size / 2), b - size / 2);
+    cx = land(cx, w, vx0, vx1); cy = land(cy, h, vy0, vy1);
     decomposing = { cx, cy, w, h }; paint();
-    tell("Decomposing…", 600000);
     const png = await toPng(img), data = await new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(png); });
     const longest = Math.max(w, h), width = Math.round(Math.max(200, Math.min(1600, longest)));   // the Decompose screen's range
     let got;
@@ -2603,7 +2674,6 @@ span.lname { cursor: default; }
     const lines = got.lines.map(st => lineIn({ pen: st.pen, penCode: st.penCode, color: st.color, colorRgba: st.colorRgba, thicknessScale: 1,
       // at the pressure the decomposer's own pages carry (draw.write_rm: 190), so its pencils grain as they do on the tablet
       points: st.pts.map(([x, y], i) => [cx + (x - ox) * k, cy + (y - oy) * k, 0, 0, Math.max(1, Math.round((st.widths[i] || st.widths[0] || 8) * k)), 190]) }));
-    tell("");
     pickLand(); addStrokes(lines, true);
   }
   window.addEventListener("keydown", e => {                  // what is selected: Delete or Backspace removes it, Esc lets it go
@@ -2689,15 +2759,24 @@ span.lname { cursor: default; }
     text: textShape(page.text),
     meta: JSON.stringify([page.paperSize, page.textVisible, page.templateVisible, page.template]),
     pics: picturesKey(page.images) });
-  let known = null;                                            // the page's file as this editor last read or wrote it
+  // THE PAGE'S FILE AS THIS EDITOR LAST READ OR WROTE IT, kept as it came and made into keys only when a look finds the
+  // file changed (a page with a decomp is tens of thousands of strokes to key); its version, the engine's ETag, lets a
+  // look that finds nothing new end at once
+  let knownSrc = null, knownKeys = null, version = "";
+  const setKnown = (src, keys) => { knownSrc = src; knownKeys = keys || null; };
+  const knownShape = () => {
+    if (!knownKeys && knownSrc) knownKeys = shapeOf(typeof knownSrc === "string" ? JSON.parse(knownSrc)
+                                                    : knownSrc instanceof ArrayBuffer ? sceneFromBytes(knownSrc) : knownSrc);
+    return knownKeys;
+  };
 
   // THE DAEMON WRITES TO AN OPEN PAGE: a job's ink, its typed text, the request it swept. The editor looks at the file
   // every few seconds and before every save, and takes in what changed there since it last read or wrote it: strokes
   // added or removed on each layer, a new layer, the text (when the user has not changed it here meanwhile), the page's
   // template and visibility. What the user did here is kept. New ink lets the text go (contentLanded).
   function takeIn(sc) {
-    const there = shapeOf(sc), was = known;
-    known = there;
+    const there = shapeOf(sc), was = knownShape();
+    setKnown(sc, there);
     if (!was || JSON.stringify(there) === JSON.stringify(was)) return false;
     let landed = false, changed = false;
     there.layers.forEach((TL, i) => {
@@ -2750,10 +2829,12 @@ span.lname { cursor: default; }
     if (!loaded || saving || live || erasing) return;
     if (!force && performance.now() - lastInput < 1500) return;
     try {
-      const r = await fetch(SCENE, { headers: { Authorization: "Bearer " + token() } });
+      const r = await fetch(SCENE + "?form=bin", { headers: version ? { Authorization: "Bearer " + token(), "If-None-Match": version } : { Authorization: "Bearer " + token() } });
+      if (r.status === 304) return false;                     // the file is as last read or written
       if (r.ok && !live && !erasing) {
-        const took = takeIn(await r.json());
-        if (took && JSON.stringify(shapeOfPage()) !== JSON.stringify(known)) {
+        version = r.headers.get("ETag") || "";
+        const took = takeIn(sceneFromBytes(await r.arrayBuffer()));
+        if (took && JSON.stringify(shapeOfPage()) !== JSON.stringify(knownShape())) {
           clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 700);
         }
         return took;                                          // -> whether the page changed with what the file had
@@ -2762,7 +2843,42 @@ span.lname { cursor: default; }
     return false;
   }
 
-  function toScene() {
+  // THE PAGE IN THE ENGINE'S BINARY FORM (remarkable/fastrm): "PDS1", the length of the JSON that follows, the scene as
+  // JSON with each stroke's points counted ("n"), then every point in order as the .rm file's own 14-byte record (x, y
+  // float32; speed, width uint16; direction, pressure uint8, little-endian). A page with a decomp on it is a quarter of
+  // its size as JSON, and is never turned into text or read back from it.
+  const PDS = [0x50, 0x44, 0x53, 0x31];
+  function sceneFromBytes(buf) {
+    const dv = new DataView(buf), u8 = new Uint8Array(buf);
+    if (PDS.some((b, i) => u8[i] !== b)) throw new Error("not a PaperDaemon page");
+    const n = dv.getUint32(4, true), sc = JSON.parse(new TextDecoder().decode(u8.subarray(8, 8 + n)));
+    let at = 8 + n;
+    for (const L of sc.layers || []) for (const ln of L.lines || []) {
+      const k = ln.n || 0, pts = new Array(k);
+      for (let i = 0; i < k; i++, at += 14)
+        pts[i] = [dv.getFloat32(at, true), dv.getFloat32(at + 4, true), dv.getUint16(at + 8, true), dv.getUint8(at + 12), dv.getUint16(at + 10, true), dv.getUint8(at + 13)];
+      ln.points = pts; delete ln.n;
+    }
+    return sc;
+  }
+  function sceneBytes() {
+    const sc = toScene(true);
+    let total = 0;
+    for (const L of page.layers) for (const ln of L.lines) total += ln.points.length;
+    const head = new TextEncoder().encode(JSON.stringify(sc)), buf = new ArrayBuffer(8 + head.length + total * 14);
+    const dv = new DataView(buf), u8 = new Uint8Array(buf);
+    u8.set(PDS, 0); dv.setUint32(4, head.length, true); u8.set(head, 8);
+    const clip = (v, hi) => Math.max(0, Math.min(hi, Math.round(v || 0)));
+    let at = 8 + head.length;
+    for (const L of page.layers) for (const ln of L.lines) for (const q of ln.points) {
+      dv.setFloat32(at, q.x, true); dv.setFloat32(at + 4, q.y, true);
+      dv.setUint16(at + 8, clip(q.speed, 65535), true); dv.setUint16(at + 10, clip(q.width, 65535), true);
+      dv.setUint8(at + 12, clip(q.direction, 255) % 256); dv.setUint8(at + 13, clip(q.pressure, 255));
+      at += 14;
+    }
+    return buf;
+  }
+  function toScene(counted) {                                 // counted: each stroke's points as their count, n
     const runs = chars => {
       const out = [];
       for (const ch of chars) {
@@ -2775,7 +2891,7 @@ span.lname { cursor: default; }
              images: page.images.map(im => ({ name: im.name, key: im.key, quad: im.quad.map(p => p.slice()) })),
              layers: page.layers.map(L => ({ label: L.label, visible: L.visible, lines: L.lines.map(ln => ({
                pen: ln.pen, penCode: ln.penCode, color: ln.color, colorRgba: ln.colorRgba, thicknessScale: ln.thicknessScale,
-               points: ln.points.map(p => [p.x, p.y, p.speed, p.direction, p.width, p.pressure]) })) })),
+               ...(counted ? { n: ln.points.length } : { points: ln.points.map(p => [p.x, p.y, p.speed, p.direction, p.width, p.pressure]) }) })) })),
              text: page.text.paras.length ? { x: page.text.x, y: page.text.y, width: page.text.width,
                paras: page.text.paras.map(p => ({ style: p.style, list: p.list, runs: runs(p.chars) })) } : null };
   }
@@ -2783,19 +2899,18 @@ span.lname { cursor: default; }
   async function saveNow(leaving) {
     clearTimeout(saveTimer);
     if (!loaded) return;
-    let body = JSON.stringify(toScene());                     // once: a page with a decomp on it is megabytes of it
-    if (body === lastWritten) return;
-    // what the daemon wrote meanwhile is kept, not written over (and only then is the page read again)
-    if (!leaving && await lookAtFile(true)) body = JSON.stringify(toScene());
-    if (body === lastWritten) return;
+    if (changes === savedAt) return;                          // nothing changed since the last save
+    const at = changes;
+    // what the daemon wrote meanwhile is kept, not written over; then the page, once, in the binary form
+    if (!leaving) await lookAtFile(true);
+    const body = sceneBytes();
     lastWritten = body;
-    saved.textContent = "…";
     saving = true;                                            // no look while the file is being written
     try {
-      const r = await fetch(SCENE, { method: "PUT", keepalive: !!leaving, body,
-        headers: { Authorization: "Bearer " + token(), "Content-Type": "application/json" } });
+      const r = await fetch(SCENE, { method: "PUT", keepalive: !!leaving && body.byteLength < 60000, body,
+        headers: { Authorization: "Bearer " + token(), "Content-Type": "application/octet-stream" } });
       saved.textContent = r.ok ? "" : "Not saved: " + r.status;
-      if (r.ok) known = shapeOf(JSON.parse(body)); else lastWritten = null;
+      if (r.ok) { setKnown(body); savedAt = at; try { version = (await r.json()).version || ""; } catch (e) { version = ""; } } else lastWritten = null;
     } catch (e) { saved.textContent = "Not saved"; lastWritten = null; }
     saving = false;
   }
@@ -2915,13 +3030,14 @@ span.lname { cursor: default; }
 
   async function loadPage() {
     try {
-      const r = await fetch(SCENE, { headers: { Authorization: "Bearer " + token() } });
+      const r = await fetch(SCENE + "?form=bin", { headers: { Authorization: "Bearer " + token() } });
       if (!r.ok) throw new Error(r.status + " " + (await r.text()).slice(0, 120));
-      const sc = await r.json();
-      fromScene(sc); known = shapeOf(sc);
+      const sc = sceneFromBytes(await r.arrayBuffer());
+      version = r.headers.get("ETag") || "";
+      fromScene(sc); setKnown(sc);
       loadTemplate(); loadSource();
       loaded = true;
-      lastWritten = JSON.stringify(toScene());
+      savedAt = changes;                                      // as read: nothing to save until something changes
     } catch (e) { note.textContent = "This page could not be read: " + e.message; }
     paintControls(); layout();
   }

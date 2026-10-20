@@ -69,7 +69,7 @@
   <string name="term.empty">Nada ainda.</string>
   <string name="loop.pausing">Pausando…</string>
   <string name="loop.starting">Iniciando…</string>
-  <string name="loop.pause">Pausar o daemon (libera VRAM)</string>
+  <string name="loop.pause">Pausar</string>
   <string name="loop.start">Iniciar</string>
   <string name="overview.label">Daemon</string>
   <string name="overview.needs_you">Algo precisa de você</string>
@@ -270,6 +270,8 @@
   <string name="dc.size_unit">pixels do tablet, de 200 a 1.600</string>
   <string name="dc.types">PNG, JPEG, WebP</string>
   <string name="dc.decomps">Decomposições</string>
+  <string name="dc.range">{from}–{to} de {total}</string>
+  <string name="dc.per_page">Por página</string>
   <string name="lineup.unreadable">Não foi possível ler as escalações.</string>
   <string name="memories.note">O que o modelo desta escalação aprendeu sobre trabalhar para você: reclamações, correções, como você quer que as coisas sejam feitas. O próprio modelo as salva, nunca o que você escreve nem o trabalho de uma página (cada caderno guarda o próprio contexto nas suas Notas), e elas são mostradas a cada trabalho desta escalação. Altere ou exclua qualquer uma aqui.</string>
   <string name="memories.none">Ainda não há memórias.</string>
@@ -620,7 +622,6 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="fm.create_body2">O daemon responde às suas páginas exatamente como às do seu tablet. Nada dele é enviado à nuvem nem chega ao seu tablet.</string>
   <string name="fm.delete_mirror_q">Excluir o espelho falso?</string>
   <string name="fm.delete_mirror_body">Seus cadernos estão apenas neste computador e deixarão de existir. A biblioteca do seu tablet não é tocada.</string>
-  <string name="fm.inbox">Caixa de decomposição do espelho falso</string>
   <string name="fm.inbox.help">O caderno do espelho falso ao qual Enviar ao tablet também adiciona páginas. Enviar ao tablet chega às duas caixas.</string>
   <string name="fm.faces">Fontes</string>
   <string name="fm.faces.help">As fontes do texto digitado e dos livros no espelho falso.</string>

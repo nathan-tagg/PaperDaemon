@@ -69,7 +69,7 @@
   <string name="term.empty">Henüz bir şey yok.</string>
   <string name="loop.pausing">Duraklatılıyor…</string>
   <string name="loop.starting">Başlatılıyor…</string>
-  <string name="loop.pause">Daemon'ı duraklat (VRAM'i boşaltır)</string>
+  <string name="loop.pause">Duraklat</string>
   <string name="loop.start">Başlat</string>
   <string name="overview.label">Daemon</string>
   <string name="overview.needs_you">Bir şey ilginizi bekliyor</string>
@@ -271,6 +271,8 @@
   <string name="dc.size_unit">tablet pikseli, 200 ile 1.600 arası</string>
   <string name="dc.types">PNG, JPEG, WebP</string>
   <string name="dc.decomps">Ayrıştırmalar</string>
+  <string name="dc.range">{total} içinden {from}–{to}</string>
+  <string name="dc.per_page">Sayfa başına</string>
   <string name="lineup.unreadable">Dizilimler okunamadı.</string>
   <string name="memories.note">Bu dizilimin modelinin sizin için çalışmak hakkında öğrendikleri: şikâyetler, düzeltmeler, işlerin nasıl yapılmasını istediğiniz. Model bunları kendisi kaydeder; yazdıklarınızı ya da bir sayfadaki işi asla kaydetmez (her defter kendi bağlamını kendi Notlarında tutar) ve bu dizilimin her işine bunlar gösterilir. Burada istediğinizi değiştirin ya da silin.</string>
   <string name="memories.none">Henüz anı yok.</string>
@@ -620,7 +622,6 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="fm.create_body2">Daemon sayfalarını tabletinizinkileri tam olarak yanıtladığı gibi yanıtlar. İçindeki hiçbir şey buluta gönderilmez ya da tabletinize ulaşmaz.</string>
   <string name="fm.delete_mirror_q">Sahte Ayna silinsin mi?</string>
   <string name="fm.delete_mirror_body">Defterleri yalnızca bu bilgisayarda ve silinecekler. Tabletinizin kitaplığına dokunulmaz.</string>
-  <string name="fm.inbox">Sahte Aynanın ayrıştırma gelen kutusu</string>
   <string name="fm.inbox.help">Tablete Gönder'in de sayfa eklediği Sahte Aynadaki defter. Tablete Gönder iki gelen kutusuna da düşer.</string>
   <string name="fm.faces">Yazı tipleri</string>
   <string name="fm.faces.help">Sahte Ayna'da yazılan metnin ve kitapların dizildiği yazı tipleri.</string>

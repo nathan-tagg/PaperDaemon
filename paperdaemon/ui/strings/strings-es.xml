@@ -69,7 +69,7 @@
   <string name="term.empty">Nada todavía.</string>
   <string name="loop.pausing">Pausando…</string>
   <string name="loop.starting">Iniciando…</string>
-  <string name="loop.pause">Pausar el daemon (libera VRAM)</string>
+  <string name="loop.pause">Pausar</string>
   <string name="loop.start">Iniciar</string>
   <string name="overview.label">Daemon</string>
   <string name="overview.needs_you">Algo necesita tu atención</string>
@@ -270,6 +270,8 @@
   <string name="dc.size_unit">píxeles de la tableta, de 200 a 1600</string>
   <string name="dc.types">PNG, JPEG, WebP</string>
   <string name="dc.decomps">Descomposiciones</string>
+  <string name="dc.range">{from}–{to} de {total}</string>
+  <string name="dc.per_page">Por página</string>
   <string name="lineup.unreadable">No se pudieron leer las alineaciones.</string>
   <string name="memories.note">Lo que el modelo de esta alineación ha aprendido sobre cómo trabajar para ti: quejas, correcciones, cómo quieres que se hagan las cosas. El modelo las guarda por sí mismo, nunca lo que escribes ni el trabajo de una página (cada cuaderno guarda su propio contexto en sus Notas), y se le muestran a cada trabajo de esta alineación. Cambia o elimina cualquiera aquí.</string>
   <string name="memories.none">Todavía no hay recuerdos.</string>
@@ -620,7 +622,6 @@ Luego guíame para instalar SearXNG si hace falta, escribe el archivo .bat con u
   <string name="fm.create_body2">El daemon responde a sus páginas exactamente como a las de tu tableta. Nada de ella se envía a la nube ni llega a tu tableta.</string>
   <string name="fm.delete_mirror_q">¿Eliminar el espejo falso?</string>
   <string name="fm.delete_mirror_body">Sus cuadernos están solo en este ordenador y desaparecerán. La biblioteca de tu tableta no se toca.</string>
-  <string name="fm.inbox">Bandeja de descomposición del espejo falso</string>
   <string name="fm.inbox.help">El cuaderno del espejo falso al que Enviar a la tableta también añade páginas. Enviar a la tableta llega a ambas bandejas.</string>
   <string name="fm.faces">Tipografías</string>
   <string name="fm.faces.help">Las tipografías del texto escrito y de los libros en el falso espejo.</string>

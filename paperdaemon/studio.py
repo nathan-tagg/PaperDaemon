@@ -2,18 +2,20 @@
 appended to the inbox notebook on the tablet.
 
 The decomposer is the pipeline's (rm_model.decompose_into, region budget 10,000 strokes). The picture is
-fitted into a square box at the top of a page, centered; the preview is the strokes rendered at half
-the page's size and cropped to the ink, exactly what the tablet will show. Nothing the user drops in is
-kept: the picture and the preview live in temporary files deleted at once, and the last result is kept
-in memory only, so a send right after a decompose does not decompose again.
+fitted into a square box at the top of a page, centered; the preview is the strokes rendered at the tablet's
+own scale and cropped to the ink, exactly what the tablet will show. The picture the user drops in is not
+kept (it lives in a temporary file deleted at once).
+
+THE DECOMPS ARE KEPT ON DISK, not in memory: each one the Decompose screen makes is a folder of its own under
+<data>/decomps/<id> -- its strokes (strokes.npz: the points, widths, pens and colors as arrays), its preview
+(preview.png, at the tablet's own scale) and what it is (meta.json) -- and Send, Save and the screen's list read
+them from there. They stay until deleted. Both engines (the Mirror's and the false mirror's) share the folder.
 
 The inbox is the notebook named in the settings (tablet.inbox, a path such as "Folder/Inbox"). It is
 created on the first send, carrying the ignore tag so the daemon never treats the pictures as requests.
 """
 import base64
 import urllib.request
-import collections
-import hashlib
 import io
 import json
 import os
@@ -34,8 +36,6 @@ BUDGET = 10000                   # the decomposer's region budget, in strokes
 PREVIEW_SCALE = 1.0                # one preview pixel per tablet pixel: at half scale a 1,200-wide drawing showed as a 600-wide picture, enlarged
 
 _lock = threading.Lock()         # one decompose or send at a time
-_results = collections.OrderedDict()     # the latest decompositions by picture and size, so each one sends as made
-KEEP = 16
 FETCH_MAX = 40 * 1024 * 1024             # the largest picture fetched from a link
 # the decompose running now, for the screen's progress ring: its job id (the screen's own), and the stage it is in
 _now = {"job": None, "stage": "", "share": 0.0}
@@ -80,6 +80,11 @@ def box_for(width):
 
 def _preview(strokes, progress=None):
     """The strokes as a PNG data URL at the tablet's own scale, cropped to the ink."""
+    return "data:image/png;base64," + base64.b64encode(_preview_png(strokes, progress)).decode("ascii")
+
+
+def _preview_png(strokes, progress=None):
+    """The strokes as PNG bytes at the tablet's own scale, cropped to the ink."""
     from paperdaemon.pipeline.draw import preview
     from PIL import Image, ImageOps
     k = PREVIEW_SCALE
@@ -95,7 +100,7 @@ def _preview(strokes, progress=None):
             im = im.crop(ink)
         buf = io.BytesIO()
         im.save(buf, "PNG")
-        return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
+        return buf.getvalue()
     finally:
         for p in (png, png + ".ss.png"):
             try:
@@ -104,56 +109,145 @@ def _preview(strokes, progress=None):
                 pass
 
 
-def decompose(image, width=None, preview=True, job=None):
-    """A picture (data URL or base64) -> {preview, strokes, points, seconds, box, width, height}. The strokes themselves
-    stay in memory for send()."""
+def decompose(image, width=None, preview=True, job=None, keep=None):
+    """A picture (data URL or base64) -> ({preview, strokes, points, seconds, box, width, height}, the strokes). With
+    `keep` (the picture's name), the decomp is kept on disk (see the module's note) and the answer carries its id, and
+    its preview is the kept file's, not a data URL."""
     raw = _bytes(image)
     box = box_for(width)
-    key = hashlib.sha256(raw + str(box).encode()).hexdigest()
     with _lock:
         _now.update(job=job, stage="decompose", share=0.0)
         try:
-            return _decompose_locked(raw, box, key, preview)
+            out, strokes = _decompose_locked(raw, box, preview and keep is None)
+            if keep is not None:
+                _now["stage"] = "preview"
+                png = _preview_png(strokes, lambda f: _now.update(share=f))
+                out.update(_keep(strokes, png, dict(out, name=str(keep or "Picture")[:200], requested=int(width or box))))
+            return out, strokes
         finally:
             _now.update(job=None, stage="", share=0.0)
 
 
-def _decompose_locked(raw, box, key, preview):
-    if key in _results:
-        res = _results[key]
-        _results.move_to_end(key)
-    else:
-        _decomposer_cache()
-        import paperdaemon.pipeline  # noqa: F401  (the decomposer's reference imports its neighbors by name)
-        from paperdaemon.pipeline import decompose as M
-        from PIL import Image
-        F = M.fast()
-        if F:
-            F.lib().rf_progress_reset()              # the last picture's 100% is not this one's
-        fd, src = tempfile.mkstemp(suffix=".png", dir=paths.sub("tmp"))
-        os.close(fd)
+def _decompose_locked(raw, box, preview):
+    _decomposer_cache()
+    import paperdaemon.pipeline  # noqa: F401  (the decomposer's reference imports its neighbors by name)
+    from paperdaemon.pipeline import decompose as M
+    from PIL import Image
+    F = M.fast()
+    if F:
+        F.lib().rf_progress_reset()              # the last picture's 100% is not this one's
+    fd, src = tempfile.mkstemp(suffix=".png", dir=paths.sub("tmp"))
+    os.close(fd)
+    try:
+        with Image.open(io.BytesIO(raw)) as im:
+            im.convert("RGB").save(src)
+        strokes, _params, secs = M.decompose_into(src, box, box, origin=(-box / 2.0, TOP), budget=BUDGET)
+    finally:
         try:
-            with Image.open(io.BytesIO(raw)) as im:
-                im.convert("RGB").save(src)
-            strokes, _params, secs = M.decompose_into(src, box, box, origin=(-box / 2.0, TOP), budget=BUDGET)
-        finally:
-            try:
-                os.remove(src)
-            except OSError:
-                pass
-        res = {"strokes_list": strokes, "seconds": secs, "box": box}
-        _results[key] = res
-        while len(_results) > KEEP:
-            _results.popitem(last=False)
-    xs = [x for st in res["strokes_list"] for x, _y in st[0]]
-    ys = [y for st in res["strokes_list"] for _x, y in st[0]]
-    out = {"strokes": len(res["strokes_list"]), "points": len(xs), "seconds": res["seconds"], "box": res["box"],
+            os.remove(src)
+        except OSError:
+            pass
+    xs = [x for st in strokes for x, _y in st[0]]
+    ys = [y for st in strokes for _x, y in st[0]]
+    out = {"strokes": len(strokes), "points": len(xs), "seconds": secs, "box": box,
            # the drawing's own size on the page, in tablet pixels
            "width": round(max(xs) - min(xs)) if xs else 0, "height": round(max(ys) - min(ys)) if ys else 0}
     if preview:
         _now["stage"] = "preview"
-        out["preview"] = _preview(res["strokes_list"], lambda f: _now.update(share=f))
-    return out, res["strokes_list"]
+        out["preview"] = _preview(strokes, lambda f: _now.update(share=f))
+    return out, strokes
+
+
+# ---------------------------------------------------------------- the decomps, kept on disk
+
+def _decomps():
+    return paths.sub("decomps")
+
+
+def _decomp_dir(did):
+    if not (isinstance(did, str) and len(did) == 32 and all(c in "0123456789abcdef" for c in did)):
+        raise ValueError("not a decomp id")
+    p = os.path.join(_decomps(), did)
+    if not os.path.isdir(p):
+        raise FileNotFoundError("no such decomp")
+    return p
+
+
+def _keep(strokes, png, meta):
+    """A decomp into its own folder -> {id}: the strokes as arrays (each stroke's points and widths run together, its
+    point count, pen, color and RGBA beside them), the preview, and what it is."""
+    import numpy as np
+    did = uuid.uuid4().hex
+    tmp = os.path.join(_decomps(), "." + did)
+    os.makedirs(tmp)
+    counts = np.array([len(st[0]) for st in strokes], np.int32)
+    xy = np.array([p for st in strokes for p in st[0]], np.float32).reshape(-1, 2)
+    w = np.array([v for st in strokes for v in (st[1] if len(st[1]) == len(st[0]) else [st[1][0]] * len(st[0]))], np.float32)
+    pens = np.array([int(st[2]) for st in strokes], np.int16)
+    colors = np.array([int(st[3]) for st in strokes], np.int16)
+    rgba = np.array([(list(st[4]) + [255])[:4] if len(st) > 4 and st[4] else [-1, -1, -1, -1] for st in strokes], np.int16).reshape(-1, 4)
+    np.savez(os.path.join(tmp, "strokes.npz"), counts=counts, xy=xy, w=w, pens=pens, colors=colors, rgba=rgba)
+    with open(os.path.join(tmp, "preview.png"), "wb") as f:
+        f.write(png)
+    meta = {k: meta[k] for k in ("name", "strokes", "points", "seconds", "box", "width", "height", "requested") if k in meta}
+    meta.update(id=did, created=int(time.time() * 1000), sent=None)
+    with open(os.path.join(tmp, "meta.json"), "w", encoding="utf-8") as f:
+        json.dump(meta, f)
+    os.replace(tmp, os.path.join(_decomps(), did))
+    return {"id": did}
+
+
+def decomp_strokes(did):
+    """A kept decomp's strokes, as the decomposer made them: [(points, widths, pen, color, rgba or None)]."""
+    import numpy as np
+    from rmscene.scene_items import Pen, PenColor
+    with np.load(os.path.join(_decomp_dir(did), "strokes.npz")) as z:
+        counts, xy, w, pens, colors, rgba = z["counts"], z["xy"], z["w"], z["pens"], z["colors"], z["rgba"]
+    out, at = [], 0
+    for i, n in enumerate(counts.tolist()):
+        pts = [(float(x), float(y)) for x, y in xy[at:at + n].tolist()]
+        out.append((pts, w[at:at + n].tolist(), Pen(int(pens[i])), PenColor(int(colors[i])),
+                    tuple(int(v) for v in rgba[i]) if rgba[i][0] >= 0 else None))
+        at += n
+    return out
+
+
+def decomp_meta(did):
+    with open(os.path.join(_decomp_dir(did), "meta.json"), encoding="utf-8") as f:
+        return json.load(f)
+
+
+def decomp_preview(did):
+    return os.path.join(_decomp_dir(did), "preview.png")
+
+
+def decomps_page(offset=0, limit=10):
+    """The kept decomps, newest first -> {total, items: [meta]} from `offset`, `limit` of them."""
+    metas = []
+    for n in os.listdir(_decomps()):
+        if n.startswith("."):
+            continue
+        try:
+            with open(os.path.join(_decomps(), n, "meta.json"), encoding="utf-8") as f:
+                metas.append(json.load(f))
+        except (OSError, ValueError):
+            continue
+    metas.sort(key=lambda m: m.get("created") or 0, reverse=True)
+    offset, limit = max(0, int(offset)), max(1, min(500, int(limit)))
+    return {"total": len(metas), "items": metas[offset:offset + limit]}
+
+
+def decomp_sent(did, page):
+    """The page a kept decomp landed on, kept with it."""
+    m = decomp_meta(did)
+    m["sent"] = page
+    with open(os.path.join(_decomp_dir(did), "meta.json"), "w", encoding="utf-8") as f:
+        json.dump(m, f)
+
+
+def delete_decomp(did):
+    import shutil
+    shutil.rmtree(_decomp_dir(did))
 
 
 # ---------------------------------------------------------------- the inbox
@@ -362,12 +456,13 @@ def _settings():
     return s
 
 
-def send(image, width=None, s=None):
-    """Append a page with the picture's strokes to the inbox notebook and push it. -> {sent, doc, page}."""
+def send(image=None, width=None, s=None, decomp=None):
+    """Append a page with the strokes of a kept decomp (`decomp`, its id) or of a picture decomposed now to the inbox
+    notebook and push it. -> {sent, doc, page}."""
     s = s or _settings()
     if not str((s.get("tablet") or {}).get("inbox") or "").strip():
         raise ValueError("set an inbox in the Settings tab first")
-    _res, strokes = decompose(image, width, preview=False)
+    strokes = decomp_strokes(decomp) if decomp else decompose(image, width, preview=False)[1]
     from paperdaemon.pipeline import draw as A
     from paperdaemon.remarkable import sync as C
     from paperdaemon.pipeline import page as PG

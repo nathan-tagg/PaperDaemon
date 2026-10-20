@@ -69,7 +69,7 @@
   <string name="term.empty">Ingenting ennå.</string>
   <string name="loop.pausing">Setter på pause…</string>
   <string name="loop.starting">Starter…</string>
-  <string name="loop.pause">Sett daemonen på pause (frigjør VRAM)</string>
+  <string name="loop.pause">Pause</string>
   <string name="loop.start">Start</string>
   <string name="overview.label">Daemon</string>
   <string name="overview.needs_you">Noe trenger deg</string>
@@ -271,6 +271,8 @@
   <string name="dc.size_unit">nettbrettpiksler, 200 til 1 600</string>
   <string name="dc.types">PNG, JPEG, WebP</string>
   <string name="dc.decomps">Dekomponeringer</string>
+  <string name="dc.range">{from}–{to} av {total}</string>
+  <string name="dc.per_page">Per side</string>
   <string name="lineup.unreadable">Kunne ikke lese oppsettene.</string>
   <string name="memories.note">Det modellen i dette oppsettet har lært om å jobbe for deg: klager, rettelser, hvordan du vil ha ting gjort. Modellen lagrer dem selv, aldri det du skriver eller arbeidet på en side (hver notatbok har sin egen kontekst i sine Notater), og hver jobb i dette oppsettet får se dem. Endre eller slett hvilken som helst av dem her.</string>
   <string name="memories.none">Ingen minner ennå.</string>
@@ -620,7 +622,6 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="fm.create_body2">Daemonen svarer på sidene nøyaktig som på nettbrettets. Ingenting sendes til skyen eller når nettbrettet ditt.</string>
   <string name="fm.delete_mirror_q">Slette det falske speilet?</string>
   <string name="fm.delete_mirror_body">Notatbøkene finnes bare på denne datamaskinen og vil være borte. Nettbrettets bibliotek blir ikke rørt.</string>
-  <string name="fm.inbox">Dekomponeringsinnboks for det falske speilet</string>
   <string name="fm.inbox.help">Notatboken i det falske speilet som Send til nettbrett også legger sider i. Send til nettbrett havner i begge innboksene.</string>
   <string name="fm.faces">Skrifter</string>
   <string name="fm.faces.help">Skriftene skrevet tekst og bøker settes med i det falske speilet.</string>

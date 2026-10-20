@@ -69,7 +69,7 @@
   <string name="term.empty">لا شيء بعد.</string>
   <string name="loop.pausing">جارٍ الإيقاف المؤقت…</string>
   <string name="loop.starting">جارٍ البدء…</string>
-  <string name="loop.pause">إيقاف البرنامج الخفي مؤقتًا (يحرّر ذاكرة الرسومات)</string>
+  <string name="loop.pause">إيقاف مؤقت</string>
   <string name="loop.start">ابدأ</string>
   <string name="overview.label">البرنامج الخفي</string>
   <string name="overview.needs_you">هناك ما يحتاج إليك</string>
@@ -271,6 +271,8 @@
   <string name="dc.size_unit">بكسلات الجهاز اللوحي، من 200 إلى 1,600</string>
   <string name="dc.types">PNG، JPEG، WebP</string>
   <string name="dc.decomps">الصور المفككة</string>
+  <string name="dc.range">{from}–{to} من {total}</string>
+  <string name="dc.per_page">لكل صفحة</string>
   <string name="lineup.unreadable">تعذّرت قراءة التشكيلات.</string>
   <string name="memories.note">ما تعلّمه نموذج هذه التشكيلة عن العمل لأجلك: الشكاوى، والتصحيحات، والطريقة التي تريد أن تُنجز بها الأمور. يحفظها النموذج بنفسه، ولا يحفظ أبدًا ما تكتبه أو العمل على صفحة (يحتفظ كل دفتر بسياقه في ملاحظاته)، وتُعرض على كل مهمة في هذه التشكيلة. غيّر أيًّا منها أو احذفه هنا.</string>
   <string name="memories.none">لا ذكريات بعد.</string>
@@ -641,7 +643,6 @@
   <string name="fm.create_body2">يجيب البرنامج الخفي على صفحاتها تمامًا كما يجيب على صفحات جهازك اللوحي. لا يُرسل شيء منها إلى السحابة ولا يصل إلى جهازك اللوحي.</string>
   <string name="fm.delete_mirror_q">حذف المرآة الزائفة؟</string>
   <string name="fm.delete_mirror_body">دفاترها على هذا الحاسوب فقط، وستختفي. لا تُمسّ مكتبة جهازك اللوحي.</string>
-  <string name="fm.inbox">صندوق التفكيك للمرآة الزائفة</string>
   <string name="fm.inbox.help">الدفتر في المرآة الزائفة الذي يضيف إليه «إرسال إلى الجهاز اللوحي» صفحات أيضًا. يصل «إرسال إلى الجهاز اللوحي» إلى الصندوقين كليهما.</string>
   <string name="fm.faces">الخطوط</string>
   <string name="fm.faces.help">الخطوط التي يُكتب بها النص المطبوع والكتب في المرآة الزائفة.</string>

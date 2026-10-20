@@ -260,7 +260,7 @@ def test_send_to_tablet_takes_whichever_inbox_can_and_says_the_mirrors_page(monk
     settings.save(s)
     monkeypatch.setattr(paths, "false_mirror_exists", lambda: True)
     monkeypatch.setattr(server, "_fm_call", lambda m, p, b=None: (200, {"sent": True, "doc": "f", "page": 9}))
-    monkeypatch.setattr(studio, "send", lambda image, width=None, s=None: {"sent": True, "doc": "m", "page": 4})
+    monkeypatch.setattr(studio, "send", lambda image=None, width=None, s=None, decomp=None: {"sent": True, "doc": "m", "page": 4})
     body = {"image": "data:image/png;base64,", "width": 400}
     # no account: the Mirror is skipped, the False Mirror takes it
     monkeypatch.setattr(server, "_signed_in", lambda: False)
@@ -289,3 +289,31 @@ def test_a_decomp_saves_to_downloads_under_its_own_name(tmp_path, monkeypatch):
     assert a["name"] == "wave decomp.png" and b["name"] == "wave decomp (2).png"
     assert open(os.path.join(tmp_path, "Downloads", a["name"]), "rb").read() == buf.getvalue()
     assert client().post("/api/v1/decompose/save", json={"image": "data:text/plain;base64,aGk=", "name": "x"}).status_code == 400
+
+
+def test_decomps_are_kept_on_disk_listed_a_page_at_a_time_and_deleted(tmp_path, monkeypatch):
+    import base64, io
+    from PIL import Image, ImageDraw
+    from paperdaemon import studio
+    monkeypatch.setenv("USERPROFILE", str(tmp_path)); monkeypatch.setenv("HOME", str(tmp_path))
+    c = client()
+    for d in os.listdir(studio._decomps()):                  # this data folder's earlier tests' decomps
+        studio.delete_decomp(d)
+    ids = []
+    for i in range(3):
+        im = Image.new("RGB", (120, 90), "white"); ImageDraw.Draw(im).ellipse((10 + 10 * i, 10, 100, 80), fill=(20, 20, 20))
+        buf = io.BytesIO(); im.save(buf, "PNG")
+        got = c.post("/api/v1/decompose", json={"image": "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode(),
+                                                "width": 300, "keep": True, "name": "pic%d.png" % i}).json()
+        assert got["id"] and "preview" not in got             # the preview is the kept file's, not sent back
+        ids.append(got["id"])
+    page = c.get("/api/v1/decomps?offset=0&limit=2").json()
+    assert page["total"] == 3 and [m["id"] for m in page["items"]] == ids[::-1][:2]   # newest first
+    assert c.get("/api/v1/decomps?offset=2&limit=2").json()["items"][0]["id"] == ids[0]
+    assert c.get("/api/v1/decomps/%s/preview.png" % ids[0]).content.startswith(b"\x89PNG")
+    strokes = studio.decomp_strokes(ids[0])
+    assert strokes and len(strokes[0][0]) == len(strokes[0][1]) and strokes[0][2].name.endswith(("_2", "SHADER"))
+    assert c.post("/api/v1/decompose/save", json={"id": ids[0]}).json()["name"] == "pic0 decomp.png"
+    assert c.delete("/api/v1/decomps/" + ids[1]).json() == {"deleted": ids[1]}
+    assert c.get("/api/v1/decomps").json()["total"] == 2
+    assert c.get("/api/v1/decomps/../etc/preview.png").status_code in (400, 404)

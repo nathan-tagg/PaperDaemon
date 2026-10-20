@@ -69,7 +69,7 @@
   <string name="term.empty">暂时没有内容。</string>
   <string name="loop.pausing">正在暂停…</string>
   <string name="loop.starting">正在启动…</string>
-  <string name="loop.pause">暂停守护进程（释放显存）</string>
+  <string name="loop.pause">暂停</string>
   <string name="loop.start">启动</string>
   <string name="overview.label">守护进程</string>
   <string name="overview.needs_you">有事项需要您处理</string>
@@ -271,6 +271,8 @@
   <string name="dc.size_unit">平板像素，200 到 1,600</string>
   <string name="dc.types">PNG、JPEG、WebP</string>
   <string name="dc.decomps">分解结果</string>
+  <string name="dc.range">第 {from}–{to} 个，共 {total} 个</string>
+  <string name="dc.per_page">每页</string>
   <string name="lineup.unreadable">无法读取阵容。</string>
   <string name="memories.note">这个阵容的模型在为您工作中学到的东西：抱怨、纠正、您希望事情如何完成。模型自己保存这些内容，绝不包括您写下的内容或页面上的工作（每个笔记本在自己的备忘中保留各自的上下文），这个阵容的每个任务都会看到它们。您可以在这里修改或删除任何一条。</string>
   <string name="memories.none">还没有记忆。</string>
@@ -620,7 +622,6 @@
   <string name="fm.create_body2">守护进程回应它的页面，与回应你平板上的页面完全相同。其中任何内容都不会发送到云端，也不会到达你的平板。</string>
   <string name="fm.delete_mirror_q">删除伪镜像？</string>
   <string name="fm.delete_mirror_body">它的笔记本只在这台电脑上，删除后将不复存在。你平板的资料库不受影响。</string>
-  <string name="fm.inbox">伪镜像的分解收件箱</string>
   <string name="fm.inbox.help">伪镜像中“发送到平板”也会添加页面的笔记本。“发送到平板”会同时送达两个收件箱。</string>
   <string name="fm.faces">字体</string>
   <string name="fm.faces.help">伪镜像中输入文字和书籍所用的字体。</string>

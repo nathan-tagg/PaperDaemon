@@ -146,7 +146,7 @@ def test_the_false_mirror_through_the_engine():
         scene = c.get("/api/v1/fm/library/" + doc + "/page/1/scene").json()
         scene["layers"][0]["lines"] = [{"penCode": 15, "color": 0, "thicknessScale": 2,
                                         "points": [[-100, 500, 0, 0, 16, 128], [100, 520, 0, 0, 16, 128]]}]
-        assert c.put("/api/v1/fm/library/" + doc + "/page/1/scene", json=scene).json() == {"strokes": 1}
+        assert c.put("/api/v1/fm/library/" + doc + "/page/1/scene", json=scene).json()["strokes"] == 1     # and its version
         png = c.get("/api/v1/fm/library/" + doc + "/page/1.png")
         assert png.status_code == 200 and len(png.content) > 100
         assert c.put("/api/v1/fm/library/" + folder + "/tags", json={"tags": ["ask"]}).status_code == 200
@@ -283,3 +283,50 @@ def test_decompose_and_send_lands_in_the_false_mirrors_inbox_without_an_account(
         print(json.dumps([first["sent"], first["page"], second["page"], first["doc"] == second["doc"]]))
     """)
     assert got == [True, 1, 2, True]
+
+
+def test_a_page_unchanged_is_not_read_again():
+    # the editor asks with the version it has: the same page answers 304 and is not read; a write gives the new one
+    got = _run("""
+        import json
+        from fastapi.testclient import TestClient
+        from paperdaemon import server
+        from paperdaemon.remarkable import local
+        doc = local.new_notebook("Notes")
+        c = TestClient(server.app); c.headers["Authorization"] = "Bearer " + server.pairing_token()
+        url = "/api/v1/library/%s/page/1/scene" % doc
+        a = c.get(url); v = a.headers.get("etag")
+        same = c.get(url, headers={"If-None-Match": v})
+        scene = a.json()
+        scene["layers"][0]["lines"] = [{"penCode": 17, "color": 0, "colorRgba": None, "thicknessScale": 2,
+                                        "points": [[0, 400, 0, 0, 16, 190], [100, 420, 0, 0, 16, 190]]}]
+        w = c.put(url, json=scene).json()
+        after = c.get(url, headers={"If-None-Match": v})
+        print(json.dumps([a.status_code, bool(v), same.status_code, w["version"] != v, after.status_code, after.headers.get("etag") == w["version"]]))
+    """)
+    assert got == [200, True, 304, True, 200, True]
+
+
+def test_a_page_goes_both_ways_in_the_binary_form_as_rmscene_reads_it():
+    # the editor's binary form in and out, and the file it writes read by rmscene itself: the same strokes
+    got = _run("""
+        import io, json
+        import numpy as np
+        from rmscene import read_blocks
+        from rmscene import scene_stream as ss
+        from paperdaemon.remarkable import local, fastrm
+        doc = local.new_notebook("Notes")
+        sc = local.scene_of(doc, 1)
+        rows = [[float(i), 400.5 + i, 3, 7, 24 + i % 3, 190] for i in range(50)]
+        sc["layers"][0]["lines"] = [{"penCode": 17, "color": 0, "colorRgba": None, "thicknessScale": 2, "points": rows},
+                                    {"penCode": 18, "color": 3, "colorRgba": [255, 195, 140, 255], "thicknessScale": 1, "points": rows[:5]}]
+        local.write_scene(doc, 1, fastrm.scene_from_bytes(fastrm.scene_bytes(local.scene_of(doc, 1, arrays=True) | {"layers": sc["layers"]})))
+        back = fastrm.scene_from_bytes(fastrm.scene_bytes(local.scene_of(doc, 1, arrays=True)))
+        lines = back["layers"][0]["lines"]
+        ref = [b.item.value for b in read_blocks(io.BytesIO(open(local._rm(doc, 1), "rb").read())) if isinstance(b, ss.SceneLineItemBlock)]
+        same = all([[p.x, p.y, p.speed, p.direction, p.width, p.pressure] for p in r.points] ==
+                   [[float(q["x"]), float(q["y"]), int(q["speed"]), int(q["direction"]), int(q["width"]), int(q["pressure"])] for q in ln["points"]]
+                   for r, ln in zip(ref, lines))
+        print(json.dumps([len(lines), len(lines[0]["points"]), lines[1]["colorRgba"], same]))
+    """)
+    assert got == [2, 50, [255, 195, 140, 255], True]

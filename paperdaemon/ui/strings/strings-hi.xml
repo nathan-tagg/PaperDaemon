@@ -69,7 +69,7 @@
   <string name="term.empty">अभी कुछ नहीं।</string>
   <string name="loop.pausing">रोका जा रहा है…</string>
   <string name="loop.starting">शुरू हो रहा है…</string>
-  <string name="loop.pause">डेमन रोकें (VRAM खाली करता है)</string>
+  <string name="loop.pause">रोकें</string>
   <string name="loop.start">शुरू करें</string>
   <string name="overview.label">डेमन</string>
   <string name="overview.needs_you">किसी चीज़ पर आपका ध्यान चाहिए</string>
@@ -271,6 +271,8 @@
   <string name="dc.size_unit">टैबलेट पिक्सेल, 200 से 1,600</string>
   <string name="dc.types">PNG, JPEG, WebP</string>
   <string name="dc.decomps">डीकंपोज़ किए चित्र</string>
+  <string name="dc.range">{total} में से {from}–{to}</string>
+  <string name="dc.per_page">प्रति पेज</string>
   <string name="lineup.unreadable">लाइनअप पढ़े नहीं जा सके।</string>
   <string name="memories.note">इस लाइनअप के मॉडल ने आपके लिए काम करने के बारे में जो सीखा है: शिकायतें, सुधार, आप चीज़ें कैसे करवाना चाहते हैं। मॉडल इन्हें खुद सहेजता है, आप जो लिखते हैं या किसी पेज का काम कभी नहीं (हर नोटबुक अपना संदर्भ अपने नोट्स में रखती है), और इस लाइनअप के हर काम को ये दिखाई जाती हैं। इनमें से किसी को भी यहाँ बदलें या हटाएँ।</string>
   <string name="memories.none">अभी कोई याद नहीं।</string>
@@ -620,7 +622,6 @@
   <string name="fm.create_body2">डेमन इसके पन्नों का जवाब ठीक वैसे ही देता है जैसे आपके टैबलेट के पन्नों का। इसका कुछ भी क्लाउड पर नहीं भेजा जाता और न आपके टैबलेट तक पहुँचता है।</string>
   <string name="fm.delete_mirror_q">नकली मिरर हटाएँ?</string>
   <string name="fm.delete_mirror_body">इसकी नोटबुक केवल इस कंप्यूटर पर हैं, और वे चली जाएँगी। आपके टैबलेट की लाइब्रेरी को छुआ नहीं जाता।</string>
-  <string name="fm.inbox">नकली मिरर का डीकंपोज़ इनबॉक्स</string>
   <string name="fm.inbox.help">नकली मिरर की वह नोटबुक जिसमें टैबलेट पर भेजें भी पन्ने जोड़ता है। टैबलेट पर भेजें दोनों इनबॉक्स में पहुँचता है।</string>
   <string name="fm.faces">फ़ॉन्ट</string>
   <string name="fm.faces.help">वे फ़ॉन्ट जिनमें नकली मिरर का टाइप किया गया पाठ और किताबें छपती हैं।</string>
