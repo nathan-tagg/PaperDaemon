@@ -284,3 +284,14 @@ is at work, only after a pause and before each save.
 #### Scenario: Holding Delete
 - **WHEN** the user holds Delete on a page with text and ink
 - **THEN** each key redraws only the text's band, as fast as the key repeats
+
+### Requirement: A mouse draws with an inferred hand
+A stroke drawn with a mouse SHALL take a pressure inferred from its speed (slow pressed hard, fast lightly, smoothed) and
+the direction of travel as its angle; a stylus SHALL keep its own pressure. The fineliner, the highlighter and the
+shader SHALL keep their width; the ballpoint, the pencils, the marker and the brush SHALL widen with pressure (the brush
+most) and the pencils' shade follow it; the calligraphy pen SHALL be broad across its nib, held at 45 degrees, and fine
+along it.
+
+#### Scenario: The calligraphy pen
+- **WHEN** the user draws with the calligraphy pen up to the right, then down to the right
+- **THEN** the first stroke is thin and the second broad

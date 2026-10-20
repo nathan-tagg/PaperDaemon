@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.40
+
+- A mouse draws with an inferred hand: pressure from its speed, smoothed, and its direction as the angle. The ballpoint,
+  the pencils, the marker and the paintbrush widen when drawn slowly; the calligraphy pen is thin up to the right and
+  broad down to the right. A stylus keeps its own pressure.
+
 ## 0.1.39
 
 - A held key no longer stutters: a text edit redraws only the band it touched (about five times faster), erasing only

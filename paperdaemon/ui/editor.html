@@ -599,6 +599,33 @@ span.lname { cursor: default; }
              thicknessScale: ts, startingLength: 0, width: pen.per * ts, points: [] };
   }
   const pointOf = (L, x, y) => ({ x, y, speed: 0, direction: 0, width: L.width, pressure: 128 });
+  // A HAND'S POINT, from what the pointer tells: a stylus's own pressure, or (from a mouse) one inferred from the speed --
+  // slow is pressed hard, fast lightly -- smoothed so it does not jitter; the direction of travel as the stroke's angle.
+  // Each pen answers as on the tablet: the fineliner, the highlighter and the shader keep their width; the ballpoint, the
+  // pencils, the marker and the brush (most) widen with pressure, and the pencils' shade follows it; the calligraphy pen
+  // is broad across its nib (held at 45 degrees) and fine along it: thin up to the right, thick down to the right.
+  const NIB = -Math.PI / 4;                                   // the nib's edge, lower left to upper right (the page's y runs down)
+  const RESPONSE = { BALLPOINT: [0.8, 0.4], PENCIL: [0.85, 0.3], MECHANICAL: [0.9, 0.2], MARKER: [0.7, 0.6], PAINTBRUSH: [0.4, 1.2], CALIGRAPHY: [0.8, 0.4] };
+  let motion = null;                                          // the stroke so far: where, when, how fast, which way
+  function inkPoint(L, x, y, ev) {
+    const t = ev && ev.timeStamp || performance.now();
+    let pressure, dir = motion ? motion.dir : 0;
+    if (!motion) motion = { x, y, t, v: 0, dir: 0, p: 0.6 };
+    else {
+      const d = Math.hypot(x - motion.x, y - motion.y), dt = Math.max(1, t - motion.t);
+      if (d > 0.5) { dir = Math.atan2(y - motion.y, x - motion.x); motion.dir = dir; }
+      motion.v = motion.v * 0.7 + (d / dt) * 0.3;            // page units a millisecond, smoothed
+      motion.x = x; motion.y = y; motion.t = t;
+    }
+    if (ev && ev.pointerType === "pen" && ev.pressure > 0) pressure = ev.pressure;          // a stylus says it itself
+    else pressure = motion.p = motion.p * 0.6 + (0.85 - 0.6 * Math.min(1, motion.v / 4)) * 0.4;
+    const fam = L.pen.split("_")[0], r = RESPONSE[fam];
+    let w = L.width;
+    if (r) w = L.width * (r[0] + r[1] * pressure);
+    if (fam === "CALIGRAPHY") w *= 0.25 + 0.75 * Math.abs(Math.sin(dir - NIB));
+    return { x, y, speed: Math.min(65535, Math.round(motion.v * 100)), direction: Math.round(((dir % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) / (2 * Math.PI) * 255),
+             width: Math.max(1, Math.round(w)), pressure: Math.max(1, Math.min(255, Math.round(pressure * 255))) };
+  }
   const ERASER_RS = [12, 22, 40];                            // the eraser's sizes, as the pens': thin, medium (as it was), thick
   let eraseSize = 1;
   const eraserR = () => ERASER_RS[eraseSize];
@@ -1252,7 +1279,7 @@ span.lname { cursor: default; }
     else {
       if (!drawable(x, y)) return;                            // as on the tablet: no stroke starts in the gray
       contentLanded();                                        // the stroke wins: the text lets go as the pen goes down
-      live = newLine(pickers[tool]); live.points.push(pointOf(live, x, y));
+      motion = null; live = newLine(pickers[tool]); live.points.push(inkPoint(live, x, y, e));
       work = { ...base, px: base.px.slice(), stamp: base.stamp.slice() }; liveSid = ++sid;
     }
     pointer = e.pointerId; vp.setPointerCapture(e.pointerId);
@@ -1281,7 +1308,7 @@ span.lname { cursor: default; }
     let gone = false;
     for (const ev of evs) {
       const [x, y] = toPage(...local(ev));
-      if (live) { live.points.push(pointOf(live, x, y)); drawTail(live); }
+      if (live) { live.points.push(inkPoint(live, x, y, ev)); drawTail(live); }
       else if (erasing) {                                     // the eraser sweeps the whole way between two samples
         const [lx, ly] = erasing.last, n = Math.max(1, Math.ceil(Math.hypot(x - lx, y - ly) / (eraserR() / 2)));
         for (let i = 1; i <= n; i++) if (eraseAt(lx + (x - lx) * i / n, ly + (y - ly) * i / n)) gone = true;
