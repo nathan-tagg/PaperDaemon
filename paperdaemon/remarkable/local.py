@@ -365,11 +365,22 @@ def scene_of(doc, page_no, arrays=False):
     data = open(path, "rb").read()
     # THE FILE IS PARSED ONCE: the tree is built from the same blocks (rmscene's read_tree parses it again), and the typed
     # text's own reader runs only when the page has typed text -- a page with a decomp on it is seconds a parse
-    blocks = list(fastrm.read_blocks(data))         # the strokes' points in one step each (fastrm's note)
+    # IN ONE PASS where it can be (fastrm.scene_parts: the strokes read in C, the few other blocks by rmscene); a page it
+    # does not cover is read block by block, the strokes' points in one step each (fastrm.read_blocks)
+    parts = fastrm.scene_parts(data)
+    blocks = parts[0] if parts else list(fastrm.read_blocks(data))
     info = next((b for b in blocks if isinstance(b, ss.SceneInfo)), None)
     tree = SceneTree()
     ss.build_tree(tree, blocks)
     typed_here = any(isinstance(b, ss.RootTextBlock) for b in blocks)
+    if parts:
+        groups = [g for g in tree.root.children.values() if isinstance(g, si.Group)]
+        nested = any(isinstance(c, si.Group) for g in groups for c in g.children.values())
+        if nested or set(parts[1]) - {g.node_id for g in groups}:
+            parts = None                            # groups in a layer, or strokes outside the layers: read as before
+            blocks = list(fastrm.read_blocks(data))
+            tree = SceneTree()
+            ss.build_tree(tree, blocks)
 
     def lines_in(group, out):
         for item in group.children.values():
@@ -386,8 +397,12 @@ def scene_of(doc, page_no, arrays=False):
     layers = []
     for g in tree.root.children.values():
         if isinstance(g, si.Group):
+            if parts:
+                lines = [dict(ln, points=_rows(ln["points"], arrays)) for ln in parts[1].get(g.node_id, [])]
+            else:
+                lines = lines_in(g, [])
             layers.append({"label": g.label.value or "Layer %d" % (len(layers) + 1), "visible": bool(g.visible.value),
-                           "lines": lines_in(g, [])})
+                           "lines": lines})
     if not layers:
         layers = [{"label": "Layer 1", "visible": True, "lines": []}]
     text = None

@@ -71,6 +71,9 @@ def lib():
                                       ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double),
                                       ctypes.POINTER(ctypes.c_int32), ctypes.POINTER(ctypes.c_int32), ctypes.POINTER(ctypes.c_uint8),
                                       ctypes.c_int32, ctypes.POINTER(ctypes.c_double)]
+        L.rf_rm_blocks.restype = ctypes.c_int64
+        L.rf_rm_blocks.argtypes = [ctypes.c_char_p, ctypes.c_int64, ctypes.c_int64, ctypes.POINTER(ctypes.c_int64), ctypes.c_int64]
+        L.rf_rm_cols.restype = ctypes.c_int32
         L.rf_wash_pixels.restype = ctypes.c_int32
         L.rf_wash_pixels.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.c_int32, ctypes.c_double, ctypes.c_double,
                                      ctypes.c_int32, ctypes.c_int32, ctypes.c_double, ctypes.POINTER(ctypes.POINTER(ctypes.c_int32))]

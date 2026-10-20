@@ -54,6 +54,9 @@ RF_API const char *rf_version(void);
 /* the one stroke renderer (render.c): strokes over an RGB canvas, as the tablet draws them */
 RF_API int32_t rf_render(uint8_t *rgb, int32_t W, int32_t H, int32_t ss, const double *xy, const double *w,
                          const int32_t *counts, const int32_t *kinds, const uint8_t *rgba, int32_t nstrokes, double *progress);
+/* a .rm page's blocks, its strokes' fields read in one pass (rmlines.c): one row of rf_rm_cols() int64 a block */
+RF_API int64_t rf_rm_blocks(const uint8_t *d, int64_t n, int64_t header, int64_t *rows, int64_t max_rows);
+RF_API int32_t rf_rm_cols(void);
 /* the same with a density per point (dens: 0..1, 1 solid): the pencils' grain and the light paintbrush and ballpoint */
 RF_API int32_t rf_render_grain(uint8_t *rgb, int32_t W, int32_t H, int32_t ss, const double *xy, const double *w, const double *dens,
                                const int32_t *counts, const int32_t *kinds, const uint8_t *rgba, int32_t nstrokes, double *progress);

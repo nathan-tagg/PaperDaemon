@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.44
+
+- A page opens much faster: the engine reads its strokes in one pass in C (a 26,000-stroke page in 0.14 s, was 0.7)
+  and writes them in one piece.
+- Erasing on a big page: the eraser looks only at the strokes near it, the page is made again at most once a frame,
+  and cutting a stroke skips what the eraser does not touch (passing erase much faster, stroke erase steady).
+- Until the page has loaded, a spinner covers it and no stroke, key or paste reaches it.
+- Typing starts below the ink's painted edge, so new text no longer lands on a decomp's wide washes.
+- Passing is first in the eraser's menu.
+
 ## 0.1.43
 
 - Zoom (Ctrl + scroll, Ctrl + = / -, Ctrl + 0) is the window's own: the page lays itself out again for the smaller room,

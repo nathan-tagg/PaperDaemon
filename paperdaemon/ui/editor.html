@@ -52,6 +52,13 @@ img, a, svg, canvas { -webkit-user-drag: none; }
 .embedded .pop { top: 2px; }
 .embedded #saved { position: absolute; right: 12px; top: 4px; z-index: 4; font-size: 13px; color: var(--ink-3); }
 .viewport { position: relative; overflow: hidden; touch-action: none; cursor: crosshair; }
+/* UNTIL THE PAGE HAS LOADED a spinner covers it, and takes every press: nothing is drawn, typed or pasted onto a page
+   that is not there yet */
+.loading { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: rgba(30, 33, 32, 0.35); cursor: progress; }
+.loading[hidden] { display: none; }
+.loading i { width: 34px; height: 34px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.25); border-top-color: #D0806A;
+  animation: pd-spin 0.9s linear infinite; }
+@keyframes pd-spin { to { transform: rotate(360deg); } }
 .viewport.typing { cursor: text; }
 canvas { display: block; }
 /* where the view is, down the page: a thin bar at the page's right edge, its thumb dragged to scroll */
@@ -129,7 +136,7 @@ span.lname { cursor: default; }
     <span id="saved"></span>
     <div class="pop" id="pop" hidden></div>
   </div>
-  <div class="body"><div class="viewport" id="vp"><canvas id="cv"></canvas><button class="zoom" id="zoom" title="Back to 1x"></button><div class="vscroll" id="vscroll"><i></i></div></div></div>
+  <div class="body"><div class="viewport" id="vp"><canvas id="cv"></canvas><div class="loading" id="loading" role="status" aria-label="Loading the page"><i></i></div><button class="zoom" id="zoom" title="Back to 1x"></button><div class="vscroll" id="vscroll"><i></i></div></div></div>
 </div>
 <script>
 "use strict";
@@ -1004,7 +1011,10 @@ span.lname { cursor: default; }
     shownCtx.drawImage(GL.canvas, 0, 0); shownDirty = false;
     base = null; shown = null; cpuStale = true;
     inkTime = { on: GL.name, ms: performance.now() - t, lines: lines.length, whole: true };
-    clearTimeout(cpuSoon); cpuSoon = setTimeout(() => requestIdleCallback ? requestIdleCallback(() => cpuCopy()) : cpuCopy(), 400);
+    clearTimeout(cpuSoon); cpuSoon = setTimeout(() => {                 // the copy, and the eraser's grid, while the page is idle
+      const idle = f => (window.requestIdleCallback ? requestIdleCallback(f) : f());
+      idle(() => { cpuCopy(); idle(gridWarm); });
+    }, 400);
     return true;
   }
   function cpuCopy() {                                        // the editor's own copy of the page, from the card, when wanted
@@ -1176,29 +1186,88 @@ span.lname { cursor: default; }
     }
     return b;
   }
+  // THE ERASER ON A PAGE OF TENS OF THOUSANDS OF STROKES: a swipe starts with a grid of where the layer's strokes are
+  // (eraseStart), so each step looks only at those near it; a stroke the eraser takes is marked gone (and, passing,
+  // its pieces join the grid, to be cut again), and the layer is made again from the marks at most once a frame
+  // (eraseApply). The undo step is worked out once, at the end, from the layer as it was and as it is.
+  const CELL = 96, cellKey = (gx, gy) => gx * 100003 + gy;
+  let gridKept = null;                                        // the last swipe's grid, while nothing else changed the page
+  function gridWarm() {                                       // made ahead, while the page is idle, so a first swipe starts at once
+    const Ly = layer();
+    if (erasing || !Ly || (gridKept && gridKept.layer === Ly && gridKept.lines === Ly.lines && gridKept.at === changes)) return;
+    const g = { layer: Ly, lines: Ly.lines, grid: new Map(), reach: 0, at: changes };
+    for (const L of Ly.lines) gridAdd(L, g);
+    gridKept = g;
+  }
+  function eraseStart(Ly, mode, x, y) {
+    const kept = gridKept && gridKept.layer === Ly && gridKept.lines === Ly.lines && gridKept.at === changes ? gridKept : null;
+    erasing = { layer: Ly, mode, last: [x, y], before: Ly.lines.slice(), grid: kept ? kept.grid : new Map(), dead: new Set(),
+                pieces: new Map(), reach: kept ? kept.reach : 0, dirty: false, alive: new Set(Ly.lines) };
+    if (!kept) for (const L of Ly.lines) gridAdd(L);
+  }
+  function gridAdd(L, g = erasing) {
+    const b = boxOf(L), h = Math.max(b[4], L.width) * (WSCALE[L.pen.split("_")[0]] || WSCALE_DEFAULT) / 2;
+    g.reach = Math.max(g.reach, h);
+    for (let gx = Math.floor((b[0] - h) / CELL); gx <= Math.floor((b[2] + h) / CELL); gx++)
+      for (let gy = Math.floor((b[1] - h) / CELL); gy <= Math.floor((b[3] + h) / CELL); gy++) {
+        const k = cellKey(gx, gy), c = g.grid.get(k);
+        if (c) c.push(L); else g.grid.set(k, [L]);
+      }
+  }
   function eraseAt(x, y) {                                    // on the layer in hand; true when something went
-    const lines = erasing.layer.lines, before = erasing.removed.length;
-    for (const L of [...lines]) {
-      const reach = eraserR() + widthOf(L) / 2, P = L.points, bx = boxOf(L);
-      if (x < bx[0] - reach || x > bx[2] + reach || y < bx[1] - reach || y > bx[3] + reach) continue;
-      const hit = P.some((q, i) => {
-        const b = P[Math.min(i + 1, P.length - 1)], dx = b.x - q.x, dy = b.y - q.y, L2 = dx * dx + dy * dy;
-        const t = L2 ? Math.max(0, Math.min(1, ((x - q.x) * dx + (y - q.y) * dy) / L2)) : 0;
-        return near(x, y, q.x + t * dx, q.y + t * dy, reach);
-      });
-      if (!hit) continue;
-      const at = lines.indexOf(L);
-      lines.splice(at, 1);
-      erasing.removed.push({ line: L, at }); dirtyRows(bx);
-      if ((erasing.mode || eraseMode) === "stroke") continue;
-      // what it passes over: the line breaks where the eraser crossed it, its own points kept on either side
-      cutOut(P, q => near(q.x, q.y, x, y, reach)).forEach((run, j) => {
-        const piece = Object.assign({}, L, { itemId: [2, page.nextId++], points: run });
-        lines.splice(at + j, 0, piece);
-        erasing.added.push({ line: piece, at: at + j });
-      });
-    }
-    return erasing.removed.length > before;
+    const R = eraserR() + erasing.reach, seen = new Set(), mode = erasing.mode || eraseMode;
+    let gone = false;
+    for (let gx = Math.floor((x - R) / CELL); gx <= Math.floor((x + R) / CELL); gx++)
+      for (let gy = Math.floor((y - R) / CELL); gy <= Math.floor((y + R) / CELL); gy++)
+        for (const L of erasing.grid.get(cellKey(gx, gy)) || []) {
+          if (seen.has(L) || erasing.dead.has(L) || !erasing.alive.has(L)) continue;
+          seen.add(L);
+          const reach = eraserR() + widthOf(L) / 2, P = L.points, bx = boxOf(L);
+          if (x < bx[0] - reach || x > bx[2] + reach || y < bx[1] - reach || y > bx[3] + reach) continue;
+          const hit = P.some((q, i) => {
+            const b = P[Math.min(i + 1, P.length - 1)], dx = b.x - q.x, dy = b.y - q.y, L2 = dx * dx + dy * dy;
+            const t = L2 ? Math.max(0, Math.min(1, ((x - q.x) * dx + (y - q.y) * dy) / L2)) : 0;
+            return near(x, y, q.x + t * dx, q.y + t * dy, reach);
+          });
+          if (!hit) continue;
+          erasing.dead.add(L); dirtyRows(bx); gone = true;
+          if (mode === "stroke") continue;
+          // what it passes over: the line breaks where the eraser crossed it, its own points kept on either side
+          const runs = cutOut(P, q => near(q.x, q.y, x, y, reach), x, y, reach);
+          const made = runs.map(run => Object.assign({}, L, { itemId: [2, page.nextId++], points: run }));
+          erasing.pieces.set(L, made);
+          made.forEach(q => { erasing.alive.add(q); gridAdd(q); });
+        }
+    if (gone) erasing.dirty = true;
+    return gone;
+  }
+  // the layer as the swipe has left it: each stroke gone replaced by what is left of it (its pieces, and theirs)
+  function eraseApply() {
+    if (!erasing || !erasing.dirty) return;
+    erasing.dirty = false;
+    const out = [], left = L => { if (!erasing.dead.has(L)) { out.push(L); return; } for (const q of erasing.pieces.get(L) || []) left(q); };
+    for (const L of erasing.before) left(L);
+    erasing.layer.lines = out;
+  }
+  let eraseFrame = 0;
+  function eraseSoon() {                                      // the page drawn again with the swipe so far, once a frame at most
+    if (eraseFrame) return;
+    eraseFrame = requestAnimationFrame(() => {
+      eraseFrame = 0;
+      eraseApply();
+      const d = dirty; dirty = null;
+      if (d) rebuildBand(d[1] - 60, d[3] + 60); else paint();
+    });
+  }
+  function eraseEnd() {                                       // the swipe as one undo step: what went (where it was), what came
+    eraseApply();
+    const Ly = erasing.layer, was = new Map(erasing.before.map((L, i) => [L, i])), now = new Map(Ly.lines.map((L, i) => [L, i]));
+    const removed = [], added = [];
+    erasing.before.forEach((L, i) => { if (!now.has(L)) removed.push({ line: L, at: i }); });
+    Ly.lines.forEach((L, i) => { if (!was.has(L)) added.push({ line: L, at: i }); });
+    if (removed.length || added.length) { record({ type: "lines", layer: Ly, removed, added }); lastType = null; }
+    gridKept = { layer: Ly, lines: Ly.lines, grid: erasing.grid, reach: erasing.reach, at: changes };
+    erasing = null;
   }
   // ERASING A ZONE: a loop drawn with the eraser, and every point of every stroke inside it goes (on the layer in hand). A
   // stroke is cut where it crosses the loop; what lies outside stays, the pieces as strokes of their own.
@@ -1230,7 +1299,17 @@ span.lname { cursor: default; }
   }
   // the runs of a stroke outside what is erased (`ins`): its own points, and a point where it crosses the edge (found to a
   // fraction of a unit along the segment), so only what is inside goes
-  function cutOut(P, ins) {
+  // cx, cy, r (the eraser's circle, when it is one): a segment that stays outside it is kept whole and one inside it is
+  // dropped whole, without sampling -- on a decomp's long washes, nearly all of them
+  function cutOut(P, ins, cx, cy, r) {
+    const circle = cx !== undefined, r2 = r * r;
+    const far = (a, b) => {                                   // the segment's nearest point to the circle's center, squared
+      const dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy;
+      const t = L2 ? Math.max(0, Math.min(1, ((cx - a.x) * dx + (cy - a.y) * dy) / L2)) : 0;
+      const ex = a.x + t * dx - cx, ey = a.y + t * dy - cy;
+      return ex * ex + ey * ey;
+    };
+    const inCircle = q => (q.x - cx) * (q.x - cx) + (q.y - cy) * (q.y - cy) <= r2;
     const at =(a, b, t) => Object.assign({}, b, { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
     const cross = (a, b, t0, t1, s0) => {                     // the outside side of the crossing between t0 and t1
       for (let k = 0; k < 14; k++) { const m = (t0 + t1) / 2; if (ins(at(a, b, m)) === s0) t0 = m; else t1 = m; }
@@ -1239,7 +1318,10 @@ span.lname { cursor: default; }
     const runs = []; let cur = [], state = ins(P[0]);
     if (!state) cur.push(P[0]);
     for (let i = 1; i < P.length; i++) {
-      const a = P[i - 1], b = P[i], n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 2));
+      const a = P[i - 1], b = P[i];
+      if (circle && !state && far(a, b) > r2) { cur.push(b); continue; }        // clear of the eraser: kept whole
+      if (circle && state && inCircle(b)) continue;                             // inside it from end to end: gone whole
+      const n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 2));
       let t0 = 0;
       for (let j = 1; j <= n; j++) {
         const t = j / n, s = ins(at(a, b, t));
@@ -1578,10 +1660,19 @@ span.lname { cursor: default; }
     const lastP = L.paras.length ? L.paras[L.paras.length - 1] : null;
     const lineTop = lastP ? lastP.lines[lastP.lines.length - 1].y - 5 : T.y;
     const x0 = T.x, x1 = T.x + T.width;
+    // the ink's painted edge, not its center line: a decomp's wide washes paint well below their points (and a stroke
+    // whose points sit just outside the column can reach into it); a stroke whose box cannot reach lower is passed over
     let inkBottom = -Infinity;
     for (const Lyr of page.layers) {
       if (!Lyr.visible) continue;
-      for (const ln of Lyr.lines) for (const p of ln.points) if (p.x >= x0 && p.x <= x1 && p.y > inkBottom) inkBottom = p.y;
+      for (const ln of Lyr.lines) {
+        const b = boxOf(ln), sw = (WSCALE[ln.pen.split("_")[0]] || WSCALE_DEFAULT) * 0.82, reach = Math.max(b[4], ln.width) * sw;
+        if (b[3] + reach <= inkBottom || b[2] + reach < x0 || b[0] - reach > x1) continue;
+        for (const p of ln.points) {
+          const h = p.width * sw;
+          if (p.x + h >= x0 && p.x - h <= x1 && p.y + h > inkBottom) inkBottom = p.y + h;
+        }
+      }
     }
     if (inkBottom >= lineTop) {
       edit(() => {
@@ -1763,9 +1854,9 @@ span.lname { cursor: default; }
       if (!layer().visible) return;
       contentLanded();
       if (e.ctrlKey && e.shiftKey) { zone = { layer: layer(), pts: [[x, y]] }; pointer = e.pointerId; vp.setPointerCapture(e.pointerId); paint(); return; }
-      erasing = { layer: layer(), removed: [], added: [], last: [x, y], mode: e.shiftKey ? "stroke" : "area" };
+      eraseStart(layer(), e.shiftKey ? "stroke" : "area", x, y);
       pointer = e.pointerId; vp.setPointerCapture(e.pointerId);
-      if (eraseAt(x, y)) rebuild(); else paint();
+      if (eraseAt(x, y)) eraseSoon(); else paint();
       return;
     }
     if (shapeKind > 1 && pickers[tool]) {                     // a shape: the first click one corner or edge, the second the other
@@ -1805,7 +1896,7 @@ span.lname { cursor: default; }
         poly.pts.push(cornerAt(e, [x, y])); paint(); return;
       }
     }
-    if (tool === "eraser") { erasing = { layer: layer(), removed: [], added: [], last: [x, y] }; eraserAt = [x, y]; }
+    if (tool === "eraser") { eraseStart(layer(), null, x, y); eraserAt = [x, y]; }
     else {
       if (!drawable(x, y)) return;                            // as on the tablet: no stroke starts in the gray
       contentLanded();                                        // the stroke wins: the text lets go as the pen goes down
@@ -1814,7 +1905,7 @@ span.lname { cursor: default; }
       work = { ...base, px: base.px.slice(), stamp: base.stamp.slice() }; liveSid = ++sid;
     }
     pointer = e.pointerId; vp.setPointerCapture(e.pointerId);
-    if (erasing) { if (eraseAt(x, y)) rebuild(); else paint(); } else { ctx.putImageData(shown, 0, 0); drawTail(live); }
+    if (erasing) { if (eraseAt(x, y)) eraseSoon(); else paint(); } else { ctx.putImageData(shown, 0, 0); drawTail(live); }
   });
   vp.addEventListener("pointermove", e => {
     if (pickMove(e)) return;
@@ -1846,7 +1937,7 @@ span.lname { cursor: default; }
         erasing.last = [x, y];
       }
     }
-    if (erasing) { if (gone) bandSoon(); else paint(); }     // only the rows a stroke went from, once a frame at most
+    if (erasing) { if (gone) eraseSoon(); else paint(); }    // the layer made again and drawn, once a frame at most
   });
   vp.addEventListener("contextmenu", e => e.preventDefault());
   vp.addEventListener("mousedown", e => { if (e.button === 1) e.preventDefault(); });   // no autoscroll on the page
@@ -1866,13 +1957,7 @@ span.lname { cursor: default; }
         base = work; work = null; shown = downsample(base); shownDirty = true; paint(); saveSoon();   // drawn in place: the save is still due
       } else { work = null; rebuild(); }
     }
-    if (erasing) {
-      const made = new Set(erasing.added.map(x => x.line)), gone = new Set(erasing.removed.map(x => x.line)), lines = erasing.layer.lines;
-      erasing.added = erasing.added.filter(x => !gone.has(x.line)).map(x => ({ line: x.line, at: lines.indexOf(x.line) }));
-      erasing.removed = erasing.removed.filter(x => !made.has(x.line));
-      if (erasing.added.length || erasing.removed.length) { record({ type: "lines", layer: erasing.layer, removed: erasing.removed, added: erasing.added }); lastType = null; }
-      erasing = null; rebuild();
-    }
+    if (erasing) { cancelAnimationFrame(eraseFrame); eraseFrame = 0; dirty = null; eraseEnd(); rebuild(); }
   }
   vp.addEventListener("pointerup", finish);
   let boxPress = null;
@@ -1986,8 +2071,8 @@ span.lname { cursor: default; }
         cell('data-pickmode="capture"', pickMode === "capture", ICON.capture + "<span>Capture</span>", "Capture what a loop holds, or select a picture") + "</div></div>";
     } else if (popFor === "eraser") {
       pop.innerHTML = '<div class="sec"><h3>Eraser</h3><div class="grid3">' +
-        cell('data-erase="stroke"', eraseMode === "stroke", ICON.eraseStroke + "<span>Strokes</span>", "Erase whole strokes") +
         cell('data-erase="area"', eraseMode === "area", ICON.erasePass + "<span>Passing</span>", "Erase what it passes over") +
+        cell('data-erase="stroke"', eraseMode === "stroke", ICON.eraseStroke + "<span>Strokes</span>", "Erase whole strokes") +
         cell('data-erase="zone"', eraseMode === "zone", ICON.eraseZone + "<span>Zone</span>", "Erase what is inside a loop") + "</div></div>" +
         (eraseMode === "zone" ? "" :                          // a zone is a loop: it has no size
           '<div class="sec"><h3>' + SIZES[eraseSize] + '</h3><div class="grid3">' +
@@ -2077,7 +2162,7 @@ span.lname { cursor: default; }
   // page's foot, or the lowest ink or text past it, or a screen down for a page shorter than the screen
   function footOf() {
     let foot = page.paperSize[1];
-    for (const Ly of page.layers) for (const L of Ly.lines) for (const q of L.points) if (q.y > foot) foot = q.y;
+    for (const Ly of page.layers) for (const L of Ly.lines) { const y = boxOf(L)[3]; if (y > foot) foot = y; }   // each stroke's kept box
     const T = textLayout && textLayout.paras.length ? textLayout.paras[textLayout.paras.length - 1] : null;
     return T ? Math.max(foot, T.bottom) : foot;
   }
@@ -2722,6 +2807,10 @@ span.lname { cursor: default; }
   const SCENE = "/api/v1" + BASE + "/library/" + encodeURIComponent(DOC) + "/page/" + PAGE + "/scene";
   const saved = document.getElementById("saved");
   let lastWritten = null, saveTimer = 0, loaded = false;
+  // NOTHING REACHES THE PAGE BEFORE IT IS READY: keys, pastes and drops are held off (the spinner takes the presses)
+  let ready = false;
+  for (const t of ["keydown", "keypress", "paste", "drop", "beforeinput"])
+    window.addEventListener(t, e => { if (!ready) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
 
   const lineIn = ln => ({
     itemId: [2, page.nextId++], pen: ln.pen || "FINELINER_2", penCode: ln.penCode, color: ln.color, colorRgba: ln.colorRgba,
@@ -3040,6 +3129,7 @@ span.lname { cursor: default; }
       savedAt = changes;                                      // as read: nothing to save until something changes
     } catch (e) { note.textContent = "This page could not be read: " + e.message; }
     paintControls(); layout();
+    ready = true; document.getElementById("loading").hidden = true;   // loaded, or not to be (the editor opened from its file)
   }
 
   window.addEventListener("resize", layout);
