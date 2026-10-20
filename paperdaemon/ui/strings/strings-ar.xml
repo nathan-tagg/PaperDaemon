@@ -116,8 +116,6 @@
   <string name="settings.network">الوصول إلى الشبكة</string>
   <string name="settings.network.help">الطقس، ومنشورات التواصل الاجتماعي، وويكيبيديا، والبحث على الويب. لا تتأثر نماذجك ولا سحابة reMarkable.</string>
   <string name="settings.network.allow">السماح بالوصول إلى الشبكة</string>
-  <string name="settings.social">المواقع الاجتماعية</string>
-  <string name="settings.social.help">أين يبحث طلب المنشورات حين لا يسمّي موقعًا. الموقع المسمّى يُبحث فيه دائمًا.</string>
   <string name="settings.tools">الأدوات</string>
   <string name="settings.updates">التحديثات</string>
   <string name="settings.updates.help">لا يتحقق PaperDaemon من التحديثات من تلقاء نفسه أبدًا.</string>
@@ -244,8 +242,13 @@
   <string name="tablet.label">المرآة</string>
   <string name="tablet.folder">مجلد</string>
   <string name="dc.decomposing">جارٍ تفكيك {name}</string>
-  <string name="dc.drop">أفلت صورة هنا، أو {choose}.</string>
+  <string name="dc.drop">أفلت صورة هنا، أو {choose}، أو {paste}.</string>
   <string name="dc.choose">اختر ملفًا</string>
+  <string name="dc.paste">الصق صورة</string>
+  <string name="dc.paste_none">لا توجد صورة في الحافظة.</string>
+  <string name="dc.paste_denied">تعذّر على PaperDaemon قراءة الحافظة. اضغط Ctrl+V بدلًا من ذلك.</string>
+  <string name="dc.save">حفظ</string>
+  <string name="dc.saving">جارٍ الحفظ…</string>
   <string name="dc.on_page">في الصفحة رقم {n}</string>
   <string name="dc.sending">جارٍ الإرسال…</string>
   <string name="dc.send">إرسال إلى الجهاز اللوحي</string>
@@ -255,7 +258,7 @@
   <string name="count.stroke.one">خط واحد</string>
   <string name="count.stroke.other">{n} خط</string>
   <string name="common.delete">حذف</string>
-  <string name="dc.size_range">الحجم من 200 إلى 1,400 بكسل من بكسلات الجهاز اللوحي.</string>
+  <string name="dc.size_range">العرض من 200 إلى 1,600 بكسل من بكسلات الجهاز اللوحي.</string>
   <string name="dc.picture">صورة</string>
   <string name="dc.bad_type">هذا الملف ليس صورة PNG أو JPEG أو WebP.</string>
   <string name="dc.too_big">حجم هذه الصورة {size}. استخدم صورة أصغر من {max}.</string>
@@ -264,8 +267,8 @@
   <string name="dc.label">تفكيك</string>
   <string name="dc.intro">حوّل صورة إلى خطوط قلم وأرسلها إلى الجهاز اللوحي، حيث يمكن محو كل خط والرسم فوقه كما لو كان من رسمك.</string>
   <string name="dc.image">الصورة</string>
-  <string name="dc.size">الحجم</string>
-  <string name="dc.size_unit">بكسلات الجهاز اللوحي، من 200 إلى 1,400</string>
+  <string name="dc.size">العرض</string>
+  <string name="dc.size_unit">بكسلات الجهاز اللوحي، من 200 إلى 1,600</string>
   <string name="dc.types">PNG، JPEG، WebP</string>
   <string name="dc.decomps">الصور المفككة</string>
   <string name="lineup.unreadable">تعذّرت قراءة التشكيلات.</string>
@@ -452,6 +455,7 @@
   <string name="help.model.stops">حين توقف PaperDaemon مؤقتًا أو تغلقه، أو حين يجب تشغيل نص تشغيل تشكيلة أخرى. يوقف كل ما بدأه نصك. ولا يوقف أبدًا برنامجًا لم يبدأه.</string>
   <string name="help.h_wrong">مشكلات شائعة</string>
   <string name="help.model.wrong_vram">**بطاقة الرسومات ممتلئة.** يحتاج النموذج إلى مساحة في ذاكرة بطاقتك (VRAM). إذا كان خادم نماذج آخر أو لعبة أو أداة صور يحجز تلك الذاكرة، يفشل النموذج في التحميل أو يعمل ببطء شديد. إذا كنت تشغّل خوادم نماذج أخرى بنفسك، فاجعل نصك يوقفها أولًا (مثلًا `taskkill /IM llama-server.exe /F`). لا يوقف PaperDaemon إلا ما بدأه.</string>
+  <string name="help.model.wrong_own_vram">**حصة PaperDaemon نفسه.** في حالات نادرة جدًا (صفحة مليئة بتفكيكات كبيرة ومفتوحة في محرر الصفحات)، قد يستخدم PaperDaemon نفسه حتى 200 ميغابايت من ذاكرة بطاقتك. اترك هذا القدر فارغًا.</string>
   <string name="help.model.wrong_two">**نموذجان لا يتسعان معًا.** إذا لم يتسع نموذج النص ونموذج الصور معًا على بطاقتك، فاكتب كل نص بحيث يوقف خادم الآخر قبل أن يبدأ خادمه.</string>
   <string name="help.model.wrong_port">**المنفذ مشغول.** إذا كان برنامج آخر يستخدم ذلك المنفذ بالفعل، فلا يمكن لخادمك أن يبدأ عليه. اختر منفذًا حرًا واستخدمه نفسه في العنوان أعلاه.</string>
   <string name="help.wrong_spaces">**مسافات في المسار.** ضع علامات اقتباس حول أي مسار فيه مسافات.</string>
@@ -479,6 +483,7 @@
 - أن يطبع مخرجات الخادم.
 - يضبط PaperDaemon أيضًا %PAPERDAEMON_ROLE% (text أو image) و%PAPERDAEMON_LOCATION% (العنوان الكامل) و%PAPERDAEMON_OTHER_LOCATION% (عنوان النموذج الآخر) و%PAPERDAEMON_LINEUP% و%PAPERDAEMON_DATA%.
 - لا يوقف PaperDaemon إلا البرامج التي بدأها. إذا كانت خوادم نماذج أخرى قد تستخدم ذاكرة بطاقة الرسومات لديّ، فيجب أن يوقفها النص أولًا.
+- قد يستخدم PaperDaemon نفسه، في حالات نادرة جدًا، حتى 200 ميغابايت من ذاكرة بطاقة الرسوميات، لذا يجب أن يترك النموذج هذا القدر فارغًا.
 - يجب أن يدعم الخادم واجهة الدردشة المتوافقة مع OpenAI (/v1/chat/completions)، كما يفعل llama-server من llama.cpp أو Ollama أو LM Studio أو vLLM.
 
 قبل أن تكتبه، اطرح عليّ هذه الأسئلة واحدًا تلو الآخر وانتظر كل إجابة:
@@ -498,6 +503,7 @@
 - أن يطبع مخرجات الخادم.
 - يضبط PaperDaemon أيضًا %PAPERDAEMON_ROLE% (text أو image) و%PAPERDAEMON_LOCATION% (العنوان الكامل) و%PAPERDAEMON_OTHER_LOCATION% (عنوان النموذج الآخر) و%PAPERDAEMON_LINEUP% و%PAPERDAEMON_DATA%.
 - لا يوقف PaperDaemon إلا البرامج التي بدأها. إذا كانت خوادم نماذج أخرى قد تستخدم ذاكرة بطاقة الرسومات لديّ، فيجب أن يوقفها النص أولًا.
+- قد يستخدم PaperDaemon نفسه، في حالات نادرة جدًا، حتى 200 ميغابايت من ذاكرة بطاقة الرسوميات، لذا يجب أن يترك النموذج هذا القدر فارغًا.
 - يجب أن يدعم الخادم واجهة Stable Diffusion web UI (/sdapi/v1/txt2img)، كما يفعل خادم stable-diffusion.cpp أو Forge أو AUTOMATIC1111، أو واجهة الصور من OpenAI.
 
 قبل أن تكتبه، اطرح عليّ هذه الأسئلة واحدًا تلو الآخر وانتظر كل إجابة:
@@ -578,7 +584,6 @@
   <string name="ts.m.network_off">الوصول إلى الشبكة متوقف</string>
   <string name="ts.m.no_results_in">لا نتائج خلال {s} ث</string>
   <string name="ts.m.results_in">{n} نتيجة خلال {s} ث</string>
-  <string name="ts.m.no_sites">لم تُختر أي مواقع</string>
   <string name="ts.m.site_time">{site} {s} ث</string>
   <string name="ts.m.site_failed">{site} فشل</string>
   <string name="ts.m.no_forecast">لا توقعات</string>
@@ -594,7 +599,6 @@
   <string name="ts.d.search_empty">عاد البحث فارغًا.</string>
   <string name="ts.d.first">الأول: {title}</string>
   <string name="ts.d.every_site">وصلت منشورات من كل موقع.</string>
-  <string name="ts.d.choose_sites">اختر مواقع التواصل في الإعدادات.</string>
   <string name="ts.d.no_forecast">لم تستجب خدمة التوقعات.</string>
   <string name="ts.d.weather">اليوم في {place}: العظمى {hi}{unit}، الصغرى {lo}{unit}.</string>
   <string name="ts.d.weather_london">لم يُحدَّد مكان، لذا لندن اليوم: العظمى {hi}{unit}، الصغرى {lo}{unit}.</string>
@@ -651,6 +655,8 @@
   <string name="fm.convert_on">تشغيل</string>
   <string name="fm.signin_shift">سيُكتب النص المطبوع في المرآة الزائفة بخطوط الجهاز اللوحي، وقد يتحرك قليلًا.</string>
   <string name="editor.template_signin">سجّل الدخول إلى حساب reMarkable لترى القوالب وتختارها.</string>
+  <string name="editor.template_why_title">القوالب تحتاج إلى تسجيل الدخول إلى reMarkable</string>
+  <string name="editor.template_why">يقرأ PaperDaemon قوالب الصفحات من تطبيق reMarkable لسطح المكتب على هذا الحاسوب، ولا يفعل ذلك إلا عند تسجيل الدخول إلى حساب reMarkable. من دونه لا تظهر الصفحات بقالب ولا يمكن اختيار أي قالب. سجّل الدخول من الإعدادات لاستخدامها.</string>
   <string name="fm.new_notebook">دفتر جديد</string>
   <string name="fm.new_folder">مجلد جديد</string>
   <string name="fm.new_page">صفحة جديدة</string>

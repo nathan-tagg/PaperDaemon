@@ -120,8 +120,6 @@
   <string name="settings.network">Доступ к сети</string>
   <string name="settings.network.help">Погода, публикации в соцсетях, Википедия и веб-поиск. Ваши модели и облако reMarkable это не затрагивает.</string>
   <string name="settings.network.allow">Разрешить доступ к сети</string>
-  <string name="settings.social">Соцсети</string>
-  <string name="settings.social.help">Где ищет запрос публикаций, если сайт не назван. Названный сайт ищется всегда.</string>
   <string name="settings.tools">Инструменты</string>
   <string name="settings.updates">Обновления</string>
   <string name="settings.updates.help">PaperDaemon никогда не проверяет сам.</string>
@@ -250,8 +248,13 @@
   <string name="tablet.label">Зеркало</string>
   <string name="tablet.folder">Папка</string>
   <string name="dc.decomposing">Разложение {name}</string>
-  <string name="dc.drop">Перетащите изображение сюда или {choose}.</string>
+  <string name="dc.drop">Перетащите изображение сюда, {choose} или {paste}.</string>
   <string name="dc.choose">выберите файл</string>
+  <string name="dc.paste">вставьте</string>
+  <string name="dc.paste_none">В буфере обмена нет изображения.</string>
+  <string name="dc.paste_denied">PaperDaemon не смог прочитать буфер обмена. Нажмите Ctrl+V.</string>
+  <string name="dc.save">Сохранить</string>
+  <string name="dc.saving">Сохранение…</string>
   <string name="dc.on_page">На странице № {n}</string>
   <string name="dc.sending">Отправка…</string>
   <string name="dc.send">Отправить на планшет</string>
@@ -263,7 +266,7 @@
   <string name="count.stroke.many">{n} штрихов</string>
   <string name="count.stroke.other">{n} штриха</string>
   <string name="common.delete">Удалить</string>
-  <string name="dc.size_range">Размер — от 200 до 1400 пикселей планшета.</string>
+  <string name="dc.size_range">Ширина — от 200 до 1600 пикселей планшета.</string>
   <string name="dc.picture">Изображение</string>
   <string name="dc.bad_type">Этот файл не изображение PNG, JPEG или WebP.</string>
   <string name="dc.too_big">Размер изображения {size}. Используйте изображение меньше {max}.</string>
@@ -272,8 +275,8 @@
   <string name="dc.label">Разложить</string>
   <string name="dc.intro">Превратите изображение в штрихи пера и отправьте на планшет, где каждую линию можно стереть и обвести, как свою.</string>
   <string name="dc.image">Изображение</string>
-  <string name="dc.size">Размер</string>
-  <string name="dc.size_unit">пикселей планшета, от 200 до 1400</string>
+  <string name="dc.size">Ширина</string>
+  <string name="dc.size_unit">пикселей планшета, от 200 до 1600</string>
   <string name="dc.types">PNG, JPEG, WebP</string>
   <string name="dc.decomps">Разложенные</string>
   <string name="lineup.unreadable">Не удалось прочитать составы.</string>
@@ -466,6 +469,7 @@
   <string name="help.model.stops">Когда вы приостанавливаете или закрываете PaperDaemon, или когда нужно запустить скрипт другого состава. Он останавливает всё, что запустил ваш скрипт. Он никогда не останавливает программу, которую не запускал.</string>
   <string name="help.h_wrong">Что может пойти не так</string>
   <string name="help.model.wrong_vram">**Видеокарта заполнена.** Модели нужно место в памяти карты (VRAM). Если эту память держит другой сервер моделей, игра или графический инструмент, модель не загрузится или будет работать очень медленно. Если вы сами запускаете другие серверы моделей, пусть ваш скрипт сначала их остановит (например, `taskkill /IM llama-server.exe /F`). PaperDaemon останавливает только то, что запустил сам.</string>
+  <string name="help.model.wrong_own_vram">**Доля самого PaperDaemon.** В очень редких случаях (страница с множеством больших разложений, открытая в редакторе страниц) сам PaperDaemon может занять до 200 МБ памяти видеокарты. Оставьте столько свободным.</string>
   <string name="help.model.wrong_two">**Две модели не помещаются вместе.** Если текстовая модель и модель изображений не помещаются на карту одновременно, напишите каждый скрипт так, чтобы он останавливал сервер другого перед запуском своего.</string>
   <string name="help.model.wrong_port">**Порт занят.** Если этот порт уже использует другая программа, ваш сервер не сможет на нём запуститься. Выберите свободный порт и укажите его же в адресе выше.</string>
   <string name="help.wrong_spaces">**Пробелы в пути.** Заключайте в кавычки любой путь с пробелами.</string>
@@ -493,6 +497,7 @@
 - Выводить сообщения сервера.
 - PaperDaemon также задаёт %PAPERDAEMON_ROLE% (text или image), %PAPERDAEMON_LOCATION% (полный адрес), %PAPERDAEMON_OTHER_LOCATION% (адрес другой модели), %PAPERDAEMON_LINEUP% и %PAPERDAEMON_DATA%.
 - PaperDaemon останавливает только программы, которые запустил сам. Если другие серверы моделей могут занимать память моей видеокарты, скрипт должен сначала их остановить.
+- Сам PaperDaemon в очень редких случаях может занять до 200 МБ памяти моей видеокарты, поэтому модель должна оставлять столько свободным.
 - Сервер должен поддерживать OpenAI-совместимый API чата (/v1/chat/completions), как llama-server из llama.cpp, Ollama, LM Studio или vLLM.
 
 Прежде чем писать, задай мне эти вопросы по одному и дождись каждого ответа:
@@ -512,6 +517,7 @@
 - Выводить сообщения сервера.
 - PaperDaemon также задаёт %PAPERDAEMON_ROLE% (text или image), %PAPERDAEMON_LOCATION% (полный адрес), %PAPERDAEMON_OTHER_LOCATION% (адрес другой модели), %PAPERDAEMON_LINEUP% и %PAPERDAEMON_DATA%.
 - PaperDaemon останавливает только программы, которые запустил сам. Если другие серверы моделей могут занимать память моей видеокарты, скрипт должен сначала их остановить.
+- Сам PaperDaemon в очень редких случаях может занять до 200 МБ памяти моей видеокарты, поэтому модель должна оставлять столько свободным.
 - Сервер должен поддерживать API Stable Diffusion web UI (/sdapi/v1/txt2img), как сервер stable-diffusion.cpp, Forge или AUTOMATIC1111, или API изображений OpenAI.
 
 Прежде чем писать, задай мне эти вопросы по одному и дождись каждого ответа:
@@ -571,7 +577,6 @@
   <string name="ts.m.network_off">Доступ к сети выключен</string>
   <string name="ts.m.no_results_in">Нет результатов за {s} с</string>
   <string name="ts.m.results_in">{n} результатов за {s} с</string>
-  <string name="ts.m.no_sites">Сайты не выбраны</string>
   <string name="ts.m.site_time">{site} {s} с</string>
   <string name="ts.m.site_failed">{site}: ошибка</string>
   <string name="ts.m.no_forecast">Нет прогноза</string>
@@ -587,7 +592,6 @@
   <string name="ts.d.search_empty">Поиск вернулся пустым.</string>
   <string name="ts.d.first">Первый: {title}</string>
   <string name="ts.d.every_site">Посты пришли со всех сайтов.</string>
-  <string name="ts.d.choose_sites">Выберите соцсети в настройках.</string>
   <string name="ts.d.no_forecast">Служба прогноза не ответила.</string>
   <string name="ts.d.weather">Сегодня в {place}: максимум {hi}{unit}, минимум {lo}{unit}.</string>
   <string name="ts.d.weather_london">Место не задано, поэтому Лондон сегодня: максимум {hi}{unit}, минимум {lo}{unit}.</string>
@@ -644,6 +648,8 @@
   <string name="fm.convert_on">Включить</string>
   <string name="fm.signin_shift">Набранный текст в Ложном зеркале будет набран шрифтами планшета и может немного сместиться.</string>
   <string name="editor.template_signin">Войдите в аккаунт reMarkable, чтобы видеть и выбирать шаблоны.</string>
+  <string name="editor.template_why_title">Для шаблонов нужен вход в reMarkable</string>
+  <string name="editor.template_why">PaperDaemon читает шаблоны страниц из настольного приложения reMarkable на этом компьютере и делает это только при входе в аккаунт reMarkable. Без него на страницах нет шаблонов и выбрать их нельзя. Войдите в настройках, чтобы ими пользоваться.</string>
   <string name="fm.new_notebook">Новый блокнот</string>
   <string name="fm.new_folder">Новая папка</string>
   <string name="fm.new_page">Новая страница</string>

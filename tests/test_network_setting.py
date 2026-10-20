@@ -43,5 +43,5 @@ def test_the_brief_tells_the_model(tmp_path, monkeypatch):
     import paperdaemon.pipeline.host as H
     _run_file(tmp_path, monkeypatch, network={"allowed": False})
     assert "The internet is off" in H._prefs_sentence()
-    _run_file(tmp_path, monkeypatch, "lineup2.json", social={"sites": ["reddit", "bluesky"]})
-    assert "come from Reddit and Bluesky" in H._prefs_sentence()
+    _run_file(tmp_path, monkeypatch, "lineup2.json")
+    assert "come from Reddit, Hacker News, Bluesky, 4chan and Mastodon" in H._prefs_sentence()      # every site, always

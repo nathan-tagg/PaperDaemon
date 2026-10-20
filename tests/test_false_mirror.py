@@ -264,3 +264,22 @@ def test_a_pages_pictures_round_trip_through_the_editor_scene():
     assert [im["quad"] for im in got["second"]] == [first[1]["quad"]]
     assert [im["name"] for im in got["third"]] == [first[1]["name"]] and got["strokes"] == 1
     assert got["refused"] is True
+
+
+def test_decompose_and_send_lands_in_the_false_mirrors_inbox_without_an_account():
+    # the False Mirror's engine with no reMarkable account and the shipped lineups only: its own inbox takes the page
+    got = _run("""
+        import base64, io, json
+        from PIL import Image, ImageDraw
+        from paperdaemon import settings, studio
+        s = settings.load()
+        s["false_mirror"]["inbox"] = "Inbox"
+        settings.save(s)
+        img = Image.new("RGB", (120, 90), "white")
+        ImageDraw.Draw(img).ellipse((20, 15, 100, 75), fill=(30, 30, 30))
+        buf = io.BytesIO(); img.save(buf, "PNG")
+        first = studio.send("data:image/png;base64," + base64.b64encode(buf.getvalue()).decode(), 400)
+        second = studio.send("data:image/png;base64," + base64.b64encode(buf.getvalue()).decode(), 400)
+        print(json.dumps([first["sent"], first["page"], second["page"], first["doc"] == second["doc"]]))
+    """)
+    assert got == [True, 1, 2, True]

@@ -116,8 +116,6 @@
   <string name="settings.network">नेटवर्क पहुँच</string>
   <string name="settings.network.help">मौसम, सोशल पोस्ट, विकिपीडिया और वेब खोज। आपके मॉडल और reMarkable क्लाउड पर कोई असर नहीं पड़ता।</string>
   <string name="settings.network.allow">नेटवर्क पहुँच की अनुमति दें</string>
-  <string name="settings.social">सोशल साइटें</string>
-  <string name="settings.social.help">जब पोस्ट का अनुरोध किसी साइट का नाम न ले, तब वह कहाँ खोजता है। नाम ली गई साइट हमेशा खोजी जाती है।</string>
   <string name="settings.tools">टूल</string>
   <string name="settings.updates">अपडेट</string>
   <string name="settings.updates.help">PaperDaemon खुद से कभी जाँच नहीं करता।</string>
@@ -244,8 +242,13 @@
   <string name="tablet.label">मिरर</string>
   <string name="tablet.folder">फ़ोल्डर</string>
   <string name="dc.decomposing">{name} को डीकंपोज़ किया जा रहा है</string>
-  <string name="dc.drop">कोई चित्र यहाँ छोड़ें, या {choose}।</string>
+  <string name="dc.drop">कोई चित्र यहाँ छोड़ें, {choose}, या {paste}।</string>
   <string name="dc.choose">कोई फ़ाइल चुनें</string>
+  <string name="dc.paste">एक पेस्ट करें</string>
+  <string name="dc.paste_none">क्लिपबोर्ड पर कोई चित्र नहीं है।</string>
+  <string name="dc.paste_denied">PaperDaemon क्लिपबोर्ड नहीं पढ़ सका। इसके बजाय Ctrl+V दबाएँ।</string>
+  <string name="dc.save">सहेजें</string>
+  <string name="dc.saving">सहेजा जा रहा है…</string>
   <string name="dc.on_page">पेज #{n} पर</string>
   <string name="dc.sending">भेजा जा रहा है…</string>
   <string name="dc.send">टैबलेट पर भेजें</string>
@@ -255,7 +258,7 @@
   <string name="count.stroke.one">{n} रेखा</string>
   <string name="count.stroke.other">{n} रेखाएँ</string>
   <string name="common.delete">हटाएँ</string>
-  <string name="dc.size_range">आकार टैबलेट के 200 से 1,400 पिक्सेल तक है।</string>
+  <string name="dc.size_range">चौड़ाई टैबलेट के 200 से 1,600 पिक्सेल तक है।</string>
   <string name="dc.picture">चित्र</string>
   <string name="dc.bad_type">वह फ़ाइल PNG, JPEG या WebP चित्र नहीं है।</string>
   <string name="dc.too_big">वह चित्र {size} का है। {max} से छोटा चित्र इस्तेमाल करें।</string>
@@ -264,8 +267,8 @@
   <string name="dc.label">डीकंपोज़</string>
   <string name="dc.intro">किसी चित्र को पेन की रेखाओं में बदलें और टैबलेट पर भेजें, जहाँ हर रेखा को आपकी अपनी रेखा की तरह मिटाया और उस पर बनाया जा सकता है।</string>
   <string name="dc.image">चित्र</string>
-  <string name="dc.size">आकार</string>
-  <string name="dc.size_unit">टैबलेट पिक्सेल, 200 से 1,400</string>
+  <string name="dc.size">चौड़ाई</string>
+  <string name="dc.size_unit">टैबलेट पिक्सेल, 200 से 1,600</string>
   <string name="dc.types">PNG, JPEG, WebP</string>
   <string name="dc.decomps">डीकंपोज़ किए चित्र</string>
   <string name="lineup.unreadable">लाइनअप पढ़े नहीं जा सके।</string>
@@ -452,6 +455,7 @@
   <string name="help.model.stops">जब आप PaperDaemon को रोकते या बंद करते हैं, या जब किसी दूसरे लाइनअप की स्टार्ट स्क्रिप्ट चलनी हो। वह आपकी स्क्रिप्ट का शुरू किया सब कुछ रोकता है। जो प्रोग्राम उसने शुरू नहीं किया, उसे वह कभी नहीं रोकता।</string>
   <string name="help.h_wrong">जो चीज़ें गलत होती हैं</string>
   <string name="help.model.wrong_vram">**ग्राफ़िक्स कार्ड भरा हुआ है।** मॉडल को आपके कार्ड की मेमोरी (VRAM) में जगह चाहिए। अगर कोई दूसरा मॉडल सर्वर, गेम या चित्र टूल वह मेमोरी घेरे हुए है, तो मॉडल लोड नहीं होता या बहुत धीमा चलता है। अगर आप खुद दूसरे मॉडल सर्वर चलाते हैं, तो अपनी स्क्रिप्ट से पहले उन्हें रुकवाएँ (जैसे `taskkill /IM llama-server.exe /F`)। PaperDaemon सिर्फ़ वही रोकता है जो उसने शुरू किया।</string>
+  <string name="help.model.wrong_own_vram">**PaperDaemon का अपना हिस्सा।** बहुत ही असामान्य मामलों में (बड़े डीकम्प से भरा पेज, पेज एडिटर में खुला), PaperDaemon खुद आपके कार्ड की 200 MB तक मेमोरी इस्तेमाल कर सकता है। इतनी जगह खाली छोड़ें।</string>
   <string name="help.model.wrong_two">**दो मॉडल जो साथ में नहीं समाते।** अगर आपका टेक्स्ट मॉडल और चित्र मॉडल दोनों एक साथ कार्ड पर नहीं समाते, तो हर स्क्रिप्ट ऐसी लिखें कि वह अपना सर्वर शुरू करने से पहले दूसरे का सर्वर रोक दे।</string>
   <string name="help.model.wrong_port">**पोर्ट व्यस्त है।** अगर कोई दूसरा प्रोग्राम वह पोर्ट पहले से इस्तेमाल कर रहा है, तो आपका सर्वर वहाँ शुरू नहीं हो सकता। कोई खाली पोर्ट चुनें और ऊपर के पते में भी वही इस्तेमाल करें।</string>
   <string name="help.wrong_spaces">**पाथ में खाली जगह।** खाली जगह वाले किसी भी पाथ के चारों ओर उद्धरण चिह्न लगाएँ।</string>
@@ -479,6 +483,7 @@
 - सर्वर का आउटपुट छापे।
 - PaperDaemon ये भी सेट करता है: %PAPERDAEMON_ROLE% (text या image), %PAPERDAEMON_LOCATION% (पूरा पता), %PAPERDAEMON_OTHER_LOCATION% (दूसरे मॉडल का पता), %PAPERDAEMON_LINEUP% और %PAPERDAEMON_DATA%।
 - PaperDaemon सिर्फ़ वही प्रोग्राम रोकता है जो उसने शुरू किए। अगर दूसरे मॉडल सर्वर मेरे ग्राफ़िक्स कार्ड की मेमोरी इस्तेमाल कर रहे हों, तो स्क्रिप्ट पहले उन्हें रोके।
+- बहुत ही असामान्य मामलों में PaperDaemon खुद मेरे ग्राफ़िक्स कार्ड की 200 MB तक मेमोरी इस्तेमाल कर सकता है, इसलिए मॉडल को इतनी जगह खाली छोड़नी चाहिए।
 - सर्वर को OpenAI-संगत चैट API (/v1/chat/completions) बोलना चाहिए, जैसा llama.cpp का llama-server, Ollama, LM Studio या vLLM करते हैं।
 
 लिखने से पहले मुझसे ये सवाल एक-एक करके पूछो और हर जवाब का इंतज़ार करो:
@@ -498,6 +503,7 @@
 - सर्वर का आउटपुट छापे।
 - PaperDaemon ये भी सेट करता है: %PAPERDAEMON_ROLE% (text या image), %PAPERDAEMON_LOCATION% (पूरा पता), %PAPERDAEMON_OTHER_LOCATION% (दूसरे मॉडल का पता), %PAPERDAEMON_LINEUP% और %PAPERDAEMON_DATA%।
 - PaperDaemon सिर्फ़ वही प्रोग्राम रोकता है जो उसने शुरू किए। अगर दूसरे मॉडल सर्वर मेरे ग्राफ़िक्स कार्ड की मेमोरी इस्तेमाल कर रहे हों, तो स्क्रिप्ट पहले उन्हें रोके।
+- बहुत ही असामान्य मामलों में PaperDaemon खुद मेरे ग्राफ़िक्स कार्ड की 200 MB तक मेमोरी इस्तेमाल कर सकता है, इसलिए मॉडल को इतनी जगह खाली छोड़नी चाहिए।
 - सर्वर को Stable Diffusion web UI API (/sdapi/v1/txt2img) बोलना चाहिए, जैसा stable-diffusion.cpp का सर्वर, Forge या AUTOMATIC1111 करते हैं, या OpenAI Images API।
 
 लिखने से पहले मुझसे ये सवाल एक-एक करके पूछो और हर जवाब का इंतज़ार करो:
@@ -557,7 +563,6 @@
   <string name="ts.m.network_off">नेटवर्क पहुँच बंद है</string>
   <string name="ts.m.no_results_in">{s} से. में कोई नतीजा नहीं</string>
   <string name="ts.m.results_in">{s} से. में {n} नतीजे</string>
-  <string name="ts.m.no_sites">कोई साइट नहीं चुनी</string>
   <string name="ts.m.site_time">{site} {s} से.</string>
   <string name="ts.m.site_failed">{site} विफल</string>
   <string name="ts.m.no_forecast">कोई पूर्वानुमान नहीं</string>
@@ -573,7 +578,6 @@
   <string name="ts.d.search_empty">खोज खाली लौटी।</string>
   <string name="ts.d.first">पहला: {title}</string>
   <string name="ts.d.every_site">हर साइट से पोस्ट आए।</string>
-  <string name="ts.d.choose_sites">सेटिंग्स में सोशल साइटें चुनें।</string>
   <string name="ts.d.no_forecast">मौसम सेवा ने जवाब नहीं दिया।</string>
   <string name="ts.d.weather">आज {place} में: अधिकतम {hi}{unit}, न्यूनतम {lo}{unit}।</string>
   <string name="ts.d.weather_london">कोई जगह सेट नहीं है, इसलिए आज लंदन: अधिकतम {hi}{unit}, न्यूनतम {lo}{unit}।</string>
@@ -630,6 +634,8 @@
   <string name="fm.convert_on">चालू करें</string>
   <string name="fm.signin_shift">नकली मिरर का टाइप किया गया पाठ टैबलेट के फ़ॉन्ट में छपेगा और थोड़ा खिसक सकता है।</string>
   <string name="editor.template_signin">टेम्पलेट देखने और चुनने के लिए reMarkable खाते में साइन इन करें।</string>
+  <string name="editor.template_why_title">टेम्पलेट के लिए reMarkable लॉगिन चाहिए</string>
+  <string name="editor.template_why">PaperDaemon इस कंप्यूटर पर reMarkable डेस्कटॉप ऐप से पेज टेम्पलेट पढ़ता है, और ऐसा तभी करता है जब कोई reMarkable खाता साइन इन हो। उसके बिना पेजों पर कोई टेम्पलेट नहीं दिखता और कोई चुना नहीं जा सकता। इन्हें इस्तेमाल करने के लिए सेटिंग्स में साइन इन करें।</string>
   <string name="fm.new_notebook">नई नोटबुक</string>
   <string name="fm.new_folder">नया फ़ोल्डर</string>
   <string name="fm.new_page">नया पन्ना</string>

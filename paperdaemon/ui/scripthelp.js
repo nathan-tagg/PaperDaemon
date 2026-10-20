@@ -17,7 +17,7 @@
       h3("help.h_do"), list("ol", ["help.model.do1", "help.model.do2", "help.do_output"]),
       h3("help.h_runs"), list("ul", ["help.model.runs1", "help.model.runs2", "help.model.runs3"]),
       h3("help.h_stops"), p("help.model.stops"),
-      h3("help.h_wrong"), list("ul", ["help.model.wrong_vram", "help.model.wrong_two", "help.model.wrong_port", "help.wrong_spaces", "help.model.wrong_keys"]),
+      h3("help.h_wrong"), list("ul", ["help.model.wrong_vram", "help.model.wrong_own_vram", "help.model.wrong_two", "help.model.wrong_port", "help.wrong_spaces", "help.model.wrong_keys"]),
       h3("help.h_try"), p("help.model.try"),
     ],
     prompt: kind => PD.t(kind === "image" ? "help.model.prompt_image" : "help.model.prompt_text"),

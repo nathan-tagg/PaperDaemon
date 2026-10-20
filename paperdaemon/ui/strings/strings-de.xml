@@ -116,8 +116,6 @@
   <string name="settings.network">Netzwerkzugriff</string>
   <string name="settings.network.help">Wetter, Beiträge aus sozialen Netzen, Wikipedia und Websuche. Deine Modelle und die reMarkable-Cloud sind nicht betroffen.</string>
   <string name="settings.network.allow">Netzwerkzugriff erlauben</string>
-  <string name="settings.social">Soziale Seiten</string>
-  <string name="settings.social.help">Wo eine Anfrage nach Beiträgen sucht, wenn sie keine Seite nennt. Eine genannte Seite wird immer durchsucht.</string>
   <string name="settings.tools">Werkzeuge</string>
   <string name="settings.updates">Updates</string>
   <string name="settings.updates.help">PaperDaemon sucht nie von selbst.</string>
@@ -244,8 +242,13 @@
   <string name="tablet.label">Spiegel</string>
   <string name="tablet.folder">Ordner</string>
   <string name="dc.decomposing">{name} wird zerlegt</string>
-  <string name="dc.drop">Zieh ein Bild hierher, oder {choose}.</string>
+  <string name="dc.drop">Zieh ein Bild hierher, {choose} oder {paste}.</string>
   <string name="dc.choose">wähle eine Datei</string>
+  <string name="dc.paste">füge eines ein</string>
+  <string name="dc.paste_none">In der Zwischenablage ist kein Bild.</string>
+  <string name="dc.paste_denied">PaperDaemon konnte die Zwischenablage nicht lesen. Drück stattdessen Strg+V.</string>
+  <string name="dc.save">Speichern</string>
+  <string name="dc.saving">Wird gespeichert…</string>
   <string name="dc.on_page">Auf Seite Nr. {n}</string>
   <string name="dc.sending">Wird gesendet…</string>
   <string name="dc.send">An das Tablet senden</string>
@@ -255,7 +258,7 @@
   <string name="count.stroke.one">{n} Strich</string>
   <string name="count.stroke.other">{n} Striche</string>
   <string name="common.delete">Löschen</string>
-  <string name="dc.size_range">Die Größe liegt zwischen 200 und 1.400 Tablet-Pixeln.</string>
+  <string name="dc.size_range">Die Breite liegt zwischen 200 und 1.600 Tablet-Pixeln.</string>
   <string name="dc.picture">Bild</string>
   <string name="dc.bad_type">Diese Datei ist kein PNG-, JPEG- oder WebP-Bild.</string>
   <string name="dc.too_big">Dieses Bild ist {size} groß. Nimm eines unter {max}.</string>
@@ -264,8 +267,8 @@
   <string name="dc.label">Zerlegen</string>
   <string name="dc.intro">Verwandle ein Bild in Stiftstriche und sende es an das Tablet, wo sich jede Linie wie deine eigene radieren und übermalen lässt.</string>
   <string name="dc.image">Bild</string>
-  <string name="dc.size">Größe</string>
-  <string name="dc.size_unit">Tablet-Pixel, 200 bis 1.400</string>
+  <string name="dc.size">Breite</string>
+  <string name="dc.size_unit">Tablet-Pixel, 200 bis 1.600</string>
   <string name="dc.types">PNG, JPEG, WebP</string>
   <string name="dc.decomps">Zerlegungen</string>
   <string name="lineup.unreadable">Die Aufstellungen konnten nicht gelesen werden.</string>
@@ -452,6 +455,7 @@
   <string name="help.model.stops">Wenn du PaperDaemon pausierst oder beendest, oder wenn das Startskript einer anderen Aufstellung laufen muss. Es hält alles an, was dein Skript gestartet hat. Ein Programm, das es nicht gestartet hat, hält es nie an.</string>
   <string name="help.h_wrong">Was schiefgehen kann</string>
   <string name="help.model.wrong_vram">**Die Grafikkarte ist voll.** Ein Modell braucht Platz im Speicher deiner Karte (VRAM). Wenn ein anderer Modellserver, ein Spiel oder ein Bildwerkzeug diesen Speicher belegt, lädt das Modell nicht oder läuft sehr langsam. Wenn du selbst andere Modellserver betreibst, lass dein Skript sie zuerst anhalten (zum Beispiel `taskkill /IM llama-server.exe /F`). PaperDaemon hält nur an, was es gestartet hat.</string>
+  <string name="help.model.wrong_own_vram">**Was PaperDaemon selbst braucht.** In sehr seltenen Fällen (eine Seite voller großer Zerlegungen, im Seiteneditor geöffnet) kann PaperDaemon selbst bis zu 200 MB vom Speicher deiner Karte belegen. Lass so viel frei.</string>
   <string name="help.model.wrong_two">**Zwei Modelle, die nicht zusammen passen.** Wenn dein Textmodell und dein Bildmodell nicht beide auf deine Karte passen, schreib jedes Skript so, dass es den Server des anderen anhält, bevor es seinen eigenen startet.</string>
   <string name="help.model.wrong_port">**Der Port ist belegt.** Wenn ein anderes Programm diesen Port schon nutzt, kann dein Server dort nicht starten. Wähle einen freien Port und nutze denselben in der Adresse oben.</string>
   <string name="help.wrong_spaces">**Leerzeichen in einem Pfad.** Setze jeden Pfad mit Leerzeichen in Anführungszeichen.</string>
@@ -479,6 +483,7 @@ Regeln, die das Skript befolgen muss:
 - Die Ausgabe des Servers anzeigen.
 - PaperDaemon setzt außerdem %PAPERDAEMON_ROLE% (text oder image), %PAPERDAEMON_LOCATION% (die volle Adresse), %PAPERDAEMON_OTHER_LOCATION% (die Adresse des anderen Modells), %PAPERDAEMON_LINEUP% und %PAPERDAEMON_DATA%.
 - PaperDaemon hält nur Programme an, die es gestartet hat. Wenn andere Modellserver den Speicher meiner Grafikkarte belegen könnten, sollte das Skript sie zuerst anhalten.
+- PaperDaemon selbst kann in sehr seltenen Fällen bis zu 200 MB vom Speicher meiner Grafikkarte belegen, also sollte das Modell so viel frei lassen.
 - Der Server muss die OpenAI-kompatible Chat-API (/v1/chat/completions) sprechen, wie es llama-server von llama.cpp, Ollama, LM Studio oder vLLM tun.
 
 Bevor du es schreibst, stell mir diese Fragen nacheinander und warte jeweils auf die Antwort:
@@ -498,6 +503,7 @@ Regeln, die das Skript befolgen muss:
 - Die Ausgabe des Servers anzeigen.
 - PaperDaemon setzt außerdem %PAPERDAEMON_ROLE% (text oder image), %PAPERDAEMON_LOCATION% (die volle Adresse), %PAPERDAEMON_OTHER_LOCATION% (die Adresse des anderen Modells), %PAPERDAEMON_LINEUP% und %PAPERDAEMON_DATA%.
 - PaperDaemon hält nur Programme an, die es gestartet hat. Wenn andere Modellserver den Speicher meiner Grafikkarte belegen könnten, sollte das Skript sie zuerst anhalten.
+- PaperDaemon selbst kann in sehr seltenen Fällen bis zu 200 MB vom Speicher meiner Grafikkarte belegen, also sollte das Modell so viel frei lassen.
 - Der Server muss die Stable-Diffusion-Web-UI-API (/sdapi/v1/txt2img) sprechen, wie es der Server von stable-diffusion.cpp, Forge oder AUTOMATIC1111 tun, oder die OpenAI-Images-API.
 
 Bevor du es schreibst, stell mir diese Fragen nacheinander und warte jeweils auf die Antwort:
@@ -557,7 +563,6 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="ts.m.network_off">Netzwerkzugriff ist aus</string>
   <string name="ts.m.no_results_in">Keine Ergebnisse in {s} s</string>
   <string name="ts.m.results_in">{n} Ergebnisse in {s} s</string>
-  <string name="ts.m.no_sites">Keine Seiten gewählt</string>
   <string name="ts.m.site_time">{site} {s} s</string>
   <string name="ts.m.site_failed">{site} fehlgeschlagen</string>
   <string name="ts.m.no_forecast">Keine Vorhersage</string>
@@ -573,7 +578,6 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="ts.d.search_empty">Die Suche kam leer zurück.</string>
   <string name="ts.d.first">Erstes: {title}</string>
   <string name="ts.d.every_site">Von jeder Seite kamen Beiträge zurück.</string>
-  <string name="ts.d.choose_sites">Wähle die sozialen Seiten in den Einstellungen.</string>
   <string name="ts.d.no_forecast">Der Wetterdienst hat nicht geantwortet.</string>
   <string name="ts.d.weather">Heute in {place}: Höchstwert {hi}{unit}, Tiefstwert {lo}{unit}.</string>
   <string name="ts.d.weather_london">Kein Ort eingestellt, also London heute: Höchstwert {hi}{unit}, Tiefstwert {lo}{unit}.</string>
@@ -630,6 +634,8 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="fm.convert_on">Einschalten</string>
   <string name="fm.signin_shift">Getippter Text im falschen Spiegel wird in den Schriften des Tablets gesetzt und kann sich leicht verschieben.</string>
   <string name="editor.template_signin">Melde dich bei einem reMarkable-Konto an, um Vorlagen zu sehen und auszuwählen.</string>
+  <string name="editor.template_why_title">Vorlagen brauchen eine reMarkable-Anmeldung</string>
+  <string name="editor.template_why">PaperDaemon liest die Seitenvorlagen aus der reMarkable-Desktop-App auf diesem Computer, und das nur, wenn ein reMarkable-Konto angemeldet ist. Ohne Anmeldung zeigen Seiten keine Vorlage, und es lässt sich keine auswählen. Melde dich unter Einstellungen an, um sie zu nutzen.</string>
   <string name="fm.new_notebook">Neues Notizbuch</string>
   <string name="fm.new_folder">Neuer Ordner</string>
   <string name="fm.new_page">Neue Seite</string>

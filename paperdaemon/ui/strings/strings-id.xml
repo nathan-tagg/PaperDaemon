@@ -116,8 +116,6 @@
   <string name="settings.network">Akses jaringan</string>
   <string name="settings.network.help">Cuaca, postingan media sosial, Wikipedia, dan pencarian web. Model Anda dan cloud reMarkable tidak terpengaruh.</string>
   <string name="settings.network.allow">Izinkan akses jaringan</string>
-  <string name="settings.social">Situs sosial</string>
-  <string name="settings.social.help">Tempat permintaan postingan mencari ketika tidak menyebut situs. Situs yang disebut selalu dicari.</string>
   <string name="settings.tools">Alat</string>
   <string name="settings.updates">Pembaruan</string>
   <string name="settings.updates.help">PaperDaemon tidak pernah memeriksa sendiri.</string>
@@ -244,8 +242,13 @@
   <string name="tablet.label">Cermin</string>
   <string name="tablet.folder">Folder</string>
   <string name="dc.decomposing">Mengurai {name}</string>
-  <string name="dc.drop">Letakkan gambar di sini, atau {choose}.</string>
+  <string name="dc.drop">Letakkan gambar di sini, {choose}, atau {paste}.</string>
   <string name="dc.choose">pilih berkas</string>
+  <string name="dc.paste">tempel satu</string>
+  <string name="dc.paste_none">Tidak ada gambar di papan klip.</string>
+  <string name="dc.paste_denied">PaperDaemon tidak bisa membaca papan klip. Tekan Ctrl+V saja.</string>
+  <string name="dc.save">Simpan</string>
+  <string name="dc.saving">Menyimpan…</string>
   <string name="dc.on_page">Di halaman #{n}</string>
   <string name="dc.sending">Mengirim…</string>
   <string name="dc.send">Kirim ke Tablet</string>
@@ -255,7 +258,7 @@
   <string name="count.stroke.one">{n} goresan</string>
   <string name="count.stroke.other">{n} goresan</string>
   <string name="common.delete">Hapus</string>
-  <string name="dc.size_range">Ukurannya 200 sampai 1.400 piksel tablet.</string>
+  <string name="dc.size_range">Lebarnya 200 sampai 1.600 piksel tablet.</string>
   <string name="dc.picture">Gambar</string>
   <string name="dc.bad_type">Berkas itu bukan gambar PNG, JPEG, atau WebP.</string>
   <string name="dc.too_big">Gambar itu berukuran {size}. Pakai yang di bawah {max}.</string>
@@ -264,8 +267,8 @@
   <string name="dc.label">Urai</string>
   <string name="dc.intro">Ubah gambar menjadi goresan pena dan kirim ke tablet, tempat setiap garis bisa dihapus dan digambar ulang seperti milik Anda sendiri.</string>
   <string name="dc.image">Gambar</string>
-  <string name="dc.size">Ukuran</string>
-  <string name="dc.size_unit">piksel tablet, 200 sampai 1.400</string>
+  <string name="dc.size">Lebar</string>
+  <string name="dc.size_unit">piksel tablet, 200 sampai 1.600</string>
   <string name="dc.types">PNG, JPEG, WebP</string>
   <string name="dc.decomps">Hasil urai</string>
   <string name="lineup.unreadable">Formasi tidak dapat dibaca.</string>
@@ -452,6 +455,7 @@
   <string name="help.model.stops">Ketika Anda menjeda atau menutup PaperDaemon, atau ketika skrip mulai formasi lain harus berjalan. PaperDaemon menghentikan semua yang dijalankan skrip Anda. PaperDaemon tidak pernah menghentikan program yang tidak dijalankannya.</string>
   <string name="help.h_wrong">Hal yang bisa salah</string>
   <string name="help.model.wrong_vram">**Kartu grafis penuh.** Sebuah model memerlukan ruang di memori kartu Anda (VRAM). Jika server model lain, game, atau alat gambar sedang memakai memori itu, model gagal dimuat atau berjalan sangat lambat. Jika Anda sendiri menjalankan server model lain, buat skrip Anda menghentikannya terlebih dahulu (misalnya `taskkill /IM llama-server.exe /F`). PaperDaemon hanya menghentikan yang dijalankannya.</string>
+  <string name="help.model.wrong_own_vram">**Bagian PaperDaemon sendiri.** Dalam kasus yang sangat jarang (halaman penuh dekomposisi besar yang terbuka di editor halaman), PaperDaemon sendiri bisa memakai hingga 200 MB memori kartu Anda. Sisakan sebanyak itu.</string>
   <string name="help.model.wrong_two">**Dua model yang tidak muat bersama.** Jika model teks dan model gambar Anda tidak muat bersamaan di kartu, tulis setiap skrip agar menghentikan server yang lain sebelum menjalankan servernya sendiri.</string>
   <string name="help.model.wrong_port">**Port sudah dipakai.** Jika program lain sudah memakai port itu, server Anda tidak bisa berjalan di sana. Pilih port yang kosong dan pakai port yang sama di alamat di atas.</string>
   <string name="help.wrong_spaces">**Spasi di jalur.** Beri tanda kutip pada setiap jalur yang berisi spasi.</string>
@@ -479,6 +483,7 @@ Aturan yang harus diikuti skrip:
 - Cetak keluaran server.
 - PaperDaemon juga mengatur %PAPERDAEMON_ROLE% (text atau image), %PAPERDAEMON_LOCATION% (alamat lengkap), %PAPERDAEMON_OTHER_LOCATION% (alamat model lainnya), %PAPERDAEMON_LINEUP% dan %PAPERDAEMON_DATA%.
 - PaperDaemon hanya menghentikan program yang dijalankannya. Jika server model lain mungkin memakai memori kartu grafis saya, skrip harus menghentikannya terlebih dahulu.
+- Dalam kasus yang sangat jarang, PaperDaemon sendiri bisa memakai hingga 200 MB memori kartu grafis saya, jadi model harus menyisakan sebanyak itu.
 - Server harus berbicara dengan API chat yang kompatibel dengan OpenAI (/v1/chat/completions), seperti llama-server dari llama.cpp, Ollama, LM Studio, atau vLLM.
 
 Sebelum menulisnya, ajukan pertanyaan-pertanyaan ini satu per satu dan tunggu setiap jawaban:
@@ -498,6 +503,7 @@ Aturan yang harus diikuti skrip:
 - Cetak keluaran server.
 - PaperDaemon juga mengatur %PAPERDAEMON_ROLE% (text atau image), %PAPERDAEMON_LOCATION% (alamat lengkap), %PAPERDAEMON_OTHER_LOCATION% (alamat model lainnya), %PAPERDAEMON_LINEUP% dan %PAPERDAEMON_DATA%.
 - PaperDaemon hanya menghentikan program yang dijalankannya. Jika server model lain mungkin memakai memori kartu grafis saya, skrip harus menghentikannya terlebih dahulu.
+- Dalam kasus yang sangat jarang, PaperDaemon sendiri bisa memakai hingga 200 MB memori kartu grafis saya, jadi model harus menyisakan sebanyak itu.
 - Server harus berbicara dengan API web UI Stable Diffusion (/sdapi/v1/txt2img), seperti server stable-diffusion.cpp, Forge, atau AUTOMATIC1111, atau dengan API Images OpenAI.
 
 Sebelum menulisnya, ajukan pertanyaan-pertanyaan ini satu per satu dan tunggu setiap jawaban:
@@ -558,7 +564,6 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="ts.m.network_off">Akses jaringan mati</string>
   <string name="ts.m.no_results_in">Tidak ada hasil dalam {s} dtk</string>
   <string name="ts.m.results_in">{n} hasil dalam {s} dtk</string>
-  <string name="ts.m.no_sites">Tidak ada situs yang dipilih</string>
   <string name="ts.m.site_time">{site} {s} dtk</string>
   <string name="ts.m.site_failed">{site} gagal</string>
   <string name="ts.m.no_forecast">Tidak ada prakiraan</string>
@@ -574,7 +579,6 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="ts.d.search_empty">Pencarian kembali kosong.</string>
   <string name="ts.d.first">Pertama: {title}</string>
   <string name="ts.d.every_site">Postingan datang dari setiap situs.</string>
-  <string name="ts.d.choose_sites">Pilih situs sosial di Pengaturan.</string>
   <string name="ts.d.no_forecast">Layanan prakiraan tidak menjawab.</string>
   <string name="ts.d.weather">Hari ini di {place}: tertinggi {hi}{unit}, terendah {lo}{unit}.</string>
   <string name="ts.d.weather_london">Lokasi belum diatur, jadi London hari ini: tertinggi {hi}{unit}, terendah {lo}{unit}.</string>
@@ -630,6 +634,8 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="fm.convert_on">Nyalakan</string>
   <string name="fm.signin_shift">Teks ketikan di Cermin Palsu akan disusun dengan huruf tablet dan bisa bergeser sedikit.</string>
   <string name="editor.template_signin">Masuk ke akun reMarkable untuk melihat dan memilih templat.</string>
+  <string name="editor.template_why_title">Templat memerlukan login reMarkable</string>
+  <string name="editor.template_why">PaperDaemon membaca templat halaman dari aplikasi desktop reMarkable di komputer ini, dan hanya melakukannya jika akun reMarkable sudah masuk. Tanpa itu, halaman tidak menampilkan templat dan tidak ada yang bisa dipilih. Masuk di Pengaturan untuk menggunakannya.</string>
   <string name="fm.new_notebook">Buku catatan baru</string>
   <string name="fm.new_folder">Folder baru</string>
   <string name="fm.new_page">Halaman baru</string>

@@ -621,10 +621,10 @@ def _prefs_sentence():
               p["week_start"].capitalize()))
     if (H._CT._setting("network") or {}).get("allowed") is False:
         return out + " The internet is off: no web search, weather, social posts or Wikipedia."
-    sites = [_SITE_NAMES.get(x, x) for x in ((H._CT._setting("social") or {}).get("sites") or [])]
-    if sites:
-        out += " Social posts asked for without a site come from %s; a site the request names is always used." % (
-            ", ".join(sites[:-1]) + " and " + sites[-1] if len(sites) > 1 else sites[0])
+    from paperdaemon.settings import SOCIAL_SITES
+    sites = [_SITE_NAMES.get(x, x) for x in SOCIAL_SITES]
+    out += " Social posts asked for without a site come from %s; a site the request names is always used." % (
+        ", ".join(sites[:-1]) + " and " + sites[-1])
     return out
 
 

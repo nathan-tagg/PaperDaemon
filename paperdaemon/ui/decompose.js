@@ -11,7 +11,7 @@
   const uploadIcon = '<svg viewBox="0 0 40 52" aria-hidden="true"><rect x="1" y="1" width="38" height="50" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M20 34V16M13 23l7-7 7 7" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
   const eyeIcon = '<svg viewBox="0 0 24 16" aria-hidden="true"><path d="M1 8s4-7 11-7 11 7 11 7-4 7-11 7S1 8 1 8z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
 
-  const widthOk = w => Number.isFinite(w) && w >= 200 && w <= 1400;
+  const widthOk = w => Number.isFinite(w) && w >= 200 && w <= 1600;            // the page's safe width (studio.box_for)
   function setErr(t) { S.err = t || ""; const el = $("#dc-err", R); if (el) el.textContent = S.err; }
 
   // ---- the drop zone: the prompt, or the pictures being decomposed, each under a ring that fills as the engine
@@ -30,7 +30,9 @@
     zone.classList.toggle("loaded", S.working.length > 0);
     $("#dc-zone-body", R).innerHTML = S.working.length
       ? '<div class="dc-working">' + S.working.map(w => '<div class="decomp-pic working" data-job="' + w.job + '"><img alt="' + esc(w.name) + '" src="' + esc(w.src) + '">' + ring(w) + "</div>").join("") + "</div>"
-      : '<span class="drop-icon">' + uploadIcon + '</span><p>' + PD.tHtml("dc.drop", { choose: '<button type="button" class="link-btn" data-act="choose">' + esc(PD.t("dc.choose")) + "</button>" }) + "</p>";
+      : '<span class="drop-icon">' + uploadIcon + '</span><p>' + PD.tHtml("dc.drop", {
+          choose: '<button type="button" class="link-btn" data-act="choose">' + esc(PD.t("dc.choose")) + "</button>",
+          paste: '<button type="button" class="link-btn" data-act="paste">' + esc(PD.t("dc.paste")) + "</button>" }) + "</p>";
   }
 
   /** Ask the engine how far each picture in the zone has come, and move its ring; until none is left. */
@@ -64,7 +66,9 @@
       '<div class="decomp-pic"><img alt="" src="' + esc(it.preview) + '">' +
       '<button type="button" class="eye" data-look="' + it.id + '" aria-label="' + esc(PD.t("dc.look")) + '">' + eyeIcon + "</button></div>" +
       '<figcaption><span class="name">' + esc(it.name) + '</span><span class="meta num">' + esc(PD.t("dc.size_px", { w: PD.n(it.w), h: PD.n(it.h) })) + "</span><span class=\"meta\">" + PD.count("count.stroke", it.strokes) + " · " + esc(PD.dur(it.seconds || 0)) + "</span>" +
-      '<span class="decomp-actions"><button type="button" class="btn small" data-del="' + it.id + '">' + esc(PD.t("common.delete")) + "</button>" + act + "</span></figcaption></figure>";
+      '<span class="decomp-actions"><button type="button" class="btn small" data-del="' + it.id + '">' + esc(PD.t("common.delete")) + "</button>" +
+      '<button type="button" class="btn small" data-save="' + it.id + '"' + (it.saving ? ' disabled aria-busy="true"' : "") + ">" + esc(PD.t(it.saving ? "dc.saving" : "dc.save")) + "</button>" +
+      act + "</span>" + (it.note ? '<span class="meta' + (it.noteBad ? " attn-text" : "") + '" role="status">' + esc(it.note) + "</span>" : "") + "</figcaption></figure>";
   }
 
   function renderItems() {
@@ -93,6 +97,35 @@
       it.page = d && d.page != null ? d.page : "?";
     } catch (e) { setErr(PD.errText(e)); }
     it.sending = false; renderItems();
+  }
+
+  /** The decomp's picture, as the screen shows it, into the user's Downloads folder. */
+  async function save(it) {
+    if (!it || it.saving) return;
+    it.saving = true; it.note = ""; renderItems();
+    const [got, e] = await PD.safe(PD.api("POST", "/decompose/save", { image: it.preview, name: it.name }));
+    it.saving = false; it.note = e ? PD.errText(e) : PD.t("fm.exported", { name: got.name }); it.noteBad = !!e;
+    renderItems();
+  }
+
+  /** The paste control: an image on the clipboard (or an image's link), as if dropped. Ctrl+V does the same. */
+  async function pasteClipboard() {
+    setErr("");
+    let items;
+    try { items = await navigator.clipboard.read(); } catch (e) { setErr(PD.t("dc.paste_denied")); return; }
+    for (const it of items) {
+      const type = it.types.find(t => /^image\/(png|jpeg|webp)$/.test(t));
+      if (type) { const b = await it.getType(type); fromFile(new File([b], PD.t("dc.picture") + "." + type.split("/")[1], { type })); return; }
+    }
+    for (const it of items) {                       // a copied image from a web page comes as its markup or its link
+      const text = {};
+      for (const t of ["text/html", "text/uri-list", "text/plain"]) if (it.types.includes(t)) text[t] = await (await it.getType(t)).text();
+      const html = text["text/html"] || "", link = (text["text/uri-list"] || text["text/plain"] || "").trim();
+      if (/<img[^>]+src="/i.test(html) || /^(https?:|data:image\/)/i.test(link)) {
+        fromDrop({ files: [], getData: t => t === "text/html" ? html : t === "text/uri-list" ? link : "" }); return;
+      }
+    }
+    setErr(PD.t("dc.paste_none"));
   }
 
   /** A close look at a decomp, in a viewer like the Tablet tab's. */
@@ -148,7 +181,7 @@
       R.innerHTML = '<header class="page-head"><h1>' + esc(PD.t("dc.label")) + "</h1>" +
         "<p>" + esc(PD.t("dc.intro")) + "</p></header>" +
         '<section class="section" aria-labelledby="dc-h-img"><h2 id="dc-h-img">' + esc(PD.t("dc.image")) + "</h2>" +
-        '<div class="actions dc-size"><label class="meta" for="dc-width">' + esc(PD.t("dc.size")) + '</label><input class="field num w-s" id="dc-width" type="number" min="200" max="1400" step="50" value="' + S.width + '">' +
+        '<div class="actions dc-size"><label class="meta" for="dc-width">' + esc(PD.t("dc.size")) + '</label><input class="field num w-s" id="dc-width" type="number" min="200" max="1600" step="50" value="' + S.width + '">' +
         '<span class="meta">' + esc(PD.t("dc.size_unit")) + '</span><span class="drop-note">' + esc(PD.t("dc.types")) + "</span></div>" +
         '<div class="drop" id="dc-zone"><div id="dc-zone-body"></div><input type="file" id="dc-file" accept="image/png,image/jpeg,image/webp" multiple hidden></div>' +
         '<p class="msg err" id="dc-err" role="alert"></p><span hidden id="dc-noinbox">' + esc(PD.t("dc.no_inbox")) + "</span></section>" +
@@ -156,6 +189,8 @@
         '</h2><div class="decomps" id="dc-items"></div></section>';
       const zone = $("#dc-zone", R);
       PD.on(R, "click", "[data-act=choose]", () => $("#dc-file", R).click());
+      PD.on(R, "click", "[data-act=paste]", () => pasteClipboard());
+      PD.on(R, "click", "[data-save]", (e, el) => save(S.items.find(x => x.id === Number(el.dataset.save))));
       $("#dc-file", R).addEventListener("change", e => { [...e.target.files].forEach(fromFile); e.target.value = ""; });
       for (const t of ["dragenter", "dragover"]) zone.addEventListener(t, e => { e.preventDefault(); zone.classList.add("over"); });
       zone.addEventListener("dragleave", () => zone.classList.remove("over"));
@@ -172,8 +207,12 @@
       renderZone(); renderItems();
     },
     async show() {
+      // SEND IS ON WHEN ANY INBOX CAN TAKE IT: the Mirror's (with an account signed in) or the False Mirror's
       const [st] = await PD.safe(PD.loadSettings());
-      S.inbox = (st && st.tablet && st.tablet.inbox) || "";
+      const status = PD.status || {}, fm = !!(status.false_mirror || {}).exists;
+      const signedIn = !!(status.tablet || {}).set;
+      const real = (st && st.tablet && st.tablet.inbox) || "", fake = fm ? ((st && st.false_mirror && st.false_mirror.inbox) || "") : "";
+      S.inbox = (signedIn && real) || fake || "";
       renderItems();
     },
   });

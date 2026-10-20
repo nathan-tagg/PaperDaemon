@@ -115,8 +115,6 @@
   <string name="settings.network">Network access</string>
   <string name="settings.network.help">Weather, social posts, Wikipedia and web search. Your models and the reMarkable cloud are not affected.</string>
   <string name="settings.network.allow">Allow network access</string>
-  <string name="settings.social">Social sites</string>
-  <string name="settings.social.help">Where a request for posts looks when it names no site. A site it names is always searched.</string>
   <string name="settings.tools">Tools</string>
   <string name="settings.updates">Updates</string>
   <string name="settings.updates.help">PaperDaemon never checks on its own.</string>
@@ -243,8 +241,13 @@
   <string name="tablet.label">Mirror</string>
   <string name="tablet.folder">Folder</string>
   <string name="dc.decomposing">Decomposing {name}</string>
-  <string name="dc.drop">Drop an image here, or {choose}.</string>
+  <string name="dc.drop">Drop an image here, {choose}, or {paste}.</string>
   <string name="dc.choose">choose a file</string>
+  <string name="dc.paste">paste one</string>
+  <string name="dc.paste_none">There is no image on the clipboard.</string>
+  <string name="dc.paste_denied">PaperDaemon could not read the clipboard. Press Ctrl+V instead.</string>
+  <string name="dc.save">Save</string>
+  <string name="dc.saving">Saving…</string>
   <string name="dc.on_page">On page #{n}</string>
   <string name="dc.sending">Sending…</string>
   <string name="dc.send">Send to Tablet</string>
@@ -254,7 +257,7 @@
   <string name="count.stroke.one">{n} stroke</string>
   <string name="count.stroke.other">{n} strokes</string>
   <string name="common.delete">Delete</string>
-  <string name="dc.size_range">The size is 200 to 1,400 tablet pixels.</string>
+  <string name="dc.size_range">The width is 200 to 1,600 tablet pixels.</string>
   <string name="dc.picture">Picture</string>
   <string name="dc.bad_type">That file is not a PNG, JPEG or WebP image.</string>
   <string name="dc.too_big">That image is {size}. Use one under {max}.</string>
@@ -263,8 +266,8 @@
   <string name="dc.label">Decompose</string>
   <string name="dc.intro">Turn an image into pen strokes and send it to the tablet, where every line can be erased and drawn over like your own.</string>
   <string name="dc.image">Image</string>
-  <string name="dc.size">Size</string>
-  <string name="dc.size_unit">tablet pixels, 200 to 1,400</string>
+  <string name="dc.size">Width</string>
+  <string name="dc.size_unit">tablet pixels, 200 to 1,600</string>
   <string name="dc.types">PNG, JPEG, WebP</string>
   <string name="dc.decomps">Decomps</string>
   <string name="lineup.unreadable">The lineups could not be read.</string>
@@ -451,6 +454,7 @@
   <string name="help.model.stops">When you pause or quit PaperDaemon, or when another lineup's start script has to run. It stops everything your script started. It never stops a program it didn't start.</string>
   <string name="help.h_wrong">Things that go wrong</string>
   <string name="help.model.wrong_vram">**The graphics card is full.** A model needs room in your card's memory (VRAM). If another model server, a game or an image tool is holding that memory, the model fails to load or runs very slowly. If you run other model servers yourself, have your script stop them first (for example `taskkill /IM llama-server.exe /F`). PaperDaemon only stops what it started.</string>
+  <string name="help.model.wrong_own_vram">**PaperDaemon's own share.** In very unusual cases (a page covered in large decomps, open in the page editor), PaperDaemon itself may use up to 200 MB of your card's memory. Leave that much free.</string>
   <string name="help.model.wrong_two">**Two models that don't fit together.** If your text model and your image model can't both fit on your card, write each script so it stops the other one's server before starting its own.</string>
   <string name="help.model.wrong_port">**The port is taken.** If another program already uses that port, your server can't start there. Pick a free port and use the same one in the address above.</string>
   <string name="help.wrong_spaces">**Spaces in a path.** Put quotes around any path with spaces in it.</string>
@@ -478,6 +482,7 @@ Rules the script has to follow:
 - Print the server's output.
 - PaperDaemon also sets %PAPERDAEMON_ROLE% (text or image), %PAPERDAEMON_LOCATION% (the full address), %PAPERDAEMON_OTHER_LOCATION% (the other model's address), %PAPERDAEMON_LINEUP% and %PAPERDAEMON_DATA%.
 - PaperDaemon only stops programs it started. If other model servers might be using my graphics card's memory, the script should stop them first.
+- PaperDaemon itself may, in very unusual cases, use up to 200 MB of my graphics card's memory, so the model should leave that much free.
 - The server must speak the OpenAI-compatible chat API (/v1/chat/completions), as llama.cpp's llama-server, Ollama, LM Studio or vLLM do.
 
 Before you write it, ask me these questions one at a time and wait for each answer:
@@ -497,6 +502,7 @@ Rules the script has to follow:
 - Print the server's output.
 - PaperDaemon also sets %PAPERDAEMON_ROLE% (text or image), %PAPERDAEMON_LOCATION% (the full address), %PAPERDAEMON_OTHER_LOCATION% (the other model's address), %PAPERDAEMON_LINEUP% and %PAPERDAEMON_DATA%.
 - PaperDaemon only stops programs it started. If other model servers might be using my graphics card's memory, the script should stop them first.
+- PaperDaemon itself may, in very unusual cases, use up to 200 MB of my graphics card's memory, so the model should leave that much free.
 - The server must speak the Stable Diffusion web UI API (/sdapi/v1/txt2img), as stable-diffusion.cpp's server, Forge or AUTOMATIC1111 do, or the OpenAI Images API.
 
 Before you write it, ask me these questions one at a time and wait for each answer:
@@ -557,7 +563,6 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="ts.m.network_off">Network access is off</string>
   <string name="ts.m.no_results_in">No results in {s} s</string>
   <string name="ts.m.results_in">{n} results in {s} s</string>
-  <string name="ts.m.no_sites">No sites chosen</string>
   <string name="ts.m.site_time">{site} {s} s</string>
   <string name="ts.m.site_failed">{site} failed</string>
   <string name="ts.m.no_forecast">No forecast</string>
@@ -573,7 +578,6 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="ts.d.search_empty">The search came back empty.</string>
   <string name="ts.d.first">First: {title}</string>
   <string name="ts.d.every_site">Posts came back from every site.</string>
-  <string name="ts.d.choose_sites">Choose the social sites in Settings.</string>
   <string name="ts.d.no_forecast">The forecast service did not answer.</string>
   <string name="ts.d.weather">Today in {place}: high {hi}{unit}, low {lo}{unit}.</string>
   <string name="ts.d.weather_london">No location is set, so London today: high {hi}{unit}, low {lo}{unit}.</string>
@@ -630,6 +634,8 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="fm.convert_on">Turn on</string>
   <string name="fm.signin_shift">Typed text in the False Mirror will be set in the tablet's faces, and may shift slightly from where it is now.</string>
   <string name="editor.template_signin">Sign in to a reMarkable account to see and choose templates.</string>
+  <string name="editor.template_why_title">Templates need a reMarkable login</string>
+  <string name="editor.template_why">PaperDaemon reads the page templates from the reMarkable desktop app on this computer, and it does that only with a reMarkable account signed in. Without one, pages show no template and none can be chosen. Sign in under Settings to use them.</string>
   <string name="fm.new_notebook">New notebook</string>
   <string name="fm.new_folder">New folder</string>
   <string name="fm.new_page">New page</string>

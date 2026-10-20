@@ -1,8 +1,7 @@
 "use strict";
 /* Settings: the window's language and the preferences for the pages (how they write temperatures, times and weeks,
    the decompose inboxes, the location, the ignore and standing instructions tags) -- one set for every tablet, since
-   they all share one library -- then PaperDaemon's own settings (the reMarkable login, network access, the social
-   sites), and tools (checking for an update, sending the logs to the inbox).
+   they all share one library -- then PaperDaemon's own settings (the reMarkable login, network access), and tools (checking for an update, sending the logs to the inbox).
 
    THE FALSE MIRROR IS FOUND BY WAITING: a minute on this screen without leaving it, and its setting fades in at the
    bottom. Once there is a false mirror the setting shows at once, to delete it; deleting it turns it back into
@@ -14,7 +13,6 @@
   const S = { s: null, places: new Map(), books: null, fmBooks: null, revealed: false, timer: 0 };
   const BULB = '<svg viewBox="0 0 16 16" aria-hidden="true"><path pathLength="1" d="M8 1.5a4.5 4.5 0 0 0-2.6 8.2c.4.3.6.7.6 1.1V12h4v-1.2c0-.4.2-.8.6-1.1A4.5 4.5 0 0 0 8 1.5z"/><path pathLength="1" d="M6 13.5h4M6.8 15h2.4"/></svg>';
   const fmExists = () => !!((PD.status || {}).false_mirror || {}).exists;
-  const SITES = [["reddit", "Reddit"], ["hackernews", "Hacker News"], ["bluesky", "Bluesky"], ["4chan", "4chan"], ["mastodon", "Mastodon"]];
   async function save(path, value, msgEl) {
     const [s, e] = await PD.safe(PD.saveSettings(st => { PD.setK(st, path, value); }));
     if (s) S.s = s;
@@ -357,8 +355,6 @@
     const s = S.s || {};
     $("#st-lang", R).value = PD.languageLabel(PD.getK(s, "prefs.language") || "en");
     $("#st-net", R).checked = PD.getK(s, "network.allowed") !== false;
-    const sites = PD.getK(s, "social.sites") || [];
-    R.querySelectorAll("[data-site]").forEach(el => { el.checked = sites.includes(el.dataset.site); el.disabled = !$("#st-net", R).checked; });
     paintTools(); paintLogin();
   }
 
@@ -379,9 +375,6 @@
         row(t("settings.network"), t("settings.network.help"),
           '<label class="check-label"><input type="checkbox" id="st-net"> ' + esc(t("settings.network.allow")) +
           '</label><p class="hint" id="st-net-msg" role="status"></p>') +
-        row(t("settings.social"), t("settings.social.help"),
-          '<div class="checks-row">' + SITES.map(([v, l]) => '<label class="check-label"><input type="checkbox" data-site="' + v + '"> ' + esc(l) + "</label>").join("") +
-          '</div><p class="hint" id="st-sites-msg" role="status"></p>') +
         "</section>" +
         '<section class="section" aria-labelledby="st-h-tools"><h2 id="st-h-tools">' + esc(t("settings.tools")) + "</h2>" +
         row(t("settings.updates"), t("settings.updates.help"),
@@ -396,12 +389,7 @@
       wirePrefs();
       PD.on(R, "click", "[data-act=fm-create]", (e, el) => createFalseMirror(el));
       PD.on(R, "click", "[data-act=fm-delete]", (e, el) => deleteFalseMirror(el));
-      $("#st-net", R).addEventListener("change", async e => {
-        await save("network.allowed", e.target.checked, $("#st-net-msg", R));
-        R.querySelectorAll("[data-site]").forEach(el => { el.disabled = !e.target.checked; });
-      });
-      R.querySelectorAll("[data-site]").forEach(el => el.addEventListener("change", () =>
-        save("social.sites", [...R.querySelectorAll("[data-site]:checked")].map(x => x.dataset.site), $("#st-sites-msg", R))));
+      $("#st-net", R).addEventListener("change", e => save("network.allowed", e.target.checked, $("#st-net-msg", R)));
       PD.on(R, "click", "[data-act=update]", (e, el) => checkUpdates(el));
       PD.on(R, "click", "#st-login [data-act=borrow], #st-login [data-act=steal]", (e, el) => PD.busy(el, () => takeLogin(el.dataset.act)));
       PD.on(R, "click", "[data-act=logs]", (e, el) => sendLogs(el));

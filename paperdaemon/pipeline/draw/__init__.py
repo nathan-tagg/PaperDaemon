@@ -467,7 +467,7 @@ class Drawing:
     def paint_strokes(self, ox=None, oy=0.0, scale=1.0):
         """The strokes for the renderer (pipeline/page/paint.py): page x = 0 at `ox` (the canvas's center by default), widths
         from their width fields (the pens' and the highlighter's scales), the pens in their measured colors."""
-        from paperdaemon.pipeline.page.paint import pencil_tone
+        from paperdaemon.pipeline.page.paint import drawn, response
         ox = self.w / 2.0 if ox is None else ox
         out = []
         for st in self.strokes:
@@ -477,10 +477,10 @@ class Drawing:
                 out.append((P, [w * WHL * scale for w in widths], "highlighter",
                             tuple(rgba[:3]) if rgba else (255, 237, 117)))
             else:
-                col = R.ENUM.get(color.value, (0, 0, 0))
-                if tool.name.split("_")[0] in R.PENCIL_FAMILY:
-                    col = pencil_tone(col, 1.0)        # a drawn pencil carries no pressure: full
-                out.append((P, [w * WPEN * scale for w in widths], "pen", col))
+                attrs = st[5] if len(st) > 5 and isinstance(st[5], dict) else {}
+                k, dens = response(tool.name.split("_")[0], [attrs.get("pressure", 190)] * len(P),   # what write_rm stores
+                                   [attrs.get("speed", 0)] * len(P))
+                out.append((P, drawn([w * WPEN * scale for w in widths], k), "pen", R.ENUM.get(color.value, (0, 0, 0)), dens))
         return out
 
     def render_png(self, path, progress=None, ss=2):

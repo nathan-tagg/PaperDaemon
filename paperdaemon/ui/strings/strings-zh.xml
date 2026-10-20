@@ -116,8 +116,6 @@
   <string name="settings.network">网络访问</string>
   <string name="settings.network.help">天气、社交帖子、维基百科和网页搜索。您的模型和 reMarkable 云不受影响。</string>
   <string name="settings.network.allow">允许网络访问</string>
-  <string name="settings.social">社交网站</string>
-  <string name="settings.social.help">当获取帖子的请求没有指明网站时搜索的位置。被指明的网站总会被搜索。</string>
   <string name="settings.tools">工具</string>
   <string name="settings.updates">更新</string>
   <string name="settings.updates.help">PaperDaemon 从不自行检查。</string>
@@ -244,8 +242,13 @@
   <string name="tablet.label">镜像</string>
   <string name="tablet.folder">文件夹</string>
   <string name="dc.decomposing">正在分解 {name}</string>
-  <string name="dc.drop">把图片拖放到这里，或{choose}。</string>
+  <string name="dc.drop">把图片拖放到这里，{choose}，或{paste}。</string>
   <string name="dc.choose">选择文件</string>
+  <string name="dc.paste">粘贴一张</string>
+  <string name="dc.paste_none">剪贴板上没有图片。</string>
+  <string name="dc.paste_denied">PaperDaemon 无法读取剪贴板。请改按 Ctrl+V。</string>
+  <string name="dc.save">保存</string>
+  <string name="dc.saving">正在保存…</string>
   <string name="dc.on_page">在第 {n} 页</string>
   <string name="dc.sending">正在发送…</string>
   <string name="dc.send">发送到平板</string>
@@ -255,7 +258,7 @@
   <string name="count.stroke.one">{n} 笔</string>
   <string name="count.stroke.other">{n} 笔</string>
   <string name="common.delete">删除</string>
-  <string name="dc.size_range">尺寸为平板的 200 到 1,400 像素。</string>
+  <string name="dc.size_range">宽度为平板的 200 到 1,600 像素。</string>
   <string name="dc.picture">图片</string>
   <string name="dc.bad_type">该文件不是 PNG、JPEG 或 WebP 图片。</string>
   <string name="dc.too_big">该图片大小为 {size}。请使用小于 {max} 的图片。</string>
@@ -264,8 +267,8 @@
   <string name="dc.label">分解</string>
   <string name="dc.intro">把图片转换成笔画并发送到平板，每一条线都能像您自己画的一样擦除和描画。</string>
   <string name="dc.image">图片</string>
-  <string name="dc.size">尺寸</string>
-  <string name="dc.size_unit">平板像素，200 到 1,400</string>
+  <string name="dc.size">宽度</string>
+  <string name="dc.size_unit">平板像素，200 到 1,600</string>
   <string name="dc.types">PNG、JPEG、WebP</string>
   <string name="dc.decomps">分解结果</string>
   <string name="lineup.unreadable">无法读取阵容。</string>
@@ -452,6 +455,7 @@
   <string name="help.model.stops">当您暂停或退出 PaperDaemon 时，或者需要运行另一个阵容的启动脚本时。它会停止您的脚本启动的所有内容。它从不停止不是它启动的程序。</string>
   <string name="help.h_wrong">常见问题</string>
   <string name="help.model.wrong_vram">**显卡已满。** 模型需要显卡内存（显存）中的空间。如果其他模型服务器、游戏或图像工具占用了这些内存，模型会无法加载或运行得很慢。如果您自己运行其他模型服务器，请让脚本先停止它们（例如 `taskkill /IM llama-server.exe /F`）。PaperDaemon 只停止它自己启动的程序。</string>
+  <string name="help.model.wrong_own_vram">**PaperDaemon 自己占用的部分。** 在极少数情况下（一页上铺满大幅分解图，并在页面编辑器中打开），PaperDaemon 本身可能占用显卡最多 200 MB 显存。请留出这么多空间。</string>
   <string name="help.model.wrong_two">**两个模型放不下。** 如果您的文本模型和图片模型不能同时放进显卡，请让每个脚本在启动自己的服务器之前先停止另一个的服务器。</string>
   <string name="help.model.wrong_port">**端口被占用。** 如果其他程序已在使用该端口，您的服务器就无法在那里启动。请选择一个空闲端口，并在上方地址中使用同一个端口。</string>
   <string name="help.wrong_spaces">**路径中有空格。** 给任何带空格的路径加上引号。</string>
@@ -479,6 +483,7 @@
 - 输出服务器的消息。
 - PaperDaemon 还会设置 %PAPERDAEMON_ROLE%（text 或 image）、%PAPERDAEMON_LOCATION%（完整地址）、%PAPERDAEMON_OTHER_LOCATION%（另一个模型的地址）、%PAPERDAEMON_LINEUP% 和 %PAPERDAEMON_DATA%。
 - PaperDaemon 只停止它自己启动的程序。如果其他模型服务器可能占用我的显卡内存，脚本应先停止它们。
+- 在极少数情况下，PaperDaemon 本身可能占用我显卡最多 200 MB 显存，所以模型应留出这么多空间。
 - 服务器必须支持兼容 OpenAI 的聊天 API（/v1/chat/completions），就像 llama.cpp 的 llama-server、Ollama、LM Studio 或 vLLM 那样。
 
 在你编写之前，请一次问我一个下面的问题，并等我回答：
@@ -498,6 +503,7 @@
 - 输出服务器的消息。
 - PaperDaemon 还会设置 %PAPERDAEMON_ROLE%（text 或 image）、%PAPERDAEMON_LOCATION%（完整地址）、%PAPERDAEMON_OTHER_LOCATION%（另一个模型的地址）、%PAPERDAEMON_LINEUP% 和 %PAPERDAEMON_DATA%。
 - PaperDaemon 只停止它自己启动的程序。如果其他模型服务器可能占用我的显卡内存，脚本应先停止它们。
+- 在极少数情况下，PaperDaemon 本身可能占用我显卡最多 200 MB 显存，所以模型应留出这么多空间。
 - 服务器必须支持 Stable Diffusion web UI API（/sdapi/v1/txt2img），就像 stable-diffusion.cpp 的服务器、Forge 或 AUTOMATIC1111 那样，或者支持 OpenAI 的图像 API。
 
 在你编写之前，请一次问我一个下面的问题，并等我回答：
@@ -557,7 +563,6 @@
   <string name="ts.m.network_off">网络访问已关闭</string>
   <string name="ts.m.no_results_in">{s} 秒内无结果</string>
   <string name="ts.m.results_in">{s} 秒内 {n} 个结果</string>
-  <string name="ts.m.no_sites">未选择网站</string>
   <string name="ts.m.site_time">{site} {s} 秒</string>
   <string name="ts.m.site_failed">{site} 失败</string>
   <string name="ts.m.no_forecast">没有预报</string>
@@ -573,7 +578,6 @@
   <string name="ts.d.search_empty">搜索结果为空。</string>
   <string name="ts.d.first">第一条：{title}</string>
   <string name="ts.d.every_site">每个网站都返回了帖子。</string>
-  <string name="ts.d.choose_sites">请在设置中选择社交网站。</string>
   <string name="ts.d.no_forecast">天气预报服务没有响应。</string>
   <string name="ts.d.weather">今天{place}：最高 {hi}{unit}，最低 {lo}{unit}。</string>
   <string name="ts.d.weather_london">未设置位置，因此显示今天伦敦：最高 {hi}{unit}，最低 {lo}{unit}。</string>
@@ -630,6 +634,8 @@
   <string name="fm.convert_on">开启</string>
   <string name="fm.signin_shift">伪镜像中的输入文字将以平板的字体排版，可能略有移动。</string>
   <string name="editor.template_signin">登录 reMarkable 账户即可查看和选择模板。</string>
+  <string name="editor.template_why_title">模板需要登录 reMarkable</string>
+  <string name="editor.template_why">PaperDaemon 从这台电脑上的 reMarkable 桌面应用读取页面模板，并且只在登录 reMarkable 账户后才会这样做。未登录时，页面不显示模板，也无法选择模板。请在设置中登录以使用模板。</string>
   <string name="fm.new_notebook">新建笔记本</string>
   <string name="fm.new_folder">新建文件夹</string>
   <string name="fm.new_page">新建页面</string>

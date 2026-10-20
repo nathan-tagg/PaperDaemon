@@ -46,8 +46,7 @@ def test_social_reports_each_site_and_partly_when_one_fails(fresh, monkeypatch):
     monkeypatch.setattr(reddit, "posts", lambda *a, **k: [{"title": "a post"}])
     monkeypatch.setattr(social, "fetch", lambda src, **k: ([{"title": "x"}], None) if src == "hn" else (None, "down"))
     s = settings.load()
-    s["social"]["sites"] = ["reddit", "hackernews", "bluesky"]
-    got = probes.social(s)
+    got = probes.social(s)                          # every site, always: Reddit and Hacker News answer, the rest do not
     assert got["state"] == "partly" and got["metric"].startswith("Reddit ") and "Bluesky failed" in got["metric"]
     s["network"]["allowed"] = False
     assert probes.social(s)["state"] == "off"

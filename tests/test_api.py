@@ -250,3 +250,42 @@ def test_a_notepad_comes_back_in_parts():
     got = client().get("/api/v1/notepads/" + DOC).json()["entries"]
     assert got[0]["asked"] == ["draw an owl"] and got[0]["did"] == ["done: drew it", "an owl in place 1"]
     assert got[0]["page_id"] == "abcdef12" and got[0]["page"] is None and len(got[0]["when"]) == 16
+
+
+def test_send_to_tablet_takes_whichever_inbox_can_and_says_the_mirrors_page(monkeypatch):
+    from paperdaemon import studio
+    s = settings.load()
+    s["tablet"]["inbox"] = "Inbox"
+    s["false_mirror"]["inbox"] = "FM inbox"
+    settings.save(s)
+    monkeypatch.setattr(paths, "false_mirror_exists", lambda: True)
+    monkeypatch.setattr(server, "_fm_call", lambda m, p, b=None: (200, {"sent": True, "doc": "f", "page": 9}))
+    monkeypatch.setattr(studio, "send", lambda image, width=None, s=None: {"sent": True, "doc": "m", "page": 4})
+    body = {"image": "data:image/png;base64,", "width": 400}
+    # no account: the Mirror is skipped, the False Mirror takes it
+    monkeypatch.setattr(server, "_signed_in", lambda: False)
+    got = client().post("/api/v1/decompose/send", json=body).json()
+    assert got["sent"] and got["page"] == 9 and "mirror" not in got
+    # both: the page it landed on is the Mirror's
+    monkeypatch.setattr(server, "_signed_in", lambda: True)
+    got = client().post("/api/v1/decompose/send", json=body).json()
+    assert got["page"] == 4 and got["false_mirror"]["page"] == 9
+    # no account and no False Mirror inbox: said why
+    s = settings.load(); s["false_mirror"]["inbox"] = ""; settings.save(s)
+    monkeypatch.setattr(server, "_signed_in", lambda: False)
+    r = client().post("/api/v1/decompose/send", json=body)
+    assert r.status_code == 400 and "sign in" in r.json()["error"]
+
+
+def test_a_decomp_saves_to_downloads_under_its_own_name(tmp_path, monkeypatch):
+    import base64, io
+    from PIL import Image
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    monkeypatch.setenv("HOME", str(tmp_path))
+    buf = io.BytesIO(); Image.new("RGB", (4, 4), "white").save(buf, "PNG")
+    url = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+    a = client().post("/api/v1/decompose/save", json={"image": url, "name": "wave.jpg"}).json()
+    b = client().post("/api/v1/decompose/save", json={"image": url, "name": "wave.jpg"}).json()
+    assert a["name"] == "wave decomp.png" and b["name"] == "wave decomp (2).png"
+    assert open(os.path.join(tmp_path, "Downloads", a["name"]), "rb").read() == buf.getvalue()
+    assert client().post("/api/v1/decompose/save", json={"image": "data:text/plain;base64,aGk=", "name": "x"}).status_code == 400

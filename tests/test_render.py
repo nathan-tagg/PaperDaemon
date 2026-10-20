@@ -118,3 +118,19 @@ def test_a_highlighter_with_no_rgba_takes_its_color_from_the_enum(tmp_path, monk
     R.render("d", 1, str(out), blank_ok=True, displayed=True)
     r, g, b = Image.open(out).convert("RGB").getpixel((810, 130))
     assert b == 255 and g < 230 and r > g                       # the pink wash, not the yellow one (b would be low)
+
+
+def test_a_grain_stroke_inks_its_density_and_each_pixel_once():
+    from paperdaemon.pipeline.page.paint import response
+    pts = [(x, 50.0) for x in np.arange(10.0, 390.0, 3.0)]
+    solid = ink(paint(canvas(400, 100), [(pts, [8.0] * len(pts), "pen", (0, 0, 0))]))
+    for d in (0.2, 0.5, 0.8):
+        a = ink(paint(canvas(400, 100), [(pts, [8.0] * len(pts), "pen", (0, 0, 0), [d] * len(pts))]))
+        assert not (a & ~solid).any()                         # only inside the stroke's shape
+        assert abs(a.sum() / solid.sum() - d) < 0.06          # its share, however densely the points sit
+    # density 1 is the solid stroke, pixel for pixel
+    assert np.array_equal(ink(paint(canvas(400, 100), [(pts, [8.0] * len(pts), "pen", (0, 0, 0), [1.0] * len(pts))])), solid)
+    # the pencils grain with pressure, the fineliner never
+    assert response("PENCIL", [40])[1][0] < 0.1 < response("PENCIL", [255])[1][0]
+    assert response("FINELINER", [10])[1][0] == 1.0 and response("FINELINER", [10])[0][0] == 1.0
+    assert response("PAINTBRUSH", [30])[0][0] == 0             # the lightest paintbrush leaves nothing

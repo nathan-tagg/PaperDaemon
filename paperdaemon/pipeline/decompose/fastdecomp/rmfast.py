@@ -66,6 +66,11 @@ def lib():
                                 ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_int32),
                                 ctypes.POINTER(ctypes.c_int32), ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32,
                                 ctypes.POINTER(ctypes.c_double)]
+        L.rf_render_grain.restype = ctypes.c_int32
+        L.rf_render_grain.argtypes = [ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.c_int32, ctypes.c_int32,
+                                      ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double),
+                                      ctypes.POINTER(ctypes.c_int32), ctypes.POINTER(ctypes.c_int32), ctypes.POINTER(ctypes.c_uint8),
+                                      ctypes.c_int32, ctypes.POINTER(ctypes.c_double)]
         L.rf_wash_pixels.restype = ctypes.c_int32
         L.rf_wash_pixels.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.c_int32, ctypes.c_double, ctypes.c_double,
                                      ctypes.c_int32, ctypes.c_int32, ctypes.c_double, ctypes.POINTER(ctypes.POINTER(ctypes.c_int32))]

@@ -17,6 +17,8 @@
     tag: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 2h5.8l6.4 6.5-5.7 5.7L2 7.8z"/><circle cx="5" cy="5" r="1"/></svg>',
     menu: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/></svg>',
     newpage: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 1.5h6l3 3v10h-9z"/><path d="M9.5 1.5v3h3"/><path d="M8 7.5v5M5.5 10h5"/></svg>',
+    prev: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg>',
+    next: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg>',
   };
   // a folder's own tags, as the tablet tags it: an icon on the folder, and pills after its name in the path
   // a shopping tag, as the tablet draws one: square corner at the top left with the hole in it, the point at the bottom right
@@ -97,9 +99,12 @@
       $(".viewer-nav", dlg).innerHTML = S.view === "page"
         ? '<button type="button" class="icon-btn" data-v="tagpop" aria-pressed="' + !!S.tagPop + '" title="' + esc(PD.t("fm.tags")) +
             '" aria-label="' + esc(PD.t("fm.tags")) + '">' + ICON.tag + "</button>" + tool("pages", PD.t("viewer.pages")) +
-          '<button type="button" class="btn small" data-v="prev" aria-label="' + esc(PD.t("viewer.prev")) + '"' + (S.page <= 1 ? " disabled" : "") + ">‹</button>" +
+          // the arrows the same buttons as the tag, the grid and the new page beside them
+          '<button type="button" class="icon-btn" data-v="prev" title="' + esc(PD.t("viewer.prev")) + '" aria-label="' + esc(PD.t("viewer.prev")) + '"' +
+            (S.page <= 1 ? " disabled" : "") + ">" + ICON.prev + "</button>" +
           '<span class="viewer-count">' + esc(PD.t("tablet.page_of", { page: S.page, pages: n })) + "</span>" +
-          '<button type="button" class="btn small" data-v="next" aria-label="' + esc(PD.t("viewer.next")) + '"' + (S.page >= n ? " disabled" : "") + ">›</button>" +
+          '<button type="button" class="icon-btn" data-v="next" title="' + esc(PD.t("viewer.next")) + '" aria-label="' + esc(PD.t("viewer.next")) + '"' +
+            (S.page >= n ? " disabled" : "") + ">" + ICON.next + "</button>" +
           (fm && S.doc.kind === "notebook" ? '<button type="button" class="icon-btn" data-v="newpage" title="' + esc(PD.t("fm.new_page")) + '" aria-label="' +
             esc(PD.t("fm.new_page")) + '">' + ICON.newpage + "</button>" : "")
         : ((S.chapters || []).length ? tool("chapters", PD.t("viewer.chapters")) : "") + tool("pages", PD.t("viewer.pages")) +

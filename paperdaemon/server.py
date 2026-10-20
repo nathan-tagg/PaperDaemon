@@ -71,6 +71,7 @@ Decompose and send
   POST   /decompose {image (data URL or link), width, job?}  {preview (PNG data URL), strokes, points, seconds, box, width, height}
   GET    /decompose/progress?job=                   {state: waiting | running, done: 0..1}
   POST   /decompose/send {image, width}             {sent, doc, page, created, strokes}
+  POST   /decompose/save {image (PNG data URL), name}  {path, name}: the decomp's picture in the user's Downloads
   POST   /logs/send                                 {sent, doc, pages, first}: the logs as pages in the inbox
 
 Benchmark
@@ -369,13 +370,18 @@ def post_false_mirror_export(body: dict = Body(...)):
             data = r.read()
     except Exception as ex:
         return _bad("the document could not be exported: %s" % str(ex)[:200], 502)
-    name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", str(body.get("name") or "Document")).strip(" .") or "Document"
+    return _to_downloads(body.get("name") or "Document", ".pdf", data)
+
+
+def _to_downloads(name, ext, data):
+    """`data` written into the user's Downloads folder as `name` + `ext` (a new name when one is taken) -> {path, name}."""
+    name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", str(name)).strip(" .") or "Document"
     folder = os.path.join(os.path.expanduser("~"), "Downloads")
     os.makedirs(folder, exist_ok=True)
-    path, n = os.path.join(folder, name + ".pdf"), 1
+    path, n = os.path.join(folder, name + ext), 1
     while os.path.exists(path):
         n += 1
-        path = os.path.join(folder, "%s (%d).pdf" % (name, n))
+        path = os.path.join(folder, "%s (%d)%s" % (name, n, ext))
     with open(path, "wb") as f:
         f.write(data)
     return {"path": path, "name": os.path.basename(path)}
@@ -1232,6 +1238,24 @@ def post_decompose(body: dict = Body(...)):
     return out
 
 
+@app.post(API + "/decompose/save")
+def post_decompose_save(body: dict = Body(...)):
+    """A decomp's picture (the PNG the screen shows, as a data URL) saved into the user's Downloads folder -> {path, name}."""
+    import base64
+    import binascii
+    image = str(body.get("image") or "")
+    if not image.startswith("data:image/png;base64,"):
+        return _bad("not a PNG picture")
+    try:
+        data = base64.b64decode(image.split(",", 1)[1], validate=True)
+    except (binascii.Error, ValueError):
+        return _bad("not a PNG picture")
+    if not data.startswith(b"\x89PNG") or len(data) > 80 * 1024 * 1024:
+        return _bad("not a PNG picture")
+    base = os.path.splitext(str(body.get("name") or ""))[0] or "Picture"
+    return _to_downloads(base + " decomp", ".png", data)
+
+
 @app.post(API + "/logs/send")
 def post_logs_send():
     """PaperDaemon's logs, as pages added to the inbox notebook: {sent, doc, pages, first}."""
@@ -1253,9 +1277,10 @@ def get_decompose_progress(job: str = ""):
 
 @app.post(API + "/decompose/send")
 def post_decompose_send(body: dict = Body(...)):
-    """SEND TO TABLET LANDS IN EVERY INBOX: the Mirror's (tablet.inbox) and, when there is a false mirror with an inbox
-    of its own (false_mirror.inbox), the false mirror's too. Nobody is asked to pick. -> {sent, mirror?, false_mirror?,
-    errors}."""
+    """SEND TO TABLET LANDS IN EVERY INBOX: the Mirror's (tablet.inbox, with a reMarkable account signed in: without one
+    there is no tablet to reach) and, when there is a false mirror with an inbox of its own (false_mirror.inbox), the
+    false mirror's too. Either alone is enough. Nobody is asked to pick. The page it says it landed on is the Mirror's
+    when both took it. -> {sent, doc, page, mirror?, false_mirror?, errors}."""
     from . import studio
     if paths.local_only():                            # the false mirror's engine: its own inbox only
         try:
@@ -1265,9 +1290,11 @@ def post_decompose_send(body: dict = Body(...)):
         except Exception as ex:
             return _bad("%s: %s" % (type(ex).__name__, str(ex)[:300]), 502)
     s = settings.load()
-    real = bool(str((s.get("tablet") or {}).get("inbox") or "").strip())
+    real = bool(str((s.get("tablet") or {}).get("inbox") or "").strip()) and _signed_in()
     fake = paths.false_mirror_exists() and bool(str((s.get("false_mirror") or {}).get("inbox") or "").strip())
     if not real and not fake:
+        if str((s.get("tablet") or {}).get("inbox") or "").strip():
+            return _bad("sign in to a reMarkable account to send to the tablet, or set the False Mirror's inbox")
         return _bad("set an inbox in the Settings tab first")
     out, errors = {"sent": False}, []
     if real:

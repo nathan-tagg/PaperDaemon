@@ -25,6 +25,10 @@
   --font-ui: "Times New Roman", Times, serif;
 }
 html, body { margin: 0; height: 100%; background: var(--paper-sunk); color: var(--ink); font-family: var(--font-ui); overflow: hidden; }
+/* the page's own selection is drawn on the canvas: nothing of the editor's chrome is ever selected, so a drag over the
+   page can never pick up a selection and turn into the browser's drag (the crossed-out cursor) */
+body { user-select: none; -webkit-user-select: none; }
+img, a, svg, canvas { -webkit-user-drag: none; }
 .dialog { position: absolute; inset: 0; background: var(--paper-sunk); display: flex; flex-direction: column; }
 .note { padding: 4px 22px 0; font-size: 13px; color: var(--ink-3); }
 .note:empty { display: none; }
@@ -106,6 +110,10 @@ span.lname { cursor: default; }
 .tpl { display: grid; justify-items: center; gap: 6px; padding: 10px 4px 8px; border: 0; background: transparent; color: var(--ink);
   font: 14px var(--font-ui); cursor: pointer; border-bottom: 3px solid transparent; }
 .tpl:hover { background: var(--field); }
+.tpl { position: relative; }
+/* a template PaperDaemon draws itself (the app keeps no definition of it): a small warning, its words on hover */
+.tpl-approx { position: absolute; top: 6px; right: 8px; width: 16px; height: 16px; color: #C9A227; display: grid; place-items: center; }
+.tpl-approx svg { width: 16px; height: 16px; }
 .tpl.here { border-bottom-color: var(--ink); }
 .tpl svg, .tpl img { width: 46px; height: 60px; fill: currentColor; }
 .tpl img { filter: invert(0.75); }
@@ -142,18 +150,19 @@ span.lname { cursor: default; }
   const SCREEN_W = 1620;                                                               // what the Paper Pro shows at 1x
 
   // ================================================================ PENS AND COLORS
-  // The tablet's 3 x 3 order. STORED WIDTH at 50% pressure per thickness scale (1 / 2 / 3): the fineliner's 8 and the
-  // highlighter's 120 are the tablet's own, the marker's read off the user's strokes; the rest are PLACEHOLDERS until
-  // each pen's strokes are read from a synced page (tasks 2.3). How every pen is drawn is the renderer's.
+  // The tablet's 3 x 3 order. STORED WIDTH per thickness scale (1 / 2 / 3): the fineliner's 8 and the highlighter's 120
+  // are the tablet's own, the marker's read off the user's strokes, and the pencils' 12 and the shader's 44 (its full
+  // width) off the user's strokes on the pen-test pages (2026-10-19); the ballpoint's, the calligraphy pen's and the
+  // paintbrush's are still placeholders. How every pen is drawn is the renderer's.
   const PENS = [
     { id: "ballpoint", pen: "BALLPOINT_2", code: 15, name: "Ballpoint pen", per: 8 },
     { id: "fineliner", pen: "FINELINER_2", code: 17, name: "Fineliner", per: 8 },
     { id: "highlighter", pen: "HIGHLIGHTER_2", code: 18, name: "Highlighter", per: 120, sizes: false },
     { id: "pencil", pen: "PENCIL_2", code: 14, name: "Pencil", per: 12 },
-    { id: "mechanical", pen: "MECHANICAL_PENCIL_2", code: 13, name: "Mechanical pencil", per: 6 },
+    { id: "mechanical", pen: "MECHANICAL_PENCIL_2", code: 13, name: "Mechanical pencil", per: 12 },
     { id: "calligraphy", pen: "CALIGRAPHY", code: 21, name: "Calligraphy pen", per: 16 },
     { id: "marker", pen: "MARKER_2", code: 16, name: "Marker", per: 20 },
-    { id: "shader", pen: "SHADER", code: 23, name: "Shader", per: 60 },
+    { id: "shader", pen: "SHADER", code: 23, name: "Shader", per: 44 },
     { id: "brush", pen: "PAINTBRUSH_2", code: 12, name: "Paintbrush", per: 24 },
   ];
   const PEN = Object.fromEntries(PENS.map(p => [p.id, p]));
@@ -181,7 +190,7 @@ span.lname { cursor: default; }
   const SH_CODE = { Gray: 1, Orange: 9, Magenta: 12, Blue: 6, Red: 7, Green: 4, Yellow: 3, Cyan: 11 };
   const SH_COLORS = Object.keys(SH_TOP).map(n => [n, SH_CODE[n], SH_TOP[n].concat([96]), SH_TOP[n], false, true]);  // shader: the renderer's alpha
   const colorsOf = id => id === "highlighter" ? HL_COLORS : id === "shader" ? SH_COLORS : PEN_COLORS;
-  const WSCALE = { HIGHLIGHTER: 0.25 }, WSCALE_DEFAULT = 0.144, PENCIL_FAMILY = ["PENCIL", "MECHANICAL"];
+  const WSCALE = { HIGHLIGHTER: 0.25 }, WSCALE_DEFAULT = 0.144;
 
   const pickers = { a: { pen: "fineliner", size: 1, pick: 0 }, b: { pen: "highlighter", size: 0, pick: 0 } };
   let tool = "a", eraseMode = "stroke", popFor = null;
@@ -205,20 +214,42 @@ span.lname { cursor: default; }
       for (let k = 0; k < 3; k++) p[i + k] = Math.round(p[i + k] + (rgba[k] - p[i + k]) * a);
     }
   }
-  function capsule(c, ax, ay, bx, by, r, kind, rgba, sid) {
+  // THE GRAIN (render.c's GRAIN): a pen stroke with a density per point is inked at that share of its pixels, each pixel
+  // decided once per stroke from a hash of where it sits along and across the stroke. `unit` is the canvas pixels to a
+  // tablet pixel (render.c's ss), so the grain is the tablet's size at any zoom.
+  const GRAIN_STREAK = 3;
+  const mix = h => { h ^= h >>> 16; h = Math.imul(h, 0x7feb352d); h ^= h >>> 15; h = Math.imul(h, 0x846ca68b); h ^= h >>> 16; return h >>> 0; };
+  const hash01 = (seed, a, b) => mix((seed ^ mix(Math.imul(a, 0x9e3779b9) ^ mix((b + 0x85ebca6b) | 0))) >>> 0) / 4294967296;
+  function grainInk(c, x, y, g, u, v, r, t, sid) {
+    const s = y * c.W + x;
+    if (c.stamp[s] === sid) return false;
+    c.stamp[s] = sid;
+    const q = r > 0 ? v / r : 0;
+    const d = (g.da + (g.db - g.da) * t) * (1.25 - 0.5 * q * q) / (1.25 - 0.5 / 3);
+    if (d >= 1) return true;
+    if (d <= 0) return false;
+    const cv = Math.floor(v / g.unit), jitter = hash01((g.seed ^ 0x51ed27) >>> 0, cv, 0) * GRAIN_STREAK;
+    return hash01(g.seed, Math.floor((u / g.unit + jitter) / GRAIN_STREAK), cv) < d;
+  }
+  function capsule(c, ax, ay, bx, by, r, kind, rgba, sid, g) {
     if (!(r > 0)) return;
     let x0 = loPx(Math.min(ax, bx) - r), x1 = hiPx(Math.max(ax, bx) + r);
     let y0 = loPx(Math.min(ay, by) - r), y1 = hiPx(Math.max(ay, by) + r);
     if (x0 < c.cx0) x0 = c.cx0; if (y0 < c.cy0) y0 = c.cy0; if (x1 > c.cx1) x1 = c.cx1; if (y1 > c.cy1) y1 = c.cy1;   // put() keeps to these anyway
-    const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy, r2 = r * r;
+    const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy, r2 = r * r, L = Math.sqrt(L2);
     for (let y = y0; y <= y1; y++) {
       const py = y + 0.5;
       for (let x = x0; x <= x1; x++) {
         const px = x + 0.5;
-        let t = 0;
-        if (L2 > 0) { t = ((px - ax) * dx + (py - ay) * dy) / L2; t = t < 0 ? 0 : (t > 1 ? 1 : t); }
+        let t = 0, tu = 0;
+        if (L2 > 0) { tu = ((px - ax) * dx + (py - ay) * dy) / L2; t = tu < 0 ? 0 : (tu > 1 ? 1 : tu); }
         const ex = px - (ax + t * dx), ey = py - (ay + t * dy);
-        if (ex * ex + ey * ey <= r2) put(c, x, y, kind, rgba, sid);
+        if (ex * ex + ey * ey > r2) continue;
+        if (g) {
+          const v = L > 0 ? ((px - ax) * dy - (py - ay) * dx) / L : Math.sqrt(ex * ex + ey * ey);
+          if (x < c.cx0 || x > c.cx1 || y < c.cy0 || y > c.cy1 || !grainInk(c, x, y, g, g.u0 + tu * L, v, r, t, sid)) continue;
+        }
+        put(c, x, y, kind, rgba, sid);
       }
     }
   }
@@ -248,10 +279,17 @@ span.lname { cursor: default; }
       }
     }
   }
-  function penShape(c, xy, w, kind, rgba, sid) {
+  // `grain`, for a pen stroke with densities: { dens (per point), seed, u0 (the length along the stroke before xy's first
+  // point, in canvas pixels), unit }
+  function penShape(c, xy, w, kind, rgba, sid, grain) {
     const n = w.length;
-    if (n === 1) { capsule(c, xy[0], xy[1], xy[0], xy[1], w[0] / 2, kind, rgba, sid); return; }
-    for (let i = 0; i + 1 < n; i++) capsule(c, xy[2 * i], xy[2 * i + 1], xy[2 * i + 2], xy[2 * i + 3], (w[i] + w[i + 1]) / 4, kind, rgba, sid);
+    const g = grain && kind === RF_PEN && grain.dens.some(d => d < 1) ? { seed: grain.seed, unit: grain.unit, u0: grain.u0 || 0, da: 1, db: 1 } : null;
+    if (n === 1) { if (g) g.da = g.db = grain.dens[0]; capsule(c, xy[0], xy[1], xy[0], xy[1], w[0] / 2, kind, rgba, sid, g); return; }
+    for (let i = 0; i + 1 < n; i++) {
+      if (g) { g.da = grain.dens[i]; g.db = grain.dens[i + 1]; }
+      capsule(c, xy[2 * i], xy[2 * i + 1], xy[2 * i + 2], xy[2 * i + 3], (w[i] + w[i + 1]) / 4, kind, rgba, sid, g);
+      if (g) g.u0 += Math.hypot(xy[2 * i + 2] - xy[2 * i], xy[2 * i + 3] - xy[2 * i + 1]);
+    }
   }
   function highlighterShape(c, xy, w, rgba, sid) {
     const sx = [], sy = [], sw = [];
@@ -279,16 +317,340 @@ span.lname { cursor: default; }
                 [sy[i], sy[i] + s * dx[i - 1] * hw[i - 1], sy[i] + s * dx[i] * hw[i]], RF_HIGHLIGHTER, rgba, sid);
     }
   }
-  function pencilTone(rgb, pressure) { const k = 0.6 + 0.4 * Math.min(1, Math.max(0, pressure)); return rgb.map(v => Math.trunc(255 - (255 - v) * k)); }
+  // HOW EACH PEN ANSWERS PRESSURE AND SPEED: paint.py's response(), measured on the pen-test pages (see its note) ->
+  // [width factor, density] at a pressure 0..255 and the speed field
+  const GRAIN_AT = [0, 16, 32, 64, 96, 128, 160, 208, 255];
+  const GRAIN = { PENCIL: [0.02, 0.027, 0.03, 0.096, 0.19, 0.32, 0.48, 0.66, 0.81],
+                  MECHANICAL: [0.02, 0.03, 0.03, 0.12, 0.21, 0.29, 0.35, 0.42, 0.52],
+                  PAINTBRUSH: [0, 0, 0, 0.12, 0.73, 0.87, 0.87, 0.87, 0.87],
+                  BALLPOINT: [0.8, 0.83, 0.87, 1, 1, 1, 1, 1, 1] };
+  const WIDER = { PENCIL: 1.25, MECHANICAL: 1.3, PAINTBRUSH: 1.25, CALIGRAPHY: 1.37, MARKER: 1.1, SHADER: 1.63 };
+  const SPEED_AT = [0, 50, 200, 800];
+  function interp(p, xs, ys) {
+    if (p <= xs[0]) return ys[0];
+    for (let i = 1; i < xs.length; i++) if (p <= xs[i]) return ys[i - 1] + (ys[i] - ys[i - 1]) * (p - xs[i - 1]) / (xs[i] - xs[i - 1]);
+    return ys[ys.length - 1];
+  }
+  function response(fam, pressure, speed) {
+    const p = Math.min(255, Math.max(0, pressure)), sp = speed || 0;
+    let k = WIDER[fam] || 1, d = GRAIN[fam] ? interp(p, GRAIN_AT, GRAIN[fam]) : 1;
+    if (fam === "PAINTBRUSH") {
+      k *= Math.min(1, Math.max(0, (p - 40) / 24)) * interp(sp, SPEED_AT, [1, 1, 0.7, 0.7]);
+      d *= interp(sp, SPEED_AT, [1, 0.95, 0.37, 0.32]);
+    } else if (fam === "BALLPOINT") k *= 0.55 + 0.45 * Math.min(1, p / 64);
+    else if (fam === "MARKER") d = interp(sp, SPEED_AT, [1, 1, 0.97, 0.86]);
+    return [k, d];
+  }
   function prepared(L) {                                      // render.py's preparation of a line
     const fam = L.pen.split("_")[0], scaleW = WSCALE[fam] || WSCALE_DEFAULT;
     const widths = L.points.map(p => Math.max(1, p.width * scaleW));
-    if (L.pen === "SHADER") return { kind: RF_SHADER, rgba: L.colorRgba || [128, 128, 128, 96], widths };
     if (L.pen.startsWith("HIGHLIGHTER")) return { kind: RF_HIGHLIGHTER, rgba: (L.colorRgba ? L.colorRgba.slice(0, 3) : (HL_ENUM[L.color] || [255, 237, 117])), widths };
-    let col = ENUM[L.color] || [0, 0, 0];
-    if (PENCIL_FAMILY.includes(fam)) col = pencilTone(col, L.points.reduce((a, p) => a + p.pressure, 0) / L.points.length / 255);
-    return { kind: RF_PEN, rgba: col, widths };
+    const dens = L.points.map((p, i) => { const [k, d] = response(fam, p.pressure, p.speed); widths[i] = k > 0 ? Math.max(1, widths[i] * k) : 0; return d; });
+    if (L.pen === "SHADER") return { kind: RF_SHADER, rgba: L.colorRgba || [128, 128, 128, 96], widths };
+    const p0 = L.points[0], seed = mix((Math.imul(Math.round((p0.x + page.paperSize[0] / 2) * 16), 0x27d4eb2d) ^ mix(Math.round(p0.y * 16))) >>> 0);
+    return { kind: RF_PEN, rgba: ENUM[L.color] || [0, 0, 0], widths, dens, seed };
   }
+
+  // ================================================================ THE RENDERER ON THE GRAPHICS CARD (WebGL2)
+  // The same rules as the renderer above, drawn by the card: a pen segment is a quad whose pixels are inked when their
+  // CENTER is within r of the segment; a highlighter is its rectangles and outer bevels, a per-channel MIN; a shader's
+  // wash and a grain stroke's pixels are each decided once per stroke (the stencil holds which stroke last decided a
+  // pixel; a grain pixel left uninked still claims its place, at alpha 0). Strokes are drawn in file order: runs of
+  // plain pens and of highlighters in one draw each, a shader or grain stroke in a draw of its own.
+  // THE STROKES LIVE ON THE CARD in page units: each line's part is made once (and kept with the line), the page's whole
+  // set uploaded only when its lines change; a zoom or a scroll is two numbers (k, the canvas pixels a page unit, and
+  // the offset). What is under the ink (paper, template, pictures, text) goes up as a texture, the strokes are drawn
+  // over it, and the result comes back into the canvas the rest of the editor works on. Without WebGL2 (or with #cpu
+  // in the address) the renderer above draws everything, as before.
+  const GL = (() => {
+    if (/(^|[#&])cpu\b/.test(location.hash)) return null;
+    const cv = document.createElement("canvas");
+    const gl = cv.getContext("webgl2", { antialias: false, depth: false, stencil: false, premultipliedAlpha: false, preserveDrawingBuffer: false });
+    if (!gl) return null;
+    const VS_SEG = `#version 300 es
+    layout(location=0) in vec2 corner;
+    layout(location=1) in vec4 ab; layout(location=2) in vec4 rcol; layout(location=3) in vec4 gr; layout(location=4) in uint seed;
+    uniform vec2 size; uniform float k; uniform vec2 off;
+    flat out vec4 vAB; flat out vec4 vRC; flat out vec4 vG; flat out uint vSeed;
+    void main() {
+      vec2 a = ab.xy * k + off, b = ab.zw * k + off; float r = rcol.x * k;
+      vec2 d = b - a; float L = length(d);
+      vec2 u = L > 0.0 ? d / L : vec2(1.0, 0.0), n = vec2(-u.y, u.x);
+      float m = r + 1.5;
+      vec2 p = (corner.x < 0.0 ? a - u * m : b + u * m) + n * (corner.y * m);
+      gl_Position = vec4(p / size * 2.0 - 1.0, 0.0, 1.0);
+      vAB = vec4(a, b); vRC = vec4(r, rcol.yzw); vG = vec4(gr.xy, gr.z * k, k); vSeed = seed;
+    }`;
+    const FS_SEG = `#version 300 es
+    precision highp float; precision highp int;
+    flat in vec4 vAB; flat in vec4 vRC; flat in vec4 vG; flat in uint vSeed;
+    uniform int grainOn; uniform float alpha;
+    out vec4 color;
+    uint mixh(uint h) { h ^= h >> 16; h *= 0x7feb352du; h ^= h >> 15; h *= 0x846ca68bu; h ^= h >> 16; return h; }
+    float hash01(uint s, int a, int b) { return float(mixh(s ^ mixh(uint(a) * 0x9e3779b9u ^ mixh(uint(b) + 0x85ebca6bu)))) / 4294967296.0; }
+    void main() {
+      vec2 p = gl_FragCoord.xy;                               // the pixel's center; the canvas's rows run down as the texture's do
+      vec2 a = vAB.xy, b = vAB.zw, d = b - a; float r = vRC.x;
+      float L2 = dot(d, d), tu = L2 > 0.0 ? dot(p - a, d) / L2 : 0.0, t = clamp(tu, 0.0, 1.0);
+      vec2 e = p - (a + t * d);
+      if (dot(e, e) > r * r) discard;
+      float ink = 1.0;
+      if (grainOn == 1) {
+        float L = sqrt(L2), v = L > 0.0 ? ((p.x - a.x) * d.y - (p.y - a.y) * d.x) / L : length(e), q = r > 0.0 ? v / r : 0.0;
+        float den = (vG.x + (vG.y - vG.x) * t) * (1.25 - 0.5 * q * q) / (1.25 - 0.5 / 3.0);
+        if (den < 1.0) {
+          if (den <= 0.0) ink = 0.0;
+          else {
+            float unit = vG.w; int cv = int(floor(v / unit));
+            float jitter = hash01(vSeed ^ 0x51ed27u, cv, 0) * 3.0;
+            int cu = int(floor(((vG.z + tu * L) / unit + jitter) / 3.0));
+            ink = hash01(vSeed, cu, cv) < den ? 1.0 : 0.0;
+          }
+        }
+      }
+      color = vec4(vRC.yzw, ink * alpha);
+    }`;
+    const VS_TRI = `#version 300 es
+    layout(location=0) in vec2 pos; layout(location=1) in vec3 col;
+    uniform vec2 size; uniform float k; uniform vec2 off; flat out vec3 vCol;
+    void main() { gl_Position = vec4((pos * k + off) / size * 2.0 - 1.0, 0.0, 1.0); vCol = col; }`;
+    const FS_TRI = `#version 300 es
+    precision highp float; flat in vec3 vCol; out vec4 color; void main() { color = vec4(vCol, 1.0); }`;
+    const prog = (vs, fs) => {
+      const p = gl.createProgram();
+      for (const [t, src] of [[gl.VERTEX_SHADER, vs], [gl.FRAGMENT_SHADER, fs]]) {
+        const s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s);
+        if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+        gl.attachShader(p, s);
+      }
+      gl.linkProgram(p);
+      if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+      return p;
+    };
+    let segP, triP;
+    try { segP = prog(VS_SEG, FS_SEG); triP = prog(VS_TRI, FS_TRI); } catch (e) { return null; }
+    const U = (p, n) => gl.getUniformLocation(p, n);
+    const uSeg = { size: U(segP, "size"), k: U(segP, "k"), off: U(segP, "off"), grain: U(segP, "grainOn"), alpha: U(segP, "alpha") };
+    const uTri = { size: U(triP, "size"), k: U(triP, "k"), off: U(triP, "off") };
+    const F = 12;                                             // floats a segment: ab(4) r+color(4) da db u0 -(4)
+    const quad = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    const segVao = gl.createVertexArray(), segBuf = gl.createBuffer(), seedBuf = gl.createBuffer();
+    gl.bindVertexArray(segVao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, quad); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    for (let i = 1; i <= 4; i++) { gl.enableVertexAttribArray(i); gl.vertexAttribDivisor(i, 1); }
+    const triVao = gl.createVertexArray(), triBuf = gl.createBuffer();
+    gl.bindVertexArray(triVao); gl.bindBuffer(gl.ARRAY_BUFFER, triBuf);
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 20, 0);
+    gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 20, 8);
+    gl.bindVertexArray(null);
+    const tex = gl.createTexture(), stencil = gl.createRenderbuffer(), fb = gl.createFramebuffer();
+    let texW = 0, texH = 0, readBuf = null;
+
+    // ONE LINE'S PART, in page units: its segments (pens, shaders) or its triangles (highlighters); kept with the line
+    const parts = new WeakMap();
+    function partOf(L) {
+      const had = parts.get(L);
+      if (had && had.pts === L.points && had.n === L.points.length) return had;
+      const P = prepared(L), n = L.points.length, out = { pts: L.points, n, kind: P.kind };
+      if (P.kind === RF_HIGHLIGHTER) {
+        const sx = [], sy = [], sw = [];
+        L.points.forEach((p, i) => {
+          const m = sx.length;
+          if (m && Math.abs(p.x - sx[m - 1]) <= 1e-9 && Math.abs(p.y - sy[m - 1]) <= 1e-9) return;
+          sx.push(p.x); sy.push(p.y); sw.push(P.widths[i]);
+        });
+        const m = sx.length, c0 = P.rgba[0] / 255, c1 = P.rgba[1] / 255, c2 = P.rgba[2] / 255;
+        const tri = new Float32Array(Math.max(0, (6 * (m - 1) + 3 * Math.max(0, m - 2)) * 5));
+        let tn = 0;
+        const v = (x, y) => { tri[tn] = x; tri[tn + 1] = y; tri[tn + 2] = c0; tri[tn + 3] = c1; tri[tn + 4] = c2; tn += 5; };
+        const dx = new Float64Array(Math.max(0, m - 1)), dy = new Float64Array(Math.max(0, m - 1)), hw = new Float64Array(Math.max(0, m - 1));
+        for (let i = 0; i + 1 < m; i++) {
+          const ex = sx[i + 1] - sx[i], ey = sy[i + 1] - sy[i], Ln = Math.sqrt(ex * ex + ey * ey);
+          dx[i] = ex / Ln; dy[i] = ey / Ln; hw[i] = (sw[i] + sw[i + 1]) / 4;
+        }
+        for (let i = 0; i + 1 < m; i++) {
+          const nx = -dy[i] * hw[i], ny = dx[i] * hw[i];
+          v(sx[i] + nx, sy[i] + ny); v(sx[i + 1] + nx, sy[i + 1] + ny); v(sx[i + 1] - nx, sy[i + 1] - ny);
+          v(sx[i] + nx, sy[i] + ny); v(sx[i + 1] - nx, sy[i + 1] - ny); v(sx[i] - nx, sy[i] - ny);
+        }
+        for (let i = 1; i + 1 < m; i++) {
+          const cross = dx[i - 1] * dy[i] - dy[i - 1] * dx[i];
+          if (Math.abs(cross) < 1e-9) continue;
+          const sg = cross > 0 ? -1 : 1;
+          v(sx[i], sy[i]); v(sx[i] + sg * (-dy[i - 1]) * hw[i - 1], sy[i] + sg * dx[i - 1] * hw[i - 1]); v(sx[i] + sg * (-dy[i]) * hw[i], sy[i] + sg * dx[i] * hw[i]);
+        }
+        out.tri = tri.subarray(0, tn);
+      } else {
+        const ns = Math.max(1, n - 1), seg = new Float32Array(ns * F), seeds = new Uint32Array(ns);
+        const grain = P.kind === RF_PEN && P.dens.some(d => d < 1), c = P.rgba;
+        let u0 = 0;
+        const put = (s, i, j, r) => {
+          const a = L.points[i], b = L.points[j], o = s * F;
+          seg[o] = a.x; seg[o + 1] = a.y; seg[o + 2] = b.x; seg[o + 3] = b.y;
+          seg[o + 4] = r; seg[o + 5] = c[0] / 255; seg[o + 6] = c[1] / 255; seg[o + 7] = c[2] / 255;
+          seg[o + 8] = grain ? P.dens[i] : 1; seg[o + 9] = grain ? P.dens[j] : 1; seg[o + 10] = u0;
+          seeds[s] = (P.seed || 0) >>> 0;
+        };
+        if (n === 1) put(0, 0, 0, P.widths[0] / 2);
+        else for (let i = 0; i + 1 < n; i++) {
+          put(i, i, i + 1, (P.widths[i] + P.widths[i + 1]) / 4);
+          u0 += Math.hypot(L.points[i + 1].x - L.points[i].x, L.points[i + 1].y - L.points[i].y);
+        }
+        Object.assign(out, { seg, seeds, grain, alpha: P.kind === RF_SHADER ? P.rgba[3] / 255 : 1 });
+      }
+      parts.set(L, out);
+      return out;
+    }
+
+    // THE PAGE'S SET on the card, and the draws in file order; made again only when the lines drawn change
+    let have = [], plan = [];
+    function sync(lines) {
+      if (lines.length === have.length && lines.every((L, i) => L === have[i] && parts.get(L) && parts.get(L).pts === L.points && parts.get(L).n === L.points.length)) return;
+      const ps = lines.map(partOf);
+      let nSeg = 0, nTri = 0;
+      for (const p of ps) { if (p.tri) nTri += p.tri.length; else nSeg += p.seeds.length; }
+      const seg = new Float32Array(nSeg * F), seeds = new Uint32Array(nSeg), tri = new Float32Array(nTri);
+      let s = 0, t = 0;
+      plan = [];
+      for (const p of ps) {
+        if (p.tri) {
+          const first = t / 5; tri.set(p.tri, t); t += p.tri.length;
+          const last = plan[plan.length - 1];
+          if (last && last.type === "hl") last.count += p.tri.length / 5; else plan.push({ type: "hl", first, count: p.tri.length / 5 });
+        } else {
+          const first = s; seg.set(p.seg, s * F); seeds.set(p.seeds, s); s += p.seeds.length;
+          const own = p.kind === RF_SHADER || p.grain, last = plan[plan.length - 1];
+          if (!own && last && last.type === "pen") last.count += p.seeds.length;
+          else plan.push({ type: own ? "own" : "pen", first, count: p.seeds.length, grain: p.grain, alpha: p.alpha });
+        }
+      }
+      gl.bindBuffer(gl.ARRAY_BUFFER, segBuf); gl.bufferData(gl.ARRAY_BUFFER, seg, gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER, seedBuf); gl.bufferData(gl.ARRAY_BUFFER, seeds, gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER, triBuf); gl.bufferData(gl.ARRAY_BUFFER, tri, gl.STATIC_DRAW);
+      have = lines.slice();
+    }
+    function bindSegs(first) {                                // the per-segment attributes, from segment `first` on
+      gl.bindBuffer(gl.ARRAY_BUFFER, segBuf);
+      gl.vertexAttribPointer(1, 4, gl.FLOAT, false, F * 4, first * F * 4);
+      gl.vertexAttribPointer(2, 4, gl.FLOAT, false, F * 4, first * F * 4 + 16);
+      gl.vertexAttribPointer(3, 4, gl.FLOAT, false, F * 4, first * F * 4 + 32);
+      gl.bindBuffer(gl.ARRAY_BUFFER, seedBuf);
+      gl.vertexAttribIPointer(4, 1, gl.UNSIGNED_INT, 0, first * 4);
+    }
+
+    // THE CANVAS ON THE CARD: the page at the working size (ss times the screen's), RGB, with a stencil for the strokes
+    function target(W, H) {
+      if (W > gl.getParameter(gl.MAX_TEXTURE_SIZE) || H > gl.getParameter(gl.MAX_TEXTURE_SIZE)) return false;
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      if (W !== texW || H !== texH) {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB8, W, H, 0, gl.RGB, gl.UNSIGNED_BYTE, null);     // RGB, as the editor's canvas
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.bindRenderbuffer(gl.RENDERBUFFER, stencil); gl.renderbufferStorage(gl.RENDERBUFFER, gl.STENCIL_INDEX8, W, H);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.STENCIL_ATTACHMENT, gl.RENDERBUFFER, stencil);
+        texW = W; texH = H; readBuf = null;
+      }
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+      gl.viewport(0, 0, W, H);
+      return true;
+    }
+    function strokes(W, H, lines, k, ox, oy, sq) {           // the lines over what the target holds, in file order
+      sync(lines);
+      gl.enable(gl.SCISSOR_TEST);                             // put()'s square: past it, kept and not shown
+      if (sq.cx1 < sq.cx0 || sq.cy1 < sq.cy0) gl.scissor(0, 0, 0, 0); else gl.scissor(sq.cx0, sq.cy0, sq.cx1 - sq.cx0 + 1, sq.cy1 - sq.cy0 + 1);
+      gl.clearStencil(0); gl.clear(gl.STENCIL_BUFFER_BIT);
+      gl.useProgram(segP); gl.uniform2f(uSeg.size, W, H); gl.uniform1f(uSeg.k, k); gl.uniform2f(uSeg.off, ox, oy);
+      gl.useProgram(triP); gl.uniform2f(uTri.size, W, H); gl.uniform1f(uTri.k, k); gl.uniform2f(uTri.off, ox, oy);
+      let ref = 0;
+      for (const d of plan) {
+        if (d.type === "hl") {
+          gl.useProgram(triP); gl.bindVertexArray(triVao);
+          gl.disable(gl.STENCIL_TEST); gl.enable(gl.BLEND); gl.blendEquation(gl.MIN);
+          gl.drawArrays(gl.TRIANGLES, d.first, d.count);
+          continue;
+        }
+        gl.useProgram(segP); gl.bindVertexArray(segVao); bindSegs(d.first);
+        if (d.type === "pen") {
+          gl.disable(gl.STENCIL_TEST); gl.disable(gl.BLEND); gl.uniform1i(uSeg.grain, 0); gl.uniform1f(uSeg.alpha, 1);
+        } else {
+          ref = ref % 255 + 1;
+          if (ref === 1) gl.clear(gl.STENCIL_BUFFER_BIT);
+          gl.enable(gl.STENCIL_TEST); gl.stencilFunc(gl.NOTEQUAL, ref, 0xff); gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
+          gl.enable(gl.BLEND); gl.blendEquation(gl.FUNC_ADD); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+          gl.uniform1i(uSeg.grain, d.grain ? 1 : 0); gl.uniform1f(uSeg.alpha, d.alpha);
+        }
+        gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, d.count);
+      }
+      gl.bindVertexArray(null); gl.disable(gl.SCISSOR_TEST); gl.disable(gl.STENCIL_TEST); gl.disable(gl.BLEND);
+    }
+    function readInto(c) {                                    // the target's pixels into c's RGB, rows top first
+      const W = c.W, H = c.H;
+      if (!readBuf || readBuf.length !== W * H * 4) readBuf = new Uint8Array(W * H * 4);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+      gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, readBuf);
+      const px = c.px, rb = readBuf;
+      for (let i = 0, j = 0, n = W * H; i < n; i++, j += 4) { const o = i * 3; px[o] = rb[j]; px[o + 1] = rb[j + 1]; px[o + 2] = rb[j + 2]; }
+    }
+
+    /** Draw `lines` over the canvas `c` (its RGB pixels, what is under the ink already on it), page units to canvas
+        pixels as x * k + ox, y * k + oy, kept to c's drawable square, and read the result back into c. -> drawn? */
+    let holds = false;                                        // the target holds the page page() drew (not draw()'s)
+    function draw(c, lines, k, ox, oy) {
+      holds = false;
+      if (gl.isContextLost() || !target(c.W, c.H)) return false;
+      gl.bindTexture(gl.TEXTURE_2D, tex); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+      // what is under the ink, up as it is: RGB rows, top first (the framebuffer's row 0 is the canvas's top here)
+      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, c.W, c.H, gl.RGB, gl.UNSIGNED_BYTE, new Uint8Array(c.px.buffer, c.px.byteOffset, c.px.length));
+      strokes(c.W, c.H, lines, k, ox, oy, c);
+      readInto(c);
+      return true;
+    }
+
+    // THE PAGE SHOWN STRAIGHT FROM THE CARD: what is under the ink (a canvas the browser drew: paper, template, pictures,
+    // text) copied in, the strokes over it, then each ss x ss block averaged down into this canvas, the screen's size,
+    // which the editor copies onto its screen. Nothing comes back from the card; readInto() does that, when asked.
+    const underTex = gl.createTexture();
+    function page(under, lines, k, ox, oy, sq, ss) {
+      const W = under.width, H = under.height;
+      holds = false;
+      if (gl.isContextLost() || !target(W, H)) return false;
+      gl.bindTexture(gl.TEXTURE_2D, underTex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, under);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fb); gl.viewport(0, 0, W, H);
+      gl.useProgram(copyP); gl.uniform1i(uCopy.tex, 0); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, underTex);
+      gl.disable(gl.BLEND); gl.drawArrays(gl.TRIANGLES, 0, 3);
+      strokes(W, H, lines, k, ox, oy, sq);
+      const w = Math.floor(W / ss), h = Math.floor(H / ss);
+      if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, w, h);
+      gl.useProgram(downP); gl.uniform1i(uDown.tex, 0); gl.uniform1i(uDown.ss, ss); gl.uniform1i(uDown.h, h);
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      holds = true;
+      return true;
+    }
+    const VS_FULL = `#version 300 es
+    void main() { vec2 p = vec2(gl_VertexID == 1 ? 3.0 : -1.0, gl_VertexID == 2 ? 3.0 : -1.0); gl_Position = vec4(p, 0.0, 1.0); }`;
+    const FS_COPY = `#version 300 es
+    precision highp float; uniform sampler2D tex; out vec4 color;
+    void main() { color = vec4(texelFetch(tex, ivec2(gl_FragCoord.xy), 0).rgb, 1.0); }`;
+    const FS_DOWN = `#version 300 es
+    precision highp float; uniform sampler2D tex; uniform int ss; uniform int h; out vec4 color;
+    void main() {                                             // the screen's row from the top; each block as the CPU averages it
+      ivec2 o = ivec2(int(gl_FragCoord.x), h - 1 - int(gl_FragCoord.y)) * ss;
+      vec3 sum = vec3(0.0);
+      for (int j = 0; j < ss; j++) for (int i = 0; i < ss; i++) sum += texelFetch(tex, o + ivec2(i, j), 0).rgb;
+      float n = float(ss * ss);
+      color = vec4(floor((sum * 255.0 + n * 0.5) / n + 0.5) / 255.0, 1.0);
+    }`;
+    let copyP, downP;
+    try { copyP = prog(VS_FULL, FS_COPY); downP = prog(VS_FULL, FS_DOWN); } catch (e) { return null; }
+    const uCopy = { tex: U(copyP, "tex") }, uDown = { tex: U(downP, "tex"), ss: U(downP, "ss"), h: U(downP, "h") };
+    return { draw, page, readInto, holds: (W, H) => holds && texW === W && texH === H, canvas: cv, name: (() => { const x = gl.getExtension("WEBGL_debug_renderer_info"); return x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : "WebGL2"; })() };
+  })();
 
   // ================================================================ TYPED TEXT: typed.py's layout, in fixed units
   // Four styles. Title is HEADING, Section BOLD and Body PLAIN, at typed.py's sizes; Header is measured off the tablet's
@@ -449,7 +811,7 @@ span.lname { cursor: default; }
   // and new ends, the page's width. Its rows are painted anew (paper, template, pictures, text), the strokes that reach
   // into them drawn again within them, and only those rows of the screen replaced. A held key runs as fast as it repeats.
   function rebuildBand(y0p, y1p) {
-    if (!base || !shown || live || pickDrag || hiddenLines.size || hiddenPics.size) { rebuild(); return; }
+    if (!base || !shown || live || pickDrag || hiddenLines.size || hiddenPics.size || (GL && !gpuFailed)) { rebuild(); return; }
     const k = dpr * SS, W = base.W, px = base.px;
     let r0 = Math.max(0, Math.floor(toScreen(0, y0p)[1] * k)), r1 = Math.min(base.H - 1, Math.ceil(toScreen(0, y1p)[1] * k));
     r0 -= r0 % SS; r1 = Math.min(base.H - 1, r1 + (SS - 1 - (r1 % SS)));
@@ -498,8 +860,29 @@ span.lname { cursor: default; }
     const P = prepared(L), k = dpr * SS * scale(), xy = new Float64Array(L.points.length * 2);
     L.points.forEach((p, i) => { const [sx, sy] = toScreen(p.x, p.y); xy[2 * i] = sx * dpr * SS; xy[2 * i + 1] = sy * dpr * SS; });
     const w = P.widths.map(v => v * k), s = id || ++sid;
-    if (P.kind === RF_HIGHLIGHTER) highlighterShape(c, xy, w, P.rgba, s); else penShape(c, xy, w, P.kind, P.rgba, s);
+    if (P.kind === RF_HIGHLIGHTER) highlighterShape(c, xy, w, P.rgba, s);
+    else penShape(c, xy, w, P.kind, P.rgba, s, P.dens && { dens: P.dens, seed: P.seed, unit: k, u0: 0 });
   }
+  // THE PAGE'S INK, on the graphics card when there is one (GL above), else line by line as drawLine draws it
+  let gpuFailed = false;
+  function drawInk(c) {
+    const lines = [];
+    for (const Ly of page.layers) if (Ly.visible) for (const L of Ly.lines) if (!hiddenLines.has(L)) lines.push(L);
+    if (GL && !gpuFailed) {
+      const s = scale(), u = dpr * SS, t = performance.now();
+      try {
+        if (GL.draw(c, lines, s * u, (vpW / 2 - view.cx * s) * u, -view.top * s * u)) {
+          inkTime = { on: GL.name, ms: performance.now() - t, lines: lines.length };
+          return;
+        }
+      } catch (e) { gpuFailed = true; console.warn("The page editor draws without the graphics card:", e); }
+    }
+    const t = performance.now();
+    for (const L of lines) drawLine(c, L);
+    inkTime = { on: "CPU", ms: performance.now() - t, lines: lines.length };
+  }
+  let inkTime = null;
+  window.pdInkTime = () => inkTime;                           // how the last page was drawn, for a look from the console
   function downsample(c, x0 = 0, y0 = 0, W = cv.width, H = cv.height) {   // a region of the canvas, averaged down
     const out = ctx.createImageData(W, H), o = out.data, k2 = SS * SS;
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -523,19 +906,78 @@ span.lname { cursor: default; }
       mnx = Math.min(mnx, xy[2 * i]); mxx = Math.max(mxx, xy[2 * i]); mny = Math.min(mny, xy[2 * i + 1]); mxy = Math.max(mxy, xy[2 * i + 1]);
     });
     const w = P.widths.slice(from).map(v => v * k), pad = Math.max(...w) + 2;
-    if (n === 1 && P.kind !== RF_HIGHLIGHTER) penShape(work, xy, w, P.kind, P.rgba, liveSid);
+    let u0 = 0;                                               // the grain's length along the stroke before the new segment
+    if (P.dens) for (let i = 1; i < n - 1; i++) u0 += Math.hypot(L.points[i].x - L.points[i - 1].x, L.points[i].y - L.points[i - 1].y) * k;
+    const grain = P.dens && { dens: P.dens.slice(n === 1 ? 0 : n - 2), seed: P.seed, unit: k, u0 };
+    if (n === 1 && P.kind !== RF_HIGHLIGHTER) penShape(work, xy, w, P.kind, P.rgba, liveSid, grain);
     else if (P.kind === RF_HIGHLIGHTER) highlighterShape(work, xy, w, P.rgba, liveSid);
-    else penShape(work, xy.slice(xy.length - 4), w.slice(w.length - 2), P.kind, P.rgba, liveSid);
+    else penShape(work, xy.slice(xy.length - 4), w.slice(w.length - 2), P.kind, P.rgba, liveSid, grain);
     const x0 = Math.max(0, Math.floor((mnx - pad) / SS)), y0 = Math.max(0, Math.floor((mny - pad) / SS));
     const x1 = Math.min(cv.width, Math.ceil((mxx + pad) / SS)), y1 = Math.min(cv.height, Math.ceil((mxy + pad) / SS));
     if (x1 > x0 && y1 > y0) ctx.putImageData(downsample(work, x0, y0, x1 - x0, y1 - y0), x0, y0);
   }
+  // THE PAGE FROM THE CARD (GL.page): what is under the ink drawn by the browser on a canvas of its own, the strokes and
+  // the averaging down on the card, the result copied onto the screen's canvas. The editor's own copy of the pixels (base,
+  // shown: what a stroke being drawn, a text edit's band, a fill and a capture work on) is made from the card only when
+  // one of them needs it (cpuCopy), or when the page is idle.
+  let cpuStale = false, cpuSoon = 0;
+  const uc = document.createElement("canvas"), ucg = uc.getContext("2d");      // kept, and drawn over whole each time
+  function underCanvas(sq) {                                  // canvasFor's paper and underInk's layers, drawn by the browser
+    const W = cv.width * SS, H = cv.height * SS, k = dpr * SS;
+    if (uc.width !== W || uc.height !== H) { uc.width = W; uc.height = H; }
+    const g = ucg;
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.fillStyle = "rgb(142,142,142)"; g.fillRect(0, 0, W, H);
+    if (sq.cx1 >= sq.cx0) { g.fillStyle = "#fff"; g.fillRect(sq.cx0, sq.cy0, sq.cx1 - sq.cx0 + 1, sq.cy1 - sq.cy0 + 1); }
+    const withText = page.textVisible && page.text.paras.length, withTemplate = page.templateVisible && tplImg;
+    const withPictures = page.images.some(im => pictures.get(im.name));
+    if ((withText || withTemplate || srcImg || withPictures) && sq.cx1 >= sq.cx0) {
+      g.save(); g.beginPath(); g.rect(sq.cx0, sq.cy0, sq.cx1 - sq.cx0 + 1, sq.cy1 - sq.cy0 + 1); g.clip();
+      const s = k * scale();
+      g.setTransform(s, 0, 0, s, (vpW / 2 - view.cx * scale()) * k, -view.top * scale() * k);
+      if (srcImg) g.drawImage(srcImg, -page.paperSize[0] / 2, 0, page.paperSize[0], page.paperSize[1]);
+      if (withTemplate) g.drawImage(tplImg, -page.paperSize[0] / 2, 0, page.paperSize[0], page.paperSize[1]);
+      if (withPictures) drawPictures(g);
+      if (withText) drawText(g, textLayout);
+      g.restore();
+    }
+    return uc;
+  }
+  function squareOf() {                                       // canvasFor's drawable square, without its pixels
+    const W = cv.width * SS, H = cv.height * SS, k = dpr * SS;
+    const [ax, ay] = toScreen(-half(), 0), [bx] = toScreen(half(), 0);
+    return { W, H, cx0: Math.max(0, Math.ceil(ax * k - 0.5)), cx1: Math.min(W - 1, Math.floor(bx * k - 0.5)), cy0: Math.max(0, Math.ceil(ay * k - 0.5)), cy1: H - 1 };
+  }
+  function rebuildOnCard() {                                  // -> drawn?
+    if (!GL || gpuFailed || live) return false;
+    const t = performance.now(), sq = squareOf(), s = scale(), u = dpr * SS, lines = [];
+    for (const Ly of page.layers) if (Ly.visible) for (const L of Ly.lines) if (!hiddenLines.has(L)) lines.push(L);
+    try {
+      if (!GL.page(underCanvas(sq), lines, s * u, (vpW / 2 - view.cx * s) * u, -view.top * s * u, sq, SS)) return false;
+    } catch (e) { gpuFailed = true; console.warn("The page editor draws without the graphics card:", e); return false; }
+    if (shownCv.width !== cv.width || shownCv.height !== cv.height) { shownCv.width = cv.width; shownCv.height = cv.height; }
+    shownCtx.drawImage(GL.canvas, 0, 0); shownDirty = false;
+    base = null; shown = null; cpuStale = true;
+    inkTime = { on: GL.name, ms: performance.now() - t, lines: lines.length, whole: true };
+    clearTimeout(cpuSoon); cpuSoon = setTimeout(() => requestIdleCallback ? requestIdleCallback(() => cpuCopy()) : cpuCopy(), 400);
+    return true;
+  }
+  function cpuCopy() {                                        // the editor's own copy of the page, from the card, when wanted
+    if (!cpuStale) return;
+    cpuStale = false; clearTimeout(cpuSoon);
+    const sq = squareOf(), c = Object.assign({ px: new Uint8ClampedArray(sq.W * sq.H * 3), stamp: new Int32Array(sq.W * sq.H) }, sq);
+    if (GL.holds(c.W, c.H)) try { GL.readInto(c); base = c; shown = downsample(base); return; } catch (e) { /* drawn here instead */ }
+    base = canvasFor(); drawInk(base); shown = downsample(base);
+  }
   function rebuild() {
+    freshSprite();                                            // a floating selection, at a new zoom's size
     textLayout = layoutText();
-    base = canvasFor();
-    for (const Ly of page.layers) if (Ly.visible) for (const L of Ly.lines) if (!hiddenLines.has(L)) drawLine(base, L);
-    shown = downsample(base); shownDirty = true;
     footSeen = footOf();
+    if (rebuildOnCard()) { paint(); return; }
+    cpuStale = false;
+    base = canvasFor();
+    drawInk(base);
+    shown = downsample(base); shownDirty = true;
     if (live) {                                               // A KEY WHILE A STROKE IS DRAWN shows now: the page anew, with the
       work = { ...base, px: base.px.slice(), stamp: base.stamp.slice() };   // stroke so far over it, and the stroke goes on
       drawLine(work, live, liveSid);
@@ -549,7 +991,7 @@ span.lname { cursor: default; }
   function paint() {
     paintScroll();
     if (live) return;                                         // the stroke being drawn paints its own patches
-    if (shownDirty || shownCv.width !== shown.width || shownCv.height !== shown.height) {
+    if (shown && (shownDirty || shownCv.width !== shown.width || shownCv.height !== shown.height)) {
       if (shownCv.width !== shown.width || shownCv.height !== shown.height) { shownCv.width = shown.width; shownCv.height = shown.height; }
       shownCtx.putImageData(shown, 0, 0); shownDirty = false;
     }
@@ -564,7 +1006,7 @@ span.lname { cursor: default; }
   function apply(a, forward) {
     if (a.type === "text") { const s = forward ? a.after : a.before; page.text = clone(s.text); setCursors(clone(s.cursors)); return; }
     if (a.type === "layers") { const s = forward ? a.after : a.before; setLayers(s); return; }
-    pick = null;                                              // what was selected may be gone or elsewhere
+    pick = null; hiddenLines.clear();                         // what was selected may be gone or elsewhere (and floats no more)
     if (a.type === "pics") { page.images = clone(forward ? a.after : a.before); loadPictures(); return; }
     const lines = a.layer.lines, take = forward ? a.removed : a.added, put_ = forward ? a.added : a.removed;
     for (const e of take) { const i = lines.indexOf(e.line); if (i >= 0) lines.splice(i, 1); }
@@ -593,37 +1035,68 @@ span.lname { cursor: default; }
   const clone = o => JSON.parse(JSON.stringify(o));
 
   // ================================================================ pens and the eraser
-  function newLine(pk) {                                      // as the tablet stores it: an upright pen at a steady 50% pressure
+  function newLine(pk) {                                      // as the tablet stores it: an upright pen pressed as a hand presses
     const pen = PEN[pk.pen], c = choiceOf(pk), ts = pen.sizes === false ? 1 : pk.size + 1;
     return { itemId: [2, page.nextId++], pen: pen.pen, penCode: pen.code, color: c[1], colorRgba: c[2],
              thicknessScale: ts, startingLength: 0, width: pen.per * ts, points: [] };
   }
-  const pointOf = (L, x, y) => ({ x, y, speed: 0, direction: 0, width: L.width, pressure: 128 });
-  // A HAND'S POINT, from what the pointer tells: a stylus's own pressure, or (from a mouse) one inferred from the speed --
-  // slow is pressed hard, fast lightly -- smoothed so it does not jitter; the direction of travel as the stroke's angle.
-  // Each pen answers as on the tablet: the fineliner, the highlighter and the shader keep their width; the ballpoint, the
-  // pencils, the marker and the brush (most) widen with pressure, and the pencils' shade follows it; the calligraphy pen
-  // is broad across its nib (held at 45 degrees) and fine along it: thin up to the right, thick down to the right.
+  // a shape's or a fill's points: steady, at the pressure the middle of the user's strokes holds (230 of 255)
+  const pointOf = (L, x, y) => ({ x, y, speed: 0, direction: 0, width: L.width, pressure: 230 });
+  // A HAND'S POINT, from what the pointer tells: a stylus's own pressure, or (from a mouse) one inferred as a hand presses
+  // -- read off the user's own strokes on the tablet (2026-10-19): writing is pressed hard nearly all the way (the middle
+  // of a stroke at 230-255), a stroke lands lighter and is at full pressure within its first tenth, and quicker is only a
+  // little lighter. The direction of travel is the stroke's direction field (the tablet's own track it within a few
+  // degrees). The width each pen stores, as the tablet stored the user's: the fineliner, the highlighter and the
+  // mechanical pencil keep theirs; the pencil a little wider with pressure; the marker and the ballpoint wider with it;
+  // the paintbrush a third of its width until pressed hard, then full; the shader full until very light; the calligraphy
+  // pen fine along its nib (held at 45 degrees) and broader across it. The renderer then draws each as the tablet does.
   const NIB = -Math.PI / 4;                                   // the nib's edge, lower left to upper right (the page's y runs down)
-  const RESPONSE = { BALLPOINT: [0.8, 0.4], PENCIL: [0.85, 0.3], MECHANICAL: [0.9, 0.2], MARKER: [0.7, 0.6], PAINTBRUSH: [0.4, 1.2], CALIGRAPHY: [0.8, 0.4] };
+  const RESPONSE = { BALLPOINT: [0.8, 0.4], PENCIL: [0.72, 0.28], MARKER: [0.7, 0.6] };
+  // THE SHADER keeps its full width until the pressure is very light, and only then thins to a third (the user's strokes:
+  // full from pressure 64 of 255, 29 of 88 at the lightest)
+  const SHADER_KNEE = 0.25;
+  const LANDING = 40;                                         // page units from the stroke's start to full pressure
   let motion = null;                                          // the stroke so far: where, when, how fast, which way
   function inkPoint(L, x, y, ev) {
     const t = ev && ev.timeStamp || performance.now();
     let pressure, dir = motion ? motion.dir : 0;
-    if (!motion) motion = { x, y, t, v: 0, dir: 0, p: 0.6 };
+    if (!motion) motion = { x, y, t, v: 0, dir: 0, p: 0.9, bend: 0, turned: false, run: 0 };
     else {
       const d = Math.hypot(x - motion.x, y - motion.y), dt = Math.max(1, t - motion.t);
-      if (d > 0.5) { dir = Math.atan2(y - motion.y, x - motion.x); motion.dir = dir; }
+      motion.run += d;
+      if (d > 0.5) {
+        dir = Math.atan2(y - motion.y, x - motion.x);
+        if (motion.turned) {                                  // how sharply the stroke bends: the turn per unit along it
+          let da = dir - motion.dir; da = Math.atan2(Math.sin(da), Math.cos(da));
+          motion.bend = motion.bend * 0.75 + (da / d) * 0.25;
+        }
+        motion.dir = dir; motion.turned = true;
+      }
       motion.v = motion.v * 0.7 + (d / dt) * 0.3;            // page units a millisecond, smoothed
       motion.x = x; motion.y = y; motion.t = t;
     }
     if (ev && ev.pointerType === "pen" && ev.pressure > 0) pressure = ev.pressure;          // a stylus says it itself
-    else pressure = motion.p = motion.p * 0.6 + (0.85 - 0.6 * Math.min(1, motion.v / 4)) * 0.4;
+    else {
+      const landing = 0.35 + 0.65 * Math.min(1, motion.run / LANDING);
+      pressure = motion.p = motion.p * 0.6 + (0.97 - 0.2 * Math.min(1, motion.v / 4)) * landing * 0.4;
+    }
     const fam = L.pen.split("_")[0], r = RESPONSE[fam];
     let w = L.width;
     if (r) w = L.width * (r[0] + r[1] * pressure);
-    if (fam === "CALIGRAPHY") w *= 0.25 + 0.75 * Math.abs(Math.sin(dir - NIB));
-    return { x, y, speed: Math.min(65535, Math.round(motion.v * 100)), direction: Math.round(((dir % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) / (2 * Math.PI) * 255),
+    if (fam === "PAINTBRUSH") w = L.width * (0.33 + 0.67 * Math.min(1, Math.max(0, (pressure - 0.75) / 0.2)));
+    // THE HAND LEANS INTO A CURVE (by feel, not measured): a tight bend tilts the pen toward its inside, and a tilted
+    // pencil or marker lays a wider, softer mark -- the pencils' shade lighter with it. (The tablet's tilted pencil is far
+    // wider still, up to six times: a mouse cannot say how the pen is held.)
+    const lean = Math.min(1, Math.abs(motion.bend) * 20);
+    if (fam === "PENCIL" || fam === "MARKER") {
+      w *= 1 + 0.6 * lean;
+      if (fam !== "MARKER") pressure *= 1 - 0.3 * lean;
+    }
+    if (fam === "CALIGRAPHY") w *= 0.3 + 0.4 * Math.abs(Math.sin(dir - NIB));
+    if (fam === "SHADER" && pressure < SHADER_KNEE) w *= 0.33 + 0.67 * pressure / SHADER_KNEE;
+    // the speed field in the tablet's range for a hand (its unit is not known: the user's strokes read 6 to 30 drawn at
+    // an ordinary pace, which a mouse moving about a page unit a millisecond is taken to be)
+    return { x, y, speed: Math.min(65535, Math.round(motion.v * 15)), direction: Math.round(((dir % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) / (2 * Math.PI) * 255),
              width: Math.max(1, Math.round(w)), pressure: Math.max(1, Math.min(255, Math.round(pressure * 255))) };
   }
   const ERASER_RS = [12, 22, 40];                            // the eraser's sizes, as the pens': thin, medium (as it was), thick
@@ -749,12 +1222,16 @@ span.lname { cursor: default; }
     L.points = resample(pts.map(([x, y]) => ({ x, y })), step).map(p => pointOf(L, p.x, p.y));
     return L;
   }
-  function addStrokes(list) {
+  function addStrokes(list, float) {                          // float: they come in selected and floating (a paste), no redraw
     const Ly = layer(), added = [];
     for (const L of list) { if (!L.points.length) continue; added.push({ line: L, at: Ly.lines.length }); Ly.lines.push(L); }
     if (!added.length) return;
     record({ type: "lines", layer: Ly, removed: [], added }); lastType = null;
-    contentLanded(); rebuild();
+    contentLanded();
+    if (!float) { rebuild(); return; }
+    if (tool !== "pick" || pickMode !== "select") { tool = "pick"; pickMode = "select"; paintControls(); }
+    selectStrokes(added.map(a => a.line), Ly);
+    if (pickFloat(false)) { saveSoon(); paint(); } else rebuild();
   }
   function closePoly() {
     if (!poly) return;
@@ -817,6 +1294,7 @@ span.lname { cursor: default; }
   // deeper one wider. Every ring is a stroke of the pen in hand at the planner's width. Without the engine (the editor
   // opened from its file) there is no fill, and the page says so.
   async function fillAt(pk, x, y) {
+    cpuCopy();
     if (!shown) return;
     const W = shown.width, H = shown.height, d = shown.data;
     const [sx, sy] = toScreen(x, y), px = Math.round(sx * dpr), py = Math.round(sy * dpr);
@@ -1165,6 +1643,7 @@ span.lname { cursor: default; }
     return false;
   }
   // the clipboard: every selection, in order, one per line; pasting as many lines as there are cursors gives each its own
+  document.addEventListener("dragstart", e => e.preventDefault());          // nothing in the editor drags (see the style)
   document.addEventListener("copy", e => { const s = selections(); if (editing() && s.length) { e.clipboardData.setData("text/plain", s.map(textOf).join("\n")); e.preventDefault(); } });
   document.addEventListener("cut", e => {
     const s = selections(); if (!editing() || !s.length) return;
@@ -1279,6 +1758,7 @@ span.lname { cursor: default; }
     else {
       if (!drawable(x, y)) return;                            // as on the tablet: no stroke starts in the gray
       contentLanded();                                        // the stroke wins: the text lets go as the pen goes down
+      cpuCopy();                                              // the stroke is drawn on the editor's own copy of the page
       motion = null; live = newLine(pickers[tool]); live.points.push(inkPoint(live, x, y, e));
       work = { ...base, px: base.px.slice(), stamp: base.stamp.slice() }; liveSid = ++sid;
     }
@@ -1447,7 +1927,7 @@ span.lname { cursor: default; }
       pop.innerHTML = '<div class="lsec">' + rows +
         '<div class="lrow">' + eye('data-tvis="text"', page.textVisible, "Text") + '<span class="lname">Text</span></div>' +
         '<div class="lrow">' + eye('data-tvis="template"', page.templateVisible, "Template") + '<span class="lname">Template</span>' +
-        '<button class="lb" data-tmpl="1" aria-label="Templates" title="' + tplTitle() + '"' + (tplLocked ? ' aria-disabled="true"' : "") + ">" + ICON.template + "</button></div>" +
+        '<button class="lb" data-tmpl="1" aria-label="Templates" title="' + tplTitle() + '">' + ICON.template + "</button></div>" +
         '</div><div class="lsec"><button class="lrow lnew" data-lop="add">' + ICON.plusCircle + "<span>New layer</span></button></div>";
     } else if (popFor === "pick") {
       pop.innerHTML = '<div class="sec"><h3>' + (pickMode === "capture" ? "Capture" : "Select") + '</h3><div class="grid2">' +
@@ -1458,8 +1938,9 @@ span.lname { cursor: default; }
         cell('data-erase="stroke"', eraseMode === "stroke", ICON.eraseStroke + "<span>Strokes</span>", "Erase whole strokes") +
         cell('data-erase="area"', eraseMode === "area", ICON.erasePass + "<span>Passing</span>", "Erase what it passes over") +
         cell('data-erase="zone"', eraseMode === "zone", ICON.eraseZone + "<span>Zone</span>", "Erase what is inside a loop") + "</div></div>" +
-        '<div class="sec"><h3>' + SIZES[eraseSize] + '</h3><div class="grid3">' +
-        [0, 1, 2].map(i => cell('data-esize="' + i + '"', eraseSize === i, sizeIcon(i), SIZES[i], "short")).join("") + "</div></div>";
+        (eraseMode === "zone" ? "" :                          // a zone is a loop: it has no size
+          '<div class="sec"><h3>' + SIZES[eraseSize] + '</h3><div class="grid3">' +
+          [0, 1, 2].map(i => cell('data-esize="' + i + '"', eraseSize === i, sizeIcon(i), SIZES[i], "short")).join("") + "</div></div>");
     } else if (popFor === "text") {
       // the four styles, each shown in its own face; the one at the cursor is pressed
       const col = page.text.column, here = editing() && page.text.paras[caret.p] ? page.text.paras[caret.p].style : "body";
@@ -1491,12 +1972,12 @@ span.lname { cursor: default; }
   });
   pop.addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b) return;
-    if (b.dataset.erase) eraseMode = b.dataset.erase;
+    if (b.dataset.erase) { eraseMode = b.dataset.erase; paintPop(); }
     if (b.dataset.esize) eraseSize = Number(b.dataset.esize);
     if (b.dataset.pickmode) { if (pickMode !== b.dataset.pickmode) clearPick(); pickMode = b.dataset.pickmode; }
     if (b.dataset.lact !== undefined) { activeLayer = Number(b.dataset.lact); paintPop(); return; }
     if (b.dataset.tvis) { const k = b.dataset.tvis === "text" ? "textVisible" : "templateVisible"; layerEdit(() => { page[k] = !page[k]; }); return; }
-    if (b.dataset.tmpl) { if (tplLocked) return; popFor = null; paintPop(); paintControls(); openTemplates(); return; }
+    if (b.dataset.tmpl) { popFor = null; paintPop(); paintControls(); if (tplLocked) whyNoTemplates(); else openTemplates(); return; }
     if (b.dataset.lvis !== undefined) { const i = Number(b.dataset.lvis); layerEdit(() => { page.layers[i].visible = !page.layers[i].visible; }); return; }
     if (b.dataset.lop && !b.classList.contains("off")) {
       const op = b.dataset.lop, i = activeLayer, Ls = page.layers;
@@ -1666,11 +2147,8 @@ span.lname { cursor: default; }
     }
     if (editing() && textKey(e)) e.preventDefault();
   });
-  // the page's frame is the page's own; the face is the tablet's when present, else the substitute, and the note says so
-  const note = document.getElementById("note");
-  function paintNote() {
-    note.textContent = tabletFace ? "" : "Typed text is in PaperDaemon's own faces, Arimo and Gelasio.";
-  }
+  // the page's frame is the page's own; the face is the tablet's when present, else the substitute, said nowhere
+  const note = document.getElementById("note");             // only for a page that cannot be read
   // THE TABLET'S FACES, from the user's own desktop app through the engine (never shipped): fetched with the window's
   // token, since a font link cannot carry one
   const P = window.parent && window.parent.PD;
@@ -1702,7 +2180,7 @@ span.lname { cursor: default; }
     }));
     tabletFace = got[0] && got[4];
     useTablet = tabletFace;
-    paintNote(); rebuild();
+    rebuild();
   }
 
 
@@ -1741,15 +2219,17 @@ span.lname { cursor: default; }
     return ([x, y]) => { const [lx, ly] = rot([x - f0.cx, y - f0.cy], -f0.a); const [mx, my] = rot([lx * s, ly * s], f1.a); return [f1.cx + mx, f1.cy + my]; };
   }
   function selectStrokes(lines, layerRef) {
+    if (floating()) pickLand();                               // the selection before goes back into the page
     if (!lines.length) { pick = null; paint(); return; }
     pick = { kind: "strokes", layer: layerRef, lines, frame: frameOfPoints(lines.flatMap(L => L.points.map(p => [p.x, p.y]))) };
     contentLanded(); paint();
   }
   function selectPicture(i) {
+    if (floating()) pickLand();
     pick = { kind: "picture", index: i, frame: frameOfQuad(page.images[i].quad) };
     contentLanded(); paint();
   }
-  function clearPick() { if (pick) { pick = null; paint(); } }
+  function clearPick() { if (pick) { const was = floating(); if (was) pickLand(); pick = null; paint(); } }
   // where the handles are, on the screen: the four corners, and the turning handle above the top's middle
   function handlesOf(f) {
     const c = corners(f).map(p => toScreen(...p));
@@ -1772,20 +2252,82 @@ span.lname { cursor: default; }
     }
     return -1;
   }
+  // A SELECTION THAT MOVES FLOATS: drawn once, by the renderer, into a picture of its own (on white: it goes over the page
+  // multiplied, so white leaves the page as it is), its strokes left out of the page under it. Each move, turn or resize
+  // only places that picture where the frame now is, which the browser composites on the graphics card, however many
+  // strokes the selection holds, and a drop only moves the strokes in the file. The page is drawn with them once, when
+  // the selection is let go (pickLand). A pasted decomp floats from the start, so it lands on the page without a redraw.
+  // The picture keeps its own frame, so the selection's later frames are carried from it; a zoom far from the one it was
+  // drawn at draws it again.
+  function spriteOf(lines, frame) {
+    const kd = dpr * scale(), k = kd * SS;                    // device pixels, and working pixels, a page unit
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    const P = lines.map(prepared);
+    lines.forEach((L, j) => {
+      const pad = Math.max(...P[j].widths) / 2 + 2;
+      for (const p of L.points) { x0 = Math.min(x0, p.x - pad); y0 = Math.min(y0, p.y - pad); x1 = Math.max(x1, p.x + pad); y1 = Math.max(y1, p.y + pad); }
+    });
+    const ox = Math.floor(x0 * kd) / kd, oy = Math.floor(y0 * kd) / kd;           // the picture's corner, on a device pixel
+    const Wd = Math.max(1, Math.ceil((x1 - ox) * kd)), Hd = Math.max(1, Math.ceil((y1 - oy) * kd));
+    if (Wd * Hd > 6e7) return null;                           // too big to hold: the drag shows plain lines instead
+    const W = Wd * SS, H = Hd * SS;
+    const c = { W, H, px: new Uint8ClampedArray(W * H * 3).fill(255), stamp: new Int32Array(W * H), cx0: 0, cx1: W - 1, cy0: 0, cy1: H - 1 };
+    let onCard = false;
+    if (GL && !gpuFailed) try { onCard = GL.draw(c, lines, k, -ox * k, -oy * k); } catch (e) { onCard = false; }
+    if (!onCard) lines.forEach((L, j) => {
+      const Pj = P[j], xy = new Float64Array(L.points.length * 2);
+      L.points.forEach((p, i) => { xy[2 * i] = (p.x - ox) * k; xy[2 * i + 1] = (p.y - oy) * k; });
+      const w = Pj.widths.map(v => v * k);
+      if (Pj.kind === RF_HIGHLIGHTER) highlighterShape(c, xy, w, Pj.rgba, j + 1);
+      else penShape(c, xy, w, Pj.kind, Pj.rgba, j + 1, Pj.dens && { dens: Pj.dens, seed: Pj.seed, unit: k, u0: 0 });
+    });
+    const cv2 = document.createElement("canvas"); cv2.width = Wd; cv2.height = Hd;
+    cv2.getContext("2d").putImageData(downsample(c, 0, 0, Wd, Hd), 0, 0);
+    return { cv: cv2, ox, oy, kd, frame: { ...frame } };
+  }
+  function drawSprite(sp) {                                   // the picture, carried from its frame to the selection's
+    const m = mapper(sp.frame, pick.frame), at = (i, j) => toScreen(...m([sp.ox + i / sp.kd, sp.oy + j / sp.kd]));
+    const [e0, f0] = at(0, 0), [a1, b1] = at(1, 0), [c1, d1] = at(0, 1);
+    ctx.save(); ctx.transform(a1 - e0, b1 - f0, c1 - e0, d1 - f0, e0, f0);
+    ctx.globalCompositeOperation = "multiply"; ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(sp.cv, 0, 0); ctx.restore();
+  }
+  const floating = () => !!(pick && pick.kind === "strokes" && pick.sprite && pick.floating);
+  function pickFloat(redraw) {                                // the selection out of the page, as its picture -> floats?
+    if (!pick || pick.kind !== "strokes") return false;
+    if (!pick.floating) {
+      pick.sprite = spriteOf(pick.lines, pick.frame);
+      if (!pick.sprite) return false;
+      pick.floating = true;
+      pick.lines.forEach(L => hiddenLines.add(L));
+      if (redraw) rebuild();
+    }
+    return true;
+  }
+  function pickLand() {                                       // a floating selection back into the page -> drawn?
+    if (!hiddenLines.size || pickDrag) return false;
+    if (pick) pick.floating = false;
+    hiddenLines.clear(); rebuild(); return true;
+  }
+  function freshSprite() {                                    // after a zoom: a floating selection's picture at the new size
+    if (!floating()) return;
+    const kd = dpr * scale(), sp = pick.sprite;
+    if (sp.kd / kd > 1.6 || kd / sp.kd > 1.6) pick.sprite = spriteOf(pick.lines, pick.frame) || sp;
+  }
   function pickDown(e, x, y) {
     const [sx, sy] = local(e), hit = hitPick(sx, sy);
     pointer = e.pointerId; vp.setPointerCapture(e.pointerId);
     if (hit) {                                                // a handle or the inside: the selection moves, scales or turns
       pickDrag = { ...hit, start: [x, y], f0: { ...pick.frame } };
-      if (pick.kind === "strokes") { pick.lines.forEach(L => hiddenLines.add(L)); }
-      else hiddenPics.add(page.images[pick.index]);
-      rebuild(); return;
+      if (pick.kind === "strokes") { if (!pickFloat(true)) { pick.lines.forEach(L => hiddenLines.add(L)); rebuild(); } else paint(); }
+      else { hiddenPics.add(page.images[pick.index]); rebuild(); }
+      return;
     }
     if (pickMode === "capture") {                             // a click on a picture selects it; a loop captures
       const i = pictureAt(x, y);
       if (i >= 0) { selectPicture(i); pickDrag = { op: "move", start: [x, y], f0: { ...pick.frame } }; hiddenPics.add(page.images[i]); rebuild(); return; }
     }
-    pick = null;
+    pickLand(); pick = null;
     pickLoop = { pts: [[x, y]] };
     paint();
   }
@@ -1828,17 +2370,21 @@ span.lname { cursor: default; }
     }
     if (pickDrag) {
       const d = pickDrag; pickDrag = null;
-      hiddenLines.clear(); hiddenPics.clear();
-      const f0 = d.f0, f1 = pick.frame;
-      if (f0.cx === f1.cx && f0.cy === f1.cy && f0.w === f1.w && f0.a === f1.a) { rebuild(); return true; }
+      const f0 = d.f0, f1 = pick.frame, float = floating();
+      if (f0.cx === f1.cx && f0.cy === f1.cy && f0.w === f1.w && f0.a === f1.a) {
+        hiddenPics.clear();
+        if (float) paint(); else { hiddenLines.clear(); rebuild(); }
+        return true;
+      }
       const m = mapper(f0, f1), s = f1.w / f0.w;
       if (pick.kind === "strokes") {                          // the strokes made anew where the frame now is, one undo step
-        const Ly = pick.layer, removed = [], added = [];
+        const Ly = pick.layer, removed = [], added = [], at = new Map(Ly.lines.map((L, i) => [L, i]));
         pick.lines = pick.lines.map(L => {
-          const at = Ly.lines.indexOf(L); if (at < 0) return L;
+          const i = at.get(L); if (i === undefined) return L;
           const N = Object.assign({}, L, { itemId: [2, page.nextId++], width: Math.max(1, Math.round(L.width * s)),
             points: L.points.map(p => { const [nx, ny] = m([p.x, p.y]); return { ...p, x: nx, y: ny, width: Math.max(1, Math.round(p.width * s)) }; }) });
-          Ly.lines[at] = N; removed.push({ line: L, at }); added.push({ line: N, at });
+          Ly.lines[i] = N; removed.push({ line: L, at: i }); added.push({ line: N, at: i });
+          if (float) { hiddenLines.delete(L); hiddenLines.add(N); }
           return N;
         });
         record({ type: "lines", layer: Ly, removed, added }); lastType = null;
@@ -1847,7 +2393,10 @@ span.lname { cursor: default; }
         page.images[pick.index].quad = page.images[pick.index].quad.map(m);
         record({ type: "pics", before, after: clone(page.images) }); lastType = null;
       }
-      rebuild(); return true;
+      hiddenPics.clear();
+      if (float) { saveSoon(); paint(); }                     // still floating: the page under it is as it was
+      else { hiddenLines.clear(); rebuild(); }
+      return true;
     }
     return false;
   }
@@ -1863,7 +2412,7 @@ span.lname { cursor: default; }
       page.images.splice(pick.index, 1);
       record({ type: "pics", before, after: clone(page.images) }); lastType = null;
     }
-    pick = null; rebuild();
+    pick = null; hiddenLines.clear(); rebuild();
   }
   function drawDecomposing() {
     if (!decomposing) return;
@@ -1879,7 +2428,8 @@ span.lname { cursor: default; }
       ctx.closePath(); ctx.stroke(); ctx.restore();
     }
     if (!pick) return;
-    if (pickDrag) {                                           // while dragged: the strokes as plain lines, the picture as itself
+    if (floating()) drawSprite(pick.sprite);
+    else if (pickDrag) {                                      // while dragged: the strokes (plain lines, when too big to picture), the picture as itself
       const m = mapper(pickDrag.f0, pick.frame), k = pick.frame.w / pickDrag.f0.w;
       if (pick.kind === "strokes") {
         ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round";
@@ -1942,6 +2492,7 @@ span.lname { cursor: default; }
   document.addEventListener("copy", e => { if (!editing() && copyPick(e)) tell("Copied"); });
   document.addEventListener("cut", e => { if (!editing() && copyPick(e)) deletePick(); });
   function captureLoop(loop) {                                // what the page shows inside the loop, pixel for pixel
+    cpuCopy();
     if (!shown) return;
     const dev = loop.map(p => toScreen(...p).map(v => v * dpr));
     const xs = dev.map(p => p[0]), ys = dev.map(p => p[1]);
@@ -1998,10 +2549,9 @@ span.lname { cursor: default; }
     const m = /data-pd-strokes="([^"]+)"/.exec(html);
     if (m && !asStrokes) {                                    // our own strokes, back as strokes, selected
       let got; try { got = JSON.parse(decodeURIComponent(escape(atob(m[1])))); } catch (err) { return false; }
-      const [cx, cy] = pasteAt(), Ly = layer();
+      const [cx, cy] = pasteAt();
       const lines = (got.lines || []).map(ln => lineIn({ ...ln, points: ln.points.map(p => [p[0] + cx, p[1] + cy, p[2], p[3], p[4], p[5]]) }));
-      addStrokes(lines); if (tool !== "pick") { tool = "pick"; pickMode = "select"; paintControls(); }
-      selectStrokes(lines, Ly); return true;
+      pickLand(); addStrokes(lines, true); return true;
     }
     const svg = /<svg[\s\S]*<\/svg>/i.exec(text) || /<svg[\s\S]*<\/svg>/i.exec(html), src = /<img[^>]+src="(data:image\/[^"]+)"/i.exec(html);
     if (svg) { placeImage(new Blob([svg[0]], { type: "image/svg+xml" }), asStrokes); return true; }
@@ -2037,7 +2587,7 @@ span.lname { cursor: default; }
     decomposing = { cx, cy, w, h }; paint();
     tell("Decomposing…", 600000);
     const png = await toPng(img), data = await new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(png); });
-    const longest = Math.max(w, h), width = Math.round(Math.max(200, Math.min(1200, longest)));
+    const longest = Math.max(w, h), width = Math.round(Math.max(200, Math.min(1600, longest)));   // the Decompose screen's range
     let got;
     try {
       const r = await fetch("/api/v1/decompose", { method: "POST", headers: { Authorization: "Bearer " + token(), "Content-Type": "application/json" },
@@ -2049,11 +2599,12 @@ span.lname { cursor: default; }
       tell(location.protocol === "file:" ? "Paste as strokes works in the app's page editor, not in this file" : "The image could not be decomposed"); return;
     }
     decomposing = null;
-    const k = longest / got.box, [ox, oy] = got.center, Ly = layer();
+    const k = longest / got.box, [ox, oy] = got.center;
     const lines = got.lines.map(st => lineIn({ pen: st.pen, penCode: st.penCode, color: st.color, colorRgba: st.colorRgba, thicknessScale: 1,
-      points: st.pts.map(([x, y], i) => [cx + (x - ox) * k, cy + (y - oy) * k, 0, 0, Math.max(1, Math.round((st.widths[i] || st.widths[0] || 8) * k)), 128]) }));
+      // at the pressure the decomposer's own pages carry (draw.write_rm: 190), so its pencils grain as they do on the tablet
+      points: st.pts.map(([x, y], i) => [cx + (x - ox) * k, cy + (y - oy) * k, 0, 0, Math.max(1, Math.round((st.widths[i] || st.widths[0] || 8) * k)), 190]) }));
     tell("");
-    addStrokes(lines); tool = "pick"; pickMode = "select"; paintControls(); selectStrokes(lines, Ly);
+    pickLand(); addStrokes(lines, true);
   }
   window.addEventListener("keydown", e => {                  // what is selected: Delete or Backspace removes it, Esc lets it go
     if (!pick || editing() || live) return;
@@ -2184,9 +2735,10 @@ span.lname { cursor: default; }
   }
   let looking = null, saving = false;
   async function lookAtFile(force) {                          // one look at a time; a save waits for the one under way
-    if (looking) { await looking; if (!force) return; }
+    let took = false;
+    if (looking) { took = await looking; if (!force) return took; }
     looking = look(force).finally(() => { looking = null; });
-    return looking;
+    return (await looking) || took;
   }
   // NOT WHILE THE USER IS AT IT: the look reads and compares the whole page, which on a full one is felt as a hitch in a
   // held key or a drawn stroke; it waits for a moment's pause (the save before a write still looks, so nothing is lost)
@@ -2200,11 +2752,14 @@ span.lname { cursor: default; }
     try {
       const r = await fetch(SCENE, { headers: { Authorization: "Bearer " + token() } });
       if (r.ok && !live && !erasing) {
-        if (takeIn(await r.json()) && JSON.stringify(shapeOfPage()) !== JSON.stringify(known)) {
+        const took = takeIn(await r.json());
+        if (took && JSON.stringify(shapeOfPage()) !== JSON.stringify(known)) {
           clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 700);
         }
+        return took;                                          // -> whether the page changed with what the file had
       }
     } catch (e) { /* the engine is away: the next look */ }
+    return false;
   }
 
   function toScene() {
@@ -2228,9 +2783,10 @@ span.lname { cursor: default; }
   async function saveNow(leaving) {
     clearTimeout(saveTimer);
     if (!loaded) return;
-    if (JSON.stringify(toScene()) === lastWritten) return;
-    if (!leaving) await lookAtFile(true);                     // what the daemon wrote meanwhile is kept, not written over
-    const body = JSON.stringify(toScene());
+    let body = JSON.stringify(toScene());                     // once: a page with a decomp on it is megabytes of it
+    if (body === lastWritten) return;
+    // what the daemon wrote meanwhile is kept, not written over (and only then is the page read again)
+    if (!leaving && await lookAtFile(true)) body = JSON.stringify(toScene());
     if (body === lastWritten) return;
     lastWritten = body;
     saved.textContent = "…";
@@ -2270,7 +2826,7 @@ span.lname { cursor: default; }
   // ================================================================ the page's template
   // drawn from the engine's reading of the user's own desktop app (never shipped), as SVG at the page's frame. TEMPLATES
   // COME WITH AN ACCOUNT (add-epub-reading, D6): without one the engine answers 403, no template is drawn, and the
-  // Template control only says, on hover, to sign in
+  // Template control says why in a sheet
   let tplImg = null, tplLocked = false, srcImg = null;
   async function loadSource() {
     srcImg = null;
@@ -2289,6 +2845,21 @@ span.lname { cursor: default; }
   const tplTitle = () => tplLocked ? ((window.parent && window.parent.PD && window.parent.PD.t) ? window.parent.PD.t("editor.template_signin")
                                                                                                 : "Sign in to a reMarkable account to see and choose templates.")
                                    : "Templates";
+  // WITHOUT A LOGIN the Templates button says why, in the window's own sheet over the viewer
+  function whyNoTemplates() {
+    const W = window.parent && window.parent.PD;
+    const say = (k, en) => (W && W.t) ? W.t(k) : en;
+    const title = say("editor.template_why_title", "Templates need a reMarkable login");
+    const body = say("editor.template_why", "PaperDaemon reads the page templates from the reMarkable desktop app on this computer, and it does that " +
+                     "only with a reMarkable account signed in. Without one, pages show no template and none can be chosen. Sign in under Settings to use them.");
+    if (!(W && W.sheet)) { alert(title + "\n\n" + body); return; }
+    const dlg = W.sheet(title, "<p>" + W.esc(body) + '</p><div class="actions"><button type="button" class="btn primary" data-v="ok" autofocus>' +
+                                 W.esc(say("common.close", "Close")) + "</button></div>");
+    dlg.addEventListener("click", e => { if (e.target.closest("button[data-v]")) dlg.close(); });
+    dlg.addEventListener("close", () => dlg.remove());
+    window.parent.document.body.append(dlg);
+    dlg.showModal();
+  }
   async function checkTemplates() {
     try {
       const r = await fetch("/api/v1/templates", { headers: { Authorization: "Bearer " + token() } });
@@ -2314,6 +2885,9 @@ span.lname { cursor: default; }
 
   // THE TEMPLATE PICKER: one screen over the editor, every template there is (defaults and rM Methods together, no tabs,
   // no filter) as its icon over its name, the page's own underlined; choosing one sets it and closes the screen
+  const APPROX = '<span class="tpl-approx" title="PaperDaemon cannot read this template from the reMarkable app. It is an approximation.">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.5 21.5 20h-19z"/>' +
+    '<path d="M12 10v4.5" stroke-linecap="round"/><circle cx="12" cy="17.2" r="0.6" fill="currentColor"/></svg></span>';
   async function openTemplates() {
     let box = document.getElementById("tpl-pick");
     if (!box) {
@@ -2336,7 +2910,7 @@ span.lname { cursor: default; }
     const icon = t => t.icon && t.icon.d ? '<svg viewBox="' + t.icon.viewBox + '"><path d="' + t.icon.d + '"/></svg>'
       : t.icon && t.icon.svg ? '<img alt="" src="data:image/svg+xml;base64,' + t.icon.svg + '">' : '<svg viewBox="0 0 30 40"><rect x="1" y="1" width="28" height="38" fill="none" stroke="currentColor"/></svg>';
     box.querySelector(".tpl-grid").innerHTML = list.length ? list.map(t => '<button class="tpl' + (t.file === page.template ? " here" : "") + '" data-tpl="' + t.file.replace(/"/g, "&quot;") +
-      '" title="' + t.name + '">' + icon(t) + "<span>" + t.name + "</span></button>").join("") : "<p>No templates were found in the reMarkable app on this computer.</p>";
+      '" title="' + t.name + '">' + icon(t) + "<span>" + t.name + "</span>" + (t.approx ? APPROX : "") + "</button>").join("") : "<p>No templates were found in the reMarkable app on this computer.</p>";
   }
 
   async function loadPage() {

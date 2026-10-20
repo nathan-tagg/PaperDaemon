@@ -116,8 +116,6 @@
   <string name="settings.network">Nettverkstilgang</string>
   <string name="settings.network.help">Vær, innlegg fra sosiale medier, Wikipedia og nettsøk. Modellene dine og reMarkable-skyen påvirkes ikke.</string>
   <string name="settings.network.allow">Tillat nettverkstilgang</string>
-  <string name="settings.social">Sosiale nettsteder</string>
-  <string name="settings.social.help">Hvor en forespørsel om innlegg leter når den ikke nevner noe nettsted. Et nettsted som nevnes, søkes alltid i.</string>
   <string name="settings.tools">Verktøy</string>
   <string name="settings.updates">Oppdateringer</string>
   <string name="settings.updates.help">PaperDaemon sjekker aldri av seg selv.</string>
@@ -244,8 +242,13 @@
   <string name="tablet.label">Speil</string>
   <string name="tablet.folder">Mappe</string>
   <string name="dc.decomposing">Dekomponerer {name}</string>
-  <string name="dc.drop">Slipp et bilde her, eller {choose}.</string>
+  <string name="dc.drop">Slipp et bilde her, {choose} eller {paste}.</string>
   <string name="dc.choose">velg en fil</string>
+  <string name="dc.paste">lim inn ett</string>
+  <string name="dc.paste_none">Det er ikke noe bilde på utklippstavlen.</string>
+  <string name="dc.paste_denied">PaperDaemon kunne ikke lese utklippstavlen. Trykk Ctrl+V i stedet.</string>
+  <string name="dc.save">Lagre</string>
+  <string name="dc.saving">Lagrer…</string>
   <string name="dc.on_page">På side nr. {n}</string>
   <string name="dc.sending">Sender…</string>
   <string name="dc.send">Send til nettbrett</string>
@@ -255,7 +258,7 @@
   <string name="count.stroke.one">{n} strek</string>
   <string name="count.stroke.other">{n} streker</string>
   <string name="common.delete">Slett</string>
-  <string name="dc.size_range">Størrelsen er 200 til 1 400 nettbrettpiksler.</string>
+  <string name="dc.size_range">Bredden er 200 til 1 600 nettbrettpiksler.</string>
   <string name="dc.picture">Bilde</string>
   <string name="dc.bad_type">Den filen er ikke et PNG-, JPEG- eller WebP-bilde.</string>
   <string name="dc.too_big">Det bildet er {size}. Bruk et under {max}.</string>
@@ -264,8 +267,8 @@
   <string name="dc.label">Dekomponer</string>
   <string name="dc.intro">Gjør et bilde om til pennestreker og send det til nettbrettet, der hver linje kan viskes ut og tegnes over som dine egne.</string>
   <string name="dc.image">Bilde</string>
-  <string name="dc.size">Størrelse</string>
-  <string name="dc.size_unit">nettbrettpiksler, 200 til 1 400</string>
+  <string name="dc.size">Bredde</string>
+  <string name="dc.size_unit">nettbrettpiksler, 200 til 1 600</string>
   <string name="dc.types">PNG, JPEG, WebP</string>
   <string name="dc.decomps">Dekomponeringer</string>
   <string name="lineup.unreadable">Kunne ikke lese oppsettene.</string>
@@ -452,6 +455,7 @@
   <string name="help.model.stops">Når du setter PaperDaemon på pause eller avslutter det, eller når et annet oppsetts startskript må kjøre. Det stopper alt skriptet ditt startet. Det stopper aldri et program det ikke startet.</string>
   <string name="help.h_wrong">Ting som går galt</string>
   <string name="help.model.wrong_vram">**Grafikkortet er fullt.** En modell trenger plass i kortets minne (VRAM). Hvis en annen modellserver, et spill eller et bildeverktøy holder på det minnet, klarer ikke modellen å laste, eller den går svært tregt. Hvis du kjører andre modellservere selv, la skriptet stoppe dem først (for eksempel `taskkill /IM llama-server.exe /F`). PaperDaemon stopper bare det det startet.</string>
+  <string name="help.model.wrong_own_vram">**PaperDaemons egen andel.** I svært uvanlige tilfeller (en side full av store dekomponeringer, åpen i sideredigereren) kan PaperDaemon selv bruke opptil 200 MB av kortets minne. La så mye være ledig.</string>
   <string name="help.model.wrong_two">**To modeller som ikke får plass sammen.** Hvis tekstmodellen og bildemodellen ikke får plass på kortet samtidig, skriv hvert skript slik at det stopper den andres server før det starter sin egen.</string>
   <string name="help.model.wrong_port">**Porten er opptatt.** Hvis et annet program allerede bruker den porten, kan ikke serveren din starte der. Velg en ledig port og bruk den samme i adressen over.</string>
   <string name="help.wrong_spaces">**Mellomrom i en bane.** Sett anførselstegn rundt alle baner med mellomrom i.</string>
@@ -479,6 +483,7 @@ Regler skriptet må følge:
 - Skrive ut serverens utdata.
 - PaperDaemon setter også %PAPERDAEMON_ROLE% (text eller image), %PAPERDAEMON_LOCATION% (hele adressen), %PAPERDAEMON_OTHER_LOCATION% (adressen til den andre modellen), %PAPERDAEMON_LINEUP% og %PAPERDAEMON_DATA%.
 - PaperDaemon stopper bare programmer den har startet. Hvis andre modellservere kan bruke minnet på grafikkortet mitt, bør skriptet stoppe dem først.
+- PaperDaemon selv kan i svært uvanlige tilfeller bruke opptil 200 MB av minnet på grafikkortet mitt, så modellen bør la så mye være ledig.
 - Serveren må snakke det OpenAI-kompatible chat-API-et (/v1/chat/completions), slik llama-server fra llama.cpp, Ollama, LM Studio eller vLLM gjør.
 
 Før du skriver det, still meg disse spørsmålene ett om gangen og vent på hvert svar:
@@ -498,6 +503,7 @@ Regler skriptet må følge:
 - Skrive ut serverens utdata.
 - PaperDaemon setter også %PAPERDAEMON_ROLE% (text eller image), %PAPERDAEMON_LOCATION% (hele adressen), %PAPERDAEMON_OTHER_LOCATION% (adressen til den andre modellen), %PAPERDAEMON_LINEUP% og %PAPERDAEMON_DATA%.
 - PaperDaemon stopper bare programmer den har startet. Hvis andre modellservere kan bruke minnet på grafikkortet mitt, bør skriptet stoppe dem først.
+- PaperDaemon selv kan i svært uvanlige tilfeller bruke opptil 200 MB av minnet på grafikkortet mitt, så modellen bør la så mye være ledig.
 - Serveren må snakke Stable Diffusion web UI-API-et (/sdapi/v1/txt2img), slik serveren til stable-diffusion.cpp, Forge eller AUTOMATIC1111 gjør, eller OpenAI Images-API-et.
 
 Før du skriver det, still meg disse spørsmålene ett om gangen og vent på hvert svar:
@@ -557,7 +563,6 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="ts.m.network_off">Nettverkstilgang er av</string>
   <string name="ts.m.no_results_in">Ingen treff på {s} s</string>
   <string name="ts.m.results_in">{n} treff på {s} s</string>
-  <string name="ts.m.no_sites">Ingen sider valgt</string>
   <string name="ts.m.site_time">{site} {s} s</string>
   <string name="ts.m.site_failed">{site} mislyktes</string>
   <string name="ts.m.no_forecast">Ingen varsel</string>
@@ -573,7 +578,6 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="ts.d.search_empty">Søket kom tilbake tomt.</string>
   <string name="ts.d.first">Første: {title}</string>
   <string name="ts.d.every_site">Innlegg kom tilbake fra hver side.</string>
-  <string name="ts.d.choose_sites">Velg de sosiale sidene i Innstillinger.</string>
   <string name="ts.d.no_forecast">Værtjenesten svarte ikke.</string>
   <string name="ts.d.weather">I dag i {place}: høyeste {hi}{unit}, laveste {lo}{unit}.</string>
   <string name="ts.d.weather_london">Ingen plassering er satt, så London i dag: høyeste {hi}{unit}, laveste {lo}{unit}.</string>
@@ -630,6 +634,8 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="fm.convert_on">Slå på</string>
   <string name="fm.signin_shift">Skrevet tekst i det falske speilet settes med nettbrettets skrifter og kan flytte seg litt.</string>
   <string name="editor.template_signin">Logg inn på en reMarkable-konto for å se og velge maler.</string>
+  <string name="editor.template_why_title">Maler krever innlogging på reMarkable</string>
+  <string name="editor.template_why">PaperDaemon leser sidemalene fra reMarkable-skrivebordsappen på denne datamaskinen, og bare når en reMarkable-konto er logget inn. Uten innlogging viser sidene ingen mal, og ingen kan velges. Logg inn under Innstillinger for å bruke dem.</string>
   <string name="fm.new_notebook">Ny notatbok</string>
   <string name="fm.new_folder">Ny mappe</string>
   <string name="fm.new_page">Ny side</string>

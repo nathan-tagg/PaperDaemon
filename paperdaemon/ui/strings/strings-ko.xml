@@ -116,8 +116,6 @@
   <string name="settings.network">네트워크 접근</string>
   <string name="settings.network.help">날씨, 소셜 게시물, 위키백과, 웹 검색. 모델과 reMarkable 클라우드는 영향을 받지 않습니다.</string>
   <string name="settings.network.allow">네트워크 접근 허용</string>
-  <string name="settings.social">소셜 사이트</string>
-  <string name="settings.social.help">게시물 요청이 사이트를 지정하지 않을 때 찾아보는 곳입니다. 지정된 사이트는 항상 검색합니다.</string>
   <string name="settings.tools">도구</string>
   <string name="settings.updates">업데이트</string>
   <string name="settings.updates.help">PaperDaemon은 스스로 확인하지 않습니다.</string>
@@ -244,8 +242,13 @@
   <string name="tablet.label">미러</string>
   <string name="tablet.folder">폴더</string>
   <string name="dc.decomposing">{name} 분해 중</string>
-  <string name="dc.drop">여기에 이미지를 끌어다 놓거나 {choose}.</string>
+  <string name="dc.drop">여기에 이미지를 끌어다 놓거나, {choose}, 또는 {paste}.</string>
   <string name="dc.choose">파일을 고르세요</string>
+  <string name="dc.paste">붙여 넣기</string>
+  <string name="dc.paste_none">클립보드에 이미지가 없습니다.</string>
+  <string name="dc.paste_denied">PaperDaemon이 클립보드를 읽지 못했습니다. 대신 Ctrl+V를 누르세요.</string>
+  <string name="dc.save">저장</string>
+  <string name="dc.saving">저장 중…</string>
   <string name="dc.on_page">{n}번 페이지에</string>
   <string name="dc.sending">보내는 중…</string>
   <string name="dc.send">태블릿으로 보내기</string>
@@ -255,7 +258,7 @@
   <string name="count.stroke.one">획 {n}개</string>
   <string name="count.stroke.other">획 {n}개</string>
   <string name="common.delete">삭제</string>
-  <string name="dc.size_range">크기는 태블릿 픽셀 200에서 1,400 사이입니다.</string>
+  <string name="dc.size_range">너비는 태블릿 픽셀 200에서 1,600 사이입니다.</string>
   <string name="dc.picture">그림</string>
   <string name="dc.bad_type">그 파일은 PNG, JPEG, WebP 이미지가 아닙니다.</string>
   <string name="dc.too_big">그 이미지는 {size}입니다. {max} 미만의 이미지를 쓰세요.</string>
@@ -264,8 +267,8 @@
   <string name="dc.label">분해</string>
   <string name="dc.intro">이미지를 펜 획으로 바꿔 태블릿으로 보냅니다. 모든 선을 직접 그린 선처럼 지우고 덧그릴 수 있습니다.</string>
   <string name="dc.image">이미지</string>
-  <string name="dc.size">크기</string>
-  <string name="dc.size_unit">태블릿 픽셀, 200에서 1,400</string>
+  <string name="dc.size">너비</string>
+  <string name="dc.size_unit">태블릿 픽셀, 200에서 1,600</string>
   <string name="dc.types">PNG, JPEG, WebP</string>
   <string name="dc.decomps">분해한 이미지</string>
   <string name="lineup.unreadable">라인업을 읽을 수 없습니다.</string>
@@ -452,6 +455,7 @@
   <string name="help.model.stops">PaperDaemon을 일시 중지하거나 종료할 때, 또는 다른 라인업의 시작 스크립트를 실행해야 할 때. 스크립트가 시작한 모든 것을 멈춥니다. 자신이 시작하지 않은 프로그램은 절대 멈추지 않습니다.</string>
   <string name="help.h_wrong">자주 생기는 문제</string>
   <string name="help.model.wrong_vram">**그래픽 카드가 가득 찼습니다.** 모델에는 카드 메모리(VRAM)의 여유 공간이 필요합니다. 다른 모델 서버, 게임, 이미지 도구가 그 메모리를 차지하고 있으면 모델이 로드되지 않거나 매우 느리게 실행됩니다. 다른 모델 서버를 직접 실행한다면 스크립트에서 먼저 멈추게 하세요 (예: `taskkill /IM llama-server.exe /F`). PaperDaemon은 자신이 시작한 것만 멈춥니다.</string>
+  <string name="help.model.wrong_own_vram">**PaperDaemon 자체가 쓰는 몫.** 아주 드문 경우(큰 분해 그림이 가득한 페이지를 페이지 편집기에서 열었을 때)에는 PaperDaemon 자체가 그래픽 카드 메모리를 최대 200MB까지 쓸 수 있습니다. 그만큼은 비워 두세요.</string>
   <string name="help.model.wrong_two">**함께 올라가지 않는 두 모델.** 텍스트 모델과 이미지 모델이 카드에 함께 올라가지 않으면, 각 스크립트가 자기 서버를 시작하기 전에 상대 서버를 멈추도록 쓰세요.</string>
   <string name="help.model.wrong_port">**포트가 사용 중입니다.** 다른 프로그램이 이미 그 포트를 쓰고 있으면 서버가 거기서 시작할 수 없습니다. 비어 있는 포트를 고르고 위 주소에도 같은 포트를 쓰세요.</string>
   <string name="help.wrong_spaces">**경로에 공백이 있습니다.** 공백이 있는 경로는 따옴표로 감싸세요.</string>
@@ -479,6 +483,7 @@
 - 서버의 출력을 표시한다.
 - PaperDaemon은 %PAPERDAEMON_ROLE%(text 또는 image), %PAPERDAEMON_LOCATION%(전체 주소), %PAPERDAEMON_OTHER_LOCATION%(다른 모델의 주소), %PAPERDAEMON_LINEUP%, %PAPERDAEMON_DATA%도 설정한다.
 - PaperDaemon은 자신이 시작한 프로그램만 멈춘다. 다른 모델 서버가 내 그래픽 카드 메모리를 쓰고 있을 수 있다면 스크립트가 먼저 그것들을 멈춘다.
+- 아주 드문 경우 PaperDaemon 자체가 내 그래픽 카드 메모리를 최대 200MB까지 쓸 수 있으므로, 모델은 그만큼을 비워 두어야 한다.
 - 서버는 llama.cpp의 llama-server, Ollama, LM Studio, vLLM처럼 OpenAI 호환 채팅 API(/v1/chat/completions)를 지원해야 한다.
 
 작성하기 전에 다음 질문을 하나씩 하고, 답을 하나씩 기다려 주세요:
@@ -498,6 +503,7 @@
 - 서버의 출력을 표시한다.
 - PaperDaemon은 %PAPERDAEMON_ROLE%(text 또는 image), %PAPERDAEMON_LOCATION%(전체 주소), %PAPERDAEMON_OTHER_LOCATION%(다른 모델의 주소), %PAPERDAEMON_LINEUP%, %PAPERDAEMON_DATA%도 설정한다.
 - PaperDaemon은 자신이 시작한 프로그램만 멈춘다. 다른 모델 서버가 내 그래픽 카드 메모리를 쓰고 있을 수 있다면 스크립트가 먼저 그것들을 멈춘다.
+- 아주 드문 경우 PaperDaemon 자체가 내 그래픽 카드 메모리를 최대 200MB까지 쓸 수 있으므로, 모델은 그만큼을 비워 두어야 한다.
 - 서버는 stable-diffusion.cpp의 서버, Forge, AUTOMATIC1111처럼 Stable Diffusion web UI API(/sdapi/v1/txt2img)를 지원하거나, OpenAI 이미지 API를 지원해야 한다.
 
 작성하기 전에 다음 질문을 하나씩 하고, 답을 하나씩 기다려 주세요:
@@ -557,7 +563,6 @@
   <string name="ts.m.network_off">네트워크 접근이 꺼져 있습니다</string>
   <string name="ts.m.no_results_in">{s}초 동안 결과 없음</string>
   <string name="ts.m.results_in">{s}초 만에 결과 {n}개</string>
-  <string name="ts.m.no_sites">선택한 사이트 없음</string>
   <string name="ts.m.site_time">{site} {s}초</string>
   <string name="ts.m.site_failed">{site} 실패</string>
   <string name="ts.m.no_forecast">예보 없음</string>
@@ -573,7 +578,6 @@
   <string name="ts.d.search_empty">검색 결과가 비어 있습니다.</string>
   <string name="ts.d.first">첫 번째: {title}</string>
   <string name="ts.d.every_site">모든 사이트에서 게시물이 왔습니다.</string>
-  <string name="ts.d.choose_sites">설정에서 소셜 사이트를 고르세요.</string>
   <string name="ts.d.no_forecast">예보 서비스가 응답하지 않았습니다.</string>
   <string name="ts.d.weather">오늘 {place}: 최고 {hi}{unit}, 최저 {lo}{unit}.</string>
   <string name="ts.d.weather_london">위치가 설정되지 않아 오늘 런던: 최고 {hi}{unit}, 최저 {lo}{unit}.</string>
@@ -630,6 +634,8 @@
   <string name="fm.convert_on">켜기</string>
   <string name="fm.signin_shift">가짜 미러의 입력 텍스트는 태블릿 글꼴로 조판되며 조금 움직일 수 있습니다.</string>
   <string name="editor.template_signin">템플릿을 보고 고르려면 reMarkable 계정에 로그인하세요.</string>
+  <string name="editor.template_why_title">템플릿에는 reMarkable 로그인이 필요합니다</string>
+  <string name="editor.template_why">PaperDaemon은 이 컴퓨터의 reMarkable 데스크톱 앱에서 페이지 템플릿을 읽으며, reMarkable 계정에 로그인되어 있을 때만 그렇게 합니다. 로그인하지 않으면 페이지에 템플릿이 표시되지 않고 고를 수도 없습니다. 사용하려면 설정에서 로그인하세요.</string>
   <string name="fm.new_notebook">새 노트북</string>
   <string name="fm.new_folder">새 폴더</string>
   <string name="fm.new_page">새 페이지</string>

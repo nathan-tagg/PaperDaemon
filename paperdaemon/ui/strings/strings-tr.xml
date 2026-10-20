@@ -116,8 +116,6 @@
   <string name="settings.network">Ağ erişimi</string>
   <string name="settings.network.help">Hava durumu, sosyal medya gönderileri, Vikipedi ve web araması. Modelleriniz ve reMarkable bulutu etkilenmez.</string>
   <string name="settings.network.allow">Ağ erişimine izin ver</string>
-  <string name="settings.social">Sosyal siteler</string>
-  <string name="settings.social.help">Site adı vermeyen bir gönderi isteğinin nerede arayacağı. Adı verilen bir site her zaman aranır.</string>
   <string name="settings.tools">Araçlar</string>
   <string name="settings.updates">Güncellemeler</string>
   <string name="settings.updates.help">PaperDaemon kendi kendine asla kontrol etmez.</string>
@@ -244,8 +242,13 @@
   <string name="tablet.label">Ayna</string>
   <string name="tablet.folder">Klasör</string>
   <string name="dc.decomposing">{name} ayrıştırılıyor</string>
-  <string name="dc.drop">Bir görseli buraya bırakın ya da {choose}.</string>
+  <string name="dc.drop">Bir görseli buraya bırakın, {choose} ya da {paste}.</string>
   <string name="dc.choose">bir dosya seçin</string>
+  <string name="dc.paste">bir tane yapıştırın</string>
+  <string name="dc.paste_none">Panoda görsel yok.</string>
+  <string name="dc.paste_denied">PaperDaemon panoyu okuyamadı. Bunun yerine Ctrl+V'ye basın.</string>
+  <string name="dc.save">Kaydet</string>
+  <string name="dc.saving">Kaydediliyor…</string>
   <string name="dc.on_page">{n}. sayfada</string>
   <string name="dc.sending">Gönderiliyor…</string>
   <string name="dc.send">Tablete Gönder</string>
@@ -255,7 +258,7 @@
   <string name="count.stroke.one">{n} çizgi</string>
   <string name="count.stroke.other">{n} çizgi</string>
   <string name="common.delete">Sil</string>
-  <string name="dc.size_range">Boyut 200 ile 1.400 tablet pikseli arasındadır.</string>
+  <string name="dc.size_range">Genişlik 200 ile 1.600 tablet pikseli arasındadır.</string>
   <string name="dc.picture">Görsel</string>
   <string name="dc.bad_type">Bu dosya PNG, JPEG ya da WebP görseli değil.</string>
   <string name="dc.too_big">Bu görsel {size}. {max} altında bir görsel kullanın.</string>
@@ -264,8 +267,8 @@
   <string name="dc.label">Ayrıştır</string>
   <string name="dc.intro">Bir görseli kalem çizgilerine dönüştürüp tablete gönderin; orada her çizgi sizinkiler gibi silinip üzerine çizilebilir.</string>
   <string name="dc.image">Görsel</string>
-  <string name="dc.size">Boyut</string>
-  <string name="dc.size_unit">tablet pikseli, 200 ile 1.400 arası</string>
+  <string name="dc.size">Genişlik</string>
+  <string name="dc.size_unit">tablet pikseli, 200 ile 1.600 arası</string>
   <string name="dc.types">PNG, JPEG, WebP</string>
   <string name="dc.decomps">Ayrıştırmalar</string>
   <string name="lineup.unreadable">Dizilimler okunamadı.</string>
@@ -452,6 +455,7 @@
   <string name="help.model.stops">PaperDaemon'ı duraklattığınızda ya da kapattığınızda veya başka bir dizilimin başlatma betiğinin çalışması gerektiğinde. Betiğinizin başlattığı her şeyi durdurur. Kendi başlatmadığı bir programı asla durdurmaz.</string>
   <string name="help.h_wrong">Ters gidebilecek şeyler</string>
   <string name="help.model.wrong_vram">**Ekran kartı dolu.** Bir modelin, kartınızın belleğinde (VRAM) yere ihtiyacı vardır. Başka bir model sunucusu, bir oyun ya da bir görsel aracı o belleği tutuyorsa, model yüklenemez ya da çok yavaş çalışır. Başka model sunucularını kendiniz çalıştırıyorsanız, betiğinizin önce onları durdurmasını sağlayın (örneğin `taskkill /IM llama-server.exe /F`). PaperDaemon yalnızca kendi başlattığını durdurur.</string>
+  <string name="help.model.wrong_own_vram">**PaperDaemon'un kendi payı.** Çok nadir durumlarda (büyük ayrıştırmalarla dolu bir sayfa, sayfa düzenleyicide açıkken) PaperDaemon kendisi kartınızın belleğinden 200 MB'a kadar kullanabilir. Bu kadarını boş bırakın.</string>
   <string name="help.model.wrong_two">**Birlikte sığmayan iki model.** Metin modeliniz ve görsel modeliniz karta birlikte sığmıyorsa, her betiği kendi sunucusunu başlatmadan önce diğerinin sunucusunu durduracak şekilde yazın.</string>
   <string name="help.model.wrong_port">**Port kullanımda.** Başka bir program o portu zaten kullanıyorsa sunucunuz orada başlayamaz. Boş bir port seçin ve yukarıdaki adreste aynısını kullanın.</string>
   <string name="help.wrong_spaces">**Yolda boşluklar.** Boşluk içeren her yolu tırnak içine alın.</string>
@@ -479,6 +483,7 @@ Betiğin uyması gereken kurallar:
 - Sunucunun çıktısını yazdır.
 - PaperDaemon ayrıca %PAPERDAEMON_ROLE% (text ya da image), %PAPERDAEMON_LOCATION% (tam adres), %PAPERDAEMON_OTHER_LOCATION% (diğer modelin adresi), %PAPERDAEMON_LINEUP% ve %PAPERDAEMON_DATA% değişkenlerini ayarlar.
 - PaperDaemon yalnızca kendi başlattığı programları durdurur. Başka model sunucuları ekran kartımın belleğini kullanıyor olabilirse, betik önce onları durdurmalı.
+- PaperDaemon kendisi, çok nadir durumlarda, ekran kartımın belleğinden 200 MB'a kadar kullanabilir; bu yüzden model bu kadarını boş bırakmalı.
 - Sunucu, llama.cpp'nin llama-server'ı, Ollama, LM Studio ya da vLLM gibi OpenAI uyumlu sohbet API'sini (/v1/chat/completions) konuşmalı.
 
 Yazmadan önce bana şu soruları tek tek sor ve her yanıtı bekle:
@@ -498,6 +503,7 @@ Betiğin uyması gereken kurallar:
 - Sunucunun çıktısını yazdır.
 - PaperDaemon ayrıca %PAPERDAEMON_ROLE% (text ya da image), %PAPERDAEMON_LOCATION% (tam adres), %PAPERDAEMON_OTHER_LOCATION% (diğer modelin adresi), %PAPERDAEMON_LINEUP% ve %PAPERDAEMON_DATA% değişkenlerini ayarlar.
 - PaperDaemon yalnızca kendi başlattığı programları durdurur. Başka model sunucuları ekran kartımın belleğini kullanıyor olabilirse, betik önce onları durdurmalı.
+- PaperDaemon kendisi, çok nadir durumlarda, ekran kartımın belleğinden 200 MB'a kadar kullanabilir; bu yüzden model bu kadarını boş bırakmalı.
 - Sunucu, stable-diffusion.cpp sunucusu, Forge ya da AUTOMATIC1111 gibi Stable Diffusion web UI API'sini (/sdapi/v1/txt2img) ya da OpenAI Images API'sini konuşmalı.
 
 Yazmadan önce bana şu soruları tek tek sor ve her yanıtı bekle:
@@ -558,7 +564,6 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="ts.m.network_off">Ağ erişimi kapalı</string>
   <string name="ts.m.no_results_in">{s} sn'de sonuç yok</string>
   <string name="ts.m.results_in">{s} sn'de {n} sonuç</string>
-  <string name="ts.m.no_sites">Site seçilmedi</string>
   <string name="ts.m.site_time">{site} {s} sn</string>
   <string name="ts.m.site_failed">{site} başarısız</string>
   <string name="ts.m.no_forecast">Tahmin yok</string>
@@ -574,7 +579,6 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="ts.d.search_empty">Arama boş döndü.</string>
   <string name="ts.d.first">İlk: {title}</string>
   <string name="ts.d.every_site">Her siteden gönderi geldi.</string>
-  <string name="ts.d.choose_sites">Sosyal siteleri Ayarlar'da seçin.</string>
   <string name="ts.d.no_forecast">Hava tahmini hizmeti yanıt vermedi.</string>
   <string name="ts.d.weather">Bugün {place}: en yüksek {hi}{unit}, en düşük {lo}{unit}.</string>
   <string name="ts.d.weather_london">Konum ayarlanmadığı için bugün Londra: en yüksek {hi}{unit}, en düşük {lo}{unit}.</string>
@@ -630,6 +634,8 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="fm.convert_on">Aç</string>
   <string name="fm.signin_shift">Sahte Ayna'daki yazılan metin tabletin yazı tipleriyle dizilir ve biraz kayabilir.</string>
   <string name="editor.template_signin">Şablonları görmek ve seçmek için bir reMarkable hesabına giriş yap.</string>
+  <string name="editor.template_why_title">Şablonlar için reMarkable girişi gerekir</string>
+  <string name="editor.template_why">PaperDaemon sayfa şablonlarını bu bilgisayardaki reMarkable masaüstü uygulamasından okur ve bunu yalnızca bir reMarkable hesabına giriş yapılmışken yapar. Giriş yoksa sayfalarda şablon görünmez ve hiçbiri seçilemez. Kullanmak için Ayarlar'dan giriş yap.</string>
   <string name="fm.new_notebook">Yeni defter</string>
   <string name="fm.new_folder">Yeni klasör</string>
   <string name="fm.new_page">Yeni sayfa</string>

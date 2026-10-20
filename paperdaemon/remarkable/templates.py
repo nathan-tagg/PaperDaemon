@@ -177,12 +177,18 @@ def catalog(mirror=None):
             continue
         out.append({"name": t.get("name") or "Template", "file": os.path.basename(p)[:-9], "categories": t.get("categories") or [],
                     "source": "methods", "icon": {"svg": t.get("iconData")} if t.get("iconData") else None, "drawn": "definition"})
+    for t in out:                                     # drawn by PaperDaemon, not read: the picker says so
+        if t.get("drawn") == "app" and t.get("name") in OWN:
+            t["approx"] = True
     out.sort(key=lambda t: (t["name"] != "Blank", t["name"].lower()))
     return out
 
 
 def definition(entry, mirror=None):
-    """A catalog entry's definition, or None (Blank, and those the app draws in its own code)."""
+    """A catalog entry's definition, or None (Blank). Those the app draws in its own code are PaperDaemon's own drawing
+    (OWN): {"paperdaemon": name}."""
+    if entry.get("drawn") == "app" and entry.get("name") in OWN:
+        return {"paperdaemon": entry["name"]}
     try:
         if entry.get("source") == "methods":
             with open(os.path.join(mirror or paths.mirror_dir(), entry["file"] + ".template"), encoding="utf-8") as f:
@@ -317,7 +323,9 @@ def svg(defn, width, height, font="sans-serif"):
     """The template drawn on a `width` x `height` page, in page units, as SVG: black lines on nothing, for under a
     page's ink. Blank or None -> an empty drawing."""
     out = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" width="%d" height="%d">' % (width, height, width, height)]
-    if defn:
+    if defn and defn.get("paperdaemon"):
+        _own(defn["paperdaemon"], float(width), float(height), out)
+    elif defn:
         # the names the app supplies: the page's size, and its origin (x 0 is the page's middle in its own units)
         env = {"templateWidth": float(width), "templateHeight": float(height), "paperOriginX": width / 2.0, "paperOriginY": 0.0}
         for c in defn.get("constants") or []:
@@ -329,6 +337,50 @@ def svg(defn, width, height, font="sans-serif"):
         _items(defn.get("items") or [], 0.0, 0.0, float(width), float(height), env, out, font, width, height)
     out.append("</svg>")
     return "".join(out)
+
+
+# ---------------------------------------------------------------- the five the app draws in its own code
+# THE APP KEEPS NO DEFINITION of Hexagon small, medium and large or Calligraphy large and medium: its own code draws them
+# (SceneTemplateRenderer), so there is nothing to read. PaperDaemon draws its own: a hexagon grid and calligraphy guide
+# lines, in the definitions' plain black 1-unit lines, centered on the page's middle as the grids are. Their sizes are
+# PaperDaemon's ESTIMATES until measured off the app's own drawing (a vector export of each), and the picker marks the
+# five as approximations.
+OWN = {"Hexagon small": ("hex", 26.0), "Hexagon medium": ("hex", 39.0), "Hexagon large": ("hex", 58.5),
+       "Calligraphy large": ("calligraphy", 58.0), "Calligraphy medium": ("calligraphy", 39.0)}
+CALLIGRAPHY_SLANT = 55.0                              # degrees from the line, the italic hand's
+
+
+def _own(name, width, height, out):
+    kind, size = OWN[name]
+    d = []
+    if kind == "hex":                                 # pointed top, rows offset by half a cell, from the page's middle
+        side, w = size, size * math.sqrt(3)
+        row = 1.5 * side
+        cols = int(width / w) + 3
+        x0 = width / 2.0 - w * (cols // 2)
+        r = 0
+        y = 0.0
+        while y - side <= height:
+            off = (w / 2.0) if r % 2 else 0.0
+            for c in range(cols + 1):
+                cx = x0 + off + c * w
+                pts = [(cx + side * math.cos(math.radians(a)), y + side * math.sin(math.radians(a))) for a in (-90, -30, 30, 90, 150, 210)]
+                d.append("M%.2f %.2f" % pts[0] + "".join("L%.2f %.2f" % q for q in pts[1:]) + "Z")
+            r += 1
+            y += row
+    else:                                             # ascender, x-height, baseline, descender; slanted guides between
+        u = size
+        y = 2.0 * u
+        dx = 3.0 * u / math.tan(math.radians(CALLIGRAPHY_SLANT))
+        while y + 3 * u <= height:
+            for k in range(4):
+                d.append("M0 %.2f L%.2f %.2f" % (y + k * u, width, y + k * u))
+            x = -dx
+            while x < width:
+                d.append("M%.2f %.2f L%.2f %.2f" % (x, y + 3 * u, x + dx, y))
+                x += 2.0 * u
+            y += 4.5 * u
+    out.append('<path d="%s" fill="none" stroke="#000000" stroke-width="1.00"/>' % " ".join(d))
 
 
 def _repeat(spec, start, size, limit, env):

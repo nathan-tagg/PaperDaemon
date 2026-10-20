@@ -9,6 +9,13 @@
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   Object.assign(PD, { $, $$, esc });
 
+  // NOTHING DRAGS BUT WHAT IS MADE TO: a press that moves on a link, a picture or text already selected would start the
+  // browser's own drag, which nothing in the window takes -- a crossed-out circle for a cursor instead of a selection.
+  // Only an element marked draggable="true" (the grips that reorder) starts one; files dragged in from outside still drop.
+  document.addEventListener("dragstart", e => {
+    if (!(e.target instanceof Element && e.target.closest('[draggable="true"]'))) e.preventDefault();
+  });
+
   // ---- THE INTERFACE'S WORDS: every piece of text the window shows comes from ui/strings/strings-<language>.xml
   // through PD.t(name, values). English is the source; a string a translation lacks falls back to it. They are read
   // before any screen's script runs (the screens build some of their text as they load), from this same engine.

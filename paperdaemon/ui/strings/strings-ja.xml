@@ -116,8 +116,6 @@
   <string name="settings.network">ネットワークへのアクセス</string>
   <string name="settings.network.help">天気、SNS の投稿、Wikipedia、ウェブ検索。モデルと reMarkable のクラウドには影響しません。</string>
   <string name="settings.network.allow">ネットワークへのアクセスを許可</string>
-  <string name="settings.social">SNS サイト</string>
-  <string name="settings.social.help">投稿の依頼がサイトを指定しないときに探す場所です。指定されたサイトは常に検索されます。</string>
   <string name="settings.tools">ツール</string>
   <string name="settings.updates">アップデート</string>
   <string name="settings.updates.help">PaperDaemon が自分で確認することはありません。</string>
@@ -244,8 +242,13 @@
   <string name="tablet.label">ミラー</string>
   <string name="tablet.folder">フォルダー</string>
   <string name="dc.decomposing">{name} を分解中</string>
-  <string name="dc.drop">ここに画像をドロップするか、{choose}。</string>
+  <string name="dc.drop">ここに画像をドロップするか、{choose}か、{paste}。</string>
   <string name="dc.choose">ファイルを選択</string>
+  <string name="dc.paste">貼り付け</string>
+  <string name="dc.paste_none">クリップボードに画像がありません。</string>
+  <string name="dc.paste_denied">PaperDaemon はクリップボードを読み取れませんでした。代わりに Ctrl+V を押してください。</string>
+  <string name="dc.save">保存</string>
+  <string name="dc.saving">保存中…</string>
   <string name="dc.on_page">{n} ページ目</string>
   <string name="dc.sending">送信中…</string>
   <string name="dc.send">タブレットに送信</string>
@@ -255,7 +258,7 @@
   <string name="count.stroke.one">{n} 本のストローク</string>
   <string name="count.stroke.other">{n} 本のストローク</string>
   <string name="common.delete">削除</string>
-  <string name="dc.size_range">サイズはタブレットの 200 から 1,400 ピクセルです。</string>
+  <string name="dc.size_range">幅はタブレットの 200 から 1,600 ピクセルです。</string>
   <string name="dc.picture">画像</string>
   <string name="dc.bad_type">そのファイルは PNG、JPEG、WebP の画像ではありません。</string>
   <string name="dc.too_big">その画像は {size} です。{max} 未満の画像を使ってください。</string>
@@ -264,8 +267,8 @@
   <string name="dc.label">分解</string>
   <string name="dc.intro">画像をペンのストロークに変えてタブレットに送ります。どの線も自分で書いた線のように消したり上から描いたりできます。</string>
   <string name="dc.image">画像</string>
-  <string name="dc.size">サイズ</string>
-  <string name="dc.size_unit">タブレットのピクセル、200 から 1,400</string>
+  <string name="dc.size">幅</string>
+  <string name="dc.size_unit">タブレットのピクセル、200 から 1,600</string>
   <string name="dc.types">PNG、JPEG、WebP</string>
   <string name="dc.decomps">分解した画像</string>
   <string name="lineup.unreadable">ラインナップを読み込めませんでした。</string>
@@ -452,6 +455,7 @@
   <string name="help.model.stops">PaperDaemon を一時停止または終了したとき、または別のラインナップの起動スクリプトを実行する必要があるとき。スクリプトが起動したものはすべて停止します。自分が起動していないプログラムを停止することはありません。</string>
   <string name="help.h_wrong">よくある問題</string>
   <string name="help.model.wrong_vram">**グラフィックカードがいっぱい。** モデルにはカードのメモリ (VRAM) の空きが必要です。ほかのモデルサーバー、ゲーム、画像ツールがそのメモリを使っていると、モデルが読み込めないか、とても遅くなります。ほかのモデルサーバーを自分で動かしている場合は、スクリプトで先にそれらを止めてください (たとえば `taskkill /IM llama-server.exe /F`)。PaperDaemon が止めるのは自分が起動したものだけです。</string>
+  <string name="help.model.wrong_own_vram">**PaperDaemon 自身の使用分。** ごくまれなケース (大きな分解がいくつも載ったページをページエディタで開いているときなど) では、PaperDaemon 自身がグラフィックカードのメモリを最大 200 MB 使うことがあります。その分は空けておいてください。</string>
   <string name="help.model.wrong_two">**一緒に載らない 2 つのモデル。** テキストモデルと画像モデルが同時にカードに載らない場合は、各スクリプトが自分のサーバーを起動する前に相手のサーバーを止めるように書いてください。</string>
   <string name="help.model.wrong_port">**ポートが使用中。** ほかのプログラムがそのポートを使っていると、サーバーはそこで起動できません。空いているポートを選び、上のアドレスにも同じポートを使ってください。</string>
   <string name="help.wrong_spaces">**パスに空白がある。** 空白を含むパスは引用符で囲んでください。</string>
@@ -479,6 +483,7 @@
 - サーバーの出力を表示する。
 - PaperDaemon は %PAPERDAEMON_ROLE% (text または image)、%PAPERDAEMON_LOCATION% (完全なアドレス)、%PAPERDAEMON_OTHER_LOCATION% (もう一方のモデルのアドレス)、%PAPERDAEMON_LINEUP%、%PAPERDAEMON_DATA% も設定する。
 - PaperDaemon が止めるのは自分が起動したプログラムだけ。ほかのモデルサーバーがグラフィックカードのメモリを使っている可能性があれば、スクリプトが先にそれらを止める。
+- ごくまれなケースでは、PaperDaemon 自身が私のグラフィックカードのメモリを最大 200 MB 使うことがあるので、モデルはその分を空けておくこと。
 - サーバーは OpenAI 互換のチャット API (/v1/chat/completions) を話す必要がある。llama.cpp の llama-server、Ollama、LM Studio、vLLM などがそうです。
 
 書く前に、次の質問を 1 つずつしてください。毎回私の答えを待ってください:
@@ -498,6 +503,7 @@
 - サーバーの出力を表示する。
 - PaperDaemon は %PAPERDAEMON_ROLE% (text または image)、%PAPERDAEMON_LOCATION% (完全なアドレス)、%PAPERDAEMON_OTHER_LOCATION% (もう一方のモデルのアドレス)、%PAPERDAEMON_LINEUP%、%PAPERDAEMON_DATA% も設定する。
 - PaperDaemon が止めるのは自分が起動したプログラムだけ。ほかのモデルサーバーがグラフィックカードのメモリを使っている可能性があれば、スクリプトが先にそれらを止める。
+- ごくまれなケースでは、PaperDaemon 自身が私のグラフィックカードのメモリを最大 200 MB 使うことがあるので、モデルはその分を空けておくこと。
 - サーバーは Stable Diffusion web UI の API (/sdapi/v1/txt2img) か OpenAI の Images API を話す必要がある。stable-diffusion.cpp のサーバー、Forge、AUTOMATIC1111 などがそうです。
 
 書く前に、次の質問を 1 つずつしてください。毎回私の答えを待ってください:
@@ -557,7 +563,6 @@
   <string name="ts.m.network_off">ネットワーク接続はオフです</string>
   <string name="ts.m.no_results_in">{s} 秒で結果なし</string>
   <string name="ts.m.results_in">{s} 秒で {n} 件</string>
-  <string name="ts.m.no_sites">サイトが選ばれていません</string>
   <string name="ts.m.site_time">{site} {s} 秒</string>
   <string name="ts.m.site_failed">{site} 失敗</string>
   <string name="ts.m.no_forecast">予報なし</string>
@@ -573,7 +578,6 @@
   <string name="ts.d.search_empty">検索結果は空でした。</string>
   <string name="ts.d.first">最初: {title}</string>
   <string name="ts.d.every_site">すべてのサイトから投稿が届きました。</string>
-  <string name="ts.d.choose_sites">設定でソーシャルサイトを選んでください。</string>
   <string name="ts.d.no_forecast">天気予報サービスが応答しませんでした。</string>
   <string name="ts.d.weather">今日の{place}: 最高 {hi}{unit}、最低 {lo}{unit}。</string>
   <string name="ts.d.weather_london">場所が未設定のため今日のロンドン: 最高 {hi}{unit}、最低 {lo}{unit}。</string>
@@ -630,6 +634,8 @@
   <string name="fm.convert_on">オンにする</string>
   <string name="fm.signin_shift">偽ミラーの入力テキストはタブレットのフォントで組まれ、少しずれることがあります。</string>
   <string name="editor.template_signin">テンプレートを表示・選択するには reMarkable アカウントにサインインしてください。</string>
+  <string name="editor.template_why_title">テンプレートには reMarkable へのログインが必要です</string>
+  <string name="editor.template_why">PaperDaemon はこのコンピューターの reMarkable デスクトップアプリからページのテンプレートを読み込みます。これは reMarkable アカウントにサインインしているときだけ行われます。サインインしていないと、ページにテンプレートは表示されず、選ぶこともできません。使うには設定でサインインしてください。</string>
   <string name="fm.new_notebook">新しいノートブック</string>
   <string name="fm.new_folder">新しいフォルダー</string>
   <string name="fm.new_page">新しいページ</string>

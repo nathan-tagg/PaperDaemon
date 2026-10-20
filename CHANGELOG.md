@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.1.41
+
+- The page editor draws on the graphics card (WebGL2): a pan, a zoom or an edit redraws a page holding a 24,000-stroke
+  decomp in about a millisecond, where it took about a quarter of a second. Without WebGL2 it draws as before.
+- A selection that moves floats: dragging, turning or resizing a decomp places one picture of it, and it is drawn into
+  the page once, when let go. A pasted decomp lands floating, and a save writes the page once.
+- The pens draw as the tablet does, measured on test pages: the pencils in grain that fills in with pressure, the
+  paintbrush leaving nothing when very light and breaking up when fast, the ballpoint thinner and broken when light,
+  and the calligraphy pen, the pencils and the shader at the tablet's widths.
+- A mouse presses as a hand does, read off real strokes: hard nearly the whole way, landing a little lighter. Shapes and
+  fills are drawn at that pressure, and pasted decomps at the decomposer's own.
+- The five templates the reMarkable app draws in its own code (the hexagons and the calligraphy guides) are drawn by
+  PaperDaemon, marked as approximations. Without a login, the Templates button says why there are none.
+- Decompose: Send works with only the False Mirror's inbox, and needs a login only for the tablet's; when both take a
+  page, it reports the tablet's page. Each decomp has Save (its picture into Downloads), the drop zone has paste, and
+  the width goes to 1,600.
+- The rail's foot stays in the window when it is zoomed in. The page arrows are the same buttons as the rest of the
+  bar, and the page count stays on one line.
+- A drag that starts on a link, a picture or selected text selects instead of showing a crossed-out cursor.
+- The social sites setting is gone: a request for posts searches every site. The note about the editor's faces is gone.
+- The zone eraser's menu has no sizes. The start script help says PaperDaemon may use up to 200 MB of the card's memory.
+
 ## 0.1.40
 
 - A mouse draws with an inferred hand: pressure from its speed, smoothed, and its direction as the angle. The ballpoint,

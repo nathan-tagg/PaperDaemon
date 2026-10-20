@@ -14,8 +14,13 @@
                      is idempotent, so a stroke crossing itself or one of its own color never darkens twice
      RF_SHADER       a translucent wash: its color at its alpha over what is under it, ONCE per pixel per stroke
                      (segments of one stroke overlap; another stroke over it deepens it)
-   A pencil reaches this as an RF_PEN whose color the caller has toned by pressure (its grain is the device's and is
-   not in the file).
+     GRAIN           a pen stroke with a DENSITY per point (0..1, 1 solid): the share of its pixels the tablet inks.
+                     The pencils, and the paintbrush and the ballpoint when light, are drawn by the tablet as scattered
+                     grain, not as a lighter or thinner solid (measured on the pen-test pages, 2026-10-19: the inked
+                     share climbs with pressure, the grain is short streaks along the stroke, denser toward its middle).
+                     Each pixel of the stroke is decided ONCE (a stroke's own overlapping segments never ink a pixel
+                     twice), from a hash of where it sits along and across the stroke, so the grain moves with the
+                     stroke and another stroke over it fills it in.
 
    Coordinates: points in the canvas's pixels (x right, y down, 0,0 the top left corner of pixel 0,0), widths in
    pixels. The canvas is RGB, 8 bits a channel, W x H, row by row; what is on it (a PDF page, typed text, pictures)
@@ -32,8 +37,24 @@ enum { RF_PEN = 0, RF_HIGHLIGHTER = 1, RF_SHADER = 2 };
 typedef struct {
     uint8_t *px;          /* the working canvas, RGB, W x H (ss times the target's size) */
     int32_t W, H;
-    int32_t *stamp;       /* the shader's: the last stroke that washed each pixel (stroke index + 1), or NULL */
+    int32_t *stamp;       /* the shader's and the grain's: the last stroke that decided each pixel (stroke index + 1), or NULL */
+    int32_t ss;
 } canvas;
+
+/* a grain stroke's segment, as capsule() needs it: the stroke's seed, the length along the stroke at the segment's
+   start, and the densities at its two ends */
+typedef struct { uint32_t seed; double u0, da, db; } grain;
+
+#define GRAIN_STREAK 3.0   /* a grain's length along the stroke, in target pixels (one pixel across) */
+
+static inline uint32_t mix(uint32_t h) {
+    h ^= h >> 16; h *= 0x7feb352dU; h ^= h >> 15; h *= 0x846ca68bU; h ^= h >> 16;
+    return h;
+}
+
+static inline double hash01(uint32_t seed, int32_t a, int32_t b) {
+    return mix(seed ^ mix((uint32_t)a * 0x9e3779b9U ^ mix((uint32_t)b + 0x85ebca6bU))) / 4294967296.0;
+}
 
 static inline int32_t lo_px(double v) { double f = floor(v - 0.5); return f < -1 ? -1 : (int32_t)f; }
 static inline int32_t hi_px(double v) { return (int32_t)ceil(v - 0.5); }
@@ -55,8 +76,26 @@ static inline void put(canvas *c, int32_t x, int32_t y, int kind, const uint8_t 
     }
 }
 
-/* a capsule: the points within r of the segment a-b (a disc when a == b) */
-static void capsule(canvas *c, double ax, double ay, double bx, double by, double r, int kind, const uint8_t *rgba, int32_t sid) {
+/* is this pixel of a grain stroke inked? Decided once per stroke: the first segment to reach it decides, from where it
+   sits along (u) and across (v) the stroke, in target pixels */
+static inline int grain_ink(canvas *c, int32_t x, int32_t y, const grain *g, double u, double v, double r, double t, int32_t sid) {
+    int32_t *s = c->stamp + (size_t)y * c->W + x;
+    if (*s == sid) return 0;
+    *s = sid;
+    double d = g->da + (g->db - g->da) * t, q = r > 0 ? v / r : 0;
+    d *= (1.25 - 0.5 * q * q) / (1.25 - 0.5 / 3.0);       /* denser toward the middle, the same share over the width */
+    if (d >= 1) return 1;
+    if (d <= 0) return 0;
+    double ss = c->ss;
+    int32_t cv = (int32_t)floor(v / ss);
+    double jitter = hash01(g->seed ^ 0x51ed27u, cv, 0) * GRAIN_STREAK;    /* the rows' streaks do not line up */
+    int32_t cu = (int32_t)floor((u / ss + jitter) / GRAIN_STREAK);
+    return hash01(g->seed, cu, cv) < d;
+}
+
+/* a capsule: the points within r of the segment a-b (a disc when a == b); with `g`, a grain stroke's segment */
+static void capsule(canvas *c, double ax, double ay, double bx, double by, double r, int kind, const uint8_t *rgba, int32_t sid,
+                    const grain *g) {
     if (!(r > 0)) return;
     int32_t x0 = lo_px(fmin(ax, bx) - r), x1 = hi_px(fmax(ax, bx) + r);
     int32_t y0 = lo_px(fmin(ay, by) - r), y1 = hi_px(fmax(ay, by) + r);
@@ -64,17 +103,24 @@ static void capsule(canvas *c, double ax, double ay, double bx, double by, doubl
     if (y0 < 0) y0 = 0;
     if (x1 > c->W - 1) x1 = c->W - 1;
     if (y1 > c->H - 1) y1 = c->H - 1;
-    double dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy, r2 = r * r;
+    double dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy, r2 = r * r, L = sqrt(L2);
     for (int32_t y = y0; y <= y1; y++) {
         double py = y + 0.5;
         for (int32_t x = x0; x <= x1; x++) {
-            double px = x + 0.5, t = 0;
+            double px = x + 0.5, t = 0, tu = 0;
             if (L2 > 0) {
-                t = ((px - ax) * dx + (py - ay) * dy) / L2;
-                t = t < 0 ? 0 : (t > 1 ? 1 : t);
+                tu = ((px - ax) * dx + (py - ay) * dy) / L2;
+                t = tu < 0 ? 0 : (tu > 1 ? 1 : tu);
             }
             double ex = px - (ax + t * dx), ey = py - (ay + t * dy);
-            if (ex * ex + ey * ey <= r2) put(c, x, y, kind, rgba, sid);
+            if (ex * ex + ey * ey > r2) continue;
+            if (g) {
+                /* along: the projection, unclamped, so a pixel past the segment's end sits where the next one puts it;
+                   across: the distance from the segment's line (from its center on a single point's disc) */
+                double v = L > 0 ? ((px - ax) * dy - (py - ay) * dx) / L : sqrt(ex * ex + ey * ey);
+                if (!grain_ink(c, x, y, g, g->u0 + tu * L, v, r, t, sid)) continue;
+            }
+            put(c, x, y, kind, rgba, sid);
         }
     }
 }
@@ -115,10 +161,29 @@ static void convex(canvas *c, const double *qx, const double *qy, int n, int kin
     }
 }
 
-static void pen(canvas *c, const double *xy, const double *w, int32_t n, int kind, const uint8_t *rgba, int32_t sid) {
-    if (n == 1) { capsule(c, xy[0], xy[1], xy[0], xy[1], w[0] / 2.0, kind, rgba, sid); return; }
-    for (int32_t i = 0; i + 1 < n; i++)
-        capsule(c, xy[2 * i], xy[2 * i + 1], xy[2 * i + 2], xy[2 * i + 3], (w[i] + w[i + 1]) / 4.0, kind, rgba, sid);
+/* a grain stroke's seed: from where it starts (in target pixels), so it keeps its grain wherever it sits in the file */
+static uint32_t stroke_seed(const double *xy, int32_t ss) {
+    return mix((uint32_t)(int64_t)llround(xy[0] / ss * 16) * 0x27d4eb2dU ^ mix((uint32_t)(int64_t)llround(xy[1] / ss * 16)));
+}
+
+static void pen(canvas *c, const double *xy, const double *w, const double *dens, int32_t n, int kind, const uint8_t *rgba,
+                int32_t sid) {
+    grain g = {0, 0, 1, 1}, *gp = NULL;
+    if (dens && kind == RF_PEN) {
+        for (int32_t i = 0; i < n; i++)
+            if (dens[i] < 1) { gp = &g; break; }
+        if (gp) g.seed = stroke_seed(xy, c->ss);
+    }
+    if (n == 1) {
+        if (gp) g.da = g.db = dens[0];
+        capsule(c, xy[0], xy[1], xy[0], xy[1], w[0] / 2.0, kind, rgba, sid, gp);
+        return;
+    }
+    for (int32_t i = 0; i + 1 < n; i++) {
+        if (gp) { g.da = dens[i]; g.db = dens[i + 1]; }
+        capsule(c, xy[2 * i], xy[2 * i + 1], xy[2 * i + 2], xy[2 * i + 3], (w[i] + w[i + 1]) / 4.0, kind, rgba, sid, gp);
+        if (gp) g.u0 += hypot(xy[2 * i + 2] - xy[2 * i], xy[2 * i + 3] - xy[2 * i + 1]);
+    }
 }
 
 static void highlighter(canvas *c, const double *xy, const double *w, int32_t n, int kind, const uint8_t *rgba, int32_t sid,
@@ -153,25 +218,32 @@ static void highlighter(canvas *c, const double *xy, const double *w, int32_t n,
 
 /* Draw `nstrokes` strokes over the RGB canvas `rgb` (W x H), at `ss` times its size averaged down (1 = the tablet's
    own pixels). Stroke s has counts[s] points from xy (x, y pairs) and w (widths), its kind (RF_PEN, RF_HIGHLIGHTER,
-   RF_SHADER) and rgba[4 s .. 4 s + 3]. `progress`, when not NULL, is set to the share of the strokes drawn.
+   RF_SHADER) and rgba[4 s .. 4 s + 3]; `dens`, when not NULL, a density per point (see GRAIN above; a pen stroke whose
+   densities are all 1 is solid). `progress`, when not NULL, is set to the share of the strokes drawn.
    -> 0, or -1 when memory ran out (the canvas is then unchanged). */
-int32_t rf_render(uint8_t *rgb, int32_t W, int32_t H, int32_t ss, const double *xy, const double *w,
-                  const int32_t *counts, const int32_t *kinds, const uint8_t *rgba, int32_t nstrokes, double *progress) {
+int32_t rf_render_grain(uint8_t *rgb, int32_t W, int32_t H, int32_t ss, const double *xy, const double *w, const double *dens,
+                        const int32_t *counts, const int32_t *kinds, const uint8_t *rgba, int32_t nstrokes, double *progress) {
     if (ss < 1) ss = 1;
-    canvas c = {NULL, W * ss, H * ss, NULL};
+    canvas c = {NULL, W * ss, H * ss, NULL, ss};
     int32_t most = 1, shader = 0;
+    size_t total = 0;
     for (int32_t s = 0; s < nstrokes; s++) {
         if (counts[s] > most) most = counts[s];
         if (kinds[s] == RF_SHADER) shader = 1;
+        total += (size_t)(counts[s] > 0 ? counts[s] : 0);
     }
+    if (dens)
+        for (size_t i = 0; i < total && !shader; i++)
+            if (dens[i] < 1) shader = 1;                 /* the grain decides each pixel once too: it needs the stamps */
+    double *sd = dens ? (double *)malloc(sizeof(double) * (size_t)most) : NULL;
     double *scratch = (double *)malloc(sizeof(double) * 6 * (size_t)most);
     double *sxy = (double *)malloc(sizeof(double) * 2 * (size_t)most);
     double *sw = (double *)malloc(sizeof(double) * (size_t)most);
     if (ss == 1) c.px = rgb;
     else c.px = (uint8_t *)malloc((size_t)c.W * c.H * 3);
     if (shader) c.stamp = (int32_t *)calloc((size_t)c.W * c.H, sizeof(int32_t));
-    if (!scratch || !sxy || !sw || !c.px || (shader && !c.stamp)) {
-        free(scratch); free(sxy); free(sw); free(c.stamp);
+    if (!scratch || !sxy || !sw || !c.px || (shader && !c.stamp) || (dens && !sd)) {
+        free(scratch); free(sxy); free(sw); free(c.stamp); free(sd);
         if (ss != 1) free(c.px);
         return -1;
     }
@@ -187,13 +259,14 @@ int32_t rf_render(uint8_t *rgb, int32_t W, int32_t H, int32_t ss, const double *
                 sxy[2 * i] = xy[2 * (at + i)] * ss;
                 sxy[2 * i + 1] = xy[2 * (at + i) + 1] * ss;
                 sw[i] = w[at + i] * ss;
+                if (sd) sd[i] = dens[at + i];
             }
             const uint8_t *col = rgba + 4 * (size_t)s;
             if (kinds[s] == RF_HIGHLIGHTER)
                 highlighter(&c, sxy, sw, n, RF_HIGHLIGHTER, col, s + 1, scratch, scratch + most, scratch + 2 * most,
                             scratch + 3 * most, scratch + 4 * most, scratch + 5 * most);
             else
-                pen(&c, sxy, sw, n, kinds[s] == RF_SHADER ? RF_SHADER : RF_PEN, col, s + 1);
+                pen(&c, sxy, sw, sd, n, kinds[s] == RF_SHADER ? RF_SHADER : RF_PEN, col, s + 1);
         }
         at += (size_t)n;
         if (progress && (s & 511) == 0) *progress = (double)s / (double)nstrokes;
@@ -213,6 +286,12 @@ int32_t rf_render(uint8_t *rgb, int32_t W, int32_t H, int32_t ss, const double *
         free(c.px);
     }
     if (progress) *progress = 1.0;
-    free(scratch); free(sxy); free(sw); free(c.stamp);
+    free(scratch); free(sxy); free(sw); free(c.stamp); free(sd);
     return 0;
+}
+
+/* the same, every stroke solid */
+int32_t rf_render(uint8_t *rgb, int32_t W, int32_t H, int32_t ss, const double *xy, const double *w,
+                  const int32_t *counts, const int32_t *kinds, const uint8_t *rgba, int32_t nstrokes, double *progress) {
+    return rf_render_grain(rgb, W, H, ss, xy, w, NULL, counts, kinds, rgba, nstrokes, progress);
 }

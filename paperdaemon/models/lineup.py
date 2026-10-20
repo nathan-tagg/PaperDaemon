@@ -95,7 +95,7 @@ def run_file(per_lineup, s=None):
                 settings={"location": {"name": loc.get("name") or "", "lat": loc.get("lat"), "lon": loc.get("lon"),
                                        "holidays": loc.get("holidays") or ""},
                           "prefs": dict(s.get("prefs") or {}),
-                          "network": dict(s.get("network") or {}), "social": dict(s.get("social") or {}),
+                          "network": dict(s.get("network") or {}),
                           "search": dict(first.get("search") or {}),
                           "tags": {"ignore": ignore, "sprompt": sprompt}})
 

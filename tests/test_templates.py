@@ -37,7 +37,7 @@ def test_counted_rows_and_text_and_the_apps_own_names():
     assert 1500 < x < 1620 and ">Day:</text>" in out
 
 
-def test_blank_and_the_apps_own_drawings_have_no_definition(tmp_path, monkeypatch):
+def test_blank_has_no_definition_and_the_apps_own_drawings_are_paperdaemons(tmp_path, monkeypatch):
     monkeypatch.setattr(T, "folder", lambda: str(tmp_path))
     (tmp_path / "defs").mkdir()
     (tmp_path / "defs" / "P Grid medium.json").write_text(json.dumps({"name": "Grid medium", "items": []}))
@@ -52,6 +52,9 @@ def test_blank_and_the_apps_own_drawings_have_no_definition(tmp_path, monkeypatc
     cat = T.catalog(str(mirror))
     assert [t["name"] for t in cat] == ["Blank", "Grid medium", "Hexagon large", "Meeting minutes"]     # portrait only
     assert T.definition(cat[1]) == {"name": "Grid medium", "items": []}
-    assert T.definition(cat[2]) is None and T.definition(cat[0]) is None
+    assert T.definition(cat[0]) is None
+    # what the app draws in its own code, PaperDaemon draws itself, marked as an approximation
+    assert T.definition(cat[2]) == {"paperdaemon": "Hexagon large"} and cat[2].get("approx") is True
+    assert "<path" in T.svg(T.definition(cat[2]), 1620, 2160)
     assert T.definition(cat[3], str(mirror))["name"] == "Meeting minutes"
     assert T.svg(None, 100, 100) == '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"></svg>'

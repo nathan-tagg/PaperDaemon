@@ -1,6 +1,7 @@
 /* The app's own pieces, on top of style.css (the tokens and components from the interface language). */
 
 .screen[hidden] { display: none; }
+img, a, svg { -webkit-user-drag: none; }        /* a press that moves on them selects; it never drags them (core.js) */
 .page h1:focus { outline: none; }
 .skip { position: absolute; inset-inline-start: -9999px; top: var(--s2); z-index: 10; background: var(--ink); color: var(--paper); padding: var(--s1) var(--s3); }
 .skip:focus { inset-inline-start: var(--s2); }
@@ -20,6 +21,10 @@
 .msg { min-height: 20px; }
 p.msg:empty { display: none; }   /* an empty message line takes no room: buttons keep their one spacing */
 .msg.attn { color: var(--mark); }
+/* THE RAIL'S FOOT NEVER LEAVES THE WINDOW: zoomed in, the rail is taller than the window, so the rail scrolls and its
+   foot (the start and pause, the version) stays at the bottom over it */
+.rail { overflow-y: auto; scrollbar-width: none; padding-bottom: 0; }
+.rail-foot { position: sticky; bottom: 0; background: var(--paper-sunk); padding-bottom: var(--s4); }
 .rail-foot .meta { overflow-wrap: anywhere; }
 .rail-foot .foot-line { display: flex; align-items: center; gap: var(--s3); min-width: 0; }
 .rail-foot .foot-line .meta { margin: 0; min-width: 0; }
@@ -233,7 +238,7 @@ pre.snippet.pad-text { white-space: pre-wrap; padding: var(--s3) var(--s4); font
   .nav a { border-inline-start: 0; border-bottom: 2px solid transparent; padding: 6px var(--s3); }
   .nav a[aria-current="page"] { border-bottom-color: var(--ink); background: transparent; }
   .nav .state { display: none; }
-  .rail-foot { padding: var(--s2) var(--s4); }     /* narrow: the start and pause stay; the version goes */
+  .rail-foot { position: static; padding: var(--s2) var(--s4); }     /* narrow: the start and pause stay; the version goes */
   .rail-foot .meta { display: none; }
   .steplist { display: flex; flex-wrap: wrap; }
   .steplist li { padding: 6px var(--s3); }
@@ -285,7 +290,8 @@ dialog.viewer::backdrop { background: var(--shade); }
 .viewer-tags:empty { display: none; }               /* with no tags, the tools take the bar and Go to page sits at its right */
 .viewer-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .viewer-nav { display: inline-flex; align-items: center; gap: var(--s3); }
-.viewer-count { min-width: 9ch; text-align: center; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.viewer-count { min-width: 9ch; flex: none; white-space: nowrap; text-align: center; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.viewer-nav > * { flex: none; }                    /* the bar's right end never squeezes: "Page 4 of 10" stays one line */
 .viewer-page { display: flex; align-items: flex-start; justify-content: center; padding: var(--s4); min-height: 0; overflow-y: auto; }
 .viewer-page img { height: auto; max-width: 100%; background: #FFFFFF; box-shadow: 0 0 0 1px var(--edge); }
 .lineup-bar { margin-bottom: var(--s5); }
@@ -385,7 +391,8 @@ textarea.field { height: auto; padding: 8px 10px; }
 .icon-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.4; }
 .icon-btn svg circle { fill: currentColor; stroke: none; }
 .icon-btn:hover, .icon-btn[aria-pressed="true"] { color: var(--mark); border-color: var(--mark); }
-.viewer-nav { margin-inline-start: auto; }
+.icon-btn:disabled { color: var(--ink-3); border-color: var(--rule); cursor: default; opacity: 0.6; }
+.viewer-nav { margin-inline-start: auto; flex-shrink: 0; }
 .viewer-nav:empty { display: none; }
 /* the page editor's tools in the viewer's bar (sent by editor.html): its buttons as the editor draws them, even sizes
    so an icon centers on whole pixels at every zoom */

@@ -76,11 +76,10 @@ def web_search(s):
 
 
 def social(s):
-    sites = [x for x in ((s.get("social") or {}).get("sites") or []) if x in SITE_NAMES]
+    from ..settings import SOCIAL_SITES
+    sites = [x for x in SOCIAL_SITES if x in SITE_NAMES]          # every site, always
     if not _network_on(s):
         return row("social", "off", "network_off", d="allow_network")
-    if not sites:
-        return row("social", "off", "no_sites", d="choose_sites")
     from ..pipeline.charts import reddit, social as so
     pieces, ok, bad = [], 0, []
     for site in sites:

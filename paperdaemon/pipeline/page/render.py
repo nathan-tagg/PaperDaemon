@@ -769,9 +769,10 @@ def _render(doc, page_no, out, typed, hide, hide_typed, hide_images, mark_typed,
             pass
     # THE STROKES, by PaperDaemon's one renderer (pipeline/page/paint.py: fastdecomp/render.c), as the tablet draws them:
     # file order; pens opaque in their measured colors; the highlighter a per-channel minimum ("darken") wash; the
-    # shader a translucent wash; a pencil toned by its pressure (its grain is the device's, not in the file). For a
-    # person (displayed) it is drawn at twice the size and averaged down; otherwise at the tablet's own pixels.
-    from paperdaemon.pipeline.page.paint import paint, pencil_tone
+    # shader a translucent wash; each pen answering its pressure as the tablet does (paint.response: the pencils' grain,
+    # the light paintbrush and ballpoint). For a person (displayed) it is drawn at twice the size and averaged down;
+    # otherwise at the tablet's own pixels.
+    from paperdaemon.pipeline.page.paint import drawn, paint, response
     import numpy as _np
 
     class _O:                                       # T() is a translation: where it puts the page's origin
@@ -782,21 +783,19 @@ def _render(doc, page_no, out, typed, hide, hide_typed, hide_images, mark_typed,
     for L in S:
         if len(L.points) < 2:
             continue
-        a = _np.array([(p.x, p.y, p.width, p.pressure) for p in L.points], _np.float64)
+        a = _np.array([(p.x, p.y, p.width, p.pressure, p.speed) for p in L.points], _np.float64)
         pts = a[:, :2] + (_tx, _ty)
         fam = L.tool.name.split("_")[0]
         widths = _np.maximum(1.0, a[:, 2] * WSCALE.get(fam, WSCALE_DEFAULT))       # px_width, for the whole stroke
+        k, dens = response(fam, a[:, 3], a[:, 4])
         if L.tool.name.startswith("SHADER"):
             rgba = tuple(L.color_rgba) if getattr(L, "color_rgba", None) else (128, 128, 128, 96)
-            ink.append((pts, widths, "shader", rgba[:4]))
+            ink.append((pts, drawn(widths, k), "shader", rgba[:4]))
         elif L.tool.name.startswith("HIGHLIGHTER"):
             rgb = tuple(L.color_rgba[:3]) if L.color_rgba else HL_ENUM.get(L.color.value, (255, 237, 117))
             ink.append((pts, widths, "highlighter", rgb))
         else:
-            col = ENUM.get(L.color.value, (0, 0, 0))
-            if fam in PENCIL_FAMILY:
-                col = pencil_tone(col, float(a[:, 3].mean()) / 255.0)
-            ink.append((pts, widths, "pen", col))
+            ink.append((pts, drawn(widths, k), "pen", ENUM.get(L.color.value, (0, 0, 0)), dens))
     paint(canvas, ink, ss=2 if displayed else 1)
     canvas.save(out)
     tools = collections.Counter(L.tool.name for L in S)

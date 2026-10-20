@@ -47,7 +47,7 @@ LANGUAGES = {"en": "English", "es": "Español", "pt": "Português", "fr": "Fran�
 IGNORE_TAG = "ignore"
 SPROMPT_TAG = "sprompt"
 FIXED_TAGS = (IGNORE_TAG, SPROMPT_TAG)
-# the social sites a request for posts can search, by the names the settings use
+# the social sites a request for posts that names no site searches: all of them, always
 SOCIAL_SITES = ("reddit", "hackernews", "bluesky", "4chan", "mastodon")
 # what earlier versions kept as settings and this one drops when it loads them
 _RETIRED_TABLET_KEYS = ("mute_tag", "sprompt_tag", "trigger_tag")   # trigger_tag: each lineup's watch tag now
@@ -106,9 +106,6 @@ SCHEMA = [
     {"path": "network.allowed", "type": "bool", "default": True, "label": "Allow network access",
      "help": "Off, PaperDaemon reaches nothing on the internet itself: no weather, social posts, Wikipedia, maps or web "
              "search. The models in the lineup and the reMarkable cloud are not affected."},
-    {"path": "social.sites", "type": "list", "default": ["reddit", "hackernews", "bluesky"],
-     "choices": list(SOCIAL_SITES), "label": "Social sites to search",
-     "help": "Where a request for posts looks when it names no site. A request that names one always looks there."},
     {"path": "features.off", "type": "list", "default": [], "label": "Features switched off",
      "help": "Features PaperDaemon never offers the model, whatever the lineup can do."},
     {"path": "server.port", "type": "integer", "default": API_PORT, "min": 1024, "max": 65535, "label": "Port",
@@ -324,7 +321,8 @@ def normalize_lineup(lu):
 
 def _shape(s):
     s.pop("models", None)                   # an older single-slot shape; lineups replace it
-    for k in ("search", "output_folder"):   # web search is each lineup's now; new documents go where the job is
+    # web search is each lineup's now; new documents go where the job is; a request for posts searches every social site
+    for k in ("search", "output_folder", "social"):
         s.pop(k, None)
     old_tag = str((s.get("tablet") or {}).get("trigger_tag") or "").strip()
     for k in _RETIRED_TABLET_KEYS:
