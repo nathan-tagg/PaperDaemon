@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.45
+
+- Page editor: erasing no longer rebuilds the page during a swipe. An erased stroke is blanked in place on the graphics card, and the pieces a Passing erase leaves are drawn on top; the page is rebuilt once, after the swipe.
+- Page editor: the zone eraser works on loops with many strokes and on loops drawn round and round (every turn counts as inside).
+- Page editor: a pasted picture (Ctrl+V) lands by the same rules as a decomp: at most 1,600 across, centered on the pointer, kept inside the view, and never above the top of the page. A decomp too tall for the view no longer goes off the top of the page.
+- Page editor: when a page can't be saved, the editor says why.
+
 ## 0.1.44
 
 - A page opens much faster: the engine reads its strokes in one pass in C (a 26,000-stroke page in 0.14 s, was 0.7)

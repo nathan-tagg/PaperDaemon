@@ -515,17 +515,20 @@ span.lname { cursor: default; }
     // THE PAGE'S SET ON THE CARD, IN CHUNKS of a few hundred lines, each with its own buffers and its draws in file order.
     // Where a chunk ends is decided by its last line's part (a random draw on the part's serial), not by its position, so
     // a line erased, added or changed remakes only the chunk it is in, and the rest of the page stays on the card as it is.
-    let serial = 0, chunks = [], gen = 0;
+    let serial = 0, chunks = [], gen = 0, have = [], over = [];
     const kept = new Map();                                   // chunk key -> chunk
+    const partChunk = new WeakMap();                          // a stroke's part -> the chunk holding it
+    const zeroed = new Set();                                 // chunks with strokes zeroed in them (hide): never reused
     function chunkOf(ps) {
       const key = ps.map(p => p.serial).join(",");
       let c = kept.get(key);
       if (c) return c;
       let nSeg = 0, nTri = 0;
       for (const p of ps) { if (p.tri) nTri += p.tri.length; else nSeg += p.seeds.length; }
-      const seg = new Float32Array(nSeg * F), seeds = new Uint32Array(nSeg), tri = new Float32Array(nTri), plan = [];
+      const seg = new Float32Array(nSeg * F), seeds = new Uint32Array(nSeg), tri = new Float32Array(nTri), plan = [], at = new Map();
       let sN = 0, tN = 0;
       for (const p of ps) {
+        at.set(p, p.tri ? { tri: tN, n: p.tri.length } : { seg: sN * F, n: p.seeds.length * F });
         if (p.tri) {
           const first = tN / 5; tri.set(p.tri, tN); tN += p.tri.length;
           const last = plan[plan.length - 1];
@@ -537,7 +540,8 @@ span.lname { cursor: default; }
           else plan.push({ type: own ? "own" : "pen", first, count: p.seeds.length, grain: p.grain, alpha: p.alpha });
         }
       }
-      c = { key, plan, segBuf: gl.createBuffer(), seedBuf: gl.createBuffer(), triBuf: gl.createBuffer() };
+      c = { key, plan, at, segBuf: gl.createBuffer(), seedBuf: gl.createBuffer(), triBuf: gl.createBuffer() };
+      for (const p of ps) partChunk.set(p, c);
       gl.bindBuffer(gl.ARRAY_BUFFER, c.segBuf); gl.bufferData(gl.ARRAY_BUFFER, seg, gl.STATIC_DRAW);
       gl.bindBuffer(gl.ARRAY_BUFFER, c.seedBuf); gl.bufferData(gl.ARRAY_BUFFER, seeds, gl.STATIC_DRAW);
       gl.bindBuffer(gl.ARRAY_BUFFER, c.triBuf); gl.bufferData(gl.ARRAY_BUFFER, tri, gl.STATIC_DRAW);
@@ -545,6 +549,13 @@ span.lname { cursor: default; }
       return c;
     }
     function sync(lines) {
+      // THE SAME STROKES AS LAST TIME (a pan, a zoom, a swipe in progress): the chunks as they are
+      if (lines.length === have.length) {
+        let same = true;
+        for (let i = 0; i < lines.length; i++) if (lines[i] !== have[i]) { same = false; break; }
+        if (same) { for (const c of chunks) c.gen = gen; return; }
+      }
+      have = lines.slice();
       const now = [];
       let run = [];
       for (const L of lines) {
@@ -559,7 +570,27 @@ span.lname { cursor: default; }
       for (const [key, c] of kept) if (c.gen < gen - 2) {
         gl.deleteBuffer(c.segBuf); gl.deleteBuffer(c.seedBuf); gl.deleteBuffer(c.triBuf); kept.delete(key);
       }
+      for (const c of zeroed) if (!now.includes(c)) { gl.deleteBuffer(c.segBuf); gl.deleteBuffer(c.seedBuf); gl.deleteBuffer(c.triBuf); zeroed.delete(c); }
       chunks = now;
+    }
+    // A SWIPE IN PROGRESS: a stroke the eraser took has its records in its chunk zeroed (a capsule of no width, a triangle
+    // of no area: it draws nothing), the chunk set aside so it is never used again; the pieces it leaves are drawn over
+    // the page from a small set of their own (overlay). The chunks are made again once, when the swipe is over.
+    function hide(lines) {
+      for (const L of lines) {
+        const p = parts.get(L), c = p && partChunk.get(p), w = c && c.at.get(p);
+        if (!w || !chunks.includes(c)) continue;
+        if (kept.get(c.key) === c) { kept.delete(c.key); zeroed.add(c); }
+        gl.bindBuffer(gl.ARRAY_BUFFER, w.tri !== undefined ? c.triBuf : c.segBuf);
+        gl.bufferSubData(gl.ARRAY_BUFFER, (w.tri !== undefined ? w.tri : w.seg) * 4, new Float32Array(w.n));
+      }
+    }
+    function overlay(lines) {
+      over = [];
+      let run = [];
+      for (const L of lines) { run.push(partOf(L)); if (run.length >= 256) { over.push(chunkOf(run)); run = []; } }
+      if (run.length) over.push(chunkOf(run));
+      for (const c of over) c.gen = gen;
     }
     function bindSegs(c, first) {                             // the per-segment attributes of chunk c, from segment `first` on
       gl.bindBuffer(gl.ARRAY_BUFFER, c.segBuf);
@@ -595,7 +626,7 @@ span.lname { cursor: default; }
       gl.useProgram(segP); gl.uniform2f(uSeg.size, W, H); gl.uniform1f(uSeg.k, k); gl.uniform2f(uSeg.off, ox, oy);
       gl.useProgram(triP); gl.uniform2f(uTri.size, W, H); gl.uniform1f(uTri.k, k); gl.uniform2f(uTri.off, ox, oy);
       let ref = 0;
-      for (const c of chunks) for (const d of c.plan) {
+      for (const c of over.length ? chunks.concat(over) : chunks) for (const d of c.plan) {
         if (d.type === "hl") {
           gl.useProgram(triP); gl.bindVertexArray(triVao);
           gl.bindBuffer(gl.ARRAY_BUFFER, c.triBuf);
@@ -631,6 +662,10 @@ span.lname { cursor: default; }
         pixels as x * k + ox, y * k + oy, kept to c's drawable square, and read the result back into c. -> drawn? */
     let holds = false;                                        // the target holds the page page() drew (not draw()'s)
     function draw(c, lines, k, ox, oy) {
+      const swipe = over; over = [];                          // a picture of these lines alone: no swipe's pieces over it
+      try { return drawOnly(c, lines, k, ox, oy); } finally { over = swipe; }
+    }
+    function drawOnly(c, lines, k, ox, oy) {
       holds = false;
       if (gl.isContextLost() || !target(c.W, c.H)) return false;
       gl.bindTexture(gl.TEXTURE_2D, tex); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
@@ -688,7 +723,7 @@ span.lname { cursor: default; }
     let copyP, downP;
     try { copyP = prog(VS_FULL, FS_COPY); downP = prog(VS_FULL, FS_DOWN); } catch (e) { return null; }
     const uCopy = { tex: U(copyP, "tex") }, uDown = { tex: U(downP, "tex"), ss: U(downP, "ss"), h: U(downP, "h") };
-    return { draw, page, readInto, holds: (W, H) => holds && texW === W && texH === H, canvas: cv, name: (() => { const x = gl.getExtension("WEBGL_debug_renderer_info"); return x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : "WebGL2"; })() };
+    return { draw, page, readInto, hide, overlay, holds: (W, H) => holds && texW === W && texH === H, canvas: cv, name: (() => { const x = gl.getExtension("WEBGL_debug_renderer_info"); return x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : "WebGL2"; })() };
   })();
 
   // ================================================================ TYPED TEXT: typed.py's layout, in fixed units
@@ -999,7 +1034,18 @@ span.lname { cursor: default; }
   function rebuildOnCard() {                                  // -> drawn?
     if (!GL || gpuFailed || live) return false;
     const t = performance.now(), sq = squareOf(), s = scale(), u = dpr * SS, lines = [];
-    for (const Ly of page.layers) if (Ly.visible) for (const L of Ly.lines) if (!hiddenLines.has(L)) lines.push(L);
+    // A SWIPE IN PROGRESS: the erased layer as it was when the swipe began (the card's chunks stay as they are), the
+    // strokes it has taken zeroed there, the pieces they leave drawn on top
+    const swipe = erasing && erasing.before ? erasing : null;
+    for (const Ly of page.layers) if (Ly.visible) for (const L of (swipe && Ly === swipe.layer ? swipe.before : Ly.lines)) if (!hiddenLines.has(L)) lines.push(L);
+    if (swipe) {
+      const fresh = [];
+      for (const L of swipe.dead) if (!swipe.hidden.has(L)) { swipe.hidden.add(L); fresh.push(L); }
+      try { GL.hide(fresh); } catch (e) { /* drawn whole below */ }
+      const pieces = [];
+      for (const made of swipe.pieces.values()) for (const q of made) if (!swipe.dead.has(q)) pieces.push(q);
+      GL.overlay(pieces);
+    } else GL.overlay([]);
     try {
       // what is under the ink, drawn again only when it changed: the view, the text, the template, the pictures
       const key = underKey();
@@ -1202,7 +1248,7 @@ span.lname { cursor: default; }
   function eraseStart(Ly, mode, x, y) {
     const kept = gridKept && gridKept.layer === Ly && gridKept.lines === Ly.lines && gridKept.at === changes ? gridKept : null;
     erasing = { layer: Ly, mode, last: [x, y], before: Ly.lines.slice(), grid: kept ? kept.grid : new Map(), dead: new Set(),
-                pieces: new Map(), reach: kept ? kept.reach : 0, dirty: false, alive: new Set(Ly.lines) };
+                pieces: new Map(), reach: kept ? kept.reach : 0, dirty: false, alive: new Set(Ly.lines), hidden: new Set() };
     if (!kept) for (const L of Ly.lines) gridAdd(L);
   }
   function gridAdd(L, g = erasing) {
@@ -1254,6 +1300,7 @@ span.lname { cursor: default; }
     if (eraseFrame) return;
     eraseFrame = requestAnimationFrame(() => {
       eraseFrame = 0;
+      if (GL && !gpuFailed) { dirty = null; rebuild(); return; }   // on the card: the swipe's state drawn as it is
       eraseApply();
       const d = dirty; dirty = null;
       if (d) rebuildBand(d[1] - 60, d[3] + 60); else paint();
@@ -1280,22 +1327,48 @@ span.lname { cursor: default; }
     }
     return c;
   };
+  // THE ZONE: the loop filled once into a mask, a cell a page unit, by the NONZERO rule -- every turn of a loop drawn
+  // round and round is inside, where the even-odd test let overlapping turns cancel out -- so whether a point is in the
+  // zone is one look in the mask, however many corners the loop has. The layer is made again once, at the end.
+  function zoneMask(poly) {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const [x, y] of poly) { if (x < x0) x0 = x; if (y < y0) y0 = y; if (x > x1) x1 = x; if (y > y1) y1 = y; }
+    x0 = Math.floor(x0) - 1; y0 = Math.floor(y0) - 1;
+    const W = Math.max(1, Math.ceil(x1) + 2 - x0), H = Math.max(1, Math.ceil(y1) + 2 - y0);
+    const k = Math.min(1, Math.sqrt(16e6 / (W * H)));           // a huge loop: a coarser mask, never past 16 million cells
+    const w = Math.max(1, Math.ceil(W * k)), h = Math.max(1, Math.ceil(H * k));
+    const cv2 = document.createElement("canvas"); cv2.width = w; cv2.height = h;
+    const g = cv2.getContext("2d", { willReadFrequently: true });
+    g.setTransform(k, 0, 0, k, -x0 * k, -y0 * k);
+    g.beginPath(); poly.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath();
+    g.fillStyle = "#000"; g.fill("nonzero");
+    const a = g.getImageData(0, 0, w, h).data, m = new Uint8Array(w * h);
+    for (let i = 0; i < m.length; i++) m[i] = a[4 * i + 3] >= 128 ? 1 : 0;
+    const ins = (x, y) => { const cx = Math.floor((x - x0) * k), cy = Math.floor((y - y0) * k); return cx >= 0 && cy >= 0 && cx < w && cy < h && m[cy * w + cx] === 1; };
+    return { ins, box: [x0, y0, x0 + W, y0 + H] };
+  }
   function eraseZone(Ly, poly) {
     if (poly.length < 3) return;
-    const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
-    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
-    const removed = [], added = [], lines = Ly.lines;
-    for (const L of [...lines]) {
-      if (!L.points.some(q => q.x >= x0 && q.x <= x1 && q.y >= y0 && q.y <= y1 && inside(q.x, q.y, poly))
-          && !resample(L.points, 2).some(q => q.x >= x0 && q.x <= x1 && q.y >= y0 && q.y <= y1 && inside(q.x, q.y, poly))) continue;
-      const at = lines.indexOf(L);
-      lines.splice(at, 1); removed.push({ line: L, at });
-      cutOut(L.points, q => inside(q.x, q.y, poly)).forEach((run, j) => {
+    const { ins, box } = zoneMask(poly), before = Ly.lines, out = [], removed = [], added = [];
+    before.forEach((L, i) => {
+      const b = boxOf(L);
+      if (b[2] < box[0] || b[0] > box[2] || b[3] < box[1] || b[1] > box[3]) { out.push(L); return; }
+      const P = L.points;
+      let hit = P.some(q => ins(q.x, q.y));
+      for (let j = 1; !hit && j < P.length; j++) {               // a segment that crosses the zone between its points
+        const a = P[j - 1], c = P[j], n = Math.ceil(Math.hypot(c.x - a.x, c.y - a.y) / 2);
+        for (let t = 1; t < n && !hit; t++) hit = ins(a.x + (c.x - a.x) * t / n, a.y + (c.y - a.y) * t / n);
+      }
+      if (!hit) { out.push(L); return; }
+      removed.push({ line: L, at: i });
+      for (const run of cutOut(P, q => ins(q.x, q.y))) {
         const piece = Object.assign({}, L, { itemId: [2, page.nextId++], points: run });
-        lines.splice(at + j, 0, piece); added.push({ line: piece, at: at + j });
-      });
-    }
-    if (removed.length) { record({ type: "lines", layer: Ly, removed, added }); lastType = null; }
+        added.push({ line: piece, at: out.length }); out.push(piece);
+      }
+    });
+    if (!removed.length) return;
+    Ly.lines = out;
+    record({ type: "lines", layer: Ly, removed, added }); lastType = null;
   }
   // the runs of a stroke outside what is erased (`ins`): its own points, and a point where it crosses the edge (found to a
   // fraction of a unit along the segment), so only what is inside goes
@@ -1957,7 +2030,15 @@ span.lname { cursor: default; }
         base = work; work = null; shown = downsample(base); shownDirty = true; paint(); saveSoon();   // drawn in place: the save is still due
       } else { work = null; rebuild(); }
     }
-    if (erasing) { cancelAnimationFrame(eraseFrame); eraseFrame = 0; dirty = null; eraseEnd(); rebuild(); }
+    if (erasing) {
+      cancelAnimationFrame(eraseFrame); eraseFrame = 0; dirty = null;
+      const onCard = GL && !gpuFailed;
+      if (onCard) rebuild();                                  // the swipe's last steps, as drawn during it
+      eraseEnd();
+      // the screen already shows the page as it is now: the chunks are made again for it while idle (or at the next draw)
+      if (onCard) { saveSoon(); (window.requestIdleCallback || (f => setTimeout(f, 50)))(() => { if (!erasing) rebuild(); }, { timeout: 600 }); }
+      else rebuild();
+    }
   }
   vp.addEventListener("pointerup", finish);
   let boxPress = null;
@@ -2707,11 +2788,24 @@ span.lname { cursor: default; }
     if (src) { placeImage(await (await fetch(src[1])).blob(), asStrokes); return true; }
     return false;
   }
+  // WHERE A PASTE LANDS (a picture or a decomp), each way on its own: at most 1,600 across its longest side; centered on
+  // the pointer; bigger than the view (what is on screen, smaller when zoomed in), centered in the view; fitting but over
+  // an edge, moved in until it is against that edge -- its center as near the pointer as the view allows. Never above the
+  // page's top (y 0): the page goes on downward only, so what lay above it would be lost
+  function landing(cx, cy, w, h) {
+    const fit = Math.min(1, 1600 / Math.max(w, h));
+    w *= fit; h *= fit;
+    const [vx0, vy0] = toPage(0, 0), [vx1, vy1] = toPage(vpW, vpH);
+    const land = (c, size, a, b) => size >= b - a ? (a + b) / 2 : Math.min(Math.max(c, a + size / 2), b - size / 2);
+    return { cx: land(cx, w, vx0, vx1), cy: Math.max(land(cy, h, vy0, vy1), h / 2), w, h };
+  }
   async function placeImage(blob, asStrokes) {               // under the pointer, a pixel of it a pixel of the screen
-    const [cx, cy] = pasteAt();
+    let [cx, cy] = pasteAt();
     const img = await loadBlob(blob); if (!img) { tell("That image could not be read"); return; }
-    const u = 1 / (scale() * dpr), w = img.naturalWidth * u, h = img.naturalHeight * u;
+    const u = 1 / (scale() * dpr);
+    let w = img.naturalWidth * u, h = img.naturalHeight * u;
     if (asStrokes) { pasteDecomposed(img, cx, cy, w, h); return; }
+    const at = landing(cx, cy, w, h); cx = at.cx; cy = at.cy; w = at.w; h = at.h;
     const png = await toPng(img), r = await fetch("/api/v1" + BASE + "/library/" + encodeURIComponent(DOC) + "/page/" + PAGE + "/picture",
       { method: "POST", body: png, headers: { Authorization: "Bearer " + token(), "Content-Type": "image/png" } }).catch(() => null);
     if (!r || !r.ok) { tell(location.protocol === "file:" ? "Pictures go on the page in the app's page editor, not in this file" : "The picture could not be kept"); return; }
@@ -2733,14 +2827,7 @@ span.lname { cursor: default; }
   // WHILE AN IMAGE IS DECOMPOSED its place on the page shows: a dashed frame the image's size, under the pointer, saying so
   let decomposing = null;
   async function pasteDecomposed(img, cx, cy, w, h) {        // Ctrl+Shift+V: the decomposer's strokes, at the image's own size
-    // at most the Decompose screen's 1,600 across its longest side. WHERE IT LANDS, each way on its own: centered on the
-    // pointer; bigger than the view (what is on screen, smaller when zoomed in), centered in the view; fitting but over an
-    // edge, moved in until it is against that edge -- its center as near the pointer as the view allows
-    const longest0 = Math.max(w, h), fit = Math.min(1, 1600 / longest0);
-    w *= fit; h *= fit;
-    const [vx0, vy0] = toPage(0, 0), [vx1, vy1] = toPage(vpW, vpH);
-    const land = (c, size, a, b) => size >= b - a ? (a + b) / 2 : Math.min(Math.max(c, a + size / 2), b - size / 2);
-    cx = land(cx, w, vx0, vx1); cy = land(cy, h, vy0, vy1);
+    ({ cx, cy, w, h } = landing(cx, cy, w, h));               // where it lands: as a picture would (landing)
     decomposing = { cx, cy, w, h }; paint();
     const png = await toPng(img), data = await new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(png); });
     const longest = Math.max(w, h), width = Math.round(Math.max(200, Math.min(1600, longest)));   // the Decompose screen's range
@@ -2998,7 +3085,8 @@ span.lname { cursor: default; }
     try {
       const r = await fetch(SCENE, { method: "PUT", keepalive: !!leaving && body.byteLength < 60000, body,
         headers: { Authorization: "Bearer " + token(), "Content-Type": "application/octet-stream" } });
-      saved.textContent = r.ok ? "" : "Not saved: " + r.status;
+      // not saved: the engine's own reason, so it can be told and put right
+      saved.textContent = r.ok ? "" : "Not saved: " + (await r.json().then(j => j.error, () => "") || r.status);
       if (r.ok) { setKnown(body); savedAt = at; try { version = (await r.json()).version || ""; } catch (e) { version = ""; } } else lastWritten = null;
     } catch (e) { saved.textContent = "Not saved"; lastWritten = null; }
     saving = false;

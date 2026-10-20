@@ -1550,7 +1550,10 @@ async def put_library_scene(doc: str, page: int, request: Request):
         return _bad("the page could not be read: %s" % str(ex)[:200])
     if not isinstance(scene, dict):
         return _bad("not a page")
-    return await run_in_threadpool(_local, lambda: {"strokes": local.write_scene(doc, page, scene), "version": local.page_version(doc, page)})
+    got = await run_in_threadpool(_local, lambda: {"strokes": local.write_scene(doc, page, scene), "version": local.page_version(doc, page)})
+    if isinstance(got, JSONResponse):                 # refused: the reason in the engine's output too, for a report
+        print("[editor] page %s/%d not saved: %s" % (doc[:8], page, got.body.decode("utf-8", "replace")[:300]), flush=True)
+    return got
 
 
 @app.post(API + "/library/sync")
