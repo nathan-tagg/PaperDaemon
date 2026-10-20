@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "window-zoom",
+  "description": "The window's own page (the engine, on this computer) may set the window's zoom, and nothing else: zoomed this way the page lays itself out again for the smaller room, where CSS zoom only scaled it.",
+  "windows": ["main"],
+  "remote": { "urls": ["http://127.0.0.1:*/*"] },
+  "permissions": ["core:webview:allow-set-webview-zoom"]
+}

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.43
+
+- Zoom (Ctrl + scroll, Ctrl + = / -, Ctrl + 0) is the window's own: the page lays itself out again for the smaller room,
+  as a browser's zoom does, so nothing runs off the bottom or is cut off at the side. It is still remembered.
+
 ## 0.1.42
 
 - The page editor stays quick on a page holding a huge decomp: a redraw, a pan or a zoom never saves (only an edit

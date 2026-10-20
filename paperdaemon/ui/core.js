@@ -552,20 +552,32 @@
   PD.go = id => { if (location.hash !== "#" + id) location.hash = id; else window.dispatchEvent(new HashChangeEvent("hashchange")); };
 })();
 
-// ---- zoom: Ctrl + scroll, Ctrl + = / -, Ctrl + 0 -- the whole window, remembered, and nothing shown when it changes
+// ---- zoom: Ctrl + scroll, Ctrl + = / -, Ctrl + 0 -- the whole window, remembered.
+// IN THE APP IT IS THE WINDOW'S OWN ZOOM (WebView2's, set through the shell: shell/capabilities/zoom.json): the page is
+// laid out again for the smaller room, as a browser's zoom does -- the narrow layout comes in, nothing is cut off, and
+// what is sized against the window (the rail's height, the dialogs) stays the window's. In a browser (the window
+// reached from another device) the browser's own zoom is left to it. CSS zoom, which only scaled the page laid out for
+// the whole window, is used only if the shell cannot zoom (an older shell).
 (() => {
   const STEPS = [0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3];
-  let at = 1;
+  const shell = window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke;
+  if (!shell) return;                                         // a browser: its own zoom
+  let at = 1, native = true;
   try { at = Number(localStorage.getItem("pd.zoom")) || 1; } catch (e) { /* the default */ }
-  // CSS zoom multiplies the window's own units (vh, vw) too: what is sized against the window divides by --pd-zoom, so
-  // the notebook viewer fills the same share of the window at every zoom and only its controls and words grow
-  const apply = z => {
-    at = z;
-    PD.uiZoom = z;
+  const css = z => {                                          // the old way, kept for a shell that cannot zoom
     document.documentElement.style.zoom = z === 1 ? "" : String(z);
     document.documentElement.style.setProperty("--pd-zoom", String(z));
-    window.dispatchEvent(new Event("pd-zoom"));                  // what is sized in script against the window, again
+  };
+  const apply = async z => {
+    at = z;
     try { localStorage.setItem("pd.zoom", String(z)); } catch (e) { /* this window only */ }
+    if (native) {
+      try { await shell("plugin:webview|set_webview_zoom", { value: z }); css(1); }
+      catch (e) { native = false; }
+    }
+    if (!native) css(z);
+    PD.uiZoom = native ? 1 : z;                                 // what CSS zoom adds (the window's zoom is in its size already)
+    window.dispatchEvent(new Event("pd-zoom"));                  // what is sized in script against the window, again
   };
   const step = dir => {
     const i = STEPS.findIndex(s => s >= at - 0.001);
