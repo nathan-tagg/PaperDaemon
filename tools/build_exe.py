@@ -26,6 +26,7 @@ import importlib.util
 import os
 import shutil
 import sys
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PACKAGE = os.path.join(ROOT, "paperdaemon")
@@ -202,7 +203,17 @@ def main(argv=None):
     ap.add_argument("--print", action="store_true", help="print the PyInstaller arguments and stop")
     ap.add_argument("--dist", default=DIST, help="the folder the engine is built into (default: build/engine/)")
     args = ap.parse_args(argv)
+    # THE BUILD SEES NONE OF THIS MACHINE'S CONTENT: an empty content folder of its own, set before anything loads
+    # PaperDaemon. The user's content folder can hold a cast pack (games/cast.py puts it on the import path), and its
+    # modules were collected and compiled into the app (0.1.50) -- private code shipped, and the app's copy, with no
+    # profiles beside it, took the place of the user's pack.
+    os.environ["PAPERDAEMON_CONTENT"] = tempfile.mkdtemp(prefix="paperdaemon-build-content-")
     pa = arguments(args.clean, os.path.abspath(args.dist))
+    stray = [p for p in sys.path if p and os.path.isdir(p) and os.path.isfile(os.path.join(p, "cast_host.py"))]
+    if stray or importlib.util.find_spec("cast_host") is not None:
+        print("refusing to build: a cast pack is on the import path (%s); it would be compiled into the app"
+              % (", ".join(stray) or "cast_host"))
+        return 1
     if args.print:
         print("\n".join(pa))
         return 0

@@ -81,7 +81,7 @@ Where the decision and the brief live is now rebuild-harness-interface's (the ha
 
 ## 11. Release orders beyond the design
 
-- [x] 11.1 Own chess rules in place of python-chess (GPL-3.0): `games/chess/rules.py` (board, FEN, legal moves, SAN, game end, PGN) and `games/chess/engine.py` (Stockfish over UCI, the build picked by processor); proved by perft on seven standard positions and by random games against python-chess move by move (`tests/test_chess_rules.py`); python-chess is a dev-group dependency only
+- [x] 11.1 Own chess rules in place of python-chess (GPL-3.0): `games/chess/rules.py` (board, FEN, legal moves, SAN, game end, PGN) and `games/chess/engine.py` (Stockfish over UCI, the build picked by processor); proved by perft on seven standard positions and by known outcomes for every way a game ends (`tests/test_chess_rules.py`); python-chess is used nowhere (removed 2026-10-21, tests included)
 - [x] 11.2 Own piece art drawn in code (`games/chess/pieces.py`), rendered at first use; the cburnett SVGs, CREDITS and the committed piece and board PNGs deleted
 - [x] 11.3 The cast ships, curated: 61 profiles in `paperdaemon/content/games/characters` (six cut, references to them removed, lines scrubbed), `cast.md` and `groups.json`; faces draw from code; the content lookup falls back to the shipped content; the behavior pack is not shipped (its modules are entangled with personal code)
 - [x] 11.4 Connect your reMarkable: Borrow and Steal (the app's `devicetoken` and `UserToken` values), each behind its modal with the privacy text; Steal refuses while the app runs and removes nothing until the copy is stored; tested against a stand-in registry, and the test suite blocks the real one

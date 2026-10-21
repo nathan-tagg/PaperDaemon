@@ -1,6 +1,6 @@
 [project]
 name = "paperdaemon"
-version = "0.1.50"
+version = "0.1.51"
 description = "A reMarkable assistant: it watches your tablet for tagged pages and answers them with the models you choose."
 readme = "README.md"
 license = "Apache-2.0"
@@ -53,8 +53,6 @@ reference = [
     "shapely==2.1.2",
 ]
 dev = [
-    # test-only: the chess rules are proved against python-chess (GPL-3.0), which never ships in the app
-    "chess>=1.11.2",
     "httpx>=0.28.1",
     "pyinstaller>=6.22.3",
     "pypdf>=6.19.0",

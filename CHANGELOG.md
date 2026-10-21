@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.51
+
+- 0.1.50 was built with files from the build machine's own content folder inside it. A character pack installed in your content folder was then ignored, and characters could not be found. 0.1.51 is built without any of it, and the build now refuses to run if such files could reach the app.
+
 ## 0.1.50
 
 - Messages: a reply with an empty picture line no longer sends a picture. The line after it was read as what the picture shows, and a picture nobody asked for was drawn.
