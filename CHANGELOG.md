@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.48
+
+- Page editor: erasing with the right button while strokes are selected no longer leaves the selection's picture of them on the page until you click away. An erase now lets go of the selection first, so you see what it erased.
+
 ## 0.1.47
 
 - Every picture of a page is drawn on the graphics card, by the same shaders as the page editor, through PaperDaemon's own build of ANGLE (Direct3D 11). The processor's renderer is the fallback. The card's memory is given back when a job ends, when the daemon is paused and when a decompose finishes.

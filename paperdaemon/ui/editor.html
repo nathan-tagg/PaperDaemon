@@ -1372,6 +1372,8 @@ span.lname { cursor: default; }
     gridKept = g;
   }
   function eraseStart(Ly, mode, x, y) {
+    clearPick();                                              // an erase lets the selection go first: its picture of strokes
+                                                              // the erase is about to cut would stay over the page
     const kept = gridKept && gridKept.layer === Ly && gridKept.lines === Ly.lines && gridKept.at === changes ? gridKept : null;
     erasing = { layer: Ly, mode, last: [x, y], before: Ly.lines.slice(), grid: kept ? kept.grid : new Map(), dead: new Set(),
                 pieces: new Map(), reach: kept ? kept.reach : 0, dirty: false, alive: new Set(Ly.lines), hidden: new Set() };
