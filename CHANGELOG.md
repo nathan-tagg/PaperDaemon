@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.54
+
+- Messages: your reply is read wherever you wrote it on the chat page, not only inside the Message box. A reply written above the box was left unread, and the turn said nothing was written. The model now gets your handwriting alone, cropped close, without the chat picture or typed text around it, and all of it comes off once it is your bubble.
+
 ## 0.1.53
 
 - Handwriting is read where it is. The picture the host reads is the whole page plus anything past its frame, and the words it found were placed as if the picture were the frame squeezed. On any page written past its foot, words landed on the wrong marks or on none. They are now placed from the picture's own corner.

@@ -141,3 +141,33 @@ def test_an_empty_image_line_sends_no_picture():
     assert MS.parse_reply("SAY:\nIMAGE:\nFEEL: calm 2")["say"] == ""
     r = MS.parse_reply("SAY: Look!\nIMAGE: the harbor at sunset\nIMAGE OF: other\nFEEL: happy 6")
     assert (r["say"], r["image"], r["image_of"]) == ("Look!", "the harbor at sunset", "other")
+
+
+def test_a_chat_reads_the_players_writing_wherever_it_is(monkeypatch, tmp_path):
+    """The reply written above the box, on the thread, is read: the player's ink alone, from under the toolbar's
+    band down, cropped to the writing."""
+    from PIL import Image, ImageDraw
+    from paperdaemon.pipeline.games import messages as MS
+    from paperdaemon.pipeline.page import images as IM
+    from paperdaemon.pipeline.page import render as R
+    from paperdaemon.pipeline.page import tablets as TB
+
+    def fake_render(doc, page, out, typed=True, hide_images=None, **k):
+        assert typed is False and hide_images == [(1, 2, 3, 4)]       # ink alone: no typed text, no picture
+        im = Image.new("RGB", (1620, 2160), "white")
+        d = ImageDraw.Draw(im)
+        d.rectangle((300, 1200, 700, 1260), fill="black")             # written above the box (which starts at 1800)
+        d.rectangle((1500, 40, 1540, 80), fill="black")               # in the band: never the message
+        im.save(out)
+        return None, im.size, None, None, (-810.0, 0.0)
+    monkeypatch.setattr(R, "render", fake_render)
+    monkeypatch.setattr(IM, "items", lambda doc, page: [{"box": (1, 2, 3, 4)}])
+    monkeypatch.setattr(TB, "frame_of", lambda doc, page: (1620.0, 2160.0))
+    seen = {}
+
+    def ask(prompt, png):
+        with Image.open(png) as im:
+            seen["size"] = im.size
+        return "MESSAGE: I had chicken cordon bleu"
+    assert MS._read("doc", 1, ask, str(tmp_path)) == "I had chicken cordon bleu"
+    assert seen["size"] == (481, 141)

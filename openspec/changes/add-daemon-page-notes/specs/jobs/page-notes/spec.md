@@ -83,3 +83,7 @@ origin, so that a page written past its frame, or with ink left of it, is read w
 #### Scenario: A page longer than its frame
 - **WHEN** the page's picture is taller than the frame
 - **THEN** each word is given to the mark at its own page point
+
+#### Scenario: A chat reply written above the box
+- **WHEN** the player writes their reply on a messages page above the Message box
+- **THEN** it is read as their message, from their ink alone, and all of it comes off once it is their bubble

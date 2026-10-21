@@ -7,7 +7,8 @@ faces (the feeling that shows, and any tell: rm_table), the player's on the righ
 box to write in. When the thread fills the page, the chat goes on on a new page.
 
 One turn: the player writes in the box -> the model reads it (vision) -> it becomes their bubble and the
-ink goes -> the table decides who answers (in a one-to-one chat nearly always; in a group, the ones named
+ink goes (WHEREVER THEY WROTE: the box is where to write, but writing above it, on the thread, is read just the
+same -- a reply written there was once left unread, and the turn said nothing was written) -> the table decides who answers (in a one-to-one chat nearly always; in a group, the ones named
 and whoever would chime in, each at most once, often not everyone) -> each answers in their own voice
 from what they remember -> now and then a picture, when showing beats telling -> everyone in the chat
 remembers what was said.
@@ -231,10 +232,10 @@ def box_page(doc=None, page_no=None):
 
 
 # ------------------------------------------------------------------------------ the model's prompts
-READ_PROMPT = """This is the bottom of a messaging page on a tablet: a box headed "Message".
-Read ONLY what the player handwrote in that box. Answer with one line:
+READ_PROMPT = """This is the player's handwriting on a messaging page on a tablet, alone: their next message.
+Read what they wrote, top to bottom. Answer with one line:
 MESSAGE: <exactly what they wrote, spelling fixed, line breaks as spaces>
-or NOTHING if the box is empty or unreadable."""
+or NOTHING if nothing is written or it is unreadable."""
 
 REPLY_PROMPT = """You are texting as a resident of the town. Who you are:
 {brief}
@@ -357,16 +358,36 @@ def _draw(doc, page_no, page_id, state, workdir=None):
 
 
 # ------------------------------------------------------------------------------ one turn
+def _ink_top(doc, page_no):
+    """Where the player's writing may start: under the toolbar's band (the daemon's notes, and his retry box)."""
+    from paperdaemon.pipeline import page as PG
+    return PG.safe_area(tuple(TB.frame_of(doc, page_no)))[1]
+
+
 def _read(doc, page_no, ask_vision, workdir):
+    """The player's handwriting on the page, read: their ink alone (no picture, no typed text), from under the band
+    down, wherever they wrote it."""
+    from paperdaemon.pipeline.page import images as IM
     from paperdaemon.pipeline.page import render as R
     from PIL import Image
     png = os.path.join(workdir, "_chat_read_%d.png" % int(time.time() * 1000))
     try:
-        _ox, oy = R.render(doc, page_no, png)[4]               # one pixel a page unit; oy: the picture's top, in page units
+        try:
+            boxes = [im["box"] for im in IM.items(doc, page_no) if im.get("box")]
+            _ox, oy = R.render(doc, page_no, png, typed=False, hide_images=boxes)[4]   # one pixel a page unit
+        except ValueError:
+            return ""                                          # no ink on the page at all
         with Image.open(png) as im:
             w, h = im.size
-            top = box_page(doc, page_no)[1]
-            im.crop((0, max(0, int(top - oy)), w, h)).save(png)
+            page = im.convert("L").crop((0, max(0, int(_ink_top(doc, page_no) - oy)), w, h))
+        # the writing alone, with a margin: a vision model shrinks a big picture, and the page is mostly paper
+        from PIL import ImageOps
+        ink = ImageOps.invert(page).point(lambda v: 255 if v > 40 else 0).getbbox()
+        if not ink:
+            return ""
+        pad = 40
+        page.crop((max(0, ink[0] - pad), max(0, ink[1] - pad), min(page.width, ink[2] + pad),
+                   min(page.height, ink[3] + pad))).save(png)
         reply = ask_vision(READ_PROMPT, png)
     finally:
         try:
@@ -377,17 +398,17 @@ def _read(doc, page_no, ask_vision, workdir):
     return m.group(1).strip().strip('"') if m else ""
 
 
-def _erase_box(doc, page_no):
-    """The player's ink in the box, gone once it is read (it is their bubble now)."""
+def _erase_ink(doc, page_no):
+    """The player's ink, gone once it is read (it is their bubble now): all of it under the band, wherever they
+    wrote it."""
     from paperdaemon.pipeline import page as ER
-    x0, y0, x1, y1 = box_page(doc, page_no)
+    top = _ink_top(doc, page_no)
 
     def inside(L):
         pts = getattr(L, "points", None) or []
         if not pts:
             return False
-        xs, ys = [p.x for p in pts], [p.y for p in pts]
-        return x0 <= min(xs) and max(xs) <= x1 and y0 <= min(ys) and max(ys) <= y1
+        return min(p.y for p in pts) >= top
     try:
         ER.erase(doc, page_no, inside)
     except Exception:
@@ -420,7 +441,7 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
     now = int(time.time())
     members = state["members"]
     if text:
-        _erase_box(doc, page_no)
+        _erase_ink(doc, page_no)
         state["messages"].append({"n": len(state["messages"]) + 1, "from": "me", "text": text[:600], "at": now,
                                   "page": page_id})
     said = " / ".join(m["text"] for m in state["messages"] if m["from"] == "me" and not m.get("answered"))
