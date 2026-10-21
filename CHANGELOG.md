@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.50
+
+- Messages: a reply with an empty picture line no longer sends a picture. The line after it was read as what the picture shows, and a picture nobody asked for was drawn.
+- Messages: residents send a picture now and then, the way people text a photo (where they are, what they're up to, what they're talking about), and it goes with what they said. Most messages still have none.
+
 ## 0.1.49
 
 - Messages: a group chat holds everyone you ask for. "The whole cast" was cut to eight people.

@@ -130,3 +130,14 @@ def test_a_group_chats_names_line_stays_inside_its_width():
         line = MS._names_line(d, names, font, width)
         assert d.textlength(line, font=font) <= width and (line.endswith("more") or line == "61 people")
     assert MS._names_line(d, names[:3], font, 2000) == "Resident 0, Resident 1, Resident 2"
+
+
+def test_an_empty_image_line_sends_no_picture():
+    # an empty "IMAGE:" once took the next line ("IMAGE OF: other") as what the picture shows, and one was drawn
+    from paperdaemon.pipeline.games import messages as MS
+    r = MS.parse_reply("SAY: The Senator notes the arrival.\nIMAGE:\nIMAGE OF: other\nFEEL: calm 3\nREMEMBER: none")
+    assert (r["say"], r["image"], r["remember"]) == ("The Senator notes the arrival.", "", "")
+    assert MS.parse_reply("SAY: Hi\nIMAGE: IMAGE OF:\nFEEL: happy 4")["image"] == ""
+    assert MS.parse_reply("SAY:\nIMAGE:\nFEEL: calm 2")["say"] == ""
+    r = MS.parse_reply("SAY: Look!\nIMAGE: the harbor at sunset\nIMAGE OF: other\nFEEL: happy 6")
+    assert (r["say"], r["image"], r["image_of"]) == ("Look!", "the harbor at sunset", "other")

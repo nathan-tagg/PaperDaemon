@@ -249,8 +249,9 @@ Reply the way {short} would text: one message, short, in {short}'s own voice, tr
 (never invent a memory you don't have; if you don't know something, you can say so).
 Answer in these lines:
 SAY: <your one message>   (or NO REPLY if {short} would leave it unanswered)
-IMAGE: <only if showing a picture makes real sense -- a photo of something, a selfie -- what the picture
-shows, in one sentence; otherwise leave this line out>
+IMAGE: <now and then, as people text a photo -- where you are, what you're up to, something you're talking
+about, a selfie -- what the picture shows, in one sentence, and it goes with your message; most messages have
+none, so leave this line out unless {short} would really send one>
 IMAGE OF: <self if {short} is in the picture, other if not; only with an IMAGE line>
 FEEL: <one of {emotions}> <1-10> [at <whom>]
 FACE: <one fitting signature ID from the private menu above, or none; not a tell>
@@ -258,18 +259,28 @@ REMEMBER: <one short thing {short} will remember from this exchange, in their ow
 TRUTH: true, lie or bluff -- whether what you said is true (nobody sees this line)"""
 
 
+# A LINE'S VALUE IS ON ITS OWN LINE: [ 	]*, never \s*, after the label -- an empty "IMAGE:" took the next line
+# ("IMAGE OF: ...") as what the picture shows, and a picture nobody asked for was drawn. A value that is only
+# another line's label is no value.
+_LABEL = re.compile(r"(?i)^(SAY|IMAGE|IMAGE OF|FEEL|FACE|REMEMBER|TRUTH):")
+
+
+def _line(label, t):
+    m = re.search(r"(?im)^[ \t]*%s:[ \t]*(\S.*)$" % label, t)
+    v = m.group(1).strip() if m else ""
+    return "" if _LABEL.match(v) else v
+
+
 def parse_reply(text):
     t = str(text or "")
-    say = re.search(r"(?im)^\s*SAY:\s*(.+)$", t)
-    img = re.search(r"(?im)^\s*IMAGE:\s*(.+)$", t)
-    rem = re.search(r"(?im)^\s*REMEMBER:\s*(.+)$", t)
-    said = say.group(1).strip().strip('"') if say else ""
+    say, img, rem = _line("SAY", t), _line("IMAGE", t), _line("REMEMBER", t)
+    said = say.strip('"')
     if re.fullmatch(r"(?i)\(?no reply\)?\.?", said) or not said and re.search(r"(?i)\bNO REPLY\b", t):
         said = ""
-    remember = rem.group(1).strip() if rem else ""
+    remember = rem
     if re.fullmatch(r"(?i)none\.?|nothing\.?|-", remember):
         remember = ""
-    image = img.group(1).strip() if img else ""
+    image = img
     if re.fullmatch(r"(?i)none\.?|no\.?|-|n/a", image):
         image = ""
     feel, strong, at = CH.parse_feel(t)
