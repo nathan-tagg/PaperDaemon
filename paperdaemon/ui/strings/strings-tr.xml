@@ -671,4 +671,9 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="fm.drop">İçe aktarmak için PDF ve EPUB dosyalarını buraya bırakın</string>
   <string name="lineup.render_cpu">Sayfaları işlemcide çiz</string>
   <string name="lineup.render_cpu.help">Kapalı (varsayılan): bu dizilimin işleri okudukları sayfaları ekran kartında çizer. Bu hızlıdır ve iş sürerken kartın belleğinin bir kısmını kullanır (çok yoğun bir sayfada yaklaşık 160 MB); iş bitince geri verilir. Açık: bunun yerine işlemcide çizerler, kartın tüm belleği yapay zekâ sunucunuza kalır ve her resim daha uzun sürer, en çok da mürekkebi bol sayfalarda. Resimler her iki durumda da aynıdır. Yalnızca işlerin sayfaları etkilenir; sayfa düzenleyici her zaman kartta çizer.</string>
+  <string name="settings.retries">Yeniden denemeler</string>
+  <string name="settings.retries.help">Başarısız olan bir işin bırakılmadan önce kendiliğinden kaç kez daha deneneceği. Yapılacak bir şey olmayan sayfa başarısızlık değildir ve asla yeniden denenmez.</string>
+  <string name="settings.page_notes">Sayfadaki notlar</string>
+  <string name="settings.page_notes.help">Daemon çalışırken sayfaya yazar: işi aldığını, yapılacak işi ve nasıl bittiğini, yeniden denemek için işaretlenecek bir kutuyla birlikte. Küçük harflerle, en üstte tabletin araç çubuğunun altında, başka hiçbir şeyin okumadığı kendine ait bir katmanda.</string>
+  <string name="settings.page_notes.on">Çalışırken sayfaya yaz</string>
 </resources>

@@ -671,4 +671,9 @@
   <string name="fm.drop">가져올 PDF와 EPUB을 여기에 놓으세요</string>
   <string name="lineup.render_cpu">프로세서로 페이지 그리기</string>
   <string name="lineup.render_cpu.help">끔(기본값): 이 라인업의 작업은 읽는 페이지를 그래픽 카드에서 그립니다. 빠르며, 작업이 실행되는 동안 카드 메모리의 일부를 사용하고(아주 빽빽한 페이지에서 약 160 MB) 작업이 끝나면 돌려줍니다. 켬: 대신 프로세서에서 그려 카드 메모리를 모두 AI 서버에 남기며, 그림마다 시간이 더 걸리고 잉크가 많은 페이지일수록 더 오래 걸립니다. 어느 쪽이든 그림은 같습니다. 작업의 페이지에만 적용되며, 페이지 편집기는 항상 카드에서 그립니다.</string>
+  <string name="settings.retries">재시도</string>
+  <string name="settings.retries.help">실패한 작업을 포기하기 전에 자동으로 몇 번 더 시도할지. 할 일이 없는 페이지는 실패가 아니며 다시 시도하지 않습니다.</string>
+  <string name="settings.page_notes">페이지 메모</string>
+  <string name="settings.page_notes.help">데몬이 작업하면서 페이지에 적습니다: 작업을 받았다는 것, 진행 중인 작업, 어떻게 끝났는지, 그리고 다시 시도하려면 체크할 상자. 작게, 태블릿 도구 모음 아래 맨 위에, 다른 무엇도 읽지 않는 자기만의 레이어에 적습니다.</string>
+  <string name="settings.page_notes.on">작업하면서 페이지에 쓰기</string>
 </resources>

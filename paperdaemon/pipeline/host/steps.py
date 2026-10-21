@@ -264,7 +264,7 @@ def erase_targets(what):
 # ----------------------------------------------------------------- the job's progress, for the window
 # THE HOST KNOWS ITS STEPS once the plan is in: the window shows a bar on the page's cover and in the viewer (tablet.js),
 # moving as steps finish. The host names the page when a job starts (begin); before the plan the bar has no count.
-PROGRESS = {"path": None, "doc": None, "page": None}
+PROGRESS = {"path": None, "doc": None, "page": None, "plan": None}
 
 
 def _write_progress(done=None, total=None):
@@ -278,27 +278,31 @@ def _write_progress(done=None, total=None):
         os.makedirs(os.path.dirname(p), exist_ok=True)
         tmp = p + ".part"
         with open(tmp, "w", encoding="utf-8") as f:
-            json.dump({"doc": PROGRESS["doc"], "page": PROGRESS["page"], "done": done, "total": total, "at": time.time()}, f)
+            json.dump({"doc": PROGRESS["doc"], "page": PROGRESS["page"], "done": done, "total": total, "at": time.time(),
+                       "plan": PROGRESS["plan"]}, f)
         os.replace(tmp, p)
     except OSError:
         pass
 
 
 def begin(path, doc, page):
-    PROGRESS.update(path=path, doc=doc, page=page)
+    PROGRESS.update(path=path, doc=doc, page=page, plan=None)
     _write_progress()
 
 
 def report(steps):
-    """The plan's steps, done or failed of all, to the window."""
+    """The plan's steps, done or failed of all, to the window -- and THE WORK AT HAND, each step as "<kind>: <what>",
+    which the daemon writes on the page for the user (pipeline/daemon/notes.py) once it is there."""
     steps = steps or []
+    if PROGRESS["plan"] is None and steps:
+        PROGRESS["plan"] = [("%s: %s" % (s.get("do"), str(s.get("what") or "").strip())).rstrip(": ") for s in steps]
     _write_progress(sum(1 for s in steps if s.get("status") in ("done", "failed")), len(steps))
 
 
 def end():
     import os
     p = PROGRESS["path"]
-    PROGRESS.update(path=None, doc=None, page=None)
+    PROGRESS.update(path=None, doc=None, page=None, plan=None)
     if p:
         try:
             os.remove(p)

@@ -307,10 +307,16 @@ def _content_sha(path, data, raw):
         # same fingerprint in a fraction of the time on a page with a decomp
         from paperdaemon.remarkable import fastrm
         parts = fastrm.fingerprint_parts(data)         # ONE C pass, no stroke made: what the fingerprint takes, alone
+        # THE DAEMON'S NOTES ARE NOT THE PAGE (render.DAEMON_LAYER): his layer's strokes are left out, and a page
+        # without his layer is fingerprinted exactly as it always was
+        from paperdaemon.pipeline.page import render as _R
         if parts is not None:
+            daemon = _R.daemon_layer_ids(p[1] for p in parts if p[0] == "B")
+            if daemon:
+                parts = [p for p in parts if p[0] != "L" or (p[7], p[8]) not in daemon]
             for p in parts:
                 if p[0] == "L":
-                    _k, tool, color, rgba, n, first, last = p
+                    _k, tool, color, rgba, n, first, last = p[:7]
                     h.update(("L%s|%s|%s|%d|" % (tool, color, rgba, n)).encode())
                     for x, y in (first, last) if n else ():
                         h.update(("%.1f,%.1f;" % (x, y)).encode())
@@ -323,11 +329,15 @@ def _content_sha(path, data, raw):
                     except Exception:
                         txt = ""
                     h.update(b"T" + txt.encode("utf-8", "replace"))
-        for b in (() if parts is not None else fastrm.read_blocks(data)):
+        slow = list(fastrm.read_blocks(data)) if parts is None else []
+        daemon = _R.daemon_layer_ids(slow) if slow else set()
+        for b in slow:
             if isinstance(b, ss.SceneLineItemBlock):
                 v = getattr(b.item, "value", None)
                 if not isinstance(v, Line):
                     continue          # erased stroke; carries no content
+                if daemon and (b.parent_id.part1, b.parent_id.part2) in daemon:
+                    continue          # the daemon's note
                 pts = v.points
                 h.update(("L%s|%s|%s|%d|" % (
                     getattr(v.tool, "value", v.tool),

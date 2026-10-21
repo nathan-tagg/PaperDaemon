@@ -671,4 +671,9 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="fm.drop">PDFs und EPUBs hier ablegen, um sie zu importieren</string>
   <string name="lineup.render_cpu">Seiten auf dem Prozessor zeichnen</string>
   <string name="lineup.render_cpu.help">Aus (Standard): Die Aufträge dieser Zusammenstellung zeichnen die Seiten, die sie lesen, auf der Grafikkarte. Das ist schnell und belegt während eines Auftrags einen Teil des Kartenspeichers (etwa 160 MB bei einer sehr dichten Seite), der am Ende des Auftrags wieder frei wird. An: Sie zeichnen sie stattdessen auf dem Prozessor, der gesamte Kartenspeicher bleibt Ihrem KI-Server, und jedes Bild dauert länger, am meisten auf Seiten mit viel Tinte. Die Bilder sind in beiden Fällen gleich. Betroffen sind nur die Seiten eines Auftrags; der Seiteneditor zeichnet immer auf der Karte.</string>
+  <string name="settings.retries">Wiederholungen</string>
+  <string name="settings.retries.help">Wie oft ein fehlgeschlagener Auftrag von selbst erneut versucht wird, bevor er liegen bleibt. Eine Seite, auf der nichts zu tun ist, ist kein Fehlschlag und wird nie erneut versucht.</string>
+  <string name="settings.page_notes">Notizen auf der Seite</string>
+  <string name="settings.page_notes.help">Der Daemon schreibt bei der Arbeit auf die Seite: dass er den Auftrag hat, was zu tun ist und wie es ausging, mit einem Kästchen zum Ankreuzen für einen neuen Versuch. Klein, ganz oben unter der Werkzeugleiste des Tablets, auf einer eigenen Ebene, die sonst nichts liest.</string>
+  <string name="settings.page_notes.on">Bei der Arbeit auf die Seite schreiben</string>
 </resources>

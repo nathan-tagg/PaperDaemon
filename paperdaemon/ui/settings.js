@@ -356,6 +356,8 @@
     const s = S.s || {};
     $("#st-lang", R).value = PD.languageLabel(PD.getK(s, "prefs.language") || "en");
     $("#st-net", R).checked = PD.getK(s, "network.allowed") !== false;
+    $("#st-retries", R).value = String(PD.getK(s, "daemon.retries") || 0);
+    $("#st-notes", R).checked = PD.getK(s, "daemon.page_notes") === true;
     paintTools(); paintLogin();
   }
 
@@ -376,6 +378,13 @@
         row(t("settings.network"), t("settings.network.help"),
           '<label class="check-label"><input type="checkbox" id="st-net"> ' + esc(t("settings.network.allow")) +
           '</label><p class="hint" id="st-net-msg" role="status"></p>') +
+        // the daemon's handling of a job: another try at one that failed, and his notes on the page
+        row(t("settings.retries"), t("settings.retries.help"),
+          '<input class="field num w-xs" id="st-retries" type="number" inputmode="numeric" min="0" max="5" step="1">' +
+          '<p class="hint" id="st-retries-msg" role="status"></p>') +
+        row(t("settings.page_notes"), t("settings.page_notes.help"),
+          '<label class="check-label"><input type="checkbox" id="st-notes"> ' + esc(t("settings.page_notes.on")) +
+          '</label><p class="hint" id="st-notes-msg" role="status"></p>') +
         "</section>" +
         '<section class="section" aria-labelledby="st-h-tools"><h2 id="st-h-tools">' + esc(t("settings.tools")) + "</h2>" +
         row(t("settings.updates"), t("settings.updates.help"),
@@ -391,6 +400,12 @@
       PD.on(R, "click", "[data-act=fm-create]", (e, el) => createFalseMirror(el));
       PD.on(R, "click", "[data-act=fm-delete]", (e, el) => deleteFalseMirror(el));
       $("#st-net", R).addEventListener("change", e => save("network.allowed", e.target.checked, $("#st-net-msg", R)));
+      $("#st-retries", R).addEventListener("change", e => {
+        const n = Math.max(0, Math.min(5, Math.round(Number(e.target.value) || 0)));
+        e.target.value = String(n);
+        save("daemon.retries", n, $("#st-retries-msg", R));
+      });
+      $("#st-notes", R).addEventListener("change", e => save("daemon.page_notes", e.target.checked, $("#st-notes-msg", R)));
       PD.on(R, "click", "[data-act=update]", (e, el) => checkUpdates(el));
       PD.on(R, "click", "#st-login [data-act=borrow], #st-login [data-act=steal]", (e, el) => PD.busy(el, () => takeLogin(el.dataset.act)));
       PD.on(R, "click", "[data-act=logs]", (e, el) => sendLogs(el));

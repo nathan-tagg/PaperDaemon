@@ -671,4 +671,9 @@
   <string name="fm.drop">PDF や EPUB をここにドロップするとインポートします</string>
   <string name="lineup.render_cpu">ページをプロセッサで描画する</string>
   <string name="lineup.render_cpu.help">オフ（既定）：このラインナップのジョブは、読むページをグラフィックカードで描画します。高速で、ジョブの実行中はカードのメモリを一部使います（非常に密なページで約 160 MB）。ジョブが終わると解放されます。オン：代わりにプロセッサで描画し、カードのメモリはすべて AI サーバーに残ります。画像ごとに時間がかかり、インクの多いページほど長くなります。どちらでも画像は同じです。対象はジョブが読むページだけで、ページエディターは常にカードで描画します。</string>
+  <string name="settings.retries">再試行</string>
+  <string name="settings.retries.help">失敗したジョブを、あきらめる前に自動でさらに何回試すか。やることのないページは失敗ではなく、再試行されることはありません。</string>
+  <string name="settings.page_notes">ページへのメモ</string>
+  <string name="settings.page_notes.help">デーモンが作業しながらページに書き込みます。ジョブを受け取ったこと、取り組む作業、どう終わったか、そして再試行するためのチェックボックス。小さく、タブレットのツールバーの下の一番上に、ほかの何も読まない専用のレイヤーに書きます。</string>
+  <string name="settings.page_notes.on">作業しながらページに書く</string>
 </resources>

@@ -671,4 +671,9 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="fm.drop">Thả PDF và EPUB vào đây để nhập</string>
   <string name="lineup.render_cpu">Vẽ trang bằng bộ xử lý</string>
   <string name="lineup.render_cpu.help">Tắt (mặc định): các tác vụ của đội hình này vẽ những trang chúng đọc trên card đồ họa. Cách này nhanh, và trong lúc tác vụ chạy sẽ dùng một phần bộ nhớ của card (khoảng 160 MB với một trang rất dày), được trả lại khi tác vụ kết thúc. Bật: thay vào đó chúng vẽ bằng bộ xử lý, để toàn bộ bộ nhớ của card cho máy chủ AI của bạn, và mỗi hình mất nhiều thời gian hơn, nhất là ở những trang nhiều mực. Hình ảnh như nhau trong cả hai trường hợp. Chỉ các trang của tác vụ bị ảnh hưởng; trình chỉnh sửa trang luôn vẽ trên card.</string>
+  <string name="settings.retries">Thử lại</string>
+  <string name="settings.retries.help">Một tác vụ thất bại sẽ tự được thử thêm bao nhiêu lần trước khi bị bỏ lại. Một trang không có gì để làm không phải là thất bại và không bao giờ được thử lại.</string>
+  <string name="settings.page_notes">Ghi chú trên trang</string>
+  <string name="settings.page_notes.help">Daemon viết lên trang trong lúc làm việc: rằng anh ấy đã nhận tác vụ, công việc đang làm và kết quả ra sao, kèm một ô để đánh dấu nếu muốn thử lại. Chữ nhỏ, ở trên cùng dưới thanh công cụ của máy tính bảng, trên một lớp riêng mà không gì khác đọc.</string>
+  <string name="settings.page_notes.on">Viết lên trang trong lúc làm việc</string>
 </resources>

@@ -671,4 +671,9 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="fm.drop">Slipp PDF- og EPUB-filer her for å importere dem</string>
   <string name="lineup.render_cpu">Tegn sider på prosessoren</string>
   <string name="lineup.render_cpu.help">Av (standard): jobbene i denne oppstillingen tegner sidene de leser på grafikkortet. Det er raskt, og mens en jobb kjører bruker det noe av kortets minne (omtrent 160 MB på en svært tett side), som gis tilbake når jobben er ferdig. På: de tegner dem på prosessoren i stedet, slik at hele kortets minne er igjen til AI-serveren din, og hvert bilde tar lengre tid, mest på sider med mye blekk. Bildene blir de samme uansett. Bare jobbenes sider berøres; sideredigereren tegner alltid på kortet.</string>
+  <string name="settings.retries">Nye forsøk</string>
+  <string name="settings.retries.help">Hvor mange ganger til en jobb som mislyktes, prøves på egen hånd før den blir liggende. En side uten noe å gjøre er ikke en feil og prøves aldri igjen.</string>
+  <string name="settings.page_notes">Notater på siden</string>
+  <string name="settings.page_notes.help">Daemonen skriver på siden mens han jobber: at han fikk jobben, arbeidet som skal gjøres, og hvordan det endte, med en boks å krysse av for å prøve igjen. Smått, helt øverst under nettbrettets verktøylinje, på et eget lag som ingenting annet leser.</string>
+  <string name="settings.page_notes.on">Skriv på siden mens han jobber</string>
 </resources>

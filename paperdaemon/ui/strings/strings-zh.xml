@@ -671,4 +671,9 @@
   <string name="fm.drop">将 PDF 和 EPUB 拖放到这里即可导入</string>
   <string name="lineup.render_cpu">在处理器上绘制页面</string>
   <string name="lineup.render_cpu.help">关闭（默认）：此阵容的任务在显卡上绘制所读取的页面。速度快，任务运行期间会占用一部分显卡显存（非常密集的页面约 160 MB），任务结束后归还。开启：改为在处理器上绘制，显卡显存全部留给你的 AI 服务器，每张图片耗时更长，墨迹多的页面尤甚。两种方式画出的图片相同。只影响任务读取的页面；页面编辑器始终在显卡上绘制。</string>
+  <string name="settings.retries">重试</string>
+  <string name="settings.retries.help">失败的任务在放弃之前自动再尝试几次。没有任何要做的页面不算失败，也永远不会重试。</string>
+  <string name="settings.page_notes">页面上的备注</string>
+  <string name="settings.page_notes.help">守护进程在工作时写在页面上：他已收到任务、手头的工作以及结果如何，并附一个可勾选以重试的方框。字很小，写在最顶部平板工具栏下方，位于只属于他、其他任何东西都不读取的图层上。</string>
+  <string name="settings.page_notes.on">工作时在页面上书写</string>
 </resources>

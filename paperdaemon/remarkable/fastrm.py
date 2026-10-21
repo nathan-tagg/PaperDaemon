@@ -385,7 +385,8 @@ def blocks_c(data):
 
 def fingerprint_parts(data):
     """What the daemon's fingerprint takes from each block, in the page's order, from the C pass alone (no stroke made):
-    ("L", tool, color, rgba, point count, (x0, y0), (x1, y1)) for a stroke with a value (its first and last points),
+    ("L", tool, color, rgba, point count, (x0, y0), (x1, y1), parent part1, parent part2) for a stroke with a value (its
+    first and last points, and its layer),
     ("B", block) for any other block; or None where the C reader is not sure of the page."""
     import struct
     got = _c_pass(data)
@@ -412,7 +413,7 @@ def fingerprint_parts(data):
         n = r[20] // POINT.itemsize
         first = struct.unpack_from("<ff", data, r[19]) if n else None
         last = struct.unpack_from("<ff", data, r[19] + (n - 1) * POINT.itemsize) if n else None
-        out.append(("L", r[15], r[16], rgba, n, first, last))
+        out.append(("L", r[15], r[16], rgba, n, first, last, r[5], r[6]))
     return out
 
 

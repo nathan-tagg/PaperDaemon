@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.52
+
+- New setting, Retries (default 0): a job that failed is tried again on its own, up to that many times. A page with nothing to do is not a failure and is never tried again. A game turn that stops on an error now counts as a failure.
+- New setting, Notes on the page (default off): the daemon writes on the page as he works, small, across the very top under the tablet's toolbar, on a layer of his own called PaperDaemon. The notes say the job was received, then the work at hand once there is a plan, then how it ended and how long it took, signed. A job that was skipped or failed gets a box: tick it and it is tried again. The notes are never read as your writing, never start a job, and are erased before the page goes to the host. The first two notes go up as copies of the page, so the page in the Mirror is never touched while a job runs.
+
 ## 0.1.51
 
 - 0.1.50 was built with files from the build machine's own content folder inside it. A character pack installed in your content folder was then ignored, and characters could not be found. 0.1.51 is built without any of it, and the build now refuses to run if such files could reach the app.

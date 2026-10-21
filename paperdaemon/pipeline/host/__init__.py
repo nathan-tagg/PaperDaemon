@@ -793,7 +793,13 @@ def run_job_pages(job):
             pass
         use_lineup(lineup_for(e.get("tag")))
         S.use_trigger(e.get("tag"))               # a page the job adds is tagged for the same lineup
-        outcome, note, dt, _ = converse(doc_id, page, name, [k], conflict=job.get("conflict"))
+        # A RETRY says so: the user asked for the page again (the daemon's retry box), or the last try failed and the
+        # settings' Retries allow another; the model is told how the last try ended
+        retry = job.get("retry")
+        extra = ("THIS PAGE IS BEING TRIED AGAIN (%s). The last try ended: %s" % (
+            "the user asked for it" if retry.get("asked") else "try %d after a failure" % int(retry.get("n") or 1),
+            str(retry.get("note") or "")[:600])) if isinstance(retry, dict) else None
+        outcome, note, dt, _ = converse(doc_id, page, name, [k], extra=extra, conflict=job.get("conflict"))
         # DID THE PAGE CHANGE UNDER THE JOB? Recording the page records whatever is on it now, so anything
         # written while the job ran would pass as answered. The host knows what it saw and what it wrote;
         # anything else is the user's, and the page goes back in the queue.

@@ -170,6 +170,23 @@ _OTHER = {}          # path -> ((mtime_ns, size), blocks)
 _LINES = {}          # path -> ((mtime_ns, size), fastrm.page_lines(...))
 
 
+# THE DAEMON'S LAYER: his notes on a page (pipeline/daemon/notes.py), across its top, under the tablet's toolbar. No
+# reader of a page for the host sees it -- strokes() leaves it out -- and the page's fingerprint leaves it out too
+# (ledger._content_sha), so a note can neither be read as the user's writing nor start a job.
+DAEMON_LAYER = "PaperDaemon"
+
+
+def daemon_layer_ids(blocks):
+    """The daemon's layer(s) on a page, from its blocks: {(part1, part2)} of their node ids."""
+    out = set()
+    for b in blocks:
+        if isinstance(b, ss.TreeNodeBlock):
+            g = b.group
+            if getattr(getattr(g, "label", None), "value", None) == DAEMON_LAYER:
+                out.add((g.node_id.part1, g.node_id.part2))
+    return out
+
+
 def _lines_of(path):
     """fastrm.page_lines for a page file, cached by its (mtime, size); None where the C reader is not sure of it."""
     st = os.stat(path)
@@ -468,7 +485,10 @@ def strokes(doc, page_no, arrays=False):
     found = made if made is not None else (
         (b.item.item_id.part2, b.parent_id, b.item.value) for b in blocks
         if isinstance(b, ss.SceneLineItemBlock) and isinstance(getattr(b.item, "value", None), Line))
+    daemon = daemon_layer_ids(blocks)
     for n, parent, v in found:
+        if daemon and (parent.part1, parent.part2) in daemon:
+            continue                                      # the daemon's note, never the page's content
         if is_dead(n):
             buried += 1          # the device treats this as erased
         else:

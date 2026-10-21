@@ -671,4 +671,9 @@ Luego guíame para instalar SearXNG si hace falta, escribe el archivo .bat con u
   <string name="fm.drop">Suelta aquí PDF y EPUB para importarlos</string>
   <string name="lineup.render_cpu">Dibujar las páginas en el procesador</string>
   <string name="lineup.render_cpu.help">Desactivado (predeterminado): los trabajos de esta alineación dibujan las páginas que leen en la tarjeta gráfica. Es rápido y, mientras dura un trabajo, usa parte de la memoria de la tarjeta (unos 160 MB en una página muy densa), que se libera al terminar. Activado: las dibujan en el procesador, de modo que toda la memoria de la tarjeta queda para tu servidor de IA, y cada imagen tarda más, sobre todo en páginas con mucha tinta. Las imágenes son las mismas en ambos casos. Solo afecta a las páginas de los trabajos; el editor de páginas siempre dibuja en la tarjeta.</string>
+  <string name="settings.retries">Reintentos</string>
+  <string name="settings.retries.help">Cuántas veces más se intenta por sí solo un trabajo que falló antes de dejarlo. Una página sin nada que hacer no es un fallo y nunca se reintenta.</string>
+  <string name="settings.page_notes">Notas en la página</string>
+  <string name="settings.page_notes.help">El daemon escribe en la página mientras trabaja: que recibió el trabajo, la tarea que tiene entre manos y cómo terminó, con una casilla para marcar y volver a intentarlo. En pequeño, en lo más alto bajo la barra de herramientas de la tableta, en una capa propia que nada más lee.</string>
+  <string name="settings.page_notes.on">Escribir en la página mientras trabaja</string>
 </resources>

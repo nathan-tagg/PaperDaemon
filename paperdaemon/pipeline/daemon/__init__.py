@@ -321,6 +321,175 @@ def report_failure(job, why):
 QUEUE = os.path.join(_STATE, "rm-queue")
 
 
+# --------------------------------------------------------- the daemon's notes on the page, and another try
+# Both are the user's choice (Settings): RETRIES, how many more times a job that FAILED (ledger "failed": it did not do
+# what was asked -- a page with nothing to do is not a failure) goes back in the queue on its own; NOTES ON THE PAGE,
+# his three notes across the top of the page (notes.py): "got it" when he hands a job over, the work at hand once the
+# host has its plan, and how it ended, with a box to tick for another try. With notes off nothing here touches a page.
+def _setting(path, default):
+    try:
+        from paperdaemon import settings as S
+        v = S._get_path(S.load(), path)
+        return default if v is None else v
+    except Exception:
+        return default
+
+
+def next_try(e, allowed):
+    """A recorded job's ledger entry, and the Retries allowed: a job that FAILED goes back in the queue while tries are
+    left (its "retry" says which, and how the last one ended); a success starts the count again. -> True when the
+    entry changed."""
+    if e.get("failed") and e.get("status") in ("done", "skipped"):
+        used = int(e.get("retries_used") or 0)
+        if used < allowed:
+            e["retries_used"] = used + 1
+            e["retry"] = {"n": used + 1, "note": str(e.get("note") or "")[:600]}
+            e["status"], e["why"], e["handled_sha"], e["handled_raw"] = "pending", "retry", None, None
+            log("  it failed -- trying again (%d of %d)" % (used + 1, allowed))
+            return True
+        return e.pop("retry", None) is not None
+    if e.get("retries_used") or e.get("retry"):
+        e.pop("retries_used", None)
+        e.pop("retry", None)
+        return True
+    return False
+
+
+def notes_on():
+    return bool(_setting("daemon.page_notes", False)) and not DRY and not paths.local_only()
+
+
+def retries_allowed():
+    try:
+        return max(0, int(_setting("daemon.retries", 0)))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _page_of(job):
+    row = (job.get("batch") or [job])[0]
+    from paperdaemon.pipeline.daemon import notes as N
+    return row["doc_id"], row.get("page_id"), (N.page_file(row["doc_id"], row["page_id"]) if row.get("page_id") else None)
+
+
+def _frame_of(doc, pid):
+    from paperdaemon.pipeline.page import render as R
+    try:
+        n = [p["id"] for p in R.live_pages(doc)].index(pid) + 1
+        return tuple(float(v) for v in R.page_frame(doc, n))
+    except Exception:
+        return (1620.0, 2160.0)
+
+
+def _push_copy(doc, pid, data, what):
+    """A copy of the page, the daemon's note on it, up to the tablet; the page in the mirror stays as it is."""
+    from paperdaemon.remarkable import sync as cloud
+    try:
+        r = cloud.push_doc(doc, dry_run=False, replace={"%s/%s.rm" % (doc, pid): data}, only=True) or {}
+        if r.get("error") or r.get("skipped"):
+            log("  the %s note did not go up: %s" % (what, r.get("error") or r.get("skipped")))
+        else:
+            log("  the %s note is on the tablet" % what)
+    except Exception as ex:
+        log("  the %s note did not go up: %s" % (what, str(ex)[:120]))
+
+
+def _letter(lines, frame, box=False):
+    from paperdaemon.pipeline.daemon import notes as N
+    return N.letter(lines, frame, box=box)
+
+
+def prepare_page(job):
+    """Before a job goes to the host: his last note erased from the page, and anything the user wrote in its retry box
+    with it (a retry asked for -> job["retry"]); a retry the settings allowed carried on the job; then, with notes on,
+    his "got it" note up to the tablet on a copy of the page."""
+    from paperdaemon.pipeline.daemon import notes as N
+    key = job["keys"][0]
+    ent = rm_scan.load()["entries"].get(key) or {}
+    if isinstance(ent.get("retry"), dict):
+        job["retry"] = dict(ent["retry"])                   # the settings' Retries put it back in the queue
+    if not notes_on():
+        return
+    doc, pid, path = _page_of(job)
+    if not path or not os.path.exists(path):
+        return
+    data = open(path, "rb").read()
+    ticks = N.box_marks(data, ent.get("note_box")) if ent.get("note_box") else []
+    clean, n = N.erase(data, also=ticks)
+    if n:
+        paths.write_atomic(path, clean)
+        log("  erased the daemon's note%s" % (" and the tick in its retry box" if ticks else ""))
+    if ticks:
+        job["retry"] = {"asked": True, "note": ent.get("note") or ""}
+        log("  the user ticked the retry box -- trying %s again" % where(job))
+    frame = _frame_of(doc, pid)
+    say = "Got it %s -- %s%s. On it now." % (N.clock(), where(job), " (asked again)" if ticks else
+                                             (" (try %d)" % (int(job["retry"].get("n") or 1) + 1) if job.get("retry") else ""))
+    job["note_intake"] = say
+    job["note_base"] = clean                                  # the page as the host gets it: the work note's copy is of it
+    strokes, _box = _letter([say], frame)
+    _push_copy(doc, pid, N.with_note(clean, strokes), "got-it")
+
+
+def plan_note():
+    """While a job runs: once the host has its plan, the work at hand goes up on a copy of the page."""
+    if INFLIGHT.get("plan_noted") or not notes_on():
+        return
+    try:
+        with open(os.path.join(_STATE, "run", "progress.json"), encoding="utf-8") as f:
+            pr = json.load(f)
+    except (OSError, ValueError):
+        return
+    doc, pid, path = _page_of(INFLIGHT["job"])
+    if pr.get("doc") != doc or not pr.get("plan") or not path or not os.path.exists(path):
+        return
+    INFLIGHT["plan_noted"] = True
+    from paperdaemon.pipeline.daemon import notes as N
+    work = "The work: " + "; ".join(str(x) for x in pr["plan"])
+    strokes, _box = _letter([INFLIGHT["job"].get("note_intake") or "Got it.", work], _frame_of(doc, pid))
+    # the page as it was handed over, never as the host is leaving it: the job's own work goes up with the job
+    data = INFLIGHT["job"].get("note_base") or N.erase(open(path, "rb").read())[0]
+    _push_copy(doc, pid, N.with_note(data, strokes), "work")
+
+
+def final_note(job, since):
+    """The job is recorded: how it ended goes on the page itself (the host is done with it), and up to the tablet. A
+    job left skipped or failed gets a retry box; one going back in the queue says so."""
+    from paperdaemon.pipeline.daemon import notes as N
+    doc, pid, path = _page_of(job)
+    if not path or not os.path.exists(path):
+        return
+    key = job["keys"][0]
+    ent = rm_scan.load()["entries"].get(key) or {}
+    st, why, failed = ent.get("status"), str(ent.get("note") or "").strip(), bool(ent.get("failed"))
+    again = ent.get("status") == "pending" and isinstance(ent.get("retry"), dict)
+    took = elapsed(since)
+    if again:
+        lines = ["Didn't work, %s after %s: %s" % (N.clock(), took, why),
+                 "Trying again (%d of %d)." % (int(ent["retry"].get("n") or 1), retries_allowed())]
+    elif st == "done" and not failed:
+        lines = ["Done %s in %s: %s" % (N.clock(), took, why)]
+    elif failed:
+        lines = ["Didn't work, %s after %s: %s" % (N.clock(), took, why), "Tick the box to try again."]
+    else:
+        lines = ["Nothing to do, %s after %s: %s" % (N.clock(), took, why), "Tick the box to try it anyway."]
+    box = not again and (failed or st != "done")
+    strokes, b = _letter(lines, _frame_of(doc, pid), box=box)
+    data, _n = N.erase(open(path, "rb").read())
+    paths.write_atomic(path, N.with_note(data, strokes))
+    with rm_scan.locked():
+        led = rm_scan.load()
+        e = led["entries"].get(key)
+        if e is not None:
+            if b:
+                e["note_box"] = [round(v, 1) for v in b]
+            else:
+                e.pop("note_box", None)
+            rm_scan.save(led)
+    sync("the daemon's note")
+
+
+
 # --------------------------------------------------------------------- dispatch
 # The daemon NEVER waits. It used to sit inside dispatch() polling the ledger
 # for as long as a job took, which meant its 1 Hz heart stopped for the whole
@@ -386,6 +555,8 @@ def hand_over(job):
     body = {"keys": keys, "where": where(job)}
     if job.get("conflict"):
         body["conflict"] = job["conflict"]
+    if job.get("retry"):
+        body["retry"] = job["retry"]
     with open(os.path.join(QUEUE, stamp + ".json"), "w", encoding="utf-8") as f:
         json.dump(body, f)
     log("QUEUED %s" % where(job))
@@ -487,8 +658,20 @@ def finish_job(attempts):
                 touched = True
         if requeue:
             log("  changed while it worked -- re-queued %s" % ", ".join(sorted(requeue)))
+        # ANOTHER TRY (Settings: Retries): a job that failed goes back in the queue on its own, as many times as the
+        # user allows; a success, or a page the user changed, starts the count again
+        allowed = retries_allowed()
+        for r in (job.get("batch") or [job]):
+            e = led["entries"].get(r["key"])
+            if e and r["key"] not in requeue and next_try(e, allowed):
+                touched = True
         if touched:
             rm_scan.save(led)
+    if notes_on():
+        try:
+            final_note(job, INFLIGHT["since"])
+        except Exception as ex:
+            log("  could not write the daemon's note: %s" % str(ex)[:120])
     INFLIGHT.clear()
 
 
@@ -612,6 +795,11 @@ def main():
 
         if INFLIGHT:
             watch_inflight()
+            try:
+                plan_note()
+            except Exception as ex:
+                INFLIGHT["plan_noted"] = True
+                log("  could not note the work at hand: %s" % str(ex)[:120])
             ents = rm_scan.load()["entries"]
             sts = [ents.get(k, {}).get("status") for k in INFLIGHT["keys"]]
             if all(x in ("done", "skipped") for x in sts):
@@ -667,6 +855,10 @@ def main():
                 break
             if taken is None:
                 break
+            try:
+                prepare_page(job)
+            except Exception as ex:
+                log("  could not make the page ready (%s) -- handing it over as it is" % str(ex)[:120])
             if not hand_over(job):
                 for t in taken:
                     rm_scan.release(t, "daemon")

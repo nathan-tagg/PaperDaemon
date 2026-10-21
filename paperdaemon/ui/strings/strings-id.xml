@@ -671,4 +671,9 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="fm.drop">Lepaskan PDF dan EPUB di sini untuk mengimpornya</string>
   <string name="lineup.render_cpu">Gambar halaman di prosesor</string>
   <string name="lineup.render_cpu.help">Mati (bawaan): tugas lineup ini menggambar halaman yang dibacanya di kartu grafis. Itu cepat, dan selama tugas berjalan memakai sebagian memori kartu (sekitar 160 MB pada halaman yang sangat padat), yang dikembalikan saat tugas selesai. Nyala: halaman digambar di prosesor, sehingga seluruh memori kartu tetap untuk server AI Anda, dan setiap gambar butuh waktu lebih lama, terutama pada halaman dengan banyak tinta. Gambarnya sama saja. Hanya halaman tugas yang terpengaruh; editor halaman selalu menggambar di kartu.</string>
+  <string name="settings.retries">Coba lagi</string>
+  <string name="settings.retries.help">Berapa kali lagi tugas yang gagal dicoba dengan sendirinya sebelum ditinggalkan. Halaman yang tidak perlu dikerjakan bukan kegagalan dan tidak pernah dicoba lagi.</string>
+  <string name="settings.page_notes">Catatan di halaman</string>
+  <string name="settings.page_notes.help">Daemon menulis di halaman sambil bekerja: bahwa ia menerima tugas, pekerjaan yang sedang dilakukan, dan bagaimana hasilnya, dengan kotak yang bisa dicentang untuk mencoba lagi. Kecil, di bagian paling atas di bawah bilah alat tablet, di lapisan miliknya sendiri yang tidak dibaca apa pun.</string>
+  <string name="settings.page_notes.on">Tulis di halaman sambil bekerja</string>
 </resources>

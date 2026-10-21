@@ -106,6 +106,15 @@ SCHEMA = [
     {"path": "network.allowed", "type": "bool", "default": True, "label": "Allow network access",
      "help": "Off, PaperDaemon reaches nothing on the internet itself: no weather, social posts, Wikipedia, maps or web "
              "search. The models in the lineup and the reMarkable cloud are not affected."},
+    # THE DAEMON'S HANDLING OF A JOB (pipeline/daemon): another try at a job that failed, and his notes on the page
+    {"path": "daemon.retries", "type": "integer", "default": 0, "min": 0, "max": 5, "label": "Retries",
+     "message": "daemon.retries must be a number from 0 to 5",
+     "help": "How many more times a job that failed is tried, on its own, before it is left. A page with nothing to do "
+             "is not a failure, and is never tried again."},
+    {"path": "daemon.page_notes", "type": "bool", "default": False, "label": "Notes on the page",
+     "help": "The daemon writes on the page as he works: that he got the job, the work at hand, and how it ended, with "
+             "a box to tick to try it again. Small, across the very top, under the tablet's toolbar, on a layer of his "
+             "own that nothing else reads."},
     {"path": "features.off", "type": "list", "default": [], "label": "Features switched off",
      "help": "Features PaperDaemon never offers the model, whatever the lineup can do."},
     {"path": "server.port", "type": "integer", "default": API_PORT, "min": 1024, "max": 65535, "label": "Port",

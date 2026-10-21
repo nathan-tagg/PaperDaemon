@@ -671,4 +671,9 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="fm.drop">Trascina qui PDF ed EPUB per importarli</string>
   <string name="lineup.render_cpu">Disegna le pagine sul processore</string>
   <string name="lineup.render_cpu.help">Disattivato (predefinito): i lavori di questa formazione disegnano le pagine che leggono sulla scheda grafica. È veloce e, mentre un lavoro è in corso, usa parte della memoria della scheda (circa 160 MB per una pagina molto densa), restituita alla fine del lavoro. Attivato: le disegnano invece sul processore, lasciando tutta la memoria della scheda al tuo server di IA, e ogni immagine richiede più tempo, soprattutto sulle pagine con molto inchiostro. Le immagini sono le stesse in entrambi i casi. Riguarda solo le pagine dei lavori; l'editor di pagine disegna sempre sulla scheda.</string>
+  <string name="settings.retries">Nuovi tentativi</string>
+  <string name="settings.retries.help">Quante altre volte un lavoro non riuscito viene ritentato da solo prima di essere lasciato. Una pagina senza nulla da fare non è un errore e non viene mai ritentata.</string>
+  <string name="settings.page_notes">Note sulla pagina</string>
+  <string name="settings.page_notes.help">Il daemon scrive sulla pagina mentre lavora: che ha ricevuto il lavoro, il lavoro da fare e come è finito, con una casella da spuntare per riprovare. In piccolo, in cima sotto la barra degli strumenti del tablet, su un livello tutto suo che nient'altro legge.</string>
+  <string name="settings.page_notes.on">Scrivi sulla pagina mentre lavora</string>
 </resources>

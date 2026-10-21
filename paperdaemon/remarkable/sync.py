@@ -872,13 +872,24 @@ def _upload(t, blobs):
 
 
 @_one_at_a_time
-def push_doc(doc_uuid, dry_run=True):
+def push_doc(doc_uuid, dry_run=True, replace=None, only=False):
     """Push every locally changed file of one existing document in a single root move.
 
     Diffs against the LIVE document index, not the cached state (the tablet may have pushed since),
     and includes files the index does not list at all -- a new page's .rm has no index line, and
     missing it would push a page list naming a page the cloud never received.
+
+    `replace` = {index name ("<doc>/<page>.rm"): bytes} pushes those bytes for that file instead of the mirror's: a
+    COPY of a page goes up while the page in the mirror stays as it is (the daemon's notes, pipeline/daemon/notes.py,
+    while the host works on the page). The copy is recorded as the cloud's, so the next pull leaves the mirror's
+    page alone, and the next push of the mirror's page takes the copy's place. `only`: those files and nothing else
+    of the document -- a note going up mid-job never carries the job's own work with it (push_pending is the one way
+    a job's work reaches the tablet, so it can still be taken back).
     """
+    replace = replace or {}
+
+    def _read(name, path):
+        return replace[name] if name in replace else open(path, "rb").read()
     t = user_token()
     root, gen = get_root(t)
     tree = get_blob(t, root, "root.docSchema").decode()
@@ -892,14 +903,16 @@ def push_doc(doc_uuid, dry_run=True):
     dhead, dfiles = di.splitlines()[0], di.splitlines()[1:]
 
     local = _local_files(doc_uuid)
+    if only:
+        local = {n: p for n, p in local.items() if n in replace}
     indexed = {l.split(":")[2]: l for l in dfiles}
     pulled = _state()["files"]
     edits, added, theirs = [], [], []
     for name, path in sorted(local.items()):
-        h = hashlib.sha256(open(path, "rb").read()).hexdigest()
+        h = hashlib.sha256(_read(name, path)).hexdigest()
         line = indexed.get(name)
         if line is None:
-            added.append((name, h, os.path.getsize(path)))
+            added.append((name, h, len(_read(name, path))))
             continue
         cloud = line.split(":")[0]
         if cloud == h:
@@ -921,14 +934,14 @@ def push_doc(doc_uuid, dry_run=True):
 
     blobs, nfiles, delta = [], list(dfiles), 0
     for name, known, newhash in edits:
-        data = open(local[name], "rb").read()
+        data = _read(name, local[name])
         i = [k for k, l in enumerate(nfiles) if l.split(":")[2] == name][0]
         ohash, oflags, _, ozero, osize = nfiles[i].split(":")
         delta += len(data) - int(osize)
         nfiles[i] = "%s:%s:%s:%s:%d" % (newhash, oflags, name, ozero, len(data))
         blobs.append((data, name, None))
     for name, newhash, size in added:
-        data = open(local[name], "rb").read()
+        data = _read(name, local[name])
         # the index is SORTED by file name, and the document hash is taken over it in that order
         nfiles.append("%s:0:%s:0:%d" % (newhash, name, size))
         nfiles.sort(key=lambda l: l.split(":")[2])

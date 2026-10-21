@@ -671,4 +671,9 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="fm.drop">Solte PDFs e EPUBs aqui para importá-los</string>
   <string name="lineup.render_cpu">Desenhar as páginas no processador</string>
   <string name="lineup.render_cpu.help">Desligado (padrão): os trabalhos desta formação desenham as páginas que leem na placa de vídeo. É rápido e, enquanto um trabalho corre, usa parte da memória da placa (cerca de 160 MB numa página muito densa), devolvida quando o trabalho termina. Ligado: desenham-nas no processador, deixando toda a memória da placa para o seu servidor de IA, e cada imagem demora mais, sobretudo em páginas com muita tinta. As imagens são as mesmas em ambos os casos. Só afeta as páginas dos trabalhos; o editor de páginas desenha sempre na placa.</string>
+  <string name="settings.retries">Novas tentativas</string>
+  <string name="settings.retries.help">Quantas vezes mais um trabalho que falhou é tentado por si só antes de ser deixado. Uma página sem nada para fazer não é uma falha e nunca é tentada de novo.</string>
+  <string name="settings.page_notes">Notas na página</string>
+  <string name="settings.page_notes.help">O daemon escreve na página enquanto trabalha: que recebeu o trabalho, a tarefa em curso e como terminou, com uma caixa para assinalar e tentar de novo. Em pequeno, no topo, sob a barra de ferramentas do tablet, numa camada só dele que mais nada lê.</string>
+  <string name="settings.page_notes.on">Escrever na página enquanto trabalha</string>
 </resources>

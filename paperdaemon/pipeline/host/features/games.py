@@ -19,6 +19,7 @@ def _game_job(doc_id, page, name, t0):
     except Exception as ex:
         H._warn("playing the game", ex)
         res = ("skipped", "the game turn failed: %s: %s" % (type(ex).__name__, str(ex)[:120]))
+        JOB.failed = True                       # it did not do what was asked: a failure, which Retries may try again
     outcome, note = res or ("skipped", "no game on this page")
     # the host changed the page itself (tidied pieces, the opponent's move, the talk strip): that is
     # this job's own write, never a change "under" it
