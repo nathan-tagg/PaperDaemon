@@ -426,7 +426,7 @@ def _anchor_groups(path):
     from paperdaemon.pipeline.page import render as R
     from rmscene import scene_stream as ss
     out = {}
-    for b in R.blocks_of(path):
+    for b in R.other_blocks_of(path):
         if isinstance(b, ss.TreeNodeBlock):
             g = b.group
             ox = getattr(getattr(g, "anchor_origin_x", None), "value", None)
@@ -568,7 +568,7 @@ def stacking(path):
     from rmscene import scene_stream as ss
     # group node -> (the id of its place among its parent's children, that parent)
     where = {}
-    for b in R.blocks_of(path):
+    for b in R.other_blocks_of(path):
         if isinstance(b, ss.SceneGroupItemBlock):
             v = getattr(b.item, "value", None)
             if v is not None:

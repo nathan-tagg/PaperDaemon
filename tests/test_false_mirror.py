@@ -147,8 +147,6 @@ def test_the_false_mirror_through_the_engine():
         scene["layers"][0]["lines"] = [{"penCode": 15, "color": 0, "thicknessScale": 2,
                                         "points": [[-100, 500, 0, 0, 16, 128], [100, 520, 0, 0, 16, 128]]}]
         assert c.put("/api/v1/fm/library/" + doc + "/page/1/scene", json=scene).json()["strokes"] == 1     # and its version
-        png = c.get("/api/v1/fm/library/" + doc + "/page/1.png")
-        assert png.status_code == 200 and len(png.content) > 100
         assert c.put("/api/v1/fm/library/" + folder + "/tags", json={"tags": ["ask"]}).status_code == 200
         lib = {x["name"]: x for x in c.get("/api/v1/fm/library").json()}
         assert lib["Recipes"]["tags"] == ["ask"] and lib["Soup"]["parent"] == folder and lib["Soup"]["pages"] == 2

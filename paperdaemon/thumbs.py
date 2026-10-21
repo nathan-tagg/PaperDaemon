@@ -1,16 +1,20 @@
-"""The page picture cache: every page of every document drawn ahead, so a book of a thousand pages opens with its
-pages grid at once, the way the reMarkable desktop app keeps its thumbnails.
+"""The page picture cache: the pages grid's pictures and the documents' covers, kept so a book of a thousand pages
+opens with its pages grid at once, the way the reMarkable desktop app keeps its thumbnails.
 
-A picture is kept under a key made of what the page IS -- its page id, its ink file's size and time, the page of the
-document's PDF or EPUB it shows and that file's size and time -- so writing on one page of a book redraws that page
-only, and a page nobody touched is never drawn twice. The pictures live in <data>/cache/pages/<renderer stamp>/:
-a new build or an edited renderer starts the cache afresh.
+THE WINDOW DRAWS THEM, on the graphics card: a picture the cache does not have is answered "missing" (with the page and
+the size wanted), and the window draws that page with the page editor's own renderer, one picture at a time, and hands
+it back (put). Nothing is drawn ahead and nothing is drawn here for the grid or the covers: a picture is made only
+when it is missing and asked for.
 
-The FILLER is one background thread. It starts once the Mirror is built, works out every book's chapters
-(remarkable/chapters.cached), draws every page that has no picture yet (the documents opened most recently first),
-and ends. It starts again only when an update from the tablet lands
-(the daemon's pull, or the engine's own), and then draws only what changed. Pictures asked for by the screen are
-drawn at once, ahead of it.
+A picture is kept under a key made of what the page IS -- its page id, its template, the page of the document's PDF
+or EPUB it shows and that file's size and time -- and NOT its ink: writing on a page leaves its picture as it was until
+the page (or, for its cover, the document) is opened again, which forgets it (forget), and the next look draws it
+anew. The pictures live in <data>/cache/pages/<renderer stamp>/: a new build starts the cache afresh.
+
+draw() is the engine's own drawing of a page (render.py), for the full-size page pictures it still serves.
+
+The FILLER is one background thread: it works out every book's chapters (remarkable/chapters.cached) once the Mirror
+is built, and again when an update from the tablet lands. It draws no pictures.
 """
 import hashlib
 import json
@@ -22,7 +26,7 @@ import threading
 
 from . import paths
 
-THUMB, PAGE = 360, 2160                 # the pages grid's picture and the page view's, long side in pixels
+THUMB, COVER, PAGE = 360, 480, 2160    # the pages grid's picture (its width), a cover's (its width) and the page view's
 _STAMP = []
 _state = {"thread": None, "again": False, "drawn": 0, "left": 0, "running": False}
 _lock = threading.Lock()
@@ -87,8 +91,8 @@ def page_key(doc, page, live=None):
         return None
     p = live[page - 1]
     pid = p.get("id") or ""
-    parts = [pid, _stat(os.path.join(library.M, doc, pid + ".rm")), str((p.get("redir") or {}).get("value", "")),
-             str((p.get("template") or {}).get("value", ""))]
+    # not the ink file: a page written on keeps its picture until it is opened again (forget)
+    parts = [pid, str((p.get("redir") or {}).get("value", "")), str((p.get("template") or {}).get("value", ""))]
     for ext in (".pdf", ".epub"):
         src = os.path.join(library.M, doc + ext)
         if os.path.exists(src):
@@ -96,25 +100,71 @@ def page_key(doc, page, live=None):
     if os.path.exists(os.path.join(library.M, doc + ".epub")) and not os.path.exists(os.path.join(library.M, doc + ".pdf")):
         from .remarkable import books                    # a book PaperDaemon lays out: drawn again when its faces change
         parts.append("faces:" + books.mode())
-    pics = os.path.join(library.M, doc, pid)            # pictures placed on the page
-    if os.path.isdir(pics):
-        parts.append(_stat(pics) + ":" + ",".join(sorted(os.listdir(pics))))
     return hashlib.sha1("|".join(parts).encode()).hexdigest()[:16]
 
 
-def path_for(doc, page, size, top=False, live=None, square=False):
+def path_for(doc, page, size, top=False, live=None):
     key = page_key(doc, page, live)
     if key is None:
         return None
-    return os.path.join(folder(), doc, "%s-%d%s%s.webp" % (key, size, "-top" if top else "", "-sq" if square else ""))
+    return os.path.join(folder(), doc, "%s-%d%s.webp" % (key, size, "-top" if top else ""))
 
 
-def draw(doc, page, size, top=False, live=None, square=False):
+def cached(doc, page, size, top=True):
+    """The kept picture of page `page` at `size` (the grid's or a cover's: the top of the page in a 3:4 card) -> its
+    path, or None when it is missing (the window draws it: put)."""
+    out = path_for(doc, page, size, top)
+    return out if out and os.path.isfile(out) else None
+
+
+def put(doc, page, size, data, top=True):
+    """The window's drawing of page `page` at `size`, as image bytes (WebP or PNG), kept -> its path. Refused when it is
+    not a picture of that width."""
+    import io
+    from PIL import Image
+    out = path_for(doc, page, size, top)
+    if out is None:
+        raise ValueError("there is no page %d" % page)
+    with Image.open(io.BytesIO(data)) as im:
+        im.load()
+        if im.size[0] != size or not 0 < im.size[1] <= 4 * size:
+            raise ValueError("a picture %d wide was wanted, not %dx%d" % (size, im.size[0], im.size[1]))
+        rgb = im.convert("RGB")
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    part = out + ".%d.part" % threading.get_ident()
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        with open(part, "wb") as f:
+            f.write(data)
+    else:
+        rgb.save(part, format="WEBP", quality=90, method=4)
+    os.replace(part, out)
+    return out
+
+
+def forget(doc, page):
+    """Page `page`'s kept pictures, every size, gone: the page (or its document) was opened, and the next look at its
+    picture draws it anew."""
+    key = page_key(doc, page)
+    d = os.path.join(folder(), doc)
+    if key is None or not os.path.isdir(d):
+        return 0
+    n = 0
+    for f in os.listdir(d):
+        if f.startswith(key + "-"):
+            try:
+                os.remove(os.path.join(d, f))
+                n += 1
+            except OSError:
+                pass
+    return n
+
+
+def draw(doc, page, size, top=False, live=None):
     """Page `page` of `doc` as a picture `size` pixels at most on its long side (`top`: the top of the page in a 3:4
     card, `size` wide), from the cache or drawn now -> its path. Raises when it cannot be drawn."""
     from PIL import Image
     from .pipeline.page import render as R
-    out = path_for(doc, page, size, top, live, square)
+    out = path_for(doc, page, size, top, live)
     if out is None:
         raise ValueError("there is no page %d" % page)
     if os.path.isfile(out):
@@ -122,7 +172,7 @@ def draw(doc, page, size, top=False, live=None, square=False):
     os.makedirs(os.path.dirname(out), exist_ok=True)
     tmp = out[:-5] + ".%d.full.png" % threading.get_ident()
     try:
-        R.render(doc, page, tmp, blank_ok=True, displayed=True, square=square)   # as the tablet shows it; unwritten pages too
+        R.render(doc, page, tmp, blank_ok=True)               # the one render: the whole page; unwritten pages too
         with Image.open(tmp) as im:
             if top:
                 w, h = im.size
@@ -164,43 +214,19 @@ def _documents():
 
 
 def _fill():
-    """Draw every page's grid picture that is missing; again while updates keep landing; then end."""
+    """Work out every book's chapters; again while updates keep landing; then end. (The pictures are the window's.)"""
     try:
         while True:
             with _lock:
                 _state["again"] = False
             from .remarkable import chapters, library
-            for doc in _documents():                 # every book's chapters first: seconds each for a big EPUB
+            for doc in _documents():                 # seconds each for a big EPUB
                 if _state["again"]:
                     break
                 try:
                     chapters.cached(library.M, doc)
                 except Exception:
                     pass
-            todo = []
-            for doc in _documents():
-                try:
-                    live = _live(doc)
-                except (OSError, ValueError):
-                    continue
-                for n in range(1, len(live) + 1):
-                    p = path_for(doc, n, THUMB, True, live)
-                    if p and not os.path.isfile(p):
-                        todo.append((doc, n))
-            _state["left"] = len(todo)
-            live_of = {}
-            for doc, n in todo:
-                if _state["again"]:
-                    break                        # the Mirror changed under it: look again from the top
-                try:
-                    if doc not in live_of:
-                        live_of.clear()
-                        live_of[doc] = _live(doc)
-                    draw(doc, n, THUMB, True, live_of[doc])
-                    _state["drawn"] += 1
-                except Exception:
-                    pass                         # a page that cannot be drawn is drawn when it is asked for
-                _state["left"] = max(0, _state["left"] - 1)
             with _lock:
                 if not _state["again"]:
                     _state.update(thread=None, running=False, left=0)

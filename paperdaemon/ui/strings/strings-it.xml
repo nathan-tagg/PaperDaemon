@@ -61,6 +61,11 @@
   <string name="issue.setup_go">Continua la configurazione</string>
   <string name="issue.tablet">PaperDaemon non riesce a raggiungere il tuo reMarkable.</string>
   <string name="issue.mirror">Impossibile aggiornare lo Specchio: {why}</string>
+  <string name="issue.render_cpu">Le pagine vengono disegnate senza la scheda grafica, più lentamente: {why}</string>
+  <string name="issue.render_ok">OK</string>
+  <string name="editor.large_title">Questa pagina sta diventando molto grande</string>
+  <string name="editor.large_body">Il tablet farà fatica a caricare questa pagina, e l'editor di pagina userà più memoria della scheda grafica del previsto. Continua solo se sei sicuro che vada bene. Se esegui un server di IA locale sulla stessa scheda grafica, sappi che questa pagina gli toglie memoria.</string>
+  <string name="editor.large_ok">Ho capito</string>
   <string name="issue.not_started">PaperDaemon non è partito: {why}</string>
   <string name="term.daemon">Daemon</string>
   <string name="term.daemon_about">Sorveglia il tuo tablet in cerca di pagine con tag e passa ciascuna all'host come lavoro.</string>
@@ -142,7 +147,6 @@
   <string name="viewer.goto_aria">Vai alla pagina, da 1 a {last}</string>
   <string name="viewer.prev">Pagina precedente</string>
   <string name="viewer.next">Pagina successiva</string>
-  <string name="viewer.zoom_reset">Torna a 1×</string>
   <string name="keys.open">Scorciatoie</string>
   <string name="viewer.notSaved">Non salvato: {why}</string>
   <string name="keys.title">Scorciatoie e comandi</string>
@@ -236,9 +240,7 @@
   <string name="keys.paste_strokes">Incolla come tratti</string>
   <string name="keys.paste_strokes_d">Un'immagine scomposta in tratti, alla sua dimensione.</string>
   <string name="viewer.reading_chapters">Lettura dei capitoli…</string>
-  <string name="viewer.not_drawn">Impossibile disegnare questa pagina.</string>
   <string name="viewer.page">Pagina {n}</string>
-  <string name="viewer.go_to">Vai alla pagina {n}</string>
   <string name="common.close">Chiudi</string>
   <string name="tablet.label">Specchio</string>
   <string name="tablet.folder">Cartella</string>
@@ -458,7 +460,7 @@
   <string name="help.model.stops">Quando metti in pausa o chiudi PaperDaemon, o quando deve partire lo script di avvio di un'altra formazione. Ferma tutto ciò che il tuo script ha avviato. Non ferma mai un programma che non ha avviato lui.</string>
   <string name="help.h_wrong">Cose che vanno storte</string>
   <string name="help.model.wrong_vram">**La scheda grafica è piena.** Un modello ha bisogno di spazio nella memoria della scheda (VRAM). Se un altro server di modelli, un gioco o uno strumento per le immagini occupa quella memoria, il modello non si carica o va molto lento. Se esegui tu altri server di modelli, fai in modo che il tuo script li fermi prima (per esempio `taskkill /IM llama-server.exe /F`). PaperDaemon ferma solo ciò che ha avviato lui.</string>
-  <string name="help.model.wrong_own_vram">**La parte di PaperDaemon stesso.** In casi molto rari (una pagina piena di grandi scomposizioni, aperta nell'editor di pagina), PaperDaemon stesso può usare fino a 200 MB della memoria della scheda. Lasciane libera altrettanta.</string>
+  <string name="help.model.wrong_own_vram">**La parte di PaperDaemon stesso.** Anche PaperDaemon usa un po' della memoria della scheda. Con una pagina aperta nell'editor di pagina, la sua finestra usa circa 100 MB per una pagina con una grande scomposizione, fino a circa 200 MB per le pagine più grandi in assoluto (oltre 250.000 tratti; l'editor avvisa). Mentre un lavoro è in corso, il motore disegna pagine sulla scheda: circa 50 MB per una pagina normale, fino a circa 350 MB per le più grandi, e restituisce tutto alla fine del lavoro. Lascia liberi circa 550 MB se lavori su pagine enormi, altrimenti circa 150 MB.</string>
   <string name="help.model.wrong_two">**Due modelli che non stanno insieme.** Se il modello di testo e quello di immagini non entrano entrambi nella scheda, scrivi ogni script in modo che fermi il server dell'altro prima di avviare il proprio.</string>
   <string name="help.model.wrong_port">**La porta è occupata.** Se un altro programma usa già quella porta, il tuo server non può partire lì. Scegli una porta libera e usa la stessa nell'indirizzo qui sopra.</string>
   <string name="help.wrong_spaces">**Spazi in un percorso.** Metti tra virgolette ogni percorso che contiene spazi.</string>
@@ -486,7 +488,7 @@ Regole che lo script deve seguire:
 - Stampare l'output del server.
 - PaperDaemon imposta anche %PAPERDAEMON_ROLE% (text o image), %PAPERDAEMON_LOCATION% (l'indirizzo completo), %PAPERDAEMON_OTHER_LOCATION% (l'indirizzo dell'altro modello), %PAPERDAEMON_LINEUP% e %PAPERDAEMON_DATA%.
 - PaperDaemon ferma solo i programmi che ha avviato lui. Se altri server di modelli potrebbero occupare la memoria della mia scheda grafica, lo script deve fermarli prima.
-- PaperDaemon stesso può, in casi molto rari, usare fino a 200 MB della memoria della mia scheda grafica, quindi il modello deve lasciarne libera altrettanta.
+- PaperDaemon stesso usa un po' della memoria della mia scheda grafica: di solito meno di 150 MB, e fino a circa 550 MB nel momento peggiore (una pagina enorme aperta nel suo editor di pagina mentre un lavoro ne disegna un'altra), quindi il modello deve lasciarne libera altrettanta.
 - Il server deve parlare l'API chat compatibile con OpenAI (/v1/chat/completions), come fanno llama-server di llama.cpp, Ollama, LM Studio o vLLM.
 
 Prima di scriverlo, fammi queste domande una alla volta e aspetta ogni risposta:
@@ -506,7 +508,7 @@ Regole che lo script deve seguire:
 - Stampare l'output del server.
 - PaperDaemon imposta anche %PAPERDAEMON_ROLE% (text o image), %PAPERDAEMON_LOCATION% (l'indirizzo completo), %PAPERDAEMON_OTHER_LOCATION% (l'indirizzo dell'altro modello), %PAPERDAEMON_LINEUP% e %PAPERDAEMON_DATA%.
 - PaperDaemon ferma solo i programmi che ha avviato lui. Se altri server di modelli potrebbero occupare la memoria della mia scheda grafica, lo script deve fermarli prima.
-- PaperDaemon stesso può, in casi molto rari, usare fino a 200 MB della memoria della mia scheda grafica, quindi il modello deve lasciarne libera altrettanta.
+- PaperDaemon stesso usa un po' della memoria della mia scheda grafica: di solito meno di 150 MB, e fino a circa 550 MB nel momento peggiore (una pagina enorme aperta nel suo editor di pagina mentre un lavoro ne disegna un'altra), quindi il modello deve lasciarne libera altrettanta.
 - Il server deve parlare l'API della web UI di Stable Diffusion (/sdapi/v1/txt2img), come fanno il server di stable-diffusion.cpp, Forge o AUTOMATIC1111, oppure l'API Images di OpenAI.
 
 Prima di scriverlo, fammi queste domande una alla volta e aspetta ogni risposta:
@@ -667,4 +669,6 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="fm.imported_n">{n} file importati.</string>
   <string name="fm.import_failed">Impossibile importare {name}: {why}</string>
   <string name="fm.drop">Trascina qui PDF ed EPUB per importarli</string>
+  <string name="lineup.render_cpu">Disegna le pagine sul processore</string>
+  <string name="lineup.render_cpu.help">Disattivato (predefinito): i lavori di questa formazione disegnano le pagine che leggono sulla scheda grafica. È veloce e, mentre un lavoro è in corso, usa parte della memoria della scheda (circa 160 MB per una pagina molto densa), restituita alla fine del lavoro. Attivato: le disegnano invece sul processore, lasciando tutta la memoria della scheda al tuo server di IA, e ogni immagine richiede più tempo, soprattutto sulle pagine con molto inchiostro. Le immagini sono le stesse in entrambi i casi. Riguarda solo le pagine dei lavori; l'editor di pagine disegna sempre sulla scheda.</string>
 </resources>

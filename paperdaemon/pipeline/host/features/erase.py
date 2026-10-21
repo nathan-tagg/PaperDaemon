@@ -132,15 +132,18 @@ def _erase(kill, why):
                 **H._did())
 
 
-def _boxes_from(boxes, iw, ih):
-    """Boxes in the picture's pixels (what the harness read from the reply) -> page coordinates."""
+def _boxes_from(boxes, iw, ih, view=None):
+    """Boxes in the picture's pixels (what the harness read from the reply) -> page coordinates. `view`: what the
+    picture spans, (x, y, width, height) in page units -- its top-left corner as render() returned it and its size
+    (a render is one pixel a page unit); the page's own frame when not given."""
     out = []
     fw, fh = H._frame()
+    ox, oy, uw, uh = view or (-fw / 2.0, 0.0, fw, fh)
     for x0, y0, x1, y1 in boxes:
-        px0 = x0 * (fw / iw) - fw / 2.0
-        px1 = x1 * (fw / iw) - fw / 2.0
-        py0 = y0 * (fh / ih)
-        py1 = y1 * (fh / ih)
+        px0 = ox + x0 * (uw / iw)
+        px1 = ox + x1 * (uw / iw)
+        py0 = oy + y0 * (uh / ih)
+        py1 = oy + y1 * (uh / ih)
         out.append((min(px0, px1), min(py0, py1), max(px0, px1), max(py0, py1)))
     return out
 

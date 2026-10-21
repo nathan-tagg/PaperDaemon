@@ -713,6 +713,7 @@ def use_lineup(name):
     told, so the job's model calls and pictures go to that lineup's slots (its start script runs if another
     lineup's server holds the card)."""
     global RUN, CAPS, MODEL, CTX, _BRIEF, MAX_TOKENS, VISION, _SCHEMA
+    _drawing_on(name)
     values = (_RUN_FILE.get("lineups") or {}).get(name)
     if values is None:
         return
@@ -736,6 +737,32 @@ def use_lineup(name):
 
 
 def run_job(job):
+    """run_job_pages, the graphics card's helper (pipeline/page/gpu.py) let go after it: the card's memory is the
+    models' again between jobs. Each page's lineup says where its pictures are drawn (use_lineup: _drawing_on)."""
+    from paperdaemon.pipeline.page import gpu
+    try:
+        return run_job_pages(job)
+    finally:
+        gpu.processor(False)
+        gpu.release()
+
+
+def _drawing_on(name):
+    """Where lineup `name`'s pages are drawn: on the processor when its "render" setting says so (the card is let go,
+    and nothing is drawn there), else on the graphics card, its context made now so the first picture does not wait."""
+    from paperdaemon import settings
+    from paperdaemon.pipeline.page import gpu
+    lu = settings.lineup(settings.load(), name) if name else None
+    cpu = bool(lu and lu.get("render") == "cpu")
+    gpu.processor(cpu)
+    if cpu:
+        gpu.release()
+    else:
+        gpu.warm()
+    log("  pages drawn on the %s" % ("processor" if cpu else "graphics card"))
+
+
+def run_job_pages(job):
     """One directive per PAGE, start to finish, each in a fresh context.
 
     A job can carry several pages of one notebook (the daemon batches them); each page is its own look. A page

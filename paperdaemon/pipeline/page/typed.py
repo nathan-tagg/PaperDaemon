@@ -113,7 +113,7 @@ def _record(doc_name, page_no):
     if hit is not None:
         return hit or None
     data = io.open(path, "rb").read()
-    blocks = read_preserved(data)
+    blocks = read_preserved(_text_only(data))
     rec = from_blocks(blocks, data, doc_id=str(doc_name), page_id=str(page_no))
     rec = rec if rec and rec.get("paragraphs") else None
     if len(_RECORDS) > 16:
@@ -126,7 +126,7 @@ def _layout_of(data, doc_name, page_no):
     """The engine's layout of a page's typed text from its bytes (not cached: they are not the file's)."""
     if not _engine():
         return None
-    rec = from_blocks(read_preserved(data), data, doc_id=str(doc_name), page_id=str(page_no))
+    rec = from_blocks(read_preserved(_text_only(data)), data, doc_id=str(doc_name), page_id=str(page_no))
     return layout(rec) if rec and rec.get("paragraphs") else None
 
 
@@ -202,7 +202,7 @@ def paragraphs(doc_name, page_no, data=None):
     # see _text_block) comes first and is the `tb` returned; any other RootTextBlock's paragraphs
     # follow, laid out from that block's own pos_y. A page with two blocks used to have one of
     # them invisible to every collision check, which is one way a reply lands on the user's words.
-    blocks = R.blocks_of(R.page_file(doc, pid)) if data is None else list(read_blocks(io.BytesIO(data)))
+    blocks = R.other_blocks_of(R.page_file(doc, pid)) if data is None else list(read_blocks(io.BytesIO(_text_only(data))))
     _tb = _text_block(blocks)
     if _tb is None:
         return None, []
@@ -858,6 +858,15 @@ _Dispatch.read=types.MethodType(types.FunctionType(ss.Block.read.__func__.__code
     dict(ss.Block.read.__func__.__globals__,Block=_Dispatch)),_Dispatch)
 _read_blocks=types.FunctionType(ss._read_blocks.__code__,dict(ss._read_blocks.__globals__,Block=_Dispatch))
 _read_all=types.FunctionType(ss.read_blocks.__code__,dict(ss.read_blocks.__globals__,_read_blocks=_read_blocks))
+
+def _text_only(data):
+    """The page's bytes without its strokes, for the readers of its typed text (fastrm.without_strokes): the strokes are
+    most of the file and nothing the text needs."""
+    try:
+        from paperdaemon.remarkable import fastrm
+        return fastrm.without_strokes(data)
+    except Exception:
+        return data
 
 def read_preserved(data):
     return list(_read_all(io.BytesIO(data)))

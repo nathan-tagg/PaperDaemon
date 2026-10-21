@@ -63,3 +63,5 @@ shell/gen/
 *.lib
 *.o
 .zig-cache*/
+# the engine's ANGLE, built by tools/build_angle.py
+paperdaemon/pipeline/page/angle/

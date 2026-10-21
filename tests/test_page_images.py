@@ -39,7 +39,7 @@ def test_pictures_are_drawn_in_the_tablets_order(tmp_path, monkeypatch):
               group_item((1, 130), (1, 129), (0, 11))]          # the tied group, a child of Layer 1
     page = tmp_path / "p.rm"
     page.write_bytes(b"x")
-    monkeypatch.setattr(R, "blocks_of", lambda path: blocks)
+    monkeypatch.setattr(R, "other_blocks_of", lambda path: blocks)
     monkeypatch.setattr(IM, "parse", lambda data: [
         {"item": (1, 154), "parent": (1, 129), "deleted": False},    # a piece, in the group
         {"item": (1, 212), "parent": (0, 11), "deleted": False}])    # the board, right on Layer 1, written later

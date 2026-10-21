@@ -152,3 +152,26 @@ def test_the_ignore_and_sprompt_settings_are_dropped_on_load():
     with open(paths.settings_file(), encoding="utf-8") as f:
         assert "mute_tag" not in f.read()
     assert settings.FIXED_TAGS == ("ignore", "sprompt")
+
+
+def test_a_lineup_draws_its_pages_on_the_card_unless_it_says_the_processor():
+    from paperdaemon import settings
+    assert settings.normalize_lineup({"name": "a"})["render"] == "card"
+    assert settings.normalize_lineup({"name": "a", "render": "cpu"})["render"] == "cpu"
+    assert settings.normalize_lineup({"name": "a", "render": "nonsense"})["render"] == "card"
+
+
+def test_a_processor_lineup_never_asks_the_card():
+    import numpy as np
+    from paperdaemon.pipeline.page import gpu
+    asked = []
+    real = gpu._ask
+    gpu._ask = lambda job, wait=True: asked.append(job)
+    try:
+        gpu.processor(True)
+        assert gpu.paint(np.zeros((4, 4, 3), np.uint8), None) is None
+        gpu.warm()
+        assert asked == []
+    finally:
+        gpu.processor(False)
+        gpu._ask = real

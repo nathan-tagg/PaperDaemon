@@ -18,8 +18,8 @@ def t_find(what):
     doc, page = JOB.doc, JOB.page
     try:
         out = os.path.join(H.QUEUE, "_host_find.png")
-        R.render(doc, page, out, typed=True, hide=H._hide(),
-                 hide_typed=JOB.hide_typed, hide_images=JOB.hide_images)
+        ox, oy = R.render(doc, page, out, typed=True, hide=H._hide(),
+                          hide_typed=JOB.hide_typed, hide_images=JOB.hide_images)[4]   # its top-left, in page units
         from PIL import Image as _I
         with _I.open(out) as _im:
             iw, ih = _im.size
@@ -31,7 +31,7 @@ def t_find(what):
     found = H._H().read_located_one(reply, iw, ih)
     if found is None:
         return dict({"found": False, "note": "not on the page"}, **H._did())
-    boxes = H._boxes_from(found, iw, ih)
+    boxes = H._boxes_from(found, iw, ih, (ox, oy, iw, ih))
     if not boxes:
         return dict({"found": False,
                      "note": "no box came back: %s" % reply[:80]}, **H._did())
@@ -82,15 +82,13 @@ def _serve_look(fn, args, cid, msgs, doc, page):
         bx = hit[0]["bbox"]
         try:
             out = os.path.join(H.QUEUE, "_host_closer.png")
-            R.render(doc, page, out, typed=True, hide=H._hide(),
-                     hide_typed=JOB.hide_typed, hide_images=JOB.hide_images)
+            ox, oy = R.render(doc, page, out, typed=True, hide=H._hide(),
+                              hide_typed=JOB.hide_typed, hide_images=JOB.hide_images)[4]   # its top-left, page units
             im = Image.open(out).convert("RGB")
             pad = max(60.0, 0.25 * max(bx[2] - bx[0], bx[3] - bx[1]))
-            fw, fh = H._frame()
-            kx, ky = im.width / fw, im.height / fh           # pixels per page unit
-            crop = im.crop((max(0, int((bx[0] + fw / 2.0 - pad) * kx)), max(0, int((bx[1] - pad) * ky)),
-                            min(im.width, int((bx[2] + fw / 2.0 + pad) * kx)),
-                            min(im.height, int((bx[3] + pad) * ky))))
+            # one pixel a page unit: a page point is its pixel less the picture's corner
+            crop = im.crop((max(0, int(bx[0] - ox - pad)), max(0, int(bx[1] - oy - pad)),
+                            min(im.width, int(bx[2] - ox + pad)), min(im.height, int(bx[3] - oy + pad))))
             k = min(900.0 / max(1, crop.width), 900.0 / max(1, crop.height))
             crop = crop.resize((max(1, int(crop.width * k)), max(1, int(crop.height * k))), Image.LANCZOS)
             crop.save(out)
@@ -161,7 +159,7 @@ def _changes(doc, page):
     from paperdaemon.pipeline import page as _P
     old_paras = []
     if snap[1]:
-        for b in R.blocks_of(snap[1]):
+        for b in R.other_blocks_of(snap[1]):
             if isinstance(b, TY.ss.RootTextBlock):
                 old_paras += [str(p.get("text", "")).strip() for p in TY._paragraphs_of(b.value)]
     norm = lambda t: " ".join(str(t or "").split()).lower()

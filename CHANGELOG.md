@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.47
+
+- Every picture of a page is drawn on the graphics card, by the same shaders as the page editor, through PaperDaemon's own build of ANGLE (Direct3D 11). The processor's renderer is the fallback. The card's memory is given back when a job ends, when the daemon is paused and when a decompose finishes.
+- New lineup option, "Draw pages on the processor" (Text / Reasoning tab): that lineup's jobs draw their pages without the graphics card, leaving all of its memory to your AI server. The ? explains the tradeoff.
+- If pages can't be drawn on the graphics card, the Daemon page says so, once a session.
+- A large page opens much faster: its typed text is read without reading every stroke again.
+- Reading pages is faster throughout: strokes, typed text and the page's fingerprint are read in C.
+- The pictures the engine makes always hold the whole page and anything past its edges. Where the model points on a page with ink outside it now lands in the right place, and the games read the player's box from the same pictures.
+- Mirror pages open in the page editor, read-only: no tools, nothing written, a PDF's or book's links work, and the arrow keys turn pages. The old picture viewer is gone.
+- Mirror PDFs saved in the tablet's older layout open again.
+- Page editor: draws at your screen's resolution, more as you zoom in (up to twice each way), and never coarser than the tablet's, averaged down to the screen. It uses less of the graphics card's memory.
+- Thumbnails in the pages grid and on covers are drawn by the page editor on the graphics card, one at a time, only when one is missing, and again when that page or notebook is opened.
+- A page that passes 250,000 strokes shows a warning in the page editor, once per page.
+
 ## 0.1.46
 
 - Page editor: fixed the eraser freezing and then crashing the app. When the eraser only grazed a stroke, a Passing erase replaced the stroke with an identical copy, over and over, until memory ran out. A graze now takes nothing, and the pieces an erase leaves can no longer feed the same pass.

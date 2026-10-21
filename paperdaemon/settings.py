@@ -316,6 +316,9 @@ def normalize_lineup(lu):
         sr["kind"] = "local"
     out["search"] = {k: sr.get(k, v) for k, v in search_defaults().items()}
     out["tags"] = _upgrade_tags(lu.get("tags"))
+    # where this lineup's jobs draw their pages' pictures: "card" (the graphics card, pipeline/page/gpu.py) or "cpu"
+    # (render.c, on the processor: the card left to the models). The page editor draws on the card either way.
+    out["render"] = "cpu" if lu.get("render") == "cpu" else "card"
     return out
 
 

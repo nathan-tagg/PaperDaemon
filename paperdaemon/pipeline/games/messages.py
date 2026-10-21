@@ -305,11 +305,11 @@ def _read(doc, page_no, ask_vision, workdir):
     from PIL import Image
     png = os.path.join(workdir, "_chat_read_%d.png" % int(time.time() * 1000))
     try:
-        R.render(doc, page_no, png, displayed=True)             # the page as shown: one pixel a page unit
+        _ox, oy = R.render(doc, page_no, png)[4]               # one pixel a page unit; oy: the picture's top, in page units
         with Image.open(png) as im:
             w, h = im.size
             top = box_page(doc, page_no)[1]
-            im.crop((0, int(top), w, h)).save(png)
+            im.crop((0, max(0, int(top - oy)), w, h)).save(png)
         reply = ask_vision(READ_PROMPT, png)
     finally:
         try:

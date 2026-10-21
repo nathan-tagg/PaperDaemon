@@ -68,6 +68,10 @@ def write_atomic(path, data):
             return path
         except PermissionError:
             if i == 39:
+                try:                                  # not written: its part file goes too, never left beside the file
+                    os.remove(tmp)
+                except OSError:
+                    pass
                 raise
             time.sleep(0.05)
 

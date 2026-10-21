@@ -61,6 +61,11 @@
   <string name="issue.setup_go">Kuruluma devam et</string>
   <string name="issue.tablet">PaperDaemon, reMarkable'ınıza ulaşamıyor.</string>
   <string name="issue.mirror">Ayna güncellenemedi: {why}</string>
+  <string name="issue.render_cpu">Sayfalar ekran kartı olmadan çiziliyor, bu daha yavaş: {why}</string>
+  <string name="issue.render_ok">Tamam</string>
+  <string name="editor.large_title">Bu sayfa çok büyüyor</string>
+  <string name="editor.large_body">Tabletiniz bu sayfayı yüklemekte zorlanacak ve sayfa düzenleyici ekran kartı belleğini öngörülenden fazla kullanacak. Yalnızca bunun sorun olmadığından eminseniz devam edin. Aynı ekran kartında yerel bir yapay zekâ sunucusu çalıştırıyorsanız, bu sayfanın o sunucunun belleğinden aldığını bilin.</string>
+  <string name="editor.large_ok">Anladım</string>
   <string name="issue.not_started">PaperDaemon başlamadı: {why}</string>
   <string name="term.daemon">Daemon</string>
   <string name="term.daemon_about">Tabletinizde etiketli sayfaları izler ve her birini iş olarak host'a verir.</string>
@@ -142,7 +147,6 @@
   <string name="viewer.goto_aria">Sayfaya git, 1 ile {last} arası</string>
   <string name="viewer.prev">Önceki sayfa</string>
   <string name="viewer.next">Sonraki sayfa</string>
-  <string name="viewer.zoom_reset">1×'e dön</string>
   <string name="keys.open">Kısayollar</string>
   <string name="viewer.notSaved">Kaydedilmedi: {why}</string>
   <string name="keys.title">Kısayollar ve komutlar</string>
@@ -236,9 +240,7 @@
   <string name="keys.paste_strokes">Çizgi olarak yapıştır</string>
   <string name="keys.paste_strokes_d">Bir görüntü kendi boyutunda çizgilere ayrılır.</string>
   <string name="viewer.reading_chapters">Bölümler okunuyor…</string>
-  <string name="viewer.not_drawn">Bu sayfa çizilemedi.</string>
   <string name="viewer.page">Sayfa {n}</string>
-  <string name="viewer.go_to">{n}. sayfaya git</string>
   <string name="common.close">Kapat</string>
   <string name="tablet.label">Ayna</string>
   <string name="tablet.folder">Klasör</string>
@@ -458,7 +460,7 @@
   <string name="help.model.stops">PaperDaemon'ı duraklattığınızda ya da kapattığınızda veya başka bir dizilimin başlatma betiğinin çalışması gerektiğinde. Betiğinizin başlattığı her şeyi durdurur. Kendi başlatmadığı bir programı asla durdurmaz.</string>
   <string name="help.h_wrong">Ters gidebilecek şeyler</string>
   <string name="help.model.wrong_vram">**Ekran kartı dolu.** Bir modelin, kartınızın belleğinde (VRAM) yere ihtiyacı vardır. Başka bir model sunucusu, bir oyun ya da bir görsel aracı o belleği tutuyorsa, model yüklenemez ya da çok yavaş çalışır. Başka model sunucularını kendiniz çalıştırıyorsanız, betiğinizin önce onları durdurmasını sağlayın (örneğin `taskkill /IM llama-server.exe /F`). PaperDaemon yalnızca kendi başlattığını durdurur.</string>
-  <string name="help.model.wrong_own_vram">**PaperDaemon'un kendi payı.** Çok nadir durumlarda (büyük ayrıştırmalarla dolu bir sayfa, sayfa düzenleyicide açıkken) PaperDaemon kendisi kartınızın belleğinden 200 MB'a kadar kullanabilir. Bu kadarını boş bırakın.</string>
+  <string name="help.model.wrong_own_vram">**PaperDaemon'un kendi payı.** PaperDaemon da kartınızın belleğinin bir kısmını kullanır. Sayfa düzenleyicide bir sayfa açıkken penceresi büyük bir ayrıştırma içeren sayfa için yaklaşık 100 MB, en büyük sayfalar için (250.000'den fazla çizgi; düzenleyici bunlar için uyarır) yaklaşık 200 MB'a kadar kullanır. Bir iş çalışırken motor sayfaları kartta çizer: sıradan bir sayfa için yaklaşık 50 MB, en büyükler için yaklaşık 350 MB'a kadar, ve iş bitince hepsini geri verir. Çok büyük sayfalarla çalışıyorsanız yaklaşık 550 MB, değilse yaklaşık 150 MB boş bırakın.</string>
   <string name="help.model.wrong_two">**Birlikte sığmayan iki model.** Metin modeliniz ve görsel modeliniz karta birlikte sığmıyorsa, her betiği kendi sunucusunu başlatmadan önce diğerinin sunucusunu durduracak şekilde yazın.</string>
   <string name="help.model.wrong_port">**Port kullanımda.** Başka bir program o portu zaten kullanıyorsa sunucunuz orada başlayamaz. Boş bir port seçin ve yukarıdaki adreste aynısını kullanın.</string>
   <string name="help.wrong_spaces">**Yolda boşluklar.** Boşluk içeren her yolu tırnak içine alın.</string>
@@ -486,7 +488,7 @@ Betiğin uyması gereken kurallar:
 - Sunucunun çıktısını yazdır.
 - PaperDaemon ayrıca %PAPERDAEMON_ROLE% (text ya da image), %PAPERDAEMON_LOCATION% (tam adres), %PAPERDAEMON_OTHER_LOCATION% (diğer modelin adresi), %PAPERDAEMON_LINEUP% ve %PAPERDAEMON_DATA% değişkenlerini ayarlar.
 - PaperDaemon yalnızca kendi başlattığı programları durdurur. Başka model sunucuları ekran kartımın belleğini kullanıyor olabilirse, betik önce onları durdurmalı.
-- PaperDaemon kendisi, çok nadir durumlarda, ekran kartımın belleğinden 200 MB'a kadar kullanabilir; bu yüzden model bu kadarını boş bırakmalı.
+- PaperDaemon'un kendisi ekran kartımın belleğinin bir kısmını kullanır: genellikle 150 MB'tan az, en kötü anda ise (sayfa düzenleyicide çok büyük bir sayfa açıkken bir iş başka bir sayfa çizerken) yaklaşık 550 MB'a kadar, bu yüzden model bu kadarını boş bırakmalıdır.
 - Sunucu, llama.cpp'nin llama-server'ı, Ollama, LM Studio ya da vLLM gibi OpenAI uyumlu sohbet API'sini (/v1/chat/completions) konuşmalı.
 
 Yazmadan önce bana şu soruları tek tek sor ve her yanıtı bekle:
@@ -506,7 +508,7 @@ Betiğin uyması gereken kurallar:
 - Sunucunun çıktısını yazdır.
 - PaperDaemon ayrıca %PAPERDAEMON_ROLE% (text ya da image), %PAPERDAEMON_LOCATION% (tam adres), %PAPERDAEMON_OTHER_LOCATION% (diğer modelin adresi), %PAPERDAEMON_LINEUP% ve %PAPERDAEMON_DATA% değişkenlerini ayarlar.
 - PaperDaemon yalnızca kendi başlattığı programları durdurur. Başka model sunucuları ekran kartımın belleğini kullanıyor olabilirse, betik önce onları durdurmalı.
-- PaperDaemon kendisi, çok nadir durumlarda, ekran kartımın belleğinden 200 MB'a kadar kullanabilir; bu yüzden model bu kadarını boş bırakmalı.
+- PaperDaemon'un kendisi ekran kartımın belleğinin bir kısmını kullanır: genellikle 150 MB'tan az, en kötü anda ise (sayfa düzenleyicide çok büyük bir sayfa açıkken bir iş başka bir sayfa çizerken) yaklaşık 550 MB'a kadar, bu yüzden model bu kadarını boş bırakmalıdır.
 - Sunucu, stable-diffusion.cpp sunucusu, Forge ya da AUTOMATIC1111 gibi Stable Diffusion web UI API'sini (/sdapi/v1/txt2img) ya da OpenAI Images API'sini konuşmalı.
 
 Yazmadan önce bana şu soruları tek tek sor ve her yanıtı bekle:
@@ -667,4 +669,6 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="fm.imported_n">{n} dosya içe aktarıldı.</string>
   <string name="fm.import_failed">{name} içe aktarılamadı: {why}</string>
   <string name="fm.drop">İçe aktarmak için PDF ve EPUB dosyalarını buraya bırakın</string>
+  <string name="lineup.render_cpu">Sayfaları işlemcide çiz</string>
+  <string name="lineup.render_cpu.help">Kapalı (varsayılan): bu dizilimin işleri okudukları sayfaları ekran kartında çizer. Bu hızlıdır ve iş sürerken kartın belleğinin bir kısmını kullanır (çok yoğun bir sayfada yaklaşık 160 MB); iş bitince geri verilir. Açık: bunun yerine işlemcide çizerler, kartın tüm belleği yapay zekâ sunucunuza kalır ve her resim daha uzun sürer, en çok da mürekkebi bol sayfalarda. Resimler her iki durumda da aynıdır. Yalnızca işlerin sayfaları etkilenir; sayfa düzenleyici her zaman kartta çizer.</string>
 </resources>

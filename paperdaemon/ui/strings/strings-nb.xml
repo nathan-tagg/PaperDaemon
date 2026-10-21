@@ -61,6 +61,11 @@
   <string name="issue.setup_go">Fortsett oppsettet</string>
   <string name="issue.tablet">PaperDaemon når ikke reMarkable-en din.</string>
   <string name="issue.mirror">Kunne ikke oppdatere Speilet: {why}</string>
+  <string name="issue.render_cpu">Sidene tegnes uten grafikkortet, og det går tregere: {why}</string>
+  <string name="issue.render_ok">OK</string>
+  <string name="editor.large_title">Denne siden blir svært stor</string>
+  <string name="editor.large_body">Nettbrettet vil slite med å laste denne siden, og sideredigeringen vil bruke mer av grafikkortets minne enn tenkt. Fortsett bare hvis du er sikker på at det er greit. Kjører du en lokal KI-server på samme grafikkort, tar denne siden minne som den serveren ellers ville hatt.</string>
+  <string name="editor.large_ok">Jeg forstår</string>
   <string name="issue.not_started">PaperDaemon startet ikke: {why}</string>
   <string name="term.daemon">Daemon</string>
   <string name="term.daemon_about">Holder øye med nettbrettet etter merkede sider og gir hver av dem til verten som en jobb.</string>
@@ -142,7 +147,6 @@
   <string name="viewer.goto_aria">Gå til side, 1 til {last}</string>
   <string name="viewer.prev">Forrige side</string>
   <string name="viewer.next">Neste side</string>
-  <string name="viewer.zoom_reset">Tilbake til 1×</string>
   <string name="keys.open">Snarveier</string>
   <string name="viewer.notSaved">Ikke lagret: {why}</string>
   <string name="keys.title">Snarveier og kommandoer</string>
@@ -236,9 +240,7 @@
   <string name="keys.paste_strokes">Lim inn som strøk</string>
   <string name="keys.paste_strokes_d">Et bilde delt opp i strøk, i sin egen størrelse.</string>
   <string name="viewer.reading_chapters">Leser kapitlene…</string>
-  <string name="viewer.not_drawn">Kunne ikke tegne denne siden.</string>
   <string name="viewer.page">Side {n}</string>
-  <string name="viewer.go_to">Gå til side {n}</string>
   <string name="common.close">Lukk</string>
   <string name="tablet.label">Speil</string>
   <string name="tablet.folder">Mappe</string>
@@ -458,7 +460,7 @@
   <string name="help.model.stops">Når du setter PaperDaemon på pause eller avslutter det, eller når et annet oppsetts startskript må kjøre. Det stopper alt skriptet ditt startet. Det stopper aldri et program det ikke startet.</string>
   <string name="help.h_wrong">Ting som går galt</string>
   <string name="help.model.wrong_vram">**Grafikkortet er fullt.** En modell trenger plass i kortets minne (VRAM). Hvis en annen modellserver, et spill eller et bildeverktøy holder på det minnet, klarer ikke modellen å laste, eller den går svært tregt. Hvis du kjører andre modellservere selv, la skriptet stoppe dem først (for eksempel `taskkill /IM llama-server.exe /F`). PaperDaemon stopper bare det det startet.</string>
-  <string name="help.model.wrong_own_vram">**PaperDaemons egen andel.** I svært uvanlige tilfeller (en side full av store dekomponeringer, åpen i sideredigereren) kan PaperDaemon selv bruke opptil 200 MB av kortets minne. La så mye være ledig.</string>
+  <string name="help.model.wrong_own_vram">**Det PaperDaemon selv bruker.** PaperDaemon bruker også litt av kortets minne. Med en side åpen i sideredigeringen bruker vinduet omtrent 100 MB for en side med en stor dekomponering, og opptil omtrent 200 MB for de aller største sidene (over 250 000 strøk, som redigeringen advarer om). Mens en jobb kjører, tegner motoren sider på kortet: omtrent 50 MB for en vanlig side, opptil omtrent 350 MB for de største, og alt gis tilbake når jobben er ferdig. La omtrent 550 MB være ledig hvis du jobber med enorme sider, ellers omtrent 150 MB.</string>
   <string name="help.model.wrong_two">**To modeller som ikke får plass sammen.** Hvis tekstmodellen og bildemodellen ikke får plass på kortet samtidig, skriv hvert skript slik at det stopper den andres server før det starter sin egen.</string>
   <string name="help.model.wrong_port">**Porten er opptatt.** Hvis et annet program allerede bruker den porten, kan ikke serveren din starte der. Velg en ledig port og bruk den samme i adressen over.</string>
   <string name="help.wrong_spaces">**Mellomrom i en bane.** Sett anførselstegn rundt alle baner med mellomrom i.</string>
@@ -486,7 +488,7 @@ Regler skriptet må følge:
 - Skrive ut serverens utdata.
 - PaperDaemon setter også %PAPERDAEMON_ROLE% (text eller image), %PAPERDAEMON_LOCATION% (hele adressen), %PAPERDAEMON_OTHER_LOCATION% (adressen til den andre modellen), %PAPERDAEMON_LINEUP% og %PAPERDAEMON_DATA%.
 - PaperDaemon stopper bare programmer den har startet. Hvis andre modellservere kan bruke minnet på grafikkortet mitt, bør skriptet stoppe dem først.
-- PaperDaemon selv kan i svært uvanlige tilfeller bruke opptil 200 MB av minnet på grafikkortet mitt, så modellen bør la så mye være ledig.
+- PaperDaemon selv bruker litt av grafikkortets minne: vanligvis under 150 MB, og opptil omtrent 550 MB i verste øyeblikk (en enorm side åpen i sideredigeringen mens en jobb tegner en annen), så modellen bør la så mye være ledig.
 - Serveren må snakke det OpenAI-kompatible chat-API-et (/v1/chat/completions), slik llama-server fra llama.cpp, Ollama, LM Studio eller vLLM gjør.
 
 Før du skriver det, still meg disse spørsmålene ett om gangen og vent på hvert svar:
@@ -506,7 +508,7 @@ Regler skriptet må følge:
 - Skrive ut serverens utdata.
 - PaperDaemon setter også %PAPERDAEMON_ROLE% (text eller image), %PAPERDAEMON_LOCATION% (hele adressen), %PAPERDAEMON_OTHER_LOCATION% (adressen til den andre modellen), %PAPERDAEMON_LINEUP% og %PAPERDAEMON_DATA%.
 - PaperDaemon stopper bare programmer den har startet. Hvis andre modellservere kan bruke minnet på grafikkortet mitt, bør skriptet stoppe dem først.
-- PaperDaemon selv kan i svært uvanlige tilfeller bruke opptil 200 MB av minnet på grafikkortet mitt, så modellen bør la så mye være ledig.
+- PaperDaemon selv bruker litt av grafikkortets minne: vanligvis under 150 MB, og opptil omtrent 550 MB i verste øyeblikk (en enorm side åpen i sideredigeringen mens en jobb tegner en annen), så modellen bør la så mye være ledig.
 - Serveren må snakke Stable Diffusion web UI-API-et (/sdapi/v1/txt2img), slik serveren til stable-diffusion.cpp, Forge eller AUTOMATIC1111 gjør, eller OpenAI Images-API-et.
 
 Før du skriver det, still meg disse spørsmålene ett om gangen og vent på hvert svar:
@@ -667,4 +669,6 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="fm.imported_n">{n} filer importert.</string>
   <string name="fm.import_failed">{name} kunne ikke importeres: {why}</string>
   <string name="fm.drop">Slipp PDF- og EPUB-filer her for å importere dem</string>
+  <string name="lineup.render_cpu">Tegn sider på prosessoren</string>
+  <string name="lineup.render_cpu.help">Av (standard): jobbene i denne oppstillingen tegner sidene de leser på grafikkortet. Det er raskt, og mens en jobb kjører bruker det noe av kortets minne (omtrent 160 MB på en svært tett side), som gis tilbake når jobben er ferdig. På: de tegner dem på prosessoren i stedet, slik at hele kortets minne er igjen til AI-serveren din, og hvert bilde tar lengre tid, mest på sider med mye blekk. Bildene blir de samme uansett. Bare jobbenes sider berøres; sideredigereren tegner alltid på kortet.</string>
 </resources>

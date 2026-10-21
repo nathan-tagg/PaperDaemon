@@ -61,6 +61,11 @@
   <string name="issue.setup_go">सेटअप जारी रखें</string>
   <string name="issue.tablet">PaperDaemon आपके reMarkable तक नहीं पहुँच पा रहा।</string>
   <string name="issue.mirror">मिरर अपडेट नहीं हो सका: {why}</string>
+  <string name="issue.render_cpu">पेज ग्राफ़िक्स कार्ड के बिना बनाए जा रहे हैं, जो धीमा है: {why}</string>
+  <string name="issue.render_ok">ठीक है</string>
+  <string name="editor.large_title">यह पेज बहुत बड़ा होता जा रहा है</string>
+  <string name="editor.large_body">आपके टैबलेट को यह पेज लोड करने में दिक्कत होगी, और पेज एडिटर आपके ग्राफ़िक्स कार्ड की मेमोरी तय से ज़्यादा इस्तेमाल करेगा। तभी आगे बढ़ें जब आपको भरोसा हो कि यह ठीक है। अगर आप उसी ग्राफ़िक्स कार्ड पर लोकल AI सर्वर चलाते हैं, तो जान लें कि यह पेज उस सर्वर के हिस्से की मेमोरी लेता है।</string>
+  <string name="editor.large_ok">समझ गया</string>
   <string name="issue.not_started">PaperDaemon शुरू नहीं हुआ: {why}</string>
   <string name="term.daemon">डेमन</string>
   <string name="term.daemon_about">टैग लगे पेजों के लिए आपके टैबलेट पर नज़र रखता है और हर पेज को काम के रूप में होस्ट को सौंपता है।</string>
@@ -142,7 +147,6 @@
   <string name="viewer.goto_aria">पेज पर जाएँ, 1 से {last}</string>
   <string name="viewer.prev">पिछला पेज</string>
   <string name="viewer.next">अगला पेज</string>
-  <string name="viewer.zoom_reset">वापस 1× पर</string>
   <string name="keys.open">शॉर्टकट</string>
   <string name="viewer.notSaved">सहेजा नहीं गया: {why}</string>
   <string name="keys.title">शॉर्टकट और कमांड</string>
@@ -236,9 +240,7 @@
   <string name="keys.paste_strokes">स्ट्रोक के रूप में पेस्ट</string>
   <string name="keys.paste_strokes_d">छवि अपने ही आकार में स्ट्रोक में बँटी हुई।</string>
   <string name="viewer.reading_chapters">अध्याय पढ़े जा रहे हैं…</string>
-  <string name="viewer.not_drawn">यह पेज बनाया नहीं जा सका।</string>
   <string name="viewer.page">पेज {n}</string>
-  <string name="viewer.go_to">पेज {n} पर जाएँ</string>
   <string name="common.close">बंद करें</string>
   <string name="tablet.label">मिरर</string>
   <string name="tablet.folder">फ़ोल्डर</string>
@@ -458,7 +460,7 @@
   <string name="help.model.stops">जब आप PaperDaemon को रोकते या बंद करते हैं, या जब किसी दूसरे लाइनअप की स्टार्ट स्क्रिप्ट चलनी हो। वह आपकी स्क्रिप्ट का शुरू किया सब कुछ रोकता है। जो प्रोग्राम उसने शुरू नहीं किया, उसे वह कभी नहीं रोकता।</string>
   <string name="help.h_wrong">जो चीज़ें गलत होती हैं</string>
   <string name="help.model.wrong_vram">**ग्राफ़िक्स कार्ड भरा हुआ है।** मॉडल को आपके कार्ड की मेमोरी (VRAM) में जगह चाहिए। अगर कोई दूसरा मॉडल सर्वर, गेम या चित्र टूल वह मेमोरी घेरे हुए है, तो मॉडल लोड नहीं होता या बहुत धीमा चलता है। अगर आप खुद दूसरे मॉडल सर्वर चलाते हैं, तो अपनी स्क्रिप्ट से पहले उन्हें रुकवाएँ (जैसे `taskkill /IM llama-server.exe /F`)। PaperDaemon सिर्फ़ वही रोकता है जो उसने शुरू किया।</string>
-  <string name="help.model.wrong_own_vram">**PaperDaemon का अपना हिस्सा।** बहुत ही असामान्य मामलों में (बड़े डीकम्प से भरा पेज, पेज एडिटर में खुला), PaperDaemon खुद आपके कार्ड की 200 MB तक मेमोरी इस्तेमाल कर सकता है। इतनी जगह खाली छोड़ें।</string>
+  <string name="help.model.wrong_own_vram">**PaperDaemon का अपना हिस्सा।** PaperDaemon भी आपके कार्ड की कुछ मेमोरी इस्तेमाल करता है। पेज एडिटर में कोई पेज खुला हो तो इसकी विंडो बड़े डीकम्प वाले पेज के लिए लगभग 100 MB, और सबसे बड़े पेजों के लिए (2,50,000 से ज़्यादा स्ट्रोक, जिनके बारे में एडिटर चेतावनी देता है) लगभग 200 MB तक इस्तेमाल करती है। कोई काम चलते समय इंजन कार्ड पर पेज बनाता है: सामान्य पेज के लिए लगभग 50 MB, सबसे बड़े पेजों के लिए लगभग 350 MB तक, और काम खत्म होने पर सब लौटा देता है। बहुत बड़े पेजों पर काम करते हों तो लगभग 550 MB खाली छोड़ें, वरना लगभग 150 MB।</string>
   <string name="help.model.wrong_two">**दो मॉडल जो साथ में नहीं समाते।** अगर आपका टेक्स्ट मॉडल और चित्र मॉडल दोनों एक साथ कार्ड पर नहीं समाते, तो हर स्क्रिप्ट ऐसी लिखें कि वह अपना सर्वर शुरू करने से पहले दूसरे का सर्वर रोक दे।</string>
   <string name="help.model.wrong_port">**पोर्ट व्यस्त है।** अगर कोई दूसरा प्रोग्राम वह पोर्ट पहले से इस्तेमाल कर रहा है, तो आपका सर्वर वहाँ शुरू नहीं हो सकता। कोई खाली पोर्ट चुनें और ऊपर के पते में भी वही इस्तेमाल करें।</string>
   <string name="help.wrong_spaces">**पाथ में खाली जगह।** खाली जगह वाले किसी भी पाथ के चारों ओर उद्धरण चिह्न लगाएँ।</string>
@@ -486,7 +488,7 @@
 - सर्वर का आउटपुट छापे।
 - PaperDaemon ये भी सेट करता है: %PAPERDAEMON_ROLE% (text या image), %PAPERDAEMON_LOCATION% (पूरा पता), %PAPERDAEMON_OTHER_LOCATION% (दूसरे मॉडल का पता), %PAPERDAEMON_LINEUP% और %PAPERDAEMON_DATA%।
 - PaperDaemon सिर्फ़ वही प्रोग्राम रोकता है जो उसने शुरू किए। अगर दूसरे मॉडल सर्वर मेरे ग्राफ़िक्स कार्ड की मेमोरी इस्तेमाल कर रहे हों, तो स्क्रिप्ट पहले उन्हें रोके।
-- बहुत ही असामान्य मामलों में PaperDaemon खुद मेरे ग्राफ़िक्स कार्ड की 200 MB तक मेमोरी इस्तेमाल कर सकता है, इसलिए मॉडल को इतनी जगह खाली छोड़नी चाहिए।
+- PaperDaemon खुद मेरे ग्राफ़िक्स कार्ड की कुछ मेमोरी इस्तेमाल करता है: आम तौर पर 150 MB से कम, और सबसे बुरे पल में (पेज एडिटर में बहुत बड़ा पेज खुला हो और कोई काम दूसरा पेज बना रहा हो) लगभग 550 MB तक, इसलिए मॉडल को इतनी जगह खाली छोड़नी चाहिए।
 - सर्वर को OpenAI-संगत चैट API (/v1/chat/completions) बोलना चाहिए, जैसा llama.cpp का llama-server, Ollama, LM Studio या vLLM करते हैं।
 
 लिखने से पहले मुझसे ये सवाल एक-एक करके पूछो और हर जवाब का इंतज़ार करो:
@@ -506,7 +508,7 @@
 - सर्वर का आउटपुट छापे।
 - PaperDaemon ये भी सेट करता है: %PAPERDAEMON_ROLE% (text या image), %PAPERDAEMON_LOCATION% (पूरा पता), %PAPERDAEMON_OTHER_LOCATION% (दूसरे मॉडल का पता), %PAPERDAEMON_LINEUP% और %PAPERDAEMON_DATA%।
 - PaperDaemon सिर्फ़ वही प्रोग्राम रोकता है जो उसने शुरू किए। अगर दूसरे मॉडल सर्वर मेरे ग्राफ़िक्स कार्ड की मेमोरी इस्तेमाल कर रहे हों, तो स्क्रिप्ट पहले उन्हें रोके।
-- बहुत ही असामान्य मामलों में PaperDaemon खुद मेरे ग्राफ़िक्स कार्ड की 200 MB तक मेमोरी इस्तेमाल कर सकता है, इसलिए मॉडल को इतनी जगह खाली छोड़नी चाहिए।
+- PaperDaemon खुद मेरे ग्राफ़िक्स कार्ड की कुछ मेमोरी इस्तेमाल करता है: आम तौर पर 150 MB से कम, और सबसे बुरे पल में (पेज एडिटर में बहुत बड़ा पेज खुला हो और कोई काम दूसरा पेज बना रहा हो) लगभग 550 MB तक, इसलिए मॉडल को इतनी जगह खाली छोड़नी चाहिए।
 - सर्वर को Stable Diffusion web UI API (/sdapi/v1/txt2img) बोलना चाहिए, जैसा stable-diffusion.cpp का सर्वर, Forge या AUTOMATIC1111 करते हैं, या OpenAI Images API।
 
 लिखने से पहले मुझसे ये सवाल एक-एक करके पूछो और हर जवाब का इंतज़ार करो:
@@ -667,4 +669,6 @@
   <string name="fm.imported_n">{n} फ़ाइलें इम्पोर्ट हुईं।</string>
   <string name="fm.import_failed">{name} इम्पोर्ट नहीं हो सका: {why}</string>
   <string name="fm.drop">इम्पोर्ट करने के लिए PDF और EPUB यहाँ छोड़ें</string>
+  <string name="lineup.render_cpu">पेज प्रोसेसर पर बनाएँ</string>
+  <string name="lineup.render_cpu.help">बंद (डिफ़ॉल्ट): इस लाइनअप के काम जिन पेजों को पढ़ते हैं, उन्हें ग्राफ़िक्स कार्ड पर बनाते हैं। यह तेज़ है, और काम चलते समय कार्ड की कुछ मेमोरी लेता है (बहुत घने पेज पर लगभग 160 MB), जो काम ख़त्म होने पर लौट जाती है। चालू: इसके बजाय वे उन्हें प्रोसेसर पर बनाते हैं, कार्ड की पूरी मेमोरी आपके AI सर्वर के लिए रहती है, और हर चित्र में ज़्यादा समय लगता है, ख़ासकर बहुत स्याही वाले पेजों पर। दोनों तरह से चित्र एक जैसे ही होते हैं। असर सिर्फ़ काम के पेजों पर पड़ता है; पेज एडिटर हमेशा कार्ड पर बनाता है।</string>
 </resources>

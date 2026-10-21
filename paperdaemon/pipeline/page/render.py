@@ -133,7 +133,7 @@ def find_doc(name, include_trash=False):
 _BLOCKS = {}          # path -> ((mtime_ns, size), blocks)
 
 
-def blocks_of(path):
+def blocks_of(path, arrays=False):
     """The parsed blocks of a page file, cached by the file's (mtime, size). READ ONLY.
 
     One job parsed the same page about sixty times -- strokes for the render, again for the marks,
@@ -146,15 +146,167 @@ def blocks_of(path):
     """
     st = os.stat(path)
     key = (st.st_mtime_ns, st.st_size)
-    hit = _BLOCKS.get(path)
+    hit = _BLOCKS.get((path, arrays))
     if hit is not None and hit[0] == key:
         return hit[1]
     with open(path, "rb") as f:
-        blocks = list(read_blocks(f))
+        data = f.read()
+    # its strokes read straight from the bytes, block for block what rmscene reads (fastrm), in one C pass where it can
+    # be: a page with a decomp was seconds of rmscene for every picture drawn. `arrays`: each stroke's points its
+    # fastrm.POINT array as read (the renderer's, which draws from arrays); else si.Point objects, as rmscene makes them
+    try:
+        from paperdaemon.remarkable import fastrm
+        blocks = fastrm.read_blocks_arrays(data) if arrays else fastrm.read_blocks_points(data)
+    except Exception:
+        import io
+        blocks = list(read_blocks(io.BytesIO(data)))
     if len(_BLOCKS) >= 12:
         _BLOCKS.clear()
-    _BLOCKS[path] = (key, blocks)
+    _BLOCKS[(path, arrays)] = (key, blocks)
     return blocks
+
+
+_OTHER = {}          # path -> ((mtime_ns, size), blocks)
+_LINES = {}          # path -> ((mtime_ns, size), fastrm.page_lines(...))
+
+
+def _lines_of(path):
+    """fastrm.page_lines for a page file, cached by its (mtime, size); None where the C reader is not sure of it."""
+    st = os.stat(path)
+    key = (st.st_mtime_ns, st.st_size)
+    hit = _LINES.get(path)
+    if hit is not None and hit[0] == key:
+        return hit[1]
+    try:
+        from paperdaemon.remarkable import fastrm
+        with open(path, "rb") as f:
+            got = fastrm.page_lines(f.read())
+    except Exception:
+        got = None
+    if len(_LINES) >= 6:
+        _LINES.clear()
+    _LINES[path] = (key, got)
+    return got
+
+
+def other_blocks_of(path):
+    """The page's blocks OTHER THAN ITS STROKES (its typed text, groups and anchors, its settings, its pictures' blocks),
+    cached by the file's (mtime, size) like blocks_of. READ ONLY. For the readers that need nothing else: the strokes
+    are most of a busy page, and seconds to read for nothing."""
+    st = os.stat(path)
+    key = (st.st_mtime_ns, st.st_size)
+    hit = _OTHER.get(path)
+    if hit is not None and hit[0] == key:
+        return hit[1]
+    import io
+    with open(path, "rb") as f:
+        data = f.read()
+    try:
+        from paperdaemon.remarkable import fastrm
+        data = fastrm.without_strokes(data)
+    except Exception:
+        pass
+    blocks = [b for b in read_blocks(io.BytesIO(data)) if not isinstance(b, ss.SceneLineItemBlock)]
+    if len(_OTHER) >= 24:
+        _OTHER.clear()
+    _OTHER[path] = (key, blocks)
+    return blocks
+
+
+def _joined(P):
+    """Point arrays of one dtype joined into one, as raw bytes (numpy checks every structured array's fields when it
+    joins them: a second for a page of a quarter of a million strokes); None when they are not all arrays of one dtype."""
+    import numpy as _np
+    if not P or not all(hasattr(p, "dtype") for p in P):
+        return None
+    dt = P[0].dtype
+    if any(p.dtype != dt for p in P):
+        return None
+    return _np.concatenate([_np.ascontiguousarray(p).view(_np.uint8) for p in P]).view(dt)
+
+
+def _lo_hi(arr, extra, lo):
+    """min (lo) or max of an array's values and the extra numbers, as Python's min/max of them all would give."""
+    vals = list(extra)
+    if len(arr):
+        vals.append(float(arr.min() if lo else arr.max()))
+    return min(vals) if lo else max(vals)
+
+
+def _coords(S, k):
+    """Every point's x (k 0) or y (k 1) of strokes S as one float64 array, whether a stroke's points are si.Point
+    objects or a point array (strokes(arrays=True)): the same numbers either way."""
+    import numpy as _np
+    J = _joined([L.points for L in S])
+    if J is not None:
+        return _np.asarray(J["xy"[k]], _np.float64)
+    parts = []
+    for L in S:
+        P = L.points
+        if hasattr(P, "dtype"):
+            parts.append(_np.asarray(P["xy"[k]], _np.float64))
+        elif len(P):
+            parts.append(_np.array([p.x for p in P] if k == 0 else [p.y for p in P], _np.float64))
+    return _np.concatenate(parts) if parts else _np.zeros(0)
+
+
+def _ink(S, tx, ty):
+    """Strokes S as the renderers draw them (paint.Flat), the whole page at once: each stroke of two points or more, in
+    file order; its points moved by (tx, ty); its widths px_width's (the stored width times its pen's scale, a pixel at
+    least), then the pen's response to its pressure and speed (paint.response: drawn() for pens and shaders, the
+    density for pens); a pen's color by its color number, a highlighter's and a shader's by their own colors."""
+    import numpy as _np
+    from paperdaemon.pipeline.page.paint import Flat, drawn, response, KINDS
+    keep = [L for L in S if len(L.points) >= 2]
+    if not keep:
+        return None
+    counts = _np.fromiter((len(L.points) for L in keep), _np.int64, len(keep))
+    A = _joined([L.points for L in keep])
+    if A is not None:
+        a = _np.empty((len(A), 5), _np.float64)
+        for i, f in enumerate(("x", "y", "width", "pressure", "speed")):
+            a[:, i] = A[f]
+    else:
+        a = _np.concatenate([_columns(L) for L in keep])
+    names = [L.tool.name for L in keep]
+    fams = [n.split("_")[0] for n in names]
+    uniq = sorted(set(fams))
+    fid = _np.array([uniq.index(f) for f in fams], _np.int64)
+    fp = _np.repeat(fid, counts)
+    scale = _np.array([WSCALE.get(f, WSCALE_DEFAULT) for f in uniq])
+    widths = _np.maximum(1.0, a[:, 2] * scale[fp])
+    k, dens = _np.ones(len(a)), _np.ones(len(a))
+    for j, f in enumerate(uniq):
+        m = fp == j
+        k[m], dens[m] = response(f, a[m, 3], a[m, 4])
+    kind = _np.array([KINDS["shader"] if n.startswith("SHADER") else KINDS["highlighter"] if n.startswith("HIGHLIGHTER")
+                      else KINDS["pen"] for n in names], _np.int32)
+    kp = _np.repeat(kind, counts)
+    w = _np.where(kp == KINDS["highlighter"], widths, drawn(widths, k))
+    d = _np.where(kp == KINDS["pen"], dens, 1.0)
+    rgba = _np.empty((len(keep), 4), _np.uint8)
+    for i, (L, n) in enumerate(zip(keep, names)):
+        if n.startswith("SHADER"):
+            c = tuple(L.color_rgba) if getattr(L, "color_rgba", None) else (128, 128, 128, 96)
+        elif n.startswith("HIGHLIGHTER"):
+            c = tuple(L.color_rgba[:3]) if L.color_rgba else HL_ENUM.get(L.color.value, (255, 237, 117))
+        else:
+            c = ENUM.get(L.color.value, (0, 0, 0))
+        rgba[i] = (list(c) + [255])[:4]
+    xy = _np.ascontiguousarray(a[:, :2] + (tx, ty))
+    return Flat(xy, _np.ascontiguousarray(w), _np.ascontiguousarray(d), counts.astype(_np.int32), kind, rgba)
+
+
+def _columns(L):
+    """A stroke's points as rows (x, y, width, pressure, speed), float64, from either form of its points."""
+    import numpy as _np
+    P = L.points
+    if hasattr(P, "dtype"):
+        a = _np.empty((len(P), 5), _np.float64)
+        for i, f in enumerate(("x", "y", "width", "pressure", "speed")):
+            a[:, i] = P[f]
+        return a
+    return _np.array([(p.x, p.y, p.width, p.pressure, p.speed) for p in P], _np.float64)
 
 
 # A PAGE READ FROM ANOTHER FILE, in this process only: {(doc, page id): path}. The conflict job renders the copy of a
@@ -269,7 +421,7 @@ def _anchor_offsets(doc, page_no, blocks):
     return out
 
 
-def strokes(doc, page_no):
+def strokes(doc, page_no, arrays=False):
     """Live strokes on a 1-based page number, as the app numbers them.
 
     EXCLUDES strokes whose id sits inside a deleted RANGE, because the device
@@ -286,29 +438,56 @@ def strokes(doc, page_no):
     path = page_file(doc, pid)
     if not os.path.exists(path):
         return []                   # never written on: a PDF or EPUB page, or a blank sheet, has no ink file
-    blocks = blocks_of(path)
-    dead = dead_ranges(blocks)
+    fast = _lines_of(path) if arrays else None
+    if fast is not None:                              # the renderer's: straight from the C pass, no block objects
+        blocks, dead, made = fast
+    else:
+        blocks = blocks_of(path, arrays)
+        dead = dead_ranges(blocks)
+        made = None
     # WHERE THE TABLET DRAWS EACH STROKE, always: a group the tablet anchored to the typed text is stored offset
     # from the page, and read at its stored place it was drawn, ruled on, collided with and pointed at somewhere
     # it is not (a sentence over the board read as lying across the user's handwriting at the top). The copy keeps
     # its STORED identity (P.skey), which is what erasing and hiding match in the file.
     shifts = _anchor_offsets(doc, page_no, blocks)
     out, buried = [], 0
-    for b in blocks:
-        if isinstance(b, ss.SceneLineItemBlock):
-            v = getattr(b.item, "value", None)
-            if isinstance(v, Line):
-                n = b.item.item_id.part2
-                if any(a <= n <= z for a, z in dead):
-                    buried += 1          # the device treats this as erased
+    # the erased ranges merged and sorted, each stroke's id looked up by bisection (a page with many tombstones and many
+    # strokes was hundreds of millions of comparisons, one range at a time)
+    import bisect
+    spans = []
+    for a, z in sorted(dead):
+        if spans and a <= spans[-1][1] + 1:
+            spans[-1][1] = max(spans[-1][1], z)
+        else:
+            spans.append([a, z])
+    lows = [a for a, _z in spans]
+
+    def is_dead(n):
+        i = bisect.bisect_right(lows, n) - 1
+        return i >= 0 and n <= spans[i][1]
+    found = made if made is not None else (
+        (b.item.item_id.part2, b.parent_id, b.item.value) for b in blocks
+        if isinstance(b, ss.SceneLineItemBlock) and isinstance(getattr(b.item, "value", None), Line))
+    for n, parent, v in found:
+        if is_dead(n):
+            buried += 1          # the device treats this as erased
+        else:
+            d = shifts.get(parent)
+            if d and (d[0] or d[1]):             # where the tablet draws it
+                if hasattr(v.points, "dtype"):    # an array: moved in float64, as the objects' floats are
+                    import numpy as _np
+                    P = v.points
+                    Q = _np.empty(len(P), [(f, _np.float64) for f in P.dtype.names])
+                    for f in P.dtype.names:
+                        Q[f] = P[f]
+                    Q["x"] += d[0]; Q["y"] += d[1]
+                    v = dataclasses.replace(v, points=Q)
                 else:
-                    d = shifts.get(b.parent_id)
-                    if d and (d[0] or d[1]):             # where the tablet draws it
-                        from paperdaemon.pipeline import page as _P
-                        key = _P.skey(v)
-                        v = dataclasses.replace(v, points=[dataclasses.replace(p, x=p.x + d[0], y=p.y + d[1]) for p in v.points])
-                        v._stored_key = key
-                    out.append(v)
+                    from paperdaemon.pipeline import page as _P
+                    key = _P.skey(v)
+                    v = dataclasses.replace(v, points=[dataclasses.replace(p, x=p.x + d[0], y=p.y + d[1]) for p in v.points])
+                    v._stored_key = key
+            out.append(v)
     if buried:
         logging.getLogger("rm_render").error(
             "%d stroke(s) on %s p%s have ids inside a DELETED RANGE %s -- the "
@@ -353,7 +532,7 @@ def page_frame(doc, page_no):
             return (size[0] * PDF_SCALE, size[1] * PDF_SCALE)
     pid = live_pages(doc)[page_no - 1]["id"]
     path = page_file(doc, pid)
-    for b in (blocks_of(path) if os.path.exists(path) else []):
+    for b in (other_blocks_of(path) if os.path.exists(path) else []):
         if isinstance(b, ss.SceneInfo) and getattr(b, "paper_size", None):
             return tuple(b.paper_size)
     return (PAGE_W, PAGE_H)
@@ -370,18 +549,6 @@ def source_image(doc, page_no):
     canvas = Image.new("RGB", (int(round(pw)), int(round(ph))), "white")
     _paste_source(canvas, doc, page_no, (pw, ph), lambda p, _h=pw / 2: (p.x + _h, p.y))
     return canvas
-
-
-def displayed_top(doc, page_no):
-    """Where the displayed picture of a page starts, in page units: 0, or above it when strokes or pictures sit above
-    the page's top (render(displayed=True) starts there)."""
-    ys = [p.y for L in strokes(doc, page_no) for p in L.points]
-    try:
-        from paperdaemon.pipeline.page import images as _IM
-        ys += [im["box"][1] for im in _IM.items(doc, page_no) if im.get("path")]
-    except Exception:
-        pass
-    return min([0.0] + ys)
 
 
 def px_width(L, pt):
@@ -502,22 +669,27 @@ class _Pt(object):
 
 
 def _frame(S, page=(PAGE_W, PAGE_H), extra=()):
-    """Return (width, height, transform), using the page's own frame if content fits.
-
-    `extra` is a list of (x, y) page points that must also be inside the frame --
-    the typed-text box. Without it the frame is sized to ink alone and any text
-    outside the stroke bbox is cropped away silently.
-    """
+    """THE PICTURE'S FRAME -> (width, height, transform), one pixel a page unit: THE WHOLE PAGE, always, grown on any
+    side where something sits past it (ink, typed text, a picture: `extra` is a list of (x, y) page points that must
+    be inside too) to hold it, with a margin. Nothing on the page is left out of its picture, and no part of the page
+    is either. transform(p) is p's pixel; the picture's top-left corner is page point -transform(0, 0) (render() returns
+    it), so a picture's pixel maps back to the page whatever the frame came out as."""
     pw, ph = page
-    xs = [p.x for L in S for p in L.points] + [e[0] for e in extra]
-    ys = [p.y for L in S for p in L.points] + [e[1] for e in extra]
-    if not xs or (-pw/2 <= min(xs) and max(xs) <= pw/2 and 0 <= min(ys) and max(ys) <= ph):      # nothing drawn: the page itself
-        return int(round(pw)), int(round(ph)), lambda p: (p.x + pw/2, p.y)
+    X, Y = _coords(S, 0), _coords(S, 1)
+    ex, ey = [e[0] for e in extra], [e[1] for e in extra]
+    x0, y0, x1, y1 = -pw / 2, 0.0, pw / 2, ph
     pad = 60
-    x0, y0 = min(xs) - pad, min(ys) - pad
-    w = int(max(xs) - x0 + pad)
-    h = int(max(ys) - y0 + pad)
-    return w, h, lambda p: (p.x - x0, p.y - y0)
+    if len(X) or ex:
+        x_lo, x_hi, y_lo, y_hi = _lo_hi(X, ex, True), _lo_hi(X, ex, False), _lo_hi(Y, ey, True), _lo_hi(Y, ey, False)
+        if x_lo < x0:
+            x0 = math.floor(x_lo - pad)
+        if y_lo < y0:
+            y0 = math.floor(y_lo - pad)
+        if x_hi > x1:
+            x1 = x_hi + pad
+        if y_hi > y1:
+            y1 = y_hi + pad
+    return int(round(x1 - x0)), int(round(y1 - y0)), lambda p: (p.x - x0, p.y - y0)
 
 
 def _stipple(d, L, col, pts, rng):
@@ -539,24 +711,14 @@ def _stipple(d, L, col, pts, rng):
             d.point([(int(cx + math.cos(a)*r), int(cy + math.sin(a)*r))], fill=tone)
 
 
-# render(displayed=True): the page as the tablet shows it, for a person to look at. PER THREAD: the engine renders
-# thumbnails on one thread while requests render pages on others, and one must never draw with the other's setting
-_VIEW = threading.local()
-
-
 def _draw(d, L, col, pts):
     """THE DECOMPOSER REFERENCE'S stroke shape (rm_lean and rm_raster measure with it; the pictures are drawn by
     pipeline/page/paint.py). One stroke: round-capped, round-joined, per-point width. The HIGHLIGHTER has FLAT ends
     (measured on the app, on calibration pages): each segment a
     rectangle, and no joint -- the outer wedge of every turn stays unpainted."""
     if L.tool.name.split("_")[0] in PENCIL_FAMILY:
-        if not getattr(_VIEW, "on", False):
-            _stipple(d, L, col, pts, random.Random(int(pts[0][0]) * 7919 + int(pts[0][1])))
-            return
-        # for a person: a solid line, darker with pressure, as the tablet's pencil reads at normal size
-        pr = sum(p.pressure for p in L.points) / (255.0 * max(1, len(L.points)))
-        k = 0.6 + 0.4 * min(1.0, pr)
-        col = tuple(int(255 - (255 - c) * k) for c in col)
+        _stipple(d, L, col, pts, random.Random(int(pts[0][0]) * 7919 + int(pts[0][1])))
+        return
     if L.tool.name.startswith("HIGHLIGHTER"):
         # one rectangle per segment (flat ends) + a bevel triangle on the outer side of each
         # interior vertex, nothing on the inner side (measured on calibration pages)
@@ -629,9 +791,10 @@ def _draw(d, L, col, pts):
 
 
 def render(doc, page_no, out, typed=True, hide=None, hide_typed=None, hide_images=None,
-           mark_typed=False, blank_ok=False, displayed=False, square=False):
-    """Render a page to PNG -- strokes AND typed text. `square` (with `displayed`): across the whole drawable square,
-    as wide as the page is tall (what the tablet shows when zoomed out), not only the frame's width.
+           mark_typed=False, blank_ok=False):
+    """Render a page to PNG -- strokes AND typed text -- at one pixel a page unit, the whole page and anything past
+    it (_frame). -> (strokes, (width, height), tools, typed paragraphs, (x, y)): the last the page point at the
+    picture's top-left corner, so a pixel (u, v) is page point (x + u, y + v), whatever the frame came out as.
 
     TYPED TEXT IS DRAWN BY DEFAULT, and that is not a nicety. This renderer used
     to draw strokes only, so on a page with typed text every preview showed the
@@ -644,16 +807,13 @@ def render(doc, page_no, out, typed=True, hide=None, hide_typed=None, hide_image
     has to answer: what is already here, and where does it end. Pass typed=False
     only when you specifically want ink alone.
     """
-    _VIEW.on = bool(displayed)
-    _VIEW.square = bool(square)
-    try:
-        return _render(doc, page_no, out, typed, hide, hide_typed, hide_images, mark_typed, blank_ok, displayed)
-    finally:
-        _VIEW.on = False
+    return _render(doc, page_no, out, typed, hide, hide_typed, hide_images, mark_typed, blank_ok)
 
 
-def _render(doc, page_no, out, typed, hide, hide_typed, hide_images, mark_typed, blank_ok, displayed):
-    S = strokes(doc, page_no)
+def _render(doc, page_no, out, typed, hide, hide_typed, hide_images, mark_typed, blank_ok):
+    # the points as arrays, as they are drawn (strokes(arrays=True)); a job's staged erasures name strokes by their keys,
+    # which are taken from point objects, so a render with any hides reads those
+    S = strokes(doc, page_no, arrays=not hide)
     # STAGED ERASURES (rm_host): strokes, typed paragraphs and pictures the current job has
     # erased in its draft are left out, so a preview shows the page as commit() will leave it.
     if hide:
@@ -704,23 +864,7 @@ def _render(doc, page_no, out, typed, hide, hide_typed, hide_images, mark_typed,
         _x0, _y0, _x1, _y1 = _im["box"]
         _extra = list(_extra) + [(_x0, _y0), (_x1, _y1)]
     _page = page_frame(doc, page_no)
-    if displayed:
-        # the page as the tablet shows it: its screen, exactly the frame's width (measured on the device: x
-        # -810..810 on a notebook page) -- ink written past a side is off the screen there too, so it does not
-        # widen the picture or put a margin beside the page. Ink below makes it taller, to its own bottom and no
-        # further (content that ends at the page's foot ends at the screen's, with no strip under it). Ink above
-        # the top is off the page.
-        # INK ABOVE THE TOP IS KEPT: a page smaller than the screen lets the tablet draw above its top (measured: a
-        # 200 x 266 page holds strokes up to y -61), so the picture starts at the highest thing on the page
-        # (displayed_top); the viewer opens on the page's top (y 0) and scrolling up shows what is above it
-        _pw, _ph = _page
-        _half = (max(_pw, _ph) if getattr(_VIEW, "square", False) else _pw) / 2
-        _low = max([p.y for L in S for p in L.points] + [e[1] for e in _extra] + [_ph])
-        _top = min([0.0] + [p.y for L in S for p in L.points] + [im["box"][1] for im in _imgs])
-        W, H = int(round(2 * _half)), int(round(max(_ph, _low) - _top))
-        T = (lambda p, _h=_half, _t=_top: (p.x + _h, p.y - _t))
-    else:
-        W, H, T = _frame(S, _page, extra=_extra)
+    W, H, T = _frame(S, _page, extra=_extra)
     canvas = Image.new("RGB", (W, H), "white")
     _note = _paste_source(canvas, doc, page_no, _page, T)
     for _im in _imgs:
@@ -770,33 +914,15 @@ def _render(doc, page_no, out, typed, hide, hide_typed, hide_images, mark_typed,
     # THE STROKES, by PaperDaemon's one renderer (pipeline/page/paint.py: fastdecomp/render.c), as the tablet draws them:
     # file order; pens opaque in their measured colors; the highlighter a per-channel minimum ("darken") wash; the
     # shader a translucent wash; each pen answering its pressure as the tablet does (paint.response: the pencils' grain,
-    # the light paintbrush and ballpoint). For a person (displayed) it is drawn at twice the size and averaged down;
-    # otherwise at the tablet's own pixels.
-    from paperdaemon.pipeline.page.paint import drawn, paint, response
+    # the light paintbrush and ballpoint). ONE RENDER: at the tablet's own pixels, for every picture the engine makes.
+    from paperdaemon.pipeline.page.paint import paint_flat
     import numpy as _np
 
     class _O:                                       # T() is a translation: where it puts the page's origin
         __slots__ = ("x", "y")
         def __init__(self, x, y): self.x, self.y = x, y
     _tx, _ty = T(_O(0.0, 0.0))
-    ink = []
-    for L in S:
-        if len(L.points) < 2:
-            continue
-        a = _np.array([(p.x, p.y, p.width, p.pressure, p.speed) for p in L.points], _np.float64)
-        pts = a[:, :2] + (_tx, _ty)
-        fam = L.tool.name.split("_")[0]
-        widths = _np.maximum(1.0, a[:, 2] * WSCALE.get(fam, WSCALE_DEFAULT))       # px_width, for the whole stroke
-        k, dens = response(fam, a[:, 3], a[:, 4])
-        if L.tool.name.startswith("SHADER"):
-            rgba = tuple(L.color_rgba) if getattr(L, "color_rgba", None) else (128, 128, 128, 96)
-            ink.append((pts, drawn(widths, k), "shader", rgba[:4]))
-        elif L.tool.name.startswith("HIGHLIGHTER"):
-            rgb = tuple(L.color_rgba[:3]) if L.color_rgba else HL_ENUM.get(L.color.value, (255, 237, 117))
-            ink.append((pts, widths, "highlighter", rgb))
-        else:
-            ink.append((pts, drawn(widths, k), "pen", ENUM.get(L.color.value, (0, 0, 0)), dens))
-    paint(canvas, ink, ss=2 if displayed else 1)
+    paint_flat(canvas, _ink(S, _tx, _ty))
     canvas.save(out)
     tools = collections.Counter(L.tool.name for L in S)
-    return len(S), (W, H), tools, _typed_n
+    return len(S), (W, H), tools, _typed_n, (-_tx, -_ty)

@@ -318,12 +318,61 @@
       the picture has arrived and decoded; a failed fetch or decode is tried again, waiting longer each time, for as
       long as the img is on screen and `stale()` is false. After `tries` failures `giveUp(holder)` is called (when given)
       and the spinner stays otherwise. -> a promise of true once shown. */
+  // THE PAGE PICTURES THE ENGINE DOES NOT HAVE (a grid picture, a cover: answered 404 {missing, page, size}) are drawn
+  // here, on the graphics card, by the page editor's own renderer: one at a time (one page's worth of the card's memory
+  // in use, never a grid's), each in a frame of its own that is gone when it is done, and handed to the engine to keep.
+  let thumbChain = Promise.resolve();
+  const thumbJobs = new Map();                              // what is being drawn -> its promise (asked twice, drawn once)
+  function thumbOne(base, doc, page, size) {
+    return new Promise(done => {
+      const fr = document.createElement("iframe");
+      fr.setAttribute("aria-hidden", "true"); fr.tabIndex = -1;
+      fr.style.cssText = "position:fixed;left:-20000px;top:0;border:0;pointer-events:none;width:" + size + "px;height:" + Math.round(size * 4 / 3) + "px";
+      let over = false;
+      const end = got => {
+        if (over) return; over = true;
+        window.removeEventListener("message", on); clearTimeout(stuck); fr.remove(); done(got);
+      };
+      const on = e => { if (e.source === fr.contentWindow && e.data && e.data.pd === "thumb-done") end(e.data); };
+      window.addEventListener("message", on);
+      const stuck = setTimeout(() => end({ ok: false }), 60000);   // a frame that never answers does not hold the rest up
+      fr.src = "/ui/editor.html#doc=" + encodeURIComponent(doc) + "&page=" + page + "&base=" + encodeURIComponent(base) + "&thumb=" + size;
+      document.body.append(fr);
+    });
+  }
+  PD.drawThumb = (base, doc, page, size) => {
+    const key = [base, doc, page, size].join("|");
+    if (thumbJobs.has(key)) return thumbJobs.get(key);
+    const job = thumbChain.then(async () => {
+      const got = await thumbOne(base, doc, page, size);
+      if (!got.ok || !got.blob) return false;
+      try {
+        const r = await fetch("/api/v1" + base + "/library/" + encodeURIComponent(doc) + "/thumb/" + page + "?size=" + size,
+          { method: "PUT", body: got.blob, headers: { Authorization: "Bearer " + PD.pairing.token, "Content-Type": "image/webp" } });
+        return r.ok;
+      } catch (e) { return false; }
+    }).finally(() => thumbJobs.delete(key));
+    thumbChain = job.catch(() => false);
+    thumbJobs.set(key, job);
+    return job;
+  };
+
   PD.loadImage = async (img, path, { holder = img.parentElement, stale = () => false, tries = 8, giveUp = null } = {}) => {
     if (holder) holder.classList.add("img-wait");
+    let drew = false;
     for (let k = 0; ; k++) {
       if (!img.isConnected || stale()) return false;
       try {
         const r = await fetch("/api/v1" + path, { headers: { Authorization: "Bearer " + PD.pairing.token } });
+        if (r.status === 404 && !drew) {                    // not drawn yet: drawn here, then asked for again
+          const j = await r.json().catch(() => ({}));
+          const at = /^(.*)\/library\/([^/]+)\//.exec(path);
+          if (j.missing && at) {
+            drew = true;
+            if (!img.isConnected || stale()) return false;
+            if (await PD.drawThumb(at[1], decodeURIComponent(at[2]), j.page, j.size)) { k--; continue; }
+          }
+        }
         if (r.ok) {
           const url = URL.createObjectURL(await r.blob());
           if (!img.isConnected || stale()) { URL.revokeObjectURL(url); return false; }

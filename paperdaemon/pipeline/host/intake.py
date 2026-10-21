@@ -260,7 +260,7 @@ def _new_since_last_job(doc, page, paras, ms):
     base = last[:-5] if last.endswith(".json") else last        # entries give the stamp, no extension
     last, old_paras, rm_ = base + ".json", [], base + ".rm"
     if os.path.exists(rm_):
-        blocks = R.blocks_of(rm_)
+        blocks = R.other_blocks_of(rm_)
         for b in blocks:                                # every text block, as TY.paragraphs reads them
             if isinstance(b, TY.ss.RootTextBlock):
                 old_paras += [p.get("text", "") for p in TY._paragraphs_of(b.value)]
@@ -316,8 +316,8 @@ def page_image(doc, page, note):
     out = os.path.join(H.QUEUE, "_host_view.png")
     try:
         _t = time.time()
-        R.render(doc, page, out, typed=True, hide=H._hide(),
-                 hide_typed=JOB.hide_typed, hide_images=JOB.hide_images)
+        ox, oy = R.render(doc, page, out, typed=True, hide=H._hide(),
+                          hide_typed=JOB.hide_typed, hide_images=JOB.hide_images)[4]   # its top-left, in page units
         H.log("  render: %.1fs" % (time.time() - _t))
         base = Image.open(out).convert("RGB")
         render_failed = None
@@ -328,22 +328,24 @@ def page_image(doc, page, note):
                          "of that failure, NOT because the page is empty. Do not place anything "
                          "by looking at it -- say so and stop." % type(ex).__name__)
         base = Image.new("RGB", tuple(int(v) for v in H._frame()), "white")
+        ox, oy = -H._frame()[0] / 2.0, 0.0
+    # ONE PIXEL A PAGE UNIT, from the picture's top-left corner (ox, oy): a page point (x, y) is pixel (x - ox, y - oy)
     for _im in JOB.images or []:
         # a pending picture, where commit() will put it -- under the draft ink, like the device
         try:
             _x0, _y0, _x1, _y1 = _im["box"]
-            _fw, _fh = H._frame()
-            _sx, _sy = base.width / _fw, base.height / _fh
             _pic = Image.open(_im["png"]).convert("RGB").resize(
-                (max(1, int((_x1 - _x0) * _sx)), max(1, int((_y1 - _y0) * _sy))))
-            base.paste(_pic, (int((_x0 + _fw / 2.0) * _sx), int(_y0 * _sy)))
+                (max(1, int(_x1 - _x0)), max(1, int(_y1 - _y0))))
+            base.paste(_pic, (int(_x0 - ox), int(_y0 - oy)))
         except Exception as ex:
             # the picture it just inserted, missing from the picture of the page
             H._warn("compositing an inserted image", ex)
     if JOB.ops and JOB.draw.strokes:
-        draft_path = os.path.join(H.QUEUE, "_host_draft.png")
-        JOB.draw.render_png(draft_path)
-        d = Image.open(draft_path).convert("RGB").resize(base.size)
+        # the draft's ink, by the one renderer, on a sheet the picture's size with the page where the picture has it
+        # (ink the draft puts past the page's edge shows too), laid over the page
+        from paperdaemon.pipeline.page.paint import paint
+        d = Image.new("RGB", base.size, "white")
+        paint(d, JOB.draw.paint_strokes(ox=-ox, oy=-oy))
         mask = d.convert("L").point(lambda v: 255 if v < 250 else 0)
         base = Image.composite(d, base, mask)
     if not H.VISION:
@@ -354,10 +356,9 @@ def page_image(doc, page, note):
         except Exception:
             full = out
         text = H.describe_page(doc, page) + H._H().describe(H._host(), full)
-    # what the image spans, in page units, so the model's grounding on it maps back (_from_view) --
-    # in the page's own frame (a PDF page's own width, at rm_render.PDF_SCALE)
-    _fw = H._frame()[0]
-    JOB.view = (_fw, base.height * _fw / max(1, base.width))
+    # what the image spans, in page units, so the model's grounding on it maps back (_from_view): its top-left corner
+    # and its size, one pixel a page unit
+    JOB.view = (ox, oy, float(base.width), float(base.height))
     base.thumbnail((1300, 1300))
     # Write the COMPOSITE back over the plain render, so anything inspecting the file sees what the model saw.
     try:

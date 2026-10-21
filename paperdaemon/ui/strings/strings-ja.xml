@@ -61,6 +61,11 @@
   <string name="issue.setup_go">セットアップを続ける</string>
   <string name="issue.tablet">PaperDaemon が reMarkable に接続できません。</string>
   <string name="issue.mirror">ミラーを更新できませんでした: {why}</string>
+  <string name="issue.render_cpu">ページはグラフィックカードを使わずに描画されています（遅くなります）：{why}</string>
+  <string name="issue.render_ok">OK</string>
+  <string name="editor.large_title">このページはとても大きくなっています</string>
+  <string name="editor.large_body">タブレットはこのページの読み込みに苦労します。また、ページエディターは想定よりも多くのグラフィックカードのメモリを使います。問題ないと確信できる場合にだけ続けてください。同じグラフィックカードでローカルのAIサーバーを動かしている場合、このページはそのサーバーが使うはずのメモリを奪うことを理解しておいてください。</string>
+  <string name="editor.large_ok">理解しました</string>
   <string name="issue.not_started">PaperDaemon が起動しませんでした: {why}</string>
   <string name="term.daemon">デーモン</string>
   <string name="term.daemon_about">タブレットのタグ付きページを見張り、それぞれをジョブとしてホストに渡します。</string>
@@ -142,7 +147,6 @@
   <string name="viewer.goto_aria">ページへ移動、1 から {last}</string>
   <string name="viewer.prev">前のページ</string>
   <string name="viewer.next">次のページ</string>
-  <string name="viewer.zoom_reset">1× に戻す</string>
   <string name="keys.open">ショートカット</string>
   <string name="viewer.notSaved">保存されていません: {why}</string>
   <string name="keys.title">ショートカットとコマンド</string>
@@ -236,9 +240,7 @@
   <string name="keys.paste_strokes">線として貼り付け</string>
   <string name="keys.paste_strokes_d">画像を元の大きさのまま線に分解します。</string>
   <string name="viewer.reading_chapters">章を読み込み中…</string>
-  <string name="viewer.not_drawn">このページを描画できませんでした。</string>
   <string name="viewer.page">{n} ページ</string>
-  <string name="viewer.go_to">{n} ページへ移動</string>
   <string name="common.close">閉じる</string>
   <string name="tablet.label">ミラー</string>
   <string name="tablet.folder">フォルダー</string>
@@ -458,7 +460,7 @@
   <string name="help.model.stops">PaperDaemon を一時停止または終了したとき、または別のラインナップの起動スクリプトを実行する必要があるとき。スクリプトが起動したものはすべて停止します。自分が起動していないプログラムを停止することはありません。</string>
   <string name="help.h_wrong">よくある問題</string>
   <string name="help.model.wrong_vram">**グラフィックカードがいっぱい。** モデルにはカードのメモリ (VRAM) の空きが必要です。ほかのモデルサーバー、ゲーム、画像ツールがそのメモリを使っていると、モデルが読み込めないか、とても遅くなります。ほかのモデルサーバーを自分で動かしている場合は、スクリプトで先にそれらを止めてください (たとえば `taskkill /IM llama-server.exe /F`)。PaperDaemon が止めるのは自分が起動したものだけです。</string>
-  <string name="help.model.wrong_own_vram">**PaperDaemon 自身の使用分。** ごくまれなケース (大きな分解がいくつも載ったページをページエディタで開いているときなど) では、PaperDaemon 自身がグラフィックカードのメモリを最大 200 MB 使うことがあります。その分は空けておいてください。</string>
+  <string name="help.model.wrong_own_vram">**PaperDaemon自身の使用分。** PaperDaemonもカードのメモリを少し使います。ページエディターでページを開いていると、そのウィンドウは大きな分解のあるページで約100MB、最大級のページ（25万本を超えるストローク。エディターが警告します）で約200MBまで使います。ジョブの実行中は、エンジンがカード上でページを描きます。通常のページで約50MB、最大級のページで約350MBまで使い、ジョブが終わるとすべて返します。巨大なページを扱うなら約550MB、そうでなければ約150MBを空けておいてください。</string>
   <string name="help.model.wrong_two">**一緒に載らない 2 つのモデル。** テキストモデルと画像モデルが同時にカードに載らない場合は、各スクリプトが自分のサーバーを起動する前に相手のサーバーを止めるように書いてください。</string>
   <string name="help.model.wrong_port">**ポートが使用中。** ほかのプログラムがそのポートを使っていると、サーバーはそこで起動できません。空いているポートを選び、上のアドレスにも同じポートを使ってください。</string>
   <string name="help.wrong_spaces">**パスに空白がある。** 空白を含むパスは引用符で囲んでください。</string>
@@ -486,7 +488,7 @@
 - サーバーの出力を表示する。
 - PaperDaemon は %PAPERDAEMON_ROLE% (text または image)、%PAPERDAEMON_LOCATION% (完全なアドレス)、%PAPERDAEMON_OTHER_LOCATION% (もう一方のモデルのアドレス)、%PAPERDAEMON_LINEUP%、%PAPERDAEMON_DATA% も設定する。
 - PaperDaemon が止めるのは自分が起動したプログラムだけ。ほかのモデルサーバーがグラフィックカードのメモリを使っている可能性があれば、スクリプトが先にそれらを止める。
-- ごくまれなケースでは、PaperDaemon 自身が私のグラフィックカードのメモリを最大 200 MB 使うことがあるので、モデルはその分を空けておくこと。
+- PaperDaemon自身も私のグラフィックカードのメモリを少し使います。普段は150MB未満、最悪の瞬間（ページエディターで巨大なページを開いたまま、ジョブが別のページを描いているとき）には約550MBまで使うので、モデルはその分を空けておく必要があります。
 - サーバーは OpenAI 互換のチャット API (/v1/chat/completions) を話す必要がある。llama.cpp の llama-server、Ollama、LM Studio、vLLM などがそうです。
 
 書く前に、次の質問を 1 つずつしてください。毎回私の答えを待ってください:
@@ -506,7 +508,7 @@
 - サーバーの出力を表示する。
 - PaperDaemon は %PAPERDAEMON_ROLE% (text または image)、%PAPERDAEMON_LOCATION% (完全なアドレス)、%PAPERDAEMON_OTHER_LOCATION% (もう一方のモデルのアドレス)、%PAPERDAEMON_LINEUP%、%PAPERDAEMON_DATA% も設定する。
 - PaperDaemon が止めるのは自分が起動したプログラムだけ。ほかのモデルサーバーがグラフィックカードのメモリを使っている可能性があれば、スクリプトが先にそれらを止める。
-- ごくまれなケースでは、PaperDaemon 自身が私のグラフィックカードのメモリを最大 200 MB 使うことがあるので、モデルはその分を空けておくこと。
+- PaperDaemon自身も私のグラフィックカードのメモリを少し使います。普段は150MB未満、最悪の瞬間（ページエディターで巨大なページを開いたまま、ジョブが別のページを描いているとき）には約550MBまで使うので、モデルはその分を空けておく必要があります。
 - サーバーは Stable Diffusion web UI の API (/sdapi/v1/txt2img) か OpenAI の Images API を話す必要がある。stable-diffusion.cpp のサーバー、Forge、AUTOMATIC1111 などがそうです。
 
 書く前に、次の質問を 1 つずつしてください。毎回私の答えを待ってください:
@@ -667,4 +669,6 @@
   <string name="fm.imported_n">{n} 個のファイルをインポートしました。</string>
   <string name="fm.import_failed">{name} をインポートできませんでした: {why}</string>
   <string name="fm.drop">PDF や EPUB をここにドロップするとインポートします</string>
+  <string name="lineup.render_cpu">ページをプロセッサで描画する</string>
+  <string name="lineup.render_cpu.help">オフ（既定）：このラインナップのジョブは、読むページをグラフィックカードで描画します。高速で、ジョブの実行中はカードのメモリを一部使います（非常に密なページで約 160 MB）。ジョブが終わると解放されます。オン：代わりにプロセッサで描画し、カードのメモリはすべて AI サーバーに残ります。画像ごとに時間がかかり、インクの多いページほど長くなります。どちらでも画像は同じです。対象はジョブが読むページだけで、ページエディターは常にカードで描画します。</string>
 </resources>

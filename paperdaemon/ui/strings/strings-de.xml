@@ -61,6 +61,11 @@
   <string name="issue.setup_go">Einrichtung fortsetzen</string>
   <string name="issue.tablet">PaperDaemon erreicht dein reMarkable nicht.</string>
   <string name="issue.mirror">Der Spiegel konnte nicht aktualisiert werden: {why}</string>
+  <string name="issue.render_cpu">Seiten werden ohne die Grafikkarte gezeichnet, das ist langsamer: {why}</string>
+  <string name="issue.render_ok">OK</string>
+  <string name="editor.large_title">Diese Seite wird sehr groß</string>
+  <string name="editor.large_body">Dein Tablet wird Mühe haben, diese Seite zu laden, und der Seiteneditor belegt mehr Grafikkartenspeicher als vorgesehen. Mach nur weiter, wenn du sicher bist, dass das in Ordnung ist. Wenn auf derselben Grafikkarte ein lokaler KI-Server läuft, nimmt diese Seite ihm Speicher weg.</string>
+  <string name="editor.large_ok">Verstanden</string>
   <string name="issue.not_started">PaperDaemon ist nicht gestartet: {why}</string>
   <string name="term.daemon">Daemon</string>
   <string name="term.daemon_about">Beobachtet dein Tablet auf markierte Seiten und übergibt jede davon als Auftrag an den Host.</string>
@@ -142,7 +147,6 @@
   <string name="viewer.goto_aria">Gehe zu Seite, 1 bis {last}</string>
   <string name="viewer.prev">Vorherige Seite</string>
   <string name="viewer.next">Nächste Seite</string>
-  <string name="viewer.zoom_reset">Zurück auf 1×</string>
   <string name="keys.open">Tastenkürzel</string>
   <string name="viewer.notSaved">Nicht gespeichert: {why}</string>
   <string name="keys.title">Tastenkürzel und Befehle</string>
@@ -236,9 +240,7 @@
   <string name="keys.paste_strokes">Als Striche einfügen</string>
   <string name="keys.paste_strokes_d">Ein Bild in Striche zerlegt, in seiner eigenen Größe.</string>
   <string name="viewer.reading_chapters">Kapitel werden gelesen…</string>
-  <string name="viewer.not_drawn">Diese Seite konnte nicht gezeichnet werden.</string>
   <string name="viewer.page">Seite {n}</string>
-  <string name="viewer.go_to">Gehe zu Seite {n}</string>
   <string name="common.close">Schließen</string>
   <string name="tablet.label">Spiegel</string>
   <string name="tablet.folder">Ordner</string>
@@ -458,7 +460,7 @@
   <string name="help.model.stops">Wenn du PaperDaemon pausierst oder beendest, oder wenn das Startskript einer anderen Aufstellung laufen muss. Es hält alles an, was dein Skript gestartet hat. Ein Programm, das es nicht gestartet hat, hält es nie an.</string>
   <string name="help.h_wrong">Was schiefgehen kann</string>
   <string name="help.model.wrong_vram">**Die Grafikkarte ist voll.** Ein Modell braucht Platz im Speicher deiner Karte (VRAM). Wenn ein anderer Modellserver, ein Spiel oder ein Bildwerkzeug diesen Speicher belegt, lädt das Modell nicht oder läuft sehr langsam. Wenn du selbst andere Modellserver betreibst, lass dein Skript sie zuerst anhalten (zum Beispiel `taskkill /IM llama-server.exe /F`). PaperDaemon hält nur an, was es gestartet hat.</string>
-  <string name="help.model.wrong_own_vram">**Was PaperDaemon selbst braucht.** In sehr seltenen Fällen (eine Seite voller großer Zerlegungen, im Seiteneditor geöffnet) kann PaperDaemon selbst bis zu 200 MB vom Speicher deiner Karte belegen. Lass so viel frei.</string>
+  <string name="help.model.wrong_own_vram">**Was PaperDaemon selbst braucht.** Auch PaperDaemon belegt etwas vom Speicher deiner Karte. Ist eine Seite im Seiteneditor geöffnet, braucht sein Fenster etwa 100 MB für eine Seite mit einer großen Zerlegung und bis zu etwa 200 MB für die allergrößten Seiten (über 250.000 Striche; davor warnt der Editor). Während ein Auftrag läuft, zeichnet die Engine Seiten auf der Karte: etwa 50 MB für eine gewöhnliche Seite, bis zu etwa 350 MB für die größten, alles wieder freigegeben, wenn der Auftrag endet. Lass etwa 550 MB frei, wenn du an riesigen Seiten arbeitest, sonst etwa 150 MB.</string>
   <string name="help.model.wrong_two">**Zwei Modelle, die nicht zusammen passen.** Wenn dein Textmodell und dein Bildmodell nicht beide auf deine Karte passen, schreib jedes Skript so, dass es den Server des anderen anhält, bevor es seinen eigenen startet.</string>
   <string name="help.model.wrong_port">**Der Port ist belegt.** Wenn ein anderes Programm diesen Port schon nutzt, kann dein Server dort nicht starten. Wähle einen freien Port und nutze denselben in der Adresse oben.</string>
   <string name="help.wrong_spaces">**Leerzeichen in einem Pfad.** Setze jeden Pfad mit Leerzeichen in Anführungszeichen.</string>
@@ -486,7 +488,7 @@ Regeln, die das Skript befolgen muss:
 - Die Ausgabe des Servers anzeigen.
 - PaperDaemon setzt außerdem %PAPERDAEMON_ROLE% (text oder image), %PAPERDAEMON_LOCATION% (die volle Adresse), %PAPERDAEMON_OTHER_LOCATION% (die Adresse des anderen Modells), %PAPERDAEMON_LINEUP% und %PAPERDAEMON_DATA%.
 - PaperDaemon hält nur Programme an, die es gestartet hat. Wenn andere Modellserver den Speicher meiner Grafikkarte belegen könnten, sollte das Skript sie zuerst anhalten.
-- PaperDaemon selbst kann in sehr seltenen Fällen bis zu 200 MB vom Speicher meiner Grafikkarte belegen, also sollte das Modell so viel frei lassen.
+- PaperDaemon selbst belegt etwas vom Speicher meiner Grafikkarte: meist unter 150 MB und im ungünstigsten Moment (eine riesige Seite im Seiteneditor geöffnet, während ein Auftrag eine zeichnet) bis zu etwa 550 MB, also sollte das Modell so viel frei lassen.
 - Der Server muss die OpenAI-kompatible Chat-API (/v1/chat/completions) sprechen, wie es llama-server von llama.cpp, Ollama, LM Studio oder vLLM tun.
 
 Bevor du es schreibst, stell mir diese Fragen nacheinander und warte jeweils auf die Antwort:
@@ -506,7 +508,7 @@ Regeln, die das Skript befolgen muss:
 - Die Ausgabe des Servers anzeigen.
 - PaperDaemon setzt außerdem %PAPERDAEMON_ROLE% (text oder image), %PAPERDAEMON_LOCATION% (die volle Adresse), %PAPERDAEMON_OTHER_LOCATION% (die Adresse des anderen Modells), %PAPERDAEMON_LINEUP% und %PAPERDAEMON_DATA%.
 - PaperDaemon hält nur Programme an, die es gestartet hat. Wenn andere Modellserver den Speicher meiner Grafikkarte belegen könnten, sollte das Skript sie zuerst anhalten.
-- PaperDaemon selbst kann in sehr seltenen Fällen bis zu 200 MB vom Speicher meiner Grafikkarte belegen, also sollte das Modell so viel frei lassen.
+- PaperDaemon selbst belegt etwas vom Speicher meiner Grafikkarte: meist unter 150 MB und im ungünstigsten Moment (eine riesige Seite im Seiteneditor geöffnet, während ein Auftrag eine zeichnet) bis zu etwa 550 MB, also sollte das Modell so viel frei lassen.
 - Der Server muss die Stable-Diffusion-Web-UI-API (/sdapi/v1/txt2img) sprechen, wie es der Server von stable-diffusion.cpp, Forge oder AUTOMATIC1111 tun, oder die OpenAI-Images-API.
 
 Bevor du es schreibst, stell mir diese Fragen nacheinander und warte jeweils auf die Antwort:
@@ -667,4 +669,6 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="fm.imported_n">{n} Dateien importiert.</string>
   <string name="fm.import_failed">{name} konnte nicht importiert werden: {why}</string>
   <string name="fm.drop">PDFs und EPUBs hier ablegen, um sie zu importieren</string>
+  <string name="lineup.render_cpu">Seiten auf dem Prozessor zeichnen</string>
+  <string name="lineup.render_cpu.help">Aus (Standard): Die Aufträge dieser Zusammenstellung zeichnen die Seiten, die sie lesen, auf der Grafikkarte. Das ist schnell und belegt während eines Auftrags einen Teil des Kartenspeichers (etwa 160 MB bei einer sehr dichten Seite), der am Ende des Auftrags wieder frei wird. An: Sie zeichnen sie stattdessen auf dem Prozessor, der gesamte Kartenspeicher bleibt Ihrem KI-Server, und jedes Bild dauert länger, am meisten auf Seiten mit viel Tinte. Die Bilder sind in beiden Fällen gleich. Betroffen sind nur die Seiten eines Auftrags; der Seiteneditor zeichnet immer auf der Karte.</string>
 </resources>

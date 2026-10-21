@@ -61,6 +61,11 @@
   <string name="issue.setup_go">Tiếp tục thiết lập</string>
   <string name="issue.tablet">PaperDaemon không kết nối được với reMarkable của bạn.</string>
   <string name="issue.mirror">Không thể cập nhật Bản sao: {why}</string>
+  <string name="issue.render_cpu">Các trang đang được vẽ mà không dùng card đồ họa, chậm hơn: {why}</string>
+  <string name="issue.render_ok">OK</string>
+  <string name="editor.large_title">Trang này đang trở nên rất lớn</string>
+  <string name="editor.large_body">Máy tính bảng của bạn sẽ khó tải trang này, và trình chỉnh sửa trang sẽ dùng nhiều bộ nhớ card đồ họa hơn dự định. Chỉ tiếp tục nếu bạn chắc rằng điều này ổn. Nếu bạn chạy máy chủ AI cục bộ trên cùng card đồ họa, hãy hiểu rằng trang này lấy bộ nhớ mà máy chủ đó lẽ ra được dùng.</string>
+  <string name="editor.large_ok">Tôi hiểu</string>
   <string name="issue.not_started">PaperDaemon không khởi động được: {why}</string>
   <string name="term.daemon">Daemon</string>
   <string name="term.daemon_about">Theo dõi máy tính bảng để tìm các trang được gắn thẻ và giao từng trang cho host như một công việc.</string>
@@ -142,7 +147,6 @@
   <string name="viewer.goto_aria">Đến trang, từ 1 đến {last}</string>
   <string name="viewer.prev">Trang trước</string>
   <string name="viewer.next">Trang sau</string>
-  <string name="viewer.zoom_reset">Về lại 1×</string>
   <string name="keys.open">Phím tắt</string>
   <string name="viewer.notSaved">Chưa lưu: {why}</string>
   <string name="keys.title">Phím tắt và lệnh</string>
@@ -236,9 +240,7 @@
   <string name="keys.paste_strokes">Dán thành nét</string>
   <string name="keys.paste_strokes_d">Một hình được phân rã thành nét, đúng kích thước của nó.</string>
   <string name="viewer.reading_chapters">Đang đọc các chương…</string>
-  <string name="viewer.not_drawn">Không thể vẽ trang này.</string>
   <string name="viewer.page">Trang {n}</string>
-  <string name="viewer.go_to">Đến trang {n}</string>
   <string name="common.close">Đóng</string>
   <string name="tablet.label">Bản sao</string>
   <string name="tablet.folder">Thư mục</string>
@@ -458,7 +460,7 @@
   <string name="help.model.stops">Khi bạn tạm dừng hoặc thoát PaperDaemon, hoặc khi tập lệnh khởi động của một đội hình khác phải chạy. Nó dừng mọi thứ tập lệnh của bạn đã khởi động. Nó không bao giờ dừng một chương trình mà nó không khởi động.</string>
   <string name="help.h_wrong">Những điều có thể trục trặc</string>
   <string name="help.model.wrong_vram">**Card đồ họa đã đầy.** Một mô hình cần chỗ trong bộ nhớ của card (VRAM). Nếu một máy chủ mô hình khác, một trò chơi hay một công cụ xử lý ảnh đang chiếm bộ nhớ đó, mô hình sẽ không tải được hoặc chạy rất chậm. Nếu bạn tự chạy các máy chủ mô hình khác, hãy cho tập lệnh dừng chúng trước (ví dụ `taskkill /IM llama-server.exe /F`). PaperDaemon chỉ dừng những gì nó đã khởi động.</string>
-  <string name="help.model.wrong_own_vram">**Phần của chính PaperDaemon.** Trong những trường hợp rất hiếm (một trang đầy các bản phân rã lớn, đang mở trong trình sửa trang), chính PaperDaemon có thể dùng tới 200 MB bộ nhớ card đồ họa. Hãy chừa trống chừng ấy.</string>
+  <string name="help.model.wrong_own_vram">**Phần của chính PaperDaemon.** PaperDaemon cũng dùng một phần bộ nhớ card của bạn. Khi một trang đang mở trong trình chỉnh sửa trang, cửa sổ của nó dùng khoảng 100 MB cho trang có bản phân tách lớn, và tới khoảng 200 MB cho những trang lớn nhất (hơn 250.000 nét, trình chỉnh sửa sẽ cảnh báo). Trong khi một tác vụ chạy, engine vẽ trang trên card: khoảng 50 MB cho trang thường, tới khoảng 350 MB cho trang lớn nhất, và trả lại tất cả khi tác vụ xong. Hãy để trống khoảng 550 MB nếu bạn làm việc với trang rất lớn, nếu không thì khoảng 150 MB.</string>
   <string name="help.model.wrong_two">**Hai mô hình không vừa cùng lúc.** Nếu mô hình văn bản và mô hình ảnh của bạn không thể cùng nằm trên card, hãy viết mỗi tập lệnh sao cho nó dừng máy chủ của mô hình kia trước khi khởi động máy chủ của mình.</string>
   <string name="help.model.wrong_port">**Cổng đã bị dùng.** Nếu một chương trình khác đã dùng cổng đó, máy chủ của bạn không thể khởi động ở đó. Hãy chọn một cổng trống và dùng cùng cổng đó trong địa chỉ phía trên.</string>
   <string name="help.wrong_spaces">**Khoảng trắng trong đường dẫn.** Hãy đặt mọi đường dẫn có khoảng trắng trong dấu ngoặc kép.</string>
@@ -486,7 +488,7 @@ Các quy tắc tập lệnh phải tuân theo:
 - In ra đầu ra của máy chủ.
 - PaperDaemon cũng đặt %PAPERDAEMON_ROLE% (text hoặc image), %PAPERDAEMON_LOCATION% (địa chỉ đầy đủ), %PAPERDAEMON_OTHER_LOCATION% (địa chỉ của mô hình kia), %PAPERDAEMON_LINEUP% và %PAPERDAEMON_DATA%.
 - PaperDaemon chỉ dừng các chương trình do nó khởi động. Nếu các máy chủ mô hình khác có thể đang dùng bộ nhớ card đồ họa của tôi, tập lệnh nên dừng chúng trước.
-- Trong những trường hợp rất hiếm, chính PaperDaemon có thể dùng tới 200 MB bộ nhớ card đồ họa của tôi, nên mô hình cần chừa trống chừng ấy.
+- Bản thân PaperDaemon dùng một phần bộ nhớ card đồ họa của tôi: thường dưới 150 MB, và tới khoảng 550 MB vào lúc tệ nhất (một trang rất lớn đang mở trong trình chỉnh sửa trang trong khi một tác vụ vẽ trang khác), nên mô hình cần chừa lại chừng đó.
 - Máy chủ phải dùng API chat tương thích OpenAI (/v1/chat/completions), như llama-server của llama.cpp, Ollama, LM Studio hoặc vLLM.
 
 Trước khi viết, hãy hỏi tôi lần lượt từng câu sau và chờ từng câu trả lời:
@@ -506,7 +508,7 @@ Các quy tắc tập lệnh phải tuân theo:
 - In ra đầu ra của máy chủ.
 - PaperDaemon cũng đặt %PAPERDAEMON_ROLE% (text hoặc image), %PAPERDAEMON_LOCATION% (địa chỉ đầy đủ), %PAPERDAEMON_OTHER_LOCATION% (địa chỉ của mô hình kia), %PAPERDAEMON_LINEUP% và %PAPERDAEMON_DATA%.
 - PaperDaemon chỉ dừng các chương trình do nó khởi động. Nếu các máy chủ mô hình khác có thể đang dùng bộ nhớ card đồ họa của tôi, tập lệnh nên dừng chúng trước.
-- Trong những trường hợp rất hiếm, chính PaperDaemon có thể dùng tới 200 MB bộ nhớ card đồ họa của tôi, nên mô hình cần chừa trống chừng ấy.
+- Bản thân PaperDaemon dùng một phần bộ nhớ card đồ họa của tôi: thường dưới 150 MB, và tới khoảng 550 MB vào lúc tệ nhất (một trang rất lớn đang mở trong trình chỉnh sửa trang trong khi một tác vụ vẽ trang khác), nên mô hình cần chừa lại chừng đó.
 - Máy chủ phải dùng API của web UI Stable Diffusion (/sdapi/v1/txt2img), như máy chủ của stable-diffusion.cpp, Forge hoặc AUTOMATIC1111, hoặc API Images của OpenAI.
 
 Trước khi viết, hãy hỏi tôi lần lượt từng câu sau và chờ từng câu trả lời:
@@ -667,4 +669,6 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="fm.imported_n">Đã nhập {n} tệp.</string>
   <string name="fm.import_failed">Không thể nhập {name}: {why}</string>
   <string name="fm.drop">Thả PDF và EPUB vào đây để nhập</string>
+  <string name="lineup.render_cpu">Vẽ trang bằng bộ xử lý</string>
+  <string name="lineup.render_cpu.help">Tắt (mặc định): các tác vụ của đội hình này vẽ những trang chúng đọc trên card đồ họa. Cách này nhanh, và trong lúc tác vụ chạy sẽ dùng một phần bộ nhớ của card (khoảng 160 MB với một trang rất dày), được trả lại khi tác vụ kết thúc. Bật: thay vào đó chúng vẽ bằng bộ xử lý, để toàn bộ bộ nhớ của card cho máy chủ AI của bạn, và mỗi hình mất nhiều thời gian hơn, nhất là ở những trang nhiều mực. Hình ảnh như nhau trong cả hai trường hợp. Chỉ các trang của tác vụ bị ảnh hưởng; trình chỉnh sửa trang luôn vẽ trên card.</string>
 </resources>

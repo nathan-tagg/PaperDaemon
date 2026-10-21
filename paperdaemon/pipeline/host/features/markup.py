@@ -21,10 +21,12 @@ MARK_PEN = 13                    # the lettering pen: a circle or an underline i
 
 def _from_view(at):
     """The model's grounding on the page image it was shown -> page units: (x, y) for a point,
-    (x0, y0, x1, y1) for a box. Grounding is on a 0-1000 grid each way, whatever the image's size."""
-    w, h = JOB.view or H._frame()
-    xs = [float(v) / 1000.0 * w - w / 2.0 for v in at[0::2]]
-    ys = [float(v) / 1000.0 * h for v in at[1::2]]
+    (x0, y0, x1, y1) for a box. Grounding is on a 0-1000 grid each way, whatever the image's size. JOB.view: what the
+    image spans, (x, y, width, height) in page units (page_image sets it); the page's own frame before it has."""
+    fw, fh = H._frame()
+    x, y, w, h = JOB.view or (-fw / 2.0, 0.0, fw, fh)
+    xs = [x + float(v) / 1000.0 * w for v in at[0::2]]
+    ys = [y + float(v) / 1000.0 * h for v in at[1::2]]
     if len(at) == 2:
         return xs[0], ys[0]
     return min(xs), min(ys), max(xs), max(ys)
@@ -43,14 +45,12 @@ def _at_ground(whats):
         return {}
     try:
         out = os.path.join(H.QUEUE, "_host_at.png")
-        R.render(doc, page, out, typed=True, hide=H._hide(),
-                 hide_typed=JOB.hide_typed, hide_images=JOB.hide_images)
+        ox, oy = R.render(doc, page, out, typed=True, hide=H._hide(),
+                          hide_typed=JOB.hide_typed, hide_images=JOB.hide_images)[4]
         im = Image.open(out).convert("RGB")
-        # what the image spans, in PAGE UNITS -- the page's own frame, the PDF page's own width on a
-        # PDF page, where a 1620 assumption put a pointed-at request 15% low and wide ("nothing
-        # there")
-        fw = H._frame()[0]
-        uw, uh = fw, im.height * fw / max(1, im.width)
+        # what the image spans, in PAGE UNITS: one pixel a page unit from its top-left corner (render() says where
+        # that is; a 1620 assumption once put a pointed-at request on a PDF page 15% low and wide, "nothing there")
+        uw, uh = im.width, im.height
         im.thumbnail((1300, 1300))
         buf = io.BytesIO()
         im.save(buf, "PNG")
@@ -59,8 +59,8 @@ def _at_ground(whats):
         H._warn("grounding %d place(s)" % len(whats), ex)
         return {}
     got = {}
-    px = lambda f: f * uw - uw / 2.0          # fractions of the picture -> page units
-    py = lambda f: f * uh
+    px = lambda f: ox + f * uw                # fractions of the picture -> page units
+    py = lambda f: oy + f * uh
     for w, hit in zip(whats, H._H().read_located(reply, len(whats))):
         if hit is None:
             continue

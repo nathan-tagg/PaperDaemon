@@ -85,6 +85,8 @@ def _touch(u):
 
 
 def _live(c):
+    if not c.get("cPages") and isinstance(c.get("pages"), list):  # an older document's layout: its page ids, in order
+        return [{"id": p} for p in c["pages"] if isinstance(p, str)]
     return sorted((p for p in (c.get("cPages") or {}).get("pages") or [] if "deleted" not in p),
                   key=lambda p: p["idx"]["value"])
 
@@ -299,7 +301,7 @@ def set_page_template(doc, page_no, file):
 
 def page_template(doc, page_no):
     pid = page_id(doc, page_no)
-    for p in _content(doc)["cPages"]["pages"]:
+    for p in _live(_content(doc)):
         if p.get("id") == pid:
             return (p.get("template") or {}).get("value") or "Blank"
     return "Blank"
@@ -408,7 +410,9 @@ def scene_of(doc, page_no, arrays=False):
         layers = [{"label": "Layer 1", "visible": True, "lines": []}]
     text = None
     try:
-        rec = TY.from_blocks(TY.read_preserved(data), data) if typed_here else {}
+        # the text read from the page without its strokes: they are most of the file, and seconds to read on a page
+        # with a decomp, for nothing the text needs
+        rec = TY.from_blocks(TY.read_preserved(fastrm.without_strokes(data)), data) if typed_here else {}
         if rec.get("column"):
             paras = []
             for p in rec["paragraphs"]:

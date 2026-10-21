@@ -483,9 +483,10 @@ class Drawing:
                 out.append((P, drawn([w * WPEN * scale for w in widths], k), "pen", R.ENUM.get(color.value, (0, 0, 0)), dens))
         return out
 
-    def render_png(self, path, progress=None, ss=2):
+    def render_png(self, path, progress=None, ss=1):
         """The drawing as a picture, with PaperDaemon's one renderer (pipeline/page/paint.py: as the tablet draws it),
-        `ss` times the size averaged down for a screen. progress(f), when given, hears 1.0 when it is drawn."""
+        at the tablet's own pixels, as every page picture is (`ss`: times the size averaged down, when a caller asks).
+        progress(f), when given, hears 1.0 when it is drawn."""
         from paperdaemon.pipeline.page.paint import paint
         img = Image.new("RGB", (self.w, self.h), "white")
         paint(img, self.paint_strokes(), ss=ss)
@@ -671,9 +672,9 @@ def to_drawing(strokes, w, h, pad=24, ss=1):
     return d
 
 
-def preview(strokes, w, h, out, pad=24, ss=2, progress=None):
+def preview(strokes, w, h, out, pad=24, ss=1, progress=None):
     """Strokes in a w x h box (x from 0 at the box's left) as a picture with `pad` around it, drawn by the one
-    renderer at `ss` times the size and averaged down."""
+    renderer at the tablet's own pixels, as every page picture is."""
     d = Drawing(int(w + 2 * pad), int(h + 2 * pad))
     d.strokes = [([(x + pad, y + pad) for x, y in st[0]],) + tuple(st[1:5]) for st in strokes]
     img = Image.new("RGB", (d.w, d.h), "white")

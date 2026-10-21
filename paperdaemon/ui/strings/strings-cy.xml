@@ -61,6 +61,11 @@
   <string name="issue.setup_go">Parhau â'r gosod</string>
   <string name="issue.tablet">Ni all PaperDaemon gyrraedd eich reMarkable.</string>
   <string name="issue.mirror">Doedd dim modd diweddaru'r Drych: {why}</string>
+  <string name="issue.render_cpu">Mae'r tudalennau'n cael eu tynnu heb y cerdyn graffeg, sy'n arafach: {why}</string>
+  <string name="issue.render_ok">Iawn</string>
+  <string name="editor.large_title">Mae'r dudalen hon yn mynd yn fawr iawn</string>
+  <string name="editor.large_body">Bydd eich llechen yn cael trafferth llwytho'r dudalen hon, a bydd y golygydd tudalennau'n defnyddio mwy o gof eich cerdyn graffeg na'r bwriad. Ewch ymlaen dim ond os ydych yn siŵr bod hyn yn iawn. Os ydych yn rhedeg gweinydd AI lleol ar yr un cerdyn graffeg, deallwch fod y dudalen hon yn cymryd cof y byddai'r gweinydd hwnnw fel arall yn ei gael.</string>
+  <string name="editor.large_ok">Rwy'n deall</string>
   <string name="issue.not_started">Ni ddechreuodd PaperDaemon: {why}</string>
   <string name="term.daemon">Daemon</string>
   <string name="term.daemon_about">Yn gwylio eich llechen am dudalennau â thag ac yn trosglwyddo pob un i'r gwesteiwr fel tasg.</string>
@@ -142,7 +147,6 @@
   <string name="viewer.goto_aria">Mynd i dudalen, 1 i {last}</string>
   <string name="viewer.prev">Tudalen flaenorol</string>
   <string name="viewer.next">Tudalen nesaf</string>
-  <string name="viewer.zoom_reset">Yn ôl i 1×</string>
   <string name="keys.open">Llwybrau byr</string>
   <string name="viewer.notSaved">Heb ei gadw: {why}</string>
   <string name="keys.title">Llwybrau byr a gorchmynion</string>
@@ -236,9 +240,7 @@
   <string name="keys.paste_strokes">Gludo fel strociau</string>
   <string name="keys.paste_strokes_d">Delwedd wedi'i dadelfennu'n strociau, yn ei maint ei hun.</string>
   <string name="viewer.reading_chapters">Yn darllen y penodau…</string>
-  <string name="viewer.not_drawn">Doedd dim modd tynnu'r dudalen hon.</string>
   <string name="viewer.page">Tudalen {n}</string>
-  <string name="viewer.go_to">Mynd i dudalen {n}</string>
   <string name="common.close">Cau</string>
   <string name="tablet.label">Drych</string>
   <string name="tablet.folder">Ffolder</string>
@@ -458,7 +460,7 @@
   <string name="help.model.stops">Pan fyddwch yn oedi neu'n cau PaperDaemon, neu pan fydd rhaid i sgript gychwyn tîm arall redeg. Mae'n stopio popeth a gychwynnodd eich sgript. Nid yw byth yn stopio rhaglen na wnaeth ei chychwyn.</string>
   <string name="help.h_wrong">Pethau sy'n mynd o chwith</string>
   <string name="help.model.wrong_vram">**Mae'r cerdyn graffeg yn llawn.** Mae angen lle ar fodel yng nghof eich cerdyn (VRAM). Os yw gweinydd model arall, gêm neu offeryn delweddau yn dal y cof hwnnw, mae'r model yn methu llwytho neu'n rhedeg yn araf iawn. Os ydych yn rhedeg gweinyddion model eraill eich hun, gwnewch i'ch sgript eu stopio yn gyntaf (er enghraifft `taskkill /IM llama-server.exe /F`). Dim ond yr hyn a gychwynnodd y mae PaperDaemon yn ei stopio.</string>
-  <string name="help.model.wrong_own_vram">**Cyfran PaperDaemon ei hun.** Mewn achosion anarferol iawn (tudalen yn llawn dadelfeniadau mawr, ar agor yn y golygydd tudalennau), gall PaperDaemon ei hun ddefnyddio hyd at 200 MB o gof eich cerdyn. Gadewch gymaint â hynny'n rhydd.</string>
+  <string name="help.model.wrong_own_vram">**Cyfran PaperDaemon ei hun.** Mae PaperDaemon hefyd yn defnyddio rhywfaint o gof eich cerdyn. Gyda thudalen ar agor yn y golygydd tudalennau, mae ei ffenestr yn defnyddio tua 100 MB ar gyfer tudalen gyda dadelfeniad mawr, hyd at tua 200 MB ar gyfer y tudalennau mwyaf (dros 250,000 o linellau, y mae'r golygydd yn rhybuddio amdanynt). Tra bo tasg yn rhedeg, mae'r injan yn tynnu tudalennau ar y cerdyn: tua 50 MB ar gyfer tudalen arferol, hyd at tua 350 MB ar gyfer y mwyaf, a'r cyfan yn cael ei roi'n ôl pan ddaw'r dasg i ben. Gadewch tua 550 MB yn rhydd os ydych yn gweithio ar dudalennau enfawr, tua 150 MB fel arall.</string>
   <string name="help.model.wrong_two">**Dau fodel nad ydynt yn ffitio gyda'i gilydd.** Os na all eich model testun a'ch model delwedd ffitio ar eich cerdyn gyda'i gilydd, ysgrifennwch bob sgript fel ei bod yn stopio gweinydd y llall cyn cychwyn ei un ei hun.</string>
   <string name="help.model.wrong_port">**Mae'r porth wedi'i gymryd.** Os yw rhaglen arall eisoes yn defnyddio'r porth hwnnw, ni all eich gweinydd gychwyn yno. Dewiswch borth rhydd a defnyddiwch yr un un yn y cyfeiriad uchod.</string>
   <string name="help.wrong_spaces">**Bylchau mewn llwybr.** Rhowch ddyfynodau o amgylch unrhyw lwybr sydd â bylchau ynddo.</string>
@@ -486,7 +488,7 @@ Rheolau y mae'n rhaid i'r sgript eu dilyn:
 - Argraffu allbwn y gweinydd.
 - Mae PaperDaemon hefyd yn gosod %PAPERDAEMON_ROLE% (text neu image), %PAPERDAEMON_LOCATION% (y cyfeiriad llawn), %PAPERDAEMON_OTHER_LOCATION% (cyfeiriad y model arall), %PAPERDAEMON_LINEUP% a %PAPERDAEMON_DATA%.
 - Dim ond rhaglenni a gychwynnodd y mae PaperDaemon yn eu stopio. Os gallai gweinyddion model eraill fod yn defnyddio cof fy ngherdyn graffeg, dylai'r sgript eu stopio yn gyntaf.
-- Gall PaperDaemon ei hun, mewn achosion anarferol iawn, ddefnyddio hyd at 200 MB o gof fy ngherdyn graffeg, felly dylai'r model adael cymaint â hynny'n rhydd.
+- Mae PaperDaemon ei hun yn defnyddio rhywfaint o gof fy ngherdyn graffeg: fel arfer llai na 150 MB, a hyd at tua 550 MB ar yr eiliad waethaf (tudalen enfawr ar agor yn ei olygydd tudalennau tra bo tasg yn tynnu un arall), felly dylai'r model adael cymaint â hynny'n rhydd.
 - Rhaid i'r gweinydd siarad yr API sgwrsio sy'n gydnaws ag OpenAI (/v1/chat/completions), fel y mae llama-server llama.cpp, Ollama, LM Studio neu vLLM yn ei wneud.
 
 Cyn i ti ei hysgrifennu, gofyn y cwestiynau hyn i mi un ar y tro ac aros am bob ateb:
@@ -506,7 +508,7 @@ Rheolau y mae'n rhaid i'r sgript eu dilyn:
 - Argraffu allbwn y gweinydd.
 - Mae PaperDaemon hefyd yn gosod %PAPERDAEMON_ROLE% (text neu image), %PAPERDAEMON_LOCATION% (y cyfeiriad llawn), %PAPERDAEMON_OTHER_LOCATION% (cyfeiriad y model arall), %PAPERDAEMON_LINEUP% a %PAPERDAEMON_DATA%.
 - Dim ond rhaglenni a gychwynnodd y mae PaperDaemon yn eu stopio. Os gallai gweinyddion model eraill fod yn defnyddio cof fy ngherdyn graffeg, dylai'r sgript eu stopio yn gyntaf.
-- Gall PaperDaemon ei hun, mewn achosion anarferol iawn, ddefnyddio hyd at 200 MB o gof fy ngherdyn graffeg, felly dylai'r model adael cymaint â hynny'n rhydd.
+- Mae PaperDaemon ei hun yn defnyddio rhywfaint o gof fy ngherdyn graffeg: fel arfer llai na 150 MB, a hyd at tua 550 MB ar yr eiliad waethaf (tudalen enfawr ar agor yn ei olygydd tudalennau tra bo tasg yn tynnu un arall), felly dylai'r model adael cymaint â hynny'n rhydd.
 - Rhaid i'r gweinydd siarad API Stable Diffusion web UI (/sdapi/v1/txt2img), fel y mae gweinydd stable-diffusion.cpp, Forge neu AUTOMATIC1111 yn ei wneud, neu API Images OpenAI.
 
 Cyn i ti ei hysgrifennu, gofyn y cwestiynau hyn i mi un ar y tro ac aros am bob ateb:
@@ -667,4 +669,6 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="fm.imported_n">Wedi mewnforio {n} ffeil.</string>
   <string name="fm.import_failed">Ni ellid mewnforio {name}: {why}</string>
   <string name="fm.drop">Gollyngwch PDFs ac EPUBs yma i'w mewnforio</string>
+  <string name="lineup.render_cpu">Tynnu tudalennau ar y prosesydd</string>
+  <string name="lineup.render_cpu.help">I ffwrdd (y rhagosodiad): mae swyddi'r tîm hwn yn tynnu'r tudalennau maen nhw'n eu darllen ar y cerdyn graffeg. Mae hynny'n gyflym, a thra bo swydd yn rhedeg mae'n defnyddio peth o gof y cerdyn (tua 160 MB ar dudalen drwchus iawn), a roddir yn ôl pan ddaw'r swydd i ben. Ymlaen: maen nhw'n eu tynnu ar y prosesydd yn lle hynny, gan adael holl gof y cerdyn i'ch gweinydd AI, ac mae pob llun yn cymryd mwy o amser, yn enwedig ar dudalennau â llawer o inc. Mae'r lluniau'r un fath y naill ffordd neu'r llall. Dim ond tudalennau swydd sy'n cael eu heffeithio; mae golygydd y dudalen bob amser yn tynnu ar y cerdyn.</string>
 </resources>

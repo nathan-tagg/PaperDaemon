@@ -67,6 +67,9 @@ canvas { display: block; }
 /* the middle button's autoscroll: its mark where it was pressed, a dot with the ways the page can go */
 .automark { position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px; z-index: 4; pointer-events: none; }
 .vscroll.on, .vscroll:hover, .vscroll.drag { opacity: 1; transition-duration: 0.12s; }
+.pd-links { position: absolute; inset: 0; pointer-events: none; z-index: 2; overflow: hidden; }
+.pd-link { position: absolute; pointer-events: auto; padding: 0; border: 0; background: transparent; cursor: pointer; border-radius: 2px; }
+.pd-link:hover, .pd-link:focus-visible { background: rgba(255, 213, 0, 0.18); outline: 1px solid rgba(160, 120, 0, 0.45); }
 .vscroll i { position: absolute; right: 3px; width: 5px; border-radius: 3px; background: rgba(0, 0, 0, 0.30);
              box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55); transition: width 0.12s ease, right 0.12s ease, background 0.12s ease; }
 .vscroll:hover i, .vscroll.drag i { right: 2px; width: 8px; border-radius: 4px; background: rgba(0, 0, 0, 0.46); }
@@ -137,7 +140,8 @@ span.lname { cursor: default; }
     <div class="pop" id="pop" hidden></div>
   </div>
   <div class="body"><div class="viewport" id="vp"><canvas id="cv"></canvas><div class="loading" id="loading" role="status" aria-label="Loading the page"><i></i></div><button class="zoom" id="zoom" title="Back to 1x"></button><div class="vscroll" id="vscroll"><i></i></div></div></div>
-</div>
+</div>
+<script src="shaders.js"></script>
 <script>
 "use strict";
 (() => {
@@ -154,6 +158,37 @@ span.lname { cursor: default; }
   };
   let activeLayer = 0;                                         // the layer the pens and the eraser work on
   const layer = () => page.layers[activeLayer];
+  // A THUMBNAIL (#...&thumb=W, the window's page pictures): the page drawn once, W wide, the top of it in a 3:4 card as
+  // the tablet shows its thumbnails, by the same renderer, and handed to the window (drawThumb); nothing saved
+  const THUMB_W = Number(new URLSearchParams(location.hash.slice(1)).get("thumb")) || 0;
+  let thumbHold = !!THUMB_W;                                  // until everything under the ink is in: no drawing
+  // THE MIRROR'S PAGES (#...&view=1): the same editor with its edit controls stripped -- no tools in the bar, nothing
+  // drawn, erased, typed, pasted or dropped, nothing saved; scrolling, zooming and the page coming in as the tablet
+  // changes it are as ever. One gate, ahead of every handler (the capture phase, on the window), lets through only what
+  // looks; a page's links are followed (placeLinks), and the keys that turn pages go to the viewer
+  const VIEW = /(^|[#&])view=1(&|$)/.test(location.hash);
+  if (VIEW) {
+    const TURN = ["ArrowLeft", "ArrowRight", "PageUp", "PageDown"];
+    const LOOK = ["ArrowUp", "ArrowDown", "Home", "End", "Escape", "Tab"];
+    window.addEventListener("keydown", e => {
+      if (TURN.includes(e.key) && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        if (window.parent !== window) window.parent.postMessage({ pd: "view-key", key: e.key, altKey: e.altKey }, location.origin);
+        return;
+      }
+      const zoom = (e.ctrlKey || e.metaKey) && ["+", "-", "=", "0", "c"].includes(e.key.toLowerCase());
+      if (LOOK.includes(e.key) || zoom) return;
+      e.stopImmediatePropagation();
+      if (e.key.length === 1 || ["Delete", "Backspace", "Enter"].includes(e.key)) e.preventDefault();
+    }, true);
+    for (const t of ["paste", "cut", "drop", "beforeinput"]) window.addEventListener(t, e => { e.preventDefault(); e.stopImmediatePropagation(); }, true);
+    window.addEventListener("pointerdown", e => {
+      if (e.button === 1) return;                             // the middle button scrolls, as it does anywhere
+      const el = e.target && e.target.closest ? e.target : null;
+      if (!el || el.closest(".pd-link") || el.closest("#vscroll") || el.closest("#zoom")) return;
+      if (el.closest("#vp")) { e.preventDefault(); e.stopImmediatePropagation(); }
+    }, true);
+  }
   const SCREEN_W = 1620;                                                               // what the Paper Pro shows at 1x
 
   // ================================================================ PENS AND COLORS
@@ -373,59 +408,13 @@ span.lname { cursor: default; }
   // over it, and the result comes back into the canvas the rest of the editor works on. Without WebGL2 (or with #cpu
   // in the address) the renderer above draws everything, as before.
   const GL = (() => {
+    // the shaders: ui/shaders.js, the one copy the engine draws with too (loaded before this script)
+    const { VS_SEG, FS_SEG, VS_HL, FS_TRI, VS_FULL, FS_COPY, FS_AREA } = window.PD_SHADERS || {};
+    if (!VS_SEG) return null;
     if (/(^|[#&])cpu\b/.test(location.hash)) return null;
     const cv = document.createElement("canvas");
     const gl = cv.getContext("webgl2", { antialias: false, depth: false, stencil: false, premultipliedAlpha: false, preserveDrawingBuffer: false });
-    if (!gl) return null;
-    const VS_SEG = `#version 300 es
-    layout(location=0) in vec2 corner;
-    layout(location=1) in vec4 ab; layout(location=2) in vec4 rcol; layout(location=3) in vec4 gr; layout(location=4) in uint seed;
-    uniform vec2 size; uniform float k; uniform vec2 off;
-    flat out vec4 vAB; flat out vec4 vRC; flat out vec4 vG; flat out uint vSeed;
-    void main() {
-      vec2 a = ab.xy * k + off, b = ab.zw * k + off; float r = rcol.x * k;
-      vec2 d = b - a; float L = length(d);
-      vec2 u = L > 0.0 ? d / L : vec2(1.0, 0.0), n = vec2(-u.y, u.x);
-      float m = r + 1.5;
-      vec2 p = (corner.x < 0.0 ? a - u * m : b + u * m) + n * (corner.y * m);
-      gl_Position = vec4(p / size * 2.0 - 1.0, 0.0, 1.0);
-      vAB = vec4(a, b); vRC = vec4(r, rcol.yzw); vG = vec4(gr.xy, gr.z * k, k); vSeed = seed;
-    }`;
-    const FS_SEG = `#version 300 es
-    precision highp float; precision highp int;
-    flat in vec4 vAB; flat in vec4 vRC; flat in vec4 vG; flat in uint vSeed;
-    uniform int grainOn; uniform float alpha;
-    out vec4 color;
-    uint mixh(uint h) { h ^= h >> 16; h *= 0x7feb352du; h ^= h >> 15; h *= 0x846ca68bu; h ^= h >> 16; return h; }
-    float hash01(uint s, int a, int b) { return float(mixh(s ^ mixh(uint(a) * 0x9e3779b9u ^ mixh(uint(b) + 0x85ebca6bu)))) / 4294967296.0; }
-    void main() {
-      vec2 p = gl_FragCoord.xy;                               // the pixel's center; the canvas's rows run down as the texture's do
-      vec2 a = vAB.xy, b = vAB.zw, d = b - a; float r = vRC.x;
-      float L2 = dot(d, d), tu = L2 > 0.0 ? dot(p - a, d) / L2 : 0.0, t = clamp(tu, 0.0, 1.0);
-      vec2 e = p - (a + t * d);
-      if (dot(e, e) > r * r) discard;
-      float ink = 1.0;
-      if (grainOn == 1) {
-        float L = sqrt(L2), v = L > 0.0 ? ((p.x - a.x) * d.y - (p.y - a.y) * d.x) / L : length(e), q = r > 0.0 ? v / r : 0.0;
-        float den = (vG.x + (vG.y - vG.x) * t) * (1.25 - 0.5 * q * q) / (1.25 - 0.5 / 3.0);
-        if (den < 1.0) {
-          if (den <= 0.0) ink = 0.0;
-          else {
-            float unit = vG.w; int cv = int(floor(v / unit));
-            float jitter = hash01(vSeed ^ 0x51ed27u, cv, 0) * 3.0;
-            int cu = int(floor(((vG.z + tu * L) / unit + jitter) / 3.0));
-            ink = hash01(vSeed, cu, cv) < den ? 1.0 : 0.0;
-          }
-        }
-      }
-      color = vec4(vRC.yzw, ink * alpha);
-    }`;
-    const VS_TRI = `#version 300 es
-    layout(location=0) in vec2 pos; layout(location=1) in vec3 col;
-    uniform vec2 size; uniform float k; uniform vec2 off; flat out vec3 vCol;
-    void main() { gl_Position = vec4((pos * k + off) / size * 2.0 - 1.0, 0.0, 1.0); vCol = col; }`;
-    const FS_TRI = `#version 300 es
-    precision highp float; flat in vec3 vCol; out vec4 color; void main() { color = vec4(vCol, 1.0); }`;
+    if (!gl) return null;
     const prog = (vs, fs) => {
       const p = gl.createProgram();
       for (const [t, src] of [[gl.VERTEX_SHADER, vs], [gl.FRAGMENT_SHADER, fs]]) {
@@ -438,75 +427,74 @@ span.lname { cursor: default; }
       return p;
     };
     let segP, triP;
-    try { segP = prog(VS_SEG, FS_SEG); triP = prog(VS_TRI, FS_TRI); } catch (e) { return null; }
+    try { segP = prog(VS_SEG, FS_SEG); triP = prog(VS_HL, FS_TRI); } catch (e) { return null; }
     const U = (p, n) => gl.getUniformLocation(p, n);
-    const uSeg = { size: U(segP, "size"), k: U(segP, "k"), off: U(segP, "off"), grain: U(segP, "grainOn"), alpha: U(segP, "alpha") };
-    const uTri = { size: U(triP, "size"), k: U(triP, "k"), off: U(triP, "off") };
-    const F = 12;                                             // floats a segment: ab(4) r+color(4) da db u0 -(4)
+    const uSeg = { size: U(segP, "size"), k: U(segP, "k"), off: U(segP, "off"), grain: U(segP, "grainOn"), alpha: U(segP, "alpha"), seed: U(segP, "seed") };
+    const uTri = { size: U(triP, "size"), k: U(triP, "k"), off: U(triP, "off"), eps: U(triP, "eps") };
+    // THE POINT RECORD (ui/shaders.js): x, y, the width (float32 each), a byte of flags, the color (3 bytes) -- 16 bytes,
+    // each point once; a grain stroke's points also in a buffer of their own: the density and the length along it (8)
+    const PT = 16, GR = 8, SEG = 1, DOT = 2, BEVEL = 4, OTHER = 8;
     const quad = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, quad);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
     const segVao = gl.createVertexArray();
     gl.bindVertexArray(segVao);
     gl.bindBuffer(gl.ARRAY_BUFFER, quad); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-    for (let i = 1; i <= 4; i++) { gl.enableVertexAttribArray(i); gl.vertexAttribDivisor(i, 1); }
-    const triVao = gl.createVertexArray();                    // each chunk's triangles bound to it as it is drawn
-    gl.bindVertexArray(triVao); gl.enableVertexAttribArray(0); gl.enableVertexAttribArray(1);
+    for (const i of [1, 2, 3, 5, 6]) { gl.enableVertexAttribArray(i); gl.vertexAttribDivisor(i, 1); }
+    for (const i of [7, 8]) gl.vertexAttribDivisor(i, 1);
+    const triVao = gl.createVertexArray();
+    gl.bindVertexArray(triVao);
+    for (const i of [1, 2, 3, 5, 6, 9, 10]) { gl.enableVertexAttribArray(i); gl.vertexAttribDivisor(i, 1); }
     gl.bindVertexArray(null);
-    const tex = gl.createTexture(), stencil = gl.createRenderbuffer(), fb = gl.createFramebuffer();
+    let tex = null, stencil = null;
+    const fb = gl.createFramebuffer();
     let texW = 0, texH = 0, readBuf = null;
 
-    // ONE LINE'S PART, in page units: its segments (pens, shaders) or its triangles (highlighters); kept with the line
+    // ONE LINE'S PART, in page units: its points' records (and a grain stroke's grain); kept with the line.
+    // THE FEEDING: written twice, here and in pipeline/page/gpu.py (_feed), which feeds the same shaders (ui/shaders.js)
+    // for the engine. A change to one MUST be made to the other.
     const parts = new WeakMap();
     function partOf(L) {
       const had = parts.get(L);
-      if (had && had.pts === L.points && had.n === L.points.length) return had;
-      const P = prepared(L), n = L.points.length, out = { pts: L.points, n, kind: P.kind };
-      if (P.kind === RF_HIGHLIGHTER) {
-        const sx = [], sy = [], sw = [];
-        L.points.forEach((p, i) => {
-          const m = sx.length;
-          if (m && Math.abs(p.x - sx[m - 1]) <= 1e-9 && Math.abs(p.y - sy[m - 1]) <= 1e-9) return;
-          sx.push(p.x); sy.push(p.y); sw.push(P.widths[i]);
-        });
-        const m = sx.length, c0 = P.rgba[0] / 255, c1 = P.rgba[1] / 255, c2 = P.rgba[2] / 255;
-        const tri = new Float32Array(Math.max(0, (6 * (m - 1) + 3 * Math.max(0, m - 2)) * 5));
-        let tn = 0;
-        const v = (x, y) => { tri[tn] = x; tri[tn + 1] = y; tri[tn + 2] = c0; tri[tn + 3] = c1; tri[tn + 4] = c2; tn += 5; };
-        const dx = new Float64Array(Math.max(0, m - 1)), dy = new Float64Array(Math.max(0, m - 1)), hw = new Float64Array(Math.max(0, m - 1));
-        for (let i = 0; i + 1 < m; i++) {
-          const ex = sx[i + 1] - sx[i], ey = sy[i + 1] - sy[i], Ln = Math.sqrt(ex * ex + ey * ey);
-          dx[i] = ex / Ln; dy[i] = ey / Ln; hw[i] = (sw[i] + sw[i + 1]) / 4 + WASH_EPS;   // page units: a tablet pixel each
-        }
-        for (let i = 0; i + 1 < m; i++) {
-          const nx = -dy[i] * hw[i], ny = dx[i] * hw[i];
-          v(sx[i] + nx, sy[i] + ny); v(sx[i + 1] + nx, sy[i + 1] + ny); v(sx[i + 1] - nx, sy[i + 1] - ny);
-          v(sx[i] + nx, sy[i] + ny); v(sx[i + 1] - nx, sy[i + 1] - ny); v(sx[i] - nx, sy[i] - ny);
-        }
-        for (let i = 1; i + 1 < m; i++) {
-          const cross = dx[i - 1] * dy[i] - dy[i - 1] * dx[i];
-          if (Math.abs(cross) < 1e-9) continue;
-          const sg = cross > 0 ? -1 : 1;
-          v(sx[i], sy[i]); v(sx[i] + sg * (-dy[i - 1]) * hw[i - 1], sy[i] + sg * dx[i - 1] * hw[i - 1]); v(sx[i] + sg * (-dy[i]) * hw[i], sy[i] + sg * dx[i] * hw[i]);
-        }
-        out.tri = tri.subarray(0, tn);
-      } else {
-        const ns = Math.max(1, n - 1), seg = new Float32Array(ns * F), seeds = new Uint32Array(ns);
-        const grain = P.kind === RF_PEN && P.dens.some(d => d < 1), c = P.rgba;
-        let u0 = 0;
-        const put = (s, i, j, r) => {
-          const a = L.points[i], b = L.points[j], o = s * F;
-          seg[o] = a.x; seg[o + 1] = a.y; seg[o + 2] = b.x; seg[o + 3] = b.y;
-          seg[o + 4] = r; seg[o + 5] = c[0] / 255; seg[o + 6] = c[1] / 255; seg[o + 7] = c[2] / 255;
-          seg[o + 8] = grain ? P.dens[i] : 1; seg[o + 9] = grain ? P.dens[j] : 1; seg[o + 10] = u0;
-          seeds[s] = (P.seed || 0) >>> 0;
-        };
-        if (n === 1) put(0, 0, 0, P.widths[0] / 2);
-        else for (let i = 0; i + 1 < n; i++) {
-          put(i, i, i + 1, (P.widths[i] + P.widths[i + 1]) / 4);
-          u0 += Math.hypot(L.points[i + 1].x - L.points[i].x, L.points[i + 1].y - L.points[i].y);
-        }
-        Object.assign(out, { seg, seeds, grain, alpha: P.kind === RF_SHADER ? P.rgba[3] / 255 : 1 });
+      if (had && had.pts === L.points && had.n0 === L.points.length) return had;
+      const P = prepared(L), n0 = L.points.length, pts = L.points;
+      const out = { pts, n0, kind: P.kind, grain: false, alpha: 1, seed: 0, gr: null };
+      let idx;                                                // the points on the card: a highlighter's repeats dropped
+      if (P.kind === RF_HIGHLIGHTER) {                        // against the last point kept, as render.c drops them
+        idx = [0];
+        for (let i = 1; i < n0; i++) { const j = idx[idx.length - 1]; if (Math.abs(pts[i].x - pts[j].x) > 1e-6 || Math.abs(pts[i].y - pts[j].y) > 1e-6) idx.push(i); }
+      } else idx = Array.from({ length: n0 }, (_, i) => i);
+      const n = idx.length, buf = new ArrayBuffer(n * PT), f32 = new Float32Array(buf), u8 = new Uint8Array(buf);
+      const c = P.rgba;
+      for (let k = 0; k < n; k++) {
+        const q = pts[idx[k]], o = k * PT;
+        f32[o / 4] = q.x; f32[o / 4 + 1] = q.y; f32[o / 4 + 2] = P.widths[idx[k]];
+        u8[o + 13] = c[0]; u8[o + 14] = c[1]; u8[o + 15] = c[2];
       }
+      if (P.kind === RF_HIGHLIGHTER) {                         // its segments, and its bevels where it turns (render.c's rule)
+        let pdx = 0, pdy = 0, prev = false;
+        for (let k = 0; k + 1 < n; k++) {
+          const a = pts[idx[k]], b = pts[idx[k + 1]], ex = b.x - a.x, ey = b.y - a.y, L = Math.sqrt(ex * ex + ey * ey);
+          const dx = ex / L, dy = ey / L;
+          let f = SEG;
+          if (prev) { const cross = pdx * dy - pdy * dx; if (Math.abs(cross) >= 1e-6) f |= cross > 0 ? BEVEL | OTHER : BEVEL; }
+          u8[k * PT + 12] = f;
+          pdx = dx; pdy = dy; prev = true;
+        }
+      } else {
+        if (n === 1) u8[12] = DOT; else for (let k = 0; k + 1 < n; k++) u8[k * PT + 12] = SEG;
+        out.grain = P.kind === RF_PEN && P.dens.some(d => d < 1);
+        out.alpha = P.kind === RF_SHADER ? P.rgba[3] / 255 : 1;
+        if (out.grain) {                                      // its densities, and its length along it at each point
+          const gr = new Float32Array(n * 2);
+          let u = 0;
+          for (let k = 0; k < n; k++) {
+            if (k) u += Math.hypot(pts[k].x - pts[k - 1].x, pts[k].y - pts[k - 1].y);
+            gr[2 * k] = P.dens[k]; gr[2 * k + 1] = u;
+          }
+          out.gr = gr; out.seed = (P.seed || 0) >>> 0;
+        }
+      }
+      out.rec = u8; out.n = n;
       out.serial = ++serial;
       parts.set(L, out);
       return out;
@@ -528,31 +516,27 @@ span.lname { cursor: default; }
       return c;
     }
     function build(ps, key) {                                 // a chunk's buffers on the card, from its parts
-      let c, nSeg = 0, nTri = 0;
-      for (const p of ps) { if (p.tri) nTri += p.tri.length; else nSeg += p.seeds.length; }
-      const seg = new Float32Array(nSeg * F), seeds = new Uint32Array(nSeg), tri = new Float32Array(nTri), plan = [], at = new Map();
-      let sN = 0, tN = 0;
+      let nP = 2, nG = 1;                                     // a record each side of the points; one after the grain
+      for (const p of ps) { nP += p.n; if (p.gr) nG += p.n; }
+      const rec = new Uint8Array(nP * PT), gr = nG > 1 ? new Float32Array(nG * 2) : null, plan = [], at = new Map();
+      let pN = 1, gN = 0, own = false;
       for (const p of ps) {
-        at.set(p, p.tri ? { tri: tN, n: p.tri.length } : { seg: sN * F, n: p.seeds.length * F });
-        if (p.tri) {
-          const first = tN / 5; tri.set(p.tri, tN); tN += p.tri.length;
-          const last = plan[plan.length - 1];
-          if (last && last.type === "hl") last.count += p.tri.length / 5; else plan.push({ type: "hl", first, count: p.tri.length / 5 });
-        } else {
-          const first = sN; seg.set(p.seg, sN * F); seeds.set(p.seeds, sN); sN += p.seeds.length;
-          const own = p.kind === RF_SHADER || p.grain, last = plan[plan.length - 1];
-          if (!own && last && last.type === "pen") last.count += p.seeds.length;
-          else plan.push({ type: own ? "own" : "pen", first, count: p.seeds.length, grain: p.grain, alpha: p.alpha });
-        }
+        at.set(p, { off: pN * PT, n: p.n * PT });
+        rec.set(p.rec, pN * PT);
+        const kind = p.kind === RF_HIGHLIGHTER ? "hl" : (p.kind === RF_SHADER || p.grain) ? "own" : "pen", last = plan[plan.length - 1];
+        if (kind !== "own" && last && last.type === kind) last.count += p.n;
+        else plan.push({ type: kind, first: pN, count: p.n, grain: p.grain, alpha: p.alpha, seed: p.seed, gfirst: gN });
+        if (p.gr) { gr.set(p.gr, gN * 2); gN += p.n; }
+        if (kind === "own") own = true;
+        pN += p.n;
       }
-      c = { key, plan, at, segBuf: gl.createBuffer(), seedBuf: gl.createBuffer(), triBuf: gl.createBuffer() };
+      const c = { key, plan, at, own, ptBuf: gl.createBuffer(), grBuf: gr ? gl.createBuffer() : null };
       for (const p of ps) partChunk.set(p, c);
-      gl.bindBuffer(gl.ARRAY_BUFFER, c.segBuf); gl.bufferData(gl.ARRAY_BUFFER, seg, gl.STATIC_DRAW);
-      gl.bindBuffer(gl.ARRAY_BUFFER, c.seedBuf); gl.bufferData(gl.ARRAY_BUFFER, seeds, gl.STATIC_DRAW);
-      gl.bindBuffer(gl.ARRAY_BUFFER, c.triBuf); gl.bufferData(gl.ARRAY_BUFFER, tri, gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER, c.ptBuf); gl.bufferData(gl.ARRAY_BUFFER, rec, gl.STATIC_DRAW);
+      if (gr) { gl.bindBuffer(gl.ARRAY_BUFFER, c.grBuf); gl.bufferData(gl.ARRAY_BUFFER, gr, gl.STATIC_DRAW); }
       return c;
     }
-    const drop = c => { gl.deleteBuffer(c.segBuf); gl.deleteBuffer(c.seedBuf); gl.deleteBuffer(c.triBuf); };
+    const drop = c => { gl.deleteBuffer(c.ptBuf); if (c.grBuf) gl.deleteBuffer(c.grBuf); };
     function sync(lines) {
       // THE SAME STROKES AS LAST TIME (a pan, a zoom, a swipe in progress): the chunks as they are
       if (lines.length === have.length) {
@@ -572,22 +556,20 @@ span.lname { cursor: default; }
       gen++;
       for (const c of now) c.gen = gen;
       // a chunk not drawn for two draws is off the card (kept that long, the page's survive the selection's picture)
-      for (const [key, c] of kept) if (c.gen < gen - 2) {
-        gl.deleteBuffer(c.segBuf); gl.deleteBuffer(c.seedBuf); gl.deleteBuffer(c.triBuf); kept.delete(key);
-      }
-      for (const c of zeroed) if (!now.includes(c)) { gl.deleteBuffer(c.segBuf); gl.deleteBuffer(c.seedBuf); gl.deleteBuffer(c.triBuf); zeroed.delete(c); }
+      for (const [key, c] of kept) if (c.gen < gen - 2) { drop(c); kept.delete(key); }
+      for (const c of zeroed) if (!now.includes(c)) { drop(c); zeroed.delete(c); }
       chunks = now;
     }
-    // A SWIPE IN PROGRESS: a stroke the eraser took has its records in its chunk zeroed (a capsule of no width, a triangle
-    // of no area: it draws nothing), the chunk set aside so it is never used again; the pieces it leaves are drawn over
+    // A SWIPE IN PROGRESS: a stroke the eraser took has its points' records in its chunk zeroed (no flags: it draws
+    // nothing), the chunk set aside so it is never used again; the pieces it leaves are drawn over
     // the page from a small set of their own (overlay). The chunks are made again once, when the swipe is over.
     function hide(lines) {
       for (const L of lines) {
         const p = parts.get(L), c = p && partChunk.get(p), w = c && c.at.get(p);
         if (!w || !(chunks.includes(c) || over.includes(c))) continue;
         if (kept.get(c.key) === c) { kept.delete(c.key); zeroed.add(c); }
-        gl.bindBuffer(gl.ARRAY_BUFFER, w.tri !== undefined ? c.triBuf : c.segBuf);
-        gl.bufferSubData(gl.ARRAY_BUFFER, (w.tri !== undefined ? w.tri : w.seg) * 4, new Float32Array(w.n));
+        gl.bindBuffer(gl.ARRAY_BUFFER, c.ptBuf);
+        gl.bufferSubData(gl.ARRAY_BUFFER, w.off, new Uint8Array(w.n));
       }
     }
     // the overlay grows by the pieces new since the last frame, a chunk of their own (its own buffers, never in `kept`);
@@ -599,50 +581,68 @@ span.lname { cursor: default; }
       for (const L of lines) if (!overHas.has(L)) { overHas.add(L); fresh.push(partOf(L)); }
       if (fresh.length) over.push(build(fresh, ""));
     }
-    function bindSegs(c, first) {                             // the per-segment attributes of chunk c, from segment `first` on
-      gl.bindBuffer(gl.ARRAY_BUFFER, c.segBuf);
-      gl.vertexAttribPointer(1, 4, gl.FLOAT, false, F * 4, first * F * 4);
-      gl.vertexAttribPointer(2, 4, gl.FLOAT, false, F * 4, first * F * 4 + 16);
-      gl.vertexAttribPointer(3, 4, gl.FLOAT, false, F * 4, first * F * 4 + 32);
-      gl.bindBuffer(gl.ARRAY_BUFFER, c.seedBuf);
-      gl.vertexAttribIPointer(4, 1, gl.UNSIGNED_INT, 0, first * 4);
+    function points(c, first) {                               // this point (a) and the next (b), from the chunk's buffer
+      const o = first * PT;
+      gl.bindBuffer(gl.ARRAY_BUFFER, c.ptBuf);
+      gl.vertexAttribPointer(1, 2, gl.FLOAT, false, PT, o); gl.vertexAttribPointer(2, 1, gl.FLOAT, false, PT, o + 8);
+      gl.vertexAttribIPointer(3, 4, gl.UNSIGNED_BYTE, PT, o + 12);                         // the flags and the color, one attribute
+      gl.vertexAttribPointer(5, 2, gl.FLOAT, false, PT, o + PT); gl.vertexAttribPointer(6, 1, gl.FLOAT, false, PT, o + PT + 8);
     }
 
-    // THE CANVAS ON THE CARD: the page at the working size (ss times the screen's), RGB, with a stencil for the strokes
+    // THE CANVAS ON THE CARD: the page at the working size (the tablet's resolution or the screen's, whichever is finer), RGBA8 (RGB is emulated, and slow),
+    // made once for its size (texStorage2D: no room for levels it never has); a stencil (4 bytes a pixel, whatever is
+    // asked for) only once a page has a shader or grain stroke, which is all it is for
     function target(W, H) {
       if (W > gl.getParameter(gl.MAX_TEXTURE_SIZE) || H > gl.getParameter(gl.MAX_TEXTURE_SIZE)) return false;
-      gl.bindTexture(gl.TEXTURE_2D, tex);
       if (W !== texW || H !== texH) {
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB8, W, H, 0, gl.RGB, gl.UNSIGNED_BYTE, null);     // RGB, as the editor's canvas
+        if (tex) gl.deleteTexture(tex);
+        if (stencil) { gl.deleteRenderbuffer(stencil); stencil = null; }
+        tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+        gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, W, H);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.bindRenderbuffer(gl.RENDERBUFFER, stencil); gl.renderbufferStorage(gl.RENDERBUFFER, gl.STENCIL_INDEX8, W, H);
         gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
-        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.STENCIL_ATTACHMENT, gl.RENDERBUFFER, stencil);
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.STENCIL_ATTACHMENT, gl.RENDERBUFFER, null);
         texW = W; texH = H; readBuf = null;
       }
       gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
       gl.viewport(0, 0, W, H);
       return true;
     }
+    function needStencil() {
+      if (stencil) return;
+      stencil = gl.createRenderbuffer();
+      gl.bindRenderbuffer(gl.RENDERBUFFER, stencil); gl.renderbufferStorage(gl.RENDERBUFFER, gl.STENCIL_INDEX8, texW, texH);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+      gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.STENCIL_ATTACHMENT, gl.RENDERBUFFER, stencil);
+    }
     function strokes(W, H, lines, k, ox, oy, sq) {           // the lines over what the target holds, in file order
       sync(lines);
+      const all = over.length ? chunks.concat(over) : chunks;
+      if (all.some(c => c.own)) needStencil();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
       gl.enable(gl.SCISSOR_TEST);                             // put()'s square: past it, kept and not shown
       if (sq.cx1 < sq.cx0 || sq.cy1 < sq.cy0) gl.scissor(0, 0, 0, 0); else gl.scissor(sq.cx0, sq.cy0, sq.cx1 - sq.cx0 + 1, sq.cy1 - sq.cy0 + 1);
-      gl.clearStencil(0); gl.clear(gl.STENCIL_BUFFER_BIT);
+      if (stencil) { gl.clearStencil(0); gl.clear(gl.STENCIL_BUFFER_BIT); }
       gl.useProgram(segP); gl.uniform2f(uSeg.size, W, H); gl.uniform1f(uSeg.k, k); gl.uniform2f(uSeg.off, ox, oy);
-      gl.useProgram(triP); gl.uniform2f(uTri.size, W, H); gl.uniform1f(uTri.k, k); gl.uniform2f(uTri.off, ox, oy);
+      gl.useProgram(triP); gl.uniform2f(uTri.size, W, H); gl.uniform1f(uTri.k, k); gl.uniform2f(uTri.off, ox, oy); gl.uniform1f(uTri.eps, WASH_EPS);
       let ref = 0;
-      for (const c of over.length ? chunks.concat(over) : chunks) for (const d of c.plan) {
-        if (d.type === "hl") {
-          gl.useProgram(triP); gl.bindVertexArray(triVao);
-          gl.bindBuffer(gl.ARRAY_BUFFER, c.triBuf);
-          gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 20, 0); gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 20, 8);
+      for (const c of all) for (const d of c.plan) {
+        if (d.type === "hl") {                                // a run of highlighters: nine vertices a point (VS_HL)
+          gl.useProgram(triP); gl.bindVertexArray(triVao); points(c, d.first);
+          const o = (d.first - 1) * PT;                        // the point before (a bevel's)
+          gl.vertexAttribPointer(9, 2, gl.FLOAT, false, PT, o); gl.vertexAttribPointer(10, 1, gl.FLOAT, false, PT, o + 8);
           gl.disable(gl.STENCIL_TEST); gl.enable(gl.BLEND); gl.blendEquation(gl.MIN);
-          gl.drawArrays(gl.TRIANGLES, d.first, d.count);
+          gl.drawArraysInstanced(gl.TRIANGLES, 0, 9, d.count);
           continue;
         }
-        gl.useProgram(segP); gl.bindVertexArray(segVao); bindSegs(c, d.first);
+        gl.useProgram(segP); gl.bindVertexArray(segVao); points(c, d.first);
+        if (d.grain) {                                         // its densities and lengths along it
+          gl.bindBuffer(gl.ARRAY_BUFFER, c.grBuf); gl.enableVertexAttribArray(7); gl.enableVertexAttribArray(8);
+          gl.vertexAttribPointer(7, 2, gl.FLOAT, false, GR, d.gfirst * GR); gl.vertexAttribPointer(8, 2, gl.FLOAT, false, GR, (d.gfirst + 1) * GR);
+        } else {                                               // solid: density 1 everywhere
+          gl.disableVertexAttribArray(7); gl.disableVertexAttribArray(8); gl.vertexAttrib2f(7, 1, 0); gl.vertexAttrib2f(8, 1, 0);
+        }
         if (d.type === "pen") {
           gl.disable(gl.STENCIL_TEST); gl.disable(gl.BLEND); gl.uniform1i(uSeg.grain, 0); gl.uniform1f(uSeg.alpha, 1);
         } else {
@@ -650,7 +650,7 @@ span.lname { cursor: default; }
           if (ref === 1) gl.clear(gl.STENCIL_BUFFER_BIT);
           gl.enable(gl.STENCIL_TEST); gl.stencilFunc(gl.NOTEQUAL, ref, 0xff); gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
           gl.enable(gl.BLEND); gl.blendEquation(gl.FUNC_ADD); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-          gl.uniform1i(uSeg.grain, d.grain ? 1 : 0); gl.uniform1f(uSeg.alpha, d.alpha);
+          gl.uniform1i(uSeg.grain, d.grain ? 1 : 0); gl.uniform1f(uSeg.alpha, d.alpha); gl.uniform1ui(uSeg.seed, d.seed);
         }
         gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, d.count);
       }
@@ -676,60 +676,52 @@ span.lname { cursor: default; }
       holds = false;
       if (gl.isContextLost() || !target(c.W, c.H)) return false;
       gl.bindTexture(gl.TEXTURE_2D, tex); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-      // what is under the ink, up as it is: RGB rows, top first (the framebuffer's row 0 is the canvas's top here)
-      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, c.W, c.H, gl.RGB, gl.UNSIGNED_BYTE, new Uint8Array(c.px.buffer, c.px.byteOffset, c.px.length));
+      // what is under the ink, up as it is: rows top first (the framebuffer's row 0 is the canvas's top here), RGBA
+      const n = c.W * c.H, up = new Uint8Array(n * 4), px = c.px;
+      for (let i = 0, j = 0; i < n; i++, j += 3) { const o = i * 4; up[o] = px[j]; up[o + 1] = px[j + 1]; up[o + 2] = px[j + 2]; up[o + 3] = 255; }
+      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, c.W, c.H, gl.RGBA, gl.UNSIGNED_BYTE, up);
       strokes(c.W, c.H, lines, k, ox, oy, c);
       readInto(c);
       return true;
     }
 
     // THE PAGE SHOWN STRAIGHT FROM THE CARD: what is under the ink (a canvas the browser drew: paper, template, pictures,
-    // text) copied in, the strokes over it, then each ss x ss block averaged down into this canvas, the screen's size,
-    // which the editor copies onto its screen. Nothing comes back from the card; readInto() does that, when asked.
-    const underTex = gl.createTexture();
-    let underW = 0, underH = 0;
+    // text) copied in, the strokes over it, then shrunk to this canvas, the screen's size (FS_AREA: each screen pixel the
+    // average of the working pixels under it), which the editor copies onto its screen. Nothing comes back from the
+    // card; readInto() does that, when asked.
+    let underTex = null, underW = 0, underH = 0;
     /** under: the canvas of what is under the ink, or null when it is as the last one sent (it stays on the card) */
-    function page(under, lines, k, ox, oy, sq, ss) {
+    function page(under, lines, k, ox, oy, sq, w, h) {    // w x h: the screen's canvas
       if (!under && !underW) return false;
       const W = under ? under.width : underW, H = under ? under.height : underH;
       holds = false;
       if (gl.isContextLost() || !target(W, H)) return false;
-      gl.bindTexture(gl.TEXTURE_2D, underTex);
       if (under) {
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, under);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        if (!underTex || W !== underW || H !== underH) {      // made once for its size, then filled
+          if (underTex) gl.deleteTexture(underTex);
+          underTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, underTex);
+          gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, W, H);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        }
+        gl.bindTexture(gl.TEXTURE_2D, underTex);
+        gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, under);
         underW = W; underH = H;
       }
       gl.bindFramebuffer(gl.FRAMEBUFFER, fb); gl.viewport(0, 0, W, H);
       gl.useProgram(copyP); gl.uniform1i(uCopy.tex, 0); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, underTex);
       gl.disable(gl.BLEND); gl.drawArrays(gl.TRIANGLES, 0, 3);
       strokes(W, H, lines, k, ox, oy, sq);
-      const w = Math.floor(W / ss), h = Math.floor(H / ss);
       if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
       gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, w, h);
-      gl.useProgram(downP); gl.uniform1i(uDown.tex, 0); gl.uniform1i(uDown.ss, ss); gl.uniform1i(uDown.h, h);
+      gl.useProgram(areaP); gl.uniform1i(uArea.tex, 0); gl.uniform1i(uArea.W, W); gl.uniform1i(uArea.cw, w); gl.uniform1i(uArea.h, h);
       gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       holds = true;
       return true;
-    }
-    const VS_FULL = `#version 300 es
-    void main() { vec2 p = vec2(gl_VertexID == 1 ? 3.0 : -1.0, gl_VertexID == 2 ? 3.0 : -1.0); gl_Position = vec4(p, 0.0, 1.0); }`;
-    const FS_COPY = `#version 300 es
-    precision highp float; uniform sampler2D tex; out vec4 color;
-    void main() { color = vec4(texelFetch(tex, ivec2(gl_FragCoord.xy), 0).rgb, 1.0); }`;
-    const FS_DOWN = `#version 300 es
-    precision highp float; uniform sampler2D tex; uniform int ss; uniform int h; out vec4 color;
-    void main() {                                             // the screen's row from the top; each block as the CPU averages it
-      ivec2 o = ivec2(int(gl_FragCoord.x), h - 1 - int(gl_FragCoord.y)) * ss;
-      vec3 sum = vec3(0.0);
-      for (int j = 0; j < ss; j++) for (int i = 0; i < ss; i++) sum += texelFetch(tex, o + ivec2(i, j), 0).rgb;
-      float n = float(ss * ss);
-      color = vec4(floor((sum * 255.0 + n * 0.5) / n + 0.5) / 255.0, 1.0);
-    }`;
-    let copyP, downP;
-    try { copyP = prog(VS_FULL, FS_COPY); downP = prog(VS_FULL, FS_DOWN); } catch (e) { return null; }
-    const uCopy = { tex: U(copyP, "tex") }, uDown = { tex: U(downP, "tex"), ss: U(downP, "ss"), h: U(downP, "h") };
+    }
+    let copyP, areaP;
+    try { copyP = prog(VS_FULL, FS_COPY); areaP = prog(VS_FULL, FS_AREA); } catch (e) { return null; }
+    const uCopy = { tex: U(copyP, "tex") }, uArea = { tex: U(areaP, "tex"), W: U(areaP, "W"), cw: U(areaP, "cw"), h: U(areaP, "h") };
     return { draw, page, readInto, hide, overlay, holds: (W, H) => holds && texW === W && texH === H, canvas: cv, name: (() => { const x = gl.getExtension("WEBGL_debug_renderer_info"); return x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : "WebGL2"; })() };
   })();
 
@@ -832,12 +824,30 @@ span.lname { cursor: default; }
   const view = { zoom: 1, cx: 0, top: 0 };
   const vp = document.getElementById("vp"), cv = document.getElementById("cv"), ctx = cv.getContext("2d");
   const dlg = document.getElementById("dlg"), zoomBtn = document.getElementById("zoom");
-  let vpW = 0, vpH = 0, dpr = 1, SS = 2, base = null, shown = null, live = null, textLayout = null;
+  let vpW = 0, vpH = 0, dpr = 1, base = null, shown = null, live = null, textLayout = null;
+  // THE WORKING CANVAS FOLLOWS THE SCREEN: the viewport's own pixels at 1x zoom and below, more as the zoom goes in, up
+  // to twice the viewport's each way (four times its pixels) from 2x on -- and never coarser than the tablet (one pixel
+  // a page unit); then shrunk to the screen (downsample(), FS_AREA: each screen pixel the average of the working pixels
+  // under it). WW x WH is its size, SS its pixels a screen pixel. At most 4000 across (FS_AREA's sum).
+  let WW = 0, WH = 0, SS = 1;
+  function workSize() {
+    const screen = Math.round(cv.width * Math.min(2, Math.max(1, view.zoom)));
+    const tablet = Math.ceil(cv.width / (dpr * scale()));     // the page units across the view: one pixel each
+    WW = Math.min(Math.max(cv.width, 4000), Math.max(screen, tablet));
+    SS = WW / cv.width;
+    WH = WW === cv.width ? cv.height : Math.ceil(cv.height * SS);
+  }
   // THE PAGE AS SHOWN, kept on a canvas of its own: a repaint (the caret's blink, the eraser's ring, a frame dragged) is one
   // copy of it, not the whole image put again; it is put only when it changed (shownDirty)
   const shownCv = document.createElement("canvas"), shownCtx = shownCv.getContext("2d");
   let shownDirty = true;
   function layout() {
+    if (THUMB_W) {                                            // a thumbnail: its own size, one pixel a pixel
+      vpW = THUMB_W; vpH = Math.round(THUMB_W * 4 / 3); dpr = 1;
+      vp.style.width = vpW + "px"; vp.style.height = vpH + "px";
+      cv.width = vpW; cv.height = vpH; cv.style.width = vpW + "px"; cv.style.height = vpH + "px";
+      rebuild(); return;
+    }
     // the frame the viewer gives it: the bar on top, the page below at the Paper Pro's 3:4, as large as fits
     const m = document.body.classList.contains("embedded") ? 0 : 32;   // in the viewer the frame is the port: no margin
     const maxW = window.innerWidth - m, maxH = window.innerHeight - document.getElementById("bar").offsetHeight - document.getElementById("note").offsetHeight - m;
@@ -845,7 +855,6 @@ span.lname { cursor: default; }
     vpW = Math.floor(vpH * 3 / 4);
     vp.style.width = vpW + "px"; vp.style.height = vpH + "px";
     dpr = window.devicePixelRatio || 1;
-    SS = dpr >= 2 ? 1 : 2;                                    // twice the screen's pixels, averaged down, as render.py draws for a screen
     cv.width = Math.round(vpW * dpr); cv.height = Math.round(vpH * dpr);
     cv.style.width = vpW + "px"; cv.style.height = vpH + "px";
     rebuild();
@@ -857,7 +866,7 @@ span.lname { cursor: default; }
   const drawable = (x, y) => Math.abs(x) <= half() && y >= 0;  // the square, and the page extends downward
 
   function canvasFor() {                                      // gray, the white of the drawable square, then the text layer
-    const W = cv.width * SS, H = cv.height * SS, k = dpr * SS, px = new Uint8ClampedArray(W * H * 3).fill(142);
+    const W = WW, H = WH, k = dpr * SS, px = new Uint8ClampedArray(W * H * 3).fill(142);
     const [ax, ay] = toScreen(-half(), 0), [bx] = toScreen(half(), 0);
     const c = { W, H, px, stamp: new Int32Array(W * H), cx0: Math.max(0, Math.ceil(ax * k - 0.5)), cx1: Math.min(W - 1, Math.floor(bx * k - 0.5)),
                 cy0: Math.max(0, Math.ceil(ay * k - 0.5)), cy1: H - 1 };
@@ -894,9 +903,10 @@ span.lname { cursor: default; }
   function rebuildBand(y0p, y1p) {
     if (!base || !shown || live || pickDrag || hiddenLines.size || hiddenPics.size || (GL && !gpuFailed)) { rebuild(); return; }
     const k = dpr * SS, W = base.W, px = base.px;
-    let r0 = Math.max(0, Math.floor(toScreen(0, y0p)[1] * k)), r1 = Math.min(base.H - 1, Math.ceil(toScreen(0, y1p)[1] * k));
-    r0 -= r0 % SS; r1 = Math.min(base.H - 1, r1 + (SS - 1 - (r1 % SS)));
-    if (r1 < r0) { paint(); return; }
+    // the screen's rows the band takes, and the working rows under them (all of each: a screen row is made from them all)
+    const d0 = Math.max(0, Math.floor(toScreen(0, y0p)[1] * dpr)), d1 = Math.min(cv.height - 1, Math.ceil(toScreen(0, y1p)[1] * dpr));
+    if (d1 < d0) { paint(); return; }
+    const r0 = Math.floor(d0 * WW / cv.width), r1 = Math.min(base.H - 1, Math.floor(((d1 + 1) * WW - 1) / cv.width));
     for (let y = r0; y <= r1; y++) {                          // the paper: the gray, and the drawable square's white
       px.fill(142, y * W * 3, (y + 1) * W * 3);
       if (y >= base.cy0 && base.cx1 >= base.cx0) px.fill(255, (y * W + base.cx0) * 3, (y * W + base.cx1 + 1) * 3);
@@ -908,7 +918,6 @@ span.lname { cursor: default; }
       const b = boxOf(L); if (b[3] < top || b[1] > bot) continue;
       drawLine(band, L);
     }
-    const d0 = r0 / SS, d1 = Math.min(cv.height - 1, Math.floor(r1 / SS));
     shown.data.set(downsample(base, 0, d0, cv.width, d1 - d0 + 1).data, d0 * cv.width * 4); shownDirty = true;
     footSeen = footOf();
     paint(); saveSoon();
@@ -945,7 +954,16 @@ span.lname { cursor: default; }
     else penShape(c, xy, w, P.kind, P.rgba, s, P.dens && { dens: P.dens, seed: P.seed, unit: k, u0: 0 });
   }
   // THE PAGE'S INK, on the graphics card when there is one (GL above), else line by line as drawLine draws it
-  let gpuFailed = false;
+  let gpuFailed = false, gpuTold = false;
+  function gpuDown(why) {                                     // drawn without the card from now on; the daemon page told, once
+    gpuFailed = true;
+    console.warn("The page editor draws without the graphics card:", why);
+    if (gpuTold || location.protocol === "file:") return;
+    gpuTold = true;
+    fetch("/api/v1/render/fallback", { method: "POST", headers: { Authorization: "Bearer " + token(), "Content-Type": "application/json" },
+      body: JSON.stringify({ why: String(why && why.message || why).slice(0, 200) }) }).catch(() => {});
+  }
+  if (!GL && !/(^|[#&])cpu\b/.test(location.hash)) setTimeout(() => gpuDown("WebGL2 is not available"), 0);
   function drawInk(c) {
     const lines = [];
     for (const Ly of page.layers) if (Ly.visible) for (const L of Ly.lines) if (!hiddenLines.has(L)) lines.push(L);
@@ -956,7 +974,7 @@ span.lname { cursor: default; }
           inkTime = { on: GL.name, ms: performance.now() - t, lines: lines.length };
           return;
         }
-      } catch (e) { gpuFailed = true; console.warn("The page editor draws without the graphics card:", e); }
+      } catch (e) { gpuDown(e); }
     }
     const t = performance.now();
     for (const L of lines) drawLine(c, L);
@@ -964,13 +982,46 @@ span.lname { cursor: default; }
   }
   let inkTime = null;
   window.pdInkTime = () => inkTime;                           // how the last page was drawn, for a look from the console
-  function downsample(c, x0 = 0, y0 = 0, W = cv.width, H = cv.height) {   // a region of the canvas, averaged down
-    const out = ctx.createImageData(W, H), o = out.data, k2 = SS * SS;
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      let r = 0, g = 0, b = 0;
-      for (let j = 0; j < SS; j++) { const row = (((y0 + y) * SS + j) * c.W + (x0 + x) * SS) * 3; for (let i = 0; i < SS; i++) { r += c.px[row + 3 * i]; g += c.px[row + 3 * i + 1]; b += c.px[row + 3 * i + 2]; } }
-      const q = (y * W + x) * 4;
-      o[q] = (r + k2 / 2) / k2; o[q + 1] = (g + k2 / 2) / k2; o[q + 2] = (b + k2 / 2) / k2; o[q + 3] = 255;
+  // THE WORKING CANVAS SHRUNK TO THE SCREEN, a region of it: each screen pixel the average of the working pixels under it,
+  // each weighted by how much of it lies there -- the sum ui/shaders.js's FS_AREA makes on the card, in the same whole
+  // numbers, so the two agree to the last bit. The overlaps along a side are worked out once for each screen column or row.
+  const spanMemo = new Map();
+  function spans(d, A, B) {                                   // screen pixel d: [[working pixel, weight], ...]
+    const key = d + ":" + A + ":" + B;
+    let s = spanMemo.get(key);
+    if (s) return s;
+    s = [];
+    for (let i = Math.floor(d * A / B), i1 = Math.floor(((d + 1) * A - 1) / B); i <= i1; i++)
+      s.push([i, Math.min((d + 1) * A, (i + 1) * B) - Math.max(d * A, i * B)]);
+    if (spanMemo.size > 20000) spanMemo.clear();
+    spanMemo.set(key, s);
+    return s;
+  }
+  function downsample(c, x0 = 0, y0 = 0, W = cv.width, H = cv.height) {
+    const out = ctx.createImageData(W, H), o = out.data, px = c.px, CW = c.W, A = WW, B = cv.width;
+    if (A === B) {                                            // at the screen's own resolution: as it is
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const q = ((y0 + y) * CW + x0 + x) * 3, t = (y * W + x) * 4;
+        o[t] = px[q]; o[t + 1] = px[q + 1]; o[t + 2] = px[q + 2]; o[t + 3] = 255;
+      }
+      return out;
+    }
+    const n = A * A, half = Math.floor(n / 2), cols = [];
+    for (let x = 0; x < W; x++) cols.push(spans(x0 + x, A, B));
+    for (let y = 0; y < H; y++) {
+      const rows = spans(y0 + y, A, B);
+      for (let x = 0; x < W; x++) {
+        const sx = cols[x];
+        let r = 0, g = 0, b = 0;
+        for (const [j, wy] of rows) {
+          let rr = 0, gg = 0, bb = 0;
+          const row = j * CW;
+          for (const [i, wx] of sx) { const q = (row + i) * 3; rr += px[q] * wx; gg += px[q + 1] * wx; bb += px[q + 2] * wx; }
+          r += rr * wy; g += gg * wy; b += bb * wy;
+        }
+        const t = (y * W + x) * 4;
+        o[t] = Math.floor((r + half) / n); o[t + 1] = Math.floor((g + half) / n); o[t + 2] = Math.floor((b + half) / n); o[t + 3] = 255;
+      }
     }
     return out;
   }
@@ -1013,7 +1064,7 @@ span.lname { cursor: default; }
   };
   const uc = document.createElement("canvas"), ucg = uc.getContext("2d");      // kept, and drawn over whole each time
   function underCanvas(sq) {                                  // canvasFor's paper and underInk's layers, drawn by the browser
-    const W = cv.width * SS, H = cv.height * SS, k = dpr * SS;
+    const W = WW, H = WH, k = dpr * SS;
     if (uc.width !== W || uc.height !== H) { uc.width = W; uc.height = H; }
     const g = ucg;
     g.setTransform(1, 0, 0, 1, 0, 0);
@@ -1034,7 +1085,7 @@ span.lname { cursor: default; }
     return uc;
   }
   function squareOf() {                                       // canvasFor's drawable square, without its pixels
-    const W = cv.width * SS, H = cv.height * SS, k = dpr * SS;
+    const W = WW, H = WH, k = dpr * SS;
     const [ax, ay] = toScreen(-half(), 0), [bx] = toScreen(half(), 0);
     return { W, H, cx0: Math.max(0, Math.ceil(ax * k - 0.5)), cx1: Math.min(W - 1, Math.floor(bx * k - 0.5)), cy0: Math.max(0, Math.ceil(ay * k - 0.5)), cy1: H - 1 };
   }
@@ -1057,9 +1108,9 @@ span.lname { cursor: default; }
       // what is under the ink, drawn again only when it changed: the view, the text, the template, the pictures
       const key = underKey();
       const fresh = key !== underWas;
-      if (!GL.page(fresh ? underCanvas(sq) : null, lines, s * u, (vpW / 2 - view.cx * s) * u, -view.top * s * u, sq, SS)) { underWas = ""; return false; }
+      if (!GL.page(fresh ? underCanvas(sq) : null, lines, s * u, (vpW / 2 - view.cx * s) * u, -view.top * s * u, sq, cv.width, cv.height)) { underWas = ""; return false; }
       underWas = key;
-    } catch (e) { gpuFailed = true; console.warn("The page editor draws without the graphics card:", e); return false; }
+    } catch (e) { gpuDown(e); return false; }
     if (shownCv.width !== cv.width || shownCv.height !== cv.height) { shownCv.width = cv.width; shownCv.height = cv.height; }
     shownCtx.drawImage(GL.canvas, 0, 0); shownDirty = false;
     base = null; shown = null; cpuStale = true;
@@ -1078,6 +1129,8 @@ span.lname { cursor: default; }
     base = canvasFor(); drawInk(base); shown = downsample(base);
   }
   function rebuild() {
+    if (thumbHold) return;
+    workSize();                                               // the zoom decides it
     freshSprite();                                            // a floating selection, at a new zoom's size
     textLayout = layoutText();
     footSeen = footOf();
@@ -1107,6 +1160,47 @@ span.lname { cursor: default; }
     ctx.save(); ctx.scale(dpr, dpr);
     drawSelection(); drawCaret(); drawEraser(); drawShaping(); drawPick(); drawDecomposing();
     ctx.restore();
+    placeLinks();
+  }
+  // A PAGE'S LINKS (a PDF's or a book's), as the tablet follows them, in the Mirror's view: a link to another page goes
+  // there, a web link opens the browser. Each is a button over its box on the page (the book's page is drawn the page's
+  // frame wide from its top, so a box's fractions of that page are page units at once), placed again with every paint.
+  let links = null, linkLayer = null;
+  async function loadLinks() {
+    if (!VIEW || !page.source || THUMB_W) return;
+    try {
+      const r = await fetch("/api/v1" + BASE + "/library/" + encodeURIComponent(DOC) + "/links/" + PAGE, { headers: { Authorization: "Bearer " + token() } });
+      if (!r.ok) return;
+      const got = await r.json();
+      if (!got.links || !got.links.length) return;
+      links = got;
+    } catch (e) { return; }
+    linkLayer = document.createElement("div");
+    linkLayer.className = "pd-links";
+    for (const l of links.links) {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "pd-link"; b.title = l.go ? "Page " + l.go : l.uri;
+      b.setAttribute("aria-label", l.go ? "Go to page " + l.go : "Open " + l.uri);
+      b.addEventListener("pointerdown", e => e.stopPropagation());
+      b.addEventListener("click", e => {
+        e.preventDefault();
+        if (window.parent === window) return;
+        window.parent.postMessage(l.go ? { pd: "view-go", page: l.go } : { pd: "view-open", uri: l.uri }, location.origin);
+      });
+      b._box = l.box;
+      linkLayer.append(b);
+    }
+    vp.append(linkLayer);
+    placeLinks();
+  }
+  function placeLinks() {
+    if (!linkLayer) return;
+    const W = page.paperSize[0], H = links.aspect ? W * links.aspect : page.paperSize[1];
+    for (const b of linkLayer.children) {
+      const [x0, y0, x1, y1] = b._box;
+      const [a, c] = toScreen(-W / 2 + x0 * W, y0 * H), [d, f] = toScreen(-W / 2 + x1 * W, y1 * H);
+      b.style.left = a + "px"; b.style.top = c + "px"; b.style.width = Math.max(1, d - a) + "px"; b.style.height = Math.max(1, f - c) + "px";
+    }
   }
 
   // ================================================================ undo and redo, for ink and text alike
@@ -1123,7 +1217,32 @@ span.lname { cursor: default; }
   // EVERY CHANGE TO THE PAGE COUNTS (an edit, its undo, its redo): a save is due only when the count moved since the
   // last one, so a redraw, a pan or a zoom never writes -- nor turns a page of tens of thousands of strokes into text
   let changes = 0, savedAt = 0;
-  function record(a) { done.push(a); undone.length = 0; changes++; }
+  function record(a) { done.push(a); undone.length = 0; changes++; largeCheck(); }
+  // A PAGE PAST 250,000 STROKES: warned once for that page, ever (the engine keeps which pages have been)
+  const LARGE = 250000;
+  let largeAsked = false;
+  async function largeCheck() {
+    if (largeAsked || THUMB_W || location.protocol === "file:") return;
+    let n = 0;
+    for (const Ly of page.layers) n += Ly.lines.length;
+    if (n <= LARGE) return;
+    largeAsked = true;
+    const url = "/api/v1" + BASE + "/library/" + encodeURIComponent(DOC) + "/page/" + PAGE + "/large-warned", H = { Authorization: "Bearer " + token() };
+    try { const r = await fetch(url, { headers: H }); if (!r.ok || (await r.json()).warned) return; } catch (e) { return; }
+    const W = window.parent && window.parent.PD;
+    const say = (k, en) => (W && W.t) ? W.t(k) : en;
+    const title = say("editor.large_title", "This page is getting very large");
+    const body = say("editor.large_body", "Your tablet will struggle to load this page, and the page editor will use more of your graphics card's memory than intended. Go on only if you are sure this is fine. If you run a local AI server on the same graphics card, understand that this page takes memory that server would otherwise have.");
+    if (W && W.sheet) {
+      const dlg = W.sheet(title, "<p>" + W.esc(body) + '</p><div class="actions"><button type="button" class="btn primary" data-v="ok" autofocus>' +
+                                 W.esc(say("editor.large_ok", "I understand")) + "</button></div>");
+      dlg.addEventListener("click", e => { if (e.target.closest("button[data-v]")) dlg.close(); });
+      dlg.addEventListener("close", () => dlg.remove());
+      window.parent.document.body.append(dlg);
+      dlg.showModal();
+    } else alert(title + "\n\n" + body);
+    fetch(url, { method: "POST", headers: H }).catch(() => {});
+  }
   // LAYERS: the page's layer nodes, painted bottom to top; the pens and the eraser work on the one in hand
   const snapLayers = () => ({ list: page.layers.map(L => ({ L, visible: L.visible, label: L.label, lines: L.lines.slice() })), active: activeLayer,
                               text: page.textVisible, template: page.templateVisible });
@@ -2108,7 +2227,7 @@ span.lname { cursor: default; }
   const EMBED = window.parent !== window && (() => { try { return !!window.parent.PD; } catch (e) { return false; } })();
   let popX = null;
   function sendTools() {
-    if (EMBED) window.parent.postMessage({ pd: "editor-tools", html: controls.innerHTML }, location.origin);
+    if (EMBED) window.parent.postMessage({ pd: "editor-tools", html: VIEW ? "" : controls.innerHTML }, location.origin);
   }
   function paintControls() {
     const pen = k => {
@@ -2499,7 +2618,7 @@ span.lname { cursor: default; }
     const ox = Math.floor(x0 * kd) / kd, oy = Math.floor(y0 * kd) / kd;           // the picture's corner, on a device pixel
     const Wd = Math.max(1, Math.ceil((x1 - ox) * kd)), Hd = Math.max(1, Math.ceil((y1 - oy) * kd));
     if (Wd * Hd > 6e7) return null;                           // too big to hold: the drag shows plain lines instead
-    const W = Wd * SS, H = Hd * SS;
+    const W = Math.ceil(Wd * SS), H = Math.ceil(Hd * SS);     // the working pixels under the picture's (downsample)
     const c = { W, H, px: new Uint8ClampedArray(W * H * 3).fill(255), stamp: new Int32Array(W * H), cx0: 0, cx1: W - 1, cy0: 0, cy1: H - 1 };
     let onCard = false;
     if (GL && !gpuFailed) try { onCard = GL.draw(c, lines, k, -ox * k, -oy * k); } catch (e) { onCard = false; }
@@ -2901,7 +3020,8 @@ span.lname { cursor: default; }
     }
   }
   // ================================================================ the page from the false mirror, and back
-  const Q = new URLSearchParams(location.hash.slice(1)), DOC = Q.get("doc"), PAGE = Number(Q.get("page") || 1), BASE = Q.get("base") || "/fm";
+  // base: "/fm" the False Mirror's (and when it is not given), "" the Mirror's
+  const Q = new URLSearchParams(location.hash.slice(1)), DOC = Q.get("doc"), PAGE = Number(Q.get("page") || 1), BASE = Q.has("base") ? Q.get("base") : "/fm";
   const SCENE = "/api/v1" + BASE + "/library/" + encodeURIComponent(DOC) + "/page/" + PAGE + "/scene";
   const saved = document.getElementById("saved");
   let lastWritten = null, saveTimer = 0, loaded = false;
@@ -3092,7 +3212,7 @@ span.lname { cursor: default; }
   }
   async function saveNow(leaving) {
     clearTimeout(saveTimer);
-    if (!loaded) return;
+    if (!loaded || VIEW) return;                              // the Mirror's pages are the tablet's: never written from here
     if (saving && !leaving) { saveAgain = true; return; }    // one save at a time: the next one after it
     if (changes === savedAt) return;                          // nothing changed since the last save
     const at = changes;
@@ -3113,7 +3233,7 @@ span.lname { cursor: default; }
     saving = false;
     if (saveAgain) { saveAgain = false; saveNow(); }
   }
-  setInterval(() => { if (!document.hidden) lookAtFile(); }, 2000);
+  setInterval(() => { if (!document.hidden && !THUMB_W) lookAtFile(); }, 2000);
   // every change is a rebuild: a save follows it, once the page has been still for a moment
   const _rebuild = rebuild;
   function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 700); }
@@ -3227,6 +3347,20 @@ span.lname { cursor: default; }
       '" title="' + t.name + '">' + icon(t) + "<span>" + t.name + "</span>" + (t.approx ? APPROX : "") + "</button>").join("") : "<p>No templates were found in the reMarkable app on this computer.</p>";
   }
 
+  // THE THUMBNAIL: everything under the ink in (template, the book's page, placed pictures, the faces), then the page
+  // drawn once and handed to the window as WebP
+  async function drawThumb() {
+    try {
+      await Promise.all([loadTemplate(), loadSource()]);
+      for (let i = 0; i < 400 && page.images.some(im => pictures.has(im.name) && pictures.get(im.name) === null); i++)
+        await new Promise(r => setTimeout(r, 25));               // the placed pictures fromScene sent for
+      thumbHold = false; layout();
+      // the page's faces load when its text is first measured: drawn again once they are in
+      if (document.fonts.status !== "loaded") { await document.fonts.ready; rebuild(); }
+      const blob = await new Promise(r => shownCv.toBlob(r, "image/webp", 0.9));
+      window.parent.postMessage({ pd: "thumb-done", ok: !!blob, blob }, location.origin);
+    } catch (e) { window.parent.postMessage({ pd: "thumb-done", ok: false, why: String(e) }, location.origin); }
+  }
   async function loadPage() {
     try {
       const r = await fetch(SCENE + "?form=bin", { headers: { Authorization: "Bearer " + token() } });
@@ -3234,10 +3368,14 @@ span.lname { cursor: default; }
       const sc = sceneFromBytes(await r.arrayBuffer());
       version = r.headers.get("ETag") || "";
       fromScene(sc); setKnown(sc);
-      loadTemplate(); loadSource();
+      if (THUMB_W) { drawThumb(); return; }
+      loadTemplate(); loadSource().then(loadLinks); largeCheck();
       loaded = true;
       savedAt = changes;                                      // as read: nothing to save until something changes
-    } catch (e) { note.textContent = "This page could not be read: " + e.message; }
+    } catch (e) {
+      if (THUMB_W) { window.parent.postMessage({ pd: "thumb-done", ok: false, why: e.message }, location.origin); return; }
+      note.textContent = "This page could not be read: " + e.message;
+    }
     paintControls(); layout();
     ready = true; document.getElementById("loading").hidden = true;   // loaded, or not to be (the editor opened from its file)
   }

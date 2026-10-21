@@ -226,6 +226,7 @@ def main():
         raise SystemExit("%s is in use (the app is running from it): quit it, then build again" % APP)
     py = sys.executable
     run([py, FASTDECOMP] + ([] if args.native else ["--generic"]), ROOT)
+    run([py, os.path.join(ROOT, "tools", "build_angle.py")], ROOT)       # the engine's ANGLE (nothing done when in place)
     run([py, os.path.join(ROOT, "tools", "make_icons.py")], ROOT)
     if not args.skip_engine:
         run([py, os.path.join(ROOT, "tools", "build_exe.py")], ROOT)

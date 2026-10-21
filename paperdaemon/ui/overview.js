@@ -21,6 +21,11 @@
     if (!t.set || t.error || pull.error_code === "unauthorized")
       out.push({ text: PD.t("issue.tablet"), fix: PD.loginButtons() });
     else if (pullErr) out.push({ text: PD.t("issue.mirror", { why: pullErr }), fix: "" });
+    // the graphics card not drawing (the engine's pictures, or the page editor's): said once a session, until dismissed
+    const rd = st.render || {}, rwhy = rd.engine || rd.editor;
+    let seen = false; try { seen = sessionStorage.getItem("pd-render-told") === "1"; } catch (e) { seen = false; }
+    if (rwhy && !seen) out.push({ text: PD.t("issue.render_cpu", { why: rwhy }),
+      fix: '<button type="button" class="btn small" data-act="render-ok">' + esc(PD.t("issue.render_ok")) + "</button>" });
     // the loop says what state it is in by a code; the usual states are no issue, every other one is, in its own words
     const code = lp.code || "not_started";
     // no_token is the "can't reach your reMarkable" issue above, said once
@@ -194,6 +199,7 @@
   }
 
   async function act(name) {
+    if (name === "render-ok") { try { sessionStorage.setItem("pd-render-told", "1"); } catch (e) { /* shown again */ } renderIssues(); return; }
     if (!["setup", "borrow", "steal"].includes(name)) return;      // a panel's own buttons are not these
     if (name === "setup") { PD.reopenSetup(); return; }
     if (name === "borrow" || name === "steal") {

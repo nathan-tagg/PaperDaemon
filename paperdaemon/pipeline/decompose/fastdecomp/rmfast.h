@@ -60,6 +60,8 @@ RF_API int32_t rf_rm_cols(void);
 /* the same with a density per point (dens: 0..1, 1 solid): the pencils' grain and the light paintbrush and ballpoint */
 RF_API int32_t rf_render_grain(uint8_t *rgb, int32_t W, int32_t H, int32_t ss, const double *xy, const double *w, const double *dens,
                                const int32_t *counts, const int32_t *kinds, const uint8_t *rgba, int32_t nstrokes, double *progress);
+/* the highlighters' kept points and their flags for the graphics card, by highlighter()'s rules (render.c) */
+RF_API int32_t rf_hl_marks(const double *xy, const int32_t *counts, const int32_t *kinds, int32_t nstrokes, uint8_t *flags);
 /* how far the decompose running now has come, in thousandths (0 before it starts, 1000 when it is done); safe to read
  * from another thread while rf_decompose* runs */
 RF_API int32_t rf_progress(void);

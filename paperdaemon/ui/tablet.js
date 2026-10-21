@@ -120,8 +120,20 @@
       input.select();
     }
 
+    // OPENED, THEN DRAWN ANEW: a page's picture in the grid, and a document's cover, are kept until the page (or the
+    // document) is opened; opening it forgets them (and so does leaving the page, for what was written on it while
+    // open), and the next look draws them again (thumbs.py)
+    const opened = (doc, page) => PD.safe(api("POST", "/library/" + encodeURIComponent(doc) + "/opened" + (page ? "?page=" + page : "")));
+    function seenPage() {
+      const now = S.view === "page" && S.doc ? S.doc.id + "|" + S.page : null;
+      if (now === S.seen) return;
+      if (S.seen) { const [d, n] = S.seen.split("|"); opened(d, Number(n)); }
+      if (now) opened(S.doc.id, S.page);
+      S.seen = now;
+    }
     async function paintBody() {
       const dlg = $("#" + VIEWER); if (!dlg || !S.doc) return;
+      seenPage();
       const body = $(".viewer-page", dlg), n = pageCount();
       body.scrollTop = 0;
       if (S.view === "pages") {
@@ -145,50 +157,16 @@
           '<li style="padding-left: ' + (c.level * 20) + 'px"><button type="button" class="chapter" data-go="' + c.page + '"><span>' + esc(c.title) + '</span><span class="meta">' + c.page + "</span></button></li>").join("") + "</ol>";
         return;
       }
-      // A FALSE-MIRROR NOTEBOOK PAGE OPENS IN THE PAGE EDITOR (editor.html, in a frame: it draws with PaperDaemon's own
-      // renderer and saves the page as it goes)
-      if (fm && ["notebook", "pdf", "epub"].includes(S.doc.kind)) {
-        body.className = "viewer-page editing";
-        body.innerHTML = '<iframe class="page-editor" allow="clipboard-read; clipboard-write" title="' + esc(PD.t("viewer.page", { n: S.page })) + '" src="/ui/editor.html#doc=' +
-          encodeURIComponent(S.doc.id) + "&page=" + S.page + "&base=" + encodeURIComponent(base) + '"></iframe>';
-        const efr = $("iframe.page-editor", body);
-        efr.addEventListener("load", () => efr.focus());      // the keys go to the page from the start, no click first
-        return;
-      }
-      body.className = "viewer-page";
-      body.innerHTML = '<div class="page-port"><div class="page-stage"><div class="page-paper"></div><span class="page-frame"><img alt=""></span></div></div>';
-      const img = $("img", body), frame = $(".page-frame", body), want = S.page, d = S.doc.id;
-      const stale = () => want !== S.page || !S.doc || S.doc.id !== d || S.view !== "page";
-      const [fr] = await PD.safe(api("GET", "/library/" + d + "/page/" + want + "/frame"));
-      if (stale()) return;
-      const shown = await PD.loadImage(img, base + "/library/" + d + "/page/" + want + ".png?square=1", { holder: body, stale,
-        giveUp: h => { h.innerHTML = '<p class="sub viewer-wait">' + esc(PD.t("viewer.not_drawn")) + ' <button type="button" class="link-btn" data-v="retry">' +
-          esc(PD.t("common.try_again")) + "</button></p>"; } });
-      if (!shown || stale()) return;
-      img.alt = PD.t("viewer.page", { n: want });
-      S.frame = fr && fr.w ? fr : { w: SCREEN_W, h: SCREEN_H };
-      placePage(true);
-      // THE PAGE'S LINKS, as the tablet follows them: a link to another page goes there, a web link opens the browser
-      const [got] = await PD.safe(api("GET", "/library/" + d + "/links/" + want));
-      if (stale() || !got || !got.links || !got.links.length) return;
-      const k = got.aspect ? Math.min(1, img.naturalWidth * got.aspect / img.naturalHeight) : 1;
-      frame.insertAdjacentHTML("beforeend", got.links.map(l => {
-        const [x0, a, x1, b] = l.box, y0 = a * k, y1 = b * k;
-        const at = 'style="left:' + (x0 * 100) + "%;top:" + (y0 * 100) + "%;width:" + ((x1 - x0) * 100) + "%;height:" + ((y1 - y0) * 100) + '%"';
-        return l.go ? '<button type="button" class="page-link" data-go="' + l.go + '" title="' + esc(PD.t("viewer.page", { n: l.go })) + '" aria-label="' + esc(PD.t("viewer.go_to", { n: l.go })) + '" ' + at + "></button>"
-          : '<button type="button" class="page-link" data-uri="' + esc(l.uri) + '" title="' + esc(l.uri) + '" aria-label="Open ' + esc(l.uri) + '" ' + at + "></button>";
-      }).join(""));
+      // A PAGE OPENS IN THE PAGE EDITOR (editor.html, in a frame: it draws with PaperDaemon's own renderer, on the card),
+      // the False Mirror's to edit (it saves the page as it goes), the Mirror's to look at: the same editor, `view=1`
+      // stripping its edit controls (the Mirror's pages are the tablet's, never written from here)
+      body.className = "viewer-page editing";
+      body.innerHTML = '<iframe class="page-editor" allow="clipboard-read; clipboard-write" title="' + esc(PD.t("viewer.page", { n: S.page })) + '" src="/ui/editor.html#doc=' +
+        encodeURIComponent(S.doc.id) + "&page=" + S.page + "&base=" + encodeURIComponent(base) + (fm ? "" : "&view=1") + '"></iframe>';
+      const efr = $("iframe.page-editor", body);
+      efr.addEventListener("load", () => efr.focus());        // the keys go to the page from the start, no click first
     }
 
-    // THE PAGE ON THE TABLET'S SCREEN. The page area holds a port the Paper Pro's screen's shape (3:4, as big as the
-    // viewer allows, never smaller) and shows in it what the Paper Pro shows: at 1x, 1620 page units across, centered on
-    // the page's middle (x 0). The paper is as wide as the page is tall (the drawable square measured on the tablet) and
-    // runs on down, as the page does; beside it, the tablet's gray (the page editor's 142). The page picture is exactly the frame
-    // wide. A page longer than the screen stretches the port down (the chin) to the viewer's foot, and then the viewer
-    // scrolls, its scrollbar in the margin beside the port. Ctrl + scroll zooms the page from 0.5x to 5x around the
-    // pointer's height, always centered across (always opening at 1x); Shift + scroll moves across a zoomed page until
-    // the zoom changes, and the pill says the zoom (click: 1x). The view opens on the page's top as the tablet shows it.
-    const SCREEN_W = 1620, SCREEN_H = 2160, ZMIN = 0.5, ZMAX = 5;
     // THE VIEWER IS AS TALL AS THE PORT. The port is the Paper Pro's screen, 3:4, as large as the window allows (by its
     // height or its width, whichever runs out first, within 92% x 94% of the window, whatever the UI zoom); the viewer is
     // the port and its title and bar, never taller, and at least wide enough for the bar.
@@ -217,72 +195,8 @@
     }
     window.addEventListener("resize", sizeViewer);
     window.addEventListener("pd-zoom", sizeViewer);
-    function placePage(fresh, anchor) {
-      const dlg = $("#" + VIEWER); if (!dlg || S.view !== "page") return;
-      const body = $(".viewer-page", dlg), port = $(".page-port", body), img = $(".page-frame img", body);
-      if (!port || !img || !img.naturalWidth || !S.frame) return;
-      const stage = $(".page-stage", port), paper = $(".page-paper", port), frame = $(".page-frame", port);
-      const bw = body.clientWidth, bh = body.clientHeight;      // the scrollbar has its own room, beside the port
-      const vw = Math.max(120, Math.min(bw, bh * 0.75)), vh = vw * 4 / 3;
-      const z = S.zoom || 1, s = vw * z / SCREEN_W;                                            // CSS pixels per page unit
-      // the picture is the drawable square wide (as wide as the page is tall) and starts at `top` (0, or above the page's
-      // top where ink was written there)
-      const fw = S.frame.w, top = Math.min(0, S.frame.top || 0), paperW = Math.max(fw, S.frame.h);
-      const imgH = img.naturalHeight * paperW / img.naturalWidth, downTo = Math.max(S.frame.h - top, imgH);
-      const U = Math.max(paperW, SCREEN_W / z);                                                // the stage's width in units
-      // THE TOP OF THE VIEW IS THE PAGE'S TOP AS THE TABLET SHOWS IT: a small page shows above its file's y 0 (measured:
-      // the frame box of a 200 x 266 page starts at y -61), so the view opens at the picture's top
-      // THE PAGE ALWAYS SCROLLS, as on the tablet: on down until the view's top reaches the page's foot (or a screen down,
-      // for a page shorter than the screen), whether or not anything is written there
-      const stageH = Math.max(vh, downTo * s) + vh;
-      // what was under the pointer, in page units, to keep it there
-      let keep = null;
-      if (anchor) {
-        const r = port.getBoundingClientRect(), k = port.offsetWidth ? r.width / port.offsetWidth : 1;
-        const px = (anchor.x - r.left) / k, py = (anchor.y - r.top) / k, old = S.placed;
-        if (old) keep = { py, uy: py / old.s, top: body.scrollTop };
-      }
-      port.style.width = vw + "px"; port.style.height = stageH + "px";
-      stage.style.width = U * s + "px"; stage.style.height = stageH + "px";
-      paper.style.left = (U - paperW) / 2 * s + "px"; paper.style.width = paperW * s + "px"; paper.style.height = stageH + "px";
-      frame.style.left = (U - paperW) / 2 * s + "px";
-      img.style.width = paperW * s + "px";
-      S.placed = { s, U };
-      // ACROSS, always centered on the page's middle (x 0), at every zoom; DOWN, the point under the pointer stays put
-      port.scrollLeft = (U * s - vw) / 2;
-      if (keep) body.scrollTop = keep.top + keep.uy * s - keep.py;
-      else if (fresh) body.scrollTop = 0;
-    }
-    function showZoom() {
-      const dlg = $("#" + VIEWER); if (!dlg) return;
-      let pill = $(".page-zoom", dlg);
-      if (!pill) {
-        pill = document.createElement("button");
-        pill.type = "button"; pill.className = "page-zoom"; pill.dataset.v = "zoom1";
-        dlg.append(pill);
-      }
-      pill.textContent = (Math.round((S.zoom || 1) * 10) / 10).toFixed(1) + "×";
-      pill.title = PD.t("viewer.zoom_reset");
-      pill.style.top = $(".viewer-page", dlg).offsetTop + 10 + "px";
-      pill.classList.add("on");
-      clearTimeout(S.zoomTimer);
-      S.zoomTimer = setTimeout(() => pill.classList.remove("on"), 2500);
-    }
-    function wheelPage(e) {
-      if (S.view !== "page") { if (e.ctrlKey) e.preventDefault(); return; }
-      const port = e.target.closest && e.target.closest(".viewer-page") && $(".page-port", $("#" + VIEWER));
-      if (!port) return;
-      if (e.ctrlKey) {
-        e.preventDefault();
-        S.zoom = Math.max(ZMIN, Math.min(ZMAX, (S.zoom || 1) * Math.exp(-e.deltaY * 0.0015)));
-        const r = port.getBoundingClientRect(), over = e.clientX >= r.left && e.clientX <= r.right;
-        // around the pointer over the page; from the top middle when the pointer is beside it
-        placePage(false, over ? { x: e.clientX, y: Math.max(e.clientY, r.top) } : { x: r.left + r.width / 2, y: Math.max(r.top, 0) });
-        showZoom();
-      } else if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-        e.preventDefault();
-        port.scrollLeft += e.deltaX || e.deltaY;
-      }
+    function wheelPage(e) {                                   // Ctrl + scroll outside the page never zooms the window
+      if (e.ctrlKey) e.preventDefault();
     }
 
     // THE TAG BUTTON'S MENU, under it: the tags used before as pills (on the page: pressed), and in the false mirror a
@@ -324,6 +238,14 @@
       if (!d || !fr || e.source !== fr.contentWindow) return;
       if (d.pd === "editor-menu") { S.edMenu = !!d.open; return; }                       // a menu of the editor's is open
       if (d.pd === "viewer-menu-close") { S.tagPop = false; paintBar(); paintTagPop(); return; }   // Esc pressed in the page
+      // the Mirror's view (the editor with view=1): a page's link followed, a page turned from the keys
+      if (d.pd === "view-go") { go(Number(d.page)); return; }
+      if (d.pd === "view-open") { PD.api("POST", "/open-link", { url: String(d.uri || "") }); return; }
+      if (d.pd === "view-key") {
+        if (d.altKey && (d.key === "ArrowLeft" || d.key === "ArrowRight")) { walk(d.key === "ArrowLeft" ? -1 : 1); return; }
+        go(S.page + (d.key === "ArrowRight" || d.key === "PageDown" ? 1 : -1));
+        return;
+      }
       if (d.pd === "editor-save") {                         // the ? by the name: a spinner while a save is slow, ! when one failed
         const q = $("#" + VIEWER + " .keys-q"); if (!q) return;
         q.classList.toggle("saving", d.state === "saving"); q.classList.toggle("failed", d.state === "error");
@@ -420,7 +342,8 @@
     }
 
     function openDoc(x) {
-      S.doc = byId(x); S.page = 1; S.tags = null; S.chapters = null; S.hist = [1]; S.hpos = 0; S.zoom = 1; S.placed = null;
+      S.doc = byId(x); S.page = 1; S.tags = null; S.chapters = null; S.hist = [1]; S.hpos = 0;
+      if (S.doc) opened(S.doc.id, 0);                       // its cover drawn anew at the next look
       S.view = PD.firstTab === "pages" || PD.firstTab === "chapters" ? PD.firstTab : "page"; PD.firstTab = "";
       let dlg = $("#" + VIEWER);
       if (!dlg) {
@@ -440,8 +363,6 @@
           if (tg) { const t = tg.dataset.tagtoggle; pageTags(now => now.includes(t) ? now.filter(x => x !== t) : now.concat([t])); return; }
           const g = e.target.closest("[data-go]");
           if (g) { go(Number(g.dataset.go)); return; }
-          const u = e.target.closest("[data-uri]");
-          if (u) { PD.api("POST", "/open-link", { url: u.dataset.uri }); return; }
           const x = e.target.closest("[data-untag]");
           if (x) { pageTags(now => now.filter(t => t !== x.dataset.untag)); return; }
           const b = e.target.closest("[data-v]");
@@ -449,11 +370,6 @@
           const v = b.dataset.v;
           if (v === "close") dlg.close();
           else if (v === "prev" || v === "next") go(S.page + (v === "next" ? 1 : -1));
-          else if (v === "retry") paintBody();
-          else if (v === "zoom1") {                       // back to 1x where it is: the middle of the view stays put
-            const br = $(".viewer-page", dlg).getBoundingClientRect();
-            S.zoom = 1; placePage(false, { x: br.left + br.width / 2, y: br.top + br.height / 2 }); showZoom();
-          }
           else if (v === "tagpop") { S.tagPop = !S.tagPop; paintBar(); paintTagPop(); }
           else if (v === "keys") PD.openShortcuts(!!editorFrame());
           else if (v === "tagadd") addTypedTag();
@@ -464,7 +380,6 @@
           else if (v === "pages" || v === "chapters") { S.view = S.view === v ? "page" : v; paintBar(); paintBody(); }
         });
         dlg.addEventListener("wheel", wheelPage, { passive: false });
-        new ResizeObserver(() => placePage(false)).observe($(".viewer-page", dlg));
         new ResizeObserver(sizeViewer).observe($(".viewer-bar", dlg));    // a bar that wraps makes the viewer taller
         dlg.addEventListener("keydown", e => {
           if (e.target.matches("[data-tag-add]")) {
@@ -493,6 +408,8 @@
           if (S.edMenu && fr && fr.contentWindow) { e.preventDefault(); S.edMenu = false; fr.contentWindow.postMessage({ pd: "editor-close" }, location.origin); }
         });
         dlg.addEventListener("close", () => {
+          if (S.seen) { const [d, n] = S.seen.split("|"); opened(d, Number(n)); S.seen = null; }   // what was written while open
+          if (S.doc) opened(S.doc.id, 0);
           if (!fm) return;
           const fr = editorFrame();
           if (fr && fr.contentWindow) fr.contentWindow.postMessage({ pd: "editor-commit" }, location.origin);

@@ -92,7 +92,7 @@ def _preview_png(strokes, progress=None):
     os.close(fd)
     try:
         preview([([((x + PAGE_W / 2.0) * k, y * k) for x, y in st[0]], [w * k for w in st[1]],
-                   st[2], st[3], st[4]) for st in strokes], int(PAGE_W * k), int(PAGE_H * k), png, pad=0, ss=2, progress=progress)
+                   st[2], st[3], st[4]) for st in strokes], int(PAGE_W * k), int(PAGE_H * k), png, pad=0, progress=progress)
         with Image.open(png) as im:
             im = im.convert("RGB")
         ink = ImageOps.invert(im.convert("L")).getbbox()
@@ -126,6 +126,11 @@ def decompose(image, width=None, preview=True, job=None, keep=None):
             return out, strokes
         finally:
             _now.update(job=None, stage="", share=0.0)
+            try:                                          # its preview drawn: the graphics card's helper let go
+                from paperdaemon.pipeline.page import gpu
+                gpu.release()
+            except Exception:
+                pass
 
 
 def _decompose_locked(raw, box, preview):

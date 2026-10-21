@@ -195,7 +195,8 @@ def read_blocks(data):
                         stream.data.data.seek(info.offset)
                         block = ss.UnreadableBlock(str(e), stream.data.read_bytes(info.size), info)
                 else:
-                    block = ss.UnreadableBlock("unknown block type %d" % info.block_type, stream.data.read_bytes(info.size), info)
+                    block = ss.UnreadableBlock("Unknown block type %d. Skipping %d bytes." % (info.block_type, info.size),   # rmscene's words
+                                               stream.data.read_bytes(info.size), info)
         block.extra_data = info.extra_data if extra is None else extra
         yield block
 
@@ -266,6 +267,201 @@ def write_lines(buf, blocks):
 # (14 bytes each, the .rm file's own layout). A page with a decomp on it is a quarter of its size as JSON, and is
 # neither turned into text nor read back from it.
 MAGIC = b"PDS1"
+
+
+def page_lines(data):
+    """A page's strokes for the renderer, straight from the C pass (_c_pass) with no block objects made -> (its other
+    blocks, rmscene's, in order; the erased id ranges [(start, end)] its tombstones make; [(item id's part2, parent
+    CrdtId, si.Line)] for every stroke with a value, in the file's order, each Line as rmscene makes it but for its
+    points, a POINT array); or None where the C reader is not sure of the page."""
+    got = _c_pass(data, rows_only=True)
+    if got is None:
+        return None
+    rows, rest = got
+    L = rows[rows[:, 0] == LINE.BLOCK_TYPE]
+    dead = [(int(a), int(a) + int(n) - 1) for a, n in L[L[:, 13] > 1][:, [8, 13]].tolist()]
+    V = L[L[:, 14] != 0]
+    thick = V[:, 17].copy().view(np.float64).tolist()
+    start = (V[:, 18] & 0xFFFFFFFF).astype(np.uint32).view(np.float32).astype(np.float64).tolist()
+    pens, colors, parents = {}, {}, {}
+    out = []
+    Line, Crdt = si.Line, CrdtId
+    for r, th, st in zip(V.tolist(), thick, start):
+        tool = pens.get(r[15])
+        if tool is None:
+            try:
+                tool = pens[r[15]] = si.Pen(r[15])
+            except ValueError:
+                return None
+        color = colors.get(r[16])
+        if color is None:
+            try:
+                color = colors[r[16]] = si.PenColor(r[16])
+            except ValueError:
+                return None
+        par = parents.get((r[5], r[6]))
+        if par is None:
+            par = parents[(r[5], r[6])] = Crdt(r[5], r[6])
+        rgba = None
+        if r[24]:
+            p = r[25] & 0xFFFFFFFF
+            rgba = ((p >> 16) & 0xFF, (p >> 8) & 0xFF, p & 0xFF, (p >> 24) & 0xFF)
+        out.append((r[8], par, Line(color, tool, np.frombuffer(data, dtype=POINT, count=r[20] // POINT.itemsize, offset=r[19]),
+                                    th, st, Crdt(r[22], r[23]) if r[21] else None, rgba)))
+    return rest, dead, out
+
+
+def _c_pass(data, rows_only=False):
+    """A page's blocks in ONE C pass (rmlines.c, as scene_parts reads them) -> (its rows, each block one, as a list of
+    lists; its other blocks than strokes, read by rmscene from their own frames, in order); or None where the C reader is
+    not sure of the page."""
+    import ctypes
+    from rmscene.tagged_block_common import HEADER_V6
+    try:
+        L = _lib()
+    except OSError:
+        return None
+    if not data.startswith(HEADER_V6):
+        return None
+    cap = len(data) // 8 + 16
+    rows = np.empty((cap, _COLS), np.int64)
+    n = L.rf_rm_blocks(data, len(data), len(HEADER_V6), rows.ctypes.data_as(ctypes.POINTER(ctypes.c_int64)), cap)
+    if n < 0:
+        return None
+    rows = rows[:n]
+    T, START, END, VERSION, ODD = 0, 1, 2, 3, 4
+    is_line = rows[:, T] == LINE.BLOCK_TYPE
+    if (rows[is_line, ODD] != 0).any() or (rows[is_line, VERSION] != 2).any() or (rows[is_line, 20] % POINT.itemsize != 0).any():
+        return None
+    others = rows[~is_line]
+    frames = b"".join(data[s - 8:e] for s, e in others[:, [START, END]].tolist())
+    rest = list(ss.read_blocks(io.BytesIO(HEADER_V6 + frames)))
+    if len(rest) != len(others):
+        return None
+    return (rows if rows_only else rows.tolist()), rest
+
+
+def blocks_c(data):
+    """rmscene.read_blocks over a page's bytes, block for block the same (each stroke's points a POINT array), its stroke
+    blocks made from the C pass's rows (_c_pass) -> the list; or None where the C reader is not sure of the page
+    (read_blocks then)."""
+    import dataclasses
+    import struct
+    from rmscene.tagged_block_common import HEADER_V6
+    got = _c_pass(data)
+    if got is None:
+        return None
+    rows, rest = got
+    out, k, at = [], 0, len(HEADER_V6) + 8            # at: where each other block's body starts in their frames
+    Crdt, Item, Pen, Color, Line = CrdtId, CrdtSequenceItem, si.Pen, si.PenColor, si.Line
+    for r in rows:
+        if r[0] != LINE.BLOCK_TYPE:
+            b = rest[k]
+            info = getattr(b, "info", None)
+            if info is not None and getattr(info, "offset", None) == at:      # as read from the page itself
+                b.info = dataclasses.replace(info, offset=r[1])
+            at += r[2] - r[1] + 8
+            k += 1
+            out.append(b)
+            continue
+        value = None
+        if r[14]:
+            rgba = None
+            if r[24]:
+                p = r[25] & 0xFFFFFFFF
+                rgba = ((p >> 16) & 0xFF, (p >> 8) & 0xFF, p & 0xFF, (p >> 24) & 0xFF)
+            try:
+                value = Line(Color(r[16]), Pen(r[15]), np.frombuffer(data, dtype=POINT, count=r[20] // POINT.itemsize, offset=r[19]),
+                             struct.unpack("<d", struct.pack("<q", r[17]))[0], struct.unpack("<f", struct.pack("<I", r[18] & 0xFFFFFFFF))[0],
+                             Crdt(r[22], r[23]) if r[21] else None, rgba)
+            except ValueError:                           # a pen or a color rmscene does not know: rmscene reads the page
+                return None
+        b = LINE(Crdt(r[5], r[6]), Item(Crdt(r[7], r[8]), Crdt(r[9], r[10]), Crdt(r[11], r[12]), r[13], value),
+                 extra_value_data=data[r[26]:r[26] + r[27]] if r[14] else b"")
+        b.extra_data = data[r[28]:r[28] + r[29]]
+        out.append(b)
+    return out
+
+
+def fingerprint_parts(data):
+    """What the daemon's fingerprint takes from each block, in the page's order, from the C pass alone (no stroke made):
+    ("L", tool, color, rgba, point count, (x0, y0), (x1, y1)) for a stroke with a value (its first and last points),
+    ("B", block) for any other block; or None where the C reader is not sure of the page."""
+    import struct
+    got = _c_pass(data)
+    if got is None:
+        return None
+    rows, rest = got
+
+    out, k = [], 0
+    for r in rows:
+        if r[0] != LINE.BLOCK_TYPE:
+            out.append(("B", rest[k]))
+            k += 1
+            continue
+        if not r[14]:
+            continue                                   # a tombstone: nothing on the page
+        try:
+            si.Pen(r[15]); si.PenColor(r[16])
+        except ValueError:
+            return None
+        rgba = None
+        if r[24]:
+            p = r[25] & 0xFFFFFFFF
+            rgba = ((p >> 16) & 0xFF, (p >> 8) & 0xFF, p & 0xFF, (p >> 24) & 0xFF)
+        n = r[20] // POINT.itemsize
+        first = struct.unpack_from("<ff", data, r[19]) if n else None
+        last = struct.unpack_from("<ff", data, r[19] + (n - 1) * POINT.itemsize) if n else None
+        out.append(("L", r[15], r[16], rgba, n, first, last))
+    return out
+
+
+def read_blocks_arrays(data):
+    """rmscene.read_blocks over a page's bytes, each stroke's points its POINT array (blocks_c, else read_blocks): for
+    a reader that takes the points as arrays (the renderer)."""
+    got = blocks_c(data)
+    return got if got is not None else list(read_blocks(data))
+
+
+def read_blocks_points(data):
+    """rmscene.read_blocks over a page's bytes, block for block the same (each stroke's points si.Point objects), its
+    stroke blocks read here and their points made in bulk: for readers that take rmscene's own objects (the renderer).
+    A page with points in the first form is read by rmscene itself."""
+    import io as _io
+    from rmscene import read_blocks as rm_read_blocks
+    out = []
+    Point = si.Point
+    got = blocks_c(data)
+    for b in (got if got is not None else read_blocks(data)):
+        v = getattr(getattr(b, "item", None), "value", None) if isinstance(b, LINE) else None
+        pts = getattr(v, "points", None)
+        if isinstance(pts, np.ndarray):
+            if pts.dtype != POINT:
+                return list(rm_read_blocks(_io.BytesIO(data)))
+            v.points = list(map(Point, pts["x"].tolist(), pts["y"].tolist(), pts["speed"].tolist(), pts["direction"].tolist(),
+                                pts["width"].tolist(), pts["pressure"].tolist()))
+        out.append(b)
+    return out
+
+
+def without_strokes(data):
+    """A page's bytes with its stroke blocks left out (walked by their frames: each block its length, 4 bytes, then 3
+    bytes of versions and its type), for a reader that needs the rest -- the typed text -- and not the strokes, which
+    are most of the file; the page as it is when the frames do not add up."""
+    from rmscene.tagged_block_common import HEADER_V6
+    if not data.startswith(HEADER_V6):
+        return data
+    out, pos, end = [HEADER_V6], len(HEADER_V6), len(data)
+    while pos < end:
+        if pos + 8 > end:
+            return data
+        size = int.from_bytes(data[pos:pos + 4], "little")
+        if pos + 8 + size > end:
+            return data
+        if data[pos + 7] != LINE.BLOCK_TYPE:
+            out.append(data[pos:pos + 8 + size])
+        pos += 8 + size
+    return b"".join(out)
 
 
 def scene_bytes(scene):

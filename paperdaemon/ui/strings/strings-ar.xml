@@ -61,6 +61,11 @@
   <string name="issue.setup_go">متابعة الإعداد</string>
   <string name="issue.tablet">لا يستطيع PaperDaemon الوصول إلى جهاز reMarkable.</string>
   <string name="issue.mirror">تعذّر تحديث المرآة: {why}</string>
+  <string name="issue.render_cpu">تُرسم الصفحات دون بطاقة الرسومات، وهذا أبطأ: {why}</string>
+  <string name="issue.render_ok">حسنًا</string>
+  <string name="editor.large_title">أصبحت هذه الصفحة كبيرة جدًا</string>
+  <string name="editor.large_body">سيصعب على جهازك اللوحي تحميل هذه الصفحة، وسيستخدم محرر الصفحات من ذاكرة بطاقة الرسومات أكثر مما ينبغي. تابع فقط إن كنت متأكدًا أن هذا مقبول. إن كنت تشغّل خادم ذكاء اصطناعي محليًا على البطاقة نفسها، فاعلم أن هذه الصفحة تأخذ ذاكرة كان سيستخدمها ذلك الخادم.</string>
+  <string name="editor.large_ok">فهمت</string>
   <string name="issue.not_started">لم يبدأ PaperDaemon: {why}</string>
   <string name="term.daemon">البرنامج الخفي</string>
   <string name="term.daemon_about">يراقب جهازك اللوحي بحثًا عن الصفحات الموسومة ويسلّم كل واحدة منها إلى المضيف كمهمة.</string>
@@ -142,7 +147,6 @@
   <string name="viewer.goto_aria">الانتقال إلى صفحة، من 1 إلى {last}</string>
   <string name="viewer.prev">الصفحة السابقة</string>
   <string name="viewer.next">الصفحة التالية</string>
-  <string name="viewer.zoom_reset">العودة إلى 1×</string>
   <string name="keys.open">الاختصارات</string>
   <string name="viewer.notSaved">لم يُحفظ: {why}</string>
   <string name="keys.title">الاختصارات والأوامر</string>
@@ -236,9 +240,7 @@
   <string name="keys.paste_strokes">لصق كخطوط</string>
   <string name="keys.paste_strokes_d">صورة مفككة إلى خطوط، بحجمها نفسه.</string>
   <string name="viewer.reading_chapters">جارٍ قراءة الفصول…</string>
-  <string name="viewer.not_drawn">تعذّر رسم هذه الصفحة.</string>
   <string name="viewer.page">الصفحة {n}</string>
-  <string name="viewer.go_to">الانتقال إلى الصفحة {n}</string>
   <string name="common.close">إغلاق</string>
   <string name="tablet.label">المرآة</string>
   <string name="tablet.folder">مجلد</string>
@@ -458,7 +460,7 @@
   <string name="help.model.stops">حين توقف PaperDaemon مؤقتًا أو تغلقه، أو حين يجب تشغيل نص تشغيل تشكيلة أخرى. يوقف كل ما بدأه نصك. ولا يوقف أبدًا برنامجًا لم يبدأه.</string>
   <string name="help.h_wrong">مشكلات شائعة</string>
   <string name="help.model.wrong_vram">**بطاقة الرسومات ممتلئة.** يحتاج النموذج إلى مساحة في ذاكرة بطاقتك (VRAM). إذا كان خادم نماذج آخر أو لعبة أو أداة صور يحجز تلك الذاكرة، يفشل النموذج في التحميل أو يعمل ببطء شديد. إذا كنت تشغّل خوادم نماذج أخرى بنفسك، فاجعل نصك يوقفها أولًا (مثلًا `taskkill /IM llama-server.exe /F`). لا يوقف PaperDaemon إلا ما بدأه.</string>
-  <string name="help.model.wrong_own_vram">**حصة PaperDaemon نفسه.** في حالات نادرة جدًا (صفحة مليئة بتفكيكات كبيرة ومفتوحة في محرر الصفحات)، قد يستخدم PaperDaemon نفسه حتى 200 ميغابايت من ذاكرة بطاقتك. اترك هذا القدر فارغًا.</string>
+  <string name="help.model.wrong_own_vram">**حصة PaperDaemon نفسه.** يستخدم PaperDaemon أيضًا جزءًا من ذاكرة بطاقتك. عندما تكون صفحة مفتوحة في محرر الصفحات، تستخدم نافذته نحو 100 ميغابايت لصفحة فيها تفكيك كبير، وحتى نحو 200 ميغابايت لأكبر الصفحات (أكثر من 250,000 خط، ويحذّر المحرر منها). وأثناء تشغيل مهمة، يرسم المحرك الصفحات على البطاقة: نحو 50 ميغابايت لصفحة عادية، وحتى نحو 350 ميغابايت لأكبرها، ويعيدها كلها عند انتهاء المهمة. اترك نحو 550 ميغابايت فارغة إن كنت تعمل على صفحات ضخمة، ونحو 150 ميغابايت غير ذلك.</string>
   <string name="help.model.wrong_two">**نموذجان لا يتسعان معًا.** إذا لم يتسع نموذج النص ونموذج الصور معًا على بطاقتك، فاكتب كل نص بحيث يوقف خادم الآخر قبل أن يبدأ خادمه.</string>
   <string name="help.model.wrong_port">**المنفذ مشغول.** إذا كان برنامج آخر يستخدم ذلك المنفذ بالفعل، فلا يمكن لخادمك أن يبدأ عليه. اختر منفذًا حرًا واستخدمه نفسه في العنوان أعلاه.</string>
   <string name="help.wrong_spaces">**مسافات في المسار.** ضع علامات اقتباس حول أي مسار فيه مسافات.</string>
@@ -486,7 +488,7 @@
 - أن يطبع مخرجات الخادم.
 - يضبط PaperDaemon أيضًا %PAPERDAEMON_ROLE% (text أو image) و%PAPERDAEMON_LOCATION% (العنوان الكامل) و%PAPERDAEMON_OTHER_LOCATION% (عنوان النموذج الآخر) و%PAPERDAEMON_LINEUP% و%PAPERDAEMON_DATA%.
 - لا يوقف PaperDaemon إلا البرامج التي بدأها. إذا كانت خوادم نماذج أخرى قد تستخدم ذاكرة بطاقة الرسومات لديّ، فيجب أن يوقفها النص أولًا.
-- قد يستخدم PaperDaemon نفسه، في حالات نادرة جدًا، حتى 200 ميغابايت من ذاكرة بطاقة الرسوميات، لذا يجب أن يترك النموذج هذا القدر فارغًا.
+- يستخدم PaperDaemon نفسه جزءًا من ذاكرة بطاقة الرسومات لديّ: عادةً أقل من 150 ميغابايت، وحتى نحو 550 ميغابايت في أسوأ لحظة (صفحة ضخمة مفتوحة في محرر الصفحات بينما ترسم مهمة صفحة أخرى)، لذا يجب أن يترك النموذج هذا القدر فارغًا.
 - يجب أن يدعم الخادم واجهة الدردشة المتوافقة مع OpenAI (/v1/chat/completions)، كما يفعل llama-server من llama.cpp أو Ollama أو LM Studio أو vLLM.
 
 قبل أن تكتبه، اطرح عليّ هذه الأسئلة واحدًا تلو الآخر وانتظر كل إجابة:
@@ -506,7 +508,7 @@
 - أن يطبع مخرجات الخادم.
 - يضبط PaperDaemon أيضًا %PAPERDAEMON_ROLE% (text أو image) و%PAPERDAEMON_LOCATION% (العنوان الكامل) و%PAPERDAEMON_OTHER_LOCATION% (عنوان النموذج الآخر) و%PAPERDAEMON_LINEUP% و%PAPERDAEMON_DATA%.
 - لا يوقف PaperDaemon إلا البرامج التي بدأها. إذا كانت خوادم نماذج أخرى قد تستخدم ذاكرة بطاقة الرسومات لديّ، فيجب أن يوقفها النص أولًا.
-- قد يستخدم PaperDaemon نفسه، في حالات نادرة جدًا، حتى 200 ميغابايت من ذاكرة بطاقة الرسوميات، لذا يجب أن يترك النموذج هذا القدر فارغًا.
+- يستخدم PaperDaemon نفسه جزءًا من ذاكرة بطاقة الرسومات لديّ: عادةً أقل من 150 ميغابايت، وحتى نحو 550 ميغابايت في أسوأ لحظة (صفحة ضخمة مفتوحة في محرر الصفحات بينما ترسم مهمة صفحة أخرى)، لذا يجب أن يترك النموذج هذا القدر فارغًا.
 - يجب أن يدعم الخادم واجهة Stable Diffusion web UI (/sdapi/v1/txt2img)، كما يفعل خادم stable-diffusion.cpp أو Forge أو AUTOMATIC1111، أو واجهة الصور من OpenAI.
 
 قبل أن تكتبه، اطرح عليّ هذه الأسئلة واحدًا تلو الآخر وانتظر كل إجابة:
@@ -688,4 +690,6 @@
   <string name="fm.imported_n">استُورد {n} ملفات.</string>
   <string name="fm.import_failed">تعذّر استيراد {name}: {why}</string>
   <string name="fm.drop">أفلت ملفات PDF وEPUB هنا لاستيرادها</string>
+  <string name="lineup.render_cpu">رسم الصفحات على المعالج</string>
+  <string name="lineup.render_cpu.help">إيقاف (الافتراضي): ترسم مهام هذه المجموعة الصفحات التي تقرؤها على بطاقة الرسومات. هذا سريع، ويستخدم أثناء تشغيل المهمة جزءًا من ذاكرة البطاقة (نحو 160 ميغابايت في صفحة كثيفة جدًا) يُعاد عند انتهاء المهمة. تشغيل: ترسمها على المعالج بدلًا من ذلك، فتبقى ذاكرة البطاقة كلها لخادم الذكاء الاصطناعي، ويستغرق كل رسم وقتًا أطول، وأكثر ما يكون في الصفحات الكثيرة الحبر. الصور هي نفسها في الحالتين. يتأثر بهذا ما تقرؤه المهام من صفحات فقط؛ أما محرر الصفحات فيرسم دائمًا على البطاقة.</string>
 </resources>

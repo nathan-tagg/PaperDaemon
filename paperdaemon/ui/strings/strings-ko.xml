@@ -61,6 +61,11 @@
   <string name="issue.setup_go">설정 계속하기</string>
   <string name="issue.tablet">PaperDaemon이 reMarkable에 연결할 수 없습니다.</string>
   <string name="issue.mirror">미러를 업데이트할 수 없습니다: {why}</string>
+  <string name="issue.render_cpu">그래픽 카드 없이 페이지를 그리고 있어 더 느립니다: {why}</string>
+  <string name="issue.render_ok">확인</string>
+  <string name="editor.large_title">이 페이지가 아주 커지고 있습니다</string>
+  <string name="editor.large_body">태블릿이 이 페이지를 불러오는 데 어려움을 겪고, 페이지 편집기가 그래픽 카드 메모리를 예정보다 많이 사용합니다. 괜찮다고 확신할 때만 계속하세요. 같은 그래픽 카드에서 로컬 AI 서버를 실행 중이라면, 이 페이지가 그 서버가 쓸 메모리를 가져간다는 점을 알아 두세요.</string>
+  <string name="editor.large_ok">이해했습니다</string>
   <string name="issue.not_started">PaperDaemon이 시작되지 않았습니다: {why}</string>
   <string name="term.daemon">데몬</string>
   <string name="term.daemon_about">태블릿에서 태그가 붙은 페이지를 지켜보고, 각각을 작업으로 호스트에 넘깁니다.</string>
@@ -142,7 +147,6 @@
   <string name="viewer.goto_aria">페이지로 이동, 1부터 {last}까지</string>
   <string name="viewer.prev">이전 페이지</string>
   <string name="viewer.next">다음 페이지</string>
-  <string name="viewer.zoom_reset">1×로 되돌리기</string>
   <string name="keys.open">단축키</string>
   <string name="viewer.notSaved">저장되지 않음: {why}</string>
   <string name="keys.title">단축키와 명령</string>
@@ -236,9 +240,7 @@
   <string name="keys.paste_strokes">획으로 붙여넣기</string>
   <string name="keys.paste_strokes_d">이미지를 원래 크기 그대로 획으로 분해합니다.</string>
   <string name="viewer.reading_chapters">장을 읽는 중…</string>
-  <string name="viewer.not_drawn">이 페이지를 그릴 수 없습니다.</string>
   <string name="viewer.page">{n}쪽</string>
-  <string name="viewer.go_to">{n}쪽으로 이동</string>
   <string name="common.close">닫기</string>
   <string name="tablet.label">미러</string>
   <string name="tablet.folder">폴더</string>
@@ -458,7 +460,7 @@
   <string name="help.model.stops">PaperDaemon을 일시 중지하거나 종료할 때, 또는 다른 라인업의 시작 스크립트를 실행해야 할 때. 스크립트가 시작한 모든 것을 멈춥니다. 자신이 시작하지 않은 프로그램은 절대 멈추지 않습니다.</string>
   <string name="help.h_wrong">자주 생기는 문제</string>
   <string name="help.model.wrong_vram">**그래픽 카드가 가득 찼습니다.** 모델에는 카드 메모리(VRAM)의 여유 공간이 필요합니다. 다른 모델 서버, 게임, 이미지 도구가 그 메모리를 차지하고 있으면 모델이 로드되지 않거나 매우 느리게 실행됩니다. 다른 모델 서버를 직접 실행한다면 스크립트에서 먼저 멈추게 하세요 (예: `taskkill /IM llama-server.exe /F`). PaperDaemon은 자신이 시작한 것만 멈춥니다.</string>
-  <string name="help.model.wrong_own_vram">**PaperDaemon 자체가 쓰는 몫.** 아주 드문 경우(큰 분해 그림이 가득한 페이지를 페이지 편집기에서 열었을 때)에는 PaperDaemon 자체가 그래픽 카드 메모리를 최대 200MB까지 쓸 수 있습니다. 그만큼은 비워 두세요.</string>
+  <string name="help.model.wrong_own_vram">**PaperDaemon 자체의 몫.** PaperDaemon도 카드 메모리를 일부 사용합니다. 페이지 편집기에 페이지가 열려 있으면 창이 큰 분해가 있는 페이지에 약 100MB, 가장 큰 페이지(25만 획 이상, 편집기가 경고함)에는 최대 약 200MB를 씁니다. 작업이 실행되는 동안 엔진이 카드에서 페이지를 그립니다. 보통 페이지는 약 50MB, 가장 큰 페이지는 최대 약 350MB이며 작업이 끝나면 모두 돌려줍니다. 아주 큰 페이지를 다룬다면 약 550MB, 그렇지 않으면 약 150MB를 비워 두세요.</string>
   <string name="help.model.wrong_two">**함께 올라가지 않는 두 모델.** 텍스트 모델과 이미지 모델이 카드에 함께 올라가지 않으면, 각 스크립트가 자기 서버를 시작하기 전에 상대 서버를 멈추도록 쓰세요.</string>
   <string name="help.model.wrong_port">**포트가 사용 중입니다.** 다른 프로그램이 이미 그 포트를 쓰고 있으면 서버가 거기서 시작할 수 없습니다. 비어 있는 포트를 고르고 위 주소에도 같은 포트를 쓰세요.</string>
   <string name="help.wrong_spaces">**경로에 공백이 있습니다.** 공백이 있는 경로는 따옴표로 감싸세요.</string>
@@ -486,7 +488,7 @@
 - 서버의 출력을 표시한다.
 - PaperDaemon은 %PAPERDAEMON_ROLE%(text 또는 image), %PAPERDAEMON_LOCATION%(전체 주소), %PAPERDAEMON_OTHER_LOCATION%(다른 모델의 주소), %PAPERDAEMON_LINEUP%, %PAPERDAEMON_DATA%도 설정한다.
 - PaperDaemon은 자신이 시작한 프로그램만 멈춘다. 다른 모델 서버가 내 그래픽 카드 메모리를 쓰고 있을 수 있다면 스크립트가 먼저 그것들을 멈춘다.
-- 아주 드문 경우 PaperDaemon 자체가 내 그래픽 카드 메모리를 최대 200MB까지 쓸 수 있으므로, 모델은 그만큼을 비워 두어야 한다.
+- PaperDaemon 자체도 내 그래픽 카드 메모리를 일부 씁니다. 보통 150MB 미만이고, 최악의 순간(페이지 편집기에 아주 큰 페이지가 열려 있고 작업이 다른 페이지를 그리는 동안)에는 최대 약 550MB를 쓰므로 모델은 그만큼 비워 두어야 합니다.
 - 서버는 llama.cpp의 llama-server, Ollama, LM Studio, vLLM처럼 OpenAI 호환 채팅 API(/v1/chat/completions)를 지원해야 한다.
 
 작성하기 전에 다음 질문을 하나씩 하고, 답을 하나씩 기다려 주세요:
@@ -506,7 +508,7 @@
 - 서버의 출력을 표시한다.
 - PaperDaemon은 %PAPERDAEMON_ROLE%(text 또는 image), %PAPERDAEMON_LOCATION%(전체 주소), %PAPERDAEMON_OTHER_LOCATION%(다른 모델의 주소), %PAPERDAEMON_LINEUP%, %PAPERDAEMON_DATA%도 설정한다.
 - PaperDaemon은 자신이 시작한 프로그램만 멈춘다. 다른 모델 서버가 내 그래픽 카드 메모리를 쓰고 있을 수 있다면 스크립트가 먼저 그것들을 멈춘다.
-- 아주 드문 경우 PaperDaemon 자체가 내 그래픽 카드 메모리를 최대 200MB까지 쓸 수 있으므로, 모델은 그만큼을 비워 두어야 한다.
+- PaperDaemon 자체도 내 그래픽 카드 메모리를 일부 씁니다. 보통 150MB 미만이고, 최악의 순간(페이지 편집기에 아주 큰 페이지가 열려 있고 작업이 다른 페이지를 그리는 동안)에는 최대 약 550MB를 쓰므로 모델은 그만큼 비워 두어야 합니다.
 - 서버는 stable-diffusion.cpp의 서버, Forge, AUTOMATIC1111처럼 Stable Diffusion web UI API(/sdapi/v1/txt2img)를 지원하거나, OpenAI 이미지 API를 지원해야 한다.
 
 작성하기 전에 다음 질문을 하나씩 하고, 답을 하나씩 기다려 주세요:
@@ -667,4 +669,6 @@
   <string name="fm.imported_n">파일 {n}개를 가져왔습니다.</string>
   <string name="fm.import_failed">{name}을(를) 가져오지 못했습니다: {why}</string>
   <string name="fm.drop">가져올 PDF와 EPUB을 여기에 놓으세요</string>
+  <string name="lineup.render_cpu">프로세서로 페이지 그리기</string>
+  <string name="lineup.render_cpu.help">끔(기본값): 이 라인업의 작업은 읽는 페이지를 그래픽 카드에서 그립니다. 빠르며, 작업이 실행되는 동안 카드 메모리의 일부를 사용하고(아주 빽빽한 페이지에서 약 160 MB) 작업이 끝나면 돌려줍니다. 켬: 대신 프로세서에서 그려 카드 메모리를 모두 AI 서버에 남기며, 그림마다 시간이 더 걸리고 잉크가 많은 페이지일수록 더 오래 걸립니다. 어느 쪽이든 그림은 같습니다. 작업의 페이지에만 적용되며, 페이지 편집기는 항상 카드에서 그립니다.</string>
 </resources>

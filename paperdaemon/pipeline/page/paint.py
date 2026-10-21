@@ -38,24 +38,66 @@ def _lib():
     return rmfast.lib()
 
 
-def paint(img, strokes, ss=1):
-    """Draw `strokes` over `img` (a PIL RGB image), in their order -> the same image, drawn on."""
+class Flat:
+    """A page's strokes in the form both renderers draw from: every point of every stroke in one run, in file order.
+    xy (N, 2) and w (N,) float64, in the target's pixels; dens (N,) float64, each point's density (1 solid); counts (S,)
+    each stroke's points; kinds (S,) int32 (KINDS); rgba (S, 4) uint8."""
+    __slots__ = ("xy", "w", "dens", "counts", "kinds", "rgba")
+
+    def __init__(self, xy, w, dens, counts, kinds, rgba):
+        self.xy, self.w, self.dens, self.counts, self.kinds, self.rgba = xy, w, dens, counts, kinds, rgba
+
+
+def flat_of(strokes):
+    """paint()'s strokes (points, widths, kind, color[, densities]) -> their Flat; None when none has a point."""
     strokes = [s for s in strokes if len(s[0])]       # points and widths: lists or numpy arrays
     if not strokes:
-        return img
+        return None
     counts = np.array([len(s[0]) for s in strokes], np.int32)
     xy = np.ascontiguousarray(np.concatenate([np.asarray(s[0], np.float64).reshape(-1, 2) for s in strokes]))
     w = np.ascontiguousarray(np.concatenate([np.broadcast_to(np.asarray(s[1], np.float64), (len(s[0]),)) for s in strokes]))
     d = np.ascontiguousarray(np.concatenate([np.broadcast_to(np.asarray(s[4] if len(s) > 4 and s[4] is not None else 1.0,
                                                                         np.float64), (len(s[0]),)) for s in strokes]))
     kinds = np.array([KINDS[s[2]] for s in strokes], np.int32)
-    rgba = np.array([(list(s[3]) + [255])[:4] for s in strokes], np.uint8).reshape(-1)
+    rgba = np.array([(list(s[3]) + [255])[:4] for s in strokes], np.uint8).reshape(-1, 4)
+    return Flat(xy, w, d, counts, kinds, rgba)
+
+
+def paint(img, strokes, ss=1):
+    """Draw `strokes` over `img` (a PIL RGB image), in their order -> the same image, drawn on."""
+    return paint_flat(img, flat_of(strokes), ss)
+
+
+def paint_flat(img, flat, ss=1):
+    """Draw a Flat over `img` (a PIL RGB image) -> the same image, drawn on: ON THE GRAPHICS CARD (gpu.py: the page
+    editor's own shaders, by the same rules), or by render.c when the card cannot be used."""
+    if flat is None or not len(flat.counts):
+        return img
+    from paperdaemon.pipeline.page import gpu
+    out = gpu.paint(np.ascontiguousarray(np.asarray(img.convert("RGB"), np.uint8)), flat, ss)
+    if out is not None:
+        from PIL import Image
+        img.paste(Image.fromarray(out, "RGB"))
+        return img
+    return _cpu(img, flat, ss)
+
+
+def paint_cpu(img, strokes, ss=1):
+    """paint() by render.c, on the processor: the fallback, and what the card's pictures are measured against."""
+    flat = flat_of(strokes)
+    return img if flat is None else _cpu(img, flat, ss)
+
+
+def _cpu(img, flat, ss=1):
+    xy, w, d = np.ascontiguousarray(flat.xy), np.ascontiguousarray(flat.w), np.ascontiguousarray(flat.dens)
+    counts, kinds = np.ascontiguousarray(flat.counts, np.int32), np.ascontiguousarray(flat.kinds, np.int32)
+    rgba = np.ascontiguousarray(flat.rgba, np.uint8).reshape(-1)
     px = np.ascontiguousarray(np.asarray(img.convert("RGB"), np.uint8))
     H, W = px.shape[:2]
     P = lambda a, t: a.ctypes.data_as(ctypes.POINTER(t))
     r = _lib().rf_render_grain(P(px, ctypes.c_uint8), W, H, int(ss), P(xy, ctypes.c_double), P(w, ctypes.c_double),
                                P(d, ctypes.c_double), P(counts, ctypes.c_int32), P(kinds, ctypes.c_int32),
-                               P(rgba, ctypes.c_uint8), len(strokes), None)
+                               P(rgba, ctypes.c_uint8), len(counts), None)
     if r != 0:
         raise MemoryError("the renderer ran out of memory")
     from PIL import Image

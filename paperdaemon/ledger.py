@@ -303,7 +303,27 @@ def _content_sha(path, data, raw):
                 h.update(b"I" + _dig)                    # other page must keep its old sha, or the
         except Exception:                                # whole ledger re-opens (it did, once)
             pass
-        for b in read_blocks(_io.BytesIO(data)):
+        # the strokes read straight from the bytes (fastrm: rmscene's blocks, each stroke's points an array), the
+        # same fingerprint in a fraction of the time on a page with a decomp
+        from paperdaemon.remarkable import fastrm
+        parts = fastrm.fingerprint_parts(data)         # ONE C pass, no stroke made: what the fingerprint takes, alone
+        if parts is not None:
+            for p in parts:
+                if p[0] == "L":
+                    _k, tool, color, rgba, n, first, last = p
+                    h.update(("L%s|%s|%s|%d|" % (tool, color, rgba, n)).encode())
+                    for x, y in (first, last) if n else ():
+                        h.update(("%.1f,%.1f;" % (x, y)).encode())
+                elif isinstance(p[1], ss.RootTextBlock):
+                    b = p[1]
+                    try:
+                        txt = "".join(str(i.value)
+                                      for i in b.value.items.sequence_items()
+                                      if isinstance(i.value, str))
+                    except Exception:
+                        txt = ""
+                    h.update(b"T" + txt.encode("utf-8", "replace"))
+        for b in (() if parts is not None else fastrm.read_blocks(data)):
             if isinstance(b, ss.SceneLineItemBlock):
                 v = getattr(b.item, "value", None)
                 if not isinstance(v, Line):
@@ -315,8 +335,9 @@ def _content_sha(path, data, raw):
                     v.color_rgba, len(pts))).encode())
                 # endpoints only: enough to catch an edit, cheap on 1000-stroke
                 # pages, and immune to float noise from a re-serialize
-                for p in (pts[0], pts[-1]) if pts else ():
-                    h.update(("%.1f,%.1f;" % (p.x, p.y)).encode())
+                for p in (pts[0], pts[-1]) if len(pts) else ():
+                    x, y = (float(p["x"]), float(p["y"])) if hasattr(p, "dtype") else (p.x, p.y)
+                    h.update(("%.1f,%.1f;" % (x, y)).encode())
             elif isinstance(b, ss.RootTextBlock):
                 try:
                     txt = "".join(str(i.value)

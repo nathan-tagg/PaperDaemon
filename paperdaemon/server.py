@@ -236,7 +236,75 @@ def status():
     return {"version": __version__, "tablet": tablet, "pull": _pull, "mirror": mirror, "secrets": _secret_flags(),
             "loop": loop.status(), "lineup": settings.active(s)["name"], "first_run": _first_run(),
             "can_start": settings.startable(s),
-            "false_mirror": {"exists": paths.false_mirror_exists(), "up": bool(_fm.get("port"))}}
+            "false_mirror": {"exists": paths.false_mirror_exists(), "up": bool(_fm.get("port"))},
+            "render": _render_status()}
+
+
+# THE GRAPHICS CARD NOT DRAWING: the engine's pictures (pipeline/page/gpu.py) or the page editor's -- either falls back to
+# drawing on the processor, slower; the daemon page says so, with the reason (the first one, this session)
+_render_down = {"editor": None}
+
+
+def _render_status():
+    try:
+        from .pipeline.page import gpu
+        engine = gpu.failure()
+    except Exception:
+        engine = None
+    return {"engine": engine, "editor": _render_down["editor"]}
+
+
+# A PAGE PAST 250,000 STROKES: the page editor warns once for that page, ever -- kept here by the page's own id (it
+# outlives a restart, and a page moved within its notebook), in <data>/editor/large-pages.json
+def _large_file():
+    return os.path.join(paths.sub("editor"), "large-pages.json")
+
+
+def _large_key(doc, page):
+    from .remarkable import local
+    return "%s/%s" % (doc, local.page_id(doc, page))
+
+
+@app.get(API + "/library/{doc}/page/{page}/large-warned")
+def get_large_warned(doc: str, page: int):
+    """Has the page editor warned about this page's size before? {"warned": bool}"""
+    if not _doc_ok(doc):
+        return _bad("not a document id")
+    try:
+        with open(_large_file(), encoding="utf-8") as f:
+            seen = json.load(f)
+        return {"warned": _large_key(doc, page) in seen}
+    except (OSError, ValueError):
+        return {"warned": False}
+    except Exception as ex:
+        return _bad(str(ex)[:200])
+
+
+@app.post(API + "/library/{doc}/page/{page}/large-warned")
+def post_large_warned(doc: str, page: int):
+    """The page editor warned about this page's size: never again for it."""
+    if not _doc_ok(doc):
+        return _bad("not a document id")
+    try:
+        key = _large_key(doc, page)
+        try:
+            with open(_large_file(), encoding="utf-8") as f:
+                seen = json.load(f)
+        except (OSError, ValueError):
+            seen = {}
+        seen[key] = int(time.time())
+        paths.write_json_atomic(_large_file(), seen)
+    except Exception as ex:
+        return _bad(str(ex)[:200])
+    return {"warned": True}
+
+
+@app.post(API + "/render/fallback")
+def post_render_fallback(body: dict = Body(default={})):
+    """The page editor draws without the graphics card: why (the first reason this session is kept)."""
+    if not _render_down["editor"]:
+        _render_down["editor"] = str(body.get("why") or "the graphics card could not be used")[:200]
+    return {"ok": True}
 
 
 # ---------------------------------------------------------------- the false mirror
@@ -669,7 +737,8 @@ def put_lineup(name: str, body: dict = Body(...)):
                                             "text": dict(old["text"], **(body.get("text") or {})),
                                             "image": dict(old["image"], **(body.get("image") or {})),
                                             "search": dict(old.get("search") or {}, **(body.get("search") or {})),
-                                            "tags": body["tags"] if "tags" in body else old.get("tags") or []})
+                                            "tags": body["tags"] if "tags" in body else old.get("tags") or [],
+                                            "render": body["render"] if "render" in body else old.get("render")})
         s["lineups"][idx[0]] = merged
         if s["lineup"] == name:
             s["lineup"] = merged["name"]
@@ -796,25 +865,21 @@ def get_library_doc(doc: str):
             "page_tags": [by_page.get(p.get("id"), []) for p in _live(c)]}
 
 
-def _page_png(doc, page, size, top=False, square=False):
-    """Page `page` (1-based) of a document drawn from the Mirror, `size` pixels at most on its long side, from the page
-    picture cache (thumbs.py) -> (path, None) or (None, error response)."""
-    from .remarkable import library
-    from . import thumbs
-    if not re.fullmatch(r"[0-9a-fA-F-]{36}", doc):
-        return None, JSONResponse({"error": "not a document id"}, status_code=400)
-    if not library.items().get(doc):
-        return None, JSONResponse({"error": "not in the Mirror"}, status_code=404)
-    try:
-        return thumbs.draw(doc, page, size, top, square=square), None
-    except Exception as ex:
-        return None, JSONResponse({"error": "could not draw it: %s" % str(ex)[:160]}, status_code=404)
-
-
 @app.get(API + "/library/{doc}/cover.png")
 def get_library_cover(doc: str):
     """The document's cover, small, for the grid: the page the tablet shows as its cover (the first page, or the
     last one open, by the document's own setting)."""
+    page = _cover_page(doc)
+    return _kept_or_missing(doc, page, thumbs_size("cover"))
+
+
+def thumbs_size(kind):
+    from . import thumbs
+    return thumbs.COVER if kind == "cover" else thumbs.THUMB
+
+
+def _cover_page(doc):
+    """The page the tablet shows as the document's cover: the first, or the last one open (its own setting)."""
     from .remarkable import library
     page = 1
     try:
@@ -824,8 +889,25 @@ def get_library_cover(doc: str):
             page = _at_page(library.items().get(doc) or {}, len(_live(c)), c)
     except (OSError, ValueError):
         pass
-    out, err = _page_png(doc, page, 480, top=True)
-    return err or FileResponse(out, media_type="image/webp")
+    return page
+
+
+def _kept_or_missing(doc, page, size):
+    """A grid picture or a cover from the page picture cache, or 404 {"missing": true, "page", "size"}: the window
+    draws it on the graphics card and hands it back (PUT .../thumb/{page}?size=), drawn nowhere else (thumbs.py)."""
+    from .remarkable import library
+    from . import thumbs
+    if not re.fullmatch(r"[0-9a-fA-F-]{36}", doc):
+        return JSONResponse({"error": "not a document id"}, status_code=400)
+    if not library.items().get(doc):
+        return JSONResponse({"error": "not in the Mirror"}, status_code=404)
+    try:
+        out = thumbs.cached(doc, page, size)
+    except Exception as ex:
+        return JSONResponse({"error": "no such page: %s" % str(ex)[:160]}, status_code=404)
+    if out:
+        return FileResponse(out, media_type="image/webp", headers={"Cache-Control": "no-store"})
+    return JSONResponse({"error": "not drawn yet", "missing": True, "page": page, "size": size}, status_code=404)
 
 
 @app.get(API + "/library/{doc}/chapters")
@@ -903,23 +985,43 @@ def get_library_thumb(doc: str, page: int):
     """One page, small, for the viewer's page grid."""
     if page < 1:
         return JSONResponse({"error": "pages count from 1"}, status_code=400)
+    return _kept_or_missing(doc, page, thumbs_size("grid"))
+
+
+@app.put(API + "/library/{doc}/thumb/{page}")
+async def put_library_thumb(doc: str, page: int, request: Request):
+    """A grid picture or a cover the window drew (?size= the width it was asked for), kept in the page picture cache."""
     from . import thumbs
-    out, err = _page_png(doc, page, thumbs.THUMB, top=True)
-    return err or FileResponse(out, media_type="image/webp")
-
-
-@app.get(API + "/library/{doc}/page/{page}/frame")
-def get_library_page_frame(doc: str, page: int):
-    """The page's own frame in page units, {w, h, top}: the page picture is exactly w wide (x from -w/2 to w/2) and runs
-    from `top` (0, or above it where ink sits above the page's top) down to h, or past it to the lowest ink. The viewer
-    places the picture on the tablet's screen with it."""
-    from .pipeline.page import render as R
+    if not _doc_ok(doc) or page < 1:
+        return _bad("not a page")
     try:
-        w, h = R.page_frame(doc, page)
-        top = R.displayed_top(doc, page)
+        size = int(request.query_params.get("size") or 0)
+    except ValueError:
+        size = 0
+    if size not in (thumbs.THUMB, thumbs.COVER):
+        return _bad("a picture %d or %d wide" % (thumbs.THUMB, thumbs.COVER))
+    data = await request.body()
+    if not data or len(data) > 8_000_000:
+        return _bad("a picture of up to 8 MB")
+    try:
+        await run_in_threadpool(thumbs.put, doc, page, size, data)
+    except Exception as ex:
+        return _bad("not kept: %s" % str(ex)[:200])
+    return {"kept": True}
+
+
+@app.post(API + "/library/{doc}/opened")
+def post_library_opened(doc: str, page: int = 0):
+    """A document, or one of its pages (?page=), was opened: its picture (its cover, or that page's) is forgotten, and
+    the next look at it draws it anew (thumbs.py)."""
+    from . import thumbs
+    if not _doc_ok(doc):
+        return _bad("not a document id")
+    try:
+        n = thumbs.forget(doc, page if page > 0 else _cover_page(doc))
     except Exception:
-        return JSONResponse({"error": "no such page"}, status_code=404)
-    return {"w": float(w), "h": float(h), "top": float(top)}
+        n = 0
+    return {"forgotten": n}
 
 
 @app.get(API + "/library/{doc}/page/{page}/source.png")
@@ -937,16 +1039,6 @@ def get_library_page_source(doc: str, page: int):
     b = _io.BytesIO()
     im.save(b, format="PNG")
     return Response(content=b.getvalue(), media_type="image/png")
-
-
-@app.get(API + "/library/{doc}/page/{page}.png")
-def get_library_page(doc: str, page: int, square: bool = False):
-    """One page, large, for the notebook view (`square`: across the whole drawable square, as wide as the page is
-    tall, for the viewer's tablet screen)."""
-    if page < 1:
-        return JSONResponse({"error": "pages count from 1"}, status_code=400)
-    out, err = _page_png(doc, page, 2160, square=square)
-    return err or FileResponse(out, media_type="image/webp")
 
 
 @app.post(API + "/harnesses/open")
@@ -1074,6 +1166,11 @@ def post_loop_stop():
     try:
         from .models import hotswap
         hotswap.stop_all()
+    except Exception:
+        pass
+    try:
+        from .pipeline.page import gpu                 # the engine's graphics helper, and its card memory, let go too
+        gpu.release()
     except Exception:
         pass
     tell_shell("status " + _doing(paused=True))
@@ -1483,8 +1580,7 @@ def get_library_scene(doc: str, page: int, request: Request):
     from .remarkable import local
     if not _doc_ok(doc):
         return _bad("not a document id")
-    if not paths.local_only():
-        return _bad("pages are edited in the False Mirror only", 404)
+    # either library's page, to read (the window draws its pictures with the editor); written in the False Mirror only
     try:
         version = local.page_version(doc, page)
     except Exception:
@@ -1510,8 +1606,6 @@ def get_library_picture(doc: str, page: int, name: str):
     from .remarkable import local
     if not _doc_ok(doc):
         return _bad("not a document id")
-    if not paths.local_only():
-        return _bad("pages are edited in the False Mirror only", 404)
     try:
         p = local.picture_path(doc, page, name)
     except ValueError as ex:

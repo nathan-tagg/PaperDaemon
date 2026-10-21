@@ -61,6 +61,11 @@
   <string name="issue.setup_go">সেটআপ চালিয়ে যান</string>
   <string name="issue.tablet">PaperDaemon আপনার reMarkable-এ পৌঁছাতে পারছে না।</string>
   <string name="issue.mirror">মিরর আপডেট করা যায়নি: {why}</string>
+  <string name="issue.render_cpu">পাতাগুলো গ্রাফিক্স কার্ড ছাড়া আঁকা হচ্ছে, যা ধীর: {why}</string>
+  <string name="issue.render_ok">ঠিক আছে</string>
+  <string name="editor.large_title">এই পাতাটি খুব বড় হয়ে যাচ্ছে</string>
+  <string name="editor.large_body">আপনার ট্যাবলেট এই পাতা লোড করতে হিমশিম খাবে, আর পেজ এডিটর আপনার গ্রাফিক্স কার্ডের মেমরি স্বাভাবিকের চেয়ে বেশি ব্যবহার করবে। এটা ঠিক আছে বলে নিশ্চিত হলেই এগোন। একই গ্রাফিক্স কার্ডে লোকাল AI সার্ভার চালালে জেনে রাখুন, এই পাতা সেই সার্ভারের মেমরি থেকে নেয়।</string>
+  <string name="editor.large_ok">বুঝেছি</string>
   <string name="issue.not_started">PaperDaemon চালু হয়নি: {why}</string>
   <string name="term.daemon">ডেমন</string>
   <string name="term.daemon_about">ট্যাগ দেওয়া পাতার জন্য আপনার ট্যাবলেটে নজর রাখে এবং প্রতিটি পাতাকে কাজ হিসেবে হোস্টের হাতে দেয়।</string>
@@ -142,7 +147,6 @@
   <string name="viewer.goto_aria">পাতায় যান, 1 থেকে {last}</string>
   <string name="viewer.prev">আগের পাতা</string>
   <string name="viewer.next">পরের পাতা</string>
-  <string name="viewer.zoom_reset">আবার 1×-এ</string>
   <string name="keys.open">শর্টকাট</string>
   <string name="viewer.notSaved">সংরক্ষিত হয়নি: {why}</string>
   <string name="keys.title">শর্টকাট ও কমান্ড</string>
@@ -236,9 +240,7 @@
   <string name="keys.paste_strokes">স্ট্রোক হিসেবে পেস্ট</string>
   <string name="keys.paste_strokes_d">নিজের মাপে স্ট্রোকে ভাঙা একটি ছবি।</string>
   <string name="viewer.reading_chapters">অধ্যায়গুলো পড়া হচ্ছে…</string>
-  <string name="viewer.not_drawn">এই পাতাটি আঁকা যায়নি।</string>
   <string name="viewer.page">পাতা {n}</string>
-  <string name="viewer.go_to">পাতা {n}-এ যান</string>
   <string name="common.close">বন্ধ করুন</string>
   <string name="tablet.label">মিরর</string>
   <string name="tablet.folder">ফোল্ডার</string>
@@ -458,7 +460,7 @@
   <string name="help.model.stops">যখন আপনি PaperDaemon-এ বিরতি দেন বা বন্ধ করেন, অথবা যখন অন্য কোনো লাইনআপের স্টার্ট স্ক্রিপ্ট চালাতে হয়। আপনার স্ক্রিপ্ট যা চালু করেছে সব থামায়। নিজে চালু করেনি এমন কোনো প্রোগ্রাম কখনও থামায় না।</string>
   <string name="help.h_wrong">যা ভুল হতে পারে</string>
   <string name="help.model.wrong_vram">**গ্রাফিক্স কার্ড ভর্তি।** মডেলের জন্য আপনার কার্ডের মেমরিতে (VRAM) জায়গা লাগে। অন্য কোনো মডেল সার্ভার, গেম বা ছবির টুল সেই মেমরি ধরে রাখলে মডেল লোড হয় না বা খুব ধীরে চলে। আপনি নিজে অন্য মডেল সার্ভার চালালে আপনার স্ক্রিপ্ট দিয়ে আগে সেগুলো থামান (যেমন `taskkill /IM llama-server.exe /F`)। PaperDaemon শুধু নিজে যা চালু করেছে তা-ই থামায়।</string>
-  <string name="help.model.wrong_own_vram">**PaperDaemon-এর নিজের ভাগ।** খুব বিরল ক্ষেত্রে (বড় বড় ডিকম্পে ভরা একটি পাতা, পেজ এডিটরে খোলা), PaperDaemon নিজেই আপনার কার্ডের মেমরির ২০০ MB পর্যন্ত ব্যবহার করতে পারে। ততটুকু খালি রাখুন।</string>
+  <string name="help.model.wrong_own_vram">**PaperDaemon-এর নিজের ভাগ।** PaperDaemon-ও আপনার কার্ডের মেমরির কিছুটা ব্যবহার করে। পেজ এডিটরে কোনো পাতা খোলা থাকলে এর উইন্ডো বড় ডিকম্পের পাতার জন্য প্রায় ১০০ MB, আর সবচেয়ে বড় পাতার জন্য (২,৫০,০০০-এর বেশি স্ট্রোক, যেগুলোর ব্যাপারে এডিটর সতর্ক করে) প্রায় ২০০ MB পর্যন্ত ব্যবহার করে। কোনো কাজ চলার সময় ইঞ্জিন কার্ডে পাতা আঁকে: সাধারণ পাতায় প্রায় ৫০ MB, সবচেয়ে বড় পাতায় প্রায় ৩৫০ MB পর্যন্ত, আর কাজ শেষ হলে সবটাই ফিরিয়ে দেয়। বিশাল পাতা নিয়ে কাজ করলে প্রায় ৫৫০ MB খালি রাখুন, নইলে প্রায় ১৫০ MB।</string>
   <string name="help.model.wrong_two">**দুটি মডেল যা একসঙ্গে আঁটে না।** আপনার লেখার মডেল আর ছবির মডেল একসঙ্গে কার্ডে না আঁটলে প্রতিটি স্ক্রিপ্ট এমনভাবে লিখুন যাতে নিজের সার্ভার চালুর আগে অন্যটির সার্ভার থামায়।</string>
   <string name="help.model.wrong_port">**পোর্ট দখলে আছে।** অন্য কোনো প্রোগ্রাম সেই পোর্ট আগে থেকেই ব্যবহার করলে আপনার সার্ভার সেখানে চালু হতে পারে না। একটি খালি পোর্ট বেছে নিন আর উপরের ঠিকানাতেও সেটিই ব্যবহার করুন।</string>
   <string name="help.wrong_spaces">**পাথে ফাঁকা জায়গা।** ফাঁকা জায়গা আছে এমন যেকোনো পাথের চারপাশে উদ্ধৃতিচিহ্ন দিন।</string>
@@ -486,7 +488,7 @@
 - সার্ভারের আউটপুট দেখাবে।
 - PaperDaemon আরও ঠিক করে দেয় %PAPERDAEMON_ROLE% (text বা image), %PAPERDAEMON_LOCATION% (পুরো ঠিকানা), %PAPERDAEMON_OTHER_LOCATION% (অন্য মডেলের ঠিকানা), %PAPERDAEMON_LINEUP% আর %PAPERDAEMON_DATA%।
 - PaperDaemon শুধু নিজে চালু করা প্রোগ্রামই থামায়। অন্য মডেল সার্ভার আমার গ্রাফিক্স কার্ডের মেমরি ব্যবহার করতে পারলে স্ক্রিপ্ট আগে সেগুলো থামাবে।
-- খুব বিরল ক্ষেত্রে PaperDaemon নিজেই আমার গ্রাফিক্স কার্ডের মেমরির ২০০ MB পর্যন্ত ব্যবহার করতে পারে, তাই মডেলের উচিত ততটুকু খালি রাখা।
+- PaperDaemon নিজেও আমার গ্রাফিক্স কার্ডের মেমরির কিছুটা ব্যবহার করে: সাধারণত ১৫০ MB-এর কম, আর সবচেয়ে খারাপ মুহূর্তে (পেজ এডিটরে বিশাল একটি পাতা খোলা, আর একটি কাজ আরেকটি পাতা আঁকছে) প্রায় ৫৫০ MB পর্যন্ত, তাই মডেলের উচিত ততটুকু খালি রাখা।
 - সার্ভারকে OpenAI-সামঞ্জস্যপূর্ণ চ্যাট API (/v1/chat/completions) বলতে পারতে হবে, যেমন llama.cpp-এর llama-server, Ollama, LM Studio বা vLLM পারে।
 
 লেখার আগে আমাকে এই প্রশ্নগুলো একটা একটা করে জিজ্ঞেস করো আর প্রতিটি উত্তরের জন্য অপেক্ষা করো:
@@ -506,7 +508,7 @@
 - সার্ভারের আউটপুট দেখাবে।
 - PaperDaemon আরও ঠিক করে দেয় %PAPERDAEMON_ROLE% (text বা image), %PAPERDAEMON_LOCATION% (পুরো ঠিকানা), %PAPERDAEMON_OTHER_LOCATION% (অন্য মডেলের ঠিকানা), %PAPERDAEMON_LINEUP% আর %PAPERDAEMON_DATA%।
 - PaperDaemon শুধু নিজে চালু করা প্রোগ্রামই থামায়। অন্য মডেল সার্ভার আমার গ্রাফিক্স কার্ডের মেমরি ব্যবহার করতে পারলে স্ক্রিপ্ট আগে সেগুলো থামাবে।
-- খুব বিরল ক্ষেত্রে PaperDaemon নিজেই আমার গ্রাফিক্স কার্ডের মেমরির ২০০ MB পর্যন্ত ব্যবহার করতে পারে, তাই মডেলের উচিত ততটুকু খালি রাখা।
+- PaperDaemon নিজেও আমার গ্রাফিক্স কার্ডের মেমরির কিছুটা ব্যবহার করে: সাধারণত ১৫০ MB-এর কম, আর সবচেয়ে খারাপ মুহূর্তে (পেজ এডিটরে বিশাল একটি পাতা খোলা, আর একটি কাজ আরেকটি পাতা আঁকছে) প্রায় ৫৫০ MB পর্যন্ত, তাই মডেলের উচিত ততটুকু খালি রাখা।
 - সার্ভারকে Stable Diffusion web UI API (/sdapi/v1/txt2img) বলতে পারতে হবে, যেমন stable-diffusion.cpp-এর সার্ভার, Forge বা AUTOMATIC1111 পারে, অথবা OpenAI Images API।
 
 লেখার আগে আমাকে এই প্রশ্নগুলো একটা একটা করে জিজ্ঞেস করো আর প্রতিটি উত্তরের জন্য অপেক্ষা করো:
@@ -667,4 +669,6 @@
   <string name="fm.imported_n">{n}টি ফাইল ইমপোর্ট হয়েছে।</string>
   <string name="fm.import_failed">{name} ইমপোর্ট করা যায়নি: {why}</string>
   <string name="fm.drop">ইমপোর্ট করতে PDF ও EPUB এখানে ছাড়ুন</string>
+  <string name="lineup.render_cpu">প্রসেসরে পৃষ্ঠা আঁকুন</string>
+  <string name="lineup.render_cpu.help">বন্ধ (ডিফল্ট): এই লাইনআপের কাজগুলো যে পৃষ্ঠা পড়ে তা গ্রাফিক্স কার্ডে আঁকে। এটি দ্রুত, আর কাজ চলার সময় কার্ডের কিছু মেমরি নেয় (খুব ঘন পৃষ্ঠায় প্রায় 160 MB), কাজ শেষ হলে তা ফিরিয়ে দেয়। চালু: এর বদলে প্রসেসরে আঁকে, কার্ডের পুরো মেমরি আপনার AI সার্ভারের জন্য থাকে, আর প্রতিটি ছবিতে বেশি সময় লাগে, বিশেষত বেশি কালির পৃষ্ঠায়। দুইভাবেই ছবি একই হয়। শুধু কাজের পড়া পৃষ্ঠাগুলোতে প্রভাব পড়ে; পৃষ্ঠা সম্পাদক সবসময় কার্ডে আঁকে।</string>
 </resources>

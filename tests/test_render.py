@@ -58,22 +58,35 @@ def test_what_is_under_the_strokes_stays():
     assert tuple(out[15, 30]) == (10, 200, 30)
 
 
-def test_a_page_written_past_its_sides_shows_the_screen_and_no_margin(tmp_path, monkeypatch):
-    """The page view is the tablet's screen, the frame's width (measured on the device): ink past a side is off it,
-    and it neither widens the view nor puts a margin beside the page."""
+def test_a_picture_is_the_whole_page_and_everything_past_it(tmp_path, monkeypatch):
+    """Every picture holds the whole page and anything past its edges (here a picture out past the right side and
+    above the top), and says where its top-left corner is, so a pixel maps back to the page whatever the frame."""
     from paperdaemon.pipeline.page import images, render as R, typed
     pic = tmp_path / "p.png"
     Image.new("RGB", (10, 10), "black").save(pic)
-    monkeypatch.setattr(R, "strokes", lambda doc, page, displayed=False: [])
+    monkeypatch.setattr(R, "strokes", lambda doc, page, arrays=False: [])
     monkeypatch.setattr(R, "page_frame", lambda doc, page: (1404, 1872))
     monkeypatch.setattr(R, "_paste_source", lambda *a: "")
     monkeypatch.setattr(typed, "paragraphs", lambda doc, page: (_ for _ in ()).throw(ValueError()))
-    monkeypatch.setattr(images, "items", lambda doc, page: [{"path": str(pic), "box": (700.0, 100.0, 800.0, 200.0)}])
+    monkeypatch.setattr(images, "items", lambda doc, page: [{"path": str(pic), "box": (700.0, -100.0, 800.0, 200.0)}])
     out = tmp_path / "o.png"
-    R.render("d", 1, str(out), blank_ok=True, displayed=True)
+    ox, oy = R.render("d", 1, str(out), blank_ok=True)[4]
     im = Image.open(out)
-    assert im.size == (1404, 1872)                          # the screen, whatever lies past its side
-    assert ink(im.convert("RGB"))[150, 702 + 700]           # the part of the picture on the screen is drawn
+    assert (ox, oy) == (-702, -160)                          # the page's left edge; 60 above the picture's top
+    assert im.size == (800 + 60 + 702, 1872 + 160)           # the page, and the picture past it with its margin
+    assert ink(im.convert("RGB"))[int(150 - oy), int(790 - ox)]        # the picture is drawn where it lies on the page
+
+
+def test_a_page_with_nothing_past_it_is_the_page_exactly(tmp_path, monkeypatch):
+    from paperdaemon.pipeline.page import images, render as R, typed
+    monkeypatch.setattr(R, "strokes", lambda doc, page, arrays=False: [])
+    monkeypatch.setattr(R, "page_frame", lambda doc, page: (1620, 2160))
+    monkeypatch.setattr(R, "_paste_source", lambda *a: "")
+    monkeypatch.setattr(typed, "paragraphs", lambda doc, page: (_ for _ in ()).throw(ValueError()))
+    monkeypatch.setattr(images, "items", lambda doc, page: [])
+    out = tmp_path / "o.png"
+    got = R.render("d", 1, str(out), blank_ok=True)
+    assert got[1] == (1620, 2160) and got[4] == (-810, 0)
 
 
 def test_a_stroke_anchored_to_the_typed_text_is_read_where_the_tablet_draws_it(tmp_path, monkeypatch):
@@ -95,7 +108,7 @@ def test_a_stroke_anchored_to_the_typed_text_is_read_where_the_tablet_draws_it(t
     page.write_bytes(b"x")
     monkeypatch.setattr(R, "live_pages", lambda doc: [{"id": "p"}])
     monkeypatch.setattr(R, "page_file", lambda doc, pid: str(page))
-    monkeypatch.setattr(R, "blocks_of", lambda path: [block])
+    monkeypatch.setattr(R, "blocks_of", lambda path, arrays=False: [block])
     monkeypatch.setattr(R, "_anchor_offsets", lambda doc, page_no, blocks: {CrdtId(1, 66): (-330.0, 234.0)})
     (line,) = R.strokes("doc", 1)
     assert (line.points[0].x, line.points[0].y) == (-230.0, 314.0)     # where the tablet draws it
@@ -109,13 +122,13 @@ def test_a_highlighter_with_no_rgba_takes_its_color_from_the_enum(tmp_path, monk
     from paperdaemon.pipeline.page import images, render as R, typed
     pink = Line(color=PenColor.PINK, tool=Pen.HIGHLIGHTER_2, thickness_scale=1.0, starting_length=0.0,
                 points=[Point(-300.0, 130.0, 0, 120, 0, 100), Point(300.0, 130.0, 0, 120, 0, 100)])
-    monkeypatch.setattr(R, "strokes", lambda doc, page, displayed=False: [pink])
+    monkeypatch.setattr(R, "strokes", lambda doc, page, arrays=False: [pink])
     monkeypatch.setattr(R, "page_frame", lambda doc, page: (1620, 2160))
     monkeypatch.setattr(R, "_paste_source", lambda *a: "")
     monkeypatch.setattr(typed, "paragraphs", lambda doc, page: (_ for _ in ()).throw(ValueError()))
     monkeypatch.setattr(images, "items", lambda doc, page: [])
     out = tmp_path / "o.png"
-    R.render("d", 1, str(out), blank_ok=True, displayed=True)
+    R.render("d", 1, str(out), blank_ok=True)
     r, g, b = Image.open(out).convert("RGB").getpixel((810, 130))
     assert b == 255 and g < 230 and r > g                       # the pink wash, not the yellow one (b would be low)
 

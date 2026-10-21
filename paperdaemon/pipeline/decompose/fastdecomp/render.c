@@ -294,6 +294,41 @@ int32_t rf_render_grain(uint8_t *rgb, int32_t W, int32_t H, int32_t ss, const do
     return 0;
 }
 
+/* THE HIGHLIGHTERS FOR THE GRAPHICS CARD (pipeline/page/gpu.py, ui/shaders.js VS_HL), by highlighter()'s own rules:
+   for each highlighter stroke's points, which are KEPT (repeats dropped against the last point kept) and, on the kept
+   ones, the flags the shader reads -- 1 a segment from this point to the next kept one, 4 a bevel at this point (the
+   turn from the segment before: |cross| >= 1e-6), 8 that bevel on the other side (cross > 0) -- with 128 marking a point
+   kept. Points in the target's pixels, as rf_render_grain takes them. flags: one byte a point of every stroke (left 0 for
+   strokes that are not highlighters). -> 0. */
+int32_t rf_hl_marks(const double *xy, const int32_t *counts, const int32_t *kinds, int32_t nstrokes, uint8_t *flags) {
+    int64_t at = 0;
+    for (int32_t s = 0; s < nstrokes; s++) {
+        int32_t n = counts[s];
+        if (n <= 0) continue;
+        if (kinds[s] != RF_HIGHLIGHTER) { at += n; continue; }
+        const double *p = xy + 2 * at;
+        uint8_t *f = flags + at;
+        int32_t last = 0, prev_seg = -1;                  /* last: the point kept last; prev_seg: where the segment before starts */
+        double pdx = 0, pdy = 0;
+        f[0] = 128;
+        for (int32_t i = 1; i < n; i++) {
+            f[i] = 0;
+            if (fabs(p[2 * i] - p[2 * last]) <= 1e-6 && fabs(p[2 * i + 1] - p[2 * last + 1]) <= 1e-6) continue;
+            double ex = p[2 * i] - p[2 * last], ey = p[2 * i + 1] - p[2 * last + 1], L = sqrt(ex * ex + ey * ey);
+            double dx = ex / L, dy = ey / L;
+            f[last] |= 1;                                  /* a segment from `last` to i */
+            if (prev_seg >= 0) {
+                double cross = pdx * dy - pdy * dx;
+                if (fabs(cross) >= 1e-6) f[last] |= cross > 0 ? (4 | 8) : 4;
+            }
+            f[i] = 128;
+            pdx = dx; pdy = dy; prev_seg = last; last = i;
+        }
+        at += n;
+    }
+    return 0;
+}
+
 /* the same, every stroke solid */
 int32_t rf_render(uint8_t *rgb, int32_t W, int32_t H, int32_t ss, const double *xy, const double *w,
                   const int32_t *counts, const int32_t *kinds, const uint8_t *rgba, int32_t nstrokes, double *progress) {
