@@ -676,4 +676,6 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="settings.page_notes">Ghi chú trên trang</string>
   <string name="settings.page_notes.help">Daemon viết lên trang trong lúc làm việc: rằng anh ấy đã nhận tác vụ, công việc đang làm và kết quả ra sao, kèm một ô để đánh dấu nếu muốn thử lại. Chữ nhỏ, ở trên cùng dưới thanh công cụ của máy tính bảng, trên một lớp riêng mà không gì khác đọc.</string>
   <string name="settings.page_notes.on">Viết lên trang trong lúc làm việc</string>
+  <string name="settings.daemon_layer">Lớp của daemon</string>
+  <string name="settings.daemon_layer.help">Tên của lớp mà daemon viết ghi chú lên. PaperDaemon không bao giờ đọc một lớp có tên này như một phần của trang; chỉ trình chỉnh sửa trang hiển thị nó.</string>
 </resources>

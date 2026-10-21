@@ -676,4 +676,6 @@
   <string name="settings.page_notes">页面上的备注</string>
   <string name="settings.page_notes.help">守护进程在工作时写在页面上：他已收到任务、手头的工作以及结果如何，并附一个可勾选以重试的方框。字很小，写在最顶部平板工具栏下方，位于只属于他、其他任何东西都不读取的图层上。</string>
   <string name="settings.page_notes.on">工作时在页面上书写</string>
+  <string name="settings.daemon_layer">守护进程图层</string>
+  <string name="settings.daemon_layer.help">守护进程书写备注所用图层的名称。PaperDaemon 从不把这个名称的图层当作页面的一部分读取；只有页面编辑器会显示它。</string>
 </resources>

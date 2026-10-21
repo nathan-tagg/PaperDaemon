@@ -676,4 +676,6 @@
   <string name="settings.page_notes">페이지 메모</string>
   <string name="settings.page_notes.help">데몬이 작업하면서 페이지에 적습니다: 작업을 받았다는 것, 진행 중인 작업, 어떻게 끝났는지, 그리고 다시 시도하려면 체크할 상자. 작게, 태블릿 도구 모음 아래 맨 위에, 다른 무엇도 읽지 않는 자기만의 레이어에 적습니다.</string>
   <string name="settings.page_notes.on">작업하면서 페이지에 쓰기</string>
+  <string name="settings.daemon_layer">데몬 레이어</string>
+  <string name="settings.daemon_layer.help">데몬이 메모를 적는 레이어의 이름. PaperDaemon은 이 이름의 레이어를 페이지의 일부로 읽지 않으며, 페이지 편집기만 이를 표시합니다.</string>
 </resources>

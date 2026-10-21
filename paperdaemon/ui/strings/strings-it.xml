@@ -676,4 +676,6 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="settings.page_notes">Note sulla pagina</string>
   <string name="settings.page_notes.help">Il daemon scrive sulla pagina mentre lavora: che ha ricevuto il lavoro, il lavoro da fare e come è finito, con una casella da spuntare per riprovare. In piccolo, in cima sotto la barra degli strumenti del tablet, su un livello tutto suo che nient'altro legge.</string>
   <string name="settings.page_notes.on">Scrivi sulla pagina mentre lavora</string>
+  <string name="settings.daemon_layer">Livello del daemon</string>
+  <string name="settings.daemon_layer.help">Il nome del livello su cui il daemon scrive le sue note. PaperDaemon non legge mai un livello con questo nome come parte della pagina; solo l'editor di pagina lo mostra.</string>
 </resources>

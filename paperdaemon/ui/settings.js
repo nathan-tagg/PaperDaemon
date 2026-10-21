@@ -358,6 +358,8 @@
     $("#st-net", R).checked = PD.getK(s, "network.allowed") !== false;
     $("#st-retries", R).value = String(PD.getK(s, "daemon.retries") || 0);
     $("#st-notes", R).checked = PD.getK(s, "daemon.page_notes") === true;
+    $("#st-layer", R).value = PD.getK(s, "daemon.layer") || "";
+    $("#st-layer", R).closest(".row").hidden = !$("#st-notes", R).checked;
     paintTools(); paintLogin();
   }
 
@@ -385,6 +387,8 @@
         row(t("settings.page_notes"), t("settings.page_notes.help"),
           '<label class="check-label"><input type="checkbox" id="st-notes"> ' + esc(t("settings.page_notes.on")) +
           '</label><p class="hint" id="st-notes-msg" role="status"></p>') +
+        row(t("settings.daemon_layer"), t("settings.daemon_layer.help"),
+          '<input class="field w-s" id="st-layer" spellcheck="false" maxlength="40"><p class="hint" id="st-layer-msg" role="status"></p>') +
         "</section>" +
         '<section class="section" aria-labelledby="st-h-tools"><h2 id="st-h-tools">' + esc(t("settings.tools")) + "</h2>" +
         row(t("settings.updates"), t("settings.updates.help"),
@@ -405,7 +409,15 @@
         e.target.value = String(n);
         save("daemon.retries", n, $("#st-retries-msg", R));
       });
-      $("#st-notes", R).addEventListener("change", e => save("daemon.page_notes", e.target.checked, $("#st-notes-msg", R)));
+      $("#st-notes", R).addEventListener("change", e => {
+        $("#st-layer", R).closest(".row").hidden = !e.target.checked;
+        save("daemon.page_notes", e.target.checked, $("#st-notes-msg", R));
+      });
+      $("#st-layer", R).addEventListener("change", e => {
+        const v = e.target.value.trim();
+        if (!v) { e.target.value = PD.getK(S.s, "daemon.layer") || ""; return; }   // a name is required: the last one stays
+        save("daemon.layer", v, $("#st-layer-msg", R));
+      });
       PD.on(R, "click", "[data-act=update]", (e, el) => checkUpdates(el));
       PD.on(R, "click", "#st-login [data-act=borrow], #st-login [data-act=steal]", (e, el) => PD.busy(el, () => takeLogin(el.dataset.act)));
       PD.on(R, "click", "[data-act=logs]", (e, el) => sendLogs(el));

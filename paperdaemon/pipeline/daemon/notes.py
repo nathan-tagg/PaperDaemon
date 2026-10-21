@@ -1,15 +1,26 @@
-r"""The daemon's notes on a page (Settings: "Notes on the page"): what he got, the work at hand, and how it ended,
-lettered small in the band across the top of the page, under the tablet's toolbar, and signed.
+r"""The daemon's notes on a page (Settings: "Notes on the page"): that he is on it, what the host makes of the page and
+does with it, step by step, and how it ended, lettered small in the band across the top of the page, under the
+tablet's toolbar, and signed.
 
 THE BAND IS HIS AND NOTHING ELSE IS: every stroke lies above the page's safe area (page.safe_area: the toolbar's zone,
-which nothing the user or the host writes may enter), on a layer of his own, PaperDaemon. Nothing that reads a page for
-the host sees that layer -- render.strokes leaves it out, and so does the fingerprint that says whether a page changed
-(ledger._content_sha) -- and before a page goes to the host his strokes are erased, so a note can neither start a job
-nor be read as the user's.
+which nothing the user or the host writes may enter), on a layer of his own, named as the user chose (Settings:
+daemon.layer, "Daemon" unless they changed it), at the bottom of the tablet's list of layers. The renderer never draws
+what is his (render.daemon_stroke), and the fingerprint that says whether a page changed leaves it out
+(ledger._content_sha), so a note can neither start a job nor be read as the user's writing. Only the page editor shows
+it.
 
-HOW THEY REACH THE TABLET: the "got it" note and the work at hand go up as COPIES of the page (sync.push_doc's
-`replace`): the page in the mirror, which the host reads and writes, is never touched while a job runs. The last note
-is written into the page itself once the host is done, and pushed.
+HIS OWN IDS: everything he puts on a page carries his own author number (render.DAEMON_AUTHOR, in the page's author
+table beside the tablet's), counted upwards per page in daemon-ink.json, so nothing of his can share an id with the
+user's strokes, the host's, or another note of his. Notes go up as copies of a page while the host works on the
+mirror's, and the tablet merges what it receives: two notes with the same ids, made from different copies, were once
+merged into a pile of three notes on top of each other.
+
+EVERY WRITE ERASES EVERYTHING OF HIS FIRST: his strokes erased (tombstoned, as the tablet erases), and the same for
+everything he put on this page before that this copy of it has never seen (daemon-ink.json keeps what he laid), so the
+merge on the tablet erases those too; his old notes from before his author id (a layer named "PaperDaemon") with them.
+Then the note. HIS LAYER ITSELF STAYS, ONE PER PAGE: the tablet writes the user's strokes on whatever layer is
+current, and the user's writing has landed on his. It is made once and sent whole with every note, so copies merge into
+one layer; it is made anew only when the user deleted it on the tablet. Only his strokes on it are his.
 
 A RETRY BOX: a job that was skipped or failed ends its note with a small box; anything the user writes in it asks for
 the job again (box_marks).
@@ -19,6 +30,7 @@ Everything here works on a page's BYTES, and refuses to return a page that does 
 import io
 import os
 import time
+import uuid
 
 from rmscene import read_blocks, write_blocks
 from rmscene import scene_stream as ss
@@ -27,60 +39,32 @@ from rmscene.crdt_sequence import CrdtSequenceItem
 from rmscene.scene_stream import CrdtId
 from rmscene.tagged_block_common import LwwValue
 
-LAYER = "PaperDaemon"               # his layer's name, on the page and in the tablet's layer list (render.DAEMON_LAYER)
+from paperdaemon.pipeline.page.render import DAEMON_AUTHOR as AUTHOR
+
+AUTHOR_UUID = uuid.uuid5(uuid.NAMESPACE_DNS, "daemon.paperdaemon")   # his entry in a page's author table, the same everywhere
 SIZE = 15.0                         # the lettering's cap height, page units on a Paper Pro page
 LEAD = 24.0                         # baseline to baseline
 PEN_W = 5                           # the fineliner's width at that size
 BOX = 40.0                          # the retry box's side: about 4.5 mm on a Paper Pro, room for a tick
+ROOT = (0, 1)                       # the page's list of layers
+LAID_MAX = 40                       # what he laid that a page has not shown back yet, kept at most
 
 
-def layer_ids(blocks):
-    """The ids of his layer(s) on a page, from its blocks: {(part1, part2)} (render.daemon_layer_ids)."""
+def layer_name():
     from paperdaemon.pipeline.page import render as R
-    return R.daemon_layer_ids(blocks)
+    return R.daemon_layer_name()
 
 
 def _key(cid):
     return (cid.part1, cid.part2)
 
 
-def _live_line(b):
-    return isinstance(b, ss.SceneLineItemBlock) and isinstance(getattr(b.item, "value", None), si.Line)
-
-
-def _tombstone(b):
-    it = b.item
-    return ss.SceneLineItemBlock(parent_id=b.parent_id, item=CrdtSequenceItem(
-        item_id=it.item_id, left_id=it.left_id, right_id=it.right_id, deleted_length=1, value=None))
-
-
-def _next_id(blocks):
-    """The first id nothing on the page uses: items, deleted ranges, layers and their values."""
-    from paperdaemon.pipeline.draw import next_free_id
-    n = next_free_id(blocks)
-    for b in blocks:
-        if isinstance(b, ss.SceneTreeBlock):
-            n = max(n, b.tree_id.part2 + 1)
-        elif isinstance(b, ss.TreeNodeBlock):
-            g = b.group
-            for v in (g.node_id, getattr(g.label, "timestamp", None), getattr(g.visible, "timestamp", None)):
-                if isinstance(v, CrdtId):
-                    n = max(n, v.part2 + 1)
-    return n
-
-
-def _counts(blocks, ids):
-    mine = sum(1 for b in blocks if _live_line(b) and _key(b.parent_id) in ids)
-    theirs = sum(1 for b in blocks if _live_line(b) and _key(b.parent_id) not in ids)
-    return mine, theirs
-
-
 # ------------------------------------------------------------------ the page, spliced
 # A PAGE IS ITS BLOCKS' FRAMES, end to end after the header: the C pass (fastrm) says where each one starts and ends,
 # its kind, and for a stroke its layer, its ids and whether it is erased. A note is a handful of blocks put in and a
 # stroke's frame swapped for its tombstone's; everything else is copied byte for byte, so a page of a quarter of a
-# million strokes is changed in a moment, not read and written whole. A page the C pass is not sure of goes through
-# rmscene instead (_slow).
+# million strokes is changed in a moment, not read and written whole. A page the C pass is not sure of is written
+# once through rmscene, and read by the C pass from that.
 LINE = ss.SceneLineItemBlock.BLOCK_TYPE
 
 
@@ -96,6 +80,21 @@ def _scan(data):
     return [list(r) for r in (rows.tolist() if hasattr(rows, "tolist") else rows)], rest
 
 
+def _parts(data):
+    """(the page's bytes, its rows, each row's block -- None for a stroke)."""
+    got = _scan(data)
+    if got is None:
+        buf = io.BytesIO()
+        write_blocks(buf, list(read_blocks(io.BytesIO(data))))
+        data = buf.getvalue()
+        got = _scan(data)
+        if got is None:
+            raise RuntimeError("the page could not be read for the daemon's note")
+    rows, rest = got
+    it = iter(rest)
+    return data, rows, [None if r[0] == LINE else next(it) for r in rows]
+
+
 def _frame(block):
     """One block's frame, as it is written in a page."""
     from rmscene.tagged_block_common import HEADER_V6
@@ -104,10 +103,24 @@ def _frame(block):
     return buf.getvalue()[len(HEADER_V6):]
 
 
+def _line_tomb(parent, iid, left, right=(0, 0)):
+    return _frame(ss.SceneLineItemBlock(parent_id=CrdtId(*parent), item=CrdtSequenceItem(
+        item_id=CrdtId(*iid), left_id=CrdtId(*left), right_id=CrdtId(*right), deleted_length=1, value=None)))
+
+
 def _tomb(r):
-    return _frame(ss.SceneLineItemBlock(parent_id=CrdtId(r[5], r[6]), item=CrdtSequenceItem(
-        item_id=CrdtId(r[7], r[8]), left_id=CrdtId(r[9], r[10]), right_id=CrdtId(r[11], r[12]),
-        deleted_length=1, value=None)))
+    return _line_tomb((r[5], r[6]), (r[7], r[8]), (r[9], r[10]), (r[11], r[12]))
+
+
+def _old_layers(blocks):
+    """His layers from before his author id ("PaperDaemon", ids of the tablet's author): their strokes are his notes,
+    erased with his; the user's writing there sits in groups the tablet made inside them, and stays."""
+    from paperdaemon.pipeline.page import render as R
+    return R.daemon_layer_ids(blocks, names={R.DAEMON_LEGACY})
+
+
+def _mine(r, old):
+    return r[7] == AUTHOR or (r[5], r[6]) in old
 
 
 def _live_counts(data):
@@ -116,224 +129,202 @@ def _live_counts(data):
     if got is None:
         return None
     rows, rest = got
-    ids = layer_ids(rest)
-    mine = sum(1 for r in rows if r[0] == LINE and r[14] and (r[5], r[6]) in ids)
-    return mine, sum(1 for r in rows if r[0] == LINE and r[14]) - mine, ids
+    old = _old_layers(rest)
+    mine = sum(1 for r in rows if r[0] == LINE and r[14] and _mine(r, old))
+    return mine, sum(1 for r in rows if r[0] == LINE and r[14]) - mine
 
 
-def erase(data, also=()):
-    """The page with his strokes erased (tombstoned, as the tablet erases), and any of the user's strokes whose ids are
-    in `also` (a tick in the retry box) -> (bytes, how many erased); (data, 0) when there is nothing to erase."""
-    got = _scan(data)
-    if got is None:
-        return _slow_erase(data, also)
+def _layer_blocks(n, name, right):
+    """His layer n, as the tablet makes one: its tree node under the root, its group (named, visible), and its place
+    FIRST in the root's list (the bottom of the tablet's layers, under the user's), before `right`. Ids n (the layer),
+    n+1 and n+2 (its name's and visibility's), n+3 (its place)."""
+    layer = CrdtId(AUTHOR, n)
+    g = si.Group(node_id=layer)
+    g.label = LwwValue(timestamp=CrdtId(AUTHOR, n + 1), value=name)
+    g.visible = LwwValue(timestamp=CrdtId(AUTHOR, n + 2), value=True)
+    return [(ss.SceneTreeBlock.BLOCK_TYPE, _frame(ss.SceneTreeBlock(tree_id=layer, node_id=CrdtId(0, 0), is_update=True,
+                                                                    parent_id=CrdtId(*ROOT)))),
+            (ss.TreeNodeBlock.BLOCK_TYPE, _frame(ss.TreeNodeBlock(group=g))),
+            (ss.SceneGroupItemBlock.BLOCK_TYPE, _frame(ss.SceneGroupItemBlock(parent_id=CrdtId(*ROOT), item=CrdtSequenceItem(
+                item_id=CrdtId(AUTHOR, n + 3), left_id=CrdtId(0, 0), right_id=CrdtId(*right), deleted_length=0,
+                value=layer))))]
+
+
+def _put(frames, kinds, news):
+    """`news` [(kind, frame)] into the page, each after the last block of its kind (before the first stroke when there
+    is none); strokes at the end."""
+    out_f, out_k = list(frames), list(kinds)
+    for kind in (ss.SceneTreeBlock.BLOCK_TYPE, ss.TreeNodeBlock.BLOCK_TYPE, ss.SceneGroupItemBlock.BLOCK_TYPE):
+        batch = [f for k, f in news if k == kind]
+        if not batch:
+            continue
+        at = max((i for i, k in enumerate(out_k) if k == kind), default=None)
+        if at is None:
+            at = next((i for i, k in enumerate(out_k) if k == LINE), len(out_k)) - 1
+        out_f[at + 1:at + 1] = batch
+        out_k[at + 1:at + 1] = [kind] * len(batch)
+    lines = [f for k, f in news if k == LINE]
+    return out_f + lines, out_k + [LINE] * len(lines)
+
+
+def _first_layer(items):
+    """The first item of the root's list of layers, in the list's own order (CRDT), or (0, 0)."""
+    from rmscene.crdt_sequence import CrdtSequence
+    try:
+        keys = list(CrdtSequence(items).keys())
+    except Exception:
+        keys = [i.item_id for i in items]
+    return _key(keys[0]) if keys else (0, 0)
+
+
+def _write(data, state, strokes=None, also=()):
+    """THE ONE WAY THE DAEMON CHANGES A PAGE: everything of his on it erased (see the module's note), the user's
+    strokes whose ids are in `also` erased (a tick in the retry box), and, given `strokes`, the note on his layer.
+    `state` (daemon-ink.json's entry for the page: {"next": his next id there, "layer": [its id, the id it goes before,
+    its name], "laid": [[layer, first id, last id], ...]}) is brought up to date. -> (bytes, how many strokes erased,
+    whether anything changed)."""
     from rmscene.tagged_block_common import HEADER_V6
-    rows, rest = got
-    ids, also = layer_ids(rest), set(also)
-    out, n = [data[:len(HEADER_V6)]], 0
-    for r in rows:
-        if r[0] == LINE and r[14] and ((r[5], r[6]) in ids or (r[7], r[8]) in also):
-            out.append(_tomb(r))
-            n += 1
-        else:
-            out.append(data[r[1] - 8:r[2]])
-    if not n:
-        return data, 0
-    new = b"".join(out)
-    before, after = _live_counts(data), _live_counts(new)
-    if after is None or after[0] + after[1] != before[0] + before[1] - n or after[0] != 0:
-        raise RuntimeError("the page did not read back after erasing the daemon's note")
-    return new, n
-
-
-def with_note(data, strokes):
-    """The page with the daemon's note: his old strokes erased, `strokes` (lettering.Drawing strokes: points, widths, tool,
-    color, rgba) on his layer, which is made when the page has none. The user's strokes, text and pictures are as they
-    were. -> bytes."""
-    got = _scan(data)
-    if got is None:
-        return _slow_with_note(data, strokes)
-    from rmscene.tagged_block_common import HEADER_V6
-    rows, rest = got
-    ids = layer_ids(rest)
-    theirs0 = sum(1 for r in rows if r[0] == LINE and r[14] and (r[5], r[6]) not in ids)
-    n = _next_id(rest)
-    for r in rows:
+    data, rows, blocks = _parts(data)
+    old = _old_layers([b for b in blocks if b is not None])
+    also = set(also)
+    theirs0 = sum(1 for r in rows if r[0] == LINE and r[14] and not _mine(r, old) and (r[7], r[8]) not in also)
+    frames, kinds = [], []
+    seen, dead, trees, nodes, places = set(), set(), set(), set(), {}
+    top, erased, changed, table = 0, 0, False, False
+    root_items = []
+    for r, b in zip(rows, blocks):
+        raw = data[r[1] - 8:r[2]]
         if r[0] == LINE:
-            n = max(n, r[8] + max(1, r[13]))
-    seq = [n]
-
-    def nid():
-        k = seq[0]
-        seq[0] += 1
-        return CrdtId(1, k)
-    frames = [_tomb(r) if r[0] == LINE and r[14] and (r[5], r[6]) in ids else data[r[1] - 8:r[2]] for r in rows]
-    kinds = [r[0] for r in rows]
-    if ids:
-        layer = CrdtId(*sorted(ids)[0])
-    else:
-        # HIS LAYER, made as the tablet makes one: a tree node under the root, its group (named, visible), and its
-        # place in the root's list, each beside the blocks of its kind, before the first stroke
-        layer = nid()
-        g = si.Group(node_id=layer)
-        g.label = LwwValue(timestamp=nid(), value=LAYER)
-        g.visible = LwwValue(timestamp=nid(), value=True)
-        root_items = [b.item for b in rest if isinstance(b, ss.SceneGroupItemBlock) and _key(b.parent_id) == (0, 1)]
-        lefts = {_key(i.left_id) for i in root_items}
-        tails = [i for i in root_items if _key(i.item_id) not in lefts]
-        left = tails[-1].item_id if tails else CrdtId(0, 0)
-        news = [(ss.SceneTreeBlock.BLOCK_TYPE, ss.SceneTreeBlock(tree_id=layer, node_id=CrdtId(0, 0), is_update=True,
-                                                                  parent_id=CrdtId(0, 1))),
-                (ss.TreeNodeBlock.BLOCK_TYPE, ss.TreeNodeBlock(group=g)),
-                (ss.SceneGroupItemBlock.BLOCK_TYPE, ss.SceneGroupItemBlock(parent_id=CrdtId(0, 1), item=CrdtSequenceItem(
-                    item_id=nid(), left_id=left, right_id=CrdtId(0, 0), deleted_length=0, value=layer)))]
-        for kind, blk in news:
-            at = max((i for i, k in enumerate(kinds) if k == kind), default=None)
-            if at is None:
-                at = next((i for i, k in enumerate(kinds) if k == LINE), len(kinds)) - 1
-            frames.insert(at + 1, _frame(blk))
-            kinds.insert(at + 1, kind)
-    # the strokes, hung off the tail of his layer's own run
-    mine = [r for r in rows if r[0] == LINE and (r[5], r[6]) == _key(layer)]
-    lefts = {(r[9], r[10]) for r in mine}
-    tails = [r for r in mine if (r[7], r[8]) not in lefts]
-    prev = CrdtId(tails[-1][7], tails[-1][8]) if tails else CrdtId(0, 0)
-    for st in strokes:
-        pts, widths, tool, color = st[0], st[1], st[2], st[3]
-        P = [si.Point(x=float(x), y=float(y), speed=0, direction=0, width=int(widths[i]), pressure=190)
-             for i, (x, y) in enumerate(pts)]
-        L = si.Line(color=color, tool=tool, points=P, thickness_scale=3.0, starting_length=0.0, move_id=None,
-                    color_rgba=None)
-        iid = nid()
-        frames.append(_frame(ss.SceneLineItemBlock(parent_id=layer, item=CrdtSequenceItem(
-            item_id=iid, left_id=prev, right_id=CrdtId(0, 0), deleted_length=0, value=L))))
-        prev = iid
+            k = (r[7], r[8])
+            seen.add(k)
+            if r[14] and (_mine(r, old) or k in also):
+                raw, erased, changed = _tomb(r), erased + 1, True
+            elif not r[14]:
+                dead.add(k)
+            if r[7] == AUTHOR:
+                top = max(top, r[8])
+        elif isinstance(b, ss.SceneGroupItemBlock):
+            it = b.item
+            k = _key(it.item_id)
+            seen.add(k)
+            if k[0] == AUTHOR:
+                top = max(top, k[1])
+                places[k] = it.value is not None and it.deleted_length == 0
+            if _key(b.parent_id) == ROOT:
+                root_items.append(it)
+        elif isinstance(b, ss.SceneTreeBlock):
+            trees.add(_key(b.tree_id))
+            if b.tree_id.part1 == AUTHOR:
+                top = max(top, b.tree_id.part2 + 3)
+        elif isinstance(b, ss.TreeNodeBlock):
+            nodes.add(_key(b.group.node_id))
+        elif isinstance(b, ss.AuthorIdsBlock):
+            table = True
+            if strokes is not None and b.author_uuids.get(AUTHOR) != AUTHOR_UUID:
+                raw = _frame(ss.AuthorIdsBlock(author_uuids={**b.author_uuids, AUTHOR: AUTHOR_UUID}))
+        frames.append(raw)
+        kinds.append(r[0])
+    # WHAT HE LAID BEFORE that this copy of the page has never seen, erased all the same: the tablet merges it with the
+    # copy that carried it. What the page already showed erased when it came here is forgotten (what is erased only
+    # now is not: a copy made later from an older page still has to erase it).
+    news, keep = [], []
+    for rec in list(state.get("laid") or []):
+        try:
+            lay, a, z = int(rec[0]), int(rec[1]), int(rec[2])
+        except (TypeError, ValueError, IndexError):
+            continue
+        ids = [(AUTHOR, k) for k in range(a, z + 1)]
+        if all(k in dead for k in ids):
+            continue
+        keep.append([lay, a, z])
+        top = max(top, z)
+        for i, k in enumerate(ids):
+            if k not in seen:
+                news.append((LINE, _line_tomb((AUTHOR, lay), k, ids[i - 1] if i else (0, 0))))
+    if news:
+        changed = True
+    n = max(int(state.get("next") or 1), top + 1)
+    if strokes is not None:
+        if not table:
+            raise RuntimeError("the page has no author table for the daemon's note")
+        # HIS LAYER: one per page, made once and sent whole with every note (the same blocks, the same ids, so copies
+        # merge into one layer); a new one only when the user deleted it on the tablet
+        lay = state.get("layer")
+        if lay and places.get((AUTHOR, int(lay[0]) + 3)) is False:
+            lay = None
+        if not lay:
+            first = _first_layer(root_items)
+            lay = [n, first[0], first[1], layer_name()]
+            n += 4
+        ln = int(lay[0])
+        for kind, frame in _layer_blocks(ln, str(lay[3]), (int(lay[1]), int(lay[2]))):
+            if (kind == ss.SceneTreeBlock.BLOCK_TYPE and (AUTHOR, ln) not in trees) or \
+                    (kind == ss.TreeNodeBlock.BLOCK_TYPE and (AUTHOR, ln) not in nodes) or \
+                    (kind == ss.SceneGroupItemBlock.BLOCK_TYPE and (AUTHOR, ln + 3) not in seen):
+                news.append((kind, frame))
+        state["layer"] = lay
+        prev, a = CrdtId(0, 0), n
+        for st in strokes:
+            pts, widths, tool, color = st[0], st[1], st[2], st[3]
+            P = [si.Point(x=float(x), y=float(y), speed=0, direction=0, width=int(widths[i]), pressure=190)
+                 for i, (x, y) in enumerate(pts)]
+            L = si.Line(color=color, tool=tool, points=P, thickness_scale=3.0, starting_length=0.0, move_id=None,
+                        color_rgba=None)
+            iid = CrdtId(AUTHOR, n)
+            news.append((LINE, _frame(ss.SceneLineItemBlock(parent_id=CrdtId(AUTHOR, ln), item=CrdtSequenceItem(
+                item_id=iid, left_id=prev, right_id=CrdtId(0, 0), deleted_length=0, value=L)))))
+            prev, n = iid, n + 1
+        if n > a:
+            keep.append([ln, a, n - 1])
+        changed = True
+    state["laid"] = keep[-LAID_MAX:]
+    state["next"] = n
+    if not changed:
+        return data, 0, False
+    frames, kinds = _put(frames, kinds, news)
     new = data[:len(HEADER_V6)] + b"".join(frames)
     after = _live_counts(new)
-    if after is None or _key(layer) not in after[2] or after[0] != len(strokes) or after[1] != theirs0:
-        raise RuntimeError("the page did not read back with the daemon's note (%s)" % (after[:2] if after else "unreadable",))
-    return new
+    want = len(strokes) if strokes is not None else 0
+    if after is None or after != (want, theirs0):
+        raise RuntimeError("the page did not read back with the daemon's note (%s)" % (after,))
+    return new, erased, True
 
 
-def box_marks(data, box, pad=6.0):
+def erase(data, state=None, also=()):
+    """The page with everything of his erased, and any of the user's strokes whose ids are in `also` (a tick in the
+    retry box) -> (bytes, how many strokes erased); (data, 0) when there is nothing to erase."""
+    new, n, changed = _write(data, {} if state is None else state, None, also)
+    return (new, n) if changed else (data, 0)
+
+
+def with_note(data, strokes, state=None):
+    """The page with everything of his erased and `strokes` (lettering.Drawing strokes: points, widths, tool, color,
+    rgba) on his layer. The user's strokes, text and pictures are as they were. -> bytes."""
+    return _write(data, {} if state is None else state, strokes)[0]
+
+
+def box_marks(data, box, pad=6.0, shifts=None):
     """The user's strokes (not his) with a point inside the retry box `box` (x0, y0, x1, y1, page units) -> their
-    item ids [(part1, part2)]: a tick, a cross, a scribble -- anything written in it asks for the job again."""
+    item ids [(part1, part2)]: a tick, a cross, a scribble -- anything written in it asks for the job again.
+    `shifts`: {group (part1, part2): (dx, dy)}, where the tablet draws a group it anchored to the typed text
+    (render._anchor_offsets) -- on a page with typed text the tablet puts the user's tick in such a group, stored
+    hundreds of units from where it is drawn."""
     if not box:
         return []
-    x0, y0, x1, y1 = box[0] - pad, box[1] - pad, box[2] + pad, box[3] + pad
-    got = _scan(data)
-    if got is None:
-        return _slow_box_marks(data, (x0, y0, x1, y1))
     import numpy as np
     from paperdaemon.remarkable import fastrm
-    rows, rest = got
-    ids = layer_ids(rest)
+    data, rows, blocks = _parts(data)
+    old = _old_layers([b for b in blocks if b is not None])
+    shifts = shifts or {}
     out = []
     for r in rows:
-        if r[0] == LINE and r[14] and (r[5], r[6]) not in ids and r[20]:
+        if r[0] == LINE and r[14] and not _mine(r, old) and r[20]:
+            dx, dy = shifts.get((r[5], r[6])) or (0.0, 0.0)
+            x0, y0, x1, y1 = box[0] - pad - dx, box[1] - pad - dy, box[2] + pad - dx, box[3] + pad - dy
             P = np.frombuffer(data, dtype=fastrm.POINT, count=r[20] // fastrm.POINT.itemsize, offset=r[19])
             if ((P["x"] >= x0) & (P["x"] <= x1) & (P["y"] >= y0) & (P["y"] <= y1)).any():
                 out.append((r[7], r[8]))
     return out
-
-
-# ------------------------------------------------------------------ the same, through rmscene (a page the C pass
-# is not sure of)
-def _slow_erase(data, also=()):
-    blocks = list(read_blocks(io.BytesIO(data)))
-    ids = layer_ids(blocks)
-    also = set(also)
-    out, n = [], 0
-    for b in blocks:
-        if _live_line(b) and (_key(b.parent_id) in ids or _key(b.item.item_id) in also):
-            out.append(_tombstone(b))
-            n += 1
-        else:
-            out.append(b)
-    if not n:
-        return data, 0
-    buf = io.BytesIO()
-    write_blocks(buf, out)
-    new = buf.getvalue()
-    back = list(read_blocks(io.BytesIO(new)))
-    if len(back) != len(blocks) or sum(1 for b in back if _live_line(b)) != sum(1 for b in blocks if _live_line(b)) - n:
-        raise RuntimeError("the page did not read back after erasing the daemon's note")
-    return new, n
-
-
-def _slow_with_note(data, strokes):
-    """The page with the daemon's note: his old strokes erased, `strokes` (lettering.Drawing strokes: points, widths, tool,
-    color, rgba) on his layer, which is made when the page has none. The user's strokes, text and pictures are as they
-    were. -> bytes."""
-    blocks = list(read_blocks(io.BytesIO(data)))
-    ids = layer_ids(blocks)
-    _mine0, theirs0 = _counts(blocks, ids)
-    blocks = [_tombstone(b) if _live_line(b) and _key(b.parent_id) in ids else b for b in blocks]
-    seq = [_next_id(blocks)]
-
-    def nid():
-        k = seq[0]
-        seq[0] += 1
-        return CrdtId(1, k)
-    if ids:
-        layer = CrdtId(*sorted(ids)[0])
-    else:
-        # HIS LAYER, made as the tablet makes one: a tree node under the root, its group (named, visible), and its
-        # place in the root's list, each beside the blocks of its kind, before the first stroke
-        layer = nid()
-        tree = ss.SceneTreeBlock(tree_id=layer, node_id=CrdtId(0, 0), is_update=True, parent_id=CrdtId(0, 1))
-        g = si.Group(node_id=layer)
-        g.label = LwwValue(timestamp=nid(), value=LAYER)
-        g.visible = LwwValue(timestamp=nid(), value=True)
-        node = ss.TreeNodeBlock(group=g)
-        root_items = [b.item for b in blocks if isinstance(b, ss.SceneGroupItemBlock) and _key(b.parent_id) == (0, 1)]
-        lefts = {_key(i.left_id) for i in root_items}
-        tails = [i for i in root_items if _key(i.item_id) not in lefts]
-        left = tails[-1].item_id if tails else CrdtId(0, 0)
-        place = ss.SceneGroupItemBlock(parent_id=CrdtId(0, 1), item=CrdtSequenceItem(
-            item_id=nid(), left_id=left, right_id=CrdtId(0, 0), deleted_length=0, value=layer))
-
-        def after_last(kind, new):
-            at = max((i for i, b in enumerate(blocks) if isinstance(b, kind)), default=None)
-            if at is None:
-                at = next((i for i, b in enumerate(blocks) if isinstance(b, ss.SceneLineItemBlock)), len(blocks)) - 1
-            blocks.insert(at + 1, new)
-        after_last(ss.SceneTreeBlock, tree)
-        after_last(ss.TreeNodeBlock, node)
-        after_last(ss.SceneGroupItemBlock, place)
-    # the strokes, each after the last of his layer's (a run of its own, hung off the layer's tail)
-    mine = [b.item for b in blocks if isinstance(b, ss.SceneLineItemBlock) and _key(b.parent_id) == _key(layer)]
-    lefts = {_key(i.left_id) for i in mine}
-    tails = [i for i in mine if _key(i.item_id) not in lefts]
-    prev = tails[-1].item_id if tails else CrdtId(0, 0)
-    for st in strokes:
-        pts, widths, tool, color = st[0], st[1], st[2], st[3]
-        P = [si.Point(x=float(x), y=float(y), speed=0, direction=0, width=int(widths[i]), pressure=190)
-             for i, (x, y) in enumerate(pts)]
-        L = si.Line(color=color, tool=tool, points=P, thickness_scale=3.0, starting_length=0.0, move_id=None,
-                    color_rgba=None)
-        iid = nid()
-        blocks.append(ss.SceneLineItemBlock(parent_id=layer, item=CrdtSequenceItem(
-            item_id=iid, left_id=prev, right_id=CrdtId(0, 0), deleted_length=0, value=L)))
-        prev = iid
-    buf = io.BytesIO()
-    write_blocks(buf, blocks)
-    new = buf.getvalue()
-    back = list(read_blocks(io.BytesIO(new)))
-    ids2 = layer_ids(back)
-    mine2, theirs2 = _counts(back, ids2)
-    if _key(layer) not in ids2 or mine2 != len(strokes) or theirs2 != theirs0:
-        raise RuntimeError("the page did not read back with the daemon's note (%d of %d of his, %d of %d of the user's)"
-                           % (mine2, len(strokes), theirs2, theirs0))
-    return new
-
-
-def _slow_box_marks(data, box):
-    x0, y0, x1, y1 = box
-    blocks = list(read_blocks(io.BytesIO(data)))
-    ids = layer_ids(blocks)
-    return [_key(b.item.item_id) for b in blocks if _live_line(b) and _key(b.parent_id) not in ids
-            and any(x0 <= p.x <= x1 and y0 <= p.y <= y1 for p in b.item.value.points)]
 
 
 # ------------------------------------------------------------------ what a note says, lettered
@@ -344,10 +335,11 @@ def band(frame):
     return x0, x1, 0.0, top
 
 
-def letter(lines, frame, box=False):
+def letter(lines, frame, box=False, latest=False):
     """`lines` lettered in the band, signed at the end of the last line, with a retry box after the signature when
-    `box`. -> (Drawing strokes, the box (x0, y0, x1, y1) or None). Each line is cut to the band's width; lines past what
-    the band holds are dropped (the last kept one ends with an ellipsis)."""
+    `box`. -> (Drawing strokes, the box (x0, y0, x1, y1) or None). Each line is wrapped to the band's width; lines past
+    what the band holds are dropped (the last kept one ends with an ellipsis). `latest`: a running account instead --
+    each line one row, cut to fit, and the first line kept with as many of the LAST ones as the band holds."""
     from paperdaemon.pipeline import draw as A
     from paperdaemon.pipeline.draw import lettering as T
     from paperdaemon.pipeline.draw import signature as SIG
@@ -360,7 +352,11 @@ def letter(lines, frame, box=False):
     box_w = (BOX * s + size * 5.5) if box else 0.0             # the retry box, at the band's right end, and its word
     width = x1 - x0 - box_w
     wrapped = []
-    for ln in lines:
+    if latest:
+        wrapped = [_cut(T, " ".join(str(ln).split()), size, width) for ln in lines] or [""]
+        if len(wrapped) > rows:
+            wrapped = wrapped[:1] + wrapped[len(wrapped) - (rows - 1):] if rows > 1 else wrapped[-1:]
+    for ln in ([] if latest else lines):
         wrapped += T.wrap(str(ln), size, width) or [""]
     if len(wrapped) > rows:
         wrapped = wrapped[:rows]

@@ -884,6 +884,24 @@ def _host_note(problems):
 _paint.session = _picture_model     # a game's several pictures in ONE hand-over (rm_adventure._with_card)
 
 
+def _what_was_read():
+    """The host's reading of the page in a line, for the daemon's note: what is new on it, as read (the typed text
+    exactly, the handwriting as OCR made it out), or what is on it."""
+    listing = JOB.listing or {}
+    refs = [r for r in (JOB.new_refs or []) if r.startswith(("para:", "line:", "mark:"))] or \
+        [r for r in listing if r.startswith(("para:", "line:"))]
+    said = []
+    for r in refs[:4]:
+        t = " ".join(str((listing.get(r) or {}).get("text") or "").split())
+        if t:
+            said.append("%s \"%s\"" % ("typed" if r.startswith("para:") else "wrote", t[:90]))
+    if said:
+        return "Read: " + "; ".join(said)
+    n = sum(1 for r in listing if r.startswith(("line:", "mark:")))
+    return "Read the page: %s" % ("%d mark%s of ink, no words made out" % (n, "" if n == 1 else "s") if n
+                                   else "nothing written on it")
+
+
 def converse(doc_id, page, name, keys=(), extra=None, conflict=None):
     """The whole job for one page. Returns (outcome, note, seconds, messages).
 
@@ -918,6 +936,11 @@ def converse(doc_id, page, name, keys=(), extra=None, conflict=None):
             _warn("reading the conflict's two pages", ex)
     problems = []
     t_ctx = time.time() - t0                      # the host's own reading of the page
+    try:
+        from paperdaemon.pipeline.host import steps as _ST
+        _ST.event(_what_was_read())
+    except Exception:
+        pass
 
     # 1. THE DECISION -- the one turn the model chooses anything; the harness builds it and reads the reply
     turn = H.decision(_host(), msgs)

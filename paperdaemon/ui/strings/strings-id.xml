@@ -676,4 +676,6 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="settings.page_notes">Catatan di halaman</string>
   <string name="settings.page_notes.help">Daemon menulis di halaman sambil bekerja: bahwa ia menerima tugas, pekerjaan yang sedang dilakukan, dan bagaimana hasilnya, dengan kotak yang bisa dicentang untuk mencoba lagi. Kecil, di bagian paling atas di bawah bilah alat tablet, di lapisan miliknya sendiri yang tidak dibaca apa pun.</string>
   <string name="settings.page_notes.on">Tulis di halaman sambil bekerja</string>
+  <string name="settings.daemon_layer">Lapisan daemon</string>
+  <string name="settings.daemon_layer.help">Nama lapisan tempat daemon menulis catatannya. PaperDaemon tidak pernah membaca lapisan dengan nama ini sebagai bagian dari halaman; hanya editor halaman yang menampilkannya.</string>
 </resources>

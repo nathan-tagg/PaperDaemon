@@ -676,4 +676,6 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="settings.page_notes">Notater på siden</string>
   <string name="settings.page_notes.help">Daemonen skriver på siden mens han jobber: at han fikk jobben, arbeidet som skal gjøres, og hvordan det endte, med en boks å krysse av for å prøve igjen. Smått, helt øverst under nettbrettets verktøylinje, på et eget lag som ingenting annet leser.</string>
   <string name="settings.page_notes.on">Skriv på siden mens han jobber</string>
+  <string name="settings.daemon_layer">Daemonens lag</string>
+  <string name="settings.daemon_layer.help">Navnet på laget daemonen skriver notatene sine på. PaperDaemon leser aldri et lag med dette navnet som en del av siden; bare sideredigereren viser det.</string>
 </resources>

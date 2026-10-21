@@ -676,4 +676,6 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="settings.page_notes">Nodiadau ar y dudalen</string>
   <string name="settings.page_notes.help">Mae'r daemon yn ysgrifennu ar y dudalen wrth weithio: iddo gael y swydd, y gwaith dan sylw, a sut y daeth i ben, gyda blwch i'w dicio i roi cynnig arall arni. Yn fach, ar draws y brig o dan far offer y dabled, ar haen ei hun nad oes dim arall yn ei darllen.</string>
   <string name="settings.page_notes.on">Ysgrifennu ar y dudalen wrth weithio</string>
+  <string name="settings.daemon_layer">Haen y daemon</string>
+  <string name="settings.daemon_layer.help">Enw'r haen y mae'r daemon yn ysgrifennu ei nodiadau arni. Nid yw PaperDaemon byth yn darllen haen o'r enw hwn fel rhan o'r dudalen; dim ond golygydd y dudalen sy'n ei dangos.</string>
 </resources>

@@ -324,8 +324,9 @@ QUEUE = os.path.join(_STATE, "rm-queue")
 # --------------------------------------------------------- the daemon's notes on the page, and another try
 # Both are the user's choice (Settings): RETRIES, how many more times a job that FAILED (ledger "failed": it did not do
 # what was asked -- a page with nothing to do is not a failure) goes back in the queue on its own; NOTES ON THE PAGE,
-# his three notes across the top of the page (notes.py): "got it" when he hands a job over, the work at hand once the
-# host has its plan, and how it ended, with a box to tick for another try. With notes off nothing here touches a page.
+# his notes across the top of the page (notes.py): "On it" the moment he hands a job over, then each thing the host
+# reports as it works (what it read, its plan, each step), then how it ended, with a box to tick for another try.
+# With notes off nothing here touches a page.
 def _setting(path, default):
     try:
         from paperdaemon import settings as S
@@ -381,6 +382,16 @@ def _frame_of(doc, pid):
         return (1620.0, 2160.0)
 
 
+def _shifts_of(doc, pid, path):
+    """Where the tablet draws the page's groups anchored to its typed text: {(part1, part2): (dx, dy)}."""
+    from paperdaemon.pipeline.page import render as R
+    try:
+        n = [p["id"] for p in R.live_pages(doc)].index(pid) + 1
+        return {(k.part1, k.part2): v for k, v in R._anchor_offsets(doc, n, R.other_blocks_of(path)).items()}
+    except Exception:
+        return {}
+
+
 def _push_copy(doc, pid, data, what):
     """A copy of the page, the daemon's note on it, up to the tablet; the page in the mirror stays as it is."""
     from paperdaemon.remarkable import sync as cloud
@@ -394,15 +405,53 @@ def _push_copy(doc, pid, data, what):
         log("  the %s note did not go up: %s" % (what, str(ex)[:120]))
 
 
-def _letter(lines, frame, box=False):
+def _letter(lines, frame, box=False, latest=False):
     from paperdaemon.pipeline.daemon import notes as N
-    return N.letter(lines, frame, box=box)
+    return N.letter(lines, frame, box=box, latest=latest)
+
+
+# WHAT HE HAS PUT ON EACH PAGE, and his next id there (notes._write's state), in a file only the daemon writes: the
+# host saves the ledger as it works, and a count lost there would let a note reuse ids the tablet already has.
+INK = os.path.join(_STATE, "daemon-ink.json")
+
+
+def _ink_all():
+    try:
+        with open(INK, encoding="utf-8") as f:
+            d = json.load(f)
+        return d if isinstance(d, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _ink(doc, pid):
+    st = _ink_all().get("%s/%s" % (doc, pid))
+    return st if isinstance(st, dict) else {}
+
+
+def _ink_keep(doc, pid, state):
+    d = _ink_all()
+    d["%s/%s" % (doc, pid)] = state
+    paths.write_atomic(INK, json.dumps(d))
+
+
+def _note_copy(doc, pid, base, lines, what):
+    """A copy of the page as it was handed over, his layer deleted and a new one with `lines` on it, up to the tablet;
+    the page in the mirror, which the host works on, is not touched."""
+    from paperdaemon.pipeline.daemon import notes as N
+    if base is None:
+        return
+    state = _ink(doc, pid)
+    strokes, _box = _letter(lines, _frame_of(doc, pid), latest=True)
+    data = N.with_note(base, strokes, state)
+    _ink_keep(doc, pid, state)
+    _push_copy(doc, pid, data, what)
 
 
 def prepare_page(job):
-    """Before a job goes to the host: his last note erased from the page, and anything the user wrote in its retry box
+    """Before a job goes to the host: his layer deleted from the page, and anything the user wrote in its retry box
     with it (a retry asked for -> job["retry"]); a retry the settings allowed carried on the job; then, with notes on,
-    his "got it" note up to the tablet on a copy of the page."""
+    "On it" up to the tablet at once, on a copy of the page."""
     from paperdaemon.pipeline.daemon import notes as N
     key = job["keys"][0]
     ent = rm_scan.load()["entries"].get(key) or {}
@@ -414,47 +463,45 @@ def prepare_page(job):
     if not path or not os.path.exists(path):
         return
     data = open(path, "rb").read()
-    ticks = N.box_marks(data, ent.get("note_box")) if ent.get("note_box") else []
-    clean, n = N.erase(data, also=ticks)
-    if n:
+    ticks = N.box_marks(data, ent.get("note_box"), shifts=_shifts_of(doc, pid, path)) if ent.get("note_box") else []
+    state = _ink(doc, pid)
+    clean, n = N.erase(data, state, also=ticks)
+    if clean is not data:
         paths.write_atomic(path, clean)
-        log("  erased the daemon's note%s" % (" and the tick in its retry box" if ticks else ""))
+        _ink_keep(doc, pid, state)
+        log("  deleted the daemon's layer%s" % (" and the tick in its retry box" if ticks else ""))
     if ticks:
         job["retry"] = {"asked": True, "note": ent.get("note") or ""}
         log("  the user ticked the retry box -- trying %s again" % where(job))
-    frame = _frame_of(doc, pid)
-    say = "Got it %s -- %s%s. On it now." % (N.clock(), where(job), " (asked again)" if ticks else
-                                             (" (try %d)" % (int(job["retry"].get("n") or 1) + 1) if job.get("retry") else ""))
-    job["note_intake"] = say
-    job["note_base"] = clean                                  # the page as the host gets it: the work note's copy is of it
-    strokes, _box = _letter([say], frame)
-    _push_copy(doc, pid, N.with_note(clean, strokes), "got-it")
+    head = "On it %s -- %s%s" % (N.clock(), where(job), " (asked again)" if ticks else
+                                 (" (try %d)" % (int(job["retry"].get("n") or 1) + 1) if job.get("retry") else ""))
+    job["note_head"] = head
+    job["note_base"] = clean                                  # the page as the host gets it: every copy is of it
+    _note_copy(doc, pid, clean, [head], "on-it")
 
 
-def plan_note():
-    """While a job runs: once the host has its plan, the work at hand goes up on a copy of the page."""
-    if INFLIGHT.get("plan_noted") or not notes_on():
+def progress_note():
+    """While a job runs: each thing the host reports (host/steps.event: what it read, its plan, each step as it ends)
+    goes up on a copy of the page, under "On it". Several at once go up together, as one."""
+    if not notes_on():
         return
     try:
         with open(os.path.join(_STATE, "run", "progress.json"), encoding="utf-8") as f:
             pr = json.load(f)
     except (OSError, ValueError):
         return
-    doc, pid, path = _page_of(INFLIGHT["job"])
-    if pr.get("doc") != doc or not pr.get("plan") or not path or not os.path.exists(path):
+    job = INFLIGHT["job"]
+    doc, pid, _path = _page_of(job)
+    events = [str(e) for e in (pr.get("events") or [])]
+    if pr.get("doc") != doc or not events or events == INFLIGHT.get("noted"):
         return
-    INFLIGHT["plan_noted"] = True
-    from paperdaemon.pipeline.daemon import notes as N
-    work = "The work: " + "; ".join(str(x) for x in pr["plan"])
-    strokes, _box = _letter([INFLIGHT["job"].get("note_intake") or "Got it.", work], _frame_of(doc, pid))
-    # the page as it was handed over, never as the host is leaving it: the job's own work goes up with the job
-    data = INFLIGHT["job"].get("note_base") or N.erase(open(path, "rb").read())[0]
-    _push_copy(doc, pid, N.with_note(data, strokes), "work")
+    INFLIGHT["noted"] = events
+    _note_copy(doc, pid, job.get("note_base"), [job.get("note_head") or "On it."] + events, "progress")
 
 
 def final_note(job, since):
-    """The job is recorded: how it ended goes on the page itself (the host is done with it), and up to the tablet. A
-    job left skipped or failed gets a retry box; one going back in the queue says so."""
+    """The job is recorded: how it ended goes on the page itself (the host is done with it), his layer deleted first,
+    and up to the tablet. A job left skipped or failed gets a retry box; one going back in the queue says so."""
     from paperdaemon.pipeline.daemon import notes as N
     doc, pid, path = _page_of(job)
     if not path or not os.path.exists(path):
@@ -475,8 +522,9 @@ def final_note(job, since):
         lines = ["Nothing to do, %s after %s: %s" % (N.clock(), took, why), "Tick the box to try it anyway."]
     box = not again and (failed or st != "done")
     strokes, b = _letter(lines, _frame_of(doc, pid), box=box)
-    data, _n = N.erase(open(path, "rb").read())
-    paths.write_atomic(path, N.with_note(data, strokes))
+    state = _ink(doc, pid)
+    paths.write_atomic(path, N.with_note(open(path, "rb").read(), strokes, state))
+    _ink_keep(doc, pid, state)
     with rm_scan.locked():
         led = rm_scan.load()
         e = led["entries"].get(key)
@@ -796,10 +844,9 @@ def main():
         if INFLIGHT:
             watch_inflight()
             try:
-                plan_note()
+                progress_note()
             except Exception as ex:
-                INFLIGHT["plan_noted"] = True
-                log("  could not note the work at hand: %s" % str(ex)[:120])
+                log("  could not note the host's progress: %s" % str(ex)[:120])
             ents = rm_scan.load()["entries"]
             sts = [ents.get(k, {}).get("status") for k in INFLIGHT["keys"]]
             if all(x in ("done", "skipped") for x in sts):

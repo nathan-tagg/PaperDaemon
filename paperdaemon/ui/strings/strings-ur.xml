@@ -676,4 +676,6 @@
   <string name="settings.page_notes">صفحے پر نوٹس</string>
   <string name="settings.page_notes.help">ڈیمن کام کرتے ہوئے صفحے پر لکھتا ہے: کہ اسے کام مل گیا، کون سا کام ہو رہا ہے، اور وہ کیسے ختم ہوا، ساتھ میں دوبارہ آزمانے کے لیے نشان لگانے کا ایک خانہ۔ چھوٹے حروف میں، سب سے اوپر ٹیبلٹ کے ٹول بار کے نیچے، اس کی اپنی ایک تہہ پر جسے اور کچھ نہیں پڑھتا۔</string>
   <string name="settings.page_notes.on">کام کرتے ہوئے صفحے پر لکھیں</string>
+  <string name="settings.daemon_layer">ڈیمن کی تہہ</string>
+  <string name="settings.daemon_layer.help">اس تہہ کا نام جس پر ڈیمن اپنے نوٹس لکھتا ہے۔ PaperDaemon اس نام کی تہہ کو کبھی صفحے کا حصہ نہیں پڑھتا؛ صرف صفحہ ایڈیٹر اسے دکھاتا ہے۔</string>
 </resources>

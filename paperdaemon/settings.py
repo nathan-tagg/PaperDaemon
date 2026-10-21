@@ -115,6 +115,10 @@ SCHEMA = [
      "help": "The daemon writes on the page as he works: that he got the job, the work at hand, and how it ended, with "
              "a box to tick to try it again. Small, across the very top, under the tablet's toolbar, on a layer of his "
              "own that nothing else reads."},
+    {"path": "daemon.layer", "type": "text", "default": "Daemon", "required": True, "label": "Daemon layer",
+     "message": "the daemon's layer needs a name",
+     "help": "The name of the layer the daemon writes his notes on. PaperDaemon never reads a layer of this name as "
+             "part of the page; only the page editor shows it."},
     {"path": "features.off", "type": "list", "default": [], "label": "Features switched off",
      "help": "Features PaperDaemon never offers the model, whatever the lineup can do."},
     {"path": "server.port", "type": "integer", "default": API_PORT, "min": 1024, "max": 65535, "label": "Port",

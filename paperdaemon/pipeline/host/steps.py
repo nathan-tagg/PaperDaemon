@@ -264,7 +264,7 @@ def erase_targets(what):
 # ----------------------------------------------------------------- the job's progress, for the window
 # THE HOST KNOWS ITS STEPS once the plan is in: the window shows a bar on the page's cover and in the viewer (tablet.js),
 # moving as steps finish. The host names the page when a job starts (begin); before the plan the bar has no count.
-PROGRESS = {"path": None, "doc": None, "page": None, "plan": None}
+PROGRESS = {"path": None, "doc": None, "page": None, "plan": None, "events": [], "count": (None, None)}
 
 
 def _write_progress(done=None, total=None):
@@ -274,35 +274,49 @@ def _write_progress(done=None, total=None):
     p = PROGRESS["path"]
     if not p:
         return
+    if done is None and total is None:
+        done, total = PROGRESS["count"]
+    PROGRESS["count"] = (done, total)
     try:
         os.makedirs(os.path.dirname(p), exist_ok=True)
         tmp = p + ".part"
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump({"doc": PROGRESS["doc"], "page": PROGRESS["page"], "done": done, "total": total, "at": time.time(),
-                       "plan": PROGRESS["plan"]}, f)
+                       "plan": PROGRESS["plan"], "events": PROGRESS["events"]}, f)
         os.replace(tmp, p)
     except OSError:
         pass
 
 
 def begin(path, doc, page):
-    PROGRESS.update(path=path, doc=doc, page=page, plan=None)
+    PROGRESS.update(path=path, doc=doc, page=page, plan=None, events=[], count=(None, None))
     _write_progress()
+
+
+def event(text):
+    """WHAT THE HOST IS DOING, one line at a time, for the user: what it read on the page, its plan, each step as it
+    ends. The daemon writes the latest of them on the page (pipeline/daemon/notes.py), with notes on."""
+    text = " ".join(str(text or "").split())
+    if text and PROGRESS["path"]:
+        PROGRESS["events"] = (PROGRESS["events"] + [text])[-12:]
+        _write_progress()
 
 
 def report(steps):
     """The plan's steps, done or failed of all, to the window -- and THE WORK AT HAND, each step as "<kind>: <what>",
     which the daemon writes on the page for the user (pipeline/daemon/notes.py) once it is there."""
     steps = steps or []
+    PROGRESS["count"] = (sum(1 for s in steps if s.get("status") in ("done", "failed")), len(steps))
     if PROGRESS["plan"] is None and steps:
         PROGRESS["plan"] = [("%s: %s" % (s.get("do"), str(s.get("what") or "").strip())).rstrip(": ") for s in steps]
-    _write_progress(sum(1 for s in steps if s.get("status") in ("done", "failed")), len(steps))
+        event("The plan: " + "; ".join(PROGRESS["plan"]))
+    _write_progress(*PROGRESS["count"])
 
 
 def end():
     import os
     p = PROGRESS["path"]
-    PROGRESS.update(path=None, doc=None, page=None, plan=None)
+    PROGRESS.update(path=None, doc=None, page=None, plan=None, events=[], count=(None, None))
     if p:
         try:
             os.remove(p)
@@ -376,6 +390,9 @@ def finish(steps, step, ok=True, note=""):
     step["status"] = "done" if ok else "failed"
     if note:
         step["note"] = str(note)[:200]
+    what = ("%s: %s" % (step.get("do"), str(step.get("what") or "").strip())).rstrip(": ")
+    event("Step %d of %d %s -- %s%s" % (step.get("id") or 0, len(steps), "done" if ok else "FAILED", what,
+                                        "" if ok or not note else ": " + str(note)[:120]))
     report(steps)
     return current(steps)
 

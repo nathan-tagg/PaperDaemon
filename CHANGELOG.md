@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.53
+
+- Handwriting is read where it is. The picture the host reads is the whole page plus anything past its frame, and the words it found were placed as if the picture were the frame squeezed. On any page written past its foot, words landed on the wrong marks or on none. They are now placed from the picture's own corner.
+- Notes on the page: the daemon writes "On it" the moment he hands a job over. After that, every time the host does something a note reaches the tablet: what it read on the page, its plan, each step as it ends (done or failed), and how the job ended.
+- Notes on the page: the notes no longer pile up. Each note went up as a copy of the page with ids another note had used, and the tablet merged them into each other. Everything the daemon writes now carries his own author id, every note erases everything of his first, including notes in copies the page never saw, and his old notes are erased with them.
+- Notes on the page: his layer is called "Daemon" by default, and the name is a setting, shown while notes are on. The renderer never reads his notes, and never reads a layer with that name that you made yourself. Only the page editor shows them. Your own writing on his layer is still read and never erased: the tablet writes on whatever layer is current, and it had put your writing there. His layer now goes at the bottom of the list of layers.
+- Notes on the page: a tick in the retry box is found on a page with typed text. The tablet keeps the tick in a group tied to the text, stored far from where it is drawn, and the box was looked for in the wrong place.
+
 ## 0.1.52
 
 - New setting, Retries (default 0): a job that failed is tried again on its own, up to that many times. A page with nothing to do is not a failure and is never tried again. A game turn that stops on an error now counts as a failure.

@@ -676,4 +676,6 @@
   <string name="settings.page_notes">ページへのメモ</string>
   <string name="settings.page_notes.help">デーモンが作業しながらページに書き込みます。ジョブを受け取ったこと、取り組む作業、どう終わったか、そして再試行するためのチェックボックス。小さく、タブレットのツールバーの下の一番上に、ほかの何も読まない専用のレイヤーに書きます。</string>
   <string name="settings.page_notes.on">作業しながらページに書く</string>
+  <string name="settings.daemon_layer">デーモンのレイヤー</string>
+  <string name="settings.daemon_layer.help">デーモンがメモを書き込むレイヤーの名前。PaperDaemon はこの名前のレイヤーをページの一部として読むことはなく、ページエディターだけが表示します。</string>
 </resources>

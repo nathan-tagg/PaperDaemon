@@ -676,4 +676,6 @@
   <string name="settings.page_notes">পৃষ্ঠায় নোট</string>
   <string name="settings.page_notes.help">ডেমন কাজ করার সময় পৃষ্ঠায় লেখে: সে কাজটি পেয়েছে, কী কাজ করা হচ্ছে, আর কীভাবে শেষ হলো, সাথে আবার চেষ্টার জন্য টিক দেওয়ার একটি বাক্স। ছোট করে, একেবারে উপরে ট্যাবলেটের টুলবারের নিচে, তার নিজের একটি স্তরে যা আর কিছু পড়ে না।</string>
   <string name="settings.page_notes.on">কাজ করার সময় পৃষ্ঠায় লিখুন</string>
+  <string name="settings.daemon_layer">ডেমনের স্তর</string>
+  <string name="settings.daemon_layer.help">যে স্তরে ডেমন তার নোট লেখে তার নাম। PaperDaemon এই নামের স্তরকে কখনও পৃষ্ঠার অংশ হিসেবে পড়ে না; শুধু পৃষ্ঠা সম্পাদক এটি দেখায়।</string>
 </resources>

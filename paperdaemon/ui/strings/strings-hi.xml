@@ -676,4 +676,6 @@
   <string name="settings.page_notes">पेज पर नोट्स</string>
   <string name="settings.page_notes.help">डेमन काम करते समय पेज पर लिखता है: कि उसे काम मिल गया, कौन-सा काम हो रहा है, और वह कैसे खत्म हुआ, साथ में दोबारा आज़माने के लिए टिक करने का एक बॉक्स। छोटे अक्षरों में, सबसे ऊपर टैबलेट के टूलबार के नीचे, उसकी अपनी एक परत पर जिसे और कुछ नहीं पढ़ता।</string>
   <string name="settings.page_notes.on">काम करते समय पेज पर लिखें</string>
+  <string name="settings.daemon_layer">डेमन की परत</string>
+  <string name="settings.daemon_layer.help">उस परत का नाम जिस पर डेमन अपने नोट्स लिखता है। PaperDaemon इस नाम की परत को कभी पेज का हिस्सा नहीं पढ़ता; केवल पेज एडिटर उसे दिखाता है।</string>
 </resources>

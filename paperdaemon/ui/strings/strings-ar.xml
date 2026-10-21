@@ -697,4 +697,6 @@
   <string name="settings.page_notes">ملاحظات على الصفحة</string>
   <string name="settings.page_notes.help">يكتب البرنامج الخفي على الصفحة أثناء عمله: أنه استلم المهمة، والعمل المطلوب، وكيف انتهى، مع مربع للتأشير عليه لإعادة المحاولة. بخط صغير في أعلى الصفحة تحت شريط أدوات الجهاز، على طبقة خاصة به لا يقرؤها شيء آخر.</string>
   <string name="settings.page_notes.on">الكتابة على الصفحة أثناء العمل</string>
+  <string name="settings.daemon_layer">طبقة البرنامج الخفي</string>
+  <string name="settings.daemon_layer.help">اسم الطبقة التي يكتب عليها البرنامج الخفي ملاحظاته. لا يقرأ PaperDaemon أبدًا طبقة بهذا الاسم كجزء من الصفحة؛ يعرضها محرر الصفحات فقط.</string>
 </resources>

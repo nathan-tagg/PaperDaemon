@@ -272,8 +272,8 @@ MAGIC = b"PDS1"
 def page_lines(data):
     """A page's strokes for the renderer, straight from the C pass (_c_pass) with no block objects made -> (its other
     blocks, rmscene's, in order; the erased id ranges [(start, end)] its tombstones make; [(item id's part2, parent
-    CrdtId, si.Line)] for every stroke with a value, in the file's order, each Line as rmscene makes it but for its
-    points, a POINT array); or None where the C reader is not sure of the page."""
+    CrdtId, si.Line, item id's part1 -- its author)] for every stroke with a value, in the file's order, each Line as
+    rmscene makes it but for its points, a POINT array); or None where the C reader is not sure of the page."""
     got = _c_pass(data, rows_only=True)
     if got is None:
         return None
@@ -307,7 +307,7 @@ def page_lines(data):
             p = r[25] & 0xFFFFFFFF
             rgba = ((p >> 16) & 0xFF, (p >> 8) & 0xFF, p & 0xFF, (p >> 24) & 0xFF)
         out.append((r[8], par, Line(color, tool, np.frombuffer(data, dtype=POINT, count=r[20] // POINT.itemsize, offset=r[19]),
-                                    th, st, Crdt(r[22], r[23]) if r[21] else None, rgba)))
+                                    th, st, Crdt(r[22], r[23]) if r[21] else None, rgba), r[7]))
     return rest, dead, out
 
 
@@ -385,8 +385,8 @@ def blocks_c(data):
 
 def fingerprint_parts(data):
     """What the daemon's fingerprint takes from each block, in the page's order, from the C pass alone (no stroke made):
-    ("L", tool, color, rgba, point count, (x0, y0), (x1, y1), parent part1, parent part2) for a stroke with a value (its
-    first and last points, and its layer),
+    ("L", tool, color, rgba, point count, (x0, y0), (x1, y1), parent part1, parent part2, item part1) for a stroke with
+    a value (its first and last points, its layer, and its author),
     ("B", block) for any other block; or None where the C reader is not sure of the page."""
     import struct
     got = _c_pass(data)
@@ -413,7 +413,7 @@ def fingerprint_parts(data):
         n = r[20] // POINT.itemsize
         first = struct.unpack_from("<ff", data, r[19]) if n else None
         last = struct.unpack_from("<ff", data, r[19] + (n - 1) * POINT.itemsize) if n else None
-        out.append(("L", r[15], r[16], rgba, n, first, last, r[5], r[6]))
+        out.append(("L", r[15], r[16], rgba, n, first, last, r[5], r[6], r[7]))
     return out
 
 

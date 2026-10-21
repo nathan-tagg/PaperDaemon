@@ -170,21 +170,53 @@ _OTHER = {}          # path -> ((mtime_ns, size), blocks)
 _LINES = {}          # path -> ((mtime_ns, size), fastrm.page_lines(...))
 
 
-# THE DAEMON'S LAYER: his notes on a page (pipeline/daemon/notes.py), across its top, under the tablet's toolbar. No
-# reader of a page for the host sees it -- strokes() leaves it out -- and the page's fingerprint leaves it out too
-# (ledger._content_sha), so a note can neither be read as the user's writing nor start a job.
-DAEMON_LAYER = "PaperDaemon"
+# THE DAEMON'S NOTES: across the top of a page, under the tablet's toolbar (pipeline/daemon/notes.py). The renderer
+# never draws them -- strokes() leaves them out, so nothing that reads a page for the host sees them -- and the page's
+# fingerprint leaves them out too (ledger._content_sha), so a note can neither be read as the user's writing nor start
+# a job. Only the page editor shows them (it reads the page itself: remarkable/local.scene_of).
+# WHAT IS HIS: every stroke with his author id (DAEMON_AUTHOR), on whatever layer; and every stroke lying on a layer
+# with his layer's name (Settings: daemon.layer) or the name his notes had before ("PaperDaemon") that he did not make
+# himself -- a layer the user named so, or his old notes. NOT the user's strokes on his own layer: the tablet writes
+# on whatever layer is current, and his writing landed on the daemon's layer (inside groups the tablet made there).
+DAEMON_LAYER = "Daemon"
+DAEMON_LEGACY = "PaperDaemon"
+DAEMON_AUTHOR = 218                  # his author number on a page (CrdtId part1), beside the tablet's 1 and other devices'
+_NAME = {"key": None, "name": DAEMON_LAYER}
 
 
-def daemon_layer_ids(blocks):
-    """The daemon's layer(s) on a page, from its blocks: {(part1, part2)} of their node ids."""
-    out = set()
-    for b in blocks:
-        if isinstance(b, ss.TreeNodeBlock):
-            g = b.group
-            if getattr(getattr(g, "label", None), "value", None) == DAEMON_LAYER:
-                out.add((g.node_id.part1, g.node_id.part2))
-    return out
+def daemon_layer_name():
+    """The daemon's layer name, from the settings (read again only when the settings file changes)."""
+    try:
+        from paperdaemon import paths as _paths
+        f = _paths.settings_file()
+        st = os.stat(f)
+        key = (f, st.st_mtime_ns, st.st_size)
+    except OSError:
+        return _NAME["name"]
+    if _NAME["key"] != key:
+        try:
+            from paperdaemon import settings as S
+            name = str(S._get_path(S.load(), "daemon.layer") or "").strip() or DAEMON_LAYER
+        except Exception:
+            name = DAEMON_LAYER
+        _NAME.update(key=key, name=name)
+    return _NAME["name"]
+
+
+def daemon_layer_ids(blocks, names=None):
+    """The layers whose strokes are never the page: named as his (`names`, else his layer's name and the old one)
+    and not made by him -> {(part1, part2)} of their node ids. (His own layer is not one: only his strokes on it are
+    his -- daemon_stroke.)"""
+    names = {daemon_layer_name(), DAEMON_LEGACY} if names is None else set(names)
+    return {(b.group.node_id.part1, b.group.node_id.part2) for b in blocks
+            if isinstance(b, ss.TreeNodeBlock) and b.group.node_id.part1 != DAEMON_AUTHOR
+            and getattr(getattr(b.group, "label", None), "value", None) in names}
+
+
+def daemon_stroke(author, parent, layers):
+    """Is a stroke the daemon's: its author (its item id's part1), its parent (part1, part2), and the page's
+    daemon_layer_ids."""
+    return author == DAEMON_AUTHOR or parent in layers
 
 
 def _lines_of(path):
@@ -483,11 +515,11 @@ def strokes(doc, page_no, arrays=False):
         i = bisect.bisect_right(lows, n) - 1
         return i >= 0 and n <= spans[i][1]
     found = made if made is not None else (
-        (b.item.item_id.part2, b.parent_id, b.item.value) for b in blocks
+        (b.item.item_id.part2, b.parent_id, b.item.value, b.item.item_id.part1) for b in blocks
         if isinstance(b, ss.SceneLineItemBlock) and isinstance(getattr(b.item, "value", None), Line))
     daemon = daemon_layer_ids(blocks)
-    for n, parent, v in found:
-        if daemon and (parent.part1, parent.part2) in daemon:
+    for n, parent, v, author in found:
+        if daemon_stroke(author, (parent.part1, parent.part2), daemon):
             continue                                      # the daemon's note, never the page's content
         if is_dead(n):
             buried += 1          # the device treats this as erased

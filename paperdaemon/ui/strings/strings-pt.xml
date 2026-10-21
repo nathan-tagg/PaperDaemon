@@ -676,4 +676,6 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="settings.page_notes">Notas na página</string>
   <string name="settings.page_notes.help">O daemon escreve na página enquanto trabalha: que recebeu o trabalho, a tarefa em curso e como terminou, com uma caixa para assinalar e tentar de novo. Em pequeno, no topo, sob a barra de ferramentas do tablet, numa camada só dele que mais nada lê.</string>
   <string name="settings.page_notes.on">Escrever na página enquanto trabalha</string>
+  <string name="settings.daemon_layer">Camada do daemon</string>
+  <string name="settings.daemon_layer.help">O nome da camada onde o daemon escreve as suas notas. O PaperDaemon nunca lê uma camada com este nome como parte da página; só o editor de páginas a mostra.</string>
 </resources>

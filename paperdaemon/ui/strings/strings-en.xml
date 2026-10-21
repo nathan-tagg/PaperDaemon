@@ -676,4 +676,6 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="settings.page_notes">Notes on the page</string>
   <string name="settings.page_notes.help">The daemon writes on the page as he works: that he got the job, the work at hand, and how it ended, with a box to tick to try it again. Small, across the very top under the tablet's toolbar, on a layer of his own that nothing else reads.</string>
   <string name="settings.page_notes.on">Write on the page as he works</string>
+  <string name="settings.daemon_layer">Daemon layer</string>
+  <string name="settings.daemon_layer.help">The name of the layer the daemon writes his notes on. PaperDaemon never reads a layer of this name as part of the page; only the page editor shows it.</string>
 </resources>

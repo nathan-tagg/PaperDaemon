@@ -14,6 +14,11 @@ def _game_job(doc_id, page, name, t0):
     if not up:
         H.log("  game: the text model is not answering -- the opponent plays by its traits and says nothing")
     try:
+        from paperdaemon.pipeline.host import steps as _ST
+        _ST.event("A game page: reading the move and playing the turn")
+    except Exception:
+        pass
+    try:
         res = GM.play(doc_id, page, JOB.page_id, ask_text=H._ask_text if up else None,
                       ask_vision=H._ask_vision if up else None, log=H.log, workdir=H.QUEUE, paint=H._paint)
     except Exception as ex:

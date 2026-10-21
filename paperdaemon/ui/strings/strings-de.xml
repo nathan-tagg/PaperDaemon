@@ -676,4 +676,6 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="settings.page_notes">Notizen auf der Seite</string>
   <string name="settings.page_notes.help">Der Daemon schreibt bei der Arbeit auf die Seite: dass er den Auftrag hat, was zu tun ist und wie es ausging, mit einem Kästchen zum Ankreuzen für einen neuen Versuch. Klein, ganz oben unter der Werkzeugleiste des Tablets, auf einer eigenen Ebene, die sonst nichts liest.</string>
   <string name="settings.page_notes.on">Bei der Arbeit auf die Seite schreiben</string>
+  <string name="settings.daemon_layer">Daemon-Ebene</string>
+  <string name="settings.daemon_layer.help">Der Name der Ebene, auf die der Daemon seine Notizen schreibt. PaperDaemon liest eine Ebene dieses Namens nie als Teil der Seite; nur der Seiteneditor zeigt sie.</string>
 </resources>

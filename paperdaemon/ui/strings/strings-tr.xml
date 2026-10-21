@@ -676,4 +676,6 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="settings.page_notes">Sayfadaki notlar</string>
   <string name="settings.page_notes.help">Daemon çalışırken sayfaya yazar: işi aldığını, yapılacak işi ve nasıl bittiğini, yeniden denemek için işaretlenecek bir kutuyla birlikte. Küçük harflerle, en üstte tabletin araç çubuğunun altında, başka hiçbir şeyin okumadığı kendine ait bir katmanda.</string>
   <string name="settings.page_notes.on">Çalışırken sayfaya yaz</string>
+  <string name="settings.daemon_layer">Daemon katmanı</string>
+  <string name="settings.daemon_layer.help">Daemon'un notlarını yazdığı katmanın adı. PaperDaemon bu adı taşıyan bir katmanı asla sayfanın parçası olarak okumaz; onu yalnızca sayfa düzenleyici gösterir.</string>
 </resources>

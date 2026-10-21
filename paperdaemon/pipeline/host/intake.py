@@ -408,11 +408,16 @@ def describe_png(path):
     except Exception:
         iw, ih = (int(v) for v in H._frame())
     fw, fh = H._frame()
-    sx, sy = fw / max(1, iw), fh / max(1, ih)
+    view = getattr(JOB, "view", None)
+    if view and (int(round(view[2])), int(round(view[3]))) == (iw, ih):
+        # the page's picture (page_image): one pixel a page unit from its top-left page point, frame or not
+        ox, oy, sx, sy = view[0], view[1], 1.0, 1.0
+    else:
+        ox, oy, sx, sy = -fw / 2.0, 0.0, fw / max(1, iw), fh / max(1, ih)
     out = []
     for r in rows[:60]:
-        x = int(r["x"] * sx - fw / 2.0)
-        y = int((r["y"] + r["h"]) * sy)
+        x = int(ox + r["x"] * sx)
+        y = int(oy + (r["y"] + r["h"]) * sy)
         size = max(8, int(r["h"] * sy))
         out.append("  y=%4d x=%5d size~%2d  %s" % (y, x, size, r["text"][:120]))
     if not out:
@@ -661,18 +666,18 @@ def _mark_words(doc, page, marks):
     try:
         from paperdaemon import reader
         out = os.path.join(H.QUEUE, "_host_ocr.png")
-        R.render(doc, page, out, typed=False, hide=H._hide())
+        # one pixel a page unit, from the page point (ox, oy) at its top-left: the whole page AND what lies past its
+        # frame, so the picture is not the frame (a page written past its foot was read as squeezed into it, and every
+        # word landed on the wrong mark, or none)
+        ox, oy = R.render(doc, page, out, typed=False, hide=H._hide())[4]
         ws = reader.read_picture(out, scale=2)
-        fw, fh = H._frame()
-        with Image.open(out) as im:
-            sx, sy = fw / max(1, im.width), fh / max(1, im.height)
     except Exception as ex:
         H._warn("reading the ink", ex)
         return {}
     found = {}
     for w in ws:
-        cx = (w["x"] + w["w"] / 2.0) * sx - fw / 2.0
-        cy = (w["y"] + w["h"] / 2.0) * sy
+        cx = ox + w["x"] + w["w"] / 2.0
+        cy = oy + w["y"] + w["h"] / 2.0
         for m in marks:
             b = m["bbox"]
             if b[0] - 12 <= cx <= b[2] + 12 and b[1] - 12 <= cy <= b[3] + 12:
@@ -692,9 +697,8 @@ def _mark_words(doc, page, marks):
                 page = im.convert("RGB")
                 for m in todo:
                     b = m["bbox"]
-                    box_ = (max(0, int((b[0] + fw / 2.0 - 30) / sx)), max(0, int((b[1] - 30) / sy)),
-                            min(page.width, int((b[2] + fw / 2.0 + 30) / sx)),
-                            min(page.height, int((b[3] + 30) / sy)))
+                    box_ = (max(0, int(b[0] - ox - 30)), max(0, int(b[1] - oy - 30)),
+                            min(page.width, int(b[2] - ox + 30)), min(page.height, int(b[3] - oy + 30)))
                     if box_[2] - box_[0] < 8 or box_[3] - box_[1] < 8:
                         continue                        # a mark off the rendered page: nothing to read
                     crop = page.crop(box_)
