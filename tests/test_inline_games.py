@@ -111,3 +111,22 @@ def test_a_character_spoken_to_always_answers():
         rng = CH.Rng(seed)
         plan = TB.pre_turn(st, cid, set(), rng, addressed=True, others_speaking=1, budget=1)
         assert plan["speak"], seed
+
+
+def test_a_group_chat_keeps_everyone_the_player_asked_for():
+    from paperdaemon.pipeline.games import characters as RC, messages as MS
+    ids = list(RC.roster())
+    got = MS.pick_members([], "the whole cast", ask_text=lambda q: ", ".join(ids + ids[:3]))
+    assert got == ids                                          # every one, once, however many
+
+
+def test_a_group_chats_names_line_stays_inside_its_width():
+    from PIL import Image, ImageDraw
+    from paperdaemon.pipeline.games import messages as MS
+    d = ImageDraw.Draw(Image.new("RGB", (10, 10)))
+    font = MS._font("reMarkableSans-Regular.ttf", 30)
+    names = ["Resident %d" % i for i in range(61)]
+    for width in (300, 700, 1100):
+        line = MS._names_line(d, names, font, width)
+        assert d.textlength(line, font=font) <= width and (line.endswith("more") or line == "61 people")
+    assert MS._names_line(d, names[:3], font, 2000) == "Resident 0, Resident 1, Resident 2"

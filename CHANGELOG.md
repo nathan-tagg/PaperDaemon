@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.49
+
+- Messages: a group chat holds everyone you ask for. "The whole cast" was cut to eight people.
+- Messages: a group chat's header is laid out like a real messaging app's. A few faces overlap with a "+N" for the rest, a big group is titled "N people" with the names that fit and how many more, and nothing runs off the page.
+- Messages: in a group, everyone your message names may answer, plus a few others who would chime in: four replies at most unless you name more people. A big group no longer makes half its members answer every turn.
+
 ## 0.1.48
 
 - Page editor: erasing with the right button while strokes are selected no longer leaves the selection's picture of them on the page until you click away. An erase now lets go of the selection first, so you see what it erased.

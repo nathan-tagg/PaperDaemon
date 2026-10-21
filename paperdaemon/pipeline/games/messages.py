@@ -59,6 +59,24 @@ def _font(name, size):
     return paths.pil_font(name, size)
 
 
+def _fit(d, text, font, width):
+    """`text` cut to `width` with an ellipsis when it would run past it."""
+    if d.textlength(text, font=font) <= width:
+        return text
+    while text and d.textlength(text + "\u2026", font=font) > width:
+        text = text[:-1]
+    return text.rstrip(" ,") + "\u2026"
+
+
+def _names_line(d, names, font, width):
+    """As many of `names` as fit on one line, then "and N more" (a group chat's member line)."""
+    for k in range(len(names), 0, -1):
+        line = ", ".join(names[:k]) + ("" if k == len(names) else " and %d more" % (len(names) - k))
+        if d.textlength(line, font=font) <= width:
+            return line
+    return _fit(d, "%d people" % len(names), font, width)
+
+
 def _wrap(d, text, font, width):
     out = []
     for para in str(text).split("\n"):
@@ -80,7 +98,8 @@ def new_state(doc, members, title=None):
     seed = CH.new_seed()
     now = int(time.time())
     names = [RC.get(c)["short"] for c in members]
-    title = title or (names[0] if len(names) == 1 else ", ".join(names[:-1]) + " & " + names[-1])
+    title = title or (names[0] if len(names) == 1 else ", ".join(names[:-1]) + " & " + names[-1] if len(names) <= 3
+                      else ", ".join(names[:3]) + " & %d others" % (len(names) - 3))
     return {"game": "messages", "version": 1, "id": "chat-" + seed[:8], "doc": doc, "page_id": None, "pages": [],
             "first": {}, "title": title[:80], "members": list(members), "messages": [],
             "rng": {"seed": seed, "draws": 0}, "status": "open", "created": now, "updated": now}
@@ -134,16 +153,39 @@ def page_png(state, first, out):
     d = ImageDraw.Draw(im)
     big, reg, small, name_f = (_font("reMarkableSans-Bold.ttf", 40), _font("reMarkableSans-Regular.ttf", 30),
                                _font("reMarkableSans-Regular.ttf", 22), _font("reMarkableSans-Medium.ttf", 22))
-    # header: the members' faces (for one with alters, whoever they pass as now) and the chat's name
+    # HEADER, as a group chat's: the first few members' faces overlapping (for one with alters, whoever they pass as
+    # now), "+N" for the rest; beside them who the chat is with -- the name, or two or three names, or "N people" with
+    # the names that fit under it and how many more. Every line is cut to the page.
     from paperdaemon.pipeline.games import table as TB
-    x = M
-    for cid in state["members"][:8]:
+    members = state["members"]
+    names = []
+    for cid in members:
+        fr = TB.front(state, cid)
+        names.append(RC.get((fr or {}).get("shows") or cid)["short"])
+    shown = members[:5] if len(members) <= 6 else members[:4]
+    x, step = M, 60                                             # 84-pixel faces, each over the one before by 24
+    for cid in shown:
         fr = TB.front(state, cid)
         with Image.open(RC.face_png(cid, "neutral", (), fr["shows"] if fr else None)) as f:
             pic = f.convert("RGBA").resize((84, 84), Image.LANCZOS)
+        d.ellipse((x - 4, HEAD_TOP - 4, x + 88, HEAD_TOP + 88), fill="white")
         im.paste(pic, (x, HEAD_TOP), pic)
-        x += 92
-    d.text((x + 16, HEAD_TOP + 18), state["title"], font=big, fill=INK)
+        x += step
+    if len(members) > len(shown):                               # the rest, counted
+        d.ellipse((x - 4, HEAD_TOP - 4, x + 88, HEAD_TOP + 88), fill="white")
+        d.ellipse((x, HEAD_TOP, x + 84, HEAD_TOP + 84), fill=THEIRS, outline=RULE, width=2)
+        more = "+%d" % (len(members) - len(shown))
+        mf = _font("reMarkableSans-Medium.ttf", 30 if len(more) <= 3 else 24)
+        d.text((x + 42, HEAD_TOP + 42), more, font=mf, fill=GRAY, anchor="mm")
+        x += step
+    tx = x + 24 + (84 - step)
+    room = PAGE_W - M - tx
+    few = names[0] if len(members) == 1 else ", ".join(names[:-1]) + " & " + names[-1]
+    if len(members) <= 3 and d.textlength(few, font=big) <= room:    # everyone named in the title itself
+        d.text((tx, HEAD_TOP + 18), few, font=big, fill=INK)
+    else:                                                       # a count, and under it the names that fit
+        d.text((tx, HEAD_TOP - 2), _fit(d, "%d people" % len(members), big, room), font=big, fill=INK)
+        d.text((tx, HEAD_TOP + 54), _names_line(d, names, reg, room), font=reg, fill=GRAY)
     d.line((M, HEAD_TOP + 108, PAGE_W - M, HEAD_TOP + 108), fill=RULE, width=2)
     fit, _over = layout(state, first)
     y = THREAD_TOP
@@ -259,7 +301,11 @@ def pick_members(members, what="", ask_text=None):
     menu = "\n".join("%s: %s -- %s" % (cid, p["name"], p["summary"][:80]) for cid, p in sorted(r.items()))
     reply = ask_text("The player wants to text: \"%s\". These are the residents:\n%s\nAnswer with the ids of who "
                      "should be in the chat, comma separated, and nothing else." % (str(what)[:300], menu))
-    return [c for c in str(reply or "").replace(",", " ").split() if c in r][:8]
+    out = []
+    for c in str(reply or "").replace(",", " ").split():
+        if c in r and c not in out:
+            out.append(c)
+    return out
 
 
 def start(doc, page_no, page_id, members, workdir=None, first_message=""):
@@ -404,7 +450,10 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
         plans.append((0 if named else 1, cid, plan))
     state["rng"] = rng.state()
     order = [x for x in sorted(plans, key=lambda t: t[0])]
-    limit = 1 if len(members) == 1 else max(1, (len(members) + 1) // 2)
+    # A FEW REPLIES A TURN, as in a real group chat: everyone the message names may answer, and a few others who
+    # would chime in -- four at most, however big the group (each reply is a model call)
+    named_n = sum(1 for p in plans if p[0] == 0)
+    limit = 1 if len(members) == 1 else max(named_n, min(4, (len(members) + 1) // 2))
     replies, images = 0, []
     for _pri, cid, plan in order:
         if replies >= limit or not plan["speak"]:
