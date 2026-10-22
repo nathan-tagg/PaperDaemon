@@ -1783,6 +1783,18 @@ span.lname { cursor: default; }
     else { const a = { type: "text", before, after }; record(a); lastType = kind === "type" ? a : null; }
     caretOn = true; bandAfterEdit(before.text, oldLayout);
   }
+  // TYPING FOLLOWS THE CURSOR: a caret the typing (or the arrows) took below the view's foot, or above its top, scrolls
+  // the view to it, with a line and a half to spare; one already in view leaves the view where it is
+  function followCaret() {
+    const c = cursors[cursors.length - 1];
+    if (!c || !c.caret || !textLayout || !textLayout.paras[c.caret.p]) return;
+    const pt = caretPoint(c.caret), seen = vpH / scale(), pad = pt.h * 1.5;
+    let top = view.top;
+    if (pt.y + pt.h + pad > view.top + seen) top = pt.y + pt.h + pad - seen;
+    else if (pt.y - pad < view.top) top = pt.y - pad;
+    if (Math.abs(top - view.top) < 0.5) return;
+    view.top = top; clampView(); showScroll(); rebuildSoon();
+  }
   function placeCaret(x, y) {
     const hit = hitText(x, y);
     if (hit) { setCursors([{ caret: hit, anchor: null }]); return; }
@@ -2494,7 +2506,7 @@ span.lname { cursor: default; }
       const P = page.text.paras, p = P.length - 1;
       setCursors([{ caret: { p, o: P[p].chars.length }, anchor: null }]); caretOn = true;
     }
-    if (editing() && textKey(e)) e.preventDefault();
+    if (editing() && textKey(e)) { e.preventDefault(); followCaret(); }      // a key typed or moved the cursor: in view
   });
   // the page's frame is the page's own; the face is the tablet's when present, else the substitute, said nowhere
   const note = document.getElementById("note");             // only for a page that cannot be read

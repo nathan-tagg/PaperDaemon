@@ -148,3 +148,37 @@ def test_an_erase_pointing_at_nothing_goes_back_to_the_model(monkeypatch):
     out = H._plan(steps, [{"id": "mark:1", "is": "request", "then": "erase"},
                           {"id": "mark:2", "is": "request", "then": "erase"}])
     assert "all the handwriting marks on the page" in out["error"] and "drop this step" in out["error"]
+
+
+def test_a_picture_after_a_short_reply_goes_right_below_it():
+    """The layout is planned before anything is written: a reply's box is a share of the free page. A picture that the
+    host makes after the reply must be placed below what the reply really took, not below its planned box (it went
+    half a page down)."""
+    from paperdaemon.pipeline import draw as A
+    from paperdaemon.pipeline import host as H
+    from paperdaemon.pipeline.host import job as J
+    from paperdaemon.pipeline.host import layout as PL
+    J.begin(doc="nodoc", page=1, frame=(1620.0, 2160.0), draw=A.Drawing(), ops=[])
+    specs = [{"id": "p1", "kind": "text", "size": "medium", "near": "stack"},
+             {"id": "p2", "kind": "image", "size": "medium", "near": "stack"}]
+    boxes = PL.solve([dict(p) for p in specs], first_free_y=600)
+    planned = dict(boxes["p2"])
+    H.JOB.plan = {"places": boxes, "reflow": {"specs": specs, "first_free_y": 600, "marks": None, "obstacles": None,
+                                               "text_col": None}}
+    H.JOB.draw.stroke([(-500, 650), (300, 650)])               # the reply: one short line at the top of its box
+    H.JOB.draw.stroke([(-500, 690), (100, 690)])
+    H.JOB.steps = [{"id": 1, "do": "write", "what": "a reply", "place": "p1", "status": "done", "draw_from": 0, "draw_to": 2},
+                   {"id": 2, "do": "image", "what": "a photo", "place": "p2", "status": "todo"}]
+    seen = {}
+
+    def run_images(batch):
+        seen["box"] = dict(H.JOB.plan["places"]["p2"])
+        for q in batch:
+            q["status"] = "done"
+    real = H._run_images
+    H._run_images = run_images
+    try:
+        H._drain_host_steps()
+    finally:
+        H._run_images = real
+    assert seen["box"]["y0"] < planned["y0"] and seen["box"]["y0"] <= 690 + PL.GAP + 1

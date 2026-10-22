@@ -196,14 +196,17 @@ pre.snippet.pad-text { white-space: pre-wrap; padding: var(--s3) var(--s4); font
 dialog.sheet .field-row .field { width: 100%; box-sizing: border-box; }
 dialog.sheet fieldset.field-row { border: 0; padding: 0; min-inline-size: 0; }
 dialog.sheet fieldset.field-row legend { padding: 0; margin-bottom: var(--s1); }
-/* the new notebook's templates, as the tablet's picker shows them */
-.nb-tpls { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s1); max-height: calc(36vh / var(--pd-zoom, 1)); overflow-y: auto; }
-.nb-tpl { display: grid; justify-items: center; gap: 4px; padding: 8px 4px 6px; border: 1px solid transparent; border-radius: var(--radius);
-  background: transparent; color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; }
+/* the new notebook's templates, drawn as the page editor's template picker draws them (editor.html .tpl): each icon
+   over its name in the ink's color, a template from the user's library (rM Methods) dimmed the same way, the one
+   chosen underlined */
+.nb-tpls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; max-height: calc(36vh / var(--pd-zoom, 1)); overflow-y: auto; }
+.nb-tpl { display: grid; justify-items: center; gap: 6px; padding: 10px 4px 8px; border: 0; border-bottom: 3px solid transparent;
+  background: transparent; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
 .nb-tpl span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.nb-tpl:hover { background: var(--paper-sunk, rgba(0, 0, 0, 0.04)); }
-.nb-tpl.here { border-color: var(--ink); }
-.nb-tpl svg, .nb-tpl img { width: 34px; height: 44px; padding: 2px; fill: #333333; color: #333333; background: #FFFFFF; border-radius: 3px; }   /* a page, in either theme */
+.nb-tpl:hover { background: var(--paper-sunk); }   /* the sheet is --field */
+.nb-tpl.here { border-bottom-color: var(--ink); }
+.nb-tpl svg, .nb-tpl img { width: 46px; height: 60px; fill: currentColor; }
+.nb-tpl img { filter: invert(0.75); }
 .nb-tpl svg rect { fill: none; stroke: currentColor; }
 
 .viewer-page.editing { padding: 0; overflow: hidden; align-items: stretch; }

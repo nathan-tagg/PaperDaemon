@@ -232,8 +232,10 @@ def _landed_box(q):
                       min(b[1] for b in bs), max(b[2] for b in bs), max(b[3] for b in bs))
 
 
-def _reflow():
-    """Lay out the places still to come again, below what has actually landed.
+def _reflow_places():
+    """Lay out the places still to come again, below what has actually landed. (Its own name: intake's _reflow,
+    the typed text laid out again, is imported here too, and under one name it took this one's place, so this never
+    ran and a picture after a short reply went half a page down.)
 
     The whole layout is planned before anything exists. As each item lands, its real extent replaces its
     planned box and the stacked rows still to come are solved again below it, so a short reply leaves no gap
@@ -301,6 +303,10 @@ def _drain_host_steps(limit=8, kinds=None):
     steps = JOB.steps or []
     ran = []
     for _ in range(limit):
+        # WHAT LANDED BEFORE IT FIRST: the places still to come are laid out again below what is really there
+        # (_reflow_places). Run after the host's steps instead, a picture after a short reply went into the reply's
+        # planned box's foot, half a page down
+        _reflow_places()
         cur = ST.current(steps)
         if cur is None or not ST.is_host(cur):
             break
@@ -963,7 +969,7 @@ def converse(doc_id, page, name, keys=(), extra=None, conflict=None):
             if prev is not None and prev.get("draw_to") is None:
                 prev["draw_to"] = len(JOB.draw.strokes)     # what the last model step drew
             _drain_host_steps()
-            _reflow()                          # the places still to come, below what has landed
+            _reflow_places()                   # the places still to come, below what has landed
             cur = ST.current(steps)
             if cur is None:
                 break

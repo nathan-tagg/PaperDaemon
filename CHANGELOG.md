@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.60
+
+- A picture a job makes after writing a reply goes right below the reply. The page's places are planned before anything is written, and laying out what is still to come below what really landed had stopped running: it shared its name with another function, and that one took its place. So a picture after a short reply went half a page down.
+- Page editor: typing past the bottom of the view (or the arrow keys) scrolls the view to where you are typing.
+- False Mirror: the bar on the cover of the page a job is working on moves smoothly. Each update used to draw it anew, starting its animation over every second, and the whole library was redrawn every five seconds.
+- False Mirror: New notebook's templates are drawn as the page editor draws them, and its name field starts empty, "Notebook" its placeholder. New folder does the same.
+- Tags have no case: "Joi" and "joi" are one tag in the page's tag menu and in a notebook's tags, and adding one keeps the spelling already in use.
+
 ## 0.1.59
 
 - Draw pages on the processor is a setting in Settings now, one for every lineup, under Network access. It was on each lineup's Text tab. A lineup that had it on turns it on for all.

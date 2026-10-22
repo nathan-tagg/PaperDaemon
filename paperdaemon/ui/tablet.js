@@ -209,11 +209,13 @@
       if (!S.tagPop || S.view !== "page") return;
       const btn = $('[data-v="tagpop"]', dlg); if (!btn) return;
       const here = (S.tags && S.tags.page_tags && S.tags.page_tags[S.page - 1]) || [];
-      const used = new Set(here);
-      (S.list || []).forEach(d => (d.tags || []).forEach(t => used.add(t)));
-      ((S.tags && S.tags.page_tags) || []).forEach(ts => (ts || []).forEach(t => used.add(t)));
-      const all = [...used].sort((a, b) => a.localeCompare(b));
-      const pill = t => fm ? '<button type="button" class="chip tag-pill" data-tagtoggle="' + esc(t) + '" aria-pressed="' + here.includes(t) + '">' + esc(t) + "</button>"
+      // TAGS HAVE NO CASE: "Joi" and "joi" are one tag, one pill, spelled as the page (else the library) has it
+      const used = new Map(here.map(t => [t.toLowerCase(), t]));
+      const keep = t => { if (!used.has(t.toLowerCase())) used.set(t.toLowerCase(), t); };
+      (S.list || []).forEach(d => (d.tags || []).forEach(keep));
+      ((S.tags && S.tags.page_tags) || []).forEach(ts => (ts || []).forEach(keep));
+      const all = [...used.values()].sort((a, b) => a.localeCompare(b));
+      const pill = t => fm ? '<button type="button" class="chip tag-pill" data-tagtoggle="' + esc(t) + '" aria-pressed="' + hasTag(here, t) + '">' + esc(t) + "</button>"
                            : '<span class="chip">' + esc(t) + "</span>";
       const pop = document.createElement("div");
       pop.className = "tag-pop";
@@ -227,8 +229,17 @@
       const inp = $("[data-tag-add]", pop); if (inp) inp.focus();
     }
     function addTypedTag() {
-      const inp = $("#" + VIEWER + " [data-tag-add]"); const t = inp && inp.value.trim(); if (!t) return;
-      pageTags(now => now.includes(t) ? now : now.concat([t])).then(paintTagPop);
+      const inp = $("#" + VIEWER + " [data-tag-add]"); const typed = inp && inp.value.trim(); if (!typed) return;
+      const t = knownSpelling(typed);
+      pageTags(now => hasTag(now, t) ? now : now.concat([t])).then(paintTagPop);
+    }
+    // a tag compared as the tablet's tags are, without regard to case; one typed is spelled as it is already in use
+    const hasTag = (list, t) => (list || []).some(x => x.toLowerCase() === String(t).toLowerCase());
+    function knownSpelling(t) {
+      const all = [];
+      (S.list || []).forEach(d => (d.tags || []).forEach(x => all.push(x)));
+      ((S.tags && S.tags.page_tags) || []).forEach(ts => (ts || []).forEach(x => all.push(x)));
+      return all.find(x => x.toLowerCase() === t.toLowerCase()) || t;
     }
     // THE PAGE EDITOR'S TOOLS LIVE IN THE BAR: the editor (in its frame) sends its buttons, and a press here goes back
     // to it with where the button is, so its menu opens right under it
@@ -286,18 +297,30 @@
         (known ? ' aria-valuemin="0" aria-valuemax="' + p.total + '" aria-valuenow="' + p.done + '"' : "") +
         '><i style="width:' + (known ? Math.max(4, 100 * p.done / p.total) : 30) + '%"></i></span>';
     }
+    // A BAR THAT IS THERE IS CHANGED IN PLACE, never drawn anew: a new element each poll started its animation over
+    // every second (it looked stuck) and could not slide its width from the last value
+    function setBar(holder, old, p) {
+      if (!old) { holder.insertAdjacentHTML("beforeend", progressBar(p)); return; }
+      const known = !!(p && p.total);
+      old.classList.toggle("busy", !known);
+      if (known) {
+        old.setAttribute("aria-valuemin", "0"); old.setAttribute("aria-valuemax", String(p.total)); old.setAttribute("aria-valuenow", String(p.done));
+      } else ["aria-valuemin", "aria-valuemax", "aria-valuenow"].forEach(a => old.removeAttribute(a));
+      const w = (known ? Math.max(4, 100 * p.done / p.total) : 30) + "%";
+      const i = old.querySelector("i"); if (i && i.style.width !== w) i.style.width = w;
+    }
     function paintProgress() {
       if (!R) return;
       const p = S.progress;
       R.querySelectorAll(".cover .job-bar").forEach(b => { if (!p || b.closest(".doc-card").dataset.open !== p.doc) b.remove(); });
       if (p) {
         const card = R.querySelector('.doc-card[data-open="' + p.doc + '"] .cover');
-        if (card) { const old = card.querySelector(".job-bar"); if (old) old.outerHTML = progressBar(p); else card.insertAdjacentHTML("beforeend", progressBar(p)); }
+        if (card) setBar(card, card.querySelector(".job-bar"), p);
       }
       const dlg = $("#" + VIEWER);
       if (dlg) {
         const old = dlg.querySelector(":scope > .job-bar");
-        if (p && dlg.open && S.doc && S.doc.id === p.doc) { if (old) old.outerHTML = progressBar(p); else dlg.insertAdjacentHTML("beforeend", progressBar(p)); }
+        if (p && dlg.open && S.doc && S.doc.id === p.doc) setBar(dlg, old, p);
         else if (old) old.remove();
       }
     }
@@ -360,7 +383,7 @@
           if (efr && efr.contentWindow) efr.contentWindow.postMessage({ pd: "editor-close" }, location.origin);
           if (S.tagPop && !e.target.closest(".tag-pop") && !e.target.closest('[data-v="tagpop"]')) { S.tagPop = false; paintBar(); paintTagPop(); }
           const tg = e.target.closest("[data-tagtoggle]");
-          if (tg) { const t = tg.dataset.tagtoggle; pageTags(now => now.includes(t) ? now.filter(x => x !== t) : now.concat([t])); return; }
+          if (tg) { const t = tg.dataset.tagtoggle; pageTags(now => hasTag(now, t) ? now.filter(x => x.toLowerCase() !== t.toLowerCase()) : now.concat([t])); return; }
           const g = e.target.closest("[data-go]");
           if (g) { go(Number(g.dataset.go)); return; }
           const x = e.target.closest("[data-untag]");
@@ -438,10 +461,15 @@
 
     async function load() {
       const [list, e] = await PD.safe(api("GET", "/library"));
+      // THE SAME LIBRARY IS NOT DRAWN AGAIN: the false mirror asks every five seconds, and redrawing every cover each
+      // time restarted what was moving on them (a job's bar)
+      const seen = JSON.stringify([e ? PD.errText(e) : "", list || []]);
+      const same = seen === S.libSeen;
+      S.libSeen = seen;
       S.err = e ? PD.errText(e) : ""; S.list = list || [];
       if (S.at && !byId(S.at)) S.at = "";
       if (S.picked && !byId(S.picked)) unpick();
-      paint();
+      if (!same) paint();
       if (!fm && PD.firstOpen && byId(PD.firstOpen)) { const x = PD.firstOpen; PD.firstOpen = ""; openDoc(x); }
     }
 
@@ -466,7 +494,10 @@
       return dlg;
     }
 
-    const nameField = (value) => '<label class="field-row"><span>' + esc(PD.t("fm.name")) + '</span><input class="field w-l" type="text" data-name value="' + esc(value) + '" spellcheck="false"></label>';
+    // THE NAME, EMPTY: what it is called when left so ("Notebook") is its placeholder, gone the moment the user types
+    const nameField = (placeholder) => '<label class="field-row"><span>' + esc(PD.t("fm.name")) + '</span><input class="field w-l" type="text" data-name value="" placeholder="' +
+      esc(placeholder) + '" spellcheck="false"></label>';
+    const nameOf = dlg => { const f = dlg.querySelector("[data-name]"); return f.value.trim() || f.placeholder; };
 
     // A NEW NOTEBOOK, AS THE TABLET MAKES ONE: its name, its cover (the page last visited, or the first page), and with
     // an account signed in its template (the tablet's, from the user's own desktop app: none without one)
@@ -487,7 +518,7 @@
       const dlg = ask(PD.t("fm.new_notebook"), inner, PD.t("fm.create"), async d => {
         const cover = (d.querySelector("[name=nb-cover]:checked") || {}).value || "last";
         const tp = d.querySelector(".nb-tpl.here");
-        await api("POST", "/library/notebook", Object.assign({ name: d.querySelector("[data-name]").value, parent: S.at, cover },
+        await api("POST", "/library/notebook", Object.assign({ name: nameOf(d), parent: S.at, cover },
                                                              tp ? { template: tp.dataset.tpl } : {}));   // none: the engine's Blank
         await load();
       });
@@ -509,7 +540,7 @@
 
     function newFolder() {
       ask(PD.t("fm.new_folder"), nameField(PD.t("fm.folder")), PD.t("fm.create"), async dlg => {
-        await api("POST", "/library/folder", { name: dlg.querySelector("[data-name]").value, parent: S.at });
+        await api("POST", "/library/folder", { name: nameOf(dlg), parent: S.at });
         await load();
       });
     }
@@ -611,15 +642,16 @@
           '<span class="chip" data-tag="' + esc(t) + '">' + esc(t) + '<button type="button" class="chip-x" aria-label="' + esc(PD.t("fm.untag", { tag: t })) + '">×</button></span>').join("") +
           '</div><input class="field w-l" type="text" data-new-tag spellcheck="false" placeholder="' + esc(PD.t("fm.tag_add")) + '">', PD.t("fm.save"), async d => {
             const tags = [...d.querySelectorAll("[data-tag]")].map(c => c.dataset.tag);
-            const extra = d.querySelector("[data-new-tag]").value.trim();
-            await api("PUT", "/library/" + it.id + "/tags", { tags: extra ? tags.concat([extra]) : tags });
+            const extra = knownSpelling(d.querySelector("[data-new-tag]").value.trim());
+            await api("PUT", "/library/" + it.id + "/tags", { tags: extra && !hasTag(tags, extra) ? tags.concat([extra]) : tags });
             await load(); pick(it.id);
           });
         dlg.addEventListener("click", e => { const x = e.target.closest(".chip-x"); if (x) x.closest("[data-tag]").remove(); });
         dlg.querySelector("[data-new-tag]").addEventListener("keydown", e => {
           if (e.key !== "Enter" || !e.target.value.trim()) return;
           e.preventDefault(); e.stopPropagation();
-          const t = e.target.value.trim(); e.target.value = "";
+          const t = knownSpelling(e.target.value.trim()); e.target.value = "";
+          if (hasTag([...dlg.querySelectorAll("[data-tag]")].map(c => c.dataset.tag), t)) return;   // already there, in any case
           dlg.querySelector("[data-tags]").insertAdjacentHTML("beforeend", '<span class="chip" data-tag="' + esc(t) + '">' + esc(t) +
             '<button type="button" class="chip-x" aria-label="' + esc(PD.t("fm.untag", { tag: t })) + '">×</button></span>');
         });
