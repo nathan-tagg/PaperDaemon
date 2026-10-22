@@ -123,6 +123,11 @@ SCHEMA = [
      "message": "the daemon's layer needs a name",
      "help": "The name of the layer the daemon writes his notes on. PaperDaemon never reads a layer of this name as "
              "part of the page; only the page editor shows it."},
+    # WHERE JOBS DRAW THE PAGES THEY READ: the graphics card (pipeline/page/gpu.py), or the processor (render.c), the
+    # card left to the models. One setting for PaperDaemon, not a lineup's. The page editor draws on the card either way.
+    {"path": "render.processor", "type": "bool", "default": False, "label": "Draw pages on the processor",
+     "help": "Jobs draw the pages they read on the processor instead of the graphics card, leaving all of the card's "
+             "memory to the AI servers. Each picture takes longer; the pictures are the same."},
     {"path": "features.off", "type": "list", "default": [], "label": "Features switched off",
      "help": "Features PaperDaemon never offers the model, whatever the lineup can do."},
     {"path": "server.port", "type": "integer", "default": API_PORT, "min": 1024, "max": 65535, "label": "Port",
@@ -338,9 +343,6 @@ def normalize_lineup(lu):
         sr["kind"] = "local"
     out["search"] = {k: sr.get(k, v) for k, v in search_defaults().items()}
     out["tags"] = _upgrade_tags(lu.get("tags"))
-    # where this lineup's jobs draw their pages' pictures: "card" (the graphics card, pipeline/page/gpu.py) or "cpu"
-    # (render.c, on the processor: the card left to the models). The page editor draws on the card either way.
-    out["render"] = "cpu" if lu.get("render") == "cpu" else "card"
     return out
 
 
@@ -353,6 +355,9 @@ def _shape(s):
     for k in _RETIRED_TABLET_KEYS:
         (s.get("tablet") or {}).pop(k, None)
     (s.get("false_mirror") or {}).pop("inbox", None)            # one inbox tag for both mirrors now (tags.inbox)
+    # a lineup that drew its pages on the processor (an earlier version's per-lineup "render"): the setting for all
+    if any(isinstance(lu, dict) and lu.get("render") == "cpu" for lu in (s.get("lineups") or [])):
+        s.setdefault("render", {})["processor"] = True
     if not isinstance(s.get("lineups"), list):
         s["lineups"] = copy.deepcopy(SHIPPED_LINEUPS)
     shaped = []

@@ -659,8 +659,6 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="fm.imported_n">{n} filer importert.</string>
   <string name="fm.import_failed">{name} kunne ikke importeres: {why}</string>
   <string name="fm.drop">Slipp PDF- og EPUB-filer her for å importere dem</string>
-  <string name="lineup.render_cpu">Tegn sider på prosessoren</string>
-  <string name="lineup.render_cpu.help">Av (standard): jobbene i denne oppstillingen tegner sidene de leser på grafikkortet. Det er raskt, og mens en jobb kjører bruker det noe av kortets minne (omtrent 160 MB på en svært tett side), som gis tilbake når jobben er ferdig. På: de tegner dem på prosessoren i stedet, slik at hele kortets minne er igjen til AI-serveren din, og hvert bilde tar lengre tid, mest på sider med mye blekk. Bildene blir de samme uansett. Bare jobbenes sider berøres; sideredigereren tegner alltid på kortet.</string>
   <string name="settings.retries">Nye forsøk</string>
   <string name="settings.retries.help">Hvor mange ganger til en jobb som mislyktes, prøves på egen hånd før den blir liggende. En side uten noe å gjøre er ikke en feil og prøves aldri igjen.</string>
   <string name="settings.page_notes">Notater på siden</string>
@@ -679,4 +677,7 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="fm.template">Mal</string>
   <string name="slot.loras_folder">LoRA-mappe</string>
   <string name="slot.loras_folder.help">Åpner LoRA-mappen til dette oppsettet. Hver LoRA i den brukes på hvert bilde oppsettet lager, slik bildeharnessen sier.</string>
+  <string name="settings.render">Tegning av sider</string>
+  <string name="settings.render.help">Av (standard): jobber tegner sidene de leser på skjermkortet. Det er raskt, og mens en jobb kjører bruker det litt av kortets minne (omtrent 160 MB på en svært tett side), som gis tilbake når jobben er ferdig. På: de tegner dem på prosessoren i stedet, så hele kortets minne blir igjen til AI-serverne dine, og hvert bilde tar lenger tid, mest på sider med mye blekk. Bildene er like uansett, og det gjelder alle oppsett. Sideredigereren tegner alltid på kortet.</string>
+  <string name="settings.render.cpu">Tegn sider på prosessoren</string>
 </resources>

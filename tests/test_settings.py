@@ -162,11 +162,16 @@ def test_the_ignore_and_sprompt_settings_are_dropped_on_load():
     assert settings.FIXED_TAGS == ("ignore", "sprompt", "inbox")
 
 
-def test_a_lineup_draws_its_pages_on_the_card_unless_it_says_the_processor():
-    from paperdaemon import settings
-    assert settings.normalize_lineup({"name": "a"})["render"] == "card"
-    assert settings.normalize_lineup({"name": "a", "render": "cpu"})["render"] == "cpu"
-    assert settings.normalize_lineup({"name": "a", "render": "nonsense"})["render"] == "card"
+def test_pages_are_drawn_on_the_card_unless_settings_say_the_processor_for_every_lineup():
+    import json
+    from paperdaemon import paths, settings
+    assert settings.load()["render"]["processor"] is False
+    assert "render" not in settings.normalize_lineup({"name": "a", "render": "cpu"})      # not a lineup's setting
+    # an earlier version's lineup that drew on the processor: the setting for all
+    with open(paths.settings_file(), "w", encoding="utf-8") as f:
+        json.dump({"lineups": [{"name": "a", "render": "card"}, {"name": "b", "render": "cpu"}]}, f)
+    s = settings.load()
+    assert s["render"]["processor"] is True and all("render" not in lu for lu in s["lineups"])
 
 
 def test_a_processor_lineup_never_asks_the_card():

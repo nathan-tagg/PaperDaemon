@@ -659,8 +659,6 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="fm.imported_n">Imported {n} files.</string>
   <string name="fm.import_failed">{name} could not be imported: {why}</string>
   <string name="fm.drop">Drop PDFs and EPUBs to import them here</string>
-  <string name="lineup.render_cpu">Draw pages on the processor</string>
-  <string name="lineup.render_cpu.help">Off (the default): this lineup's jobs draw the pages they read on the graphics card. That is fast, and while a job runs it uses some of the card's memory (about 160 MB on a very dense page), given back when the job ends. On: they draw them on the processor instead, leaving all of the card's memory to your AI server, and each picture takes longer, most on pages with a lot of ink. The pictures are the same either way. Only a job's pages are affected; the page editor always draws on the card.</string>
   <string name="settings.retries">Retries</string>
   <string name="settings.retries.help">How many more times a job that failed is tried on its own before it is left. A page with nothing to do is not a failure and is never tried again.</string>
   <string name="settings.page_notes">Notes on the page</string>
@@ -679,4 +677,7 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="fm.template">Template</string>
   <string name="slot.loras_folder">LoRA folder</string>
   <string name="slot.loras_folder.help">Open this lineup's LoRA folder. Every LoRA in it goes with every picture this lineup makes, the way its image harness says.</string>
+  <string name="settings.render">Page drawing</string>
+  <string name="settings.render.help">Off (the default): jobs draw the pages they read on the graphics card. That is fast, and while a job runs it uses some of the card's memory (about 160 MB on a very dense page), given back when the job ends. On: they draw them on the processor instead, leaving all of the card's memory to your AI servers, and each picture takes longer, most on pages with a lot of ink. The pictures are the same either way, and every lineup is alike. The page editor always draws on the card.</string>
+  <string name="settings.render.cpu">Draw pages on the processor</string>
 </resources>

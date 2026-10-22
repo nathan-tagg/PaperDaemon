@@ -659,8 +659,6 @@ Luego guíame para instalar SearXNG si hace falta, escribe el archivo .bat con u
   <string name="fm.imported_n">{n} archivos importados.</string>
   <string name="fm.import_failed">No se pudo importar {name}: {why}</string>
   <string name="fm.drop">Suelta aquí PDF y EPUB para importarlos</string>
-  <string name="lineup.render_cpu">Dibujar las páginas en el procesador</string>
-  <string name="lineup.render_cpu.help">Desactivado (predeterminado): los trabajos de esta alineación dibujan las páginas que leen en la tarjeta gráfica. Es rápido y, mientras dura un trabajo, usa parte de la memoria de la tarjeta (unos 160 MB en una página muy densa), que se libera al terminar. Activado: las dibujan en el procesador, de modo que toda la memoria de la tarjeta queda para tu servidor de IA, y cada imagen tarda más, sobre todo en páginas con mucha tinta. Las imágenes son las mismas en ambos casos. Solo afecta a las páginas de los trabajos; el editor de páginas siempre dibuja en la tarjeta.</string>
   <string name="settings.retries">Reintentos</string>
   <string name="settings.retries.help">Cuántas veces más se intenta por sí solo un trabajo que falló antes de dejarlo. Una página sin nada que hacer no es un fallo y nunca se reintenta.</string>
   <string name="settings.page_notes">Notas en la página</string>
@@ -679,4 +677,7 @@ Luego guíame para instalar SearXNG si hace falta, escribe el archivo .bat con u
   <string name="fm.template">Plantilla</string>
   <string name="slot.loras_folder">Carpeta de LoRA</string>
   <string name="slot.loras_folder.help">Abre la carpeta de LoRA de esta alineación. Cada LoRA que contiene se aplica a cada imagen que hace esta alineación, como indica su arnés de imagen.</string>
+  <string name="settings.render">Dibujo de páginas</string>
+  <string name="settings.render.help">Desactivado (predeterminado): los trabajos dibujan las páginas que leen en la tarjeta gráfica. Es rápido y, mientras un trabajo se ejecuta, usa algo de la memoria de la tarjeta (unos 160 MB en una página muy densa), que se libera al terminar. Activado: las dibujan en el procesador, dejando toda la memoria de la tarjeta a tus servidores de IA, y cada imagen tarda más, sobre todo en páginas con mucha tinta. Las imágenes son iguales de una forma u otra, y vale para todas las alineaciones. El editor de páginas siempre dibuja en la tarjeta.</string>
+  <string name="settings.render.cpu">Dibujar las páginas en el procesador</string>
 </resources>

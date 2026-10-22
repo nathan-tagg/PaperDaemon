@@ -659,8 +659,6 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="fm.imported_n">{n} arquivos importados.</string>
   <string name="fm.import_failed">Não foi possível importar {name}: {why}</string>
   <string name="fm.drop">Solte PDFs e EPUBs aqui para importá-los</string>
-  <string name="lineup.render_cpu">Desenhar as páginas no processador</string>
-  <string name="lineup.render_cpu.help">Desligado (padrão): os trabalhos desta formação desenham as páginas que leem na placa de vídeo. É rápido e, enquanto um trabalho corre, usa parte da memória da placa (cerca de 160 MB numa página muito densa), devolvida quando o trabalho termina. Ligado: desenham-nas no processador, deixando toda a memória da placa para o seu servidor de IA, e cada imagem demora mais, sobretudo em páginas com muita tinta. As imagens são as mesmas em ambos os casos. Só afeta as páginas dos trabalhos; o editor de páginas desenha sempre na placa.</string>
   <string name="settings.retries">Novas tentativas</string>
   <string name="settings.retries.help">Quantas vezes mais um trabalho que falhou é tentado por si só antes de ser deixado. Uma página sem nada para fazer não é uma falha e nunca é tentada de novo.</string>
   <string name="settings.page_notes">Notas na página</string>
@@ -679,4 +677,7 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="fm.template">Modelo</string>
   <string name="slot.loras_folder">Pasta de LoRA</string>
   <string name="slot.loras_folder.help">Abre a pasta de LoRA desta formação. Cada LoRA nela é aplicada a cada imagem que esta formação faz, como diz o seu harness de imagem.</string>
+  <string name="settings.render">Desenho das páginas</string>
+  <string name="settings.render.help">Desligado (predefinição): os trabalhos desenham as páginas que leem na placa gráfica. É rápido e, enquanto um trabalho corre, usa alguma memória da placa (cerca de 160 MB numa página muito densa), devolvida no fim. Ligado: desenham-nas no processador, deixando toda a memória da placa aos seus servidores de IA, e cada imagem demora mais, sobretudo em páginas com muita tinta. As imagens são iguais de qualquer forma, e vale para todas as formações. O editor de páginas desenha sempre na placa.</string>
+  <string name="settings.render.cpu">Desenhar as páginas no processador</string>
 </resources>

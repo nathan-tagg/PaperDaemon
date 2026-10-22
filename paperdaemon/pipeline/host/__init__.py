@@ -748,12 +748,12 @@ def run_job(job):
 
 
 def _drawing_on(name):
-    """Where lineup `name`'s pages are drawn: on the processor when its "render" setting says so (the card is let go,
-    and nothing is drawn there), else on the graphics card, its context made now so the first picture does not wait."""
+    """Where the job's pages are drawn: on the processor when Settings says so (render.processor: the card is let go,
+    and nothing is drawn there), else on the graphics card, its context made now so the first picture does not wait.
+    One setting for every lineup."""
     from paperdaemon import settings
     from paperdaemon.pipeline.page import gpu
-    lu = settings.lineup(settings.load(), name) if name else None
-    cpu = bool(lu and lu.get("render") == "cpu")
+    cpu = bool(settings._get_path(settings.load(), "render.processor"))
     gpu.processor(cpu)
     if cpu:
         gpu.release()

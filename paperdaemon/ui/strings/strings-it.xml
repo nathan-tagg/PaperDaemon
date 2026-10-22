@@ -659,8 +659,6 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="fm.imported_n">{n} file importati.</string>
   <string name="fm.import_failed">Impossibile importare {name}: {why}</string>
   <string name="fm.drop">Trascina qui PDF ed EPUB per importarli</string>
-  <string name="lineup.render_cpu">Disegna le pagine sul processore</string>
-  <string name="lineup.render_cpu.help">Disattivato (predefinito): i lavori di questa formazione disegnano le pagine che leggono sulla scheda grafica. È veloce e, mentre un lavoro è in corso, usa parte della memoria della scheda (circa 160 MB per una pagina molto densa), restituita alla fine del lavoro. Attivato: le disegnano invece sul processore, lasciando tutta la memoria della scheda al tuo server di IA, e ogni immagine richiede più tempo, soprattutto sulle pagine con molto inchiostro. Le immagini sono le stesse in entrambi i casi. Riguarda solo le pagine dei lavori; l'editor di pagine disegna sempre sulla scheda.</string>
   <string name="settings.retries">Nuovi tentativi</string>
   <string name="settings.retries.help">Quante altre volte un lavoro non riuscito viene ritentato da solo prima di essere lasciato. Una pagina senza nulla da fare non è un errore e non viene mai ritentata.</string>
   <string name="settings.page_notes">Note sulla pagina</string>
@@ -679,4 +677,7 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="fm.template">Modello</string>
   <string name="slot.loras_folder">Cartella LoRA</string>
   <string name="slot.loras_folder.help">Apre la cartella LoRA di questa formazione. Ogni LoRA che contiene si applica a ogni immagine che crea, come indica il suo harness per le immagini.</string>
+  <string name="settings.render">Disegno delle pagine</string>
+  <string name="settings.render.help">Disattivato (predefinito): i lavori disegnano le pagine che leggono sulla scheda grafica. È veloce e, durante un lavoro, usa un po' della memoria della scheda (circa 160 MB su una pagina molto densa), restituita alla fine. Attivato: le disegnano sul processore, lasciando tutta la memoria della scheda ai tuoi server di IA, e ogni immagine richiede più tempo, soprattutto sulle pagine con molto inchiostro. Le immagini sono identiche in entrambi i casi, e vale per ogni formazione. L'editor di pagina disegna sempre sulla scheda.</string>
+  <string name="settings.render.cpu">Disegna le pagine sul processore</string>
 </resources>

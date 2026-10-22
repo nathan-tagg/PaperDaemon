@@ -317,6 +317,7 @@
     const s = S.s || {};
     $("#st-lang", R).value = PD.languageLabel(PD.getK(s, "prefs.language") || "en");
     $("#st-net", R).checked = PD.getK(s, "network.allowed") !== false;
+    $("#st-cpu", R).checked = PD.getK(s, "render.processor") === true;
     $("#st-retries", R).value = String(PD.getK(s, "daemon.retries") || 0);
     $("#st-notes", R).checked = PD.getK(s, "daemon.page_notes") === true;
     $("#st-layer", R).value = PD.getK(s, "daemon.layer") || "";
@@ -341,6 +342,10 @@
         row(t("settings.network"), t("settings.network.help"),
           '<label class="check-label"><input type="checkbox" id="st-net"> ' + esc(t("settings.network.allow")) +
           '</label><p class="hint" id="st-net-msg" role="status"></p>') +
+        // where jobs draw the pages they read: one setting for PaperDaemon, every lineup alike
+        row(t("settings.render"), t("settings.render.help"),
+          '<label class="check-label"><input type="checkbox" id="st-cpu"> ' + esc(t("settings.render.cpu")) +
+          '</label><p class="hint" id="st-cpu-msg" role="status"></p>') +
         // the daemon's handling of a job: another try at one that failed, and his notes on the page
         row(t("settings.retries"), t("settings.retries.help"),
           '<input class="field num w-xs" id="st-retries" type="number" inputmode="numeric" min="0" max="5" step="1">' +
@@ -365,6 +370,7 @@
       PD.on(R, "click", "[data-act=fm-create]", (e, el) => createFalseMirror(el));
       PD.on(R, "click", "[data-act=fm-delete]", (e, el) => deleteFalseMirror(el));
       $("#st-net", R).addEventListener("change", e => save("network.allowed", e.target.checked, $("#st-net-msg", R)));
+      $("#st-cpu", R).addEventListener("change", e => save("render.processor", e.target.checked, $("#st-cpu-msg", R)));
       $("#st-retries", R).addEventListener("change", e => {
         const n = Math.max(0, Math.min(5, Math.round(Number(e.target.value) || 0)));
         e.target.value = String(n);

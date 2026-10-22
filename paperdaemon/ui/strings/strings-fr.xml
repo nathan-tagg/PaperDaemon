@@ -659,8 +659,6 @@ Ensuite, guide-moi pour installer SearXNG si besoin, écris le fichier .bat avec
   <string name="fm.imported_n">{n} fichiers importés.</string>
   <string name="fm.import_failed">{name} n'a pas pu être importé : {why}</string>
   <string name="fm.drop">Déposez ici des PDF et des EPUB pour les importer</string>
-  <string name="lineup.render_cpu">Dessiner les pages sur le processeur</string>
-  <string name="lineup.render_cpu.help">Désactivé (par défaut) : les tâches de cette formation dessinent les pages qu'elles lisent sur la carte graphique. C'est rapide et, pendant une tâche, cela occupe une partie de la mémoire de la carte (environ 160 Mo pour une page très dense), rendue à la fin de la tâche. Activé : elles les dessinent sur le processeur, laissant toute la mémoire de la carte à votre serveur d'IA, et chaque image prend plus de temps, surtout sur les pages très encrées. Les images sont identiques dans les deux cas. Seules les pages des tâches sont concernées ; l'éditeur de pages dessine toujours sur la carte.</string>
   <string name="settings.retries">Nouvelles tentatives</string>
   <string name="settings.retries.help">Combien de fois de plus une tâche qui a échoué est retentée d'elle-même avant d'être laissée. Une page sans rien à faire n'est pas un échec et n'est jamais retentée.</string>
   <string name="settings.page_notes">Notes sur la page</string>
@@ -679,4 +677,7 @@ Ensuite, guide-moi pour installer SearXNG si besoin, écris le fichier .bat avec
   <string name="fm.template">Modèle</string>
   <string name="slot.loras_folder">Dossier LoRA</string>
   <string name="slot.loras_folder.help">Ouvre le dossier LoRA de cette composition. Chaque LoRA qu'il contient s'applique à chaque image qu'elle produit, comme l'indique son harnais d'image.</string>
+  <string name="settings.render">Dessin des pages</string>
+  <string name="settings.render.help">Désactivé (par défaut) : les tâches dessinent les pages qu'elles lisent sur la carte graphique. C'est rapide et, pendant une tâche, cela utilise un peu de mémoire de la carte (environ 160 Mo sur une page très dense), rendue à la fin. Activé : elles les dessinent sur le processeur, laissant toute la mémoire de la carte à vos serveurs d'IA, et chaque image prend plus de temps, surtout sur les pages très encrées. Les images sont identiques dans les deux cas, et cela vaut pour toutes les compositions. L'éditeur de page dessine toujours sur la carte.</string>
+  <string name="settings.render.cpu">Dessiner les pages sur le processeur</string>
 </resources>

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.58
+
+- Draw pages on the processor is a setting in Settings now, one for every lineup, under Network access. It was on each lineup's Text tab. A lineup that had it on turns it on for all.
+
 ## 0.1.57
 
 - Every lineup has a LoRA folder of its own. The LoRA folder link under the image model's start script opens it. Every LoRA put in it goes with every picture that lineup makes, with no harness to write: the image harness says how they are applied. PaperDaemon's FLUX.2 Klein and Z-Image Turbo harnesses send them in the request, the way stable-diffusion.cpp's server takes them. Nothing is merged into the model: take a file out and the next picture is made without it.

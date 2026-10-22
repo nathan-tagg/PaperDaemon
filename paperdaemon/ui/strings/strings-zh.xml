@@ -659,8 +659,6 @@
   <string name="fm.imported_n">已导入 {n} 个文件。</string>
   <string name="fm.import_failed">无法导入 {name}：{why}</string>
   <string name="fm.drop">将 PDF 和 EPUB 拖放到这里即可导入</string>
-  <string name="lineup.render_cpu">在处理器上绘制页面</string>
-  <string name="lineup.render_cpu.help">关闭（默认）：此阵容的任务在显卡上绘制所读取的页面。速度快，任务运行期间会占用一部分显卡显存（非常密集的页面约 160 MB），任务结束后归还。开启：改为在处理器上绘制，显卡显存全部留给你的 AI 服务器，每张图片耗时更长，墨迹多的页面尤甚。两种方式画出的图片相同。只影响任务读取的页面；页面编辑器始终在显卡上绘制。</string>
   <string name="settings.retries">重试</string>
   <string name="settings.retries.help">失败的任务在放弃之前自动再尝试几次。没有任何要做的页面不算失败，也永远不会重试。</string>
   <string name="settings.page_notes">页面上的备注</string>
@@ -679,4 +677,7 @@
   <string name="fm.template">模板</string>
   <string name="slot.loras_folder">LoRA 文件夹</string>
   <string name="slot.loras_folder.help">打开此阵容的 LoRA 文件夹。其中的每个 LoRA 都会按此阵容的图像适配器所述，应用到它生成的每张图片。</string>
+  <string name="settings.render">页面绘制</string>
+  <string name="settings.render.help">关闭（默认）：任务在显卡上绘制所读取的页面。这很快，任务运行时会占用一些显存（非常密的页面约 160 MB），任务结束后归还。开启：改在处理器上绘制，把全部显存留给你的 AI 服务器，每张图片耗时更长，墨迹多的页面尤甚。两种方式图片相同，且对所有阵容都一样。页面编辑器始终在显卡上绘制。</string>
+  <string name="settings.render.cpu">在处理器上绘制页面</string>
 </resources>

@@ -659,8 +659,6 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="fm.imported_n">Đã nhập {n} tệp.</string>
   <string name="fm.import_failed">Không thể nhập {name}: {why}</string>
   <string name="fm.drop">Thả PDF và EPUB vào đây để nhập</string>
-  <string name="lineup.render_cpu">Vẽ trang bằng bộ xử lý</string>
-  <string name="lineup.render_cpu.help">Tắt (mặc định): các tác vụ của đội hình này vẽ những trang chúng đọc trên card đồ họa. Cách này nhanh, và trong lúc tác vụ chạy sẽ dùng một phần bộ nhớ của card (khoảng 160 MB với một trang rất dày), được trả lại khi tác vụ kết thúc. Bật: thay vào đó chúng vẽ bằng bộ xử lý, để toàn bộ bộ nhớ của card cho máy chủ AI của bạn, và mỗi hình mất nhiều thời gian hơn, nhất là ở những trang nhiều mực. Hình ảnh như nhau trong cả hai trường hợp. Chỉ các trang của tác vụ bị ảnh hưởng; trình chỉnh sửa trang luôn vẽ trên card.</string>
   <string name="settings.retries">Thử lại</string>
   <string name="settings.retries.help">Một tác vụ thất bại sẽ tự được thử thêm bao nhiêu lần trước khi bị bỏ lại. Một trang không có gì để làm không phải là thất bại và không bao giờ được thử lại.</string>
   <string name="settings.page_notes">Ghi chú trên trang</string>
@@ -679,4 +677,7 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="fm.template">Mẫu</string>
   <string name="slot.loras_folder">Thư mục LoRA</string>
   <string name="slot.loras_folder.help">Mở thư mục LoRA của đội hình này. Mọi LoRA trong đó được áp dụng cho mọi ảnh đội hình này tạo, theo cách harness ảnh của nó quy định.</string>
+  <string name="settings.render">Vẽ trang</string>
+  <string name="settings.render.help">Tắt (mặc định): tác vụ vẽ các trang chúng đọc bằng card đồ họa. Cách này nhanh, và khi tác vụ chạy thì dùng một ít bộ nhớ của card (khoảng 160 MB với trang rất dày), trả lại khi xong. Bật: chúng vẽ bằng bộ xử lý, để toàn bộ bộ nhớ card cho các máy chủ AI của bạn, và mỗi ảnh lâu hơn, nhất là trang nhiều mực. Ảnh giống nhau dù cách nào, và áp dụng cho mọi đội hình. Trình chỉnh sửa trang luôn vẽ bằng card.</string>
+  <string name="settings.render.cpu">Vẽ trang bằng bộ xử lý</string>
 </resources>

@@ -659,8 +659,6 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="fm.imported_n">Wedi mewnforio {n} ffeil.</string>
   <string name="fm.import_failed">Ni ellid mewnforio {name}: {why}</string>
   <string name="fm.drop">Gollyngwch PDFs ac EPUBs yma i'w mewnforio</string>
-  <string name="lineup.render_cpu">Tynnu tudalennau ar y prosesydd</string>
-  <string name="lineup.render_cpu.help">I ffwrdd (y rhagosodiad): mae swyddi'r tîm hwn yn tynnu'r tudalennau maen nhw'n eu darllen ar y cerdyn graffeg. Mae hynny'n gyflym, a thra bo swydd yn rhedeg mae'n defnyddio peth o gof y cerdyn (tua 160 MB ar dudalen drwchus iawn), a roddir yn ôl pan ddaw'r swydd i ben. Ymlaen: maen nhw'n eu tynnu ar y prosesydd yn lle hynny, gan adael holl gof y cerdyn i'ch gweinydd AI, ac mae pob llun yn cymryd mwy o amser, yn enwedig ar dudalennau â llawer o inc. Mae'r lluniau'r un fath y naill ffordd neu'r llall. Dim ond tudalennau swydd sy'n cael eu heffeithio; mae golygydd y dudalen bob amser yn tynnu ar y cerdyn.</string>
   <string name="settings.retries">Ailgeisio</string>
   <string name="settings.retries.help">Sawl gwaith eto y rhoddir cynnig ar swydd a fethodd ohoni ei hun cyn ei gadael. Nid methiant yw tudalen heb ddim i'w wneud, ac ni roddir cynnig arall arni byth.</string>
   <string name="settings.page_notes">Nodiadau ar y dudalen</string>
@@ -679,4 +677,7 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="fm.template">Templed</string>
   <string name="slot.loras_folder">Ffolder LoRA</string>
   <string name="slot.loras_folder.help">Agor ffolder LoRA y llinell hon. Mae pob LoRA ynddo'n mynd gyda phob llun mae'r llinell hon yn ei wneud, fel mae ei harnais delwedd yn dweud.</string>
+  <string name="settings.render">Tynnu tudalennau</string>
+  <string name="settings.render.help">I ffwrdd (y rhagosodiad): mae swyddi'n tynnu'r tudalennau maen nhw'n eu darllen ar y cerdyn graffeg. Mae hynny'n gyflym, a thra bo swydd yn rhedeg mae'n defnyddio peth o gof y cerdyn (tua 160 MB ar dudalen drwchus iawn), a roddir yn ôl pan ddaw'r swydd i ben. Ymlaen: maen nhw'n eu tynnu ar y prosesydd yn lle hynny, gan adael holl gof y cerdyn i'ch gweinyddion AI, ac mae pob llun yn cymryd yn hirach, yn enwedig ar dudalennau â llawer o inc. Mae'r lluniau yr un fath y naill ffordd neu'r llall, ac mae pob llinell yr un fath. Mae golygydd y dudalen bob amser yn tynnu ar y cerdyn.</string>
+  <string name="settings.render.cpu">Tynnu tudalennau ar y prosesydd</string>
 </resources>

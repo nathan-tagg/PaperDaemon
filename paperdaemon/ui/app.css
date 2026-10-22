@@ -484,7 +484,6 @@ textarea.field { height: auto; padding: 8px 10px; }
 .check-label input { width: 16px; height: 16px; accent-color: var(--mark); margin: 0; }
 .check-label:has(input:disabled) { color: var(--ink-3); cursor: default; }
 /* a lineup's "draw pages on the processor" (models.js): the box, its "?" beside it */
-.render-row { display: flex; align-items: center; gap: var(--s2); margin-top: var(--s4); }
 .checks-row { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); }
 .tip { display: inline-flex; }
 /* the Network tab: one heading per integration */

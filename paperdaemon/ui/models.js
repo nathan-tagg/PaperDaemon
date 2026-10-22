@@ -29,7 +29,6 @@
     S.forms = { text: PD.slots.formOf("text", l.text), image: PD.slots.formOf("image", l.image) };
     S.search = PD.slots.searchOf(l.search);
     S.tags = PD.slots.tagsOf(l.tags);
-    S.cpu = l.render === "cpu";
     S.test = { text: "", image: "", search: "" };
     S.mem = null; S.memErr = "";
   }
@@ -38,14 +37,7 @@
     if (S.tab === "search") PD.slots.readSearch(R, P, S.search);
     else if (S.tab === "tags") PD.slots.readTags(R, P, S.tags);
     else if (S.forms[S.tab]) PD.slots.read(R, P, S.tab, S.forms[S.tab]);
-    const cpu = $("#md-render-cpu", R);
-    if (cpu) S.cpu = cpu.checked;
   }
-
-  // WHERE THE LINEUP'S JOBS DRAW THE PAGES THEY READ: the graphics card, or the processor (the card left to the
-  // models). On the Text tab, under the text model: the pictures are the text model's to read.
-  const renderHtml = () => '<div class="render-row"><label class="check-label"><input type="checkbox" id="md-render-cpu"' +
-    (S.cpu ? " checked" : "") + "> " + esc(PD.t("lineup.render_cpu")) + "</label>" + PD.helpTip(PD.t("lineup.render_cpu.help")) + "</div>";
 
   // ---- the Memories tab: what the lineup's model has learned about working for the user. The model adds them;
   // the user reads, edits and deletes them.
@@ -95,7 +87,7 @@
       : S.tab === "memories" ? memoriesHtml()
       : S.tab === "jobs" ? '<div id="md-jobs"></div>'
       : S.tab === "tests" ? '<div id="md-tests"></div>'
-      : PD.slots.html(P, S.tab, S.forms[S.tab], S.harnesses, PD.slots.testHtml(S.test[S.tab]), S.show) + (S.tab === "text" ? renderHtml() : "");
+      : PD.slots.html(P, S.tab, S.forms[S.tab], S.harnesses, PD.slots.testHtml(S.test[S.tab]), S.show);
     const msg = '<span class="msg' + (S.bad ? " err" : "") + '" id="md-msg" role="status">' + esc(S.msg) + "</span>";
     box.innerHTML = top +
       '<div class="ftabs" role="tablist">' + tab("text", PD.t("tab.text")) + tab("image", PD.t("tab.image")) + tab("search", PD.t("tab.network")) + tab("tags", PD.t("tab.tags")) +
@@ -127,7 +119,7 @@
       if (box && box.value) { box.value = ""; box.placeholder = PD.t("slot.saved"); }
     }
     const body = { text: PD.slots.slotOf("text", S.forms.text, l.text), image: PD.slots.slotOf("image", S.forms.image, l.image),
-                   search: PD.slots.searchOut(S.search), tags: PD.slots.tagsOut(S.tags), render: S.cpu ? "cpu" : "card" };
+                   search: PD.slots.searchOut(S.search), tags: PD.slots.tagsOut(S.tags) };
     const [d, e] = await PD.safe(PD.api("PUT", "/lineups/" + encodeURIComponent(l.name), body));
     if (e) { S.msg = PD.errText(e); S.bad = true; paint(); return false; }
     S.data = d; S.msg = PD.t("common.saved"); S.bad = false;

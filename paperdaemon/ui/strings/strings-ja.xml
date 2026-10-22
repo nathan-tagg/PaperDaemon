@@ -659,8 +659,6 @@
   <string name="fm.imported_n">{n} 個のファイルをインポートしました。</string>
   <string name="fm.import_failed">{name} をインポートできませんでした: {why}</string>
   <string name="fm.drop">PDF や EPUB をここにドロップするとインポートします</string>
-  <string name="lineup.render_cpu">ページをプロセッサで描画する</string>
-  <string name="lineup.render_cpu.help">オフ（既定）：このラインナップのジョブは、読むページをグラフィックカードで描画します。高速で、ジョブの実行中はカードのメモリを一部使います（非常に密なページで約 160 MB）。ジョブが終わると解放されます。オン：代わりにプロセッサで描画し、カードのメモリはすべて AI サーバーに残ります。画像ごとに時間がかかり、インクの多いページほど長くなります。どちらでも画像は同じです。対象はジョブが読むページだけで、ページエディターは常にカードで描画します。</string>
   <string name="settings.retries">再試行</string>
   <string name="settings.retries.help">失敗したジョブを、あきらめる前に自動でさらに何回試すか。やることのないページは失敗ではなく、再試行されることはありません。</string>
   <string name="settings.page_notes">ページへのメモ</string>
@@ -679,4 +677,7 @@
   <string name="fm.template">テンプレート</string>
   <string name="slot.loras_folder">LoRA フォルダー</string>
   <string name="slot.loras_folder.help">このラインナップの LoRA フォルダーを開きます。中の LoRA はすべて、このラインナップが作るすべての画像に、画像ハーネスの指定どおりに適用されます。</string>
+  <string name="settings.render">ページの描画</string>
+  <string name="settings.render.help">オフ（既定）：ジョブは読むページをグラフィックカードで描画します。高速で、ジョブの実行中はカードのメモリを少し使い（非常に密なページで約 160 MB）、ジョブが終わると返します。オン：代わりにプロセッサで描画し、カードのメモリはすべて AI サーバーに残しますが、各画像に時間がかかり、インクの多いページほど長くなります。どちらでも画像は同じで、すべてのラインナップに共通です。ページエディターは常にカードで描画します。</string>
+  <string name="settings.render.cpu">ページをプロセッサで描画する</string>
 </resources>

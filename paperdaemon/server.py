@@ -733,8 +733,7 @@ def put_lineup(name: str, body: dict = Body(...)):
                                             "text": dict(old["text"], **(body.get("text") or {})),
                                             "image": dict(old["image"], **(body.get("image") or {})),
                                             "search": dict(old.get("search") or {}, **(body.get("search") or {})),
-                                            "tags": body["tags"] if "tags" in body else old.get("tags") or [],
-                                            "render": body["render"] if "render" in body else old.get("render")})
+                                            "tags": body["tags"] if "tags" in body else old.get("tags") or []})
         s["lineups"][idx[0]] = merged
         if s["lineup"] == name:
             s["lineup"] = merged["name"]

@@ -659,8 +659,6 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="fm.imported_n">{n} berkas diimpor.</string>
   <string name="fm.import_failed">{name} tidak bisa diimpor: {why}</string>
   <string name="fm.drop">Lepaskan PDF dan EPUB di sini untuk mengimpornya</string>
-  <string name="lineup.render_cpu">Gambar halaman di prosesor</string>
-  <string name="lineup.render_cpu.help">Mati (bawaan): tugas lineup ini menggambar halaman yang dibacanya di kartu grafis. Itu cepat, dan selama tugas berjalan memakai sebagian memori kartu (sekitar 160 MB pada halaman yang sangat padat), yang dikembalikan saat tugas selesai. Nyala: halaman digambar di prosesor, sehingga seluruh memori kartu tetap untuk server AI Anda, dan setiap gambar butuh waktu lebih lama, terutama pada halaman dengan banyak tinta. Gambarnya sama saja. Hanya halaman tugas yang terpengaruh; editor halaman selalu menggambar di kartu.</string>
   <string name="settings.retries">Coba lagi</string>
   <string name="settings.retries.help">Berapa kali lagi tugas yang gagal dicoba dengan sendirinya sebelum ditinggalkan. Halaman yang tidak perlu dikerjakan bukan kegagalan dan tidak pernah dicoba lagi.</string>
   <string name="settings.page_notes">Catatan di halaman</string>
@@ -679,4 +677,7 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="fm.template">Templat</string>
   <string name="slot.loras_folder">Folder LoRA</string>
   <string name="slot.loras_folder.help">Buka folder LoRA susunan ini. Setiap LoRA di dalamnya ikut pada setiap gambar yang dibuat susunan ini, seperti kata harness gambarnya.</string>
+  <string name="settings.render">Menggambar halaman</string>
+  <string name="settings.render.help">Mati (bawaan): tugas menggambar halaman yang dibacanya di kartu grafis. Ini cepat, dan selama tugas berjalan memakai sebagian memori kartu (sekitar 160 MB pada halaman yang sangat padat), yang dikembalikan saat tugas selesai. Nyala: tugas menggambarnya di prosesor, menyisakan seluruh memori kartu untuk server AI Anda, dan tiap gambar butuh waktu lebih lama, terutama pada halaman dengan banyak tinta. Gambarnya sama saja, dan berlaku untuk semua susunan. Editor halaman selalu menggambar di kartu.</string>
+  <string name="settings.render.cpu">Gambar halaman di prosesor</string>
 </resources>
