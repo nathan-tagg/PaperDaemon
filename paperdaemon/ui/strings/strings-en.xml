@@ -236,6 +236,8 @@
   <string name="keys.paste_d">Under the pointer: strokes as strokes, an image as a picture.</string>
   <string name="keys.paste_strokes">Paste as strokes</string>
   <string name="keys.paste_strokes_d">An image decomposed into strokes, at its own size.</string>
+  <string name="keys.select_all">Select all</string>
+  <string name="keys.select_all_d">Every stroke on the layer; with Shift, the pen's kind; with Shift and Alt, its kind and color.</string>
   <string name="viewer.reading_chapters">Reading the chapters…</string>
   <string name="viewer.page">Page {n}</string>
   <string name="common.close">Close</string>

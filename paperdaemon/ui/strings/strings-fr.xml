@@ -236,6 +236,8 @@
   <string name="keys.paste_d">Sous le pointeur : des traits comme traits, une image comme image.</string>
   <string name="keys.paste_strokes">Coller en traits</string>
   <string name="keys.paste_strokes_d">Une image décomposée en traits, à sa propre taille.</string>
+  <string name="keys.select_all">Tout sélectionner</string>
+  <string name="keys.select_all_d">Chaque trait du calque ; avec Maj, ceux du type de stylo ; avec Maj et Alt, son type et sa couleur.</string>
   <string name="viewer.reading_chapters">Lecture des chapitres…</string>
   <string name="viewer.page">Page {n}</string>
   <string name="common.close">Fermer</string>

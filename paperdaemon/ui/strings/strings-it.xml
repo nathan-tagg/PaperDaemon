@@ -237,6 +237,8 @@
   <string name="keys.paste_d">Sotto il puntatore: tratti come tratti, un'immagine come immagine.</string>
   <string name="keys.paste_strokes">Incolla come tratti</string>
   <string name="keys.paste_strokes_d">Un'immagine scomposta in tratti, alla sua dimensione.</string>
+  <string name="keys.select_all">Seleziona tutto</string>
+  <string name="keys.select_all_d">Ogni tratto del livello; con Maiusc, quelli del tipo di penna; con Maiusc e Alt, tipo e colore.</string>
   <string name="viewer.reading_chapters">Lettura dei capitoli…</string>
   <string name="viewer.page">Pagina {n}</string>
   <string name="common.close">Chiudi</string>

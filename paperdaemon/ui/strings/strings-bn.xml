@@ -237,6 +237,8 @@
   <string name="keys.paste_d">পয়েন্টারের নিচে: স্ট্রোক স্ট্রোক হিসেবে, ছবি ছবি হিসেবে।</string>
   <string name="keys.paste_strokes">স্ট্রোক হিসেবে পেস্ট</string>
   <string name="keys.paste_strokes_d">নিজের মাপে স্ট্রোকে ভাঙা একটি ছবি।</string>
+  <string name="keys.select_all">সব নির্বাচন</string>
+  <string name="keys.select_all_d">স্তরের প্রতিটি রেখা; Shift দিয়ে একই ধরনের কলমের; Shift ও Alt দিয়ে একই ধরন ও রঙের।</string>
   <string name="viewer.reading_chapters">অধ্যায়গুলো পড়া হচ্ছে…</string>
   <string name="viewer.page">পাতা {n}</string>
   <string name="common.close">বন্ধ করুন</string>

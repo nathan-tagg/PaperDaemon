@@ -236,6 +236,8 @@
   <string name="keys.paste_d">Sob o ponteiro: traços como traços, uma imagem como imagem.</string>
   <string name="keys.paste_strokes">Colar como traços</string>
   <string name="keys.paste_strokes_d">Uma imagem decomposta em traços, no próprio tamanho.</string>
+  <string name="keys.select_all">Selecionar tudo</string>
+  <string name="keys.select_all_d">Cada traço da camada; com Shift, os do tipo de caneta; com Shift e Alt, seu tipo e cor.</string>
   <string name="viewer.reading_chapters">Lendo os capítulos…</string>
   <string name="viewer.page">Página {n}</string>
   <string name="common.close">Fechar</string>

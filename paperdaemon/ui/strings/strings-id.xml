@@ -237,6 +237,8 @@
   <string name="keys.paste_d">Di bawah penunjuk: goresan sebagai goresan, gambar sebagai gambar.</string>
   <string name="keys.paste_strokes">Tempel sebagai goresan</string>
   <string name="keys.paste_strokes_d">Gambar diurai menjadi goresan, seukuran aslinya.</string>
+  <string name="keys.select_all">Pilih semua</string>
+  <string name="keys.select_all_d">Setiap goresan di lapisan; dengan Shift, jenis pena; dengan Shift dan Alt, jenis dan warnanya.</string>
   <string name="viewer.reading_chapters">Membaca bab…</string>
   <string name="viewer.page">Halaman {n}</string>
   <string name="common.close">Tutup</string>

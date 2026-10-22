@@ -1709,7 +1709,8 @@ span.lname { cursor: default; }
   async function fillAt(pk, x, y, sweep) {
     cpuCopy();
     if (!shown) return;
-    const W = shown.width, H = shown.height, d = shown.data;
+    // a drag reads the page as it was when the drag began: the fills it has already laid are never filled again
+    const W = shown.width, H = shown.height, d = sweep ? sweep.data : shown.data;
     const [sx, sy] = toScreen(x, y), px = Math.round(sx * dpr), py = Math.round(sy * dpr);
     if (px < 0 || py < 0 || px >= W || py >= H) return;
     const q0 = (py * W + px) * 4, r0 = d[q0], g0 = d[q0 + 1], b0 = d[q0 + 2];
@@ -2317,7 +2318,8 @@ span.lname { cursor: default; }
       if (e.altKey && !e.ctrlKey) {                             // Alt: a fill here, and in every new area the drag passes over
         e.preventDefault(); cpuCopy();
         if (!shown) return;
-        fillSweep = { pk: pickers[tool], W: shown.width, H: shown.height, done: new Uint8Array(shown.width * shown.height), color: null };
+        fillSweep = { pk: pickers[tool], W: shown.width, H: shown.height, done: new Uint8Array(shown.width * shown.height), color: null,
+                      data: shown.data.slice(), at: local(e), moving: false };
         pointer = e.pointerId; vp.setPointerCapture(e.pointerId);
         if (drawable(x, y)) fillAt(fillSweep.pk, x, y, fillSweep);
         return;
@@ -2360,7 +2362,8 @@ span.lname { cursor: default; }
     if (poly) { poly.hover = cornerAt(e, toPage(...local(e))); paint(); }
     if (shapeAt) { const q = toPage(...local(e)); shapeHover = e.altKey ? snapAngle(shapeAt, q) : q; paint(); }
     if (e.pointerId !== pointer) { if (vp.dataset.erase === "big") paint(); return; }
-    if (fillSweep) {
+    if (fillSweep) {                                          // a drag only once the pointer has truly moved from the press
+      if (!fillSweep.moving) { const [bx, by] = local(e); if (Math.hypot(bx - fillSweep.at[0], by - fillSweep.at[1]) <= 6) return; fillSweep.moving = true; }
       for (const ev of (e.getCoalescedEvents ? e.getCoalescedEvents() : [e])) { const [fx, fy] = toPage(...local(ev)); if (drawable(fx, fy)) fillAt(fillSweep.pk, fx, fy, fillSweep); }
       return;
     }
@@ -2767,6 +2770,16 @@ span.lname { cursor: default; }
     const ctrl = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
     if (ctrl && k === "z" && !e.shiftKey) { e.preventDefault(); undo(); return; }
     if (ctrl && (k === "y" || (k === "z" && e.shiftKey))) { e.preventDefault(); redo(); return; }
+    // CTRL+A WITH NO TEXT BEING TYPED: every stroke of the layer in hand; with Shift those of the pen in hand's kind;
+    // with Shift and Alt those of its kind and color (in text, Ctrl+A is all the text)
+    if (ctrl && e.code === "KeyA" && !editing()) {
+      e.preventDefault();
+      const pk = pickers[tool] || pickers.a, pen = PEN[pk.pen].pen, c = choiceOf(pk), rgba = JSON.stringify(c[2] || null);
+      const kind = e.shiftKey ? L => L.pen === pen : () => true;
+      const color = e.shiftKey && e.altKey ? L => L.color === c[1] && JSON.stringify(L.colorRgba || null) === rgba : () => true;
+      selectAll(L => kind(L) && color(L));
+      return;
+    }
     if (!editing() && !ctrl && !e.altKey && pickers[tool] && /^[1-6]$/.test(e.key)) { e.preventDefault(); setShape(Number(e.key)); return; }
     if (!editing() && !ctrl && !e.altKey && (e.key.length === 1 || e.key === "Enter")) startTyping();
     // BACKSPACE (or Delete) WITH NO CARET goes back into the text at its end, to take back what was typed last: no new
@@ -3227,10 +3240,11 @@ span.lname { cursor: default; }
   window.addEventListener("pointerdown", e => { if (!cmenu.hidden && !cmenu.contains(e.target)) closeMenu(); }, true);
   window.addEventListener("keydown", e => { if (e.key === "Escape" && !cmenu.hidden) { e.preventDefault(); e.stopImmediatePropagation(); closeMenu(); } }, true);
   window.addEventListener("blur", closeMenu);
-  function selectAll() {                                      // every stroke of the layer in hand, with Select in hand
-    if (!layer().lines.length) return;
+  function selectAll(which) {                                 // every stroke of the layer in hand (or those `which` takes), with
+    const lines = layer().lines.filter(which || (() => true));   // Select in hand
+    if (!lines.length) { tell("No strokes like that on this layer"); return; }
     if (tool !== "pick" || pickMode !== "select") { setShape(1); tool = "pick"; pickMode = "select"; paintControls(); }
-    selectStrokes(layer().lines.slice(), layer()); updateCursor();
+    selectStrokes(lines, layer()); updateCursor();
   }
   async function duplicatePick() {                            // a copy a little down and to the right, selected in its place
     if (!pick) return;

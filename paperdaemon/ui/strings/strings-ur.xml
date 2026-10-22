@@ -237,6 +237,8 @@
   <string name="keys.paste_d">پوائنٹر کے نیچے: اسٹروکس بطور اسٹروکس، تصویر بطور تصویر۔</string>
   <string name="keys.paste_strokes">بطور اسٹروکس پیسٹ</string>
   <string name="keys.paste_strokes_d">تصویر اسٹروکس میں تقسیم، اپنے سائز میں۔</string>
+  <string name="keys.select_all">سب منتخب کریں</string>
+  <string name="keys.select_all_d">تہہ کی ہر لکیر؛ Shift کے ساتھ اسی قسم کے قلم کی؛ Shift اور Alt کے ساتھ اسی قسم اور رنگ کی۔</string>
   <string name="viewer.reading_chapters">ابواب پڑھے جا رہے ہیں…</string>
   <string name="viewer.page">صفحہ {n}</string>
   <string name="common.close">بند کریں</string>

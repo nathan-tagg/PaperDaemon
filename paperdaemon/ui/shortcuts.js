@@ -84,7 +84,8 @@
       ["delete", [["delete"], ["backspace"]], "keys.delete", "keys.delete_d"],
       ["copy", [["ctrl", "C"], ["ctrl", "X"]], "keys.copy", "keys.copy_d"],
       ["paste", [["ctrl", "V"]], "keys.paste", "keys.paste_d"],
-      ["pasteStrokes", [["ctrl", "shift", "V"]], "keys.paste_strokes", "keys.paste_strokes_d"]] },
+      ["pasteStrokes", [["ctrl", "shift", "V"]], "keys.paste_strokes", "keys.paste_strokes_d"],
+      ["select", [["ctrl", "A"], ["ctrl", "shift", "A"], ["ctrl", "shift", "alt", "A"]], "keys.select_all", "keys.select_all_d"]] },
     { title: "keys.s_type", editor: true, items: [
       ["type", [["type"]], "keys.type", "keys.type_d"],
       ["back", [["backspace"]], "keys.back", "keys.back_d"],

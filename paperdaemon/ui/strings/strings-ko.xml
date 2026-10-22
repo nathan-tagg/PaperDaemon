@@ -237,6 +237,8 @@
   <string name="keys.paste_d">포인터 아래에: 획은 획으로, 이미지는 그림으로.</string>
   <string name="keys.paste_strokes">획으로 붙여넣기</string>
   <string name="keys.paste_strokes_d">이미지를 원래 크기 그대로 획으로 분해합니다.</string>
+  <string name="keys.select_all">모두 선택</string>
+  <string name="keys.select_all_d">레이어의 모든 획. Shift는 펜 종류, Shift+Alt는 종류와 색.</string>
   <string name="viewer.reading_chapters">장을 읽는 중…</string>
   <string name="viewer.page">{n}쪽</string>
   <string name="common.close">닫기</string>

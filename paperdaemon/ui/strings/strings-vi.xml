@@ -237,6 +237,8 @@
   <string name="keys.paste_d">Dưới con trỏ: nét thành nét, hình thành ảnh.</string>
   <string name="keys.paste_strokes">Dán thành nét</string>
   <string name="keys.paste_strokes_d">Một hình được phân rã thành nét, đúng kích thước của nó.</string>
+  <string name="keys.select_all">Chọn tất cả</string>
+  <string name="keys.select_all_d">Mọi nét trên lớp; với Shift, loại bút; với Shift và Alt, loại và màu của nó.</string>
   <string name="viewer.reading_chapters">Đang đọc các chương…</string>
   <string name="viewer.page">Trang {n}</string>
   <string name="common.close">Đóng</string>

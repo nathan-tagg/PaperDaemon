@@ -236,6 +236,8 @@
   <string name="keys.paste_d">Bajo el puntero: trazos como trazos, una imagen como imagen.</string>
   <string name="keys.paste_strokes">Pegar como trazos</string>
   <string name="keys.paste_strokes_d">Una imagen descompuesta en trazos, a su propio tamaño.</string>
+  <string name="keys.select_all">Seleccionar todo</string>
+  <string name="keys.select_all_d">Cada trazo de la capa; con Mayús, los del tipo de pluma; con Mayús y Alt, su tipo y color.</string>
   <string name="viewer.reading_chapters">Leyendo los capítulos…</string>
   <string name="viewer.page">Página {n}</string>
   <string name="common.close">Cerrar</string>

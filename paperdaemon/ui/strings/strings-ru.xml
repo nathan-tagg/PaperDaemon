@@ -243,6 +243,8 @@
   <string name="keys.paste_d">Под указателем: штрихи как штрихи, изображение как картинку.</string>
   <string name="keys.paste_strokes">Вставить штрихами</string>
   <string name="keys.paste_strokes_d">Изображение, разложенное на штрихи, в своём размере.</string>
+  <string name="keys.select_all">Выделить всё</string>
+  <string name="keys.select_all_d">Все штрихи слоя; с Shift — того же пера; с Shift и Alt — того же пера и цвета.</string>
   <string name="viewer.reading_chapters">Чтение глав…</string>
   <string name="viewer.page">Страница {n}</string>
   <string name="common.close">Закрыть</string>

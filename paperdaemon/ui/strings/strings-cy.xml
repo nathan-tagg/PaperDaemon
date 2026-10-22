@@ -237,6 +237,8 @@
   <string name="keys.paste_d">O dan y pwyntydd: strociau fel strociau, delwedd fel llun.</string>
   <string name="keys.paste_strokes">Gludo fel strociau</string>
   <string name="keys.paste_strokes_d">Delwedd wedi'i dadelfennu'n strociau, yn ei maint ei hun.</string>
+  <string name="keys.select_all">Dewis y cyfan</string>
+  <string name="keys.select_all_d">Pob strôc ar yr haen; gyda Shift, math y pen; gyda Shift ac Alt, ei fath a'i liw.</string>
   <string name="viewer.reading_chapters">Yn darllen y penodau…</string>
   <string name="viewer.page">Tudalen {n}</string>
   <string name="common.close">Cau</string>

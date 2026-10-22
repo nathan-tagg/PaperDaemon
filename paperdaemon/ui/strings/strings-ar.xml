@@ -237,6 +237,8 @@
   <string name="keys.paste_d">تحت المؤشر: الخطوط خطوطًا، والصورة صورةً.</string>
   <string name="keys.paste_strokes">لصق كخطوط</string>
   <string name="keys.paste_strokes_d">صورة مفككة إلى خطوط، بحجمها نفسه.</string>
+  <string name="keys.select_all">تحديد الكل</string>
+  <string name="keys.select_all_d">كل خط في الطبقة؛ مع Shift خطوط نوع القلم؛ مع Shift وAlt نوعه ولونه.</string>
   <string name="viewer.reading_chapters">جارٍ قراءة الفصول…</string>
   <string name="viewer.page">الصفحة {n}</string>
   <string name="common.close">إغلاق</string>

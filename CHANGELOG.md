@@ -5,7 +5,8 @@
 The page editor:
 - A template covers all that can be drawn on. What repeats in it (the grids, dots, isometric, the hexagons, lined and margin pages) runs on across the whole drawable area and down as far as the page goes; what does not (planners, music, storyboards, perspective) stays on the page.
 - Fills: the ballpoint, fineliner and calligraphy pen fill their area instead of spilling far past it. The other pens fill as before.
-- Alt + drag fills each new area of the same color the drag passes over.
+- Alt + drag fills each new area of the same color the drag passes over, read from the page as it was before the drag, so nothing is filled twice; it counts as a drag only once the pointer has really moved.
+- Ctrl + A with a pen in hand selects every stroke on the layer; Ctrl + Shift + A those of the pen's kind; Ctrl + Shift + Alt + A those of its kind and color. In text it selects all the text, as before.
 - A click on a thin line (a template's hexagons, a fine stroke) fills the line at any zoom, not only zoomed in.
 - The erasers' pointers are drawn smooth at the screen's own pixels, and show the moment Shift goes down (while typing, once the mouse moves or the typing stops).
 - Scrolling the caret out of sight lets the text go, so 1 to 6 choose shapes again instead of typing.

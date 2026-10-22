@@ -237,6 +237,8 @@
   <string name="keys.paste_d">पॉइंटर के नीचे: स्ट्रोक स्ट्रोक की तरह, छवि चित्र की तरह।</string>
   <string name="keys.paste_strokes">स्ट्रोक के रूप में पेस्ट</string>
   <string name="keys.paste_strokes_d">छवि अपने ही आकार में स्ट्रोक में बँटी हुई।</string>
+  <string name="keys.select_all">सब चुनें</string>
+  <string name="keys.select_all_d">परत की हर रेखा; Shift के साथ उसी तरह की कलम की; Shift और Alt के साथ उसी तरह और रंग की।</string>
   <string name="viewer.reading_chapters">अध्याय पढ़े जा रहे हैं…</string>
   <string name="viewer.page">पेज {n}</string>
   <string name="common.close">बंद करें</string>

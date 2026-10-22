@@ -237,6 +237,8 @@
   <string name="keys.paste_d">在指针下方：笔画作为笔画，图像作为图片。</string>
   <string name="keys.paste_strokes">作为笔画粘贴</string>
   <string name="keys.paste_strokes_d">把图像按原大小分解为笔画。</string>
+  <string name="keys.select_all">全选</string>
+  <string name="keys.select_all_d">图层上的所有笔画；按 Shift 选同类笔，按 Shift 和 Alt 选同类笔同颜色。</string>
   <string name="viewer.reading_chapters">正在读取章节…</string>
   <string name="viewer.page">第 {n} 页</string>
   <string name="common.close">关闭</string>

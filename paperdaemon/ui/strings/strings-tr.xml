@@ -237,6 +237,8 @@
   <string name="keys.paste_d">İşaretçinin altına: çizgiler çizgi, görüntü resim olarak.</string>
   <string name="keys.paste_strokes">Çizgi olarak yapıştır</string>
   <string name="keys.paste_strokes_d">Bir görüntü kendi boyutunda çizgilere ayrılır.</string>
+  <string name="keys.select_all">Tümünü seç</string>
+  <string name="keys.select_all_d">Katmandaki her çizgi; Shift ile kalemin türü; Shift ve Alt ile türü ve rengi.</string>
   <string name="viewer.reading_chapters">Bölümler okunuyor…</string>
   <string name="viewer.page">Sayfa {n}</string>
   <string name="common.close">Kapat</string>

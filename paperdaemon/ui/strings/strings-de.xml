@@ -237,6 +237,8 @@
   <string name="keys.paste_d">Unter dem Zeiger: Striche als Striche, ein Bild als Bild.</string>
   <string name="keys.paste_strokes">Als Striche einfügen</string>
   <string name="keys.paste_strokes_d">Ein Bild in Striche zerlegt, in seiner eigenen Größe.</string>
+  <string name="keys.select_all">Alles auswählen</string>
+  <string name="keys.select_all_d">Jeder Strich der Ebene; mit Umschalt die Art des Stifts; mit Umschalt und Alt seine Art und Farbe.</string>
   <string name="viewer.reading_chapters">Kapitel werden gelesen…</string>
   <string name="viewer.page">Seite {n}</string>
   <string name="common.close">Schließen</string>

@@ -237,6 +237,8 @@
   <string name="keys.paste_d">ポインターの下に。線は線として、画像は画像として。</string>
   <string name="keys.paste_strokes">線として貼り付け</string>
   <string name="keys.paste_strokes_d">画像を元の大きさのまま線に分解します。</string>
+  <string name="keys.select_all">すべて選択</string>
+  <string name="keys.select_all_d">レイヤーのすべての線。Shiftでペンの種類、Shift+Altで種類と色。</string>
   <string name="viewer.reading_chapters">章を読み込み中…</string>
   <string name="viewer.page">{n} ページ</string>
   <string name="common.close">閉じる</string>

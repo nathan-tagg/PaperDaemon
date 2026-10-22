@@ -237,6 +237,8 @@
   <string name="keys.paste_d">Under pekeren: strøk som strøk, et bilde som bilde.</string>
   <string name="keys.paste_strokes">Lim inn som strøk</string>
   <string name="keys.paste_strokes_d">Et bilde delt opp i strøk, i sin egen størrelse.</string>
+  <string name="keys.select_all">Merk alt</string>
+  <string name="keys.select_all_d">Hvert strøk i laget; med Shift pennens type; med Shift og Alt dens type og farge.</string>
   <string name="viewer.reading_chapters">Leser kapitlene…</string>
   <string name="viewer.page">Side {n}</string>
   <string name="common.close">Lukk</string>
