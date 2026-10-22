@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.56
+
+- False Mirror: the + menu's Quick sheets is now Quick sheet.
+
 ## 0.1.55
 
 - Send to Tablet works again with a kept decomp. It stopped with "too many values to unpack (expected 4)": the decomp's colors already carried their alpha, and the page writer added another.

@@ -671,7 +671,7 @@
   <string name="settings.inbox_tag.help">टैबलेट पर भेजें अपना पेज इस टैग वाली हर नोटबुक में जोड़ता है, मिरर और फ़ॉल्स मिरर दोनों में, या जहाँ किसी में यह न हो वहाँ क्विक शीट्स में। इस टैग वाली नोटबुक की किसी चीज़ पर कभी काम नहीं होता।</string>
   <string name="settings.logs.sent_inbox">भेजा गया: {pages} आपके इनबॉक्स में।</string>
   <string name="dc.sent">सभी इनबॉक्स में भेजा गया</string>
-  <string name="fm.quick_sheets">क्विक शीट्स</string>
+  <string name="fm.quick_sheets">क्विक शीट</string>
   <string name="fm.cover">कवर</string>
   <string name="fm.cover.last">आख़िरी देखा गया पेज</string>
   <string name="fm.cover.first">पहला पेज</string>

@@ -671,7 +671,7 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="settings.inbox_tag.help">Invia al tablet aggiunge la sua pagina a ogni quaderno con questo tag, nello Specchio e nel Falso specchio, o ai Fogli rapidi dove nessuno lo ha. Niente in un quaderno con questo tag viene mai elaborato.</string>
   <string name="settings.logs.sent_inbox">Inviato: {pages} nelle tue caselle di arrivo.</string>
   <string name="dc.sent">Inviato a tutte le caselle di arrivo</string>
-  <string name="fm.quick_sheets">Fogli rapidi</string>
+  <string name="fm.quick_sheets">Foglio rapido</string>
   <string name="fm.cover">Copertina</string>
   <string name="fm.cover.last">Ultima pagina visitata</string>
   <string name="fm.cover.first">Prima pagina</string>

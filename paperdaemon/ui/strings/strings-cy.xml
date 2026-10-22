@@ -671,7 +671,7 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="settings.inbox_tag.help">Mae Anfon i'r Dabled yn ychwanegu ei dudalen at bob llyfr nodiadau gyda'r tag hwn, yn y Drych a'r Drych Ffug, neu at y Taflenni cyflym lle nad oes gan yr un ef. Ni weithir byth ar ddim mewn llyfr nodiadau sydd ag ef.</string>
   <string name="settings.logs.sent_inbox">Wedi'i anfon: {pages} i'ch mewnflychau.</string>
   <string name="dc.sent">Wedi'i anfon i bob mewnflwch</string>
-  <string name="fm.quick_sheets">Taflenni cyflym</string>
+  <string name="fm.quick_sheets">Taflen gyflym</string>
   <string name="fm.cover">Clawr</string>
   <string name="fm.cover.last">Y dudalen olaf a welwyd</string>
   <string name="fm.cover.first">Y dudalen gyntaf</string>

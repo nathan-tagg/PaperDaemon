@@ -671,7 +671,7 @@ Ensuite, guide-moi pour installer SearXNG si besoin, écris le fichier .bat avec
   <string name="settings.inbox_tag.help">Envoyer à la tablette ajoute sa page à chaque carnet portant cette étiquette, dans le Miroir et le Faux miroir, ou aux Feuilles rapides là où aucun ne la porte. Rien dans un carnet qui la porte n'est jamais traité.</string>
   <string name="settings.logs.sent_inbox">Envoyé : {pages} dans vos boîtes de réception.</string>
   <string name="dc.sent">Envoyé à toutes les boîtes de réception</string>
-  <string name="fm.quick_sheets">Feuilles rapides</string>
+  <string name="fm.quick_sheets">Feuille rapide</string>
   <string name="fm.cover">Couverture</string>
   <string name="fm.cover.last">Dernière page visitée</string>
   <string name="fm.cover.first">Première page</string>

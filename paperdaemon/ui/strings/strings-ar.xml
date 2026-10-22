@@ -692,7 +692,7 @@
   <string name="settings.inbox_tag.help">يضيف «إرسال إلى الجهاز اللوحي» صفحته إلى كل دفتر يحمل هذا الوسم، في المرآة والمرآة الزائفة، أو إلى الأوراق السريعة حيث لا يحمله أي دفتر. لا يُعمل أبدًا على أي شيء في دفتر يحمله.</string>
   <string name="settings.logs.sent_inbox">أُرسلت: {pages} إلى صناديق الوارد.</string>
   <string name="dc.sent">أُرسلت إلى كل صناديق الوارد</string>
-  <string name="fm.quick_sheets">الأوراق السريعة</string>
+  <string name="fm.quick_sheets">ورقة سريعة</string>
   <string name="fm.cover">الغلاف</string>
   <string name="fm.cover.last">آخر صفحة زرتها</string>
   <string name="fm.cover.first">الصفحة الأولى</string>

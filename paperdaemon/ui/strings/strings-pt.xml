@@ -671,7 +671,7 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="settings.inbox_tag.help">Enviar para o tablet adiciona a sua página a cada caderno com esta etiqueta, no Espelho e no Falso Espelho, ou às Folhas rápidas onde nenhum a tiver. Nada num caderno com ela é alguma vez tratado.</string>
   <string name="settings.logs.sent_inbox">Enviado: {pages} para as suas caixas de entrada.</string>
   <string name="dc.sent">Enviado para todas as caixas de entrada</string>
-  <string name="fm.quick_sheets">Folhas rápidas</string>
+  <string name="fm.quick_sheets">Folha rápida</string>
   <string name="fm.cover">Capa</string>
   <string name="fm.cover.last">Última página visitada</string>
   <string name="fm.cover.first">Primeira página</string>

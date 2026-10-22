@@ -671,7 +671,7 @@ Luego guíame para instalar SearXNG si hace falta, escribe el archivo .bat con u
   <string name="settings.inbox_tag.help">Enviar a la tableta añade su página a cada cuaderno con esta etiqueta, en el Espejo y en el Espejo falso, o a Hojas rápidas donde ninguno la tenga. Nunca se trabaja en nada de un cuaderno que la tenga.</string>
   <string name="settings.logs.sent_inbox">Enviado: {pages} a tus bandejas de entrada.</string>
   <string name="dc.sent">Enviado a todas las bandejas</string>
-  <string name="fm.quick_sheets">Hojas rápidas</string>
+  <string name="fm.quick_sheets">Hoja rápida</string>
   <string name="fm.cover">Portada</string>
   <string name="fm.cover.last">Última página visitada</string>
   <string name="fm.cover.first">Primera página</string>

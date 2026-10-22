@@ -671,7 +671,7 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="settings.inbox_tag.help">Tablete Gönder, sayfasını Ayna'da ve Sahte Ayna'da bu etiketi taşıyan her deftere, hiçbirinde yoksa Hızlı sayfalar'a ekler. Bu etiketi taşıyan bir defterdeki hiçbir şey asla işlenmez.</string>
   <string name="settings.logs.sent_inbox">Gönderildi: {pages} gelen kutularınıza.</string>
   <string name="dc.sent">Tüm gelen kutularına gönderildi</string>
-  <string name="fm.quick_sheets">Hızlı sayfalar</string>
+  <string name="fm.quick_sheets">Hızlı sayfa</string>
   <string name="fm.cover">Kapak</string>
   <string name="fm.cover.last">Son ziyaret edilen sayfa</string>
   <string name="fm.cover.first">İlk sayfa</string>

@@ -671,7 +671,7 @@
   <string name="settings.inbox_tag.help">ٹیبلٹ پر بھیجیں اپنا صفحہ اس ٹیگ والی ہر نوٹ بک میں شامل کرتا ہے، مرر اور فالس مرر دونوں میں، یا جہاں کسی میں نہ ہو وہاں کوئک شیٹس میں۔ اس ٹیگ والی نوٹ بک کی کسی چیز پر کبھی کام نہیں ہوتا۔</string>
   <string name="settings.logs.sent_inbox">بھیج دیا: {pages} آپ کے ان باکس میں۔</string>
   <string name="dc.sent">تمام ان باکس میں بھیج دیا</string>
-  <string name="fm.quick_sheets">کوئک شیٹس</string>
+  <string name="fm.quick_sheets">کوئک شیٹ</string>
   <string name="fm.cover">سرورق</string>
   <string name="fm.cover.last">آخری دیکھا گیا صفحہ</string>
   <string name="fm.cover.first">پہلا صفحہ</string>

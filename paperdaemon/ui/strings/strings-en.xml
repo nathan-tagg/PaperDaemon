@@ -671,7 +671,7 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="settings.inbox_tag.help">Send to Tablet adds its page to every notebook with this tag, in the Mirror and the False Mirror, or to Quick sheets where none has it. Nothing in a notebook with it is ever worked on.</string>
   <string name="settings.logs.sent_inbox">Sent: {pages} to your inboxes.</string>
   <string name="dc.sent">Sent to all inboxes</string>
-  <string name="fm.quick_sheets">Quick sheets</string>
+  <string name="fm.quick_sheets">Quick sheet</string>
   <string name="fm.cover">Cover</string>
   <string name="fm.cover.last">Last page visited</string>
   <string name="fm.cover.first">First page</string>

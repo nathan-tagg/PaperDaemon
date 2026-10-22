@@ -671,7 +671,7 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="settings.inbox_tag.help">„An Tablet senden“ fügt seine Seite jedem Notizbuch mit diesem Tag hinzu, im Spiegel und im Falschen Spiegel, oder den Schnellnotizen, wo keines ihn trägt. In einem Notizbuch mit diesem Tag wird nie etwas bearbeitet.</string>
   <string name="settings.logs.sent_inbox">Gesendet: {pages} an Ihre Eingänge.</string>
   <string name="dc.sent">An alle Eingänge gesendet</string>
-  <string name="fm.quick_sheets">Schnellnotizen</string>
+  <string name="fm.quick_sheets">Schnellnotiz</string>
   <string name="fm.cover">Cover</string>
   <string name="fm.cover.last">Zuletzt besuchte Seite</string>
   <string name="fm.cover.first">Erste Seite</string>

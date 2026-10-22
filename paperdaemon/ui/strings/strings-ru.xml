@@ -685,7 +685,7 @@
   <string name="settings.inbox_tag.help">«Отправить на планшет» добавляет свою страницу в каждый блокнот с этим тегом, в Зеркале и Ложном зеркале, или в Быстрые листы, где его нет ни у одного. Ничто в блокноте с этим тегом никогда не обрабатывается.</string>
   <string name="settings.logs.sent_inbox">Отправлено: {pages} во входящие.</string>
   <string name="dc.sent">Отправлено во все входящие</string>
-  <string name="fm.quick_sheets">Быстрые листы</string>
+  <string name="fm.quick_sheets">Быстрый лист</string>
   <string name="fm.cover">Обложка</string>
   <string name="fm.cover.last">Последняя открытая страница</string>
   <string name="fm.cover.first">Первая страница</string>
