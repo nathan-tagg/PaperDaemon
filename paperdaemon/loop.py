@@ -100,7 +100,6 @@ def environment(s=None, port=8770, token="", state=None, mirror=None):
     PaperDaemon's own (the benchmark passes its isolated ones)."""
     s = s or S.load()
     from .models import lineup
-    t = s["tablet"]
     data = state or paths.data_dir()
     mirror = mirror or paths.mirror_dir()
     engine = "http://127.0.0.1:%d" % int(port)
@@ -114,7 +113,7 @@ def environment(s=None, port=8770, token="", state=None, mirror=None):
         RM_TRIGGERS=json.dumps([tag for tag, _name in S.all_tags(s)]),
         RM_TRIGGER_LINEUPS=json.dumps(dict((tag.strip().lower(), name) for tag, name in S.all_tags(s))),
         RM_IGNORE_TAG=S.fixed_tags(s)[0], RM_SPROMPT_TAG=S.fixed_tags(s)[1],
-        RM_INBOX=str(t.get("inbox") or ""),
+        RM_INBOX_TAG=S.inbox_tag(s),
         # every text call goes through the engine, which starts the text server when it is not running
         RM_LLM="%s/host/llm/%s" % (engine, token or "-"),
         # the host's run file: every lineup's harness values and features, and the settings the host reads
@@ -137,7 +136,7 @@ def fm_environment(s=None, port=8770, token=""):
     state = paths.false_mirror_state_dir()          # made by the Create button, never here
     env = environment(s, port, token, state=state, mirror=paths.false_mirror_dir())
     from .remarkable import books
-    env.update(RM_LOCAL_ONLY="1", RM_INBOX=str((s.get("false_mirror") or {}).get("inbox") or ""),
+    env.update(RM_LOCAL_ONLY="1", RM_INBOX_TAG=S.inbox_tag(s),
                RM_FACES=books.false_mirror_faces(s))
     return env
 
@@ -194,8 +193,8 @@ def _fm_faces(s):
 
 def _env_key(s):
     """What the halves are started with: when a settings change alters it, they restart."""
-    return json.dumps({"run": run_content(s), "tags": S.all_tags(s), "fixed": S.fixed_tags(s), "inbox": s["tablet"].get("inbox"),
-                       "fm_inbox": (s.get("false_mirror") or {}).get("inbox"), "fm_faces": _fm_faces(s)},
+    return json.dumps({"run": run_content(s), "tags": S.all_tags(s), "fixed": S.fixed_tags(s), "inbox": S.inbox_tag(s),
+                       "fm_faces": _fm_faces(s)},
                       sort_keys=True)
 
 

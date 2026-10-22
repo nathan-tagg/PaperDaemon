@@ -105,10 +105,6 @@
   <string name="settings.login.steal">Steal instead</string>
   <string name="settings.login.stolen">Connected with its own login, stolen from the reMarkable app</string>
   <string name="settings.login.connected">Connected</string>
-  <string name="settings.inbox">Decompose inbox</string>
-  <string name="settings.inbox.help">The notebook Send to Tablet adds pages to. PaperDaemon never answers it, whatever it is tagged with.</string>
-  <string name="settings.inbox.placeholder">Choose a notebook</string>
-  <string name="settings.inbox.pick">Choose a notebook from the list.</string>
   <string name="settings.location">Location</string>
   <string name="settings.location.help">For the weather, sunrise and holidays on calendars.</string>
   <string name="settings.location.placeholder">Start typing a city</string>
@@ -129,9 +125,6 @@
   <string name="settings.logs">Logs</string>
   <string name="settings.logs.help">What the daemon, the host and the engine wrote lately, as pages in your inbox.</string>
   <string name="settings.logs.send">Send logs to the inbox</string>
-  <string name="settings.logs.no_inbox">Set an inbox above first</string>
-  <string name="settings.logs.sent">Sent: {pages} in {inbox}, from page {first}.</string>
-  <string name="settings.logs.the_inbox">the inbox</string>
   <string name="count.page.one">{n} page</string>
   <string name="count.page.other">{n} pages</string>
   <string name="tablet.read">{pct}% read</string>
@@ -251,10 +244,8 @@
   <string name="dc.paste_denied">PaperDaemon could not read the clipboard. Press Ctrl+V instead.</string>
   <string name="dc.save">Save</string>
   <string name="dc.saving">Saving…</string>
-  <string name="dc.on_page">On page #{n}</string>
   <string name="dc.sending">Sending…</string>
   <string name="dc.send">Send to Tablet</string>
-  <string name="dc.no_inbox">Set an inbox in the Settings tab</string>
   <string name="dc.look">Look closely</string>
   <string name="dc.size_px">{w} × {h} px</string>
   <string name="count.stroke.one">{n} stroke</string>
@@ -625,7 +616,6 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="fm.create_body2">The daemon answers its pages exactly as it answers your tablet's. Nothing in it is sent to the cloud or reaches your tablet.</string>
   <string name="fm.delete_mirror_q">Delete the False Mirror?</string>
   <string name="fm.delete_mirror_body">Its notebooks are on this computer only, and they will be gone. Your tablet's library is not touched.</string>
-  <string name="fm.inbox.help">The notebook in the False Mirror that Send to Tablet also adds pages to. Send to Tablet lands in both inboxes.</string>
   <string name="fm.faces">Faces</string>
   <string name="fm.faces.help">The faces typed text and books are set in, in the False Mirror.</string>
   <string name="fm.faces.tablet">The tablet's</string>
@@ -656,8 +646,7 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="fm.tags">Tags</string>
   <string name="fm.tags_of">Tags of {name}</string>
   <string name="fm.tag_add">Add a tag</string>
-  <string name="fm.menu">Add, new notebook or folder</string>
-  <string name="fm.add">Add</string>
+  <string name="fm.add">New</string>
   <string name="fm.untag">Remove the tag {tag}</string>
   <string name="fm.delete_q">Delete {name}?</string>
   <string name="fm.delete_body">It goes to the trash, as on the tablet.</string>
@@ -678,4 +667,13 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="settings.page_notes.on">Write on the page as he works</string>
   <string name="settings.daemon_layer">Daemon layer</string>
   <string name="settings.daemon_layer.help">The name of the layer the daemon writes his notes on. PaperDaemon never reads a layer of this name as part of the page; only the page editor shows it.</string>
+  <string name="settings.inbox_tag">Inbox tag</string>
+  <string name="settings.inbox_tag.help">Send to Tablet adds its page to every notebook with this tag, in the Mirror and the False Mirror, or to Quick sheets where none has it. Nothing in a notebook with it is ever worked on.</string>
+  <string name="settings.logs.sent_inbox">Sent: {pages} to your inboxes.</string>
+  <string name="dc.sent">Sent to all inboxes</string>
+  <string name="fm.quick_sheets">Quick sheets</string>
+  <string name="fm.cover">Cover</string>
+  <string name="fm.cover.last">Last page visited</string>
+  <string name="fm.cover.first">First page</string>
+  <string name="fm.template">Template</string>
 </resources>

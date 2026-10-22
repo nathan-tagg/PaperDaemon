@@ -6,7 +6,8 @@
   const { $, esc } = PD;
   let R = null, seq = 0;
   const MAX_BYTES = 25e6;
-  const S = { working: [], items: [], width: 1200, inbox: "", err: "", page: 0, per: 10, total: 0 };
+  // SENT, FOR THIS SESSION ONLY: a decomp sent says so on its button until the window is loaded again
+  const S = { working: [], items: [], width: 1200, err: "", page: 0, per: 10, total: 0, sent: new Set() };
 
   const uploadIcon = '<svg viewBox="0 0 40 52" aria-hidden="true"><rect x="1" y="1" width="38" height="50" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M20 34V16M13 23l7-7 7 7" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
   const eyeIcon = '<svg viewBox="0 0 24 16" aria-hidden="true"><path d="M1 8s4-7 11-7 11 7 11 7-4 7-11 7S1 8 1 8z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
@@ -63,11 +64,8 @@
   try { const v = Number(localStorage.getItem("pd-decomps-per")); if (PER.includes(v)) S.per = v; } catch (e) { /* the default */ }
 
   function itemHtml(it) {
-    const act = it.sent != null ? '<span class="sent">' + esc(PD.t("dc.on_page", { n: it.sent })) + "</span>"
-      : S.inbox.trim()
-        ? '<button type="button" class="btn primary small" data-send="' + it.id + '"' + (it.sending ? ' disabled aria-busy="true"' : "") + ">" + esc(PD.t(it.sending ? "dc.sending" : "dc.send")) + "</button>"
-        : '<span class="tip" title="' + esc(PD.t("dc.no_inbox")) + '"><button type="button" class="btn primary small" disabled aria-describedby="dc-noinbox">' +
-          esc(PD.t("dc.send")) + "</button></span>";
+    const act = S.sent.has(it.id) ? '<span class="sent">' + esc(PD.t("dc.sent")) + "</span>"
+      : '<button type="button" class="btn primary small" data-send="' + it.id + '"' + (it.sending ? ' disabled aria-busy="true"' : "") + ">" + esc(PD.t(it.sending ? "dc.sending" : "dc.send")) + "</button>";
     return '<figure class="decomp">' +
       '<div class="decomp-pic"><img alt="" data-preview="' + it.id + '">' +
       '<button type="button" class="eye" data-look="' + it.id + '" aria-label="' + esc(PD.t("dc.look")) + '">' + eyeIcon + "</button></div>" +
@@ -123,11 +121,10 @@
 
   async function send(it) {
     if (!it || it.sending) return;
-    if (!S.inbox.trim()) return;                    // the button says why it is off
     it.sending = true; renderItems(); setErr("");
     try {
-      const d = await PD.api("POST", "/decompose/send", { id: it.id });
-      it.sent = d && d.page != null ? d.page : "?";
+      await PD.api("POST", "/decompose/send", { id: it.id });
+      S.sent.add(it.id);
     } catch (e) { setErr(PD.errText(e)); }
     it.sending = false; renderItems();
   }
@@ -226,7 +223,7 @@
         '<div class="actions dc-size"><label class="meta" for="dc-width">' + esc(PD.t("dc.size")) + '</label><input class="field num w-s" id="dc-width" type="number" min="200" max="1600" step="50" value="' + S.width + '">' +
         '<span class="meta">' + esc(PD.t("dc.size_unit")) + '</span><span class="drop-note">' + esc(PD.t("dc.types")) + "</span></div>" +
         '<div class="drop" id="dc-zone"><div id="dc-zone-body"></div><input type="file" id="dc-file" accept="image/png,image/jpeg,image/webp" multiple hidden></div>' +
-        '<p class="msg err" id="dc-err" role="alert"></p><span hidden id="dc-noinbox">' + esc(PD.t("dc.no_inbox")) + "</span></section>" +
+        '<p class="msg err" id="dc-err" role="alert"></p></section>' +
         '<section class="section" id="dc-decomps" aria-labelledby="dc-h-dec" hidden><div class="dc-head"><h2 id="dc-h-dec">' + esc(PD.t("dc.decomps")) +
         '</h2><nav class="pager" id="dc-pager" aria-label="' + esc(PD.t("dc.decomps")) + '"></nav></div><div class="decomps" id="dc-items"></div></section>';
       const zone = $("#dc-zone", R);
@@ -256,12 +253,7 @@
       renderZone(); renderItems();
     },
     async show() {
-      // SEND IS ON WHEN ANY INBOX CAN TAKE IT: the Mirror's (with an account signed in) or the False Mirror's
-      const [st] = await PD.safe(PD.loadSettings());
-      const status = PD.status || {}, fm = !!(status.false_mirror || {}).exists;
-      const signedIn = !!(status.tablet || {}).set;
-      const real = (st && st.tablet && st.tablet.inbox) || "", fake = fm ? ((st && st.false_mirror && st.false_mirror.inbox) || "") : "";
-      S.inbox = (signedIn && real) || fake || "";
+      // SEND IS ALWAYS ON: the engine lands it in every inbox (the inbox tag, else Quick sheets), or says why not
       loadItems();
     },
   });

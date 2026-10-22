@@ -15,7 +15,7 @@
     pages: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="1.5" width="5.5" height="5.5"/><rect x="9" y="1.5" width="5.5" height="5.5"/><rect x="1.5" y="9" width="5.5" height="5.5"/><rect x="9" y="9" width="5.5" height="5.5"/></svg>',
     chapters: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="2.5" cy="3.5" r="1.2"/><circle cx="2.5" cy="8" r="1.2"/><circle cx="2.5" cy="12.5" r="1.2"/><path d="M6 3.5h8.5M6 8h8.5M6 12.5h8.5"/></svg>',
     tag: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 2h5.8l6.4 6.5-5.7 5.7L2 7.8z"/><circle cx="5" cy="5" r="1"/></svg>',
-    menu: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/></svg>',
+    add: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v11M2.5 8h11"/></svg>',
     newpage: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 1.5h6l3 3v10h-9z"/><path d="M9.5 1.5v3h3"/><path d="M8 7.5v5M5.5 10h5"/></svg>',
     prev: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg>',
     next: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg>',
@@ -468,11 +468,43 @@
 
     const nameField = (value) => '<label class="field-row"><span>' + esc(PD.t("fm.name")) + '</span><input class="field w-l" type="text" data-name value="' + esc(value) + '" spellcheck="false"></label>';
 
-    function newNotebook() {
-      ask(PD.t("fm.new_notebook"), nameField(PD.t("fm.notebook")), PD.t("fm.create"), async dlg => {
-        await api("POST", "/library/notebook", { name: dlg.querySelector("[data-name]").value, parent: S.at });
+    // A NEW NOTEBOOK, AS THE TABLET MAKES ONE: its name, its cover (the page last visited, or the first page), and with
+    // an account signed in its template (the tablet's, from the user's own desktop app: none without one)
+    const tplIcon = t => t.icon && t.icon.d ? '<svg viewBox="' + esc(t.icon.viewBox) + '" aria-hidden="true"><path d="' + esc(t.icon.d) + '"/></svg>'
+      : t.icon && t.icon.svg ? '<img alt="" src="data:image/svg+xml;base64,' + esc(t.icon.svg) + '">'
+      : '<svg viewBox="0 0 30 40" aria-hidden="true"><rect x="1" y="1" width="28" height="38"/></svg>';
+    async function newNotebook() {
+      const [tpls] = await PD.safe(PD.api("GET", "/templates"));
+      const list = Array.isArray(tpls) ? tpls : [];
+      const inner = nameField(PD.t("fm.notebook")) +
+        '<fieldset class="field-row nb-cover"><legend>' + esc(PD.t("fm.cover")) + "</legend>" +
+        '<label class="check-label"><input type="radio" name="nb-cover" value="last" checked> ' + esc(PD.t("fm.cover.last")) + "</label>" +
+        '<label class="check-label"><input type="radio" name="nb-cover" value="first"> ' + esc(PD.t("fm.cover.first")) + "</label></fieldset>" +
+        (list.length ? '<div class="field-row"><span>' + esc(PD.t("fm.template")) + '</span><div class="nb-tpls" role="radiogroup">' +
+          list.map((t, i) => '<button type="button" class="nb-tpl' + (i ? "" : " here") + '" role="radio" aria-checked="' + (i ? "false" : "true") +
+            '" data-tpl="' + esc(t.file) + '" title="' + esc(t.name) + '">' + tplIcon(t) + "<span>" + esc(t.name) + "</span></button>").join("") +
+          "</div></div>" : "");
+      const dlg = ask(PD.t("fm.new_notebook"), inner, PD.t("fm.create"), async d => {
+        const cover = (d.querySelector("[name=nb-cover]:checked") || {}).value || "last";
+        const tp = d.querySelector(".nb-tpl.here");
+        await api("POST", "/library/notebook", Object.assign({ name: d.querySelector("[data-name]").value, parent: S.at, cover },
+                                                             tp ? { template: tp.dataset.tpl } : {}));   // none: the engine's Blank
         await load();
       });
+      dlg.addEventListener("click", e => {
+        const b = e.target.closest(".nb-tpl"); if (!b) return;
+        dlg.querySelectorAll(".nb-tpl").forEach(x => { x.classList.toggle("here", x === b); x.setAttribute("aria-checked", String(x === b)); });
+      });
+    }
+
+    // QUICK SHEETS, as the tablet's button: the library's one Quick sheets, open on a new page at its end; no name to give
+    async function quickSheets() {
+      const msg = $("#" + id + "-import", R);
+      const [got, e] = await PD.safe(api("POST", "/library/quick-sheets"));
+      if (e) { msg.textContent = PD.errText(e); msg.className = "hint import-msg attn"; return; }
+      await load();
+      openDoc(got.id);
+      go(got.page);
     }
 
     function newFolder() {
@@ -608,9 +640,10 @@
       },
       mount(root) {
         R = root;
-        // THE FALSE MIRROR'S ACTIONS in a menu at the top right: New notebook, New folder, Import
+        // THE FALSE MIRROR'S ACTIONS under a + at the top right: Quick sheets, New notebook, New folder, Import
         root.innerHTML = '<div class="page-head"><h1>' + esc(label) + "</h1>" + (fm ? '<span class="head-acts"><button type="button" class="icon-btn" data-act="fm-menu" aria-haspopup="menu" aria-expanded="false" title="' +
-          esc(PD.t("fm.menu")) + '" aria-label="' + esc(PD.t("fm.menu")) + '">' + ICON.menu + '</button><span class="head-menu" role="menu" hidden>' +
+          esc(PD.t("fm.add")) + '" aria-label="' + esc(PD.t("fm.add")) + '">' + ICON.add + '</button><span class="head-menu" role="menu" hidden>' +
+          '<button type="button" role="menuitem" data-act="quick-sheets">' + esc(PD.t("fm.quick_sheets")) + "</button>" +
           '<button type="button" role="menuitem" data-act="new-notebook">' + esc(PD.t("fm.new_notebook")) + "</button>" +
           '<button type="button" role="menuitem" data-act="new-folder">' + esc(PD.t("fm.new_folder")) + "</button>" +
           '<button type="button" role="menuitem" data-act="import">' + esc(PD.t("fm.import")) + "</button></span></span>" : "") + "</div>" +
@@ -629,6 +662,7 @@
         document.addEventListener("keydown", e => {
           if (e.key === "Escape" && S.picked && !R.hidden && !document.querySelector("dialog[open]")) unpick();
         });
+        PD.on(root, "click", "[data-act=quick-sheets]", () => { closeMenu(); quickSheets(); });
         PD.on(root, "click", "[data-act=new-notebook]", () => { closeMenu(); newNotebook(); });
         PD.on(root, "click", "[data-act=new-folder]", () => { closeMenu(); newFolder(); });
         PD.on(root, "click", "[data-act=import]", () => { closeMenu(); importFile(); });

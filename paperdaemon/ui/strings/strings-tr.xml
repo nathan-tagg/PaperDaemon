@@ -106,10 +106,6 @@
   <string name="settings.login.steal">Bunun yerine devral</string>
   <string name="settings.login.stolen">reMarkable uygulamasından devralınan kendi oturumuyla bağlı</string>
   <string name="settings.login.connected">Bağlı</string>
-  <string name="settings.inbox">Ayrıştırma gelen kutusu</string>
-  <string name="settings.inbox.help">Tablete Gönder'in sayfa eklediği defter. PaperDaemon, hangi etiketi taşırsa taşısın orayı asla yanıtlamaz.</string>
-  <string name="settings.inbox.placeholder">Bir defter seçin</string>
-  <string name="settings.inbox.pick">Listeden bir defter seçin.</string>
   <string name="settings.location">Konum</string>
   <string name="settings.location.help">Takvimlerdeki hava durumu, gün doğumu ve tatiller için.</string>
   <string name="settings.location.placeholder">Bir şehir yazmaya başlayın</string>
@@ -130,9 +126,6 @@
   <string name="settings.logs">Günlükler</string>
   <string name="settings.logs.help">Daemon'ın, host'un ve motorun son zamanlarda yazdıkları, gelen kutunuzda sayfalar olarak.</string>
   <string name="settings.logs.send">Günlükleri gelen kutusuna gönder</string>
-  <string name="settings.logs.no_inbox">Önce yukarıda bir gelen kutusu ayarlayın</string>
-  <string name="settings.logs.sent">Gönderildi: {inbox} içinde {pages}, {first}. sayfadan başlayarak.</string>
-  <string name="settings.logs.the_inbox">gelen kutusu</string>
   <string name="count.page.one">{n} sayfa</string>
   <string name="count.page.other">{n} sayfa</string>
   <string name="tablet.read">%{pct} okundu</string>
@@ -252,10 +245,8 @@
   <string name="dc.paste_denied">PaperDaemon panoyu okuyamadı. Bunun yerine Ctrl+V'ye basın.</string>
   <string name="dc.save">Kaydet</string>
   <string name="dc.saving">Kaydediliyor…</string>
-  <string name="dc.on_page">{n}. sayfada</string>
   <string name="dc.sending">Gönderiliyor…</string>
   <string name="dc.send">Tablete Gönder</string>
-  <string name="dc.no_inbox">Ayarlar sekmesinde bir gelen kutusu ayarlayın</string>
   <string name="dc.look">Yakından bak</string>
   <string name="dc.size_px">{w} × {h} px</string>
   <string name="count.stroke.one">{n} çizgi</string>
@@ -625,7 +616,6 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="fm.create_body2">Daemon sayfalarını tabletinizinkileri tam olarak yanıtladığı gibi yanıtlar. İçindeki hiçbir şey buluta gönderilmez ya da tabletinize ulaşmaz.</string>
   <string name="fm.delete_mirror_q">Sahte Ayna silinsin mi?</string>
   <string name="fm.delete_mirror_body">Defterleri yalnızca bu bilgisayarda ve silinecekler. Tabletinizin kitaplığına dokunulmaz.</string>
-  <string name="fm.inbox.help">Tablete Gönder'in de sayfa eklediği Sahte Aynadaki defter. Tablete Gönder iki gelen kutusuna da düşer.</string>
   <string name="fm.faces">Yazı tipleri</string>
   <string name="fm.faces.help">Sahte Ayna'da yazılan metnin ve kitapların dizildiği yazı tipleri.</string>
   <string name="fm.faces.tablet">Tabletinkiler</string>
@@ -656,8 +646,7 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="fm.tags">Etiketler</string>
   <string name="fm.tags_of">{name} etiketleri</string>
   <string name="fm.tag_add">Etiket ekle</string>
-  <string name="fm.menu">Ekle, yeni defter veya klasör</string>
-  <string name="fm.add">Ekle</string>
+  <string name="fm.add">Yeni</string>
   <string name="fm.untag">{tag} etiketini kaldır</string>
   <string name="fm.delete_q">{name} silinsin mi?</string>
   <string name="fm.delete_body">Tabletteki gibi çöp kutusuna gider.</string>
@@ -678,4 +667,13 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="settings.page_notes.on">Çalışırken sayfaya yaz</string>
   <string name="settings.daemon_layer">Daemon katmanı</string>
   <string name="settings.daemon_layer.help">Daemon'un notlarını yazdığı katmanın adı. PaperDaemon bu adı taşıyan bir katmanı asla sayfanın parçası olarak okumaz; onu yalnızca sayfa düzenleyici gösterir.</string>
+  <string name="settings.inbox_tag">Gelen kutusu etiketi</string>
+  <string name="settings.inbox_tag.help">Tablete Gönder, sayfasını Ayna'da ve Sahte Ayna'da bu etiketi taşıyan her deftere, hiçbirinde yoksa Hızlı sayfalar'a ekler. Bu etiketi taşıyan bir defterdeki hiçbir şey asla işlenmez.</string>
+  <string name="settings.logs.sent_inbox">Gönderildi: {pages} gelen kutularınıza.</string>
+  <string name="dc.sent">Tüm gelen kutularına gönderildi</string>
+  <string name="fm.quick_sheets">Hızlı sayfalar</string>
+  <string name="fm.cover">Kapak</string>
+  <string name="fm.cover.last">Son ziyaret edilen sayfa</string>
+  <string name="fm.cover.first">İlk sayfa</string>
+  <string name="fm.template">Şablon</string>
 </resources>

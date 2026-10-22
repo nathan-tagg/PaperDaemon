@@ -106,10 +106,6 @@
   <string name="settings.login.steal">इसके बजाय ले लें</string>
   <string name="settings.login.stolen">अपने लॉगिन से जुड़ा, जो reMarkable ऐप से लिया गया</string>
   <string name="settings.login.connected">जुड़ा हुआ</string>
-  <string name="settings.inbox">डीकंपोज़ इनबॉक्स</string>
-  <string name="settings.inbox.help">वह नोटबुक जिसमें «टैबलेट पर भेजें» पेज जोड़ता है। चाहे इस पर कोई भी टैग हो, PaperDaemon इसका जवाब कभी नहीं देता।</string>
-  <string name="settings.inbox.placeholder">कोई नोटबुक चुनें</string>
-  <string name="settings.inbox.pick">सूची से कोई नोटबुक चुनें।</string>
   <string name="settings.location">स्थान</string>
   <string name="settings.location.help">कैलेंडरों पर मौसम, सूर्योदय और छुट्टियों के लिए।</string>
   <string name="settings.location.placeholder">किसी शहर का नाम लिखना शुरू करें</string>
@@ -130,9 +126,6 @@
   <string name="settings.logs">लॉग</string>
   <string name="settings.logs.help">डेमन, होस्ट और इंजन ने हाल में जो लिखा, वह आपके इनबॉक्स में पेजों के रूप में।</string>
   <string name="settings.logs.send">लॉग इनबॉक्स में भेजें</string>
-  <string name="settings.logs.no_inbox">पहले ऊपर इनबॉक्स तय करें</string>
-  <string name="settings.logs.sent">भेजा गया: {inbox} में {pages}, पेज {first} से।</string>
-  <string name="settings.logs.the_inbox">इनबॉक्स</string>
   <string name="count.page.one">{n} पेज</string>
   <string name="count.page.other">{n} पेज</string>
   <string name="tablet.read">{pct}% पढ़ा</string>
@@ -252,10 +245,8 @@
   <string name="dc.paste_denied">PaperDaemon क्लिपबोर्ड नहीं पढ़ सका। इसके बजाय Ctrl+V दबाएँ।</string>
   <string name="dc.save">सहेजें</string>
   <string name="dc.saving">सहेजा जा रहा है…</string>
-  <string name="dc.on_page">पेज #{n} पर</string>
   <string name="dc.sending">भेजा जा रहा है…</string>
   <string name="dc.send">टैबलेट पर भेजें</string>
-  <string name="dc.no_inbox">सेटिंग टैब में इनबॉक्स तय करें</string>
   <string name="dc.look">पास से देखें</string>
   <string name="dc.size_px">{w} × {h} px</string>
   <string name="count.stroke.one">{n} रेखा</string>
@@ -625,7 +616,6 @@
   <string name="fm.create_body2">डेमन इसके पन्नों का जवाब ठीक वैसे ही देता है जैसे आपके टैबलेट के पन्नों का। इसका कुछ भी क्लाउड पर नहीं भेजा जाता और न आपके टैबलेट तक पहुँचता है।</string>
   <string name="fm.delete_mirror_q">नकली मिरर हटाएँ?</string>
   <string name="fm.delete_mirror_body">इसकी नोटबुक केवल इस कंप्यूटर पर हैं, और वे चली जाएँगी। आपके टैबलेट की लाइब्रेरी को छुआ नहीं जाता।</string>
-  <string name="fm.inbox.help">नकली मिरर की वह नोटबुक जिसमें टैबलेट पर भेजें भी पन्ने जोड़ता है। टैबलेट पर भेजें दोनों इनबॉक्स में पहुँचता है।</string>
   <string name="fm.faces">फ़ॉन्ट</string>
   <string name="fm.faces.help">वे फ़ॉन्ट जिनमें नकली मिरर का टाइप किया गया पाठ और किताबें छपती हैं।</string>
   <string name="fm.faces.tablet">टैबलेट के</string>
@@ -656,8 +646,7 @@
   <string name="fm.tags">टैग</string>
   <string name="fm.tags_of">{name} के टैग</string>
   <string name="fm.tag_add">एक टैग जोड़ें</string>
-  <string name="fm.menu">जोड़ें, नई नोटबुक या फ़ोल्डर</string>
-  <string name="fm.add">जोड़ें</string>
+  <string name="fm.add">नया</string>
   <string name="fm.untag">टैग {tag} हटाएँ</string>
   <string name="fm.delete_q">{name} हटाएँ?</string>
   <string name="fm.delete_body">यह टैबलेट की तरह ही कचरे में जाता है।</string>
@@ -678,4 +667,13 @@
   <string name="settings.page_notes.on">काम करते समय पेज पर लिखें</string>
   <string name="settings.daemon_layer">डेमन की परत</string>
   <string name="settings.daemon_layer.help">उस परत का नाम जिस पर डेमन अपने नोट्स लिखता है। PaperDaemon इस नाम की परत को कभी पेज का हिस्सा नहीं पढ़ता; केवल पेज एडिटर उसे दिखाता है।</string>
+  <string name="settings.inbox_tag">इनबॉक्स टैग</string>
+  <string name="settings.inbox_tag.help">टैबलेट पर भेजें अपना पेज इस टैग वाली हर नोटबुक में जोड़ता है, मिरर और फ़ॉल्स मिरर दोनों में, या जहाँ किसी में यह न हो वहाँ क्विक शीट्स में। इस टैग वाली नोटबुक की किसी चीज़ पर कभी काम नहीं होता।</string>
+  <string name="settings.logs.sent_inbox">भेजा गया: {pages} आपके इनबॉक्स में।</string>
+  <string name="dc.sent">सभी इनबॉक्स में भेजा गया</string>
+  <string name="fm.quick_sheets">क्विक शीट्स</string>
+  <string name="fm.cover">कवर</string>
+  <string name="fm.cover.last">आख़िरी देखा गया पेज</string>
+  <string name="fm.cover.first">पहला पेज</string>
+  <string name="fm.template">टेम्पलेट</string>
 </resources>

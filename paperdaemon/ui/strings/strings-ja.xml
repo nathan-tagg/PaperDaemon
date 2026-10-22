@@ -106,10 +106,6 @@
   <string name="settings.login.steal">代わりに奪う</string>
   <string name="settings.login.stolen">reMarkable アプリから奪った独自のログインで接続済み</string>
   <string name="settings.login.connected">接続済み</string>
-  <string name="settings.inbox">分解の受信ノート</string>
-  <string name="settings.inbox.help">「タブレットに送信」がページを追加するノートです。どんなタグが付いていても、PaperDaemon はこのノートに答えません。</string>
-  <string name="settings.inbox.placeholder">ノートを選択</string>
-  <string name="settings.inbox.pick">一覧からノートを選んでください。</string>
   <string name="settings.location">場所</string>
   <string name="settings.location.help">カレンダーの天気、日の出、祝日に使います。</string>
   <string name="settings.location.placeholder">都市名を入力</string>
@@ -130,9 +126,6 @@
   <string name="settings.logs">ログ</string>
   <string name="settings.logs.help">デーモン、ホスト、エンジンが最近書いた内容を、受信ノートのページとして送ります。</string>
   <string name="settings.logs.send">ログを受信ノートに送る</string>
-  <string name="settings.logs.no_inbox">先に上で受信ノートを設定してください</string>
-  <string name="settings.logs.sent">送信しました: {inbox} に {pages}、{first} ページ目から。</string>
-  <string name="settings.logs.the_inbox">受信ノート</string>
   <string name="count.page.one">{n} ページ</string>
   <string name="count.page.other">{n} ページ</string>
   <string name="tablet.read">{pct}% 読了</string>
@@ -252,10 +245,8 @@
   <string name="dc.paste_denied">PaperDaemon はクリップボードを読み取れませんでした。代わりに Ctrl+V を押してください。</string>
   <string name="dc.save">保存</string>
   <string name="dc.saving">保存中…</string>
-  <string name="dc.on_page">{n} ページ目</string>
   <string name="dc.sending">送信中…</string>
   <string name="dc.send">タブレットに送信</string>
-  <string name="dc.no_inbox">設定タブで受信ノートを設定してください</string>
   <string name="dc.look">拡大して見る</string>
   <string name="dc.size_px">{w} × {h} px</string>
   <string name="count.stroke.one">{n} 本のストローク</string>
@@ -625,7 +616,6 @@
   <string name="fm.create_body2">デーモンはそのページに、タブレットのページとまったく同じように答えます。クラウドに送られることも、タブレットに届くこともありません。</string>
   <string name="fm.delete_mirror_q">偽ミラーを削除しますか？</string>
   <string name="fm.delete_mirror_body">そのノートブックはこのコンピューターにしかなく、消えてしまいます。タブレットのライブラリには触れません。</string>
-  <string name="fm.inbox.help">「タブレットに送信」がページを追加する、偽ミラー内のノートブックです。「タブレットに送信」は両方の受信箱に届きます。</string>
   <string name="fm.faces">フォント</string>
   <string name="fm.faces.help">偽ミラーで入力テキストと本に使うフォント。</string>
   <string name="fm.faces.tablet">タブレットのもの</string>
@@ -656,8 +646,7 @@
   <string name="fm.tags">タグ</string>
   <string name="fm.tags_of">{name} のタグ</string>
   <string name="fm.tag_add">タグを追加</string>
-  <string name="fm.menu">追加（新しいノートブックやフォルダー）</string>
-  <string name="fm.add">追加</string>
+  <string name="fm.add">新規</string>
   <string name="fm.untag">タグ {tag} を外す</string>
   <string name="fm.delete_q">{name} を削除しますか？</string>
   <string name="fm.delete_body">タブレットと同じく、ゴミ箱に移ります。</string>
@@ -678,4 +667,13 @@
   <string name="settings.page_notes.on">作業しながらページに書く</string>
   <string name="settings.daemon_layer">デーモンのレイヤー</string>
   <string name="settings.daemon_layer.help">デーモンがメモを書き込むレイヤーの名前。PaperDaemon はこの名前のレイヤーをページの一部として読むことはなく、ページエディターだけが表示します。</string>
+  <string name="settings.inbox_tag">受信箱タグ</string>
+  <string name="settings.inbox_tag.help">「タブレットに送信」は、このタグの付いたすべてのノートブック（ミラーとフォールスミラーの両方）に、どれにも付いていなければクイックシートに、そのページを追加します。このタグの付いたノートブックの内容が処理されることはありません。</string>
+  <string name="settings.logs.sent_inbox">送信しました: {pages}を受信箱へ。</string>
+  <string name="dc.sent">すべての受信箱に送信しました</string>
+  <string name="fm.quick_sheets">クイックシート</string>
+  <string name="fm.cover">表紙</string>
+  <string name="fm.cover.last">最後に開いたページ</string>
+  <string name="fm.cover.first">最初のページ</string>
+  <string name="fm.template">テンプレート</string>
 </resources>

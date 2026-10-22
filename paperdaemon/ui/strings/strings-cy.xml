@@ -106,10 +106,6 @@
   <string name="settings.login.steal">Dwyn yn lle hynny</string>
   <string name="settings.login.stolen">Wedi cysylltu â'i fewngofnod ei hun, wedi'i ddwyn o ap reMarkable</string>
   <string name="settings.login.connected">Wedi cysylltu</string>
-  <string name="settings.inbox">Mewnflwch Dadelfennu</string>
-  <string name="settings.inbox.help">Y llyfr nodiadau y mae Anfon i'r Llechen yn ychwanegu tudalennau ato. Nid yw PaperDaemon byth yn ei ateb, pa dag bynnag sydd arno.</string>
-  <string name="settings.inbox.placeholder">Dewiswch lyfr nodiadau</string>
-  <string name="settings.inbox.pick">Dewiswch lyfr nodiadau o'r rhestr.</string>
   <string name="settings.location">Lleoliad</string>
   <string name="settings.location.help">Ar gyfer y tywydd, codiad yr haul a gwyliau ar galendrau.</string>
   <string name="settings.location.placeholder">Dechreuwch deipio dinas</string>
@@ -130,9 +126,6 @@
   <string name="settings.logs">Logiau</string>
   <string name="settings.logs.help">Yr hyn a ysgrifennodd y daemon, y gwesteiwr a'r injan yn ddiweddar, fel tudalennau yn eich mewnflwch.</string>
   <string name="settings.logs.send">Anfon y logiau i'r mewnflwch</string>
-  <string name="settings.logs.no_inbox">Gosodwch fewnflwch uchod yn gyntaf</string>
-  <string name="settings.logs.sent">Wedi anfon: {pages} yn {inbox}, o dudalen {first}.</string>
-  <string name="settings.logs.the_inbox">y mewnflwch</string>
   <string name="count.page.one">{n} dudalen</string>
   <string name="count.page.other">{n} tudalen</string>
   <string name="tablet.read">{pct}% wedi'i ddarllen</string>
@@ -252,10 +245,8 @@
   <string name="dc.paste_denied">Methodd PaperDaemon ddarllen y clipfwrdd. Pwyswch Ctrl+V yn lle hynny.</string>
   <string name="dc.save">Cadw</string>
   <string name="dc.saving">Yn cadw…</string>
-  <string name="dc.on_page">Ar dudalen #{n}</string>
   <string name="dc.sending">Yn anfon…</string>
   <string name="dc.send">Anfon i'r Llechen</string>
-  <string name="dc.no_inbox">Gosodwch fewnflwch yn y tab Gosodiadau</string>
   <string name="dc.look">Edrych yn fanwl</string>
   <string name="dc.size_px">{w} × {h} px</string>
   <string name="count.stroke.one">{n} strôc</string>
@@ -625,7 +616,6 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="fm.create_body2">Mae'r daemon yn ateb ei thudalennau yn union fel rhai eich llechen. Nid oes dim ohoni'n cael ei anfon i'r cwmwl nac yn cyrraedd eich llechen.</string>
   <string name="fm.delete_mirror_q">Dileu'r drych ffug?</string>
   <string name="fm.delete_mirror_body">Mae ei llyfrau nodiadau ar y cyfrifiadur hwn yn unig, a byddant wedi mynd. Ni chyffyrddir â llyfrgell eich llechen.</string>
-  <string name="fm.inbox.help">Y llyfr nodiadau yn y drych ffug y mae Anfon i'r Llechen hefyd yn ychwanegu tudalennau ato. Mae Anfon i'r Llechen yn glanio yn y ddau fewnflwch.</string>
   <string name="fm.faces">Ffontiau</string>
   <string name="fm.faces.help">Y ffontiau y mae testun wedi'i deipio a llyfrau'n cael eu gosod ynddynt yn y Drych ffug.</string>
   <string name="fm.faces.tablet">Rhai'r dabled</string>
@@ -656,8 +646,7 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="fm.tags">Tagiau</string>
   <string name="fm.tags_of">Tagiau {name}</string>
   <string name="fm.tag_add">Ychwanegu tag</string>
-  <string name="fm.menu">Ychwanegu, llyfr nodiadau neu ffolder newydd</string>
-  <string name="fm.add">Ychwanegu</string>
+  <string name="fm.add">Newydd</string>
   <string name="fm.untag">Tynnu'r tag {tag}</string>
   <string name="fm.delete_q">Dileu {name}?</string>
   <string name="fm.delete_body">Mae'n mynd i'r sbwriel, fel ar y llechen.</string>
@@ -678,4 +667,13 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="settings.page_notes.on">Ysgrifennu ar y dudalen wrth weithio</string>
   <string name="settings.daemon_layer">Haen y daemon</string>
   <string name="settings.daemon_layer.help">Enw'r haen y mae'r daemon yn ysgrifennu ei nodiadau arni. Nid yw PaperDaemon byth yn darllen haen o'r enw hwn fel rhan o'r dudalen; dim ond golygydd y dudalen sy'n ei dangos.</string>
+  <string name="settings.inbox_tag">Tag y mewnflwch</string>
+  <string name="settings.inbox_tag.help">Mae Anfon i'r Dabled yn ychwanegu ei dudalen at bob llyfr nodiadau gyda'r tag hwn, yn y Drych a'r Drych Ffug, neu at y Taflenni cyflym lle nad oes gan yr un ef. Ni weithir byth ar ddim mewn llyfr nodiadau sydd ag ef.</string>
+  <string name="settings.logs.sent_inbox">Wedi'i anfon: {pages} i'ch mewnflychau.</string>
+  <string name="dc.sent">Wedi'i anfon i bob mewnflwch</string>
+  <string name="fm.quick_sheets">Taflenni cyflym</string>
+  <string name="fm.cover">Clawr</string>
+  <string name="fm.cover.last">Y dudalen olaf a welwyd</string>
+  <string name="fm.cover.first">Y dudalen gyntaf</string>
+  <string name="fm.template">Templed</string>
 </resources>

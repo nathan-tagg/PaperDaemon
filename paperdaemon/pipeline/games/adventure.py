@@ -781,7 +781,8 @@ def sheet_png(state, out):
 # toolbar) down to 1270, centered
 _SCENE_SIDE = 1270 - int(CH.TOP)
 SCENE_BOX = ((PAGE_W - _SCENE_SIDE) // 2, int(CH.TOP), (PAGE_W + _SCENE_SIDE) // 2, 1270)
-TEXT_TOP, WRITE_TOP = 1300, 1810            # the story, then the player's space
+TEXT_TOP, WRITE_TOP = 1300, 1810            # the story, then the player's space: the turn page's picture ends there,
+                                            # and under it is the page itself, to type or write in (inputarea.py)
 
 
 def scene_frame_page(s=1.0):
@@ -791,9 +792,10 @@ def scene_frame_page(s=1.0):
     return ((x0 - PAGE_W / 2.0) * s, y0 * s, (x1 - PAGE_W / 2.0) * s, y1 * s)
 
 
-def turn_png(state, scene, out, roll_line="", n=None):
+def turn_png(state, scene, out, roll_line="", n=None, col_px=None):
     """A TURN PAGE's picture: a frame where the scene goes (its strokes are laid over it), what happened,
-    what is around, a few loose options, and the space to write in. `n`: the turn's number (the next one)."""
+    what is around, a few loose options, and at its foot where to answer, from `col_px` (the typed-text column's
+    left edge, design pixels). `n`: the turn's number (the next one). On the page it is cut at WRITE_TOP."""
     from PIL import Image, ImageDraw
     im = Image.new("RGB", (PAGE_W, PAGE_H), "white")
     d = ImageDraw.Draw(im)
@@ -826,13 +828,15 @@ def turn_png(state, scene, out, roll_line="", n=None):
                 y += LH
             y += 10
     opts = [o for o in (scene.get("options") or []) if str(o).strip()][:4]
+    from paperdaemon.pipeline.games import inputarea as IA
     if opts and y < WRITE_TOP - 60:
         line = "You could: " + "  ·  ".join(opts)
         for l in _wrap(d, line, small, W)[:2]:
+            if y + 32 > WRITE_TOP - IA.LABEL_H - 6:
+                break                                    # clear of the instruction at the foot
             d.text((M, y), l, font=small, fill=GRAY)
             y += 32
-    d.rounded_rectangle((M - 10, WRITE_TOP, M + W + 10, PAGE_H - 30), 20, outline=RULE, width=3)
-    d.text((M + 10, WRITE_TOP + 10), "What do you do?", font=small, fill=GRAY)
+    IA.foot(im, WRITE_TOP, "What do you do? Type or write it below", M if col_px is None else col_px, _font("reMarkableSans-Medium.ttf", 30), IA.LABEL_INK, RULE)
     im.save(out)
     return out
 
@@ -918,9 +922,9 @@ Answer with JSON only:
  "over": null or "death" or "victory"}}
 Only give items the hero actually took or was given; hit point loss can be dice like "-1d6". Leave out what did not change."""
 
-READ_PROMPT = """This is a page of a text adventure on a tablet. At the bottom is a box headed "What do you do?".
-Read ONLY what the player handwrote in that box (ignore the printed text and the picture). Answer with one
-line: ACTION: <exactly what they wrote, spelling fixed>, or NOTHING if the box is empty or unreadable.
+READ_PROMPT = """This is the player's handwriting from the bottom of a page of a text adventure on a tablet, alone:
+what they do next (or the rest of it, after what they typed). Answer with one line:
+ACTION: <exactly what they wrote, spelling fixed>, or NOTHING if nothing is written or it is unreadable.
 The names in this story: {names}. A handwritten word that looks like one of them IS that name."""
 
 # ONE STYLE, every picture, every game: the same words in new pictures, edits and portraits, so the art style
@@ -1139,8 +1143,11 @@ def _draw_play_page(doc, state, scene, roll_line, scene_png, workdir, log=None, 
     pno = _clear_page(doc, pid) if clear else _page_no(doc, pid)
     png = os.path.join(workdir, "_adv_turn_%d.png" % int(time.time() * 1000))
     try:
-        turn_png(state, scene, png, roll_line)
-        _put_full(doc, pno, pid, png, "adventure-turn", state)
+        from paperdaemon.pipeline.games import inputarea as IA
+        from paperdaemon.pipeline.page import images as IM
+        turn_png(state, scene, png, roll_line, col_px=IA.column_px(doc, pno, PAGE_W))
+        r = IA.place(doc, pno, pid, png, WRITE_TOP)                # the picture ends where the player's space begins
+        IM.record_placement(r["doc"], pno, r["name"], r["box"], hash=r["hash"], kind="adventure-turn", game=state["id"])
     finally:
         try:
             os.remove(png)
@@ -1783,26 +1790,13 @@ def start(what, ask_text, paint=None, log=None, workdir=None, parent=None, doc=N
 
 # ------------------------------------------------------------------------------ one turn
 def read_action(doc, page_no, ask_vision, workdir, names=()):
-    """What the player wrote in the page's box -> text, or ''. `names`: the story's names, so the reader reads a
-    handwritten name as the name it is."""
-    from paperdaemon.pipeline.page import render as R
-    from PIL import Image
-    png = os.path.join(workdir, "_adv_read_%d.png" % int(time.time() * 1000))
-    try:
-        _ox, oy = R.render(doc, page_no, png)[4]               # one pixel a page unit; oy: the picture's top, in page units
-        with Image.open(png) as im:
-            # the box only: the story and the picture above it are not the player's words
-            w, h = im.size
-            s = TB.picture_page(TB.frame_of(doc, page_no))[1]
-            im.crop((0, max(0, int(WRITE_TOP * s - oy)), w, h)).save(png)
-        reply = ask_vision(READ_PROMPT.format(names=", ".join(names) or "none yet"), png)
-    finally:
-        try:
-            os.remove(png)
-        except OSError:
-            pass
-    m = re.search(r"(?im)^\s*ACTION:\s*(.+)$", str(reply or ""))
-    return m.group(1).strip().strip('"') if m else ""
+    """What the player answered under the turn page's picture -> text, or '': what they typed, then what they
+    handwrote in the space (inputarea.read). `names`: the story's names, so the reader reads a handwritten name as
+    the name it is."""
+    from paperdaemon.pipeline.games import inputarea as IA
+    s = TB.picture_page(TB.frame_of(doc, page_no))[1]
+    return IA.read(doc, page_no, WRITE_TOP * s, ask_vision, READ_PROMPT.format(names=", ".join(names) or "none yet"),
+                   "ACTION", workdir)
 
 
 def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=None, workdir=None):
@@ -1818,7 +1812,7 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
         return "skipped", "ink adventure: the model is not answering, so nobody can read the page"
     action = fix_names(state, read_action(doc, page_no, ask_vision, workdir, known_names(state)))
     if not action:
-        return "skipped", "ink adventure: nothing written in the box yet"
+        return "skipped", "ink adventure: nothing typed or written under the page yet"
     _fixed(doc, state, log)
     last = state["turns"][-1]
     scene = last["scene"]

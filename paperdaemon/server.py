@@ -474,10 +474,6 @@ def delete_false_mirror():
             if not os.path.exists(d):
                 break
             time.sleep(0.5)
-    s = settings.load()
-    if (s.get("false_mirror") or {}).get("inbox"):
-        s["false_mirror"]["inbox"] = ""
-        settings.save(s)
     return status()
 
 
@@ -1417,29 +1413,25 @@ def get_decompose_progress(job: str = ""):
 
 @app.post(API + "/decompose/send")
 def post_decompose_send(body: dict = Body(...)):
-    """SEND TO TABLET LANDS IN EVERY INBOX: the Mirror's (tablet.inbox, with a reMarkable account signed in: without one
-    there is no tablet to reach) and, when there is a false mirror with an inbox of its own (false_mirror.inbox), the
-    false mirror's too. Either alone is enough. Nobody is asked to pick. The page it says it landed on is the Mirror's
-    when both took it. -> {sent, doc, page, mirror?, false_mirror?, errors}."""
+    """SEND TO TABLET LANDS IN EVERY INBOX: every notebook with the inbox tag (Settings: tags.inbox), in the Mirror (with a
+    reMarkable account signed in: without one there is no tablet to reach) and in the false mirror when there is one;
+    a mirror with none of them takes it at the end of its Quick sheets. Either mirror alone is enough. Nobody is asked
+    to pick. -> {sent, mirror?, false_mirror?, errors}."""
     from . import studio
-    if paths.local_only():                            # the false mirror's engine: its own inbox only
+    if paths.local_only():                            # the false mirror's engine: its own inboxes only
         try:
             return studio.send(body.get("image"), body.get("width"), decomp=body.get("id"))
         except (ValueError, OSError) as ex:
             return _bad(str(ex)[:300])
         except Exception as ex:
             return _bad("%s: %s" % (type(ex).__name__, str(ex)[:300]), 502)
-    s = settings.load()
-    real = bool(str((s.get("tablet") or {}).get("inbox") or "").strip()) and _signed_in()
-    fake = paths.false_mirror_exists() and bool(str((s.get("false_mirror") or {}).get("inbox") or "").strip())
+    real, fake = _signed_in(), paths.false_mirror_exists()
     if not real and not fake:
-        if str((s.get("tablet") or {}).get("inbox") or "").strip():
-            return _bad("sign in to a reMarkable account to send to the tablet, or set the False Mirror's inbox")
-        return _bad("set an inbox in the Settings tab first")
+        return _bad("sign in to a reMarkable account to send to the tablet")
     out, errors = {"sent": False}, []
     if real:
         try:
-            out["mirror"] = studio.send(body.get("image"), body.get("width"), s, decomp=body.get("id"))
+            out["mirror"] = studio.send(body.get("image"), body.get("width"), settings.load(), decomp=body.get("id"))
             out["sent"] = True
         except Exception as ex:
             errors.append("Mirror: %s" % str(ex)[:200])
@@ -1453,12 +1445,6 @@ def post_decompose_send(body: dict = Body(...)):
     out["errors"] = errors
     if not out["sent"]:
         return _bad("; ".join(errors)[:300], 502)
-    out.update({k: v for k, v in (out.get("mirror") or out.get("false_mirror") or {}).items() if k in ("doc", "page")})
-    if body.get("id") and out.get("page") is not None:       # a kept decomp remembers the page it landed on
-        try:
-            studio.decomp_sent(str(body["id"]), out["page"])
-        except (ValueError, OSError):
-            pass
     return out
 
 
@@ -1505,8 +1491,19 @@ def _doc_ok(u):
 
 @app.post(API + "/library/notebook")
 def post_library_notebook(body: dict = Body(default={})):
+    """A new notebook: {name, parent, template (a template's file, with an account signed in), cover: last | first}."""
     from .remarkable import local
-    return _local(lambda: {"id": local.new_notebook(str(body.get("name") or ""), str(body.get("parent") or ""))})
+    template = str(body.get("template") or "Blank") if _signed_in() else "Blank"
+    cover = "first" if body.get("cover") == "first" else "last"
+    return _local(lambda: {"id": local.new_notebook(str(body.get("name") or ""), str(body.get("parent") or ""),
+                                                    template, cover)})
+
+
+@app.post(API + "/library/quick-sheets")
+def post_library_quick_sheets():
+    """Quick sheets, as the tablet's button: a new page at the end of the library's one Quick sheets -> {id, page}."""
+    from .remarkable import local
+    return _local(lambda: dict(zip(("id", "page"), local.quick_sheets())))
 
 
 @app.post(API + "/library/folder")

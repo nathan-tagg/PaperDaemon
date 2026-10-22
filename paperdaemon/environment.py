@@ -31,7 +31,7 @@ WIRING = {
     "RM_TRIGGERS": "every lineup's tags, a JSON list: the tags the daemon watches for",
     "RM_TRIGGER_LINEUPS": "each watched tag's lineup, a JSON object {tag: lineup}: a page tagged for two is skipped",
     "RM_TRIGGER": "one tag to watch for, when RM_TRIGGERS is not given (a pipeline run by hand)",
-    "RM_INBOX": "the decompose inbox (Folder/Notebook), never worked whatever its tags",
+    "RM_INBOX_TAG": "the tag of the notebooks Send to Tablet adds pages to, never worked whatever its tags",
     "RM_IGNORE_TAG": "the tag that keeps pages out (Settings)",
     "RM_SPROMPT_TAG": "the tag for a notebook's standing instructions (Settings)",
     "RM_LLM": "the engine's door to the text slot",

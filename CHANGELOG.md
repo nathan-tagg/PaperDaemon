@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.55
+
+- Send to Tablet works again with a kept decomp. It stopped with "too many values to unpack (expected 4)": the decomp's colors already carried their alpha, and the page writer added another.
+- The inbox is now a tag, set in Settings beside the ignore and standing instructions tags ("inbox" unless you rename it). Send to Tablet adds its page to every notebook with that tag, in the Mirror and the False Mirror alike. A library with no tagged notebook gets the page at the end of its Quick sheets. A notebook with the inbox tag is never worked on. The two inbox settings are gone: tag the notebook you used as an inbox.
+- After a send, its button says "Sent to all inboxes" until PaperDaemon is opened again, instead of a page number. Send logs goes to the same inboxes.
+- False Mirror: the button at the top right is a +, and it has Quick sheets. That opens your Quick sheets on a new page, as the tablet's button does, and makes one if there is none.
+- False Mirror: New notebook asks for the cover, as the tablet does (the page last visited, or the first page), and, with a reMarkable account signed in, a template. The name field no longer runs past the edge of the dialog.
+- Messages and the text adventure: the page's picture ends where your space to answer begins, so you can type your answer there as well as write it. The tablet puts typed text under a picture, and the picture used to cover the whole page. The instruction sits at the picture's foot, lined up with where typed text starts. A turn reads what you typed and what you wrote, and takes both off the page.
+
 ## 0.1.54
 
 - Messages: your reply is read wherever you wrote it on the chat page, not only inside the Message box. A reply written above the box was left unread, and the turn said nothing was written. The model now gets your handwriting alone, cropped close, without the chat picture or typed text around it, and all of it comes off once it is your bubble.

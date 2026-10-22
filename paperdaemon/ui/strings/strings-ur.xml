@@ -106,10 +106,6 @@
   <string name="settings.login.steal">اس کے بجائے لے لیں</string>
   <string name="settings.login.stolen">اپنے لاگ اِن سے منسلک، جو reMarkable ایپ سے لیا گیا</string>
   <string name="settings.login.connected">منسلک</string>
-  <string name="settings.inbox">تحلیل کا اِن باکس</string>
-  <string name="settings.inbox.help">وہ نوٹ بک جس میں ٹیبلیٹ کو بھیجیں صفحات شامل کرتا ہے۔ PaperDaemon اس میں کبھی جواب نہیں دیتا، چاہے اس پر کوئی بھی ٹیگ ہو۔</string>
-  <string name="settings.inbox.placeholder">ایک نوٹ بک منتخب کریں</string>
-  <string name="settings.inbox.pick">فہرست سے ایک نوٹ بک منتخب کریں۔</string>
   <string name="settings.location">مقام</string>
   <string name="settings.location.help">کیلنڈروں پر موسم، طلوعِ آفتاب اور تعطیلات کے لیے۔</string>
   <string name="settings.location.placeholder">کسی شہر کا نام لکھنا شروع کریں</string>
@@ -130,9 +126,6 @@
   <string name="settings.logs">لاگز</string>
   <string name="settings.logs.help">daemon، host اور انجن نے حال ہی میں جو لکھا، آپ کے اِن باکس میں صفحات کے طور پر۔</string>
   <string name="settings.logs.send">لاگز اِن باکس میں بھیجیں</string>
-  <string name="settings.logs.no_inbox">پہلے اوپر ایک اِن باکس طے کریں</string>
-  <string name="settings.logs.sent">بھیج دیا: {inbox} میں {pages}، صفحہ {first} سے۔</string>
-  <string name="settings.logs.the_inbox">اِن باکس</string>
   <string name="count.page.one">{n} صفحہ</string>
   <string name="count.page.other">{n} صفحات</string>
   <string name="tablet.read">{pct}% پڑھا گیا</string>
@@ -252,10 +245,8 @@
   <string name="dc.paste_denied">PaperDaemon کلپ بورڈ نہیں پڑھ سکا۔ اس کی جگہ Ctrl+V دبائیں۔</string>
   <string name="dc.save">محفوظ کریں</string>
   <string name="dc.saving">محفوظ ہو رہا ہے…</string>
-  <string name="dc.on_page">صفحہ نمبر {n} پر</string>
   <string name="dc.sending">بھیجا جا رہا ہے…</string>
   <string name="dc.send">ٹیبلیٹ کو بھیجیں</string>
-  <string name="dc.no_inbox">ترتیبات کے ٹیب میں ایک اِن باکس طے کریں</string>
   <string name="dc.look">قریب سے دیکھیں</string>
   <string name="dc.size_px">{w} × {h} px</string>
   <string name="count.stroke.one">{n} لکیر</string>
@@ -625,7 +616,6 @@
   <string name="fm.create_body2">ڈیمن اس کے صفحوں کا جواب بالکل آپ کے ٹیبلیٹ کے صفحوں کی طرح دیتا ہے۔ اس کا کچھ بھی کلاؤڈ پر نہیں بھیجا جاتا اور نہ آپ کے ٹیبلیٹ تک پہنچتا ہے۔</string>
   <string name="fm.delete_mirror_q">جھوٹا آئینہ حذف کریں؟</string>
   <string name="fm.delete_mirror_body">اس کی نوٹ بکس صرف اسی کمپیوٹر پر ہیں، اور وہ ختم ہو جائیں گی۔ آپ کے ٹیبلیٹ کی لائبریری کو نہیں چھیڑا جاتا۔</string>
-  <string name="fm.inbox.help">جھوٹے آئینے کی وہ نوٹ بک جس میں ٹیبلیٹ کو بھیجیں بھی صفحے جوڑتا ہے۔ ٹیبلیٹ کو بھیجیں دونوں ان باکس میں پہنچتا ہے۔</string>
   <string name="fm.faces">فونٹ</string>
   <string name="fm.faces.help">وہ فونٹ جن میں جھوٹے آئینے کا ٹائپ کیا گیا متن اور کتابیں لکھی جاتی ہیں۔</string>
   <string name="fm.faces.tablet">ٹیبلٹ کے</string>
@@ -656,8 +646,7 @@
   <string name="fm.tags">ٹیگ</string>
   <string name="fm.tags_of">{name} کے ٹیگ</string>
   <string name="fm.tag_add">ٹیگ شامل کریں</string>
-  <string name="fm.menu">شامل کریں، نئی نوٹ بک یا فولڈر</string>
-  <string name="fm.add">شامل کریں</string>
+  <string name="fm.add">نیا</string>
   <string name="fm.untag">ٹیگ {tag} ہٹائیں</string>
   <string name="fm.delete_q">{name} حذف کریں؟</string>
   <string name="fm.delete_body">یہ ٹیبلیٹ کی طرح کوڑے دان میں جاتا ہے۔</string>
@@ -678,4 +667,13 @@
   <string name="settings.page_notes.on">کام کرتے ہوئے صفحے پر لکھیں</string>
   <string name="settings.daemon_layer">ڈیمن کی تہہ</string>
   <string name="settings.daemon_layer.help">اس تہہ کا نام جس پر ڈیمن اپنے نوٹس لکھتا ہے۔ PaperDaemon اس نام کی تہہ کو کبھی صفحے کا حصہ نہیں پڑھتا؛ صرف صفحہ ایڈیٹر اسے دکھاتا ہے۔</string>
+  <string name="settings.inbox_tag">ان باکس ٹیگ</string>
+  <string name="settings.inbox_tag.help">ٹیبلٹ پر بھیجیں اپنا صفحہ اس ٹیگ والی ہر نوٹ بک میں شامل کرتا ہے، مرر اور فالس مرر دونوں میں، یا جہاں کسی میں نہ ہو وہاں کوئک شیٹس میں۔ اس ٹیگ والی نوٹ بک کی کسی چیز پر کبھی کام نہیں ہوتا۔</string>
+  <string name="settings.logs.sent_inbox">بھیج دیا: {pages} آپ کے ان باکس میں۔</string>
+  <string name="dc.sent">تمام ان باکس میں بھیج دیا</string>
+  <string name="fm.quick_sheets">کوئک شیٹس</string>
+  <string name="fm.cover">سرورق</string>
+  <string name="fm.cover.last">آخری دیکھا گیا صفحہ</string>
+  <string name="fm.cover.first">پہلا صفحہ</string>
+  <string name="fm.template">ٹیمپلیٹ</string>
 </resources>

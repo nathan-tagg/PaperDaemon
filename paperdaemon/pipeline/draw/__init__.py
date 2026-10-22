@@ -588,7 +588,8 @@ class Drawing:
             L = Line(color=color, tool=tool, points=P,
                      thickness_scale=(1.0 if tool == Pen.HIGHLIGHTER_2 else 3.0),
                      starting_length=0.0, move_id=None,
-                     color_rgba=(tuple(rgba) + (255,) if rgba else None))
+                     # (r, g, b), opaque, or (r, g, b, a) as a kept decomp carries it: four values either way
+                     color_rgba=(tuple(rgba[:3]) + (tuple(rgba[3:4]) or (255,)) if rgba else None))
             seq[0] += 1
             iid = CrdtId(1, seq[0])
             blocks.append(ss.SceneLineItemBlock(

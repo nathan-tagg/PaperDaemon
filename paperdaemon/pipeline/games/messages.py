@@ -27,7 +27,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PAGE_W, PAGE_H = 1620, 2160      # the page's picture is designed at a Paper Pro page (tablets.picture_page fits it)
 # the header starts at the top of the page's safe area (below the tablet's toolbar), the thread under it
 HEAD_TOP = int(CH.TOP)
-THREAD_TOP, THREAD_BOTTOM, BOX_TOP = HEAD_TOP + 140, 1770, 1800
+# the picture ends at BOX_TOP: under it is the page itself, the player's space to type or write in (inputarea.py)
+THREAD_TOP, THREAD_BOTTOM, BOX_TOP = HEAD_TOP + 140, 1740, 1800
 M = 70
 AVATAR = 160  # large enough to keep a face's authored detail and tells
 AVATAR_GAP = 20
@@ -146,8 +147,9 @@ def layout(state, first):
     return fit, False
 
 
-def page_png(state, first, out):
-    """The chat page's picture: who is in it, the thread from message `first`, and the box to write in."""
+def page_png(state, first, out, col_px=None):
+    """The chat page's picture: who is in it, the thread from message `first`, and at its foot where to answer, from
+    `col_px` (the typed-text column's left edge, design pixels). The picture is cut at BOX_TOP when it is placed."""
     from paperdaemon.pipeline.games import characters as RC
     from PIL import Image, ImageDraw
     im = Image.new("RGB", (PAGE_W, PAGE_H), "white")
@@ -219,20 +221,15 @@ def page_png(state, first, out):
             d.text((bx + 22, ty), l, font=reg, fill=INK)
             ty += 40
         y += _bubble_h(d, m, reg, 1000, img_h) + 24
-    d.rounded_rectangle((M - 10, BOX_TOP, PAGE_W - M + 10, PAGE_H - 30), 22, outline=RULE, width=3)
-    d.text((M + 12, BOX_TOP + 10), "Message", font=small, fill=GRAY)
+    from paperdaemon.pipeline.games import inputarea as IA
+    IA.foot(im, BOX_TOP, "Message: type or write it below", M if col_px is None else col_px, _font("reMarkableSans-Medium.ttf", 30), IA.LABEL_INK, RULE)
     im.save(out)
     return out
 
 
-def box_page(doc=None, page_no=None):
-    """The writing box in page coordinates (x from the center), on this page's own frame (tablets.picture_page)."""
-    s = TB.picture_page(TB.frame_of(doc, page_no))[1] if doc else 1.0
-    return ((M - 10 - PAGE_W / 2.0) * s, BOX_TOP * s, (PAGE_W / 2.0 - M + 10) * s, (PAGE_H - 30) * s)
-
-
 # ------------------------------------------------------------------------------ the model's prompts
-READ_PROMPT = """This is the player's handwriting on a messaging page on a tablet, alone: their next message.
+READ_PROMPT = """This is the player's handwriting on a messaging page on a tablet, alone: their next message (or the
+rest of it, after what they typed).
 Read what they wrote, top to bottom. Answer with one line:
 MESSAGE: <exactly what they wrote, spelling fixed, line breaks as spaces>
 or NOTHING if nothing is written or it is unreadable."""
@@ -345,11 +342,11 @@ def _draw(doc, page_no, page_id, state, workdir=None):
             pass
     png = os.path.join(workdir, "_chat_%d.png" % int(time.time() * 1000))
     try:
-        page_png(state, state["first"].get(page_id, 0), png)
-        box = TB.picture_page(TB.frame_of(doc, page_no))[0]       # the page's own tablet's frame
-        r = IM.insert(doc, page_no, png, box, page_id=page_id)
-        IM.record_placement(r["doc"], page_no, r["name"], box, hash=r["hash"], kind="messages", game=state["id"])
-        state.setdefault("picture", {})[page_id] = {"hash": r["hash"], "name": r["name"], "box": list(box)}
+        from paperdaemon.pipeline.games import inputarea as IA
+        page_png(state, state["first"].get(page_id, 0), png, col_px=IA.column_px(doc, page_no, PAGE_W))
+        r = IA.place(doc, page_no, page_id, png, BOX_TOP)          # the picture ends where the player's space begins
+        IM.record_placement(r["doc"], page_no, r["name"], r["box"], hash=r["hash"], kind="messages", game=state["id"])
+        state.setdefault("picture", {})[page_id] = {"hash": r["hash"], "name": r["name"], "box": list(r["box"])}
     finally:
         try:
             os.remove(png)
@@ -365,54 +362,16 @@ def _ink_top(doc, page_no):
 
 
 def _read(doc, page_no, ask_vision, workdir):
-    """The player's handwriting on the page, read: their ink alone (no picture, no typed text), from under the band
-    down, wherever they wrote it."""
-    from paperdaemon.pipeline.page import images as IM
-    from paperdaemon.pipeline.page import render as R
-    from PIL import Image
-    png = os.path.join(workdir, "_chat_read_%d.png" % int(time.time() * 1000))
-    try:
-        try:
-            boxes = [im["box"] for im in IM.items(doc, page_no) if im.get("box")]
-            _ox, oy = R.render(doc, page_no, png, typed=False, hide_images=boxes)[4]   # one pixel a page unit
-        except ValueError:
-            return ""                                          # no ink on the page at all
-        with Image.open(png) as im:
-            w, h = im.size
-            page = im.convert("L").crop((0, max(0, int(_ink_top(doc, page_no) - oy)), w, h))
-        # the writing alone, with a margin: a vision model shrinks a big picture, and the page is mostly paper
-        from PIL import ImageOps
-        ink = ImageOps.invert(page).point(lambda v: 255 if v > 40 else 0).getbbox()
-        if not ink:
-            return ""
-        pad = 40
-        page.crop((max(0, ink[0] - pad), max(0, ink[1] - pad), min(page.width, ink[2] + pad),
-                   min(page.height, ink[3] + pad))).save(png)
-        reply = ask_vision(READ_PROMPT, png)
-    finally:
-        try:
-            os.remove(png)
-        except OSError:
-            pass
-    m = re.search(r"(?im)^\s*MESSAGE:\s*(.+)$", str(reply or ""))
-    return m.group(1).strip().strip('"') if m else ""
+    """The player's message: what they typed, then what they handwrote anywhere under the band (inputarea.read)."""
+    from paperdaemon.pipeline.games import inputarea as IA
+    return IA.read(doc, page_no, _ink_top(doc, page_no), ask_vision, READ_PROMPT, "MESSAGE", workdir)
 
 
 def _erase_ink(doc, page_no):
-    """The player's ink, gone once it is read (it is their bubble now): all of it under the band, wherever they
-    wrote it."""
-    from paperdaemon.pipeline import page as ER
-    top = _ink_top(doc, page_no)
-
-    def inside(L):
-        pts = getattr(L, "points", None) or []
-        if not pts:
-            return False
-        return min(p.y for p in pts) >= top
-    try:
-        ER.erase(doc, page_no, inside)
-    except Exception:
-        pass
+    """The player's message off the page once it is read (it is their bubble now): what they typed, and all their
+    ink under the band, wherever they wrote it."""
+    from paperdaemon.pipeline.games import inputarea as IA
+    IA.clear(doc, page_no, _ink_top(doc, page_no))
 
 
 def _thread_text(state, last=14):
@@ -437,7 +396,7 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
     text = _read(doc, page_no, ask_vision, workdir)
     pending = [m for m in state["messages"] if m["from"] == "me" and not m.get("answered")]
     if not text and not pending:
-        return "skipped", "messages: nothing written in the box yet"
+        return "skipped", "messages: nothing typed or written on the page yet"
     now = int(time.time())
     members = state["members"]
     if text:

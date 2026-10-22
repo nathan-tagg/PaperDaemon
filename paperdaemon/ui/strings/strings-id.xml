@@ -106,10 +106,6 @@
   <string name="settings.login.steal">Ambil alih saja</string>
   <string name="settings.login.stolen">Terhubung dengan login sendiri, diambil alih dari aplikasi reMarkable</string>
   <string name="settings.login.connected">Terhubung</string>
-  <string name="settings.inbox">Kotak masuk Urai</string>
-  <string name="settings.inbox.help">Buku catatan tempat Kirim ke Tablet menambahkan halaman. PaperDaemon tidak pernah menjawab di sana, apa pun tag-nya.</string>
-  <string name="settings.inbox.placeholder">Pilih buku catatan</string>
-  <string name="settings.inbox.pick">Pilih buku catatan dari daftar.</string>
   <string name="settings.location">Lokasi</string>
   <string name="settings.location.help">Untuk cuaca, matahari terbit, dan hari libur di kalender.</string>
   <string name="settings.location.placeholder">Mulai ketik nama kota</string>
@@ -130,9 +126,6 @@
   <string name="settings.logs">Log</string>
   <string name="settings.logs.help">Apa yang baru-baru ini ditulis daemon, host, dan mesin, sebagai halaman di kotak masuk Anda.</string>
   <string name="settings.logs.send">Kirim log ke kotak masuk</string>
-  <string name="settings.logs.no_inbox">Atur kotak masuk di atas terlebih dahulu</string>
-  <string name="settings.logs.sent">Terkirim: {pages} di {inbox}, mulai halaman {first}.</string>
-  <string name="settings.logs.the_inbox">kotak masuk</string>
   <string name="count.page.one">{n} halaman</string>
   <string name="count.page.other">{n} halaman</string>
   <string name="tablet.read">{pct}% terbaca</string>
@@ -252,10 +245,8 @@
   <string name="dc.paste_denied">PaperDaemon tidak bisa membaca papan klip. Tekan Ctrl+V saja.</string>
   <string name="dc.save">Simpan</string>
   <string name="dc.saving">Menyimpan…</string>
-  <string name="dc.on_page">Di halaman #{n}</string>
   <string name="dc.sending">Mengirim…</string>
   <string name="dc.send">Kirim ke Tablet</string>
-  <string name="dc.no_inbox">Atur kotak masuk di tab Pengaturan</string>
   <string name="dc.look">Lihat lebih dekat</string>
   <string name="dc.size_px">{w} × {h} px</string>
   <string name="count.stroke.one">{n} goresan</string>
@@ -625,7 +616,6 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="fm.create_body2">Daemon menjawab halamannya persis seperti halaman tablet Anda. Tidak ada isinya yang dikirim ke cloud atau sampai ke tablet Anda.</string>
   <string name="fm.delete_mirror_q">Hapus Cermin Palsu?</string>
   <string name="fm.delete_mirror_body">Buku catatannya hanya ada di komputer ini, dan akan hilang. Pustaka tablet Anda tidak disentuh.</string>
-  <string name="fm.inbox.help">Buku catatan di Cermin Palsu yang juga ditambahi halaman oleh Kirim ke Tablet. Kirim ke Tablet sampai di kedua kotak masuk.</string>
   <string name="fm.faces">Huruf</string>
   <string name="fm.faces.help">Huruf untuk teks ketikan dan buku di Cermin Palsu.</string>
   <string name="fm.faces.tablet">Milik tablet</string>
@@ -656,8 +646,7 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="fm.tags">Tag</string>
   <string name="fm.tags_of">Tag {name}</string>
   <string name="fm.tag_add">Tambahkan tag</string>
-  <string name="fm.menu">Tambah, buku catatan atau folder baru</string>
-  <string name="fm.add">Tambah</string>
+  <string name="fm.add">Baru</string>
   <string name="fm.untag">Hapus tag {tag}</string>
   <string name="fm.delete_q">Hapus {name}?</string>
   <string name="fm.delete_body">Masuk ke tempat sampah, seperti di tablet.</string>
@@ -678,4 +667,13 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="settings.page_notes.on">Tulis di halaman sambil bekerja</string>
   <string name="settings.daemon_layer">Lapisan daemon</string>
   <string name="settings.daemon_layer.help">Nama lapisan tempat daemon menulis catatannya. PaperDaemon tidak pernah membaca lapisan dengan nama ini sebagai bagian dari halaman; hanya editor halaman yang menampilkannya.</string>
+  <string name="settings.inbox_tag">Tag kotak masuk</string>
+  <string name="settings.inbox_tag.help">Kirim ke Tablet menambahkan halamannya ke setiap buku catatan dengan tag ini, di Cermin dan Cermin Palsu, atau ke Lembar cepat bila tak ada yang memilikinya. Tidak ada apa pun dalam buku catatan dengan tag ini yang pernah dikerjakan.</string>
+  <string name="settings.logs.sent_inbox">Terkirim: {pages} ke kotak masuk Anda.</string>
+  <string name="dc.sent">Terkirim ke semua kotak masuk</string>
+  <string name="fm.quick_sheets">Lembar cepat</string>
+  <string name="fm.cover">Sampul</string>
+  <string name="fm.cover.last">Halaman terakhir dikunjungi</string>
+  <string name="fm.cover.first">Halaman pertama</string>
+  <string name="fm.template">Templat</string>
 </resources>

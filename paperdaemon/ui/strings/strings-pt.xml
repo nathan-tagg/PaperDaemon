@@ -105,10 +105,6 @@
   <string name="settings.login.steal">Roubar em vez disso</string>
   <string name="settings.login.stolen">Conectado com login próprio, roubado do app da reMarkable</string>
   <string name="settings.login.connected">Conectado</string>
-  <string name="settings.inbox">Caixa de entrada do Decompor</string>
-  <string name="settings.inbox.help">O caderno ao qual Enviar ao tablet adiciona páginas. O PaperDaemon nunca o responde, seja qual for a marcação dele.</string>
-  <string name="settings.inbox.placeholder">Escolha um caderno</string>
-  <string name="settings.inbox.pick">Escolha um caderno da lista.</string>
   <string name="settings.location">Local</string>
   <string name="settings.location.help">Para o clima, o nascer do sol e os feriados nos calendários.</string>
   <string name="settings.location.placeholder">Comece a digitar uma cidade</string>
@@ -129,9 +125,6 @@
   <string name="settings.logs">Logs</string>
   <string name="settings.logs.help">O que o daemon, o host e o motor escreveram recentemente, como páginas na sua caixa de entrada.</string>
   <string name="settings.logs.send">Enviar os logs para a caixa de entrada</string>
-  <string name="settings.logs.no_inbox">Defina uma caixa de entrada acima primeiro</string>
-  <string name="settings.logs.sent">Enviado: {pages} em {inbox}, a partir da página {first}.</string>
-  <string name="settings.logs.the_inbox">a caixa de entrada</string>
   <string name="count.page.one">{n} página</string>
   <string name="count.page.other">{n} páginas</string>
   <string name="tablet.read">{pct}% lido</string>
@@ -251,10 +244,8 @@
   <string name="dc.paste_denied">O PaperDaemon não conseguiu ler a área de transferência. Prima Ctrl+V em vez disso.</string>
   <string name="dc.save">Guardar</string>
   <string name="dc.saving">A guardar…</string>
-  <string name="dc.on_page">Na página nº {n}</string>
   <string name="dc.sending">Enviando…</string>
   <string name="dc.send">Enviar ao tablet</string>
-  <string name="dc.no_inbox">Defina uma caixa de entrada na aba Configurações</string>
   <string name="dc.look">Ver de perto</string>
   <string name="dc.size_px">{w} × {h} px</string>
   <string name="count.stroke.one">{n} traço</string>
@@ -625,7 +616,6 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="fm.create_body2">O daemon responde às suas páginas exatamente como às do seu tablet. Nada dele é enviado à nuvem nem chega ao seu tablet.</string>
   <string name="fm.delete_mirror_q">Excluir o espelho falso?</string>
   <string name="fm.delete_mirror_body">Seus cadernos estão apenas neste computador e deixarão de existir. A biblioteca do seu tablet não é tocada.</string>
-  <string name="fm.inbox.help">O caderno do espelho falso ao qual Enviar ao tablet também adiciona páginas. Enviar ao tablet chega às duas caixas.</string>
   <string name="fm.faces">Fontes</string>
   <string name="fm.faces.help">As fontes do texto digitado e dos livros no espelho falso.</string>
   <string name="fm.faces.tablet">As do tablet</string>
@@ -656,8 +646,7 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="fm.tags">Tags</string>
   <string name="fm.tags_of">Tags de {name}</string>
   <string name="fm.tag_add">Adicionar uma tag</string>
-  <string name="fm.menu">Adicionar, novo caderno ou pasta</string>
-  <string name="fm.add">Adicionar</string>
+  <string name="fm.add">Novo</string>
   <string name="fm.untag">Remover a tag {tag}</string>
   <string name="fm.delete_q">Excluir {name}?</string>
   <string name="fm.delete_body">Vai para a lixeira, como no tablet.</string>
@@ -678,4 +667,13 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="settings.page_notes.on">Escrever na página enquanto trabalha</string>
   <string name="settings.daemon_layer">Camada do daemon</string>
   <string name="settings.daemon_layer.help">O nome da camada onde o daemon escreve as suas notas. O PaperDaemon nunca lê uma camada com este nome como parte da página; só o editor de páginas a mostra.</string>
+  <string name="settings.inbox_tag">Etiqueta da caixa de entrada</string>
+  <string name="settings.inbox_tag.help">Enviar para o tablet adiciona a sua página a cada caderno com esta etiqueta, no Espelho e no Falso Espelho, ou às Folhas rápidas onde nenhum a tiver. Nada num caderno com ela é alguma vez tratado.</string>
+  <string name="settings.logs.sent_inbox">Enviado: {pages} para as suas caixas de entrada.</string>
+  <string name="dc.sent">Enviado para todas as caixas de entrada</string>
+  <string name="fm.quick_sheets">Folhas rápidas</string>
+  <string name="fm.cover">Capa</string>
+  <string name="fm.cover.last">Última página visitada</string>
+  <string name="fm.cover.first">Primeira página</string>
+  <string name="fm.template">Modelo</string>
 </resources>

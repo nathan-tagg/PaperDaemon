@@ -110,10 +110,6 @@
   <string name="settings.login.steal">Забрать вместо этого</string>
   <string name="settings.login.stolen">Подключено со своим входом, забранным у приложения reMarkable</string>
   <string name="settings.login.connected">Подключено</string>
-  <string name="settings.inbox">Входящие для разложения</string>
-  <string name="settings.inbox.help">Блокнот, в который «Отправить на планшет» добавляет страницы. PaperDaemon никогда в нём не отвечает, какие бы теги на нём ни стояли.</string>
-  <string name="settings.inbox.placeholder">Выберите блокнот</string>
-  <string name="settings.inbox.pick">Выберите блокнот из списка.</string>
   <string name="settings.location">Местоположение</string>
   <string name="settings.location.help">Для погоды, восхода солнца и праздников в календарях.</string>
   <string name="settings.location.placeholder">Начните вводить город</string>
@@ -134,9 +130,6 @@
   <string name="settings.logs">Журналы</string>
   <string name="settings.logs.help">Что недавно записали демон, хост и движок — страницами во входящих.</string>
   <string name="settings.logs.send">Отправить журналы во входящие</string>
-  <string name="settings.logs.no_inbox">Сначала задайте входящие выше</string>
-  <string name="settings.logs.sent">Отправлено: {pages} в {inbox}, начиная со страницы {first}.</string>
-  <string name="settings.logs.the_inbox">входящие</string>
   <string name="count.page.one">{n} страница</string>
   <string name="count.page.few">{n} страницы</string>
   <string name="count.page.many">{n} страниц</string>
@@ -258,10 +251,8 @@
   <string name="dc.paste_denied">PaperDaemon не смог прочитать буфер обмена. Нажмите Ctrl+V.</string>
   <string name="dc.save">Сохранить</string>
   <string name="dc.saving">Сохранение…</string>
-  <string name="dc.on_page">На странице № {n}</string>
   <string name="dc.sending">Отправка…</string>
   <string name="dc.send">Отправить на планшет</string>
-  <string name="dc.no_inbox">Задайте входящие на вкладке «Настройки»</string>
   <string name="dc.look">Посмотреть вблизи</string>
   <string name="dc.size_px">{w} × {h} пикс.</string>
   <string name="count.stroke.one">{n} штрих</string>
@@ -639,7 +630,6 @@
   <string name="fm.create_body2">Демон отвечает на её страницы точно так же, как на страницы вашего планшета. Ничто из неё не отправляется в облако и не попадает на планшет.</string>
   <string name="fm.delete_mirror_q">Удалить ложное зеркало?</string>
   <string name="fm.delete_mirror_body">Его блокноты есть только на этом компьютере, и они исчезнут. Библиотека вашего планшета не затрагивается.</string>
-  <string name="fm.inbox.help">Блокнот в ложном зеркале, в который «Отправить на планшет» тоже добавляет страницы. «Отправить на планшет» попадает в оба ящика.</string>
   <string name="fm.faces">Шрифты</string>
   <string name="fm.faces.help">Шрифты, которыми набраны текст и книги в Ложном зеркале.</string>
   <string name="fm.faces.tablet">Шрифты планшета</string>
@@ -670,8 +660,7 @@
   <string name="fm.tags">Метки</string>
   <string name="fm.tags_of">Метки «{name}»</string>
   <string name="fm.tag_add">Добавить метку</string>
-  <string name="fm.menu">Добавить: новый блокнот или папку</string>
-  <string name="fm.add">Добавить</string>
+  <string name="fm.add">Создать</string>
   <string name="fm.untag">Убрать метку {tag}</string>
   <string name="fm.delete_q">Удалить «{name}»?</string>
   <string name="fm.delete_body">Он попадёт в корзину, как на планшете.</string>
@@ -692,4 +681,13 @@
   <string name="settings.page_notes.on">Писать на странице во время работы</string>
   <string name="settings.daemon_layer">Слой демона</string>
   <string name="settings.daemon_layer.help">Название слоя, на котором демон пишет свои заметки. PaperDaemon никогда не читает слой с этим названием как часть страницы; его показывает только редактор страниц.</string>
+  <string name="settings.inbox_tag">Тег входящих</string>
+  <string name="settings.inbox_tag.help">«Отправить на планшет» добавляет свою страницу в каждый блокнот с этим тегом, в Зеркале и Ложном зеркале, или в Быстрые листы, где его нет ни у одного. Ничто в блокноте с этим тегом никогда не обрабатывается.</string>
+  <string name="settings.logs.sent_inbox">Отправлено: {pages} во входящие.</string>
+  <string name="dc.sent">Отправлено во все входящие</string>
+  <string name="fm.quick_sheets">Быстрые листы</string>
+  <string name="fm.cover">Обложка</string>
+  <string name="fm.cover.last">Последняя открытая страница</string>
+  <string name="fm.cover.first">Первая страница</string>
+  <string name="fm.template">Шаблон</string>
 </resources>

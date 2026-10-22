@@ -252,26 +252,28 @@ def test_a_notepad_comes_back_in_parts():
     assert got[0]["page_id"] == "abcdef12" and got[0]["page"] is None and len(got[0]["when"]) == 16
 
 
-def test_send_to_tablet_takes_whichever_inbox_can_and_says_the_mirrors_page(monkeypatch):
+def test_send_to_tablet_lands_in_both_mirrors_inboxes(monkeypatch):
     from paperdaemon import studio
-    s = settings.load()
-    s["tablet"]["inbox"] = "Inbox"
-    s["false_mirror"]["inbox"] = "FM inbox"
-    settings.save(s)
     monkeypatch.setattr(paths, "false_mirror_exists", lambda: True)
-    monkeypatch.setattr(server, "_fm_call", lambda m, p, b=None: (200, {"sent": True, "doc": "f", "page": 9}))
-    monkeypatch.setattr(studio, "send", lambda image=None, width=None, s=None, decomp=None: {"sent": True, "doc": "m", "page": 4})
+    monkeypatch.setattr(server, "_fm_call", lambda m, p, b=None: (200, {"sent": True, "notebooks": 1}))
+    monkeypatch.setattr(studio, "send", lambda image=None, width=None, s=None, decomp=None: {"sent": True, "notebooks": 2})
     body = {"image": "data:image/png;base64,", "width": 400}
     # no account: the Mirror is skipped, the False Mirror takes it
     monkeypatch.setattr(server, "_signed_in", lambda: False)
     got = client().post("/api/v1/decompose/send", json=body).json()
-    assert got["sent"] and got["page"] == 9 and "mirror" not in got
-    # both: the page it landed on is the Mirror's
+    assert got["sent"] and got["false_mirror"]["notebooks"] == 1 and "mirror" not in got
+    # both
     monkeypatch.setattr(server, "_signed_in", lambda: True)
     got = client().post("/api/v1/decompose/send", json=body).json()
-    assert got["page"] == 4 and got["false_mirror"]["page"] == 9
-    # no account and no False Mirror inbox: said why
-    s = settings.load(); s["false_mirror"]["inbox"] = ""; settings.save(s)
+    assert got["mirror"]["notebooks"] == 2 and got["false_mirror"]["notebooks"] == 1
+    # a mirror with nowhere to land: the other still takes it, and the reason is said
+    def nowhere(image=None, width=None, s=None, decomp=None):
+        raise ValueError("no notebook is tagged inbox, and there is no Quick sheets")
+    monkeypatch.setattr(studio, "send", nowhere)
+    got = client().post("/api/v1/decompose/send", json=body).json()
+    assert got["sent"] and "no notebook is tagged inbox" in got["errors"][0]
+    # no account and no False Mirror: said why
+    monkeypatch.setattr(paths, "false_mirror_exists", lambda: False)
     monkeypatch.setattr(server, "_signed_in", lambda: False)
     r = client().post("/api/v1/decompose/send", json=body)
     assert r.status_code == 400 and "sign in" in r.json()["error"]

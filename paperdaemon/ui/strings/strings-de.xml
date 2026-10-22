@@ -106,10 +106,6 @@
   <string name="settings.login.steal">Stattdessen stehlen</string>
   <string name="settings.login.stolen">Mit eigener Anmeldung verbunden, von der reMarkable-App gestohlen</string>
   <string name="settings.login.connected">Verbunden</string>
-  <string name="settings.inbox">Eingang für Zerlegen</string>
-  <string name="settings.inbox.help">Das Notizbuch, dem An das Tablet senden Seiten hinzufügt. PaperDaemon beantwortet es nie, egal welches Tag es trägt.</string>
-  <string name="settings.inbox.placeholder">Wähle ein Notizbuch</string>
-  <string name="settings.inbox.pick">Wähle ein Notizbuch aus der Liste.</string>
   <string name="settings.location">Ort</string>
   <string name="settings.location.help">Für Wetter, Sonnenaufgang und Feiertage in Kalendern.</string>
   <string name="settings.location.placeholder">Tippe den Namen einer Stadt</string>
@@ -130,9 +126,6 @@
   <string name="settings.logs">Protokolle</string>
   <string name="settings.logs.help">Was Daemon, Host und Engine zuletzt geschrieben haben, als Seiten in deinem Eingang.</string>
   <string name="settings.logs.send">Protokolle an den Eingang senden</string>
-  <string name="settings.logs.no_inbox">Lege zuerst oben einen Eingang fest</string>
-  <string name="settings.logs.sent">Gesendet: {pages} in {inbox}, ab Seite {first}.</string>
-  <string name="settings.logs.the_inbox">den Eingang</string>
   <string name="count.page.one">{n} Seite</string>
   <string name="count.page.other">{n} Seiten</string>
   <string name="tablet.read">{pct} % gelesen</string>
@@ -252,10 +245,8 @@
   <string name="dc.paste_denied">PaperDaemon konnte die Zwischenablage nicht lesen. Drück stattdessen Strg+V.</string>
   <string name="dc.save">Speichern</string>
   <string name="dc.saving">Wird gespeichert…</string>
-  <string name="dc.on_page">Auf Seite Nr. {n}</string>
   <string name="dc.sending">Wird gesendet…</string>
   <string name="dc.send">An das Tablet senden</string>
-  <string name="dc.no_inbox">Lege im Tab Einstellungen einen Eingang fest</string>
   <string name="dc.look">Genau ansehen</string>
   <string name="dc.size_px">{w} × {h} px</string>
   <string name="count.stroke.one">{n} Strich</string>
@@ -625,7 +616,6 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="fm.create_body2">Der Daemon beantwortet ihre Seiten genau wie die deines Tablets. Nichts davon wird in die Cloud gesendet oder erreicht dein Tablet.</string>
   <string name="fm.delete_mirror_q">Den falschen Spiegel löschen?</string>
   <string name="fm.delete_mirror_body">Seine Notizbücher liegen nur auf diesem Computer und sind dann weg. Die Bibliothek deines Tablets bleibt unberührt.</string>
-  <string name="fm.inbox.help">Das Notizbuch im falschen Spiegel, dem „An Tablet senden“ ebenfalls Seiten hinzufügt. „An Tablet senden“ landet in beiden Eingängen.</string>
   <string name="fm.faces">Schriften</string>
   <string name="fm.faces.help">Die Schriften, in denen getippter Text und Bücher im falschen Spiegel gesetzt werden.</string>
   <string name="fm.faces.tablet">Die des Tablets</string>
@@ -656,8 +646,7 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="fm.tags">Tags</string>
   <string name="fm.tags_of">Tags von {name}</string>
   <string name="fm.tag_add">Tag hinzufügen</string>
-  <string name="fm.menu">Hinzufügen, neues Notizbuch oder neuer Ordner</string>
-  <string name="fm.add">Hinzufügen</string>
+  <string name="fm.add">Neu</string>
   <string name="fm.untag">Tag {tag} entfernen</string>
   <string name="fm.delete_q">{name} löschen?</string>
   <string name="fm.delete_body">Es kommt in den Papierkorb, wie auf dem Tablet.</string>
@@ -678,4 +667,13 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="settings.page_notes.on">Bei der Arbeit auf die Seite schreiben</string>
   <string name="settings.daemon_layer">Daemon-Ebene</string>
   <string name="settings.daemon_layer.help">Der Name der Ebene, auf die der Daemon seine Notizen schreibt. PaperDaemon liest eine Ebene dieses Namens nie als Teil der Seite; nur der Seiteneditor zeigt sie.</string>
+  <string name="settings.inbox_tag">Eingangs-Tag</string>
+  <string name="settings.inbox_tag.help">„An Tablet senden“ fügt seine Seite jedem Notizbuch mit diesem Tag hinzu, im Spiegel und im Falschen Spiegel, oder den Schnellnotizen, wo keines ihn trägt. In einem Notizbuch mit diesem Tag wird nie etwas bearbeitet.</string>
+  <string name="settings.logs.sent_inbox">Gesendet: {pages} an Ihre Eingänge.</string>
+  <string name="dc.sent">An alle Eingänge gesendet</string>
+  <string name="fm.quick_sheets">Schnellnotizen</string>
+  <string name="fm.cover">Cover</string>
+  <string name="fm.cover.last">Zuletzt besuchte Seite</string>
+  <string name="fm.cover.first">Erste Seite</string>
+  <string name="fm.template">Vorlage</string>
 </resources>

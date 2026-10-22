@@ -469,7 +469,7 @@ def prepare_page(job):
     if clean is not data:
         paths.write_atomic(path, clean)
         _ink_keep(doc, pid, state)
-        log("  deleted the daemon's layer%s" % (" and the tick in its retry box" if ticks else ""))
+        log("  erased the daemon's notes%s" % (" and the tick in its retry box" if ticks else ""))
     if ticks:
         job["retry"] = {"asked": True, "note": ent.get("note") or ""}
         log("  the user ticked the retry box -- trying %s again" % where(job))

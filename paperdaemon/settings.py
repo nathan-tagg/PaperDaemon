@@ -46,11 +46,13 @@ LANGUAGES = {"en": "English", "es": "Español", "pt": "Português", "fr": "Fran�
              "vi": "Tiếng Việt"}
 IGNORE_TAG = "ignore"
 SPROMPT_TAG = "sprompt"
-FIXED_TAGS = (IGNORE_TAG, SPROMPT_TAG)
+INBOX_TAG = "inbox"                  # on a notebook: Send to Tablet adds its pages there; never worked on
+FIXED_TAGS = (IGNORE_TAG, SPROMPT_TAG, INBOX_TAG)
 # the social sites a request for posts that names no site searches: all of them, always
 SOCIAL_SITES = ("reddit", "hackernews", "bluesky", "4chan", "mastodon")
 # what earlier versions kept as settings and this one drops when it loads them
-_RETIRED_TABLET_KEYS = ("mute_tag", "sprompt_tag", "trigger_tag")   # trigger_tag: each lineup's watch tag now
+_RETIRED_TABLET_KEYS = ("mute_tag", "sprompt_tag", "trigger_tag",  # trigger_tag: each lineup's watch tag now
+                        "inbox")                                    # inbox: a tag now (tags.inbox)
 
 
 def slot_defaults(role):
@@ -70,10 +72,6 @@ DEFAULT_LINEUP = "Lineup 1"
 # The lineups are a list of their own (check_lineup), and the capability rules of a slot live with the
 # harnesses (harnesses/schema). Secrets are named here but kept in the credential store, never the file.
 SCHEMA = [
-    {"path": "tablet.inbox", "type": "text", "default": "", "label": "Decompose inbox",
-     "help": "The notebook, by its path on the tablet, that Send to Tablet adds pages to; empty until chosen."},
-    {"path": "false_mirror.inbox", "type": "text", "default": "", "label": "False Mirror decompose inbox",
-     "help": "The notebook, by its path in the False Mirror, that Send to Tablet also adds pages to; empty until chosen."},
     {"path": "false_mirror.faces", "type": "choice", "default": "tablet", "choices": ["tablet", "own"],
      "label": "False Mirror faces",
      "help": "The faces typed text and books are set in, in the False Mirror: the tablet's (from the reMarkable desktop app, with an account signed in) or PaperDaemon's own."},
@@ -93,6 +91,12 @@ SCHEMA = [
      "message": "the ignore tag cannot be empty"},
     {"path": "tags.sprompt", "type": "text", "default": SPROMPT_TAG, "required": True, "label": "Standing instructions tag",
      "message": "the standing instructions tag cannot be empty"},
+    # THE INBOX IS A TAG: Send to Tablet adds its page to every notebook carrying it, in the Mirror and the False
+    # Mirror alike; a mirror with none takes it in its Quick sheets. A notebook with it is never worked on.
+    {"path": "tags.inbox", "type": "text", "default": INBOX_TAG, "required": True, "label": "Inbox tag",
+     "message": "the inbox tag cannot be empty",
+     "help": "Send to Tablet adds its page to every notebook with this tag, or to Quick sheets when there is none. "
+             "Nothing in a notebook with it is ever worked on."},
     # the user's preferences: empty until they choose (the Settings screen asks once the Mirror is built), and
     # read from the computer's region settings meanwhile (region.py)
     {"path": "prefs.temperature", "type": "choice", "default": "", "choices": ["", "fahrenheit", "celsius"],
@@ -302,6 +306,11 @@ def fixed_tags(s):
     return (str(tg.get("ignore") or IGNORE_TAG).strip(), str(tg.get("sprompt") or SPROMPT_TAG).strip())
 
 
+def inbox_tag(s):
+    """The inbox tag as the settings name it."""
+    return str((s.get("tags") or {}).get("inbox") or INBOX_TAG).strip()
+
+
 def _upgrade_tags(tg):
     """An earlier version's {watch, ignore, sprompt, custom} -> the list: the watch tag first (its prompt empty),
     then the custom tags with theirs."""
@@ -343,6 +352,7 @@ def _shape(s):
     old_tag = str((s.get("tablet") or {}).get("trigger_tag") or "").strip()
     for k in _RETIRED_TABLET_KEYS:
         (s.get("tablet") or {}).pop(k, None)
+    (s.get("false_mirror") or {}).pop("inbox", None)            # one inbox tag for both mirrors now (tags.inbox)
     if not isinstance(s.get("lineups"), list):
         s["lineups"] = copy.deepcopy(SHIPPED_LINEUPS)
     shaped = []
@@ -504,9 +514,11 @@ def validate(s):
     # EVERY TAG IS UNIQUE across PaperDaemon: a tag picks the lineup a page goes to, so two lineups cannot both
     # watch for it, and none may be the ignore or the standing instructions tag
     ignore, sprompt = fixed_tags(s)
-    if ignore.lower() == sprompt.lower():
-        errs.append("the ignore tag and the standing instructions tag cannot be the same")
-    owner = {ignore.lower(): "the ignore tag", sprompt.lower(): "the standing instructions tag"}
+    inbox = inbox_tag(s)
+    if len({ignore.lower(), sprompt.lower(), inbox.lower()}) < 3:
+        errs.append("the ignore, standing instructions and inbox tags must all be different")
+    owner = {ignore.lower(): "the ignore tag", sprompt.lower(): "the standing instructions tag",
+             inbox.lower(): "the inbox tag"}
     for t, name in all_tags(s):
         k = t.lower()
         if k in owner and owner[k] != name:

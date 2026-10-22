@@ -1,6 +1,6 @@
 "use strict";
 /* Settings: the window's language and the preferences for the pages (how they write temperatures, times and weeks,
-   the decompose inboxes, the location, the ignore and standing instructions tags) -- one set for every tablet, since
+   the location, the ignore, standing instructions and inbox tags) -- one set for every tablet, since
    they all share one library -- then PaperDaemon's own settings (the reMarkable login, network access), and tools (checking for an update, sending the logs to the inbox).
 
    THE FALSE MIRROR IS FOUND BY WAITING: a minute on this screen without leaving it, and its setting fades in at the
@@ -10,7 +10,7 @@
   const { $, esc, line } = PD;
   const t = PD.t;
   let R = null;
-  const S = { s: null, places: new Map(), books: null, fmBooks: null, revealed: false, timer: 0 };
+  const S = { s: null, places: new Map(), revealed: false, timer: 0 };
   const BULB = '<svg viewBox="0 0 16 16" aria-hidden="true"><path pathLength="1" d="M8 1.5a4.5 4.5 0 0 0-2.6 8.2c.4.3.6.7.6 1.1V12h4v-1.2c0-.4.2-.8.6-1.1A4.5 4.5 0 0 0 8 1.5z"/><path pathLength="1" d="M6 13.5h4M6.8 15h2.4"/></svg>';
   const fmExists = () => !!((PD.status || {}).false_mirror || {}).exists;
   async function save(path, value, msgEl) {
@@ -56,10 +56,6 @@
       if (el && el.id === "st-lang") {              // by its own name, or its name in the window's language
         const k = q.toLowerCase(), all = PD.LANGUAGES.map(PD.languageLabel);
         return all.includes(q) ? all : all.filter(l => !k || l.toLowerCase().includes(k));
-      }
-      if (el && (el.id === "st-inbox" || el.id === "st-fm-inbox")) {
-        const k = q.toLowerCase();
-        return (await notebooks(el.id === "st-fm-inbox" ? "/fm" : "")).filter(p => !k || p.toLowerCase().includes(k));
       }
       if (el && el.id === "st-loc") {
         if (q.trim().length < 2) return [];
@@ -141,47 +137,25 @@
     '<option value="">' + esc(t("common.choose")) + "</option>" +
     opts.map(([v, l]) => '<option value="' + v + '">' + esc(l) + "</option>").join("") + "</select></span>";
 
-  /** The notebooks of a library as paths ("Folder/Notebook"): the Mirror's, or the false mirror's (base "/fm"). */
-  async function notebooks(base) {
-    const key = base ? "fmBooks" : "books";
-    if (S[key]) return S[key];
-    const [list] = await PD.safe(PD.api("GET", base + "/library"));
-    const by = new Map((list || []).map(d => [d.id, d]));
-    const name = d => { const n = [d.name]; for (let p = by.get(d.parent), k = 0; p && k < 64; p = by.get(p.parent), k++) n.unshift(p.name); return n.join("/"); };
-    S[key] = (list || []).filter(d => d.type === "document" && d.kind === "notebook" && !String(d.parent).startsWith("trash")).map(name).sort((a, b) => a.localeCompare(b));
-    return S[key];
-  }
-
   function prefsRows() {
     return row(t("settings.temperature"), t("settings.temperature.help"), choice("st-temp", "prefs.temperature",
         [["fahrenheit", t("settings.temperature.f")], ["celsius", t("settings.temperature.c")]])) +
       row(t("settings.clock"), "", choice("st-clock", "prefs.clock", [["12", t("settings.clock.12")], ["24", t("settings.clock.24")]])) +
       row(t("settings.week"), "", choice("st-week", "prefs.week_start", [["sunday", t("day.sunday")], ["monday", t("day.monday")], ["saturday", t("day.saturday")]])) +
-      row(t("settings.inbox"), t("settings.inbox.help"),
-        '<input class="field w-l" id="st-inbox" data-ta="[]" spellcheck="false" placeholder="' + esc(t("settings.inbox.placeholder")) +
-        '"><p class="hint" id="st-inbox-msg" role="status"></p>') +
       row(t("settings.location"), t("settings.location.help"),
         '<input class="field w-l" id="st-loc" data-ta="[]" spellcheck="false" placeholder="' + esc(t("settings.location.placeholder")) +
         '"><p class="hint" id="st-loc-msg" role="status"></p>') +
       row(t("settings.ignore"), t("settings.ignore.help"),
         '<input class="field mono w-m" id="st-ignore" spellcheck="false" autocomplete="off"><p class="hint" id="st-ignore-msg" role="status"></p>') +
       row(t("settings.sprompt"), t("settings.sprompt.help"),
-        '<input class="field mono w-m" id="st-sprompt" spellcheck="false" autocomplete="off"><p class="hint" id="st-sprompt-msg" role="status"></p>');
+        '<input class="field mono w-m" id="st-sprompt" spellcheck="false" autocomplete="off"><p class="hint" id="st-sprompt-msg" role="status"></p>') +
+      row(t("settings.inbox_tag"), t("settings.inbox_tag.help"),
+        '<input class="field mono w-m" id="st-inbox-tag" spellcheck="false" autocomplete="off"><p class="hint" id="st-inbox-tag-msg" role="status"></p>');
   }
-
-  /** An inbox box: a notebook of the Mirror's (base "") or the false mirror's ("/fm"), chosen from the list. */
-  const pickBook = (inp, path, base) => inp.addEventListener("change", async e => {
-    const val = e.target.value.trim(), msg = $("#" + inp.id + "-msg", R), was = PD.getK(S.s, path) || "";
-    if (val === was) return;
-    if (val && !(await notebooks(base)).includes(val)) { e.target.value = was; msg.textContent = t("settings.inbox.pick"); msg.className = "hint attn"; return; }
-    await save(path, val, msg);
-    paintTools();
-  });
 
   function wirePrefs() {
     ["prefs.temperature", "prefs.clock", "prefs.week_start"].forEach(p =>
       R.querySelector('[data-path="' + p + '"]').addEventListener("change", e => save(p, e.target.value).then(() => paintNote())));
-    pickBook($("#st-inbox", R), "tablet.inbox", "");
     $("#st-loc", R).addEventListener("change", async e => {
       const val = e.target.value.trim(), msg = $("#st-loc-msg", R), was = PD.getK(S.s, "location.name") || "";
       if (val === was) return;
@@ -195,7 +169,7 @@
       if (err) e.target.value = was;
       msg.textContent = err ? PD.errText(err) : ""; msg.className = "hint" + (err ? " attn" : "");
     });
-    [["st-ignore", "tags.ignore", "ignore"], ["st-sprompt", "tags.sprompt", "sprompt"]].forEach(([el, path, dflt]) =>
+    [["st-ignore", "tags.ignore", "ignore"], ["st-sprompt", "tags.sprompt", "sprompt"], ["st-inbox-tag", "tags.inbox", "inbox"]].forEach(([el, path, dflt]) =>
       $("#" + el, R).addEventListener("change", async e => {
         const val = e.target.value.trim();
         if (!val) e.target.value = PD.getK(S.s, path) || dflt;
@@ -208,10 +182,10 @@
     ["prefs.temperature", "prefs.clock", "prefs.week_start"].forEach(p => {
       R.querySelector('[data-path="' + p + '"]').value = PD.getK(v, p) || (PD.regionDefaults || {})[p.split(".")[1]] || "";
     });
-    $("#st-inbox", R).value = PD.getK(v, "tablet.inbox") || "";
     $("#st-loc", R).value = PD.getK(v, "location.name") || "";
     $("#st-ignore", R).value = PD.getK(v, "tags.ignore") || "ignore";
     $("#st-sprompt", R).value = PD.getK(v, "tags.sprompt") || "sprompt";
+    $("#st-inbox-tag", R).value = PD.getK(v, "tags.inbox") || "inbox";
   }
 
   // THE REMINDER: once the Mirror is built and until every preference is chosen, the rail item carries a lightbulb and
@@ -255,18 +229,12 @@
       exists ? '<button type="button" class="btn danger" data-act="fm-delete">' + esc(t("fm.delete")) + "</button>"
              : '<button type="button" class="btn" data-act="fm-create">' + esc(t("fm.create_mirror")) + "</button>") +
       '<p class="hint" id="st-fm-msg" role="status"></p>' +
-      // its own decompose inbox: Send to Tablet lands there too
-      (exists ? row(t("settings.inbox"), t("fm.inbox.help"),
-        '<input class="field w-l" id="st-fm-inbox" data-ta="[]" spellcheck="false" placeholder="' + esc(t("settings.inbox.placeholder")) +
-        '"><p class="hint" id="st-fm-inbox-msg" role="status"></p>') : "") +
       (exists && signed ? row(t("fm.faces"), t("fm.faces.help"),
         choice("st-fm-faces", "false_mirror.faces", [["tablet", t("fm.faces.tablet")], ["own", t("fm.faces.own")]]) +
         '<p class="hint" id="st-fm-faces-msg" role="status"></p>') : "") +
       (exists && signed && built ? row(t("fm.convert"), t("fm.convert.help"),
         '<label class="check-label"><input type="checkbox" id="st-fm-convert"> ' + esc(t("fm.convert")) +
         '</label><p class="hint" id="st-fm-convert-msg" role="status"></p>') : "");
-    const inbox = $("#st-fm-inbox", R);
-    if (inbox) { inbox.value = PD.getK(v, "false_mirror.inbox") || ""; pickBook(inbox, "false_mirror.inbox", "/fm"); }
     const faces = $("#st-fm-faces", R);
     if (faces) {
       faces.value = PD.getK(v, "false_mirror.faces") || "tablet";
@@ -299,7 +267,6 @@
     const [st, e] = await PD.safe(PD.busy(btn, () => PD.api("POST", "/false-mirror")));
     if (e) { msg.textContent = PD.errText(e); msg.className = "hint attn"; return; }
     PD.status = st; PD.paintRail(); document.dispatchEvent(new CustomEvent("pd:status", { detail: st }));
-    S.fmBooks = null;
     paintFalseMirror(); fillPrefs();
   }
 
@@ -312,17 +279,12 @@
     PD.status = st; PD.paintRail(); document.dispatchEvent(new CustomEvent("pd:status", { detail: st }));
     const [s] = await PD.safe(PD.loadSettings()); if (s) S.s = s;
     S.revealed = true;                       // back to Create False Mirror, for the rest of this visit
-    S.fmBooks = null;
     paintFalseMirror(); fillPrefs();
   }
 
   // ---- tools
 
   function paintTools() {
-    const inbox = PD.getK(S.s, "tablet.inbox") || "";
-    const b = $("[data-act=logs]", R);
-    b.disabled = !inbox;
-    b.title = inbox ? "" : t("settings.logs.no_inbox");
     $("#st-ver", R).textContent = (PD.status && PD.status.version) || "";
   }
 
@@ -347,8 +309,7 @@
     await PD.busy(btn, async () => {
       const [d, e] = await PD.safe(PD.api("POST", "/logs/send"));
       out.className = "hint" + (e ? " attn" : "");
-      out.textContent = e ? PD.errText(e) : t("settings.logs.sent", { pages: PD.count("count.page", d.pages),
-        inbox: PD.getK(S.s, "tablet.inbox") || t("settings.logs.the_inbox"), first: d.first });
+      out.textContent = e ? PD.errText(e) : t("settings.logs.sent_inbox", { pages: PD.count("count.page", d.pages) });
     });
   }
 
@@ -431,7 +392,6 @@
       clearTimeout(S.timer);
       S.revealed = false;
       S.timer = setTimeout(haunt, 60000);
-      S.books = S.fmBooks = null;
       const [s] = await PD.safe(PD.loadSettings());
       S.s = s || PD.settings;
       fill(); fillPrefs(); paintNote(); paintFalseMirror();

@@ -106,10 +106,6 @@
   <string name="settings.login.steal">বদলে নিয়ে নিন</string>
   <string name="settings.login.stolen">নিজস্ব লগইনে যুক্ত, যা reMarkable অ্যাপ থেকে নেওয়া</string>
   <string name="settings.login.connected">যুক্ত</string>
-  <string name="settings.inbox">ডিকম্পোজ ইনবক্স</string>
-  <string name="settings.inbox.help">যে নোটবুকে «ট্যাবলেটে পাঠান» পাতা যোগ করে। যে ট্যাগই থাকুক, PaperDaemon কখনও এর উত্তর দেয় না।</string>
-  <string name="settings.inbox.placeholder">একটি নোটবুক বেছে নিন</string>
-  <string name="settings.inbox.pick">তালিকা থেকে একটি নোটবুক বেছে নিন।</string>
   <string name="settings.location">অবস্থান</string>
   <string name="settings.location.help">ক্যালেন্ডারে আবহাওয়া, সূর্যোদয় আর ছুটির দিনের জন্য।</string>
   <string name="settings.location.placeholder">একটি শহরের নাম লিখতে শুরু করুন</string>
@@ -130,9 +126,6 @@
   <string name="settings.logs">লগ</string>
   <string name="settings.logs.help">ডেমন, হোস্ট আর ইঞ্জিন সম্প্রতি যা লিখেছে, আপনার ইনবক্সে পাতা হিসেবে।</string>
   <string name="settings.logs.send">লগ ইনবক্সে পাঠান</string>
-  <string name="settings.logs.no_inbox">আগে উপরে একটি ইনবক্স ঠিক করুন</string>
-  <string name="settings.logs.sent">পাঠানো হয়েছে: {inbox}-এ {pages}, পাতা {first} থেকে।</string>
-  <string name="settings.logs.the_inbox">ইনবক্স</string>
   <string name="count.page.one">{n}টি পাতা</string>
   <string name="count.page.other">{n}টি পাতা</string>
   <string name="tablet.read">{pct}% পড়া</string>
@@ -252,10 +245,8 @@
   <string name="dc.paste_denied">PaperDaemon ক্লিপবোর্ড পড়তে পারেনি। এর বদলে Ctrl+V চাপুন।</string>
   <string name="dc.save">সংরক্ষণ</string>
   <string name="dc.saving">সংরক্ষণ হচ্ছে…</string>
-  <string name="dc.on_page">পাতা #{n}-এ</string>
   <string name="dc.sending">পাঠানো হচ্ছে…</string>
   <string name="dc.send">ট্যাবলেটে পাঠান</string>
-  <string name="dc.no_inbox">সেটিংস ট্যাবে একটি ইনবক্স ঠিক করুন</string>
   <string name="dc.look">কাছ থেকে দেখুন</string>
   <string name="dc.size_px">{w} × {h} px</string>
   <string name="count.stroke.one">{n}টি রেখা</string>
@@ -625,7 +616,6 @@
   <string name="fm.create_body2">ডেমন এর পৃষ্ঠাগুলোর উত্তর ঠিক আপনার ট্যাবলেটের মতোই দেয়। এর কিছুই ক্লাউডে পাঠানো হয় না বা আপনার ট্যাবলেটে পৌঁছায় না।</string>
   <string name="fm.delete_mirror_q">নকল মিরর মুছবেন?</string>
   <string name="fm.delete_mirror_body">এর নোটবুকগুলো শুধু এই কম্পিউটারে আছে, এবং সেগুলো চলে যাবে। আপনার ট্যাবলেটের লাইব্রেরি ছোঁয়া হবে না।</string>
-  <string name="fm.inbox.help">নকল মিররের যে নোটবুকে ট্যাবলেটে পাঠান-ও পৃষ্ঠা যোগ করে। ট্যাবলেটে পাঠান দুটি ইনবক্সেই পৌঁছায়।</string>
   <string name="fm.faces">ফন্ট</string>
   <string name="fm.faces.help">যে ফন্টে নকল মিররের টাইপ করা লেখা আর বই সাজানো হয়।</string>
   <string name="fm.faces.tablet">ট্যাবলেটের</string>
@@ -656,8 +646,7 @@
   <string name="fm.tags">ট্যাগ</string>
   <string name="fm.tags_of">{name}-এর ট্যাগ</string>
   <string name="fm.tag_add">একটি ট্যাগ যোগ করুন</string>
-  <string name="fm.menu">যোগ করুন, নতুন নোটবুক বা ফোল্ডার</string>
-  <string name="fm.add">যোগ করুন</string>
+  <string name="fm.add">নতুন</string>
   <string name="fm.untag">{tag} ট্যাগ সরান</string>
   <string name="fm.delete_q">{name} মুছবেন?</string>
   <string name="fm.delete_body">এটি ট্যাবলেটের মতোই ট্র্যাশে যায়।</string>
@@ -678,4 +667,13 @@
   <string name="settings.page_notes.on">কাজ করার সময় পৃষ্ঠায় লিখুন</string>
   <string name="settings.daemon_layer">ডেমনের স্তর</string>
   <string name="settings.daemon_layer.help">যে স্তরে ডেমন তার নোট লেখে তার নাম। PaperDaemon এই নামের স্তরকে কখনও পৃষ্ঠার অংশ হিসেবে পড়ে না; শুধু পৃষ্ঠা সম্পাদক এটি দেখায়।</string>
+  <string name="settings.inbox_tag">ইনবক্স ট্যাগ</string>
+  <string name="settings.inbox_tag.help">ট্যাবলেটে পাঠান তার পৃষ্ঠা এই ট্যাগ থাকা প্রতিটি নোটবুকে যোগ করে, মিরর ও ফলস মিররে, অথবা যেখানে কোনোটিতেই নেই সেখানে কুইক শিটে। এটি থাকা নোটবুকের কিছুতেই কখনও কাজ করা হয় না।</string>
+  <string name="settings.logs.sent_inbox">পাঠানো হয়েছে: {pages} আপনার ইনবক্সে।</string>
+  <string name="dc.sent">সব ইনবক্সে পাঠানো হয়েছে</string>
+  <string name="fm.quick_sheets">কুইক শিট</string>
+  <string name="fm.cover">কভার</string>
+  <string name="fm.cover.last">শেষ দেখা পৃষ্ঠা</string>
+  <string name="fm.cover.first">প্রথম পৃষ্ঠা</string>
+  <string name="fm.template">টেমপ্লেট</string>
 </resources>

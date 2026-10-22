@@ -11,8 +11,10 @@ THE DECOMPS ARE KEPT ON DISK, not in memory: each one the Decompose screen makes
 (preview.png, at the tablet's own scale) and what it is (meta.json) -- and Send, Save and the screen's list read
 them from there. They stay until deleted. Both engines (the Mirror's and the false mirror's) share the folder.
 
-The inbox is the notebook named in the settings (tablet.inbox, a path such as "Folder/Inbox"). It is
-created on the first send, carrying the ignore tag so the daemon never treats the pictures as requests.
+THE INBOX IS A TAG (Settings: tags.inbox, "inbox" unless renamed): a send adds its page to EVERY notebook carrying it,
+in this engine's mirror (the Mirror's engine and the false mirror's each send to their own). A mirror with no notebook
+tagged takes it at the end of its Quick sheets -- one per mirror, the document of that name at the root of the
+library, as the tablet keeps it. A notebook with the inbox tag is never worked on (ledger.is_inbox).
 """
 import base64
 import urllib.request
@@ -195,7 +197,7 @@ def _keep(strokes, png, meta):
     with open(os.path.join(tmp, "preview.png"), "wb") as f:
         f.write(png)
     meta = {k: meta[k] for k in ("name", "strokes", "points", "seconds", "box", "width", "height", "requested") if k in meta}
-    meta.update(id=did, created=int(time.time() * 1000), sent=None)
+    meta.update(id=did, created=int(time.time() * 1000))
     with open(os.path.join(tmp, "meta.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f)
     os.replace(tmp, os.path.join(_decomps(), did))
@@ -242,20 +244,15 @@ def decomps_page(offset=0, limit=10):
     return {"total": len(metas), "items": metas[offset:offset + limit]}
 
 
-def decomp_sent(did, page):
-    """The page a kept decomp landed on, kept with it."""
-    m = decomp_meta(did)
-    m["sent"] = page
-    with open(os.path.join(_decomp_dir(did), "meta.json"), "w", encoding="utf-8") as f:
-        json.dump(m, f)
-
-
 def delete_decomp(did):
     import shutil
     shutil.rmtree(_decomp_dir(did))
 
 
 # ---------------------------------------------------------------- the inbox
+
+QUICK_SHEETS = "Quick sheets"        # the tablet's own, one per library, at its root
+
 
 def _meta(mirror, doc):
     try:
@@ -265,47 +262,57 @@ def _meta(mirror, doc):
         return {}
 
 
-def _children(mirror, parent, kind):
-    out = {}
-    for n in os.listdir(mirror):
-        if not n.endswith(".metadata"):
+def _in_trash(mirror, m, depth=0):
+    parent = m.get("parent") or ""
+    if parent == "trash":
+        return True
+    if not parent or depth > 16:
+        return False
+    try:
+        with open(os.path.join(mirror, parent + ".metadata"), encoding="utf-8") as f:
+            pm = json.load(f)
+    except (OSError, ValueError):
+        return False
+    return _in_trash(mirror, pm, depth + 1)
+
+
+def inbox_docs(mirror, tag):
+    """Where a send lands in this mirror -> ([doc id], how): every notebook carrying the inbox tag `tag` ("tag"),
+    else the Quick sheets ("quick sheets": the newest at the root, should there be two), else ([], None)."""
+    tag = str(tag or "").strip().lower()
+    tagged, quick = [], []
+    for f in os.listdir(mirror) if os.path.isdir(mirror) else []:
+        if not f.endswith(".metadata"):
             continue
-        d = n[:-len(".metadata")]
-        m = _meta(mirror, d)
-        if m.get("parent") == parent and m.get("type") == kind and not m.get("deleted"):
-            out[d] = m
-    return out
+        doc = f[:-len(".metadata")]
+        try:
+            with open(os.path.join(mirror, f), encoding="utf-8") as fh:
+                m = json.load(fh)
+            with open(os.path.join(mirror, doc + ".content"), encoding="utf-8") as fh:
+                c = json.load(fh)
+        except (OSError, ValueError):
+            continue
+        if m.get("type") != "DocumentType" or m.get("deleted") or c.get("fileType") != "notebook" or _in_trash(mirror, m):
+            continue
+        if tag and any(str(t.get("name") if isinstance(t, dict) else t).strip().lower() == tag for t in (c.get("tags") or [])):
+            tagged.append((str(m.get("visibleName") or ""), doc))
+        elif m.get("visibleName") == QUICK_SHEETS and not (m.get("parent") or ""):
+            quick.append((int(str(m.get("lastModified") or "0")) if str(m.get("lastModified") or "0").isdigit() else 0, doc))
+    if tagged:
+        return [d for _n, d in sorted(tagged)], "tag"
+    if quick:
+        return [max(quick)[1]], "quick sheets"
+    return [], None
 
 
-def split_inbox(path):
-    """"Folder/Sub/Inbox" -> (["Folder", "Sub"], "Inbox")."""
-    parts = [p.strip() for p in str(path or "").replace("\\", "/").split("/") if p.strip()]
-    if not parts:
-        raise ValueError("the inbox has no name")
-    return parts[:-1], parts[-1]
-
-
-def _first_made(items):
-    """Of several folders or notebooks with one name, the one made first (the maintainer's rule: never refuse)."""
-    def made(dm):
-        v = str(dm[1].get("createdTime") or "")
-        return (int(v) if v.isdigit() else 1 << 62, dm[0])
-    return min(items, key=made)[0] if items else None
-
-
-def find_inbox(mirror, path):
-    """The inbox notebook's doc id in the mirror, or None (folders must match too). Where two share a name (an
-    edge case), the one made first is used; a send is never refused for it."""
-    folders, name = split_inbox(path)
-    parent = ""
-    for f in folders:
-        hit = _first_made([(d, m) for d, m in _children(mirror, parent, "CollectionType").items() if m.get("visibleName") == f
-                           and m.get("parent") != "trash"])
-        if not hit:
-            return None
-        parent = hit
-    return _first_made([(d, m) for d, m in _children(mirror, parent, "DocumentType").items() if m.get("visibleName") == name
-                        and m.get("parent") != "trash"])
+def _targets(s):
+    """This engine's inbox notebooks -> [doc id]; a ValueError when the mirror has none."""
+    from paperdaemon.pipeline.page import render as R
+    tag = S.inbox_tag(s)
+    docs, _how = inbox_docs(R.RM, tag)
+    if not docs:
+        raise ValueError("no notebook is tagged %s, and there is no Quick sheets" % tag)
+    return docs
 
 
 def _next_key(keys):
@@ -366,24 +373,13 @@ def _decomposer_cache():
     os.environ.setdefault("NUMBA_CACHE_DIR", paths.sub("cache", "numba"))
 
 
-def _inbox_pages(s, count, now):
-    """Append `count` blank pages to the inbox notebook (made when it is not there)
-    -> (doc, [(page_no, page_id)], created). The caller writes them and then calls _push_inbox."""
+def _inbox_pages(doc, count, now):
+    """Append `count` blank pages to the inbox notebook `doc` -> [(page_no, page_id)]. The caller writes them and
+    then calls _push_inbox."""
     from paperdaemon.pipeline import TEMPLATES
     from paperdaemon.pipeline.page import render as R
     pipeline = os.path.dirname(TEMPLATES)
     mirror = R.RM
-    folders, name = split_inbox(s["tablet"]["inbox"])
-    doc = find_inbox(mirror, s["tablet"]["inbox"])
-    created = doc is None
-    if created:
-        parent = ""
-        if folders:
-            from paperdaemon.remarkable import library as F
-            for f in folders:
-                parent = F.ensure_folder(f, parent)
-        doc = str(uuid.uuid4())
-        _new_notebook(mirror, pipeline, doc, name, parent, now)
     cpath = os.path.join(mirror, doc + ".content")
     with open(cpath, encoding="utf-8") as f:
         content = json.load(f)
@@ -421,76 +417,74 @@ def _inbox_pages(s, count, now):
         if not hit:
             raise RuntimeError("the new page is not among the notebook's pages; the mirror may be out of step")
         out.append((hit[0] + 1, pid))
-    return doc, out, created
+    return out
 
 
-def _push_inbox(doc, pids, created):
-    """The inbox's new pages, with the notebook's size brought up to date, pushed to the tablet."""
+def _push_inbox(docs):
+    """The inboxes' new pages, with each notebook's size brought up to date, pushed to the tablet."""
     from paperdaemon.pipeline.page import render as R
     from paperdaemon.remarkable import sync as C
     mirror = R.RM
-    cpath = os.path.join(mirror, doc + ".content")
-    with open(cpath, encoding="utf-8") as f:
-        content = json.load(f)
-    content["sizeInBytes"] = str(sum(os.path.getsize(os.path.join(mirror, doc, p["id"] + ".rm"))
-                                     for p in content["cPages"]["pages"]
-                                     if os.path.exists(os.path.join(mirror, doc, p["id"] + ".rm"))))
-    paths.write_atomic(cpath, json.dumps(content, indent=4))
+    for doc in docs:
+        cpath = os.path.join(mirror, doc + ".content")
+        with open(cpath, encoding="utf-8") as f:
+            content = json.load(f)
+        content["sizeInBytes"] = str(sum(os.path.getsize(os.path.join(mirror, doc, p["id"] + ".rm"))
+                                         for p in content["cPages"]["pages"]
+                                         if os.path.exists(os.path.join(mirror, doc, p["id"] + ".rm"))))
+        paths.write_atomic(cpath, json.dumps(content, indent=4))
     if paths.local_only():
-        return                             # the false mirror's inbox: written, and that is the whole of it
-    # THE ONE WAY TO THE TABLET (sync.push_pending): the inbox (and its folder, when it was just made) goes up with
-    # everything else the mirror holds that the cloud does not
-    def ours():
+        return                             # the false mirror's inboxes: written, and that is the whole of it
+    # THE ONE WAY TO THE TABLET (sync.push_pending): the inboxes go up with everything else the mirror holds that the
+    # cloud does not
+    def missing():
         got = dict(C.push_pending()["pushed"])
-        return got.get(doc) or {}
-    out = ours()
+        return [d for d in docs if (got.get(d) or {}).get("root_put") != 200 and d in got]
+    left = missing()
     for _ in range(4):                     # the tablet syncing mid-push moves the generation
-        if out.get("root_put") == 200:
+        if not left:
             break
         time.sleep(2)
-        out = ours()
-    if out.get("root_put") != 200:
-        raise RuntimeError("the push did not go through: %r" % (out,))
+        left = missing()
+    if left:
+        raise RuntimeError("the push did not go through for %d inbox(es)" % len(left))
 
 
 def _settings():
-    """The settings, with the inbox this mirror's: in the false mirror's engine, its own decompose inbox."""
-    s = S.load()
-    if paths.local_only():
-        s["tablet"] = dict(s.get("tablet") or {}, inbox=str((s.get("false_mirror") or {}).get("inbox") or ""))
-    return s
+    return S.load()
 
 
 def send(image=None, width=None, s=None, decomp=None):
-    """Append a page with the strokes of a kept decomp (`decomp`, its id) or of a picture decomposed now to the inbox
-    notebook and push it. -> {sent, doc, page}."""
+    """Append a page with the strokes of a kept decomp (`decomp`, its id) or of a picture decomposed now to every inbox
+    notebook of this mirror (_targets) and push them. -> {sent, notebooks, strokes}."""
     s = s or _settings()
-    if not str((s.get("tablet") or {}).get("inbox") or "").strip():
-        raise ValueError("set an inbox in the Settings tab first")
-    strokes = decomp_strokes(decomp) if decomp else decompose(image, width, preview=False)[1]
+    _targets(s)                                   # somewhere to land, before a picture is decomposed for nothing
+    strokes0 = decomp_strokes(decomp) if decomp else decompose(image, width, preview=False)[1]
     from paperdaemon.pipeline import draw as A
     from paperdaemon.remarkable import sync as C
     from paperdaemon.pipeline import page as PG
+    from paperdaemon.pipeline.page import tablets as TB
     with _lock:
         if not paths.local_only():
             C.pull()
-        doc, [(page_no, pid)], created = _inbox_pages(s, 1, int(time.time() * 1000))
-        # THE INBOX PAGE'S OWN TABLET: the strokes were laid out on a Paper Pro page; another tablet's page has them
-        # scaled to its width (tablets.picture_page)
-        from paperdaemon.pipeline.page import tablets as TB
-        frame = TB.frame_of(doc, page_no)
-        k = TB.picture_page(frame)[1]
-        if abs(k - 1.0) > 1e-6:
-            strokes = [([(x * k, y * k) for x, y in st[0]], [w * k for w in st[1]]) + tuple(st[2:]) for st in strokes]
-        d = A.Drawing(*[int(round(v)) for v in frame])
-        d.strokes = list(strokes)
-        w = d.write_rm(doc, page_no)
-        if not (w or {}).get("written"):
-            raise RuntimeError("the page could not be written: %r" % (w,))
-        PG.record_provenance(doc, page_no, strokes=d.strokes, what="decompose and send, %d strokes" % len(strokes),
-                             kind="drawing")
-        _push_inbox(doc, [pid], created)
-        return {"sent": True, "doc": doc, "page": page_no, "created": created, "strokes": len(strokes)}
+        docs = _targets(s)
+        for doc in docs:
+            [(page_no, pid)] = _inbox_pages(doc, 1, int(time.time() * 1000))
+            # THE INBOX PAGE'S OWN TABLET: the strokes were laid out on a Paper Pro page; another tablet's page has
+            # them scaled to its width (tablets.picture_page)
+            frame = TB.frame_of(doc, page_no)
+            k = TB.picture_page(frame)[1]
+            strokes = strokes0 if abs(k - 1.0) <= 1e-6 else \
+                [([(x * k, y * k) for x, y in st[0]], [w * k for w in st[1]]) + tuple(st[2:]) for st in strokes0]
+            d = A.Drawing(*[int(round(v)) for v in frame])
+            d.strokes = list(strokes)
+            w = d.write_rm(doc, page_no)
+            if not (w or {}).get("written"):
+                raise RuntimeError("the page could not be written: %r" % (w,))
+            PG.record_provenance(doc, page_no, strokes=d.strokes, what="decompose and send, %d strokes" % len(strokes),
+                                 kind="drawing")
+        _push_inbox(docs)
+        return {"sent": True, "notebooks": len(docs), "strokes": len(strokes0)}
 
 
 # ---------------------------------------------------------------- the logs, to the inbox
@@ -546,28 +540,28 @@ def _log_pages(lines, w=1404, h=1872):
 
 
 def send_logs(s=None):
-    """PaperDaemon's logs, as pages appended to the inbox notebook and pushed. -> {sent, doc, pages, first}."""
+    """PaperDaemon's logs, as pages appended to every inbox notebook and pushed. -> {sent, notebooks, pages}."""
     s = s or S.load()
-    if not str((s.get("tablet") or {}).get("inbox") or "").strip():
-        raise ValueError("set an inbox in the settings first")
     pictures = _log_pages(_log_text())
     from paperdaemon.pipeline.page import images as IM
     from paperdaemon.remarkable import sync as C
     with _lock:
         if not paths.local_only():
             C.pull()
-        doc, made, created = _inbox_pages(s, len(pictures), int(time.time() * 1000))
-        for (page_no, pid), im in zip(made, pictures):
-            fd, png = tempfile.mkstemp(suffix=".png", dir=paths.sub("tmp"))
-            os.close(fd)
-            try:
-                im.save(png)
-                from paperdaemon.pipeline.page import tablets as TB
-                IM.insert(doc, page_no, png, TB.picture_page(TB.frame_of(doc, page_no))[0], page_id=pid)
-            finally:
+        docs = _targets(s)
+        for doc in docs:
+            made = _inbox_pages(doc, len(pictures), int(time.time() * 1000))
+            for (page_no, pid), im in zip(made, pictures):
+                fd, png = tempfile.mkstemp(suffix=".png", dir=paths.sub("tmp"))
+                os.close(fd)
                 try:
-                    os.remove(png)
-                except OSError:
-                    pass
-        _push_inbox(doc, [pid for _n, pid in made], created)
-        return {"sent": True, "doc": doc, "pages": len(made), "first": made[0][0]}
+                    im.save(png)
+                    from paperdaemon.pipeline.page import tablets as TB
+                    IM.insert(doc, page_no, png, TB.picture_page(TB.frame_of(doc, page_no))[0], page_id=pid)
+                finally:
+                    try:
+                        os.remove(png)
+                    except OSError:
+                        pass
+        _push_inbox(docs)
+        return {"sent": True, "notebooks": len(docs), "pages": len(pictures)}

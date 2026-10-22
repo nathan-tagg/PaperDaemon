@@ -106,10 +106,6 @@
   <string name="settings.login.steal">Lấy hẳn thay vào đó</string>
   <string name="settings.login.stolen">Đã kết nối bằng thông tin đăng nhập riêng, lấy từ ứng dụng reMarkable</string>
   <string name="settings.login.connected">Đã kết nối</string>
-  <string name="settings.inbox">Hộp thư đến của Phân tách</string>
-  <string name="settings.inbox.help">Sổ tay mà Gửi đến máy tính bảng thêm trang vào. PaperDaemon không bao giờ trả lời trong đó, dù nó được gắn thẻ gì.</string>
-  <string name="settings.inbox.placeholder">Chọn một sổ tay</string>
-  <string name="settings.inbox.pick">Chọn một sổ tay trong danh sách.</string>
   <string name="settings.location">Vị trí</string>
   <string name="settings.location.help">Dùng cho thời tiết, giờ mặt trời mọc và ngày lễ trên lịch.</string>
   <string name="settings.location.placeholder">Bắt đầu gõ tên thành phố</string>
@@ -130,9 +126,6 @@
   <string name="settings.logs">Nhật ký</string>
   <string name="settings.logs.help">Những gì daemon, host và bộ máy đã ghi gần đây, dưới dạng các trang trong hộp thư đến của bạn.</string>
   <string name="settings.logs.send">Gửi nhật ký đến hộp thư đến</string>
-  <string name="settings.logs.no_inbox">Hãy đặt hộp thư đến ở trên trước</string>
-  <string name="settings.logs.sent">Đã gửi: {pages} trong {inbox}, từ trang {first}.</string>
-  <string name="settings.logs.the_inbox">hộp thư đến</string>
   <string name="count.page.one">{n} trang</string>
   <string name="count.page.other">{n} trang</string>
   <string name="tablet.read">Đã đọc {pct}%</string>
@@ -252,10 +245,8 @@
   <string name="dc.paste_denied">PaperDaemon không đọc được bảng tạm. Hãy nhấn Ctrl+V.</string>
   <string name="dc.save">Lưu</string>
   <string name="dc.saving">Đang lưu…</string>
-  <string name="dc.on_page">Trên trang số {n}</string>
   <string name="dc.sending">Đang gửi…</string>
   <string name="dc.send">Gửi đến máy tính bảng</string>
-  <string name="dc.no_inbox">Hãy đặt hộp thư đến trong thẻ Cài đặt</string>
   <string name="dc.look">Xem kỹ</string>
   <string name="dc.size_px">{w} × {h} px</string>
   <string name="count.stroke.one">{n} nét</string>
@@ -625,7 +616,6 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="fm.create_body2">Daemon trả lời các trang của nó đúng như các trang trên máy tính bảng của bạn. Không gì trong đó được gửi lên đám mây hay đến máy tính bảng của bạn.</string>
   <string name="fm.delete_mirror_q">Xóa Bản sao giả?</string>
   <string name="fm.delete_mirror_body">Các sổ tay của nó chỉ có trên máy tính này và sẽ mất. Thư viện trên máy tính bảng của bạn không bị đụng đến.</string>
-  <string name="fm.inbox.help">Sổ tay trong Bản sao giả mà Gửi đến máy tính bảng cũng thêm trang vào. Gửi đến máy tính bảng đến cả hai hộp thư.</string>
   <string name="fm.faces">Phông chữ</string>
   <string name="fm.faces.help">Phông chữ dùng cho văn bản gõ và sách trong Bản sao giả.</string>
   <string name="fm.faces.tablet">Của máy tính bảng</string>
@@ -656,8 +646,7 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="fm.tags">Thẻ</string>
   <string name="fm.tags_of">Thẻ của {name}</string>
   <string name="fm.tag_add">Thêm thẻ</string>
-  <string name="fm.menu">Thêm, sổ tay hoặc thư mục mới</string>
-  <string name="fm.add">Thêm</string>
+  <string name="fm.add">Mới</string>
   <string name="fm.untag">Gỡ thẻ {tag}</string>
   <string name="fm.delete_q">Xóa {name}?</string>
   <string name="fm.delete_body">Nó vào thùng rác, như trên máy tính bảng.</string>
@@ -678,4 +667,13 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="settings.page_notes.on">Viết lên trang trong lúc làm việc</string>
   <string name="settings.daemon_layer">Lớp của daemon</string>
   <string name="settings.daemon_layer.help">Tên của lớp mà daemon viết ghi chú lên. PaperDaemon không bao giờ đọc một lớp có tên này như một phần của trang; chỉ trình chỉnh sửa trang hiển thị nó.</string>
+  <string name="settings.inbox_tag">Thẻ hộp thư đến</string>
+  <string name="settings.inbox_tag.help">Gửi tới máy tính bảng thêm trang của nó vào mọi sổ tay có thẻ này, trong Gương và Gương giả, hoặc vào Trang nhanh nếu không sổ nào có. Không gì trong sổ tay có thẻ này từng được xử lý.</string>
+  <string name="settings.logs.sent_inbox">Đã gửi: {pages} tới các hộp thư đến của bạn.</string>
+  <string name="dc.sent">Đã gửi tới mọi hộp thư đến</string>
+  <string name="fm.quick_sheets">Trang nhanh</string>
+  <string name="fm.cover">Bìa</string>
+  <string name="fm.cover.last">Trang xem gần nhất</string>
+  <string name="fm.cover.first">Trang đầu tiên</string>
+  <string name="fm.template">Mẫu</string>
 </resources>

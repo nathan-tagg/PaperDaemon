@@ -105,10 +105,6 @@
   <string name="settings.login.steal">Robarlo en su lugar</string>
   <string name="settings.login.stolen">Conectado con su propio inicio de sesión, robado a la app de reMarkable</string>
   <string name="settings.login.connected">Conectado</string>
-  <string name="settings.inbox">Bandeja de Descomponer</string>
-  <string name="settings.inbox.help">El cuaderno al que Enviar a la tableta añade páginas. PaperDaemon nunca lo responde, tenga la etiqueta que tenga.</string>
-  <string name="settings.inbox.placeholder">Elige un cuaderno</string>
-  <string name="settings.inbox.pick">Elige un cuaderno de la lista.</string>
   <string name="settings.location">Ubicación</string>
   <string name="settings.location.help">Para el clima, el amanecer y los días festivos en los calendarios.</string>
   <string name="settings.location.placeholder">Empieza a escribir una ciudad</string>
@@ -129,9 +125,6 @@
   <string name="settings.logs">Registros</string>
   <string name="settings.logs.help">Lo que el daemon, el host y el motor escribieron últimamente, como páginas en tu bandeja.</string>
   <string name="settings.logs.send">Enviar los registros a la bandeja</string>
-  <string name="settings.logs.no_inbox">Primero define una bandeja arriba</string>
-  <string name="settings.logs.sent">Enviado: {pages} en {inbox}, desde la página {first}.</string>
-  <string name="settings.logs.the_inbox">la bandeja</string>
   <string name="count.page.one">{n} página</string>
   <string name="count.page.other">{n} páginas</string>
   <string name="tablet.read">{pct}% leído</string>
@@ -251,10 +244,8 @@
   <string name="dc.paste_denied">PaperDaemon no pudo leer el portapapeles. Pulsa Ctrl+V en su lugar.</string>
   <string name="dc.save">Guardar</string>
   <string name="dc.saving">Guardando…</string>
-  <string name="dc.on_page">En la página n.º {n}</string>
   <string name="dc.sending">Enviando…</string>
   <string name="dc.send">Enviar a la tableta</string>
-  <string name="dc.no_inbox">Define una bandeja en la pestaña Ajustes</string>
   <string name="dc.look">Ver de cerca</string>
   <string name="dc.size_px">{w} × {h} px</string>
   <string name="count.stroke.one">{n} trazo</string>
@@ -625,7 +616,6 @@ Luego guíame para instalar SearXNG si hace falta, escribe el archivo .bat con u
   <string name="fm.create_body2">El daemon responde a sus páginas exactamente como a las de tu tableta. Nada de ella se envía a la nube ni llega a tu tableta.</string>
   <string name="fm.delete_mirror_q">¿Eliminar el espejo falso?</string>
   <string name="fm.delete_mirror_body">Sus cuadernos están solo en este ordenador y desaparecerán. La biblioteca de tu tableta no se toca.</string>
-  <string name="fm.inbox.help">El cuaderno del espejo falso al que Enviar a la tableta también añade páginas. Enviar a la tableta llega a ambas bandejas.</string>
   <string name="fm.faces">Tipografías</string>
   <string name="fm.faces.help">Las tipografías del texto escrito y de los libros en el falso espejo.</string>
   <string name="fm.faces.tablet">Las de la tableta</string>
@@ -656,8 +646,7 @@ Luego guíame para instalar SearXNG si hace falta, escribe el archivo .bat con u
   <string name="fm.tags">Etiquetas</string>
   <string name="fm.tags_of">Etiquetas de {name}</string>
   <string name="fm.tag_add">Añadir una etiqueta</string>
-  <string name="fm.menu">Añadir, cuaderno o carpeta nuevos</string>
-  <string name="fm.add">Añadir</string>
+  <string name="fm.add">Nuevo</string>
   <string name="fm.untag">Quitar la etiqueta {tag}</string>
   <string name="fm.delete_q">¿Eliminar {name}?</string>
   <string name="fm.delete_body">Va a la papelera, como en la tableta.</string>
@@ -678,4 +667,13 @@ Luego guíame para instalar SearXNG si hace falta, escribe el archivo .bat con u
   <string name="settings.page_notes.on">Escribir en la página mientras trabaja</string>
   <string name="settings.daemon_layer">Capa del daemon</string>
   <string name="settings.daemon_layer.help">El nombre de la capa en la que el daemon escribe sus notas. PaperDaemon nunca lee una capa con este nombre como parte de la página; solo el editor de páginas la muestra.</string>
+  <string name="settings.inbox_tag">Etiqueta de bandeja de entrada</string>
+  <string name="settings.inbox_tag.help">Enviar a la tableta añade su página a cada cuaderno con esta etiqueta, en el Espejo y en el Espejo falso, o a Hojas rápidas donde ninguno la tenga. Nunca se trabaja en nada de un cuaderno que la tenga.</string>
+  <string name="settings.logs.sent_inbox">Enviado: {pages} a tus bandejas de entrada.</string>
+  <string name="dc.sent">Enviado a todas las bandejas</string>
+  <string name="fm.quick_sheets">Hojas rápidas</string>
+  <string name="fm.cover">Portada</string>
+  <string name="fm.cover.last">Última página visitada</string>
+  <string name="fm.cover.first">Primera página</string>
+  <string name="fm.template">Plantilla</string>
 </resources>

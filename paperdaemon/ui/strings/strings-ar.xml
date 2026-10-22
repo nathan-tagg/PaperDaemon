@@ -106,10 +106,6 @@
   <string name="settings.login.steal">خذه بدلًا من ذلك</string>
   <string name="settings.login.stolen">متصل بتسجيل دخول خاص به، مأخوذ من تطبيق reMarkable</string>
   <string name="settings.login.connected">متصل</string>
-  <string name="settings.inbox">صندوق وارد التفكيك</string>
-  <string name="settings.inbox.help">الدفتر الذي يضيف إليه «إرسال إلى الجهاز اللوحي» الصفحات. لا يجيب PaperDaemon فيه أبدًا، مهما كان وسمه.</string>
-  <string name="settings.inbox.placeholder">اختر دفترًا</string>
-  <string name="settings.inbox.pick">اختر دفترًا من القائمة.</string>
   <string name="settings.location">الموقع</string>
   <string name="settings.location.help">للطقس والشروق والعطلات في التقويمات.</string>
   <string name="settings.location.placeholder">ابدأ بكتابة اسم مدينة</string>
@@ -130,9 +126,6 @@
   <string name="settings.logs">السجلات</string>
   <string name="settings.logs.help">ما كتبه البرنامج الخفي والمضيف والمحرك مؤخرًا، كصفحات في صندوق الوارد.</string>
   <string name="settings.logs.send">إرسال السجلات إلى صندوق الوارد</string>
-  <string name="settings.logs.no_inbox">عيّن صندوق وارد أعلاه أولًا</string>
-  <string name="settings.logs.sent">أُرسلت: {pages} في {inbox}، بدءًا من الصفحة {first}.</string>
-  <string name="settings.logs.the_inbox">صندوق الوارد</string>
   <string name="count.page.one">صفحة واحدة</string>
   <string name="count.page.other">{n} صفحة</string>
   <string name="tablet.read">قُرئ {pct}%</string>
@@ -252,10 +245,8 @@
   <string name="dc.paste_denied">تعذّر على PaperDaemon قراءة الحافظة. اضغط Ctrl+V بدلًا من ذلك.</string>
   <string name="dc.save">حفظ</string>
   <string name="dc.saving">جارٍ الحفظ…</string>
-  <string name="dc.on_page">في الصفحة رقم {n}</string>
   <string name="dc.sending">جارٍ الإرسال…</string>
   <string name="dc.send">إرسال إلى الجهاز اللوحي</string>
-  <string name="dc.no_inbox">عيّن صندوق وارد في تبويب الإعدادات</string>
   <string name="dc.look">انظر عن قرب</string>
   <string name="dc.size_px">{w} × {h} بكسل</string>
   <string name="count.stroke.one">خط واحد</string>
@@ -646,7 +637,6 @@
   <string name="fm.create_body2">يجيب البرنامج الخفي على صفحاتها تمامًا كما يجيب على صفحات جهازك اللوحي. لا يُرسل شيء منها إلى السحابة ولا يصل إلى جهازك اللوحي.</string>
   <string name="fm.delete_mirror_q">حذف المرآة الزائفة؟</string>
   <string name="fm.delete_mirror_body">دفاترها على هذا الحاسوب فقط، وستختفي. لا تُمسّ مكتبة جهازك اللوحي.</string>
-  <string name="fm.inbox.help">الدفتر في المرآة الزائفة الذي يضيف إليه «إرسال إلى الجهاز اللوحي» صفحات أيضًا. يصل «إرسال إلى الجهاز اللوحي» إلى الصندوقين كليهما.</string>
   <string name="fm.faces">الخطوط</string>
   <string name="fm.faces.help">الخطوط التي يُكتب بها النص المطبوع والكتب في المرآة الزائفة.</string>
   <string name="fm.faces.tablet">خطوط الجهاز اللوحي</string>
@@ -677,8 +667,7 @@
   <string name="fm.tags">الوسوم</string>
   <string name="fm.tags_of">وسوم {name}</string>
   <string name="fm.tag_add">إضافة وسم</string>
-  <string name="fm.menu">إضافة دفتر أو مجلد جديد</string>
-  <string name="fm.add">إضافة</string>
+  <string name="fm.add">جديد</string>
   <string name="fm.untag">إزالة الوسم {tag}</string>
   <string name="fm.delete_q">حذف {name}؟</string>
   <string name="fm.delete_body">يذهب إلى سلة المهملات، كما على الجهاز اللوحي.</string>
@@ -699,4 +688,13 @@
   <string name="settings.page_notes.on">الكتابة على الصفحة أثناء العمل</string>
   <string name="settings.daemon_layer">طبقة البرنامج الخفي</string>
   <string name="settings.daemon_layer.help">اسم الطبقة التي يكتب عليها البرنامج الخفي ملاحظاته. لا يقرأ PaperDaemon أبدًا طبقة بهذا الاسم كجزء من الصفحة؛ يعرضها محرر الصفحات فقط.</string>
+  <string name="settings.inbox_tag">وسم صندوق الوارد</string>
+  <string name="settings.inbox_tag.help">يضيف «إرسال إلى الجهاز اللوحي» صفحته إلى كل دفتر يحمل هذا الوسم، في المرآة والمرآة الزائفة، أو إلى الأوراق السريعة حيث لا يحمله أي دفتر. لا يُعمل أبدًا على أي شيء في دفتر يحمله.</string>
+  <string name="settings.logs.sent_inbox">أُرسلت: {pages} إلى صناديق الوارد.</string>
+  <string name="dc.sent">أُرسلت إلى كل صناديق الوارد</string>
+  <string name="fm.quick_sheets">الأوراق السريعة</string>
+  <string name="fm.cover">الغلاف</string>
+  <string name="fm.cover.last">آخر صفحة زرتها</string>
+  <string name="fm.cover.first">الصفحة الأولى</string>
+  <string name="fm.template">القالب</string>
 </resources>

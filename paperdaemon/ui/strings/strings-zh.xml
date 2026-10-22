@@ -106,10 +106,6 @@
   <string name="settings.login.steal">改为夺取</string>
   <string name="settings.login.stolen">已用自己的登录连接，该登录夺自 reMarkable 应用</string>
   <string name="settings.login.connected">已连接</string>
-  <string name="settings.inbox">分解收件笔记本</string>
-  <string name="settings.inbox.help">“发送到平板”添加页面的笔记本。无论它带什么标签，PaperDaemon 都不会答复它。</string>
-  <string name="settings.inbox.placeholder">选择一个笔记本</string>
-  <string name="settings.inbox.pick">请从列表中选择一个笔记本。</string>
   <string name="settings.location">位置</string>
   <string name="settings.location.help">用于日历上的天气、日出和节假日。</string>
   <string name="settings.location.placeholder">输入城市名称</string>
@@ -130,9 +126,6 @@
   <string name="settings.logs">日志</string>
   <string name="settings.logs.help">守护进程、主机和引擎最近写下的内容，以页面形式放入您的收件笔记本。</string>
   <string name="settings.logs.send">将日志发送到收件笔记本</string>
-  <string name="settings.logs.no_inbox">请先在上方设置收件笔记本</string>
-  <string name="settings.logs.sent">已发送：{pages}，放入 {inbox}，从第 {first} 页开始。</string>
-  <string name="settings.logs.the_inbox">收件笔记本</string>
   <string name="count.page.one">{n} 页</string>
   <string name="count.page.other">{n} 页</string>
   <string name="tablet.read">已读 {pct}%</string>
@@ -252,10 +245,8 @@
   <string name="dc.paste_denied">PaperDaemon 无法读取剪贴板。请改按 Ctrl+V。</string>
   <string name="dc.save">保存</string>
   <string name="dc.saving">正在保存…</string>
-  <string name="dc.on_page">在第 {n} 页</string>
   <string name="dc.sending">正在发送…</string>
   <string name="dc.send">发送到平板</string>
-  <string name="dc.no_inbox">请在“设置”标签页中设置收件笔记本</string>
   <string name="dc.look">仔细查看</string>
   <string name="dc.size_px">{w} × {h} 像素</string>
   <string name="count.stroke.one">{n} 笔</string>
@@ -625,7 +616,6 @@
   <string name="fm.create_body2">守护进程回应它的页面，与回应你平板上的页面完全相同。其中任何内容都不会发送到云端，也不会到达你的平板。</string>
   <string name="fm.delete_mirror_q">删除伪镜像？</string>
   <string name="fm.delete_mirror_body">它的笔记本只在这台电脑上，删除后将不复存在。你平板的资料库不受影响。</string>
-  <string name="fm.inbox.help">伪镜像中“发送到平板”也会添加页面的笔记本。“发送到平板”会同时送达两个收件箱。</string>
   <string name="fm.faces">字体</string>
   <string name="fm.faces.help">伪镜像中输入文字和书籍所用的字体。</string>
   <string name="fm.faces.tablet">平板的字体</string>
@@ -656,8 +646,7 @@
   <string name="fm.tags">标签</string>
   <string name="fm.tags_of">{name} 的标签</string>
   <string name="fm.tag_add">添加标签</string>
-  <string name="fm.menu">添加：新笔记本或文件夹</string>
-  <string name="fm.add">添加</string>
+  <string name="fm.add">新建</string>
   <string name="fm.untag">移除标签 {tag}</string>
   <string name="fm.delete_q">删除 {name}？</string>
   <string name="fm.delete_body">它会进入回收站，与平板上一样。</string>
@@ -678,4 +667,13 @@
   <string name="settings.page_notes.on">工作时在页面上书写</string>
   <string name="settings.daemon_layer">守护进程图层</string>
   <string name="settings.daemon_layer.help">守护进程书写备注所用图层的名称。PaperDaemon 从不把这个名称的图层当作页面的一部分读取；只有页面编辑器会显示它。</string>
+  <string name="settings.inbox_tag">收件箱标签</string>
+  <string name="settings.inbox_tag.help">“发送到平板”会把页面添加到镜像和伪镜像中每个带此标签的笔记本；若都没有，则添加到快速便签。带此标签的笔记本中的内容永远不会被处理。</string>
+  <string name="settings.logs.sent_inbox">已发送：{pages}到你的收件箱。</string>
+  <string name="dc.sent">已发送到所有收件箱</string>
+  <string name="fm.quick_sheets">快速便签</string>
+  <string name="fm.cover">封面</string>
+  <string name="fm.cover.last">上次查看的页面</string>
+  <string name="fm.cover.first">第一页</string>
+  <string name="fm.template">模板</string>
 </resources>

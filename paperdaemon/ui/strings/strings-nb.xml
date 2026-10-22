@@ -106,10 +106,6 @@
   <string name="settings.login.steal">Stjel i stedet</string>
   <string name="settings.login.stolen">Tilkoblet med egen pålogging, stjålet fra reMarkable-appen</string>
   <string name="settings.login.connected">Tilkoblet</string>
-  <string name="settings.inbox">Innboks for Dekomponer</string>
-  <string name="settings.inbox.help">Notatboken som Send til nettbrett legger til sider i. PaperDaemon svarer aldri i den, uansett hvordan den er merket.</string>
-  <string name="settings.inbox.placeholder">Velg en notatbok</string>
-  <string name="settings.inbox.pick">Velg en notatbok fra listen.</string>
   <string name="settings.location">Sted</string>
   <string name="settings.location.help">For vær, soloppgang og helligdager på kalendere.</string>
   <string name="settings.location.placeholder">Begynn å skrive en by</string>
@@ -130,9 +126,6 @@
   <string name="settings.logs">Logger</string>
   <string name="settings.logs.help">Det daemonen, verten og motoren har skrevet nylig, som sider i innboksen din.</string>
   <string name="settings.logs.send">Send loggene til innboksen</string>
-  <string name="settings.logs.no_inbox">Angi en innboks ovenfor først</string>
-  <string name="settings.logs.sent">Sendt: {pages} i {inbox}, fra side {first}.</string>
-  <string name="settings.logs.the_inbox">innboksen</string>
   <string name="count.page.one">{n} side</string>
   <string name="count.page.other">{n} sider</string>
   <string name="tablet.read">{pct} % lest</string>
@@ -252,10 +245,8 @@
   <string name="dc.paste_denied">PaperDaemon kunne ikke lese utklippstavlen. Trykk Ctrl+V i stedet.</string>
   <string name="dc.save">Lagre</string>
   <string name="dc.saving">Lagrer…</string>
-  <string name="dc.on_page">På side nr. {n}</string>
   <string name="dc.sending">Sender…</string>
   <string name="dc.send">Send til nettbrett</string>
-  <string name="dc.no_inbox">Angi en innboks under fanen Innstillinger</string>
   <string name="dc.look">Se nærmere</string>
   <string name="dc.size_px">{w} × {h} px</string>
   <string name="count.stroke.one">{n} strek</string>
@@ -625,7 +616,6 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="fm.create_body2">Daemonen svarer på sidene nøyaktig som på nettbrettets. Ingenting sendes til skyen eller når nettbrettet ditt.</string>
   <string name="fm.delete_mirror_q">Slette det falske speilet?</string>
   <string name="fm.delete_mirror_body">Notatbøkene finnes bare på denne datamaskinen og vil være borte. Nettbrettets bibliotek blir ikke rørt.</string>
-  <string name="fm.inbox.help">Notatboken i det falske speilet som Send til nettbrett også legger sider i. Send til nettbrett havner i begge innboksene.</string>
   <string name="fm.faces">Skrifter</string>
   <string name="fm.faces.help">Skriftene skrevet tekst og bøker settes med i det falske speilet.</string>
   <string name="fm.faces.tablet">Nettbrettets</string>
@@ -656,8 +646,7 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="fm.tags">Merker</string>
   <string name="fm.tags_of">Merker for {name}</string>
   <string name="fm.tag_add">Legg til et merke</string>
-  <string name="fm.menu">Legg til, ny notatbok eller mappe</string>
-  <string name="fm.add">Legg til</string>
+  <string name="fm.add">Ny</string>
   <string name="fm.untag">Fjern merket {tag}</string>
   <string name="fm.delete_q">Slette {name}?</string>
   <string name="fm.delete_body">Den havner i papirkurven, som på nettbrettet.</string>
@@ -678,4 +667,13 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="settings.page_notes.on">Skriv på siden mens han jobber</string>
   <string name="settings.daemon_layer">Daemonens lag</string>
   <string name="settings.daemon_layer.help">Navnet på laget daemonen skriver notatene sine på. PaperDaemon leser aldri et lag med dette navnet som en del av siden; bare sideredigereren viser det.</string>
+  <string name="settings.inbox_tag">Innboks-merke</string>
+  <string name="settings.inbox_tag.help">Send til nettbrett legger siden sin til i hver notatbok med dette merket, i Speilet og det Falske speilet, eller i Hurtigark der ingen har den. Ingenting i en notatbok med den blir noen gang behandlet.</string>
+  <string name="settings.logs.sent_inbox">Sendt: {pages} til innboksene dine.</string>
+  <string name="dc.sent">Sendt til alle innbokser</string>
+  <string name="fm.quick_sheets">Hurtigark</string>
+  <string name="fm.cover">Omslag</string>
+  <string name="fm.cover.last">Sist besøkte side</string>
+  <string name="fm.cover.first">Første side</string>
+  <string name="fm.template">Mal</string>
 </resources>

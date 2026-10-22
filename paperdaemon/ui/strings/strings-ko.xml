@@ -106,10 +106,6 @@
   <string name="settings.login.steal">대신 가져오기</string>
   <string name="settings.login.stolen">reMarkable 앱에서 가져온 자체 로그인으로 연결됨</string>
   <string name="settings.login.connected">연결됨</string>
-  <string name="settings.inbox">분해 받은편지함</string>
-  <string name="settings.inbox.help">'태블릿으로 보내기'가 페이지를 추가하는 노트입니다. 어떤 태그가 붙어 있든 PaperDaemon은 이 노트에 답하지 않습니다.</string>
-  <string name="settings.inbox.placeholder">노트 선택</string>
-  <string name="settings.inbox.pick">목록에서 노트를 고르세요.</string>
   <string name="settings.location">위치</string>
   <string name="settings.location.help">달력의 날씨, 일출, 공휴일에 쓰입니다.</string>
   <string name="settings.location.placeholder">도시 이름을 입력하세요</string>
@@ -130,9 +126,6 @@
   <string name="settings.logs">로그</string>
   <string name="settings.logs.help">데몬, 호스트, 엔진이 최근에 쓴 내용을 받은편지함의 페이지로 보냅니다.</string>
   <string name="settings.logs.send">로그를 받은편지함으로 보내기</string>
-  <string name="settings.logs.no_inbox">먼저 위에서 받은편지함을 정하세요</string>
-  <string name="settings.logs.sent">보냄: {inbox}에 {pages}, {first}쪽부터.</string>
-  <string name="settings.logs.the_inbox">받은편지함</string>
   <string name="count.page.one">{n}쪽</string>
   <string name="count.page.other">{n}쪽</string>
   <string name="tablet.read">{pct}% 읽음</string>
@@ -252,10 +245,8 @@
   <string name="dc.paste_denied">PaperDaemon이 클립보드를 읽지 못했습니다. 대신 Ctrl+V를 누르세요.</string>
   <string name="dc.save">저장</string>
   <string name="dc.saving">저장 중…</string>
-  <string name="dc.on_page">{n}번 페이지에</string>
   <string name="dc.sending">보내는 중…</string>
   <string name="dc.send">태블릿으로 보내기</string>
-  <string name="dc.no_inbox">설정 탭에서 받은편지함을 정하세요</string>
   <string name="dc.look">자세히 보기</string>
   <string name="dc.size_px">{w} × {h} px</string>
   <string name="count.stroke.one">획 {n}개</string>
@@ -625,7 +616,6 @@
   <string name="fm.create_body2">데몬은 태블릿의 페이지와 똑같이 이 페이지에 답합니다. 아무것도 클라우드로 보내지거나 태블릿에 닿지 않습니다.</string>
   <string name="fm.delete_mirror_q">가짜 미러를 삭제할까요?</string>
   <string name="fm.delete_mirror_body">노트북은 이 컴퓨터에만 있으며 사라집니다. 태블릿의 라이브러리는 건드리지 않습니다.</string>
-  <string name="fm.inbox.help">태블릿으로 보내기가 페이지를 함께 추가하는 가짜 미러의 노트북입니다. 태블릿으로 보내기는 두 받은편지함 모두에 들어갑니다.</string>
   <string name="fm.faces">글꼴</string>
   <string name="fm.faces.help">가짜 미러에서 입력한 텍스트와 책에 쓰는 글꼴.</string>
   <string name="fm.faces.tablet">태블릿의 글꼴</string>
@@ -656,8 +646,7 @@
   <string name="fm.tags">태그</string>
   <string name="fm.tags_of">{name}의 태그</string>
   <string name="fm.tag_add">태그 추가</string>
-  <string name="fm.menu">추가, 새 노트북 또는 폴더</string>
-  <string name="fm.add">추가</string>
+  <string name="fm.add">새로 만들기</string>
   <string name="fm.untag">태그 {tag} 제거</string>
   <string name="fm.delete_q">{name}을(를) 삭제할까요?</string>
   <string name="fm.delete_body">태블릿에서처럼 휴지통으로 갑니다.</string>
@@ -678,4 +667,13 @@
   <string name="settings.page_notes.on">작업하면서 페이지에 쓰기</string>
   <string name="settings.daemon_layer">데몬 레이어</string>
   <string name="settings.daemon_layer.help">데몬이 메모를 적는 레이어의 이름. PaperDaemon은 이 이름의 레이어를 페이지의 일부로 읽지 않으며, 페이지 편집기만 이를 표시합니다.</string>
+  <string name="settings.inbox_tag">받은편지함 태그</string>
+  <string name="settings.inbox_tag.help">태블릿으로 보내기는 이 태그가 있는 모든 노트북(미러와 폴스 미러 모두)에, 아무 노트북에도 없으면 퀵 시트에 페이지를 추가합니다. 이 태그가 있는 노트북의 내용은 절대 처리되지 않습니다.</string>
+  <string name="settings.logs.sent_inbox">보냄: {pages}을(를) 받은편지함으로.</string>
+  <string name="dc.sent">모든 받은편지함으로 보냄</string>
+  <string name="fm.quick_sheets">퀵 시트</string>
+  <string name="fm.cover">표지</string>
+  <string name="fm.cover.last">마지막으로 본 페이지</string>
+  <string name="fm.cover.first">첫 페이지</string>
+  <string name="fm.template">템플릿</string>
 </resources>

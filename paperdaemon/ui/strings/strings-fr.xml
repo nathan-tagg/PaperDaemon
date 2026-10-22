@@ -105,10 +105,6 @@
   <string name="settings.login.steal">Voler plutôt</string>
   <string name="settings.login.stolen">Connecté avec sa propre connexion, volée à l'app reMarkable</string>
   <string name="settings.login.connected">Connecté</string>
-  <string name="settings.inbox">Boîte de réception de Décomposer</string>
-  <string name="settings.inbox.help">Le carnet auquel Envoyer à la tablette ajoute des pages. PaperDaemon n'y répond jamais, quelle que soit son étiquette.</string>
-  <string name="settings.inbox.placeholder">Choisissez un carnet</string>
-  <string name="settings.inbox.pick">Choisissez un carnet dans la liste.</string>
   <string name="settings.location">Lieu</string>
   <string name="settings.location.help">Pour la météo, le lever du soleil et les jours fériés sur les calendriers.</string>
   <string name="settings.location.placeholder">Commencez à taper une ville</string>
@@ -129,9 +125,6 @@
   <string name="settings.logs">Journaux</string>
   <string name="settings.logs.help">Ce que le daemon, l'hôte et le moteur ont écrit récemment, sous forme de pages dans votre boîte de réception.</string>
   <string name="settings.logs.send">Envoyer les journaux à la boîte de réception</string>
-  <string name="settings.logs.no_inbox">Définissez d'abord une boîte de réception ci-dessus</string>
-  <string name="settings.logs.sent">Envoyé : {pages} dans {inbox}, à partir de la page {first}.</string>
-  <string name="settings.logs.the_inbox">la boîte de réception</string>
   <string name="count.page.one">{n} page</string>
   <string name="count.page.other">{n} pages</string>
   <string name="tablet.read">{pct} % lu</string>
@@ -251,10 +244,8 @@
   <string name="dc.paste_denied">PaperDaemon n'a pas pu lire le presse-papiers. Appuyez plutôt sur Ctrl+V.</string>
   <string name="dc.save">Enregistrer</string>
   <string name="dc.saving">Enregistrement…</string>
-  <string name="dc.on_page">Sur la page n° {n}</string>
   <string name="dc.sending">Envoi…</string>
   <string name="dc.send">Envoyer à la tablette</string>
-  <string name="dc.no_inbox">Définissez une boîte de réception dans l'onglet Réglages</string>
   <string name="dc.look">Regarder de près</string>
   <string name="dc.size_px">{w} × {h} px</string>
   <string name="count.stroke.one">{n} trait</string>
@@ -625,7 +616,6 @@ Ensuite, guide-moi pour installer SearXNG si besoin, écris le fichier .bat avec
   <string name="fm.create_body2">Le daemon répond à ses pages exactement comme à celles de votre tablette. Rien n'en est envoyé au cloud ni n'atteint votre tablette.</string>
   <string name="fm.delete_mirror_q">Supprimer le faux miroir ?</string>
   <string name="fm.delete_mirror_body">Ses carnets ne sont que sur cet ordinateur et auront disparu. La bibliothèque de votre tablette n'est pas touchée.</string>
-  <string name="fm.inbox.help">Le carnet du faux miroir auquel Envoyer à la tablette ajoute aussi des pages. Envoyer à la tablette arrive dans les deux boîtes.</string>
   <string name="fm.faces">Polices</string>
   <string name="fm.faces.help">Les polices du texte saisi et des livres dans le faux miroir.</string>
   <string name="fm.faces.tablet">Celles de la tablette</string>
@@ -656,8 +646,7 @@ Ensuite, guide-moi pour installer SearXNG si besoin, écris le fichier .bat avec
   <string name="fm.tags">Étiquettes</string>
   <string name="fm.tags_of">Étiquettes de {name}</string>
   <string name="fm.tag_add">Ajouter une étiquette</string>
-  <string name="fm.menu">Ajouter, nouveau carnet ou dossier</string>
-  <string name="fm.add">Ajouter</string>
+  <string name="fm.add">Nouveau</string>
   <string name="fm.untag">Retirer l'étiquette {tag}</string>
   <string name="fm.delete_q">Supprimer {name} ?</string>
   <string name="fm.delete_body">Il va à la corbeille, comme sur la tablette.</string>
@@ -678,4 +667,13 @@ Ensuite, guide-moi pour installer SearXNG si besoin, écris le fichier .bat avec
   <string name="settings.page_notes.on">Écrire sur la page pendant le travail</string>
   <string name="settings.daemon_layer">Calque du daemon</string>
   <string name="settings.daemon_layer.help">Le nom du calque sur lequel le daemon écrit ses notes. PaperDaemon ne lit jamais un calque de ce nom comme faisant partie de la page ; seul l'éditeur de page l'affiche.</string>
+  <string name="settings.inbox_tag">Étiquette de boîte de réception</string>
+  <string name="settings.inbox_tag.help">Envoyer à la tablette ajoute sa page à chaque carnet portant cette étiquette, dans le Miroir et le Faux miroir, ou aux Feuilles rapides là où aucun ne la porte. Rien dans un carnet qui la porte n'est jamais traité.</string>
+  <string name="settings.logs.sent_inbox">Envoyé : {pages} dans vos boîtes de réception.</string>
+  <string name="dc.sent">Envoyé à toutes les boîtes de réception</string>
+  <string name="fm.quick_sheets">Feuilles rapides</string>
+  <string name="fm.cover">Couverture</string>
+  <string name="fm.cover.last">Dernière page visitée</string>
+  <string name="fm.cover.first">Première page</string>
+  <string name="fm.template">Modèle</string>
 </resources>

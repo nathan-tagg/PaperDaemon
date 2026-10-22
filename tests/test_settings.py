@@ -13,9 +13,10 @@ REAL_DEFAULT = settings.DEFAULT_LINEUP
 
 def test_first_start_uses_defaults():
     s = settings.load()
-    assert "trigger_tag" not in s["tablet"]                  # each lineup has its own tags, none at first
+    assert "trigger_tag" not in s.get("tablet", {})          # each lineup has its own tags, none at first
     assert all(lu["tags"] == [] for lu in s["lineups"])
-    assert "mute_tag" not in s["tablet"] and "sprompt_tag" not in s["tablet"]      # fixed names, not settings
+    assert "mute_tag" not in s.get("tablet", {}) and "sprompt_tag" not in s.get("tablet", {})   # fixed names, not settings
+    assert s["tags"]["inbox"] == "inbox"
     assert s["location"]["lat"] is None               # nothing is built in
     assert not settings.exists()
 
@@ -37,7 +38,7 @@ def test_older_file_keeps_its_values_and_gains_new_defaults():
     with open(paths.settings_file(), "w", encoding="utf-8") as f:
         json.dump({"tablet": {"trigger_tag": "Answer"}, "models": {"text": {"url": "http://x"}}}, f)
     s = settings.load()
-    assert "trigger_tag" not in s["tablet"] and s["tablet"]["inbox"] == ""
+    assert "trigger_tag" not in s["tablet"] and "inbox" not in s["tablet"]
     # the old tag goes to the lineup that was in use then (a tag belongs to one lineup)
     assert [lu["tags"] for lu in s["lineups"]] == [[{"name": "Answer", "prompt": ""}], []]
     assert "models" not in s and len(s["lineups"]) == 2
@@ -52,12 +53,19 @@ def test_a_saved_lineup_gains_missing_slot_fields():
     assert lu["image"]["location"] == "" and lu["image"]["api"] == "sdapi"
 
 
-def test_inbox_round_trip():
+def test_the_inbox_is_a_tag_and_the_old_inbox_paths_go():
+    import json
+    from paperdaemon import paths
+    with open(paths.settings_file(), "w", encoding="utf-8") as f:
+        json.dump({"tablet": {"inbox": "Projects/Pictures inbox"}, "false_mirror": {"inbox": "FM inbox", "faces": "own"}}, f)
     s = settings.load()
-    s["tablet"]["inbox"] = "Projects/Pictures inbox"
+    assert "inbox" not in s["tablet"] and "inbox" not in s["false_mirror"] and s["false_mirror"]["faces"] == "own"
+    assert settings.inbox_tag(s) == "inbox"
+    s["tags"]["inbox"] = "Outbox"
     settings.save(s)
-    assert settings.load()["tablet"]["inbox"] == "Projects/Pictures inbox"
-    assert settings.exists()
+    assert settings.inbox_tag(settings.load()) == "Outbox"
+    s["tags"]["inbox"] = "ignore"
+    assert any("must all be different" in e for e in settings.validate(s))
 
 
 def _first(s):
@@ -151,7 +159,7 @@ def test_the_ignore_and_sprompt_settings_are_dropped_on_load():
     settings.save(s)
     with open(paths.settings_file(), encoding="utf-8") as f:
         assert "mute_tag" not in f.read()
-    assert settings.FIXED_TAGS == ("ignore", "sprompt")
+    assert settings.FIXED_TAGS == ("ignore", "sprompt", "inbox")
 
 
 def test_a_lineup_draws_its_pages_on_the_card_unless_it_says_the_processor():

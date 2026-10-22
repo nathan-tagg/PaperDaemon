@@ -192,6 +192,20 @@ pre.snippet.pad-text { white-space: pre-wrap; padding: var(--s3) var(--s4); font
 .tag-edit { display: flex; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s3); min-height: 22px; }
 .move-list { display: grid; gap: var(--s2); max-height: calc(50vh / var(--pd-zoom, 1)); overflow-y: auto; margin-bottom: var(--s3); }
 .field-row { display: grid; gap: var(--s1); margin: var(--s3) 0; }
+/* inside a sheet a field is as wide as the sheet's content, never past its edge (the Create button's) */
+dialog.sheet .field-row .field { width: 100%; box-sizing: border-box; }
+dialog.sheet fieldset.field-row { border: 0; padding: 0; min-inline-size: 0; }
+dialog.sheet fieldset.field-row legend { padding: 0; margin-bottom: var(--s1); }
+/* the new notebook's templates, as the tablet's picker shows them */
+.nb-tpls { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s1); max-height: calc(36vh / var(--pd-zoom, 1)); overflow-y: auto; }
+.nb-tpl { display: grid; justify-items: center; gap: 4px; padding: 8px 4px 6px; border: 1px solid transparent; border-radius: var(--radius);
+  background: transparent; color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; }
+.nb-tpl span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nb-tpl:hover { background: var(--paper-sunk, rgba(0, 0, 0, 0.04)); }
+.nb-tpl.here { border-color: var(--ink); }
+.nb-tpl svg, .nb-tpl img { width: 34px; height: 44px; padding: 2px; fill: #333333; color: #333333; background: #FFFFFF; border-radius: 3px; }   /* a page, in either theme */
+.nb-tpl svg rect { fill: none; stroke: currentColor; }
+
 .viewer-page.editing { padding: 0; overflow: hidden; align-items: stretch; }
 .page-editor { flex: 1; width: 100%; height: 100%; border: 0; display: block; }
 /* the False Mirror's setting, come up out of nothing after a minute on Settings */

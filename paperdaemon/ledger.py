@@ -80,9 +80,6 @@ def use_trigger(tag):
     trig = trigger_of(tag)
     if trig:
         TRIGGER = trig
-# The decompose inbox (Settings > Decompose inbox, "Folder/Notebook"): where Decompose sends pictures, never a
-# request, whatever it is tagged with.
-INBOX = str(os.environ.get("RM_INBOX") or "").strip()
 # The OFF switch, and it is a real tag on the device rather than a setting in a file: put "ignore"
 # on a folder, a notebook or a single page and nothing there is ever dispatched, whatever else it
 # is tagged with. It exists because a notebook can be INSIDE the watched folder and still not be a
@@ -103,10 +100,13 @@ INBOX = str(os.environ.get("RM_INBOX") or "").strip()
 #   "sprompt"  ONLY as a page tag: that page is its notebook's standing instructions, read for every job
 #              in the notebook whatever other tags it carries (the host's notebook_prompt), and never a job
 #              itself. On a notebook or a folder it means nothing.
-from paperdaemon.settings import IGNORE_TAG, SPROMPT_TAG  # noqa: E402
+#   "inbox"    on a notebook: where Send to Tablet adds its pages (studio.py), never worked on, whatever else
+#              it is tagged with
+from paperdaemon.settings import IGNORE_TAG, SPROMPT_TAG, INBOX_TAG  # noqa: E402
 # their names as Settings gives them (the engine passes them in)
 IGNORE_TAG = (os.environ.get("RM_IGNORE_TAG") or IGNORE_TAG).strip().lower()
 SPROMPT_TAG = (os.environ.get("RM_SPROMPT_TAG") or SPROMPT_TAG).strip().lower()
+INBOX_TAG = (os.environ.get("RM_INBOX_TAG") or INBOX_TAG).strip().lower()
 MUTE = IGNORE_TAG
 CLAIM_TTL = int(os.environ.get("RM_CLAIM_TTL", "900"))
 
@@ -499,21 +499,12 @@ def _muted_pages(c):
 
 
 def is_inbox(doc, m):
-    """True for the decompose inbox notebook: its name and its folders match the setting."""
-    if not INBOX or m.get("type") == "CollectionType":
+    """True for an inbox notebook: one carrying the inbox tag."""
+    if m.get("type") == "CollectionType":
         return False
-    parts = [p.strip() for p in INBOX.replace("\\", "/").split("/") if p.strip()]
-    if not parts or m.get("visibleName") != parts[-1]:
-        return False
-    parent = m.get("parent") or ""
-    for f in reversed(parts[:-1]):
-        if not parent or parent == "trash":
-            return False
-        _, pm = _cached(parent, ".metadata", _META_CACHE, meta)
-        if pm.get("visibleName") != f:
-            return False
-        parent = pm.get("parent") or ""
-    return not parent
+    _, c = _cached(doc, ".content", _CONT_CACHE, content)
+    return any(str(t.get("name") if isinstance(t, dict) else t).strip().lower() == INBOX_TAG
+               for t in (c.get("tags") or []))
 
 
 def muted(doc, m):

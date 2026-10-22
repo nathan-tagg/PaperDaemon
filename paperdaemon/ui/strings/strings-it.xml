@@ -106,10 +106,6 @@
   <string name="settings.login.steal">Ruba invece</string>
   <string name="settings.login.stolen">Connesso con un accesso proprio, rubato all'app reMarkable</string>
   <string name="settings.login.connected">Connesso</string>
-  <string name="settings.inbox">Posta in arrivo di Scomponi</string>
-  <string name="settings.inbox.help">Il quaderno a cui Invia al tablet aggiunge le pagine. PaperDaemon non vi risponde mai, qualunque tag abbia.</string>
-  <string name="settings.inbox.placeholder">Scegli un quaderno</string>
-  <string name="settings.inbox.pick">Scegli un quaderno dall'elenco.</string>
   <string name="settings.location">Località</string>
   <string name="settings.location.help">Per il meteo, l'alba e le festività nei calendari.</string>
   <string name="settings.location.placeholder">Inizia a scrivere una città</string>
@@ -130,9 +126,6 @@
   <string name="settings.logs">Log</string>
   <string name="settings.logs.help">Ciò che il daemon, l'host e il motore hanno scritto di recente, come pagine nella tua posta in arrivo.</string>
   <string name="settings.logs.send">Invia i log alla posta in arrivo</string>
-  <string name="settings.logs.no_inbox">Imposta prima una posta in arrivo qui sopra</string>
-  <string name="settings.logs.sent">Inviati: {pages} in {inbox}, dalla pagina {first}.</string>
-  <string name="settings.logs.the_inbox">la posta in arrivo</string>
   <string name="count.page.one">{n} pagina</string>
   <string name="count.page.other">{n} pagine</string>
   <string name="tablet.read">{pct}% letto</string>
@@ -252,10 +245,8 @@
   <string name="dc.paste_denied">PaperDaemon non è riuscito a leggere gli appunti. Premi invece Ctrl+V.</string>
   <string name="dc.save">Salva</string>
   <string name="dc.saving">Sto salvando…</string>
-  <string name="dc.on_page">Sulla pagina n. {n}</string>
   <string name="dc.sending">Invio…</string>
   <string name="dc.send">Invia al tablet</string>
-  <string name="dc.no_inbox">Imposta una posta in arrivo nella scheda Impostazioni</string>
   <string name="dc.look">Guarda da vicino</string>
   <string name="dc.size_px">{w} × {h} px</string>
   <string name="count.stroke.one">{n} tratto</string>
@@ -625,7 +616,6 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="fm.create_body2">Il daemon risponde alle sue pagine esattamente come a quelle del tuo tablet. Nulla viene inviato al cloud né raggiunge il tuo tablet.</string>
   <string name="fm.delete_mirror_q">Eliminare il falso specchio?</string>
   <string name="fm.delete_mirror_body">I suoi quaderni sono solo su questo computer e spariranno. La libreria del tuo tablet non viene toccata.</string>
-  <string name="fm.inbox.help">Il quaderno del falso specchio a cui Invia al tablet aggiunge anche pagine. Invia al tablet arriva in entrambe le caselle.</string>
   <string name="fm.faces">Caratteri</string>
   <string name="fm.faces.help">I caratteri del testo digitato e dei libri nel falso specchio.</string>
   <string name="fm.faces.tablet">Quelli del tablet</string>
@@ -656,8 +646,7 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="fm.tags">Etichette</string>
   <string name="fm.tags_of">Etichette di {name}</string>
   <string name="fm.tag_add">Aggiungi un'etichetta</string>
-  <string name="fm.menu">Aggiungi, nuovo quaderno o cartella</string>
-  <string name="fm.add">Aggiungi</string>
+  <string name="fm.add">Nuovo</string>
   <string name="fm.untag">Rimuovi l'etichetta {tag}</string>
   <string name="fm.delete_q">Eliminare {name}?</string>
   <string name="fm.delete_body">Va nel cestino, come sul tablet.</string>
@@ -678,4 +667,13 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="settings.page_notes.on">Scrivi sulla pagina mentre lavora</string>
   <string name="settings.daemon_layer">Livello del daemon</string>
   <string name="settings.daemon_layer.help">Il nome del livello su cui il daemon scrive le sue note. PaperDaemon non legge mai un livello con questo nome come parte della pagina; solo l'editor di pagina lo mostra.</string>
+  <string name="settings.inbox_tag">Tag della posta in arrivo</string>
+  <string name="settings.inbox_tag.help">Invia al tablet aggiunge la sua pagina a ogni quaderno con questo tag, nello Specchio e nel Falso specchio, o ai Fogli rapidi dove nessuno lo ha. Niente in un quaderno con questo tag viene mai elaborato.</string>
+  <string name="settings.logs.sent_inbox">Inviato: {pages} nelle tue caselle di arrivo.</string>
+  <string name="dc.sent">Inviato a tutte le caselle di arrivo</string>
+  <string name="fm.quick_sheets">Fogli rapidi</string>
+  <string name="fm.cover">Copertina</string>
+  <string name="fm.cover.last">Ultima pagina visitata</string>
+  <string name="fm.cover.first">Prima pagina</string>
+  <string name="fm.template">Modello</string>
 </resources>

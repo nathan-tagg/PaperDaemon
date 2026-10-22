@@ -264,23 +264,41 @@ def test_a_pages_pictures_round_trip_through_the_editor_scene():
     assert got["refused"] is True
 
 
-def test_decompose_and_send_lands_in_the_false_mirrors_inbox_without_an_account():
-    # the False Mirror's engine with no reMarkable account and the shipped lineups only: its own inbox takes the page
+def test_decompose_and_send_lands_in_the_false_mirrors_quick_sheets_without_an_account():
+    # the False Mirror's engine with no reMarkable account and no notebook tagged inbox: Quick sheets takes the page;
+    # the Quick sheets button opens on a new page of the same one
     got = _run("""
         import base64, io, json
         from PIL import Image, ImageDraw
-        from paperdaemon import settings, studio
-        s = settings.load()
-        s["false_mirror"]["inbox"] = "Inbox"
-        settings.save(s)
+        from paperdaemon import studio
+        from paperdaemon.remarkable import local
+        try:
+            studio.send("data:image/png;base64,AA==", 400)
+        except ValueError as ex:
+            none = "Quick sheets" in str(ex)
+        doc, page = local.quick_sheets()
         img = Image.new("RGB", (120, 90), "white")
         ImageDraw.Draw(img).ellipse((20, 15, 100, 75), fill=(30, 30, 30))
         buf = io.BytesIO(); img.save(buf, "PNG")
-        first = studio.send("data:image/png;base64," + base64.b64encode(buf.getvalue()).decode(), 400)
-        second = studio.send("data:image/png;base64," + base64.b64encode(buf.getvalue()).decode(), 400)
-        print(json.dumps([first["sent"], first["page"], second["page"], first["doc"] == second["doc"]]))
+        sent = studio.send("data:image/png;base64," + base64.b64encode(buf.getvalue()).decode(), 400)
+        again = local.quick_sheets()
+        print(json.dumps([none, page, sent["sent"], sent["notebooks"], again == (doc, 3)]))
     """)
-    assert got == [True, 1, 2, True]
+    assert got == [True, 1, True, 1, True]
+
+
+def test_a_new_notebook_takes_the_tablets_options():
+    got = _run("""
+        import json
+        from paperdaemon.remarkable import local
+        a = local.new_notebook("Plain")
+        b = local.new_notebook("Grid", template="P Grid medium", cover="first")
+        def look(d):
+            c = local._content(d)
+            return [c["coverPageNumber"], c["cPages"]["pages"][0]["template"]["value"]]
+        print(json.dumps([look(a), look(b)]))
+    """)
+    assert got == [[-1, "Blank"], [0, "P Grid medium"]]
 
 
 def test_a_page_unchanged_is_not_read_again():

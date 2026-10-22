@@ -100,23 +100,38 @@ def page_id(doc, page_no):
 
 # ---------------------------------------------------------------- notebooks, folders, pages
 
-def new_notebook(name, parent=""):
-    """A notebook with one blank page, in the Paper Pro's frame. -> its id."""
+def new_notebook(name, parent="", template="Blank", cover="last"):
+    """A notebook with one page, in the Paper Pro's frame, as the tablet makes one: its cover the page last visited
+    (`cover` "last") or its first page ("first"), its page's `template` (the tablet's file name, "P Grid medium";
+    "Blank" for none). -> its id."""
     _guard()
     from paperdaemon import studio
     doc = str(uuid.uuid4())
+    template = str(template or "Blank").strip()[:120] or "Blank"
     studio._new_notebook(M, _pipeline(), doc, (name or "Notebook").strip() or "Notebook", parent, _now())
     blank = studio._blank_page_bytes(_pipeline())          # the bundled Paper Pro page: no user library to copy
     pid = str(uuid.uuid4())
     paths.write_atomic(os.path.join(M, doc, pid + ".rm"), blank)
     c = _content(doc)
     c["cPages"]["pages"] = [{"id": pid, "idx": {"timestamp": "1:2", "value": "ba"}, "modifed": str(_now()),
-                             "template": {"timestamp": "1:1", "value": "Blank"}}]
+                             "template": {"timestamp": "1:1", "value": template}}]
     c["cPages"]["lastOpened"] = {"timestamp": "1:1", "value": pid}
-    c.update(pageCount=1, sizeInBytes=str(len(blank)))
+    # the tablet's cover setting: -1 the page last visited, 0 the first page
+    c.update(pageCount=1, sizeInBytes=str(len(blank)), coverPageNumber=0 if cover == "first" else -1)
     _save_content(doc, c)
-    paths.write_atomic(os.path.join(M, doc + ".pagedata"), "Blank\n")
+    paths.write_atomic(os.path.join(M, doc + ".pagedata"), template + "\n")
     return doc
+
+
+def quick_sheets():
+    """QUICK SHEETS, as the tablet's button opens them: the library's one Quick sheets (the document of that name at the
+    root; made when there is none) on a new page at its end. -> (its id, the new page's number)."""
+    from paperdaemon import studio
+    _guard()
+    docs, how = studio.inbox_docs(M, None)
+    if how != "quick sheets":
+        return new_notebook(studio.QUICK_SHEETS, ""), 1
+    return docs[0], new_page(docs[0])
 
 
 def new_folder(name, parent=""):
