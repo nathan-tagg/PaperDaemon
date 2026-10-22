@@ -58,3 +58,20 @@ def test_blank_has_no_definition_and_the_apps_own_drawings_are_paperdaemons(tmp_
     assert "<path" in T.svg(T.definition(cat[2]), 1620, 2160)
     assert T.definition(cat[3], str(mirror))["name"] == "Meeting minutes"
     assert T.svg(None, 100, 100) == '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"></svg>'
+
+
+def test_what_repeats_runs_on_over_the_area_and_what_does_not_stays_on_the_page():
+    cell = lambda rep: {"items": [{"type": "group", "boundingBox": {"x": 0, "y": 0, "width": 100, "height": 100}, "repeat": rep,
+                                   "children": [{"type": "path", "data": ["M", 0, 0, "L", 10, 0]}]}]}
+    starts = lambda out: {tuple(map(float, m)) for m in re.findall(r'd="M([-\d.]+) ([-\d.]+)', out)}
+    area = (-500.0, 0.0, 1500.0, 3000.0)                    # the drawable square across, and the page run on below
+    grid = starts(T.svg(cell({"rows": "infinite", "columns": "infinite"}), 1000, 1000, area=area))
+    assert (-500.0, 0.0) in grid and (1400.0, 2900.0) in grid
+    lines = starts(T.svg(cell({"rows": "down"}), 1000, 1000, area=area))
+    assert (0.0, 2900.0) in lines and not any(x != 0 for x, _ in lines)
+    counted = starts(T.svg(cell({"rows": 3}), 1000, 1000, area=area))
+    assert counted == {(0.0, 0.0), (0.0, 100.0), (0.0, 200.0)}
+    hexes = T.svg({"paperdaemon": "Hexagon large"}, 1620, 2160, area=(-270.0, 0.0, 1890.0, 6480.0))
+    assert hexes.startswith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="-270 0 2160 6480"')
+    ys = [float(m) for m in re.findall(r'M[-\d.]+ ([-\d.]+)', hexes)]
+    assert max(ys) > 6000

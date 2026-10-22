@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.74
+
+The page editor:
+- A template covers all that can be drawn on. What repeats in it (the grids, dots, isometric, the hexagons, lined and margin pages) runs on across the whole drawable area and down as far as the page goes; what does not (planners, music, storyboards, perspective) stays on the page.
+- Fills: the ballpoint, fineliner and calligraphy pen fill their area instead of spilling far past it. The other pens fill as before.
+- Alt + drag fills each new area of the same color the drag passes over.
+- A click on a thin line (a template's hexagons, a fine stroke) fills the line at any zoom, not only zoomed in.
+- The erasers' pointers are drawn smooth at the screen's own pixels, and show the moment Shift goes down (while typing, once the mouse moves or the typing stops).
+- Scrolling the caret out of sight lets the text go, so 1 to 6 choose shapes again instead of typing.
+- An eraser's ring no longer stays on the page after a swipe let go off it.
+
 ## 0.1.73
 
 - A PDF page far taller than it is wide (a long scroll of a page) is shown at the page's width and scrolls, in the Mirror, the page editor and the page pictures. Since 0.1.69 the whole of it was squeezed onto one screen.

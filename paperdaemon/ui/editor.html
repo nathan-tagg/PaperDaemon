@@ -918,7 +918,7 @@ span.lname { cursor: default; }
     // THE TEMPLATE, under everything: the page's frame wide, from its top (the template layer, then text, then ink)
     // a PDF's or a book's page first, the frame wide from its top (source.png)
     if (srcImg) g.drawImage(srcImg, -page.paperSize[0] / 2, 0, page.paperSize[0], page.paperSize[1]);
-    if (withTemplate) g.drawImage(tplImg, -page.paperSize[0] / 2, 0, page.paperSize[0], page.paperSize[1]);
+    if (withTemplate) drawTemplate(g);
     if (withPictures) drawPictures(g);
     if (withText) drawText(g, textLayout);
     const t = g.getImageData(0, 0, W, h).data;
@@ -1107,7 +1107,7 @@ span.lname { cursor: default; }
       const s = k * scale();
       g.setTransform(s, 0, 0, s, (vpW / 2 - view.cx * scale()) * k, -view.top * scale() * k);
       if (srcImg) g.drawImage(srcImg, -page.paperSize[0] / 2, 0, page.paperSize[0], page.paperSize[1]);
-      if (withTemplate) g.drawImage(tplImg, -page.paperSize[0] / 2, 0, page.paperSize[0], page.paperSize[1]);
+      if (withTemplate) drawTemplate(g);
       if (withPictures) drawPictures(g);
       if (withText) drawText(g, textLayout);
       g.restore();
@@ -1661,28 +1661,42 @@ span.lname { cursor: default; }
   })();
   // THE ERASERS' POINTERS are the pointer itself, as wide as the eraser's size in the menu at the zoom in use: passing an
   // empty circle, strokes the circle crossed through, a zone a small dotted circle, or the zone's shape, dotted. Past the
-  // largest pointer the system draws, the ring is drawn on the page under a plain cross (drawEraser).
+  // largest pointer the system draws, the ring is drawn on the page under a plain cross (drawEraser). Each is drawn on a
+  // canvas at the screen's own pixels (devicePixelRatio), smoothed, and given to the system at that resolution, so it is
+  // as clean as the page under it: a thin dark line on a soft light edge.
   const CURSOR_MAX = 128;
   const eraseCss = document.head.appendChild(document.createElement("style"));   // after the pens' pointers: it wins
   let eraseCssKey = "";
+  const ZONE_LOOKS = { 0: "M16.5 10.5a6 6 0 1 1-12 0a6 6 0 1 1 12 0z", 2: "M17 10.5a6.5 6.5 0 1 1-13 0a6.5 6.5 0 1 1 13 0z",
+                       3: "M10.5 3.5l6.8 12H3.7z", 4: "M4.5 4.5h12v12h-12z", 5: "M2.5 6h16v9h-16z" };
+  function cursorImage(n, draw) {                             // n CSS pixels square -> the cursor's CSS image, smoothed
+    const s = Math.max(1, Math.min(4, window.devicePixelRatio || 1)), cv2 = document.createElement("canvas");
+    cv2.width = cv2.height = Math.round(n * s);
+    const g = cv2.getContext("2d");
+    g.scale(s, s); g.lineCap = "round"; g.lineJoin = "round";
+    const pass = (w, color) => { g.save(); g.lineWidth = w; g.strokeStyle = color; draw(g); g.restore(); };
+    pass(3, "rgba(255,255,255,0.85)"); pass(1.25, "rgba(20,20,20,0.95)");
+    const url = cv2.toDataURL("image/png"), h = Math.floor(n / 2);
+    return { plain: 'url("' + url + '") ' + h + " " + h + ", crosshair", sharp: 'image-set(url("' + url + '") ' + s + "x) " + h + " " + h + ", crosshair" };
+  }
   function eraserCursor(mode, shape) {                        // -> the key put on the viewport as data-erase
-    const d = 2 * eraserR() * scale(), n = Math.max(9, Math.ceil(d) + 4 | 1), c = n / 2, r = d / 2;
-    let key, body, dash;
-    if (mode === "zone") key = "zone" + (shape || "");
-    else if (n > CURSOR_MAX) key = "big";
-    else key = mode + n;
+    const d = 2 * eraserR() * scale(), n = Math.max(11, Math.ceil(d) + 6), c = n / 2, r = Math.max(1.5, d / 2);
+    const key = mode === "zone" ? "zone" + (shape || "") : n > CURSOR_MAX ? "big" : mode + n;
     if (key === eraseCssKey) return key;
+    let im = null;
     if (mode === "zone") {
-      body = shape ? SHAPE_LOOKS[SHAPE_NAMES[shape]] : '<circle cx="10.5" cy="10.5" r="6"/>'; dash = "2 2";
-      eraseCss.textContent = '.viewport[data-erase="' + key + '"] { cursor: ' + cursorOf(body, 21, dash) + "; }";
-    } else if (key === "big") {
-      eraseCss.textContent = '.viewport[data-erase="big"] { cursor: crosshair; }';
-    } else {
+      const p = new Path2D(ZONE_LOOKS[shape || 0]);
+      im = cursorImage(21, g => { g.setLineDash(g.lineWidth > 2 ? [] : [2, 2]); g.stroke(p); });
+    } else if (key !== "big") {
       const k = r / Math.SQRT2;
-      body = '<circle cx="' + c + '" cy="' + c + '" r="' + Math.max(1, r) + '"/>' +
-        (mode === "stroke" ? '<path d="M' + (c - k) + " " + (c - k) + "L" + (c + k) + " " + (c + k) + "M" + (c + k) + " " + (c - k) + "L" + (c - k) + " " + (c + k) + '"/>' : "");
-      eraseCss.textContent = '.viewport[data-erase="' + key + '"] { cursor: ' + cursorOf(body, n) + "; }";
+      im = cursorImage(n, g => {
+        g.beginPath(); g.arc(c, c, r, 0, Math.PI * 2);
+        if (mode === "stroke") { g.moveTo(c - k, c - k); g.lineTo(c + k, c + k); g.moveTo(c + k, c - k); g.lineTo(c - k, c + k); }
+        g.stroke();
+      });
     }
+    const sel = '.viewport[data-erase="' + key + '"]';
+    eraseCss.textContent = im ? sel + " { cursor: " + im.plain + "; cursor: " + im.sharp + "; }" : sel + " { cursor: crosshair; }";
     eraseCssKey = key;
     return key;
   }
@@ -1691,28 +1705,50 @@ span.lname { cursor: default; }
   // in C (POST /fill, fastdecomp rmfast.fill) on the area and sends back its rings, the first fine and on the edge, each
   // deeper one wider. Every ring is a stroke of the pen in hand at the planner's width. Without the engine (the editor
   // opened from its file) there is no fill, and the page says so.
-  async function fillAt(pk, x, y) {
+  // A DRAG WITH ALT fills each new area it passes over (`sweep`): those of the color it started on, each once
+  async function fillAt(pk, x, y, sweep) {
     cpuCopy();
     if (!shown) return;
     const W = shown.width, H = shown.height, d = shown.data;
     const [sx, sy] = toScreen(x, y), px = Math.round(sx * dpr), py = Math.round(sy * dpr);
     if (px < 0 || py < 0 || px >= W || py >= H) return;
     const q0 = (py * W + px) * 4, r0 = d[q0], g0 = d[q0 + 1], b0 = d[q0 + 2];
-    const mask = new Uint8Array(W * H), stack = [py * W + px];
-    const same = i => { const q = i * 4; return Math.abs(d[q] - r0) <= 24 && Math.abs(d[q + 1] - g0) <= 24 && Math.abs(d[q + 2] - b0) <= 24; };
-    mask[py * W + px] = 1;
+    if (sweep) {
+      if (sweep.W !== W || sweep.H !== H) return;               // the view changed size: the sweep's areas are gone
+      if (sweep.done[py * W + px]) return;
+      if (!sweep.color) sweep.color = [r0, g0, b0];
+      else if (Math.abs(r0 - sweep.color[0]) > 24 || Math.abs(g0 - sweep.color[1]) > 24 || Math.abs(b0 - sweep.color[2]) > 24) return;
+    }
+    const mask = sweep ? sweep.done : new Uint8Array(W * H), stack = [py * W + px];
+    const fresh = sweep ? new Uint8Array(W * H) : mask;
+    // A THIN LINE under the click (a template's, a fine stroke), smoothed by the drawing into shades across a pixel or
+    // two: fewer than a third of the pixels around it are its color. Then the fill takes every pixel nearer its color
+    // than the paper's around it, joined corner to corner as well, so the line is followed at any zoom (zoomed in, it
+    // is wide and solid enough to fill as an area)
+    const dist = (q, r, g, b) => Math.abs(d[q] - r) + Math.abs(d[q + 1] - g) + Math.abs(d[q + 2] - b);
+    let near = 0, all = 0, bg = q0, far = -1;
+    for (let j = Math.max(0, py - 4); j <= Math.min(H - 1, py + 4); j++) for (let i = Math.max(0, px - 4); i <= Math.min(W - 1, px + 4); i++) {
+      const q = (j * W + i) * 4, f = dist(q, r0, g0, b0); all++;
+      if (f <= 72) near++; if (f > far) { far = f; bg = q; }
+    }
+    const thin = near < all / 3 && far > 72, rb = d[bg], gb = d[bg + 1], bb = d[bg + 2];
+    // (and no farther from the line's color than the paper is: ink of another color crossing the line is not taken)
+    const same = thin ? i => { const q = i * 4, f = dist(q, r0, g0, b0); return f < dist(q, rb, gb, bb) && f <= far; }
+      : i => { const q = i * 4; return Math.abs(d[q] - r0) <= 24 && Math.abs(d[q + 1] - g0) <= 24 && Math.abs(d[q + 2] - b0) <= 24; };
+    mask[py * W + px] = fresh[py * W + px] = 1;
     let x0 = px, x1 = px, y0 = py, y1 = py;
     while (stack.length) {
       const i = stack.pop(), cx = i % W, cy = (i - cx) / W;
       if (cx < x0) x0 = cx; if (cx > x1) x1 = cx; if (cy < y0) y0 = cy; if (cy > y1) y1 = cy;
-      for (const n of [cx > 0 ? i - 1 : -1, cx < W - 1 ? i + 1 : -1, cy > 0 ? i - W : -1, cy < H - 1 ? i + W : -1]) {
-        if (n >= 0 && !mask[n] && same(n)) { mask[n] = 1; stack.push(n); }
+      const l = cx > 0, r = cx < W - 1, u = cy > 0, dn = cy < H - 1;
+      for (const n of [l ? i - 1 : -1, r ? i + 1 : -1, u ? i - W : -1, dn ? i + W : -1].concat(thin ? [l && u ? i - W - 1 : -1, r && u ? i - W + 1 : -1, l && dn ? i + W - 1 : -1, r && dn ? i + W + 1 : -1] : [])) {
+        if (n >= 0 && !mask[n] && same(n)) { mask[n] = fresh[n] = 1; stack.push(n); }
       }
     }
     // the area on its own grid, the screen's device pixels cropped to it, a bit each (rows packed as numpy.packbits);
     // a grid pixel is ppg page units
     const gw = x1 - x0 + 1, gh = y1 - y0 + 1, bits = new Uint8Array(Math.ceil(gw * gh / 8));
-    for (let r = 0, k = 0; r < gh; r++) for (let c = 0; c < gw; c++, k++) if (mask[(y0 + r) * W + x0 + c]) bits[k >> 3] |= 128 >> (k & 7);
+    for (let r = 0, k = 0; r < gh; r++) for (let c = 0; c < gw; c++, k++) if (fresh[(y0 + r) * W + x0 + c]) bits[k >> 3] |= 128 >> (k & 7);
     const ppg = 1 / (scale() * dpr), flat = PEN[pk.pen].pen.startsWith("HIGHLIGHTER") ? 1 : 0;
     let got;
     try {
@@ -1726,9 +1762,16 @@ span.lname { cursor: default; }
       setTimeout(() => { saved.textContent = ""; }, 3500); return;
     }
     const onPage = (gx, gy) => toPage((x0 + gx + .5) / dpr, (y0 + gy + .5) / dpr);
+    // THE PLANNER'S WIDTHS ARE ITS WRITERS': a pen's field there paints 0.144 a unit (WSCALE_WRITER, kept as it was),
+    // and the tablet draws the solid pens (ballpoint, fineliner, calligraphy) at 0.25: their rings are given the field
+    // that paints the planned width, or they spill far past the area. The others are kept as the user judged them right:
+    // the highlighter (its own scale), the pencils, marker and paintbrush (drawn narrower than their field, their rings
+    // overlap enough to read solid) and the shader (whose overlapping rings read as a heat map)
+    const fam = PEN[pk.pen].pen.split("_")[0];
+    const per = ["BALLPOINT", "FINELINER", "CALIGRAPHY"].includes(fam) ? 0.144 / (WSCALE[fam] || WSCALE_DEFAULT) : 1;
     addStrokes(got.strokes.map(ring => {
       const L = newLine(pk);
-      L.width = ring.field;
+      L.width = Math.max(1, Math.round(ring.field * per));
       L.points = ring.pts.map(([gx, gy]) => pointOf(L, ...onPage(gx, gy)));
       return L;
     }));
@@ -2167,16 +2210,17 @@ span.lname { cursor: default; }
   // THE ERASER ON THE KEYS, whatever is in hand, with the left button: Shift and a drag erases what it passes over, Ctrl +
   // Shift whole strokes, Ctrl + Shift + Alt a zone (a loop; or, with 2 to 5 pressed, a circle, triangle, square or
   // rectangle dragged out). It starts once the pointer moves: Shift and a click without moving extends the text's
-  // selection to the click instead. The pointer becomes the eraser's while the keys are held, once the mouse moves or a
-  // quarter second passes with nothing typed, so capitals typed with Shift do not flicker it.
+  // selection to the click instead. The pointer becomes the eraser's the moment the keys go down; while text is being
+  // typed, once the mouse moves or the typing stops, so capitals typed with Shift do not flicker it.
   const keyErase = e => !e.shiftKey ? null : e.ctrlKey ? (e.altKey ? "zone" : "stroke") : e.altKey ? null : "area";
   const held = { shiftKey: false, ctrlKey: false, altKey: false };
   let heldSince = 0, typedAt = 0, heldMoved = false, heldTimer = 0, zoneShape = 0, overText = false;
-  let pending = null, textDrag = false, shapeFrom = null, liveFrom = null, liveMoved = false;
+  let pending = null, textDrag = false, shapeFrom = null, liveFrom = null, liveMoved = false, fillSweep = null;
   const zoneShapeNow = () => zoneShape || (pickers[tool] && shapeKind >= 2 && shapeKind <= 5 ? shapeKind : 0);
   const zoneLoop = z => z.shape ? shapePoints(z.shape, z.pts[0], z.end || z.pts[0]) : z.pts.concat([z.pts[0]]);
   function updateCursor() {
-    const byKeys = keyErase(held), armed = byKeys && (heldMoved || performance.now() - Math.max(heldSince, typedAt) >= 250);
+    // at once, unless text is being typed (a key typed in the last 0.4 s): then once the mouse moves or the typing stops
+    const byKeys = keyErase(held), armed = byKeys && (heldMoved || !editing() || performance.now() - typedAt >= 400);
     const mode = erasing ? erasing.mode || eraseMode : zone ? "zone" : armed ? byKeys : tool === "eraser" ? eraseMode : null;
     const key = mode ? eraserCursor(mode, mode === "zone" ? (zone ? zone.shape : zoneShapeNow()) : 0) : null;
     if (key) { if (vp.dataset.erase !== key) vp.dataset.erase = key; } else delete vp.dataset.erase;
@@ -2189,7 +2233,7 @@ span.lname { cursor: default; }
     heldSince = performance.now(); heldMoved = false;
     return true;
   }
-  function soon() { clearTimeout(heldTimer); heldTimer = setTimeout(updateCursor, 260); }
+  function soon() { clearTimeout(heldTimer); heldTimer = setTimeout(updateCursor, 410); }
   window.addEventListener("keydown", e => {
     // THE ZONE'S SHAPE: 2 to 5 with the zone's keys held, or with the zone in hand from the menu; 1 a loop again
     const dg = /^Digit([1-5])$/.exec(e.code);
@@ -2270,7 +2314,14 @@ span.lname { cursor: default; }
       contentLanded(); zone = { layer: layer(), pts: [[x, y]], shape: zoneShapeNow() }; pointer = e.pointerId; vp.setPointerCapture(e.pointerId); paint(); return;
     }
     if (tool !== "eraser" && pickers[tool]) {                 // the keys held make a shape of the pen in hand
-      if (e.altKey && !e.ctrlKey) { e.preventDefault(); if (drawable(x, y)) fillAt(pickers[tool], x, y); return; }
+      if (e.altKey && !e.ctrlKey) {                             // Alt: a fill here, and in every new area the drag passes over
+        e.preventDefault(); cpuCopy();
+        if (!shown) return;
+        fillSweep = { pk: pickers[tool], W: shown.width, H: shown.height, done: new Uint8Array(shown.width * shown.height), color: null };
+        pointer = e.pointerId; vp.setPointerCapture(e.pointerId);
+        if (drawable(x, y)) fillAt(fillSweep.pk, x, y, fillSweep);
+        return;
+      }
       if (e.ctrlKey) {
         e.preventDefault();
         if (!drawable(x, y)) return;
@@ -2309,6 +2360,10 @@ span.lname { cursor: default; }
     if (poly) { poly.hover = cornerAt(e, toPage(...local(e))); paint(); }
     if (shapeAt) { const q = toPage(...local(e)); shapeHover = e.altKey ? snapAngle(shapeAt, q) : q; paint(); }
     if (e.pointerId !== pointer) { if (vp.dataset.erase === "big") paint(); return; }
+    if (fillSweep) {
+      for (const ev of (e.getCoalescedEvents ? e.getCoalescedEvents() : [e])) { const [fx, fy] = toPage(...local(ev)); if (drawable(fx, fy)) fillAt(fillSweep.pk, fx, fy, fillSweep); }
+      return;
+    }
     if (pending) {                                            // the eraser on the keys starts, once the pointer moves
       const [ax, ay] = pending.at, [bx, by] = local(e);
       if (Math.hypot(bx - ax, by - ay) <= 3) return;
@@ -2348,9 +2403,14 @@ span.lname { cursor: default; }
   document.addEventListener("contextmenu", e => { if (!(e.target.closest && e.target.closest("input, textarea"))) e.preventDefault(); });
   vp.addEventListener("mousedown", e => { if (e.button === 1) e.preventDefault(); });   // no autoscroll on the page
   vp.addEventListener("pointerleave", () => { eraserAt = null; paint(); });
+  // a swipe let go off the page: no pointerleave comes after it (the page held the pointer), so the ring goes here
+  vp.addEventListener("lostpointercapture", e => {
+    const r = vp.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX >= r.right || e.clientY < r.top || e.clientY >= r.bottom) { eraserAt = null; overText = false; updateCursor(); paint(); }
+  });
   function finish(e) {
     if (e.pointerId !== pointer) return;
-    pointer = null; textDrag = false;
+    pointer = null; textDrag = false; fillSweep = null;
     if (pending) { const p = pending; pending = null; if (p.mode === "area" && e.type === "pointerup") extendTo(...p.pt); return; }
     if (shapeFrom) {                                          // a shape ends where the button is let go: after the second press,
       const { at: [ax, ay], second } = shapeFrom, [bx, by] = local(e); shapeFrom = null;   // or a first one dragged out
@@ -2600,6 +2660,13 @@ span.lname { cursor: default; }
       view.cx = Math.max(-edge + w, Math.min(edge - w, view.cx));
     }
     view.top = Math.max(0, Math.min(Math.max(vpH / scale(), footOf()), view.top));
+    // A CARET SCROLLED OUT OF SIGHT LETS GO, as Esc does: keys typed into text no one can see were the pen's (1 to 6 its
+    // shapes) taken as typing. Typing that runs the caret down takes the view with it first (followCaret).
+    const c = editing() && primary();
+    if (c && textLayout && textLayout.paras[c.caret.p]) {
+      const pt = caretPoint(c.caret), seen = vpH / scale(), across = vpW / scale() / 2;
+      if (pt.y + pt.h < view.top || pt.y > view.top + seen || pt.x < view.cx - across || pt.x > view.cx + across) setCursors([]);
+    }
   }
   // THE SCROLLBAR: the thumb is the screen's share of all there is to scroll through, at the view's place in it
   const vscroll = document.getElementById("vscroll"), thumb = vscroll.firstElementChild;
@@ -3607,19 +3674,31 @@ span.lname { cursor: default; }
     } catch (e) { tplLocked = false; }
     paintControls();
   }
-  async function loadTemplate() {
-    tplImg = null;
+  // THE TEMPLATE COVERS ALL THAT CAN BE DRAWN ON: the drawable square across, and down past the page's foot as far as
+  // the page runs (and a page more). What repeats in it runs on over all of that; what does not stays on the page
+  // (templates.svg decides, from the template's own definition). As the page runs on, it is drawn again, longer.
+  let tplArea = null, tplMore = false;
+  const tplHeightFor = () => { const h = page.paperSize[1]; return Math.ceil((Math.max(footOf(), view.top + vpH / scale()) + h) / h) * h; };
+  function drawTemplate(g) {
+    const [x, y, w, h] = tplArea;
+    g.drawImage(tplImg, x, y, w, h);
+    if (!tplMore && view.top + vpH / scale() > y + h - page.paperSize[1] / 2) { tplMore = true; loadTemplate(true); }
+  }
+  async function loadTemplate(longer) {
+    if (!longer) tplImg = null;
     const file = page.template;
-    if (!file || file === "Blank") { rebuild(); return; }
+    if (!file || file === "Blank") { tplImg = null; rebuild(); return; }
     try {
-      const r = await fetch("/api/v1/templates/" + encodeURIComponent(file) + ".svg?w=" + page.paperSize[0] + "&h=" + page.paperSize[1],
+      const aw = Math.round(2 * half()), ah = tplHeightFor();
+      const r = await fetch("/api/v1/templates/" + encodeURIComponent(file) + ".svg?w=" + page.paperSize[0] + "&h=" + page.paperSize[1] + "&aw=" + aw + "&ah=" + ah,
                             { headers: { Authorization: "Bearer " + token() } });
       if (!r.ok) throw new Error(r.status);
       const url = URL.createObjectURL(new Blob([await r.text()], { type: "image/svg+xml" }));
       const img = new Image();
       await new Promise((ok, no) => { img.onload = ok; img.onerror = no; img.src = url; });
-      if (page.template === file) tplImg = img;
-    } catch (e) { tplImg = null; }
+      if (page.template === file) { tplImg = img; tplArea = [-aw / 2, 0, aw, ah]; }
+    } catch (e) { if (longer) return; tplImg = null; }      // a longer one that failed is not asked for again
+    tplMore = false;
     rebuild();
   }
 

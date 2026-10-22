@@ -103,7 +103,10 @@ drawn, and a hidden layer SHALL NOT take strokes or erasing. Every layer change 
 ### Requirement: Choosing a template
 The Template row's button SHALL open a screen in the dialog listing every template the user has, the
 defaults and rM Methods together, with no tabs and no filter: a scrollable grid of each template's icon
-over its name, the page's template underlined. Choosing one SHALL set the page's template.
+over its name, the page's template underlined. Choosing one SHALL set the page's template. A template SHALL cover all
+that can be drawn on: what repeats in its definition (rows or columns infinite, down, right, up, left; the hexagons and
+calligraphy lines throughout) SHALL run on across the drawable square and down as far as the page runs; what does not
+(a count, or no repeat) SHALL stay on the page's frame.
 
 #### Scenario: Picking a grid
 - **WHEN** the user opens the Template row's button and chooses Grid medium
@@ -166,7 +169,9 @@ what lies outside staying as strokes of their own.
 With a pen in hand, Ctrl and clicks SHALL set corners, drawn when Ctrl is let go: two corners a line, more a closed
 shape (as is clicking the first corner again; Esc drops them). Ctrl and Alt together SHALL snap each edge to an angle,
 every 15 degrees. Alt and a click SHALL fill the area of one
-color under the click, bounded by what the page shows and never past the view. They SHALL be ordinary strokes of the
+color under the click, bounded by what the page shows and never past the view; on a thin line (fewer than a third of
+the pixels around it its color) the line itself, followed through its smoothed edges. Alt and a drag SHALL fill each
+new area of the starting color it passes over, once. They SHALL be ordinary strokes of the
 pen in hand, a fill laid in overlapping rows joined into one stroke where they touch, so a highlighter's fill does not
 darken where its rows meet. Typing SHALL never start from these keys.
 
@@ -188,9 +193,9 @@ over; with Ctrl and Shift whole strokes; with Ctrl, Shift and Alt a zone, the lo
 that shape chosen for the pen, or 2 to 5 pressed with the zone eraser in hand) a circle, triangle, square or rectangle
 dragged out, for one erase. Shift and a click without moving SHALL extend the text's selection to the click instead.
 While the keys are held the pointer SHALL be the eraser's own, as wide as the eraser's size in its menu: an empty circle,
-the circle crossed through, a small dotted circle or the zone's shape dotted. It SHALL show once the mouse moves or a
-quarter second passes with nothing typed, so capitals typed with Shift do not flicker it. The eraser tool's pointer
-SHALL be the same.
+the circle crossed through, a small dotted circle or the zone's shape dotted, drawn smooth at the screen's own pixels.
+It SHALL show the moment the keys go down; while text is being typed, once the mouse moves or the typing has stopped
+for 0.4 seconds, so capitals typed with Shift do not flicker it. The eraser tool's pointer SHALL be the same.
 
 #### Scenario: Erasing with the pen in hand
 - **WHEN** the user, drawing with the fineliner, Ctrl-Shift-drags across a stroke

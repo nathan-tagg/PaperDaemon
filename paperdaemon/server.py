@@ -1747,8 +1747,9 @@ def get_templates():
 
 
 @app.get(API + "/templates/{file}.svg")
-def get_template_svg(file: str, w: int = 1620, h: int = 2160):
-    """One template drawn on a w x h page, as SVG (empty for Blank and for those the app draws in its own code)."""
+def get_template_svg(file: str, w: int = 1620, h: int = 2160, aw: int = 0, ah: int = 0):
+    """One template drawn on a w x h page, as SVG (empty for Blank). `aw` x `ah`: the area to cover, centered across the
+    page and from its top -- what repeats runs on across all of it (templates.svg)."""
     if not _signed_in():
         return JSONResponse({"error": "sign in to a reMarkable account for templates", "signin": True}, status_code=403)
     T = _templates()
@@ -1756,7 +1757,9 @@ def get_template_svg(file: str, w: int = 1620, h: int = 2160):
     if entry is None:
         return JSONResponse({"error": "no such template"}, status_code=404)
     w, h = max(100, min(int(w), 10000)), max(100, min(int(h), 10000))
-    return Response(content=T.svg(T.definition(entry), w, h), media_type="image/svg+xml")
+    aw, ah = max(w, min(int(aw), 20000)), max(h, min(int(ah), 60000))
+    area = (-(aw - w) / 2.0, 0.0, w + (aw - w) / 2.0, float(ah))
+    return Response(content=T.svg(T.definition(entry), w, h, area=area), media_type="image/svg+xml")
 
 
 @app.get(API + "/fonts/own/{name}")

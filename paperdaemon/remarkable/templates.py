@@ -348,12 +348,20 @@ def _num(v, env):
 
 # ---------------------------------------------------------------- drawing a definition
 
-def svg(defn, width, height, font="sans-serif"):
+def svg(defn, width, height, font="sans-serif", area=None):
     """The template drawn on a `width` x `height` page, in page units, as SVG: black lines on nothing, for under a
-    page's ink. Blank or None -> an empty drawing."""
-    out = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" width="%d" height="%d">' % (width, height, width, height)]
+    page's ink. Blank or None -> an empty drawing.
+
+    `area` (x0, y0, x1, y1, in the page's units from its top left) is what the drawing covers when it is more than the
+    page: the editor's drawable square and the page run on below. What repeats in the definition (rows or columns
+    "infinite", "down", "right", "up", "left") repeats on across all of it, as the tablet runs a grid on down the
+    page; what does not (a count, or no repeat) stays where it is on the page."""
+    ax0, ay0, ax1, ay1 = area or (0.0, 0.0, float(width), float(height))
+    aw, ah = ax1 - ax0, ay1 - ay0
+    out = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="%g %g %g %g" width="%d" height="%d">' % (ax0, ay0, aw, ah, round(aw), round(ah))]
+    bounds = (ax0, ay0, ax1, ay1)
     if defn and defn.get("paperdaemon"):
-        _own(defn["paperdaemon"], float(width), float(height), out)
+        _own(defn["paperdaemon"], float(width), float(height), out, bounds)
     elif defn:
         # the names the app supplies: the page's size, and its origin (x 0 is the page's middle in its own units)
         env = {"templateWidth": float(width), "templateHeight": float(height), "paperOriginX": width / 2.0, "paperOriginY": 0.0}
@@ -363,7 +371,7 @@ def svg(defn, width, height, font="sans-serif"):
                     env[k] = _num(v, env)
                 except ValueError:
                     pass
-        _items(defn.get("items") or [], 0.0, 0.0, float(width), float(height), env, out, font, width, height)
+        _items(defn.get("items") or [], 0.0, 0.0, float(width), float(height), env, out, font, bounds)
     out.append("</svg>")
     return "".join(out)
 
@@ -379,20 +387,21 @@ OWN = {"Hexagon small": ("hex", 26.0), "Hexagon medium": ("hex", 39.0), "Hexagon
 CALLIGRAPHY_SLANT = 55.0                              # degrees from the line, the italic hand's
 
 
-def _own(name, width, height, out):
+def _own(name, width, height, out, bounds):
     kind, size = OWN[name]
+    lo_x, lo_y, hi_x, hi_y = bounds
     d = []
     if kind == "hex":                                 # pointed top, rows offset by half a cell, from the page's middle
         side, w = size, size * math.sqrt(3)
         row = 1.5 * side
-        cols = int(width / w) + 3
-        x0 = width / 2.0 - w * (cols // 2)
+        c0 = int(math.floor((lo_x - width / 2.0) / w)) - 1
+        c1 = int(math.ceil((hi_x - width / 2.0) / w)) + 1
         r = 0
         y = 0.0
-        while y - side <= height:
+        while y - side <= hi_y:
             off = (w / 2.0) if r % 2 else 0.0
-            for c in range(cols + 1):
-                cx = x0 + off + c * w
+            for c in range(c0, c1 + 1):
+                cx = width / 2.0 + off + c * w
                 pts = [(cx + side * math.cos(math.radians(a)), y + side * math.sin(math.radians(a))) for a in (-90, -30, 30, 90, 150, 210)]
                 d.append("M%.2f %.2f" % pts[0] + "".join("L%.2f %.2f" % q for q in pts[1:]) + "Z")
             r += 1
@@ -401,33 +410,33 @@ def _own(name, width, height, out):
         u = size
         y = 2.0 * u
         dx = 3.0 * u / math.tan(math.radians(CALLIGRAPHY_SLANT))
-        while y + 3 * u <= height:
+        while y + 3 * u <= hi_y:
             for k in range(4):
-                d.append("M0 %.2f L%.2f %.2f" % (y + k * u, width, y + k * u))
-            x = -dx
-            while x < width:
+                d.append("M%.2f %.2f L%.2f %.2f" % (lo_x, y + k * u, hi_x, y + k * u))
+            x = -dx + 2.0 * u * (math.floor(lo_x / (2.0 * u)) - 1)   # the page's own spacing (-dx + 2u k), from the area's left
+            while x < hi_x:
                 d.append("M%.2f %.2f L%.2f %.2f" % (x, y + 3 * u, x + dx, y))
                 x += 2.0 * u
             y += 4.5 * u
     out.append('<path d="%s" fill="none" stroke="#000000" stroke-width="1.00"/>' % " ".join(d))
 
 
-def _repeat(spec, start, size, limit, env):
-    """Where a group's copies begin along one axis: a count, "down"/"right" to the page's end, "up"/"left" to its
-    start, "infinite" both ways, covering the page."""
+def _repeat(spec, start, size, lo, hi, env):
+    """Where a group's copies begin along one axis: a count, "down"/"right" to the drawing's end (`hi`), "up"/"left"
+    to its start (`lo`), "infinite" both ways, covering the drawing."""
     if size <= 0.5:
         return [start]
     if spec is None:
         return [start]
     if isinstance(spec, str) and spec in ("down", "right"):
-        n = int(max(0.0, limit - start) // size) + 1
+        n = int(max(0.0, hi - start) // size) + 1
         return [start + k * size for k in range(min(n, 4000))]
     if isinstance(spec, str) and spec in ("up", "left"):
-        n = int(max(0.0, start) // size) + 1
+        n = int(max(0.0, start - lo) // size) + 1
         return [start - k * size for k in range(min(n, 4000))]
     if spec == "infinite":
-        first = start - (int(start // size) + 1) * size
-        n = int((limit - first) // size) + 2
+        first = start - (int((start - lo) // size) + 1) * size
+        n = int((hi - first) // size) + 2
         return [first + k * size for k in range(min(n, 4000))]
     try:
         n = int(round(_num(spec, env)))
@@ -436,7 +445,7 @@ def _repeat(spec, start, size, limit, env):
     return [start + k * size for k in range(max(0, min(n, 4000)))]
 
 
-def _items(items, ox, oy, pw, ph, env, out, font, W, H):
+def _items(items, ox, oy, pw, ph, env, out, font, bounds):
     for it in items:
         kind = it.get("type")
         local = dict(env, parentWidth=pw, parentHeight=ph)
@@ -448,9 +457,9 @@ def _items(items, ox, oy, pw, ph, env, out, font, W, H):
                 w = _num(bb.get("width", pw), local)
                 h = _num(bb.get("height", ph), local)
                 rep = it.get("repeat") or {}
-                for gy in _repeat(rep.get("rows"), y, h, H, local):
-                    for gx in _repeat(rep.get("columns"), x, w, W, local):
-                        _items(it.get("children") or [], gx, gy, w, h, env, out, font, W, H)
+                for gy in _repeat(rep.get("rows"), y, h, bounds[1], bounds[3], local):
+                    for gx in _repeat(rep.get("columns"), x, w, bounds[0], bounds[2], local):
+                        _items(it.get("children") or [], gx, gy, w, h, env, out, font, bounds)
             elif kind == "path":
                 d, data, k = [], it.get("data") or [], 0
                 arity = {"M": 2, "L": 2, "C": 6, "Q": 4, "Z": 0}
