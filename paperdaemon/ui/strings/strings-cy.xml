@@ -700,6 +700,7 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="fm.cover.last">Y dudalen olaf a welwyd</string>
   <string name="fm.cover.first">Y dudalen gyntaf</string>
   <string name="fm.template">Templed</string>
+  <string name="fm.tpl_approx">Ni all PaperDaemon ddarllen y templed hwn o ap reMarkable: mae'r ap yn ei lunio yn ei god ei hun. Llun PaperDaemon ei hun yw hwn, yn agos ond nid yn union.</string>
   <string name="slot.loras_folder">Ffolder LoRA</string>
   <string name="slot.loras_folder.help">Agor ffolder LoRA y llinell hon. Mae pob LoRA ynddo'n mynd gyda phob llun mae'r llinell hon yn ei wneud, fel mae ei harnais delwedd yn dweud.</string>
   <string name="settings.render">Tynnu tudalennau</string>

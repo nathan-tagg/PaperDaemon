@@ -436,9 +436,9 @@ def describe_page(doc, page):
     L = []
     rows = [p for p in (paras or []) if str(p.get("text", "")).strip()]
     if rows:
-        L.append("TYPED TEXT ON THE PAGE (exact, the user typed this):")
+        L.append("TYPED TEXT ON THE PAGE (exact, the user typed this; **bold** and *italic* as the user set them):")
         for p in rows:
-            L.append("  y=%4d  %s" % (int(p.get("y") or 0), str(p["text"]).strip()[:300]))
+            L.append("  y=%4d  %s" % (int(p.get("y") or 0), str(p.get("marked") or p["text"]).strip()[:300]))
         L.append("")
     return "\n".join(L)
 
@@ -462,11 +462,15 @@ def job_context(doc, page, name):
                   "newest last, each under the page it was on -- a record of what was done, NOT a "
                   "source of facts: what an earlier job wrote may have been wrong; look facts up. "
                   "What another page asked or answered never settles a request on THIS page):", pad]
-    paras = []
+    paras, shown = [], []
     _t = time.time()
     try:
         _tb, ps = TY.paragraphs(doc, page)
-        paras = [str(p.get("text", "")).strip() for p in ps if str(p.get("text", "")).strip()]
+        kept = [p for p in ps if str(p.get("text", "")).strip()]
+        paras = [str(p.get("text", "")).strip() for p in kept]
+        # what the model reads: the same paragraphs with the user's bold and italic (typed.py `marked`); the
+        # listing's own text, which erasing matches against, stays plain
+        shown = [str(p.get("marked") or p.get("text", "")).strip() for p in kept]
     except Exception as ex:
         H._warn("reading the typed text", ex)
         L += ["", "THE TYPED TEXT COULD NOT BE READ (%s) -- if the picture shows typed words, do not "
@@ -477,8 +481,10 @@ def job_context(doc, page, name):
     # EVERY ID THE LISTING PRINTS IS ONE THE TOOLS' erase ENUM HOLDS (rm_steps.ERASE_IDS): what lies
     # beyond its ranges is counted, not numbered
     if paras:
-        L += ["", "TYPED PARAGRAPHS ON THE PAGE, the typed text, one each (its id: para:N):"]
-        L += ["  para:%d  %s" % (i + 1, t[:500]) for i, t in enumerate(paras[:ST.ERASE_RANGE["para"]])]
+        L += ["", "TYPED PARAGRAPHS ON THE PAGE, the typed text, one each (its id: para:N; the user's **bold** and "
+                  "*italic* shown as marks -- they are the user's emphasis and can carry meaning, an action in a "
+                  "roleplay say; the marks are not part of the words):"]
+        L += ["  para:%d  %s" % (i + 1, t[:500]) for i, t in enumerate(shown[:ST.ERASE_RANGE["para"]])]
         if len(paras) > ST.ERASE_RANGE["para"]:
             L.append("  ... and %d more typed paragraphs below these" % (len(paras) - ST.ERASE_RANGE["para"]))
     else:

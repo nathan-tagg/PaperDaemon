@@ -700,6 +700,7 @@
   <string name="fm.cover.last">上次查看的页面</string>
   <string name="fm.cover.first">第一页</string>
   <string name="fm.template">模板</string>
+  <string name="fm.tpl_approx">PaperDaemon 无法从 reMarkable 应用读取此模板：应用用自己的代码绘制它。这是 PaperDaemon 自己的绘制，接近但不精确。</string>
   <string name="slot.loras_folder">LoRA 文件夹</string>
   <string name="slot.loras_folder.help">打开此阵容的 LoRA 文件夹。其中的每个 LoRA 都会按此阵容的图像适配器所述，应用到它生成的每张图片。</string>
   <string name="settings.render">页面绘制</string>

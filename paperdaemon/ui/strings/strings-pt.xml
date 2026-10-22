@@ -700,6 +700,7 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="fm.cover.last">Última página visitada</string>
   <string name="fm.cover.first">Primeira página</string>
   <string name="fm.template">Modelo</string>
+  <string name="fm.tpl_approx">O PaperDaemon não consegue ler este modelo do app reMarkable: o app o desenha no próprio código. Este é o desenho do PaperDaemon, próximo, mas não exato.</string>
   <string name="slot.loras_folder">Pasta de LoRA</string>
   <string name="slot.loras_folder.help">Abre a pasta de LoRA desta formação. Cada LoRA nela é aplicada a cada imagem que esta formação faz, como diz o seu harness de imagem.</string>
   <string name="settings.render">Desenho das páginas</string>

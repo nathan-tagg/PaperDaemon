@@ -221,24 +221,30 @@ def _paragraphs_of(tb):
     """The old paragraph model for ONE text block: [{start_id, text, style, y, lines, ...}]."""
     styles = {(k.part1, k.part2): getattr(v.value, "value", v.value)
               for k, v in tb.styles.items()}
-    paras, buf, start = [], [], None
+    # BOLD AND ITALIC are the format items between the runs (1 bold on, 2 off, 3 italic on, 4 off): kept per
+    # character, for `marked` (the text with them as **bold** and *italic*, what the model reads)
+    paras, buf, fmt, start, bold, italic = [], [], [], None, False, False
     for it in tb.items.sequence_items():
         if start is None:
             start = (it.item_id.part1, it.item_id.part2)
         v = it.value
+        if isinstance(v, int) and not isinstance(v, bool) and not it.deleted_length:
+            bold = True if v == 1 else False if v == 2 else bold
+            italic = True if v == 3 else False if v == 4 else italic
         if isinstance(v, str):
             for k, ch in enumerate(v):
                 if ch in ("\n", LS, PS):
-                    paras.append((start, "".join(buf)))
-                    buf = []
+                    paras.append((start, "".join(buf), fmt))
+                    buf, fmt = [], []
                     start = (it.item_id.part1, it.item_id.part2 + k + 1)
                 else:
                     buf.append(ch)
+                    fmt.append((bold, italic))
     if buf or start:
-        paras.append((start, "".join(buf)))
+        paras.append((start, "".join(buf), fmt))
 
     out, y = [], float(tb.pos_y)
-    for idx, (sid, txt) in enumerate(paras):
+    for idx, (sid, txt, fmt) in enumerate(paras):
         # Style keys are NOT the paragraph-start id. The first paragraph is
         # keyed by CrdtId(0,0); every later one is keyed by the id of the
         # NEWLINE that ends the paragraph before it, i.e. start_id - 1. That is
@@ -265,11 +271,30 @@ def _paragraphs_of(tb):
         # `y` is the TOP of the paragraph's first line, in page coordinates. Say it here
         # because two readers derive geometry from it (text_bottom, rm_layout.occupancy) and a
         # third draws from it, and they have not always agreed about what it meant.
-        out.append({"start_id": sid, "text": txt, "style": style,
+        out.append({"start_id": sid, "text": txt, "marked": _marked(txt, fmt), "style": style,
                     "heading": heading, "size": size, "lh": lh,
                     "y": y, "lines": lines})
         y += lh * len(lines)
     return out
+
+
+def _marked(txt, fmt):
+    """The text with its bold as **...** and its italic as *...* (both: ***...***), each mark against the words it
+    holds (spaces at a run's ends stay outside it)."""
+    import itertools
+    out, k = [], 0
+    for (b, i), grp in itertools.groupby(fmt or []):
+        n = len(list(grp))
+        run = txt[k:k + n]
+        k += n
+        mark = ("**" if b else "") + ("*" if i else "")
+        core = run.strip()
+        if not mark or not core:
+            out.append(run)
+            continue
+        lead, tail = run[:len(run) - len(run.lstrip())], run[len(run.rstrip()):]
+        out.append(lead + mark + core + mark[::-1] + tail)
+    return "".join(out) + txt[k:]
 
 
 def _split_at_line_separators(got):

@@ -510,3 +510,22 @@ def test_a_page_goes_both_ways_in_the_binary_form_as_rmscene_reads_it():
         print(json.dumps([len(lines), len(lines[0]["points"]), lines[1]["colorRgba"], same]))
     """)
     assert got == [2, 50, [255, 195, 140, 255], True]
+
+
+def test_the_model_reads_the_users_bold_and_italic():
+    got = _run("""
+        import json
+        from paperdaemon.remarkable import local
+        from paperdaemon.pipeline.page import typed as TY
+        doc = local.new_notebook("Play")
+        scene = local.scene_of(doc, 1)
+        scene["text"] = {"x": -468, "y": 234, "width": 936, "paras": [
+            {"style": "body", "list": None, "runs": [{"text": "She ", "bold": False, "italic": False},
+                                                     {"text": "draws her sword", "bold": False, "italic": True},
+                                                     {"text": " and says ", "bold": False, "italic": False},
+                                                     {"text": "now", "bold": True, "italic": False}]}]}
+        local.write_scene(doc, 1, scene)
+        _tb, ps = TY.paragraphs(doc, 1)
+        print(json.dumps([(p["text"], p["marked"]) for p in ps if p["text"].strip()]))
+    """)
+    assert got == [["She draws her sword and says now", "She *draws her sword* and says **now**"]]

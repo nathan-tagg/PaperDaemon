@@ -349,9 +349,9 @@
     function walk(step) {
       const dlg = $("#" + VIEWER);
       if (!dlg || !dlg.open) return false;
+      // THE PAGES' HISTORY ONLY: at either end nothing happens (the viewer stays open, the app behind it stays put)
       const at = S.hpos + step;
-      if (at < 0) { dlg.close(); return true; }
-      if (at >= S.hist.length) return true;
+      if (at < 0 || at >= S.hist.length) return true;
       S.hpos = at;
       go(S.hist[at], true);
       return true;
@@ -473,6 +473,11 @@
         document.body.append(dlg);
         // the mouse's back (button 3) and forward (button 4) buttons, while a notebook is open: its pages, not the
         // app's screens. The press and the release are both taken, or the window would also go back a screen.
+        // and Alt+Left and Alt+Right wherever the keys are while it is open: the same walk, never the app's Back
+        window.addEventListener("keydown", e => {
+          if (!dlg.open || !e.altKey || e.ctrlKey || (e.key !== "ArrowLeft" && e.key !== "ArrowRight") || dlg.contains(e.target)) return;
+          e.preventDefault(); e.stopImmediatePropagation(); walk(e.key === "ArrowLeft" ? -1 : 1);
+        }, true);
         ["mousedown", "mouseup", "auxclick"].forEach(type => window.addEventListener(type, e => {
           if ((e.button !== 3 && e.button !== 4) || !dlg.open) return;
           e.preventDefault(); e.stopImmediatePropagation();
@@ -639,6 +644,10 @@
       // an rM Methods icon is a picture with its own colors: drawn as a mask, in the text's color like the rest
       : t.icon && t.icon.svg ? '<span class="tpl-ico tpl-mask" aria-hidden="true" style="--ico: url(&quot;data:image/svg+xml;base64,' + esc(t.icon.svg) + '&quot;)"></span>'
       : '<svg class="tpl-ico" viewBox="0 0 30 40" aria-hidden="true"><rect x="1" y="1" width="28" height="38" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>';
+    // A TEMPLATE PAPERDAEMON DRAWS ITSELF (the app keeps no definition of it), marked as the editor's picker marks it
+    const approxMark = () => '<span class="tpl-approx" title="' + esc(PD.t("fm.tpl_approx")) + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+      'stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 21.5 20h-19z"/><path d="M12 10v4.5" stroke-linecap="round"/>' +
+      '<circle cx="12" cy="17.2" r="0.6" fill="currentColor"/></svg></span>';
     async function newNotebook() {
       const [tpls] = await PD.safe(PD.api("GET", "/templates"));
       const list = Array.isArray(tpls) ? tpls : [];
@@ -648,7 +657,8 @@
         '<label class="check-label"><input type="radio" name="nb-cover" value="first"> ' + esc(PD.t("fm.cover.first")) + "</label></fieldset>" +
         (list.length ? '<div class="field-row"><span>' + esc(PD.t("fm.template")) + '</span><div class="nb-tpls" role="radiogroup">' +
           list.map((t, i) => '<button type="button" class="nb-tpl' + (i ? "" : " here") + '" role="radio" aria-checked="' + (i ? "false" : "true") +
-            '" data-tpl="' + esc(t.file) + '" title="' + esc(t.name) + '">' + tplIcon(t) + "<span>" + esc(t.name) + "</span></button>").join("") +
+            '" data-tpl="' + esc(t.file) + '" title="' + esc(t.name + (t.approx ? " -- " + PD.t("fm.tpl_approx") : "")) + '">' + tplIcon(t) +
+            "<span>" + esc(t.name) + "</span>" + (t.approx ? approxMark() : "") + "</button>").join("") +
           "</div></div>" : "");
       const dlg = ask(PD.t("fm.new_notebook"), inner, PD.t("fm.create"), async d => {
         const cover = (d.querySelector("[name=nb-cover]:checked") || {}).value || "last";

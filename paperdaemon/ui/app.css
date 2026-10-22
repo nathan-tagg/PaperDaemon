@@ -211,6 +211,9 @@ dialog.sheet fieldset.field-row legend { padding: 0; margin-bottom: var(--s1); }
 .nb-tpl span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nb-tpl:hover { background: var(--paper-sunk); }   /* the sheet is --field */
 .nb-tpl.here { border-bottom-color: var(--ink); }
+.nb-tpl { position: relative; }
+.nb-tpl .tpl-approx { position: absolute; top: 6px; right: 8px; width: 16px; height: 16px; color: #C9A227; display: grid; place-items: center; }
+.nb-tpl .tpl-approx svg { width: 16px; height: 16px; }
 .nb-tpl .tpl-ico { display: block; width: 45px; height: 60px; fill: currentColor; }
 .nb-tpl .tpl-mask { background: currentColor; -webkit-mask: var(--ico) center / contain no-repeat; mask: var(--ico) center / contain no-repeat; }
 

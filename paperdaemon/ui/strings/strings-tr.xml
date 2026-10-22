@@ -700,6 +700,7 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="fm.cover.last">Son ziyaret edilen sayfa</string>
   <string name="fm.cover.first">İlk sayfa</string>
   <string name="fm.template">Şablon</string>
+  <string name="fm.tpl_approx">PaperDaemon bu şablonu reMarkable uygulamasından okuyamaz: uygulama onu kendi koduyla çizer. Bu, PaperDaemon'ın kendi çizimi; yakın ama tam değil.</string>
   <string name="slot.loras_folder">LoRA klasörü</string>
   <string name="slot.loras_folder.help">Bu dizilimin LoRA klasörünü açar. İçindeki her LoRA, bu dizilimin yaptığı her resme, görüntü koşumunun dediği gibi uygulanır.</string>
   <string name="settings.render">Sayfa çizimi</string>

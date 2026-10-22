@@ -700,6 +700,7 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="fm.cover.last">Trang xem gần nhất</string>
   <string name="fm.cover.first">Trang đầu tiên</string>
   <string name="fm.template">Mẫu</string>
+  <string name="fm.tpl_approx">PaperDaemon không đọc được mẫu này từ ứng dụng reMarkable: ứng dụng tự vẽ nó bằng mã riêng. Đây là bản vẽ của PaperDaemon, gần giống nhưng không chính xác.</string>
   <string name="slot.loras_folder">Thư mục LoRA</string>
   <string name="slot.loras_folder.help">Mở thư mục LoRA của đội hình này. Mọi LoRA trong đó được áp dụng cho mọi ảnh đội hình này tạo, theo cách harness ảnh của nó quy định.</string>
   <string name="settings.render">Vẽ trang</string>

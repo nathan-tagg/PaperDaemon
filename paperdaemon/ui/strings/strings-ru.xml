@@ -714,6 +714,7 @@
   <string name="fm.cover.last">Последняя открытая страница</string>
   <string name="fm.cover.first">Первая страница</string>
   <string name="fm.template">Шаблон</string>
+  <string name="fm.tpl_approx">PaperDaemon не может прочитать этот шаблон из приложения reMarkable: приложение рисует его своим кодом. Это собственный рисунок PaperDaemon, близкий, но не точный.</string>
   <string name="slot.loras_folder">Папка LoRA</string>
   <string name="slot.loras_folder.help">Открывает папку LoRA этого набора. Каждая LoRA из неё применяется к каждому изображению этого набора так, как велит его харнесс изображений.</string>
   <string name="settings.render">Отрисовка страниц</string>

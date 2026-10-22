@@ -700,6 +700,7 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="fm.cover.last">Sist besøkte side</string>
   <string name="fm.cover.first">Første side</string>
   <string name="fm.template">Mal</string>
+  <string name="fm.tpl_approx">PaperDaemon kan ikke lese denne malen fra reMarkable-appen: appen tegner den i sin egen kode. Dette er PaperDaemons egen tegning, nær, men ikke nøyaktig.</string>
   <string name="slot.loras_folder">LoRA-mappe</string>
   <string name="slot.loras_folder.help">Åpner LoRA-mappen til dette oppsettet. Hver LoRA i den brukes på hvert bilde oppsettet lager, slik bildeharnessen sier.</string>
   <string name="settings.render">Tegning av sider</string>

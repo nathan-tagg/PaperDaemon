@@ -700,6 +700,7 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="fm.cover.last">Halaman terakhir dikunjungi</string>
   <string name="fm.cover.first">Halaman pertama</string>
   <string name="fm.template">Templat</string>
+  <string name="fm.tpl_approx">PaperDaemon tidak bisa membaca templat ini dari aplikasi reMarkable: aplikasi menggambarnya dengan kodenya sendiri. Ini gambar PaperDaemon sendiri, mirip tetapi tidak persis.</string>
   <string name="slot.loras_folder">Folder LoRA</string>
   <string name="slot.loras_folder.help">Buka folder LoRA susunan ini. Setiap LoRA di dalamnya ikut pada setiap gambar yang dibuat susunan ini, seperti kata harness gambarnya.</string>
   <string name="settings.render">Menggambar halaman</string>

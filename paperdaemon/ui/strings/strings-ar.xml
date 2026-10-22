@@ -721,6 +721,7 @@
   <string name="fm.cover.last">آخر صفحة زرتها</string>
   <string name="fm.cover.first">الصفحة الأولى</string>
   <string name="fm.template">القالب</string>
+  <string name="fm.tpl_approx">لا يستطيع PaperDaemon قراءة هذا القالب من تطبيق reMarkable: يرسمه التطبيق بشيفرته الخاصة. هذا رسم PaperDaemon الخاص، قريب لكنه ليس دقيقًا.</string>
   <string name="slot.loras_folder">مجلد LoRA</string>
   <string name="slot.loras_folder.help">افتح مجلد LoRA لهذه التشكيلة. كل LoRA فيه يُطبّق على كل صورة تصنعها هذه التشكيلة، كما يقول محوّل الصور الخاص بها.</string>
   <string name="settings.render">رسم الصفحات</string>

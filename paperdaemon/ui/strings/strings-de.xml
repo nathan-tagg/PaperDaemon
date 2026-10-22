@@ -700,6 +700,7 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="fm.cover.last">Zuletzt besuchte Seite</string>
   <string name="fm.cover.first">Erste Seite</string>
   <string name="fm.template">Vorlage</string>
+  <string name="fm.tpl_approx">PaperDaemon kann diese Vorlage nicht aus der reMarkable-App lesen: Die App zeichnet sie in ihrem eigenen Code. Dies ist PaperDaemons eigene Zeichnung, nah dran, aber nicht exakt.</string>
   <string name="slot.loras_folder">LoRA-Ordner</string>
   <string name="slot.loras_folder.help">Öffnet den LoRA-Ordner dieser Aufstellung. Jede LoRA darin wird bei jedem Bild dieser Aufstellung angewendet, so wie ihr Bild-Harness es vorgibt.</string>
   <string name="settings.render">Seiten zeichnen</string>

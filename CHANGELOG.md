@@ -9,7 +9,13 @@ False Mirror:
 - Moving pages: the bar asks for the page they go next to; choose one in the grid and the bar offers Move before and Move after, each with its icon. Move out leaves the notebook: open another notebook in the library, choose a page in its grid, then before or after.
 
 Page editor:
-- The mouse's back and forward buttons over a page turn the viewer's pages again (0.1.73 stopped the app going back a screen but also stopped the turn).
+- Back and forward (the mouse's buttons, Alt+Left and Alt+Right, the same thing) walk the history of pages you have been on, wherever the keys or the pointer are, the page open to edit or to look at. At either end they do nothing: they never close the viewer or move the app behind it.
+- The caret is as tall as the letters, not the whole line, and leans while italic is on.
+- With the eraser in hand, Shift changes nothing: its own pointer and its own erase. The erasers' pointers are made ahead, so the system's large cross no longer flashes before the circle.
+- Templates PaperDaemon draws itself (the hexagons and calligraphy pages) say why on hover, in the editor's picker and in New notebook.
+
+The lineup:
+- The model reads the user's bold and italic in the typed text (as **bold** and *italic*); in a roleplay italic is often an action.
 
 ## 0.1.74
 

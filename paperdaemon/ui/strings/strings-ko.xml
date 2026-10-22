@@ -700,6 +700,7 @@
   <string name="fm.cover.last">마지막으로 본 페이지</string>
   <string name="fm.cover.first">첫 페이지</string>
   <string name="fm.template">템플릿</string>
+  <string name="fm.tpl_approx">PaperDaemon은 reMarkable 앱에서 이 템플릿을 읽을 수 없습니다. 앱이 자체 코드로 그리기 때문입니다. 이것은 PaperDaemon이 직접 그린 것으로, 비슷하지만 정확하지 않습니다.</string>
   <string name="slot.loras_folder">LoRA 폴더</string>
   <string name="slot.loras_folder.help">이 라인업의 LoRA 폴더를 엽니다. 그 안의 모든 LoRA는 이 라인업이 만드는 모든 그림에 이미지 하네스가 정한 방식대로 적용됩니다.</string>
   <string name="settings.render">페이지 그리기</string>

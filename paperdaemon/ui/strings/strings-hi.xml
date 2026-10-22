@@ -700,6 +700,7 @@
   <string name="fm.cover.last">आख़िरी देखा गया पेज</string>
   <string name="fm.cover.first">पहला पेज</string>
   <string name="fm.template">टेम्पलेट</string>
+  <string name="fm.tpl_approx">PaperDaemon इस टेम्पलेट को reMarkable ऐप से नहीं पढ़ सकता: ऐप इसे अपने कोड से बनाता है। यह PaperDaemon का अपना चित्र है, मिलता-जुलता पर सटीक नहीं।</string>
   <string name="slot.loras_folder">LoRA फ़ोल्डर</string>
   <string name="slot.loras_folder.help">इस लाइनअप का LoRA फ़ोल्डर खोलें। इसमें रखा हर LoRA इस लाइनअप की बनाई हर तस्वीर पर लगता है, जैसा इसका इमेज हार्नेस कहता है।</string>
   <string name="settings.render">पेज बनाना</string>

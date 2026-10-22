@@ -200,6 +200,13 @@ span.lname { cursor: default; }
       if (el.closest("#vp")) { e.preventDefault(); e.stopImmediatePropagation(); }
     }, true);
   }
+  // ALT+LEFT AND ALT+RIGHT, the page open to edit or to look at, walk the viewer's history of pages (as the mouse's back
+  // and forward buttons do): never the browser's Back, which took the app behind the viewer a screen back
+  window.addEventListener("keydown", e => {
+    if (!e.altKey || e.ctrlKey || e.metaKey || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (window.parent !== window) window.parent.postMessage({ pd: "view-key", key: e.key, altKey: true }, location.origin);
+  }, true);
   // THE MOUSE'S BACK AND FORWARD BUTTONS over the page walk the viewer's history, as Alt+Left and Alt+Right do: the
   // press and the release both taken here, or the app's window would go back a screen behind the viewer
   for (const t of ["pointerdown", "pointerup", "mousedown", "mouseup", "auxclick"]) window.addEventListener(t, e => {
@@ -877,6 +884,7 @@ span.lname { cursor: default; }
     cv.width = Math.round(vpW * dpr); cv.height = Math.round(vpH * dpr);
     cv.style.width = vpW + "px"; cv.style.height = vpH + "px";
     rebuild();
+    if (!THUMB_W) try { eraserCursor("area"); } catch (e) { /* the page still setting up: the first key makes them */ }
   }
   // WHAT THE TABLET SHOWS AT 1x, in page units across: a notebook's screen; a page of a PDF or a book as the document's
   // zoom mode fits it on the screen (bestFit: the whole page, so the wider of its width and three quarters of its
@@ -1653,9 +1661,10 @@ span.lname { cursor: default; }
     (dash ? ' stroke-dasharray="' + dash + '"' : "") + ">" + body + "</g></g></svg>") + '") ' + Math.floor(n / 2) + " " + Math.floor(n / 2) + ", crosshair";
   const SHAPE_LOOKS = { circle: '<circle cx="10.5" cy="10.5" r="6.5"/>', triangle: '<path d="M10.5 3.5l6.8 12H3.7z"/>', square: '<rect x="4.5" y="4.5" width="12" height="12"/>',
                         rectangle: '<rect x="2.5" y="6" width="16" height="9"/>', arrow: '<path d="M4 17L17 4M17 4h-6M17 4v6"/>' };
+  const PEN_CURSOR = cursorOf('<path d="M10.5 5.5v10M5.5 10.5h10"/>');
   (() => {
-    const cross = '<path d="M10.5 5.5v10M5.5 10.5h10"/>', dot = '<path d="M10.5 10.5h.01"/>';
-    let css = ".viewport { cursor: " + cursorOf(cross) + "; }\n";
+    const dot = '<path d="M10.5 10.5h.01"/>';
+    let css = ".viewport { cursor: " + PEN_CURSOR + "; }\n";
     for (const [k, v] of Object.entries(SHAPE_LOOKS)) css += '.viewport[data-shape="' + k + '"] { cursor: ' + cursorOf(v + dot) + "; }\n";
     css += ".viewport.ibeam { cursor: text; }\n";
     const st = document.createElement("style"); st.textContent = css; document.head.append(st);
@@ -1664,10 +1673,13 @@ span.lname { cursor: default; }
   // empty circle, strokes the circle crossed through, a zone a small dotted circle, or the zone's shape, dotted. Past the
   // largest pointer the system draws, the ring is drawn on the page under a plain cross (drawEraser). Each is drawn on a
   // canvas at the screen's own pixels (devicePixelRatio), smoothed, and given to the system at that resolution, so it is
-  // as clean as the page under it: a thin dark line on a soft light edge.
+  // as clean as the page under it: a thin dark line on a soft light edge. ALL OF THEM ARE MADE AHEAD for the size in use
+  // (and their pictures loaded), so a key pressed shows the eraser at once, never the system's cross while it loads; and
+  // the fallback, if one is ever needed, is the pen's own small cross.
   const CURSOR_MAX = 128;
   const eraseCss = document.head.appendChild(document.createElement("style"));   // after the pens' pointers: it wins
-  let eraseCssKey = "";
+  let eraseSet = "";
+  const preload = [];
   const ZONE_LOOKS = { 0: "M16.5 10.5a6 6 0 1 1-12 0a6 6 0 1 1 12 0z", 2: "M17 10.5a6.5 6.5 0 1 1-13 0a6.5 6.5 0 1 1 13 0z",
                        3: "M10.5 3.5l6.8 12H3.7z", 4: "M4.5 4.5h12v12h-12z", 5: "M2.5 6h16v9h-16z" };
   function cursorImage(n, draw) {                             // n CSS pixels square -> the cursor's CSS image, smoothed
@@ -1678,12 +1690,22 @@ span.lname { cursor: default; }
     const pass = (w, color) => { g.save(); g.lineWidth = w; g.strokeStyle = color; draw(g); g.restore(); };
     pass(3, "rgba(255,255,255,0.85)"); pass(1.25, "rgba(20,20,20,0.95)");
     const url = cv2.toDataURL("image/png"), h = Math.floor(n / 2);
-    return { plain: 'url("' + url + '") ' + h + " " + h + ", crosshair", sharp: 'image-set(url("' + url + '") ' + s + "x) " + h + " " + h + ", crosshair" };
+    const im = new Image(); im.src = url; preload.push(im);    // decoded now, not when first shown
+    return { plain: 'url("' + url + '") ' + h + " " + h + ", " + PEN_CURSOR, sharp: 'image-set(url("' + url + '") ' + s + "x) " + h + " " + h + ", " + PEN_CURSOR };
   }
   function eraserCursor(mode, shape) {                        // -> the key put on the viewport as data-erase
     const d = 2 * eraserR() * scale(), n = Math.max(11, Math.ceil(d) + 6), c = n / 2, r = Math.max(1.5, d / 2);
-    const key = mode === "zone" ? "zone" + (shape || "") : n > CURSOR_MAX ? "big" : mode + n;
-    if (key === eraseCssKey) return key;
+    const set = n + "@" + (window.devicePixelRatio || 1);
+    if (set !== eraseSet) {                                   // the size changed: every pointer made anew, at once
+      eraseSet = set; preload.length = 0;
+      const rules = [];
+      for (const m of ["area", "stroke"]) { const k = n > CURSOR_MAX ? "big" : m + n; rules.push(eraserRule(k, m, 0, n, c, r)); }
+      for (const z of [0, 2, 3, 4, 5]) rules.push(eraserRule("zone" + (z || ""), "zone", z, n, c, r));
+      eraseCss.textContent = rules.join("\n");
+    }
+    return mode === "zone" ? "zone" + (shape || "") : n > CURSOR_MAX ? "big" : mode + n;
+  }
+  function eraserRule(key, mode, shape, n, c, r) {
     let im = null;
     if (mode === "zone") {
       const p = new Path2D(ZONE_LOOKS[shape || 0]);
@@ -1697,9 +1719,7 @@ span.lname { cursor: default; }
       });
     }
     const sel = '.viewport[data-erase="' + key + '"]';
-    eraseCss.textContent = im ? sel + " { cursor: " + im.plain + "; cursor: " + im.sharp + "; }" : sel + " { cursor: crosshair; }";
-    eraseCssKey = key;
-    return key;
+    return im ? sel + " { cursor: " + im.plain + "; cursor: " + im.sharp + "; }" : sel + " { cursor: " + PEN_CURSOR + "; }";
   }
   // A FILL: the area of one color under the click, as the page shows it now (bounded by ink, text and the edge of what is
   // on screen: a fill never reaches past the view), painted by the decomposer itself: the engine runs its ring planner
@@ -2167,11 +2187,19 @@ span.lname { cursor: default; }
   }
   function drawCaret() {
     if (!editing() || !caretOn || !textLayout.paras.length) return;
-    ctx.fillStyle = "#000";
+    // THE CARET IS AS TALL AS THE LETTERS, from the top of a capital to the foot of a descender on the line's baseline
+    // (not the line's whole height), and leans as italic letters do while italic is on
+    ctx.strokeStyle = "#000"; ctx.lineWidth = 1.5; ctx.lineCap = "butt";
     for (const c of cursors) {
       if (selOf(c) || !textLayout.paras[c.caret.p]) continue;
-      const pt = caretPoint(c.caret), [sx, sy] = toScreen(pt.x, pt.y + 2);
-      ctx.fillRect(Math.round(sx), sy, 1.5, pt.h * scale());
+      const pt = caretPoint(c.caret), style = page.text.paras[c.caret.p].style;
+      meas.font = fontOf(style, false, false);
+      const base = pt.y + meas.measureText("Hg").fontBoundingBoxAscent;   // drawText's baseline
+      meas.font = fontOf(style, typingB, typingI);
+      const m = meas.measureText("Hg"), up = m.actualBoundingBoxAscent, down = m.actualBoundingBoxDescent;
+      const lean = typingI ? Math.tan(12 * Math.PI / 180) : 0;
+      const [bx, by] = toScreen(pt.x - lean * down, base + down), [tx, ty] = toScreen(pt.x + lean * up, base - up);
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(tx, ty); ctx.stroke();
     }
   }
   function drawSelection() {
@@ -2223,7 +2251,7 @@ span.lname { cursor: default; }
   function updateCursor() {
     // at once, unless text is being typed (a key typed in the last 0.4 s): then once the mouse moves or the typing stops
     const byKeys = keyErase(held), armed = byKeys && (heldMoved || !editing() || performance.now() - typedAt >= 400);
-    const mode = erasing ? erasing.mode || eraseMode : zone ? "zone" : armed ? byKeys : tool === "eraser" ? eraseMode : null;
+    const mode = erasing ? erasing.mode || eraseMode : zone ? "zone" : tool === "eraser" ? eraseMode : armed ? byKeys : null;
     const key = mode ? eraserCursor(mode, mode === "zone" ? (zone ? zone.shape : zoneShapeNow()) : 0) : null;
     if (key) { if (vp.dataset.erase !== key) vp.dataset.erase = key; } else delete vp.dataset.erase;
     vp.classList.toggle("ibeam", !key && overText);
@@ -2278,7 +2306,7 @@ span.lname { cursor: default; }
     heldKeys(e);
     const [x, y] = toPage(...local(e));
     if (e.button === 2) { e.preventDefault(); openMenu(e, x, y); return; }   // THE RIGHT BUTTON IS A MENU (openMenu)
-    const byKeys = keyErase(e);
+    const byKeys = tool === "eraser" ? null : keyErase(e);      // the eraser in hand is its own: the keys change nothing
     if (byKeys) {
       e.preventDefault();
       shapeAt = shapeHover = null; poly = null;
@@ -3719,8 +3747,10 @@ span.lname { cursor: default; }
 
   // THE TEMPLATE PICKER: one screen over the editor, every template there is (defaults and rM Methods together, no tabs,
   // no filter) as its icon over its name, the page's own underlined; choosing one sets it and closes the screen
-  const APPROX = '<span class="tpl-approx" title="PaperDaemon cannot read this template from the reMarkable app. It is an approximation.">' +
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.5 21.5 20h-19z"/>' +
+  // the words, on the mark and on the whole button: hovered anywhere on it, they show
+  const APPROX_WHY = "PaperDaemon cannot read this template from the reMarkable app: the app draws it in its own code. This is PaperDaemon's own drawing of it, close but not exact.";
+  const APPROX = '<span class="tpl-approx" title="' + APPROX_WHY + '">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><title>' + APPROX_WHY + '</title><path d="M12 3.5 21.5 20h-19z"/>' +
     '<path d="M12 10v4.5" stroke-linecap="round"/><circle cx="12" cy="17.2" r="0.6" fill="currentColor"/></svg></span>';
   async function openTemplates() {
     let box = document.getElementById("tpl-pick");
@@ -3746,7 +3776,7 @@ span.lname { cursor: default; }
       : t.icon && t.icon.svg ? '<span class="tpl-ico tpl-mask" style="--ico: url(&quot;data:image/svg+xml;base64,' + t.icon.svg + '&quot;)"></span>'
       : '<svg class="tpl-ico" viewBox="0 0 30 40"><rect x="1" y="1" width="28" height="38" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>';
     box.querySelector(".tpl-grid").innerHTML = list.length ? list.map(t => '<button class="tpl' + (t.file === page.template ? " here" : "") + '" data-tpl="' + t.file.replace(/"/g, "&quot;") +
-      '" title="' + t.name + '">' + icon(t) + "<span>" + t.name + "</span>" + (t.approx ? APPROX : "") + "</button>").join("") : "<p>No templates were found in the reMarkable app on this computer.</p>";
+      '" title="' + t.name + (t.approx ? " -- " + APPROX_WHY : "") + '">' + icon(t) + "<span>" + t.name + "</span>" + (t.approx ? APPROX : "") + "</button>").join("") : "<p>No templates were found in the reMarkable app on this computer.</p>";
   }
 
   // THE THUMBNAIL: everything under the ink in (template, the book's page, placed pictures, the faces), then the page
