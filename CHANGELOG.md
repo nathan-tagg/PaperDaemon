@@ -1,8 +1,9 @@
 # Changelog
 
-## 0.1.58
+## 0.1.59
 
 - Draw pages on the processor is a setting in Settings now, one for every lineup, under Network access. It was on each lineup's Text tab. A lineup that had it on turns it on for all.
+- A folder PaperDaemon opens for you (a lineup's LoRA folder, the harnesses folder) opens in front, over PaperDaemon's window. It used to open behind every other app. The LoRA folder link no longer sends the window to another screen.
 
 ## 0.1.57
 

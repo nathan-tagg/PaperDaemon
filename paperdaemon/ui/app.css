@@ -225,7 +225,8 @@ dialog.sheet fieldset.field-row legend { padding: 0; margin-bottom: var(--s1); }
 .script-box textarea { width: 100%; box-sizing: border-box; resize: vertical; }
 /* the LoRA folder's link: under the box's right edge, in the space already there (the panel is no taller) */
 .script-box { position: relative; }
-.script-link { position: absolute; right: 0; top: 100%; margin-top: 2px; font-size: 12px; line-height: 1.2; color: var(--ink-2); }
+.script-link { position: absolute; right: 0; top: 100%; margin-top: 2px; padding: 0; border: 0; background: none; font: inherit;
+  font-size: 12px; line-height: 1.2; color: var(--ink-2); text-decoration: underline; cursor: pointer; }
 .script-link:hover { color: var(--ink); }
 
 .slot h3 { font: 600 18px/24px var(--font-head); margin: 0 0 var(--s3); }

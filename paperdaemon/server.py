@@ -1060,8 +1060,9 @@ def post_harnesses_open(body: dict = Body(default={})):
     sub = harnesses.SUBFOLDERS.get(str((body or {}).get("kind") or ""))
     if sub:
         folder = os.path.join(folder, sub)
+    from . import folders
     try:
-        os.startfile(folder)                         # Windows: File Explorer
+        folders.open_folder(folder)                  # in front, over PaperDaemon's window
     except (AttributeError, OSError) as ex:
         return {"opened": False, "folder": folder, "error": str(ex)[:200]}
     return {"opened": True, "folder": folder}

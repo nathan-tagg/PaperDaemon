@@ -47,6 +47,7 @@ def rename(old, new):
 
 def open_folder(lineup):
     """The folder in the file manager. -> its path."""
+    from . import folders
     p = folder(lineup)
-    os.startfile(p)                                    # Windows: Explorer
+    folders.open_folder(p)                             # in front, over PaperDaemon's window
     return p

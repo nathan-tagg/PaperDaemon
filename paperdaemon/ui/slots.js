@@ -88,8 +88,8 @@
         PD.scriptHelpLink(role) + "</div>" +
         PD.codeHtml(id + "-scripttext", f.scriptText || "", 14, PD.t("slot.script"), false, "bat") +
         // the lineup's LoRA folder, a small link under the box's right edge, in the space already below it
-        (role === "image" && lineup ? '<a href="#" class="script-link" data-act="loras" data-lineup="' + esc(lineup) + '" title="' +
-          esc(PD.t("slot.loras_folder.help")) + '">' + esc(PD.t("slot.loras_folder")) + "</a>" : "") + "</div>";
+        (role === "image" && lineup ? '<button type="button" class="script-link" data-act="loras" data-lineup="' + esc(lineup) + '" title="' +
+          esc(PD.t("slot.loras_folder.help")) + '">' + esc(PD.t("slot.loras_folder")) + "</button>" : "") + "</div>";
     }
     return out;
   }
