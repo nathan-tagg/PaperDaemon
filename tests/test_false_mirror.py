@@ -432,6 +432,39 @@ def test_the_editor_draws_a_group_where_the_tablet_does():
     assert got == {"rows": [[210.0, 1000.0], [270.0, 1050.0]], "arr": [210.0, 1000.0]}
 
 
+def test_a_page_naming_one_item_twice_still_opens():
+    """A layer holding a group and a stroke under one id (an older writer left pages so) opens in the editor whole,
+    as the renderer draws it, rather than failing with "Already have item"."""
+    got = _run("""
+        import io, json, dataclasses
+        from rmscene import read_blocks, write_blocks, scene_stream as ss, scene_items as si
+        from rmscene.crdt_sequence import CrdtSequenceItem
+        from rmscene.scene_stream import CrdtId
+        from rmscene.tagged_block_common import LwwValue
+        from paperdaemon.remarkable import local
+        from paperdaemon.pipeline.page import render as R
+        a = local.new_notebook("A")
+        sc = local.scene_of(a, 1)
+        sc["layers"][0]["lines"].append({"pen": "FINELINER_2", "penCode": 17, "color": 0, "thicknessScale": 1.0,
+                                         "points": [[0, 900, 0, 0, 16, 190], [60, 950, 0, 0, 16, 190]]})
+        local.write_scene(a, 1, sc)
+        path = local._rm(a, 1)
+        blocks = list(read_blocks(io.BytesIO(open(path, "rb").read())))
+        line = next(b for b in blocks if isinstance(b, ss.SceneLineItemBlock))
+        node = CrdtId(1, 900)
+        g = si.Group(node_id=node)
+        g.label = LwwValue(timestamp=CrdtId(1, 901), value="")
+        blocks[-1:-1] = [ss.SceneTreeBlock(tree_id=node, node_id=CrdtId(0, 0), is_update=True, parent_id=line.parent_id),
+                         ss.TreeNodeBlock(group=g),
+                         ss.SceneGroupItemBlock(parent_id=line.parent_id, item=CrdtSequenceItem(
+                             item_id=line.item.item_id, left_id=CrdtId(0, 0), right_id=CrdtId(0, 0), deleted_length=0, value=node))]
+        buf = io.BytesIO(); write_blocks(buf, blocks); open(path, "wb").write(buf.getvalue())
+        sc = local.scene_of(a, 1)
+        print(json.dumps([sum(len(L["lines"]) for L in sc["layers"]), len(R.strokes(a, 1))]))
+    """)
+    assert got == [1, 1]
+
+
 def test_a_page_unchanged_is_not_read_again():
     # the editor asks with the version it has: the same page answers 304 and is not read; a write gives the new one
     got = _run("""

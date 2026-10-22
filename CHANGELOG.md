@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.69
+
+- A page of a PDF or a book fills the screen as the tablet shows it (its zoom, "best fit": the whole page, as large as fits). Its frame is its own size -- a cover 1245 units wide, a planner 5095 -- and shown on a notebook's 1620 it sat small in a white margin, or showed only its top corner. Covers fill the page now, in the Mirror, the page grid and the covers.
+- A short, wide page (a hymn's last lines, a landscape sheet) is no longer drawn as a narrow white strip.
+- Pictures show on the pages of a document in the trash.
+- A page that names one item twice (a group and a stroke under one id, as an older writer left some pages) opens in the Mirror and the page editor, drawn whole, instead of failing to open.
+
 ## 0.1.68
 
 - The page editor and the Mirror draw a drawing where the tablet does. A group of strokes anchored to the typed text (below it, or at a paragraph) was drawn at its stored coordinates, top left and over the text, and the grid's pictures and covers with it; a save from the editor wrote it there.

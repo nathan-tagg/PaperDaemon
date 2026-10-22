@@ -598,7 +598,7 @@ def scene_of(doc, page_no, arrays=False):
     blocks = parts[0] if parts else list(fastrm.read_blocks(data))
     info = next((b for b in blocks if isinstance(b, ss.SceneInfo)), None)
     tree = SceneTree()
-    ss.build_tree(tree, blocks)
+    _build_tree(tree, blocks)
     typed_here = any(isinstance(b, ss.RootTextBlock) for b in blocks)
     if parts:
         groups = [g for g in tree.root.children.values() if isinstance(g, si.Group)]
@@ -607,7 +607,7 @@ def scene_of(doc, page_no, arrays=False):
             parts = None                            # groups in a layer, or strokes outside the layers: read as before
             blocks = list(fastrm.read_blocks(data))
             tree = SceneTree()
-            ss.build_tree(tree, blocks)
+            _build_tree(tree, blocks)
 
     # WHERE THE TABLET DRAWS EACH GROUP: one anchored to the typed text moves with it (render._anchor_offsets, as the
     # renderer places it). Read at their stored coordinates, a drawing anchored below the text sat at the top left,
@@ -663,7 +663,8 @@ def scene_of(doc, page_no, arrays=False):
     return {"paperSize": size, "layers": layers, "text": text,
             "textVisible": bool(lww(getattr(info, "root_document_visible", None), True)),
             "templateVisible": bool(lww(getattr(info, "background_visible", None), True)),
-            "template": page_template(doc, page_no), "source": source, "images": pictures_of(doc, page_no, data)}
+            "template": page_template(doc, page_no), "source": source, "images": pictures_of(doc, page_no, data),
+            "zoom": _content(doc).get("zoomMode") or "bestFit"}
 
 
 # ---------------------------------------------------------------- pictures on a page
@@ -771,6 +772,35 @@ def _line_blocks_in(data):
 
 
 _writing = threading.Lock()                          # one page written at a time: a save never meets another half way
+
+
+def _build_tree(tree, blocks):
+    """rmscene's build_tree, but a page that names one item twice in a layer (a group and a stroke under one id, as a
+    writer once left them) is read whole, as the tablet and the renderer draw it: the second keeps its place under an
+    id of its own instead of the page failing to open ("Already have item")."""
+    from dataclasses import replace
+    spare = [0]
+
+    def add(item, parent):
+        try:
+            tree.add_item(item, parent)
+        except ValueError as ex:
+            if "Already have item" not in str(ex):
+                raise
+            spare[0] += 1
+            tree.add_item(replace(item, item_id=CrdtId(0x7FFF, spare[0])), parent)
+    for b in blocks:
+        if isinstance(b, ss.SceneGroupItemBlock):
+            node_id = b.item.value
+            if node_id is None:
+                continue
+            if node_id not in tree:
+                raise ValueError("Node does not exist for SceneGroupItemBlock: %s" % node_id)
+            add(replace(b.item, value=tree[node_id]), b.parent_id)
+        elif isinstance(b, (ss.SceneLineItemBlock, ss.SceneGlyphItemBlock)):
+            add(b.item, b.parent_id)
+        else:
+            ss.build_tree(tree, [b])
 
 
 def write_scene(doc, page_no, scene):

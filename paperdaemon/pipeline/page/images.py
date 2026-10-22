@@ -591,11 +591,12 @@ def items(doc, page_no, page_id=None):
     """The live images of a page with their files resolved. [] when there are none."""
     try:
         from paperdaemon.pipeline.page import render as R
-        d = R.find_doc(doc) if hasattr(R, "find_doc") else doc
+        # a document in the trash is still shown (the Mirror's Trash): its pictures with it
+        d = R.find_doc(doc, include_trash=True) if hasattr(R, "find_doc") else doc
         pid = page_id or R.live_pages(d)[page_no - 1]["id"]
     except Exception:
         d, pid = doc, page_id
-    if not pid:
+    if not pid or not d:
         return []
     path = os.path.join(RM, d, pid + ".rm")
     if not os.path.exists(path):

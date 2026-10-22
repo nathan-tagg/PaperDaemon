@@ -859,10 +859,19 @@ span.lname { cursor: default; }
     cv.style.width = vpW + "px"; cv.style.height = vpH + "px";
     rebuild();
   }
-  const scale = () => vpW / (SCREEN_W / view.zoom);           // CSS pixels per page unit
+  // WHAT THE TABLET SHOWS AT 1x, in page units across: a notebook's screen; a page of a PDF or a book as the document's
+  // zoom mode fits it on the screen (bestFit: the whole page, so the wider of its width and three quarters of its
+  // height; fitToWidth; fitToHeight). Its frame is its own size -- a cover 1245 wide, a planner 5095 -- and shown on a
+  // notebook's 1620 it sat small in a white margin, or showed only its corner.
+  const screenW = () => {
+    if (!page.source) return SCREEN_W;
+    const [w, h] = page.paperSize;
+    return page.zoom === "fitToWidth" ? w : page.zoom === "fitToHeight" ? h * 3 / 4 : Math.max(w, h * 3 / 4);
+  };
+  const scale = () => vpW / (screenW() / view.zoom);           // CSS pixels per page unit
   const toScreen = (x, y) => [vpW / 2 + (x - view.cx) * scale(), (y - view.top) * scale()];
   const toPage = (sx, sy) => [view.cx + (sx - vpW / 2) / scale(), view.top + sy / scale()];
-  const half = () => page.paperSize[1] / 2;
+  const half = () => Math.max(page.paperSize[0], page.paperSize[1]) / 2;   // the drawable square: the page's longer side
   const drawable = (x, y) => Math.abs(x) <= half() && y >= 0;  // the square, and the page extends downward
 
   function canvasFor() {                                      // gray, the white of the drawable square, then the text layer
@@ -2396,7 +2405,7 @@ span.lname { cursor: default; }
   function clampView() {
     if (view.zoom <= 1) view.cx = 0;
     else {
-      const w = SCREEN_W / view.zoom / 2, edge = Math.max(half(), SCREEN_W / 2);
+      const w = screenW() / view.zoom / 2, edge = Math.max(half(), screenW() / 2);
       view.cx = Math.max(-edge + w, Math.min(edge - w, view.cx));
     }
     view.top = Math.max(0, Math.min(Math.max(vpH / scale(), footOf()), view.top));
@@ -3058,6 +3067,7 @@ span.lname { cursor: default; }
   function fromScene(sc) {
     page.paperSize = sc.paperSize || [1620, 2160];
     page.source = sc.source || null;                           // "pdf" or "epub": a page of a PDF or a book
+    page.zoom = sc.zoom || "bestFit";                           // how the tablet fits it on the screen (screenW)
     // the daemon's layer is shown and marked: it is his, written by him, and never the layer the pens work on
     page.layers = (sc.layers || []).map((L, i) => ({ nodeId: [0, 11 + i], label: L.label, visible: L.visible, daemon: !!L.daemon, lines: (L.lines || []).map(lineIn) }));
     if (!page.layers.length) page.layers = [{ nodeId: [0, 11], label: "Layer 1", visible: true, lines: [] }];
