@@ -42,10 +42,15 @@ opens at once or from files dropped on the screen, each named by its file and la
 mirror; an EPUB SHALL be filed as the desktop app files a book, without a PDF, and read by PaperDaemon (add-epub-reading).
 A long press or a right-click on a notebook or folder SHALL select it, and while anything is selected a click
 SHALL add an item to the selection or take it away; a menu with Export and Duplicate (notebooks only), Move, Tags and
-Delete SHALL take the place of the library's title bar, as the tablet's action bar does, covering and moving nothing.
+Delete SHALL take the place of the library's title bar, as the tablet's action bar does, covering and moving nothing;
+it has no Done: Esc lets the selection go. MOVE SHALL NOT open a sheet: the bar SHALL turn into where to, the folders
+opening as ever, and in a folder the items are not all in already the bar SHALL offer Move here; Esc lets it go.
 The page grid SHALL select pages the same way, its actions in the viewer's bar, as a
-bar that acts on all of them: Select all, Duplicate (each copy right after its page), Move (before or after a page of
-this notebook or another, or to its end), Tags and Delete (for good, after a confirm; a notebook keeps one page).
+bar that acts on all of them: Select all, Duplicate (each copy right after its page), Move, Tags and Delete (for good,
+after a confirm; a notebook keeps one page). Move SHALL turn the bar into where to: a page chosen in the grid, and the
+bar SHALL offer Move before and Move after it, each with its icon; Move out SHALL leave the notebook for the library,
+where the notebook opened shows its grid to choose in the same way. Esc in the grid SHALL step back one thing at a
+time: the page chosen, the move, the pages chosen, then out of the grid to the page; the viewer closes from the page.
 New notebook SHALL take tags. Export SHALL write the notebook as a PDF. Tags on folders, notebooks and pages SHALL be set and
 removed there, written as the tablet writes them. None of these controls SHALL appear in the tablet's
 mirror, which SHALL keep showing tags as it does today (the folder's tag mark, the path's pills, the

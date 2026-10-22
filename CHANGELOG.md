@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.75
+
+False Mirror:
+- No more Done buttons. Esc lets a selection go, in the library and in the page grid.
+- Esc in the page grid steps back one thing at a time: the page chosen to move next to, the move, the pages chosen, and then out of the grid to the page. The viewer closes only from the page.
+- Move is no longer a sheet. In the library, the bar turns into "Move ...: open a folder"; open folders as usual, and in any folder the items are not already in, the bar offers Move here.
+- Moving pages: the bar asks for the page they go next to; choose one in the grid and the bar offers Move before and Move after, each with its icon. Move out leaves the notebook: open another notebook in the library, choose a page in its grid, then before or after.
+
+Page editor:
+- The mouse's back and forward buttons over a page turn the viewer's pages again (0.1.73 stopped the app going back a screen but also stopped the turn).
+
 ## 0.1.74
 
 The page editor:

@@ -370,6 +370,7 @@
       S.doc = byId(x); S.page = 1; S.tags = null; S.chapters = null; S.hist = [1]; S.hpos = 0; S.pp = [];
       if (S.doc) opened(S.doc.id, 0);                       // its cover drawn anew at the next look
       S.view = PD.firstTab === "pages" || PD.firstTab === "chapters" ? PD.firstTab : "page"; PD.firstTab = "";
+      if (S.pmove && S.pmove.out) { S.pmove.out = false; S.pmove.at = 0; S.view = "pages"; unpick(); }   // where they go: its pages
       let dlg = $("#" + VIEWER);
       if (!dlg) {
         dlg = document.createElement("dialog");
@@ -392,6 +393,7 @@
           const g = e.target.closest("[data-go]");
           if (g && g.matches(".thumb") && gridHere()) {
             if (S.ppHeld) { S.ppHeld = false; return; }              // the click that ends a long press
+            if (S.pmove) { moveTarget(Number(g.dataset.go)); return; }
             if (S.pp.length) { pickPage(Number(g.dataset.go)); return; }
           }
           if (g) { go(Number(g.dataset.go)); return; }
@@ -447,14 +449,19 @@
         // back from the editor: the covers and the page pictures show what was drawn
         // CLOSING A FALSE-MIRROR DOCUMENT SYNCS it, as on the tablet: the page editor saves and tells the daemon to look
         // ESC CLOSES WHAT IS OPEN FIRST: the tags' menu, then the editor's menus, and only then the viewer
+        // ESC IN THE GRID steps back one thing at a time: the page chosen to move next to, the move, the pages chosen, and
+        // then out of the grid to the page (the chapters too) -- the viewer closes only from the page
         dlg.addEventListener("cancel", e => {
+          if (S.pmove && gridHere()) { e.preventDefault(); if (S.pmove.at) S.pmove.at = 0; else S.pmove = null; paintPagePick(); return; }
           if (S.pp.length && gridHere()) { e.preventDefault(); S.pp = []; paintPagePick(); return; }
+          if (S.view !== "page" && !S.tagPop) { e.preventDefault(); S.view = "page"; paintBar(); paintBody(); return; }
           if (S.tagPop) { e.preventDefault(); S.tagPop = false; paintBar(); paintTagPop(); return; }
           const fr = editorFrame();
           if (S.edMenu && fr && fr.contentWindow) { e.preventDefault(); S.edMenu = false; fr.contentWindow.postMessage({ pd: "editor-close" }, location.origin); }
         });
         dlg.addEventListener("close", () => {
-          S.pp = []; paintPagePick();                         // closing lets the chosen pages go, and their bar
+          S.pp = []; if (S.pmove && !S.pmove.out) S.pmove = null;   // closing lets the chosen pages go (but not pages moving out)
+          paintPagePick();
           if (S.seen) { const [d, n] = S.seen.split("|"); opened(d, Number(n)); S.seen = null; }   // what was written while open
           if (S.doc) opened(S.doc.id, 0);
           if (!fm) return;
@@ -491,20 +498,48 @@
       S.pp = S.pp.includes(n) ? S.pp.filter(x => x !== n) : S.pp.concat([n]).sort((a, b) => a - b);
       paintPagePick();
     }
+    // MOVING PAGES, AS THE TABLET DOES: Move turns the bar into where to. A page chosen in the grid, and the bar offers
+    // Move before and Move after it; Move out leaves the notebook for the library, where a notebook opened shows its
+    // grid to choose in the same way. S.pmove: {doc, name, pages, at (the page chosen, 0 none), out (in the library)}.
+    const PMOVE_ICON = {
+      before: '<svg viewBox="0 0 20 16" aria-hidden="true"><rect x="10.5" y="1.5" width="8" height="13" rx="1"/><path d="M1.5 8h6M5 5.5 7.5 8 5 10.5"/></svg>',
+      after: '<svg viewBox="0 0 20 16" aria-hidden="true"><rect x="1.5" y="1.5" width="8" height="13" rx="1"/><path d="M12.5 8h6M16 5.5 18.5 8 16 10.5"/></svg>',
+    };
+    function moveTarget(n) {
+      if (S.pmove.doc === S.doc.id && S.pmove.pages.includes(n)) return;     // not next to themselves
+      S.pmove.at = S.pmove.at === n ? 0 : n;
+      paintPagePick();
+    }
     function paintPagePick() {
       const dlg = $("#" + VIEWER); if (!dlg) return;
-      dlg.querySelectorAll(".thumb[data-go]").forEach(t => t.classList.toggle("picked", S.pp.includes(Number(t.dataset.go))));
+      const mv = S.pmove && S.doc && S.pmove.doc === S.doc.id ? S.pmove.pages : [];
+      dlg.querySelectorAll(".thumb[data-go]").forEach(t => {
+        const n = Number(t.dataset.go);
+        t.classList.toggle("picked", S.pp.includes(n)); t.classList.toggle("moving", mv.includes(n));
+        t.classList.toggle("target", !!(S.pmove && S.pmove.at === n));
+      });
       const strip = dlg.querySelector(".page-pick"); if (!strip) return;
-      const on = S.pp.length > 0 && gridHere();
+      const on = (S.pp.length > 0 || !!(S.pmove && !S.pmove.out)) && gridHere();
       strip.hidden = !on;
       strip.parentElement.classList.toggle("choosing", on);
       if (!on) { strip.innerHTML = ""; return; }
       const nb = S.doc.kind === "notebook";
-      const btn = (act, l, cls) => '<button type="button" class="btn' + (cls ? " " + cls : "") + '" data-pp="' + act + '">' + esc(l) + "</button>";
+      const btn = (act, l, cls, icon) => '<button type="button" class="btn' + (cls ? " " + cls : "") + '" data-pp="' + act + '">' + (icon || "") + esc(l) + "</button>";
+      if (S.pmove) {
+        const n = S.pmove.pages.length;
+        strip.innerHTML = !nb
+          ? '<span class="pick-name attn" role="status">' + esc(PD.t("fm.pmove_notebooks_only")) + "</span>"
+          : S.pmove.at
+          ? '<span class="pick-name" role="status">' + esc(PD.t("fm.pmove_at", { page: S.pmove.at })) + '</span><span class="pick-acts">' +
+            btn("before", PD.t("fm.move_before"), "with-icon", PMOVE_ICON.before) + btn("after", PD.t("fm.move_after"), "with-icon", PMOVE_ICON.after) + "</span>"
+          : '<span class="pick-name" role="status">' + esc(PD.t(n === 1 ? "fm.pmove_pick_one" : "fm.pmove_pick_n", { n })) + '</span><span class="pick-acts">' +
+            (S.pmove.doc === S.doc.id ? btn("moveout", PD.t("fm.move_out")) : "") + "</span>";
+        return;
+      }
       strip.innerHTML = '<span class="pick-name" role="status">' + esc(PD.t("fm.selected_n", { n: S.pp.length })) + '</span><span class="pick-acts">' +
         (S.pp.length < pageCount() ? btn("all", PD.t("fm.select_all")) : "") +
         (nb ? btn("duplicate", PD.t("fm.duplicate")) + btn("move", PD.t("fm.move")) : "") + btn("tags", PD.t("fm.tag")) +
-        btn("delete", PD.t("common.delete"), "danger") + btn("done", PD.t("fm.done")) + "</span>";
+        btn("delete", PD.t("common.delete"), "danger") + "</span>";
     }
     // after a change: the notebook as it is now, the grid drawn anew, nothing chosen
     async function pagesChanged() {
@@ -518,10 +553,22 @@
       paintBar(); paintBody();
     }
     async function pagePickAct(act) {
-      if (act === "done" || !S.pp.length) { S.pp = []; paintPagePick(); return; }   // Done always gives the bar back
-      const doc = S.doc.id, pages = S.pp.slice();
       const strip = $("#" + VIEWER + " .page-pick"), msg = strip && strip.querySelector(".pick-name");
       const fail = e => { if (msg) { msg.textContent = PD.errText(e); msg.classList.add("attn"); } };
+      if (S.pmove) {
+        const P = S.pmove;
+        if (act === "moveout") { P.out = true; P.at = 0; $("#" + VIEWER).close(); paintPickMenu(); return; }
+        if ((act === "before" || act === "after") && P.at) {
+          const [, e] = await PD.safe(api("POST", "/library/" + P.doc + "/pages/move",
+            Object.assign({ pages: P.pages, where: act, at: P.at }, S.doc.id !== P.doc ? { to: S.doc.id } : {})));
+          if (e) { fail(e); return; }
+          S.pmove = null;
+          await pagesChanged();
+        }
+        return;
+      }
+      if (!S.pp.length) { paintPagePick(); return; }
+      const doc = S.doc.id, pages = S.pp.slice();
       const run = async (what, body) => {
         const [, e] = await PD.safe(api("POST", "/library/" + doc + "/pages/" + what, Object.assign({ pages }, body || {})));
         if (e) { fail(e); return; }
@@ -543,28 +590,7 @@
         });
         return;
       }
-      if (act === "move") {
-        // WHERE TO: a notebook (this one first), and before or after one of its pages, or at its end
-        const books = [S.doc].concat((S.list || []).filter(b => b.type === "document" && b.kind === "notebook" && b.id !== doc)
-          .sort((a, b) => a.name.localeCompare(b.name)));
-        const inner = '<label class="field-row"><span>' + esc(PD.t("fm.move_to_notebook")) + '</span><select class="select w-l" data-to>' +
-          books.map(b => '<option value="' + esc(b.id) + '">' + esc(b.id === doc ? PD.t("fm.this_notebook", { name: b.name }) : b.name) + "</option>").join("") + "</select></label>" +
-          '<fieldset class="field-row"><legend>' + esc(PD.t("fm.move_where")) + "</legend>" +
-          '<label class="check-label"><input type="radio" name="pp-where" value="before"> ' + esc(PD.t("fm.move_before")) + "</label>" +
-          '<label class="check-label"><input type="radio" name="pp-where" value="after" checked> ' + esc(PD.t("fm.move_after")) + "</label>" +
-          '<label class="field-row"><span>' + esc(PD.t("fm.move_page")) + '</span><input class="field num" type="number" min="1" step="1" data-at placeholder="' +
-          esc(PD.t("fm.move_end")) + '"></label></fieldset>';
-        const dlg = ask(PD.t("fm.move_pages_q", { n: pages.length }), inner, PD.t("fm.move"), async d => {
-          const to = d.querySelector("[data-to]").value, at = d.querySelector("[data-at]").value.trim();
-          const where = (d.querySelector("[name=pp-where]:checked") || {}).value || "after";
-          await api("POST", "/library/" + doc + "/pages/move", Object.assign({ pages, where }, to !== doc ? { to } : {}, at ? { at: Number(at) } : {}));
-          await pagesChanged();
-        });
-        const sel = dlg.querySelector("[data-to]"), atf = dlg.querySelector("[data-at]");
-        const most = () => { const b = byId(sel.value) || S.doc; atf.max = String(Math.max(1, b.pages || 1)); };
-        sel.addEventListener("change", most); most();
-        sel.focus();
-      }
+      if (act === "move") { S.pmove = { doc, name: S.doc.name, pages, at: 0, out: false }; S.pp = []; paintPagePick(); }
     }
 
     async function load() {
@@ -692,32 +718,36 @@
       if (!S.picked.length) { unpick(); return; }
       paint(); paintPickMenu();
     }
+    // MOVING, AS THE TABLET MOVES: Move turns the bar into where to (no sheet over the screen); the folders open as ever,
+    // and in a folder the items are not all in already the bar offers Move here. Esc lets it go. S.lmove: moving.
+    const canMoveHere = its => its.some(it => it.parent !== S.at) && !path(S.at).some(f => its.some(it => it.id === f.id));
     function paintPickMenu() {
-      const its = picked(); if (!its.length) return;
       const m = $("#" + id + "-menu", R);
+      if (S.pmove && S.pmove.out) {                                // pages on their way out of a notebook: open the one they go to
+        const n = S.pmove.pages.length;
+        m.innerHTML = '<span class="pick-name" role="status">' + esc(PD.t(n === 1 ? "fm.pmove_open_one" : "fm.pmove_open_n", { n, name: S.pmove.name })) + "</span>";
+        m.hidden = false; m.parentElement.classList.add("choosing");
+        return;
+      }
+      const its = picked(); if (!its.length) return;
       const docs = its.every(it => it.type === "document");
       const btn = (act, l, cls) => '<button type="button" class="btn' + (cls ? " " + cls : "") + '" data-pick-act="' + act + '">' + esc(l) + "</button>";
-      m.innerHTML = '<span class="pick-name" role="status">' + esc(its.length === 1 ? its[0].name : PD.t("fm.selected_n", { n: its.length })) + '</span><span class="pick-acts">' +
-        (docs ? btn("export", PD.t("fm.export")) + btn("duplicate", PD.t("fm.duplicate")) : "") + btn("move", PD.t("fm.move")) + btn("tags", PD.t("fm.tag")) +
-        btn("delete", PD.t("common.delete"), "danger") + btn("close", PD.t("fm.done")) + "</span>";
+      const what = its.length === 1 ? its[0].name : PD.t("fm.selected_n", { n: its.length });
+      m.innerHTML = S.lmove
+        ? '<span class="pick-name" role="status">' + esc(PD.t(its.length === 1 ? "fm.lmove_one" : "fm.lmove_n", { name: its[0].name, n: its.length })) + '</span><span class="pick-acts">' +
+          (canMoveHere(its) ? btn("movehere", PD.t("fm.move_here")) : "") + "</span>"
+        : '<span class="pick-name" role="status">' + esc(what) + '</span><span class="pick-acts">' +
+          (docs ? btn("export", PD.t("fm.export")) + btn("duplicate", PD.t("fm.duplicate")) : "") + btn("move", PD.t("fm.move")) + btn("tags", PD.t("fm.tag")) +
+          btn("delete", PD.t("common.delete"), "danger") + "</span>";
       m.hidden = false;
       m.parentElement.classList.add("choosing");
     }
 
     function unpick() {
-      S.picked = [];
+      S.picked = []; S.lmove = false;
       const m = R && $("#" + id + "-menu", R);
       if (m) { m.hidden = true; m.parentElement.classList.remove("choosing"); }
       paint();
-    }
-
-    function folderChoices(skip) {
-      // every folder but those being moved and those inside them, as the path the user knows
-      const out = [].concat(skip || []);
-      const inside = f => { for (let d = f, n = 0; d && n < 30; d = byId(d.parent), n++) if (out.includes(d.id)) return true; return false; };
-      const folders = (S.list || []).filter(f => f.type === "folder" && !inside(f));
-      const name = f => path(f.id).map(d => d.name).join(" / ");
-      return [{ id: "", label: PD.t("tablet.my_files") }].concat(folders.map(f => ({ id: f.id, label: name(f) })).sort((a, b) => a.label.localeCompare(b.label)));
     }
 
     // TAGS OF SEVERAL: the tags they all carry, each to take off all of them, and a field to put one on all of them
@@ -749,7 +779,6 @@
       const msg = $("#" + id + "-menu .pick-name", R);
       const say = (text, bad) => { msg.textContent = text; msg.classList.toggle("attn", !!bad); };
       const one = its.length === 1 ? its[0] : null;
-      if (act === "close") { unpick(); return; }
       if (act === "export") {
         for (const it of its) {
           say(PD.t("fm.exporting"));
@@ -778,16 +807,15 @@
         unpick(); load();
         return;
       }
-      if (act === "move") {
-        const opts = folderChoices(its.map(it => it.id));
-        const here = one ? one.parent : null;
-        ask(one ? PD.t("fm.move_q", { name: one.name }) : PD.t("fm.move_n_q", { n: its.length }), '<div class="move-list" role="radiogroup">' + opts.map(o =>
-          '<label class="check-label"><input type="radio" name="dest" value="' + esc(o.id) + '"' + (o.id === here ? " checked" : "") + "> " + esc(o.label) + "</label>").join("") + "</div>",
-          PD.t("fm.move"), async d => {
-            const c = d.querySelector("input[name=dest]:checked");
-            for (const it of its) await api("POST", "/library/" + it.id + "/move", { parent: c ? c.value : "" });
-            unpick(); await load();
-          });
+      if (act === "move") { S.lmove = true; paint(); paintPickMenu(); return; }
+      if (act === "movehere") {
+        if (!canMoveHere(its)) return;
+        for (const it of its) {
+          if (it.parent === S.at) continue;
+          const [, e] = await PD.safe(api("POST", "/library/" + it.id + "/move", { parent: S.at }));
+          if (e) { say(PD.errText(e), true); load(); return; }
+        }
+        unpick(); await load();
         return;
       }
       if (act === "tags") {
@@ -827,15 +855,27 @@
           (fm ? '<p class="hint import-msg" id="' + id + '-import" role="status"></p>' +
                 '<div class="drop-here" id="' + id + '-drop" hidden>' + esc(PD.t("fm.drop")) + "</div>" : "") +
           '<div class="lib-box" id="' + id + '-files"></div>';
-        // WHILE ANYTHING IS SELECTED a click on a notebook or folder adds it or takes it away; a crumb still goes there
-        const choosing = () => (S.picked || []).length > 0;
+        // WHILE ANYTHING IS SELECTED a click on a notebook or folder adds it or takes it away; a crumb still goes there.
+        // WHILE MOVING the folders open as ever (the bar follows: Move here); pages moving out open a notebook
+        const moving = () => S.lmove || !!(S.pmove && S.pmove.out);
+        const choosing = () => (S.picked || []).length > 0 && !moving();
         PD.on(root, "click", "[data-at]", (e, el) => {
           if (S.held) { S.held = false; return; }
           if (choosing() && el.dataset.item) { pick(el.dataset.item); return; }
           if (choosing()) unpick();
           S.at = el.dataset.at; paint();
+          if (moving()) paintPickMenu();
         });
-        PD.on(root, "click", "[data-open]", (e, el) => { if (S.held) { S.held = false; return; } if (choosing()) { pick(el.dataset.item); return; } openDoc(el.dataset.open); });
+        PD.on(root, "click", "[data-open]", (e, el) => {
+          if (S.held) { S.held = false; return; }
+          if (S.lmove) return;                                // documents are not where things move to
+          if (choosing()) { pick(el.dataset.item); return; }
+          if (S.pmove && S.pmove.out && (byId(el.dataset.open) || {}).kind !== "notebook") {
+            const m = $("#" + id + "-menu .pick-name", R); if (m) { m.textContent = PD.t("fm.pmove_notebooks_only"); m.classList.add("attn"); }
+            return;
+          }
+          openDoc(el.dataset.open);
+        });
         root.addEventListener("click", e => {
           if (choosing() && !e.target.closest("[data-item], .select-bar, .head-acts, button, a, input")) unpick();
         });
@@ -847,7 +887,9 @@
         root.addEventListener("keydown", e => { if (e.key === "Escape" && !menu.hidden) closeMenu(); });
         // Esc puts the selection's menu away (it has no close button)
         document.addEventListener("keydown", e => {
-          if (e.key === "Escape" && (S.picked || []).length && !R.hidden && !document.querySelector("dialog[open]")) unpick();
+          if (e.key !== "Escape" || R.hidden || document.querySelector("dialog[open]")) return;
+          if (S.pmove && S.pmove.out) { S.pmove = null; unpick(); return; }    // the pages stay where they were
+          if ((S.picked || []).length) unpick();
         });
         PD.on(root, "click", "[data-act=quick-sheets]", () => { closeMenu(); quickSheets(); });
         PD.on(root, "click", "[data-act=new-notebook]", () => { closeMenu(); newNotebook(); });

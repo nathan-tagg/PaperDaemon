@@ -205,7 +205,8 @@ span.lname { cursor: default; }
   for (const t of ["pointerdown", "pointerup", "mousedown", "mouseup", "auxclick"]) window.addEventListener(t, e => {
     if (e.button !== 3 && e.button !== 4) return;
     e.preventDefault(); e.stopImmediatePropagation();
-    if (t === "mouseup" && window.parent !== window) window.parent.postMessage({ pd: "view-key", key: e.button === 3 ? "ArrowLeft" : "ArrowRight", altKey: true }, location.origin);
+    // the walk on the release of the pointer: the press taken (preventDefault) holds back the mouse's own events
+    if (t === "pointerup" && window.parent !== window) window.parent.postMessage({ pd: "view-key", key: e.button === 3 ? "ArrowLeft" : "ArrowRight", altKey: true }, location.origin);
   }, true);
   const SCREEN_W = 1620;                                                               // what the Paper Pro shows at 1x
 

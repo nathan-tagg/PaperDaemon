@@ -178,7 +178,7 @@ pre.snippet.pad-text { white-space: pre-wrap; padding: var(--s3) var(--s4); font
 .folder.picked, .doc-card.picked .cover { outline: 2px solid var(--mark); outline-offset: 2px; }
 /* WHAT IS SELECTED, AS THE TABLET'S ACTION BAR: its actions take the place of the top bar they belong to -- the
    library's head (its title and +), the viewer's bar for pages in the grid. The bar's own content hides under it and
-   keeps its room, so nothing is covered and nothing moves; Done or Esc gives the bar back (tablet.js). */
+   keeps its room, so nothing is covered and nothing moves; Esc gives the bar back (tablet.js). */
 .page-head:has(.select-bar) { position: relative; }
 .choosing > :not(.select-bar) { visibility: hidden; }
 .select-bar { position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; gap: var(--s3); min-width: 0;
@@ -479,6 +479,11 @@ textarea.field { height: auto; padding: 8px 10px; }
 .thumb.here .cover, .thumb:hover .cover { border-color: var(--mark); }
 /* PAGES CHOSEN in the False Mirror's grid (their actions: the select bar, in the viewer's bar) */
 .thumb.picked .cover { outline: 2px solid var(--mark); outline-offset: 2px; }
+/* PAGES BEING MOVED, faded where they are; the page chosen to put them next to, marked (tablet.js) */
+.thumb.moving .cover { opacity: 0.4; outline: 2px dashed var(--mark); outline-offset: 2px; }
+.thumb.target .cover { outline: 3px solid var(--mark); outline-offset: 3px; }
+.btn.with-icon { display: inline-flex; align-items: center; gap: 6px; }
+.btn.with-icon svg { width: 20px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .viewer-page.chapters { display: block; }
 .chapter-list { list-style: none; margin: 0 auto; padding: 0; max-width: 720px; }
 .chapter { display: flex; justify-content: space-between; gap: var(--s4); width: 100%; padding: var(--s2) var(--s3); border: 0; border-bottom: 1px solid var(--rule);
