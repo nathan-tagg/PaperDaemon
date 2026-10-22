@@ -645,7 +645,7 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="fm.move">Verschieben</string>
   <string name="fm.move_q">{name} verschieben nach</string>
   <string name="fm.tags">Tags</string>
-  <string name="fm.tags_of">Tags von {name}</string>
+  <string name="fm.tag">Tag</string>
   <string name="fm.tag_add">Tag hinzufügen</string>
   <string name="fm.add">Hinzufügen</string>
   <string name="fm.new_menu">Neu</string>
@@ -658,12 +658,10 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="fm.duplicate">Duplizieren</string>
   <string name="fm.delete_n_q">Auswahl ({n}) löschen?</string>
   <string name="fm.move_n_q">Auswahl ({n}) verschieben nach</string>
-  <string name="fm.tags_n">Tags der Auswahl ({n})</string>
   <string name="fm.select_all">Alle auswählen</string>
   <string name="fm.done">Fertig</string>
   <string name="fm.delete_pages_q">Ausgewählte Seiten ({n}) löschen?</string>
   <string name="fm.delete_pages_body">Seiten werden endgültig gelöscht, wie auf dem Tablet: Sie kommen nicht in den Papierkorb. Ein Notizbuch behält mindestens eine Seite.</string>
-  <string name="fm.tags_pages">Tags der ausgewählten Seiten ({n})</string>
   <string name="fm.move_pages_q">Ausgewählte Seiten ({n}) verschieben</string>
   <string name="fm.move_to_notebook">Notizbuch</string>
   <string name="fm.this_notebook">{name} (dieses Notizbuch)</string>

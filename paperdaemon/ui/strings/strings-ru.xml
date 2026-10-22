@@ -659,7 +659,7 @@
   <string name="fm.move">Переместить</string>
   <string name="fm.move_q">Переместить {name} в</string>
   <string name="fm.tags">Метки</string>
-  <string name="fm.tags_of">Метки «{name}»</string>
+  <string name="fm.tag">Метка</string>
   <string name="fm.tag_add">Добавить метку</string>
   <string name="fm.add">Добавить</string>
   <string name="fm.new_menu">Создать</string>
@@ -672,12 +672,10 @@
   <string name="fm.duplicate">Дублировать</string>
   <string name="fm.delete_n_q">Удалить выбранное ({n})?</string>
   <string name="fm.move_n_q">Переместить выбранное ({n}) в</string>
-  <string name="fm.tags_n">Метки выбранного ({n})</string>
   <string name="fm.select_all">Выбрать все</string>
   <string name="fm.done">Готово</string>
   <string name="fm.delete_pages_q">Удалить выбранные страницы ({n})?</string>
   <string name="fm.delete_pages_body">Страницы удаляются навсегда, как на планшете: они не попадают в корзину. В блокноте остается хотя бы одна страница.</string>
-  <string name="fm.tags_pages">Метки выбранных страниц ({n})</string>
   <string name="fm.move_pages_q">Переместить выбранные страницы ({n})</string>
   <string name="fm.move_to_notebook">Блокнот</string>
   <string name="fm.this_notebook">{name} (этот блокнот)</string>

@@ -645,7 +645,7 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="fm.move">Sposta</string>
   <string name="fm.move_q">Sposta {name} in</string>
   <string name="fm.tags">Etichette</string>
-  <string name="fm.tags_of">Etichette di {name}</string>
+  <string name="fm.tag">Etichetta</string>
   <string name="fm.tag_add">Aggiungi un'etichetta</string>
   <string name="fm.add">Aggiungi</string>
   <string name="fm.new_menu">Nuovo</string>
@@ -658,12 +658,10 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="fm.duplicate">Duplica</string>
   <string name="fm.delete_n_q">Eliminare la selezione ({n})?</string>
   <string name="fm.move_n_q">Sposta la selezione ({n}) in</string>
-  <string name="fm.tags_n">Etichette della selezione ({n})</string>
   <string name="fm.select_all">Seleziona tutto</string>
   <string name="fm.done">Fatto</string>
   <string name="fm.delete_pages_q">Eliminare le pagine selezionate ({n})?</string>
   <string name="fm.delete_pages_body">Le pagine vengono eliminate per sempre, come sul tablet: non passano dal cestino. Un quaderno conserva almeno una pagina.</string>
-  <string name="fm.tags_pages">Etichette delle pagine selezionate ({n})</string>
   <string name="fm.move_pages_q">Sposta le pagine selezionate ({n})</string>
   <string name="fm.move_to_notebook">Quaderno</string>
   <string name="fm.this_notebook">{name} (questo quaderno)</string>

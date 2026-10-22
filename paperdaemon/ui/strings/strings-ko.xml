@@ -645,7 +645,7 @@
   <string name="fm.move">이동</string>
   <string name="fm.move_q">{name}을(를) 이동할 곳</string>
   <string name="fm.tags">태그</string>
-  <string name="fm.tags_of">{name}의 태그</string>
+  <string name="fm.tag">태그</string>
   <string name="fm.tag_add">태그 추가</string>
   <string name="fm.add">추가</string>
   <string name="fm.new_menu">새로 만들기</string>
@@ -658,12 +658,10 @@
   <string name="fm.duplicate">복제</string>
   <string name="fm.delete_n_q">선택한 항목 ({n})을(를) 삭제할까요?</string>
   <string name="fm.move_n_q">선택한 항목 ({n})을(를) 이동할 곳</string>
-  <string name="fm.tags_n">선택한 항목 ({n})의 태그</string>
   <string name="fm.select_all">모두 선택</string>
   <string name="fm.done">완료</string>
   <string name="fm.delete_pages_q">선택한 페이지 ({n})를 삭제할까요?</string>
   <string name="fm.delete_pages_body">태블릿에서처럼 페이지는 영구히 삭제됩니다. 휴지통으로 가지 않습니다. 노트북에는 최소 한 페이지가 남습니다.</string>
-  <string name="fm.tags_pages">선택한 페이지 ({n})의 태그</string>
   <string name="fm.move_pages_q">선택한 페이지 ({n}) 이동</string>
   <string name="fm.move_to_notebook">노트북</string>
   <string name="fm.this_notebook">{name} (이 노트북)</string>

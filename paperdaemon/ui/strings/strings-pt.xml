@@ -645,7 +645,7 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="fm.move">Mover</string>
   <string name="fm.move_q">Mover {name} para</string>
   <string name="fm.tags">Tags</string>
-  <string name="fm.tags_of">Tags de {name}</string>
+  <string name="fm.tag">Marcar</string>
   <string name="fm.tag_add">Adicionar uma tag</string>
   <string name="fm.add">Adicionar</string>
   <string name="fm.new_menu">Novo</string>
@@ -658,12 +658,10 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="fm.duplicate">Duplicar</string>
   <string name="fm.delete_n_q">Excluir o que está selecionado ({n})?</string>
   <string name="fm.move_n_q">Mover o que está selecionado ({n}) para</string>
-  <string name="fm.tags_n">Tags do que está selecionado ({n})</string>
   <string name="fm.select_all">Selecionar tudo</string>
   <string name="fm.done">Concluído</string>
   <string name="fm.delete_pages_q">Excluir as páginas selecionadas ({n})?</string>
   <string name="fm.delete_pages_body">As páginas são excluídas para sempre, como no tablet: não vão para a lixeira. Um caderno mantém pelo menos uma página.</string>
-  <string name="fm.tags_pages">Tags das páginas selecionadas ({n})</string>
   <string name="fm.move_pages_q">Mover as páginas selecionadas ({n})</string>
   <string name="fm.move_to_notebook">Caderno</string>
   <string name="fm.this_notebook">{name} (este caderno)</string>

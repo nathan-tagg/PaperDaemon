@@ -195,11 +195,20 @@ def signature(x, y, height=34.0, dash=True):
     # NO SHEAR. It is already handwriting; shearing it again just leans a
     # signature that was never upright to begin with.
     out += [[(cur + px * height, y - py * height) for px, py in p] for p in word]
-    cur += max(px for p in word for px, _ in p) * height + height * 0.5
-    # THE ICON IS NOT ITALIC -- a stamp, not handwriting.
-    out += place(devil_head(0.0, 0.0, 1.0), cur, y - height * 0.55,
-                 height * 0.62, slant=0.0)
+    cur += max(px for p in word for px, _ in p) * height
+    # THE ICON IS NOT ITALIC -- a stamp, not handwriting. It stands clear of the name: its own left edge (a horn's
+    # tip, the widest it gets) a third of the height past the signature's last stroke.
+    head = devil_head(0.0, 0.0, 1.0)
+    k = height * 0.62
+    cur += height * 0.35 - min(px for p in head for px, _ in p) * k
+    out += place(head, cur, y - height * 0.55, k, slant=0.0)
     return out
+
+
+def signature_width(height=34.0, dash=True):
+    """How wide the whole mark is, written at `height`: the room a line must leave for it."""
+    xs = [px for p in signature(0.0, 0.0, height=height, dash=dash) for px, _ in p]
+    return max(xs) - min(0.0, min(xs))
 
 
 # ------------------------------------------------------------------ placement

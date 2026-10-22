@@ -125,8 +125,8 @@ span.lname { cursor: default; }
 .tpl-approx { position: absolute; top: 6px; right: 8px; width: 16px; height: 16px; color: #C9A227; display: grid; place-items: center; }
 .tpl-approx svg { width: 16px; height: 16px; }
 .tpl.here { border-bottom-color: var(--ink); }
-.tpl svg, .tpl img { width: 46px; height: 60px; fill: currentColor; }
-.tpl img { filter: invert(0.75); }
+.tpl .tpl-ico { display: block; width: 45px; height: 60px; fill: currentColor; }
+.tpl .tpl-mask { background: currentColor; -webkit-mask: var(--ico) center / contain no-repeat; mask: var(--ico) center / contain no-repeat; }
 .cell.off { opacity: 0.35; cursor: default; }
 .cell.off:hover { background: transparent; }
 </style>
@@ -3357,8 +3357,10 @@ span.lname { cursor: default; }
     box.innerHTML = '<div class="tpl-head"><button class="tpl-back" data-tpl-close>‹</button><span>Templates</span></div><div class="tpl-grid">…</div>';
     let list = [];
     try { const r = await fetch("/api/v1/templates", { headers: { Authorization: "Bearer " + token() } }); if (r.ok) list = await r.json(); } catch (e) { /* none */ }
-    const icon = t => t.icon && t.icon.d ? '<svg viewBox="' + t.icon.viewBox + '"><path d="' + t.icon.d + '"/></svg>'
-      : t.icon && t.icon.svg ? '<img alt="" src="data:image/svg+xml;base64,' + t.icon.svg + '">' : '<svg viewBox="0 0 30 40"><rect x="1" y="1" width="28" height="38" fill="none" stroke="currentColor"/></svg>';
+    // the same icons as New notebook's: the app's glyphs framed on their page, rM Methods' drawn as a mask in the text's color
+    const icon = t => t.icon && t.icon.d ? '<svg class="tpl-ico" viewBox="' + t.icon.viewBox + '"><path d="' + t.icon.d + '"/></svg>'
+      : t.icon && t.icon.svg ? '<span class="tpl-ico tpl-mask" style="--ico: url(&quot;data:image/svg+xml;base64,' + t.icon.svg + '&quot;)"></span>'
+      : '<svg class="tpl-ico" viewBox="0 0 30 40"><rect x="1" y="1" width="28" height="38" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>';
     box.querySelector(".tpl-grid").innerHTML = list.length ? list.map(t => '<button class="tpl' + (t.file === page.template ? " here" : "") + '" data-tpl="' + t.file.replace(/"/g, "&quot;") +
       '" title="' + t.name + '">' + icon(t) + "<span>" + t.name + "</span>" + (t.approx ? APPROX : "") + "</button>").join("") : "<p>No templates were found in the reMarkable app on this computer.</p>";
   }

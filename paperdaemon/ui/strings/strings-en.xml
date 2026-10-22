@@ -645,7 +645,7 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="fm.move">Move</string>
   <string name="fm.move_q">Move {name} to</string>
   <string name="fm.tags">Tags</string>
-  <string name="fm.tags_of">Tags of {name}</string>
+  <string name="fm.tag">Tag</string>
   <string name="fm.tag_add">Add a tag</string>
   <string name="fm.add">Add</string>
   <string name="fm.new_menu">New</string>
@@ -658,12 +658,10 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="fm.duplicate">Duplicate</string>
   <string name="fm.delete_n_q">Delete what is selected ({n})?</string>
   <string name="fm.move_n_q">Move what is selected ({n}) to</string>
-  <string name="fm.tags_n">Tags of what is selected ({n})</string>
   <string name="fm.select_all">Select all</string>
   <string name="fm.done">Done</string>
   <string name="fm.delete_pages_q">Delete the selected pages ({n})?</string>
   <string name="fm.delete_pages_body">Pages are deleted for good, as on the tablet: they skip the trash. A notebook keeps at least one page.</string>
-  <string name="fm.tags_pages">Tags of the selected pages ({n})</string>
   <string name="fm.move_pages_q">Move the selected pages ({n})</string>
   <string name="fm.move_to_notebook">Notebook</string>
   <string name="fm.this_notebook">{name} (this notebook)</string>

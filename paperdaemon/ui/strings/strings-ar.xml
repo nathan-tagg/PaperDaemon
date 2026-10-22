@@ -666,7 +666,7 @@
   <string name="fm.move">نقل</string>
   <string name="fm.move_q">نقل {name} إلى</string>
   <string name="fm.tags">الوسوم</string>
-  <string name="fm.tags_of">وسوم {name}</string>
+  <string name="fm.tag">وسم</string>
   <string name="fm.tag_add">إضافة وسم</string>
   <string name="fm.add">إضافة</string>
   <string name="fm.new_menu">جديد</string>
@@ -679,12 +679,10 @@
   <string name="fm.duplicate">تكرار</string>
   <string name="fm.delete_n_q">حذف المحدد ({n})؟</string>
   <string name="fm.move_n_q">نقل المحدد ({n}) إلى</string>
-  <string name="fm.tags_n">وسوم المحدد ({n})</string>
   <string name="fm.select_all">تحديد الكل</string>
   <string name="fm.done">تم</string>
   <string name="fm.delete_pages_q">حذف الصفحات المحددة ({n})؟</string>
   <string name="fm.delete_pages_body">تُحذف الصفحات نهائيًا كما على الجهاز اللوحي: لا تذهب إلى سلة المهملات. يبقى في الدفتر صفحة واحدة على الأقل.</string>
-  <string name="fm.tags_pages">وسوم الصفحات المحددة ({n})</string>
   <string name="fm.move_pages_q">نقل الصفحات المحددة ({n})</string>
   <string name="fm.move_to_notebook">الدفتر</string>
   <string name="fm.this_notebook">{name} (هذا الدفتر)</string>

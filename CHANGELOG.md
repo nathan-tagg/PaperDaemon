@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.66
+
+- New notebook: every template's icon is the same size and color (rM Methods' icons were bigger and gray), and the list scrolls without a scrollbar, fading out where there are more. The tags field is gone for now. The page editor's template picker draws the same icons.
+- The selection bars say "Tag", and the tag dialog is titled by the notebook's name.
+- Daemon notes: the devil stands clear of the signature, and a line leaves exactly the signature's room. The traced signature is optional content (`content\signaturem_sig_daemon.json`); without it the name is lettered.
+
 ## 0.1.65
 
 - False Mirror: select several notebooks and folders at once. A long press or a right-click selects, and while anything is selected a click adds an item or takes it away (Esc, or a click on nothing, lets them all go). Their actions take the place of the library's title bar, as the tablet's action bar does, so nothing is covered and nothing moves: Export, Duplicate, Move, Tags, Delete, Done.

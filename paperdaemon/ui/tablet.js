@@ -501,7 +501,7 @@
       const btn = (act, l, cls) => '<button type="button" class="btn' + (cls ? " " + cls : "") + '" data-pp="' + act + '">' + esc(l) + "</button>";
       strip.innerHTML = '<span class="pick-name" role="status">' + esc(PD.t("fm.selected_n", { n: S.pp.length })) + '</span><span class="pick-acts">' +
         (S.pp.length < pageCount() ? btn("all", PD.t("fm.select_all")) : "") +
-        (nb ? btn("duplicate", PD.t("fm.duplicate")) + btn("move", PD.t("fm.move")) : "") + btn("tags", PD.t("fm.tags")) +
+        (nb ? btn("duplicate", PD.t("fm.duplicate")) + btn("move", PD.t("fm.move")) : "") + btn("tags", PD.t("fm.tag")) +
         btn("delete", PD.t("common.delete"), "danger") + btn("done", PD.t("fm.done")) + "</span>";
     }
     // after a change: the notebook as it is now, the grid drawn anew, nothing chosen
@@ -536,7 +536,7 @@
       }
       if (act === "tags") {
         const per = (S.tags && S.tags.page_tags) || [];
-        tagsDialog(PD.t("fm.tags_pages", { n: pages.length }), common(pages.map(n => per[n - 1] || [])), async (add, remove) => {
+        tagsDialog(S.doc.name, common(pages.map(n => per[n - 1] || [])), async (add, remove) => {
           await api("POST", "/library/" + doc + "/pages/tags", { pages, add, remove });
           await pagesChanged();
         });
@@ -608,9 +608,10 @@
 
     // A NEW NOTEBOOK, AS THE TABLET MAKES ONE: its name, its cover (the page last visited, or the first page), and with
     // an account signed in its template (the tablet's, from the user's own desktop app: none without one)
-    const tplIcon = t => t.icon && t.icon.d ? '<svg viewBox="' + esc(t.icon.viewBox) + '" aria-hidden="true"><path d="' + esc(t.icon.d) + '"/></svg>'
-      : t.icon && t.icon.svg ? '<img alt="" src="data:image/svg+xml;base64,' + esc(t.icon.svg) + '">'
-      : '<svg viewBox="0 0 30 40" aria-hidden="true"><rect x="1" y="1" width="28" height="38"/></svg>';
+    const tplIcon = t => t.icon && t.icon.d ? '<svg class="tpl-ico" viewBox="' + esc(t.icon.viewBox) + '" aria-hidden="true"><path d="' + esc(t.icon.d) + '"/></svg>'
+      // an rM Methods icon is a picture with its own colors: drawn as a mask, in the text's color like the rest
+      : t.icon && t.icon.svg ? '<span class="tpl-ico tpl-mask" aria-hidden="true" style="--ico: url(&quot;data:image/svg+xml;base64,' + esc(t.icon.svg) + '&quot;)"></span>'
+      : '<svg class="tpl-ico" viewBox="0 0 30 40" aria-hidden="true"><rect x="1" y="1" width="28" height="38" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>';
     async function newNotebook() {
       const [tpls] = await PD.safe(PD.api("GET", "/templates"));
       const list = Array.isArray(tpls) ? tpls : [];
@@ -621,29 +622,15 @@
         (list.length ? '<div class="field-row"><span>' + esc(PD.t("fm.template")) + '</span><div class="nb-tpls" role="radiogroup">' +
           list.map((t, i) => '<button type="button" class="nb-tpl' + (i ? "" : " here") + '" role="radio" aria-checked="' + (i ? "false" : "true") +
             '" data-tpl="' + esc(t.file) + '" title="' + esc(t.name) + '">' + tplIcon(t) + "<span>" + esc(t.name) + "</span></button>").join("") +
-          "</div></div>" : "") +
-        '<div class="field-row"><span>' + esc(PD.t("fm.tags")) + '</span><div class="tag-edit" data-tags></div>' +
-        '<input class="field w-l" type="text" data-new-tag spellcheck="false" placeholder="' + esc(PD.t("fm.tag_add")) + '"></div>';
+          "</div></div>" : "");
       const dlg = ask(PD.t("fm.new_notebook"), inner, PD.t("fm.create"), async d => {
-        const tags = [...d.querySelectorAll("[data-tag]")].map(c => c.dataset.tag);
-        const extra = knownSpelling(d.querySelector("[data-new-tag]").value.trim());
-        if (extra && !hasTag(tags, extra)) tags.push(extra);
         const cover = (d.querySelector("[name=nb-cover]:checked") || {}).value || "last";
         const tp = d.querySelector(".nb-tpl.here");
-        await api("POST", "/library/notebook", Object.assign({ name: nameOf(d), parent: S.at, cover, tags },
+        await api("POST", "/library/notebook", Object.assign({ name: nameOf(d), parent: S.at, cover },
                                                              tp ? { template: tp.dataset.tpl } : {}));   // none: the engine's Blank
         await load();
       });
-      // a tag goes in with Enter (no case: "Joi" is "joi"), and comes out with its ×
-      const chip = t => '<span class="chip" data-tag="' + esc(t) + '">' + esc(t) + '<button type="button" class="chip-x" aria-label="' + esc(PD.t("fm.untag", { tag: t })) + '">×</button></span>';
-      dlg.querySelector("[data-new-tag]").addEventListener("keydown", e => {
-        if (e.key !== "Enter" || !e.target.value.trim()) return;
-        e.preventDefault(); e.stopPropagation();
-        const t = knownSpelling(e.target.value.trim()); e.target.value = "";
-        if (!hasTag([...dlg.querySelectorAll("[data-tag]")].map(c => c.dataset.tag), t)) dlg.querySelector("[data-tags]").insertAdjacentHTML("beforeend", chip(t));
-      });
       dlg.addEventListener("click", e => {
-        const x = e.target.closest(".chip-x"); if (x) { x.closest("[data-tag]").remove(); return; }
         const b = e.target.closest(".nb-tpl"); if (!b) return;
         dlg.querySelectorAll(".nb-tpl").forEach(x => { x.classList.toggle("here", x === b); x.setAttribute("aria-checked", String(x === b)); });
       });
@@ -710,7 +697,7 @@
       const docs = its.every(it => it.type === "document");
       const btn = (act, l, cls) => '<button type="button" class="btn' + (cls ? " " + cls : "") + '" data-pick-act="' + act + '">' + esc(l) + "</button>";
       m.innerHTML = '<span class="pick-name" role="status">' + esc(its.length === 1 ? its[0].name : PD.t("fm.selected_n", { n: its.length })) + '</span><span class="pick-acts">' +
-        (docs ? btn("export", PD.t("fm.export")) + btn("duplicate", PD.t("fm.duplicate")) : "") + btn("move", PD.t("fm.move")) + btn("tags", PD.t("fm.tags")) +
+        (docs ? btn("export", PD.t("fm.export")) + btn("duplicate", PD.t("fm.duplicate")) : "") + btn("move", PD.t("fm.move")) + btn("tags", PD.t("fm.tag")) +
         btn("delete", PD.t("common.delete"), "danger") + btn("close", PD.t("fm.done")) + "</span>";
       m.hidden = false;
       m.parentElement.classList.add("choosing");
@@ -803,7 +790,7 @@
         return;
       }
       if (act === "tags") {
-        tagsDialog(one ? PD.t("fm.tags_of", { name: one.name }) : PD.t("fm.tags_n", { n: its.length }), common(its.map(it => it.tags || [])), async (add, remove) => {
+        tagsDialog(one ? one.name : PD.t("fm.selected_n", { n: its.length }), common(its.map(it => it.tags || [])), async (add, remove) => {
           for (const it of its) {
             const now = (it.tags || []).filter(t => !hasTag(remove, t)).concat(add.filter(t => !hasTag(it.tags || [], t)));
             await api("PUT", "/library/" + it.id + "/tags", { tags: now });

@@ -645,7 +645,7 @@ Ensuite, guide-moi pour installer SearXNG si besoin, écris le fichier .bat avec
   <string name="fm.move">Déplacer</string>
   <string name="fm.move_q">Déplacer {name} vers</string>
   <string name="fm.tags">Étiquettes</string>
-  <string name="fm.tags_of">Étiquettes de {name}</string>
+  <string name="fm.tag">Étiqueter</string>
   <string name="fm.tag_add">Ajouter une étiquette</string>
   <string name="fm.add">Ajouter</string>
   <string name="fm.new_menu">Nouveau</string>
@@ -658,12 +658,10 @@ Ensuite, guide-moi pour installer SearXNG si besoin, écris le fichier .bat avec
   <string name="fm.duplicate">Dupliquer</string>
   <string name="fm.delete_n_q">Supprimer la sélection ({n}) ?</string>
   <string name="fm.move_n_q">Déplacer la sélection ({n}) vers</string>
-  <string name="fm.tags_n">Étiquettes de la sélection ({n})</string>
   <string name="fm.select_all">Tout sélectionner</string>
   <string name="fm.done">Terminé</string>
   <string name="fm.delete_pages_q">Supprimer les pages sélectionnées ({n}) ?</string>
   <string name="fm.delete_pages_body">Les pages sont supprimées définitivement, comme sur la tablette : elles ne passent pas par la corbeille. Un carnet garde au moins une page.</string>
-  <string name="fm.tags_pages">Étiquettes des pages sélectionnées ({n})</string>
   <string name="fm.move_pages_q">Déplacer les pages sélectionnées ({n})</string>
   <string name="fm.move_to_notebook">Carnet</string>
   <string name="fm.this_notebook">{name} (ce carnet)</string>

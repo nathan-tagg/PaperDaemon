@@ -348,7 +348,7 @@ def letter(lines, frame, box=False, latest=False):
     size, lead = SIZE * s, LEAD * s
     first = top + lead + 2 * s
     rows = max(1, int((bottom - 4 * s - first) // lead) + 1)
-    sig_w = size * 7.5                                         # the signature's room at the end of the last line
+    sig_w = size * 0.9 + SIG.signature_width(size * 0.9)       # the signature's room at the end of the last line
     box_w = (BOX * s + size * 5.5) if box else 0.0             # the retry box, at the band's right end, and its word
     width = x1 - x0 - box_w
     wrapped = []

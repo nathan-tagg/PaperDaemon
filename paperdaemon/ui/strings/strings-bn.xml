@@ -645,7 +645,7 @@
   <string name="fm.move">সরান</string>
   <string name="fm.move_q">{name} সরান এখানে</string>
   <string name="fm.tags">ট্যাগ</string>
-  <string name="fm.tags_of">{name}-এর ট্যাগ</string>
+  <string name="fm.tag">ট্যাগ</string>
   <string name="fm.tag_add">একটি ট্যাগ যোগ করুন</string>
   <string name="fm.add">যোগ করুন</string>
   <string name="fm.new_menu">নতুন</string>
@@ -658,12 +658,10 @@
   <string name="fm.duplicate">ডুপ্লিকেট</string>
   <string name="fm.delete_n_q">নির্বাচিতগুলো ({n}) মুছবেন?</string>
   <string name="fm.move_n_q">নির্বাচিতগুলো ({n}) সরান এখানে</string>
-  <string name="fm.tags_n">নির্বাচিতগুলোর ({n}) ট্যাগ</string>
   <string name="fm.select_all">সব নির্বাচন</string>
   <string name="fm.done">হয়েছে</string>
   <string name="fm.delete_pages_q">নির্বাচিত পৃষ্ঠাগুলো ({n}) মুছবেন?</string>
   <string name="fm.delete_pages_body">ট্যাবলেটের মতোই পৃষ্ঠা চিরতরে মুছে যায়: ট্র্যাশে যায় না। নোটবুকে অন্তত একটি পৃষ্ঠা থাকে।</string>
-  <string name="fm.tags_pages">নির্বাচিত পৃষ্ঠাগুলোর ({n}) ট্যাগ</string>
   <string name="fm.move_pages_q">নির্বাচিত পৃষ্ঠাগুলো ({n}) সরান</string>
   <string name="fm.move_to_notebook">নোটবুক</string>
   <string name="fm.this_notebook">{name} (এই নোটবুক)</string>

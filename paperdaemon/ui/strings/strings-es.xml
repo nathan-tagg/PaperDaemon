@@ -645,7 +645,7 @@ Luego guíame para instalar SearXNG si hace falta, escribe el archivo .bat con u
   <string name="fm.move">Mover</string>
   <string name="fm.move_q">Mover {name} a</string>
   <string name="fm.tags">Etiquetas</string>
-  <string name="fm.tags_of">Etiquetas de {name}</string>
+  <string name="fm.tag">Etiquetar</string>
   <string name="fm.tag_add">Añadir una etiqueta</string>
   <string name="fm.add">Añadir</string>
   <string name="fm.new_menu">Nuevo</string>
@@ -658,12 +658,10 @@ Luego guíame para instalar SearXNG si hace falta, escribe el archivo .bat con u
   <string name="fm.duplicate">Duplicar</string>
   <string name="fm.delete_n_q">¿Eliminar lo seleccionado ({n})?</string>
   <string name="fm.move_n_q">Mover lo seleccionado ({n}) a</string>
-  <string name="fm.tags_n">Etiquetas de lo seleccionado ({n})</string>
   <string name="fm.select_all">Seleccionar todo</string>
   <string name="fm.done">Listo</string>
   <string name="fm.delete_pages_q">¿Eliminar las páginas seleccionadas ({n})?</string>
   <string name="fm.delete_pages_body">Las páginas se eliminan para siempre, como en la tableta: no pasan por la papelera. Un cuaderno conserva al menos una página.</string>
-  <string name="fm.tags_pages">Etiquetas de las páginas seleccionadas ({n})</string>
   <string name="fm.move_pages_q">Mover las páginas seleccionadas ({n})</string>
   <string name="fm.move_to_notebook">Cuaderno</string>
   <string name="fm.this_notebook">{name} (este cuaderno)</string>

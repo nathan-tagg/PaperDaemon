@@ -645,7 +645,7 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="fm.move">Di chuyển</string>
   <string name="fm.move_q">Di chuyển {name} đến</string>
   <string name="fm.tags">Thẻ</string>
-  <string name="fm.tags_of">Thẻ của {name}</string>
+  <string name="fm.tag">Gắn thẻ</string>
   <string name="fm.tag_add">Thêm thẻ</string>
   <string name="fm.add">Thêm</string>
   <string name="fm.new_menu">Mới</string>
@@ -658,12 +658,10 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="fm.duplicate">Nhân bản</string>
   <string name="fm.delete_n_q">Xóa mục đã chọn ({n})?</string>
   <string name="fm.move_n_q">Di chuyển mục đã chọn ({n}) đến</string>
-  <string name="fm.tags_n">Thẻ của mục đã chọn ({n})</string>
   <string name="fm.select_all">Chọn tất cả</string>
   <string name="fm.done">Xong</string>
   <string name="fm.delete_pages_q">Xóa các trang đã chọn ({n})?</string>
   <string name="fm.delete_pages_body">Trang bị xóa vĩnh viễn, như trên máy tính bảng: không vào thùng rác. Sổ tay luôn giữ ít nhất một trang.</string>
-  <string name="fm.tags_pages">Thẻ của các trang đã chọn ({n})</string>
   <string name="fm.move_pages_q">Di chuyển các trang đã chọn ({n})</string>
   <string name="fm.move_to_notebook">Sổ tay</string>
   <string name="fm.this_notebook">{name} (sổ tay này)</string>

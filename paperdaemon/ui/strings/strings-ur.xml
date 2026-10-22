@@ -645,7 +645,7 @@
   <string name="fm.move">منتقل کریں</string>
   <string name="fm.move_q">{name} کو منتقل کریں</string>
   <string name="fm.tags">ٹیگ</string>
-  <string name="fm.tags_of">{name} کے ٹیگ</string>
+  <string name="fm.tag">ٹیگ</string>
   <string name="fm.tag_add">ٹیگ شامل کریں</string>
   <string name="fm.add">شامل کریں</string>
   <string name="fm.new_menu">نیا</string>
@@ -658,12 +658,10 @@
   <string name="fm.duplicate">نقل بنائیں</string>
   <string name="fm.delete_n_q">منتخب ({n}) حذف کریں؟</string>
   <string name="fm.move_n_q">منتخب ({n}) کو منتقل کریں</string>
-  <string name="fm.tags_n">منتخب ({n}) کے ٹیگ</string>
   <string name="fm.select_all">سب منتخب کریں</string>
   <string name="fm.done">ہو گیا</string>
   <string name="fm.delete_pages_q">منتخب صفحات ({n}) حذف کریں؟</string>
   <string name="fm.delete_pages_body">ٹیبلیٹ کی طرح صفحات ہمیشہ کے لیے حذف ہوتے ہیں: وہ ردی کی ٹوکری میں نہیں جاتے۔ نوٹ بک میں کم از کم ایک صفحہ رہتا ہے۔</string>
-  <string name="fm.tags_pages">منتخب صفحات ({n}) کے ٹیگ</string>
   <string name="fm.move_pages_q">منتخب صفحات ({n}) منتقل کریں</string>
   <string name="fm.move_to_notebook">نوٹ بک</string>
   <string name="fm.this_notebook">{name} (یہ نوٹ بک)</string>

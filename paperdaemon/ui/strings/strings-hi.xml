@@ -645,7 +645,7 @@
   <string name="fm.move">ले जाएँ</string>
   <string name="fm.move_q">{name} को यहाँ ले जाएँ</string>
   <string name="fm.tags">टैग</string>
-  <string name="fm.tags_of">{name} के टैग</string>
+  <string name="fm.tag">टैग</string>
   <string name="fm.tag_add">एक टैग जोड़ें</string>
   <string name="fm.add">जोड़ें</string>
   <string name="fm.new_menu">नया</string>
@@ -658,12 +658,10 @@
   <string name="fm.duplicate">डुप्लिकेट</string>
   <string name="fm.delete_n_q">चुने गए ({n}) हटाएँ?</string>
   <string name="fm.move_n_q">चुने गए ({n}) यहाँ ले जाएँ</string>
-  <string name="fm.tags_n">चुने गए ({n}) के टैग</string>
   <string name="fm.select_all">सब चुनें</string>
   <string name="fm.done">हो गया</string>
   <string name="fm.delete_pages_q">चुने गए पेज ({n}) हटाएँ?</string>
   <string name="fm.delete_pages_body">टैबलेट की तरह पेज हमेशा के लिए हटते हैं: वे ट्रैश में नहीं जाते। नोटबुक में कम से कम एक पेज रहता है।</string>
-  <string name="fm.tags_pages">चुने गए पेज ({n}) के टैग</string>
   <string name="fm.move_pages_q">चुने गए पेज ({n}) ले जाएँ</string>
   <string name="fm.move_to_notebook">नोटबुक</string>
   <string name="fm.this_notebook">{name} (यह नोटबुक)</string>

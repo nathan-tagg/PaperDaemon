@@ -1,6 +1,6 @@
 [package]
 name = "paperdaemon-shell"
-version = "0.1.65"
+version = "0.1.66"
 description = "PaperDaemon's desktop shell: the window and the tray around the engine"
 license = "Apache-2.0"
 edition = "2021"

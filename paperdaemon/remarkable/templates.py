@@ -156,6 +156,32 @@ def extract(dest=None, programs=None):
 
 # ---------------------------------------------------------------- every template there is
 
+def _bounds(d):
+    """The box an icon path covers (absolute M L H V C Q Z, as fontTools writes them) -> "x y w h", or None. The app's
+    glyphs draw a page inside a square; framed on that page, they are the size of an rM Methods icon, whose box is its
+    page."""
+    xs, ys, cmd, nums = [], [], "", []
+
+    def flush():
+        if cmd in "MLCQ":
+            for i in range(0, len(nums) - 1, 2):
+                xs.append(nums[i]); ys.append(nums[i + 1])
+        elif cmd == "H":
+            xs.extend(nums)
+        elif cmd == "V":
+            ys.extend(nums)
+    for tok in re.findall(r"[A-Za-z]|-?\d*\.?\d+(?:e-?\d+)?", d or ""):
+        if tok.isalpha():
+            flush()
+            cmd, nums = tok.upper(), []
+        else:
+            nums.append(float(tok))
+    flush()
+    if not xs or not ys:
+        return None
+    return "%g %g %g %g" % (min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys))
+
+
 def catalog(mirror=None):
     """Every portrait template: the app's (read by extract) and the library's rM Methods, in one list by name with
     Blank first, as the tablet's picker lists them -> [{name, file, source: default|methods, icon, drawn}]."""
@@ -163,6 +189,9 @@ def catalog(mirror=None):
     try:
         with open(os.path.join(folder(), "index.json"), encoding="utf-8") as f:
             out = [dict(t, source="default") for t in json.load(f)["templates"]]
+        for t in out:
+            if t.get("icon") and t["icon"].get("d"):
+                t["icon"] = dict(t["icon"], viewBox=_bounds(t["icon"]["d"]) or t["icon"]["viewBox"])
     except (OSError, ValueError, KeyError):
         pass
     import glob

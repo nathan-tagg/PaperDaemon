@@ -645,7 +645,7 @@
   <string name="fm.move">移動</string>
   <string name="fm.move_q">{name} の移動先</string>
   <string name="fm.tags">タグ</string>
-  <string name="fm.tags_of">{name} のタグ</string>
+  <string name="fm.tag">タグ</string>
   <string name="fm.tag_add">タグを追加</string>
   <string name="fm.add">追加</string>
   <string name="fm.new_menu">新規</string>
@@ -658,12 +658,10 @@
   <string name="fm.duplicate">複製</string>
   <string name="fm.delete_n_q">選択したもの ({n}) を削除しますか?</string>
   <string name="fm.move_n_q">選択したもの ({n}) の移動先</string>
-  <string name="fm.tags_n">選択したもの ({n}) のタグ</string>
   <string name="fm.select_all">すべて選択</string>
   <string name="fm.done">完了</string>
   <string name="fm.delete_pages_q">選択したページ ({n}) を削除しますか?</string>
   <string name="fm.delete_pages_body">タブレットと同じく、ページは完全に削除されます (ゴミ箱には入りません)。ノートブックには少なくとも 1 ページ残ります。</string>
-  <string name="fm.tags_pages">選択したページ ({n}) のタグ</string>
   <string name="fm.move_pages_q">選択したページ ({n}) を移動</string>
   <string name="fm.move_to_notebook">ノートブック</string>
   <string name="fm.this_notebook">{name} (このノートブック)</string>

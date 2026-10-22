@@ -645,7 +645,7 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="fm.move">Symud</string>
   <string name="fm.move_q">Symud {name} i</string>
   <string name="fm.tags">Tagiau</string>
-  <string name="fm.tags_of">Tagiau {name}</string>
+  <string name="fm.tag">Tagio</string>
   <string name="fm.tag_add">Ychwanegu tag</string>
   <string name="fm.add">Ychwanegu</string>
   <string name="fm.new_menu">Newydd</string>
@@ -658,12 +658,10 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="fm.duplicate">Dyblygu</string>
   <string name="fm.delete_n_q">Dileu'r hyn a ddewiswyd ({n})?</string>
   <string name="fm.move_n_q">Symud yr hyn a ddewiswyd ({n}) i</string>
-  <string name="fm.tags_n">Tagiau'r hyn a ddewiswyd ({n})</string>
   <string name="fm.select_all">Dewis y cyfan</string>
   <string name="fm.done">Wedi gorffen</string>
   <string name="fm.delete_pages_q">Dileu'r tudalennau a ddewiswyd ({n})?</string>
   <string name="fm.delete_pages_body">Caiff tudalennau eu dileu am byth, fel ar y llechen: nid ydynt yn mynd i'r sbwriel. Mae llyfr nodiadau'n cadw o leiaf un dudalen.</string>
-  <string name="fm.tags_pages">Tagiau'r tudalennau a ddewiswyd ({n})</string>
   <string name="fm.move_pages_q">Symud y tudalennau a ddewiswyd ({n})</string>
   <string name="fm.move_to_notebook">Llyfr nodiadau</string>
   <string name="fm.this_notebook">{name} (y llyfr nodiadau hwn)</string>
