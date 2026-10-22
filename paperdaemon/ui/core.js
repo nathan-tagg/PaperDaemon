@@ -35,6 +35,18 @@
   };
   const EN = readStrings("en");
   const LOCAL = PD.lang === "en" ? EN : readStrings(PD.lang);
+  // THE WORDS DID NOT COME (the window opened as the engine was still starting, after an update): every label would show
+  // its name ("np.label") until the app was opened again. The window reloads itself a moment later instead, a few
+  // times at most (counted in this window's session), and the count is cleared once the words are in.
+  (() => {
+    const K = "pd-strings-retry";
+    let n = 0;
+    try { n = Number(sessionStorage.getItem(K) || 0); } catch (e) { /* none */ }
+    if (Object.keys(EN).length) { try { sessionStorage.removeItem(K); } catch (e) { /* none */ } return; }
+    if (n >= 10) return;
+    try { sessionStorage.setItem(K, String(n + 1)); } catch (e) { /* none */ }
+    setTimeout(() => location.reload(), 800 + 400 * n);
+  })();
   document.documentElement.lang = PD.lang;
   // the languages the window speaks, each named in itself (the engine's settings.LANGUAGES), and those written right
   // to left

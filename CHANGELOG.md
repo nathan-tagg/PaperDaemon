@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.78
+
+- After an update, the window could show every label by its name ("np.label") until PaperDaemon was opened again: it read its words once, as it opened, and when that was before the engine answered it never read them again. It now reloads itself a moment later until the words are in.
+
 ## 0.1.77
 
 - Esc on a page closes the notebook, as it does from the viewer's bar. The page lets go of what it has first, one Esc each: a menu, the caret, a selection, a shape or corners being set, the template picker. In the page grid, Esc still steps back to the page first.
