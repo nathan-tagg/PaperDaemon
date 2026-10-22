@@ -7,6 +7,7 @@
 - False Mirror: the bar on the cover of the page a job is working on moves smoothly. Each update used to draw it anew, starting its animation over every second, and the whole library was redrawn every five seconds.
 - False Mirror: New notebook's templates are drawn as the page editor draws them, and its name field starts empty, "Notebook" its placeholder. New folder does the same.
 - Tags have no case: "Joi" and "joi" are one tag in the page's tag menu and in a notebook's tags, and adding one keeps the spelling already in use.
+- A job a host stopped in the middle of no longer leaves a working bar on its notebook's cover: the host clears it when it starts.
 
 ## 0.1.59
 

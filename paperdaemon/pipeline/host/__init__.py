@@ -1075,6 +1075,12 @@ class Host:
                 f.write(time.strftime("%Y-%m-%d %H:%M:%S"))
         except OSError:
             pass
+        # A JOB A HOST STOPPED IN THE MIDDLE OF left its progress behind: no job is running yet, so it goes (a cover
+        # showed a working bar for good)
+        try:
+            os.remove(os.path.join(paths.state_dir(), "run", "progress.json"))
+        except OSError:
+            pass
         ensure_server()
 
     def next_job(self):
