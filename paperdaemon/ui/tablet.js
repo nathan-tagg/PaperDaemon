@@ -86,6 +86,7 @@
 
     function paintBar() {
       const dlg = $("#" + VIEWER); if (!dlg || !S.doc) return;
+      paintPagePick();                    // the pages' bar only over the grid with pages chosen: never left behind
       const n = pageCount();
       $(".viewer-title", dlg).textContent = S.doc.name;
       // THE BAR, LAID OUT AS THE TABLET'S TOOLBAR. A page: on the left the page editor's tools in the false mirror (pen,
@@ -453,6 +454,7 @@
           if (S.edMenu && fr && fr.contentWindow) { e.preventDefault(); S.edMenu = false; fr.contentWindow.postMessage({ pd: "editor-close" }, location.origin); }
         });
         dlg.addEventListener("close", () => {
+          S.pp = []; paintPagePick();                         // closing lets the chosen pages go, and their bar
           if (S.seen) { const [d, n] = S.seen.split("|"); opened(d, Number(n)); S.seen = null; }   // what was written while open
           if (S.doc) opened(S.doc.id, 0);
           if (!fm) return;
@@ -516,7 +518,7 @@
       paintBar(); paintBody();
     }
     async function pagePickAct(act) {
-      if (!S.pp.length) return;
+      if (act === "done" || !S.pp.length) { S.pp = []; paintPagePick(); return; }   // Done always gives the bar back
       const doc = S.doc.id, pages = S.pp.slice();
       const strip = $("#" + VIEWER + " .page-pick"), msg = strip && strip.querySelector(".pick-name");
       const fail = e => { if (msg) { msg.textContent = PD.errText(e); msg.classList.add("attn"); } };
@@ -525,7 +527,6 @@
         if (e) { fail(e); return; }
         await pagesChanged();
       };
-      if (act === "done") { S.pp = []; paintPagePick(); return; }
       if (act === "all") { S.pp = Array.from({ length: pageCount() }, (_, i) => i + 1); paintPagePick(); return; }
       if (act === "duplicate") { await run("duplicate"); return; }
       if (act === "delete") {

@@ -298,13 +298,37 @@ def _ends(lines, idxs):
         p = lines[i].points
         ends.append((p[0].x, p[0].y))
         ends.append((p[-1].x, p[-1].y))
+    # THE TWO FARTHEST POINTS LIE ON THE CONVEX HULL: only its corners are compared, in the ends' own order (the
+    # same pair as comparing every two). Every pair of a traced picture's 26,000 ends was 96 s of reading a page.
+    corners = _hull(ends)
+    cand = [e for e in ends if e in corners]
     best, far = None, -1.0
-    for a in ends:
-        for b in ends:
+    for a in cand:
+        for b in cand:
             d = math.hypot(a[0] - b[0], a[1] - b[1])
             if d > far:
                 far, best = d, (a, b)
     return best, far
+
+
+def _hull(pts):
+    """The corners of the convex hull of `pts` (Andrew's monotone chain) -> a set of points."""
+    u = sorted(set(pts))
+    if len(u) <= 2:
+        return set(u)
+
+    def cross(o, a, b):
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+    lo, hi = [], []
+    for q in u:
+        while len(lo) >= 2 and cross(lo[-2], lo[-1], q) <= 0:
+            lo.pop()
+        lo.append(q)
+    for q in reversed(u):
+        while len(hi) >= 2 and cross(hi[-2], hi[-1], q) <= 0:
+            hi.pop()
+        hi.append(q)
+    return set(lo + hi)
 
 
 def _ink_near(pts, at, r):

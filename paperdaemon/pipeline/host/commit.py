@@ -239,6 +239,10 @@ def t_commit():
         res = JOB.draw.write_rm(name, page, keep_existing=True)
     if overflow:
         H._write_overflow(name, overflow)
+    # EVERYTHING THIS JOB INKED IS RECORDED AS ITS OWN, the page's own ink and its overflow page alike. (Since 0.1.15
+    # this ran only with an overflow: no job's writing was remembered, so the next job read it all as the user's --
+    # its own answers as requests, and a traced picture's thousands of strokes searched for an arrowhead.)
+    if JOB.draw.strokes or overflow:
         try:
             H._record_made(doc, page, before)
         except Exception as ex:

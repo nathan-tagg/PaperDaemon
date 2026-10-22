@@ -386,6 +386,30 @@ def test_the_editor_leaves_the_daemons_layer_to_him():
     assert got["users"] == 2
 
 
+def test_what_a_job_writes_is_remembered_as_its_own():
+    """The host records the ink it commits as its own, so the next job reads it as this system's work, not the user's.
+    (Since 0.1.15 it recorded only with an overflow page: a traced picture of 13,000 strokes was read as the user's,
+    searched for an arrowhead, and the model was shown its own answers as requests.)"""
+    got = _run("""
+        import json
+        from paperdaemon.remarkable import local
+        from paperdaemon.pipeline import draw as A
+        from paperdaemon.pipeline import host as H
+        from paperdaemon.pipeline.host import job as J
+        from paperdaemon.pipeline.page import marks as M
+        from paperdaemon.pipeline.page import render as R
+        a = local.new_notebook("A")
+        J.begin(doc=a, page=1, page_id=R.live_pages(a)[0]["id"], frame=(1620.0, 2160.0), draw=A.Drawing(),
+                ops=["write a word"])
+        H.JOB.plan = {"steps": []}
+        H.JOB.draw.stroke([(-500, 650), (300, 650)])
+        H.JOB.draw.stroke([(-500, 690), (100, 690)])
+        res = H.t_commit()
+        print(json.dumps({"error": res.get("error"), "owners": sorted(m["owner"] for m in M.marks(a, 1))}))
+    """)
+    assert got == {"error": None, "owners": ["mine"]}
+
+
 def test_a_page_unchanged_is_not_read_again():
     # the editor asks with the version it has: the same page answers 304 and is not read; a write gives the new one
     got = _run("""

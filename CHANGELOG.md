@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.67
+
+- What a job writes is remembered as its own again. Since 0.1.15 the host recorded its ink only when a job ran onto a new page, so the next job read everything it had written before as yours: its own answers as requests, and a picture's thousands of strokes as your handwriting.
+- Reading a page no longer stalls on a big drawing. Looking for arrows compared every pair of stroke ends; a picture of 13,000 strokes took 96 seconds with the graphics card idle. It now takes a fraction of a second, with the same result.
+- False Mirror: the page grid's selection bar no longer stays over the viewer's bar. Done always gives the bar back, and closing the notebook lets the chosen pages go.
+
 ## 0.1.66
 
 - Daemon notes are ONE message, one line, rewritten each time: when he saw the job, what it is doing now, and how it ended (finished, failed or skipped). They never wrap; a note too long for its line is cut.
