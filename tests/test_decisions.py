@@ -182,3 +182,9 @@ def test_a_picture_after_a_short_reply_goes_right_below_it():
     finally:
         H._run_images = real
     assert seen["box"]["y0"] < planned["y0"] and seen["box"]["y0"] <= 690 + PL.GAP + 1
+    # a traced picture's points are numpy's: what the model is told about its box must still be JSON
+    import json
+    import numpy as np
+    H.JOB.draw.stroke([(np.float32(-200), np.float32(800)), (np.float32(200), np.float32(900))])
+    H.JOB.steps[1].update(status="done", draw_from=2, draw_to=3)
+    json.dumps(H._landed_box(H.JOB.steps[1]))

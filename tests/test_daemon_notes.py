@@ -194,13 +194,17 @@ def test_a_note_stays_in_the_band_above_the_safe_area():
         assert top <= box[1] < box[3] <= bottom and box[2] <= x1
 
 
-def test_a_running_account_keeps_the_first_line_and_the_latest(monkeypatch):
+def test_a_note_is_one_line_and_never_wraps(monkeypatch):
+    """ONE message, rewritten each time: when he saw the job, what it is doing, how it ended. Too long, it is cut."""
     from paperdaemon.pipeline.draw import lettering as T
     seen = []
     real = T.text
     monkeypatch.setattr(T, "text", lambda d, s, *a, **k: seen.append(s) or real(d, s, *a, **k))
-    N.letter(["On it"] + ["Step %d of 9 done" % i for i in range(1, 10)], FRAME, latest=True)
-    assert seen[0] == "On it" and seen[-1] == "Step 9 of 9 done" and len(seen) <= 4
+    N.letter(["Saw it 1:02 PM. Now: step 2 done"], FRAME)
+    assert seen == ["Saw it 1:02 PM. Now: step 2 done"]
+    seen.clear()
+    N.letter(["Saw it 1:02 PM. Finished 1:04 PM in 2 min: " + "a long account " * 40], FRAME, box=True)
+    assert seen[1:] == ["retry"] and seen[0].endswith("...")     # the box's word beside it
 
 
 def test_a_tick_in_the_retry_box_is_found_and_erased_with_the_note():

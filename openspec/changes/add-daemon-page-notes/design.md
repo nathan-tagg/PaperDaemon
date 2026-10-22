@@ -48,3 +48,8 @@ The False Mirror has no tablet to send a copy to, so its notes go into the page 
 shows them; the host and the fingerprint never see them, as anywhere. "On it" is written before the host gets the
 page and the last note after it is done. A note while the job runs is written only if the page is still as the daemon
 read it: a page the host wrote in between keeps what it wrote, and that note is skipped.
+
+The page editor shows his layer and leaves it to him. It never draws on it, it takes his layer in whole when the
+file changes (matching the user's layers apart from it), and a save keeps his blocks from the file as he wrote
+them. Written anew under the editor's ids, his notes had become the user's strokes: he could not erase them, and
+made himself another layer each time.

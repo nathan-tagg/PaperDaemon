@@ -503,16 +503,17 @@ def prepare_page(job):
     if ticks:
         job["retry"] = {"asked": True, "note": ent.get("note") or ""}
         log("  the user ticked the retry box -- trying %s again" % where(job))
-    head = "On it %s -- %s%s" % (N.clock(), where(job), " (asked again)" if ticks else
-                                 (" (try %d)" % (int(job["retry"].get("n") or 1) + 1) if job.get("retry") else ""))
+    # ONE MESSAGE, one line, rewritten each time: when he saw the job, what it is doing now, and how it ended
+    head = "Saw it %s%s." % (N.clock(), " (asked again)" if ticks else
+                             (" (try %d)" % (int(job["retry"].get("n") or 1) + 1) if job.get("retry") else ""))
     job["note_head"] = head
     job["note_base"] = clean                                  # the page as the host gets it: every copy is of it
     _note_copy(doc, pid, clean, [head], "on-it")
 
 
 def progress_note():
-    """While a job runs: each thing the host reports (host/steps.event: what it read, its plan, each step as it ends)
-    goes up on a copy of the page, under "On it". Several at once go up together, as one."""
+    """While a job runs: the latest thing the host reports (host/steps.event: what it read, its plan, each step as it
+    ends) replaces the last, on the same one line after "Saw it"."""
     if not notes_on():
         return
     try:
@@ -526,7 +527,7 @@ def progress_note():
     if pr.get("doc") != doc or not events or events == INFLIGHT.get("noted"):
         return
     INFLIGHT["noted"] = events
-    _note_copy(doc, pid, job.get("note_base"), [job.get("note_head") or "On it."] + events, "progress")
+    _note_copy(doc, pid, job.get("note_base"), ["%s Now: %s" % (job.get("note_head") or "Saw it.", events[-1])], "progress")
 
 
 def final_note(job, since):
@@ -541,15 +542,17 @@ def final_note(job, since):
     st, why, failed = ent.get("status"), str(ent.get("note") or "").strip(), bool(ent.get("failed"))
     again = ent.get("status") == "pending" and isinstance(ent.get("retry"), dict)
     took = elapsed(since)
+    seen = job.get("note_head") or ""
     if again:
-        lines = ["Didn't work, %s after %s: %s" % (N.clock(), took, why),
-                 "Trying again (%d of %d)." % (int(ent["retry"].get("n") or 1), retries_allowed())]
+        end = "Failed %s after %s, trying again (%d of %d): %s" % (N.clock(), took, int(ent["retry"].get("n") or 1),
+                                                                   retries_allowed(), why)
     elif st == "done" and not failed:
-        lines = ["Done %s in %s: %s" % (N.clock(), took, why)]
+        end = "Finished %s in %s: %s" % (N.clock(), took, why)
     elif failed:
-        lines = ["Didn't work, %s after %s: %s" % (N.clock(), took, why), "Tick the box to try again."]
+        end = "Failed %s after %s: %s" % (N.clock(), took, why)
     else:
-        lines = ["Nothing to do, %s after %s: %s" % (N.clock(), took, why), "Tick the box to try it anyway."]
+        end = "Skipped %s after %s: %s" % (N.clock(), took, why)
+    lines = [(seen + " " + end).strip()]
     box = not again and (failed or st != "done")
     strokes, b = _letter(lines, _frame_of(doc, pid), box=box)
     state = _ink(doc, pid)

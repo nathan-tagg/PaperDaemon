@@ -219,13 +219,14 @@ REDDIT_UA = {"User-Agent": "PaperDaemon/1.0 (reMarkable assistant)"}
 def _landed_box(q):
     """Where step q's work actually is in the draft -- its picture and the strokes it added -- as a
     box, or None when nothing landed."""
-    bs = [tuple(im["box"]) for im in (JOB.images or []) if im.get("place") == q.get("place")]
+    # plain numbers: a traced picture's points are numpy's, and the box goes back to the model as JSON
+    bs = [tuple(float(v) for v in im["box"]) for im in (JOB.images or []) if im.get("place") == q.get("place")]
     a = q.get("draw_from")
     if a is not None:
         pts = [pt for s in JOB.draw.strokes[a:q.get("draw_to")] for pt in s[0]]
         if pts:
             xs, ys = [p[0] for p in pts], [p[1] for p in pts]
-            bs.append((min(xs), min(ys), max(xs), max(ys)))
+            bs.append((float(min(xs)), float(min(ys)), float(max(xs)), float(max(ys))))
     if not bs:
         return None
     return PL._finish(q["place"], ST.PLACE_KIND.get(q["do"], "text"), min(b[0] for b in bs),

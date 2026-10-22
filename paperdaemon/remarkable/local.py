@@ -615,8 +615,9 @@ def scene_of(doc, page_no, arrays=False):
                 lines = [dict(ln, points=_rows(ln["points"], arrays)) for ln in parts[1].get(g.node_id, [])]
             else:
                 lines = lines_in(g, [])
+            # THE DAEMON'S LAYER (his author id on its node): shown, and marked, so the editor leaves it to him
             layers.append({"label": g.label.value or "Layer %d" % (len(layers) + 1), "visible": bool(g.visible.value),
-                           "lines": lines})
+                           "lines": lines, "daemon": g.node_id.part1 == R.DAEMON_AUTHOR})
     if not layers:
         layers = [{"label": "Layer 1", "visible": True, "lines": []}]
     text = None
@@ -777,6 +778,12 @@ def _write_scene(doc, page_no, scene):
         return CrdtId(1, k)
 
     layers = scene.get("layers") or [{"label": "Layer 1", "visible": True, "lines": []}]
+    # THE DAEMON'S LAYER IS HIS: the editor's copy of it is dropped, and his own blocks are kept from the file as he
+    # wrote them (_daemon_blocks). Written anew under the editor's ids, his notes became the user's strokes: he could
+    # no longer erase them, and made himself another layer.
+    keep_his = any(L.get("daemon") for L in layers)
+    layers = [L for L in layers if not L.get("daemon")] or [{"label": "Layer 1", "visible": True, "lines": []}]
+    his = _daemon_blocks(path) if keep_his else None
     nodes = [CrdtId(0, 11)] + [nid() for _ in layers[1:]]
     tree = [ss.SceneTreeBlock(tree_id=n, node_id=CrdtId(0, 0), is_update=True, parent_id=CrdtId(0, 1)) for n in nodes]
     groups = [ss.TreeNodeBlock(group=si.Group(node_id=CrdtId(0, 1)))]
@@ -815,6 +822,16 @@ def _write_scene(doc, page_no, scene):
     chars = sum(len(r.get("text") or "") for p in ((scene.get("text") or {}).get("paras") or []) for r in p.get("runs") or [])
     blocks = head + [ss.PageInfoBlock(loads_count=1, merges_count=0, text_chars_count=chars,
                                       text_lines_count=len(((scene.get("text") or {}).get("paras")) or []))]
+    if his:
+        # his layer at the bottom of the list again, before the editor's first layer; his strokes after the editor's
+        tree += his["tree"]
+        groups += his["nodes"]
+        for p in his["places"]:
+            placed.insert(0, ss.SceneGroupItemBlock(parent_id=p.parent_id, item=CrdtSequenceItem(
+                item_id=p.item.item_id, left_id=CrdtId(0, 0), right_id=placed[0].item.item_id if placed else CrdtId(0, 0),
+                deleted_length=0, value=p.item.value)))
+        strokes += his["lines"]
+        count += len(his["lines"])
     blocks += ([info] if info is not None else []) + tree + groups + placed + ([text] if text else [])
     buf = io.BytesIO()
     write_blocks(buf, blocks)
@@ -831,6 +848,29 @@ def _write_scene(doc, page_no, scene):
     paths.write_atomic(path, data)
     _touch(doc)
     return count
+
+
+def _daemon_blocks(path):
+    """The daemon's own blocks in the page file -- his layers' tree blocks and nodes, their places in the list of
+    layers, and every stroke block on them (tombstones too, so what he erased stays erased) -> {tree, nodes, places,
+    lines}, or None when the page has none."""
+    from paperdaemon.remarkable import fastrm
+    from paperdaemon.pipeline.page import render as R
+    if not os.path.exists(path):
+        return None
+    me = R.DAEMON_AUTHOR
+    out = {"tree": [], "nodes": [], "places": [], "lines": []}
+    for b in fastrm.read_blocks(open(path, "rb").read()):
+        if isinstance(b, ss.SceneTreeBlock) and b.tree_id.part1 == me:
+            out["tree"].append(b)
+        elif isinstance(b, ss.TreeNodeBlock) and b.group.node_id.part1 == me:
+            out["nodes"].append(b)
+        elif isinstance(b, ss.SceneGroupItemBlock) and b.item.value is not None and b.item.deleted_length == 0 \
+                and getattr(b.item.value, "part1", None) == me and b.parent_id == CrdtId(0, 1):
+            out["places"].append(b)
+        elif isinstance(b, ss.SceneLineItemBlock) and b.parent_id.part1 == me:
+            out["lines"].append(b)
+    return out if out["nodes"] else None
 
 
 def _text_block(text, nid):

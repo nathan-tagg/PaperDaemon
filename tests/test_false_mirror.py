@@ -347,6 +347,45 @@ def test_pages_chosen_are_deleted_duplicated_moved_and_tagged_as_the_tablet_does
     assert got["copy"] == ["A copy", True]
 
 
+def test_the_editor_leaves_the_daemons_layer_to_him():
+    """The editor shows the daemon's note and saves the page around it: his layer, his strokes and their ids stay his,
+    so his next note replaces the last rather than piling on top of a copy he can no longer erase."""
+    got = _run("""
+        import io, json
+        from rmscene import read_blocks, scene_stream as ss, scene_items as si
+        from paperdaemon.remarkable import local
+        from paperdaemon.pipeline.daemon import notes as N
+        a = local.new_notebook("A")
+        scene = local.scene_of(a, 1)
+        scene["layers"][0]["lines"].append({"pen": "FINELINER_2", "penCode": 17, "color": 0, "thicknessScale": 1.0,
+                                            "points": [[0, 900, 0, 0, 16, 190], [60, 950, 0, 0, 16, 190]]})
+        local.write_scene(a, 1, scene)
+        path = local._rm(a, 1)
+        state = {}
+        first, _ = N.letter(["Saw it 1:02 PM. Now: read the page"], (1620.0, 2160.0))
+        data = N.with_note(open(path, "rb").read(), first, state); open(path, "wb").write(data)
+        sc = local.scene_of(a, 1)                                  # the editor opens the page and saves it
+        marked = [L["label"] for L in sc["layers"] if L.get("daemon")]
+        sc["layers"][[i for i, L in enumerate(sc["layers"]) if not L.get("daemon")][0]]["lines"].append(
+            {"pen": "FINELINER_2", "penCode": 17, "color": 0, "thicknessScale": 1.0,
+             "points": [[-300, 500, 0, 0, 16, 190], [-250, 520, 0, 0, 16, 190]]})
+        local.write_scene(a, 1, sc)
+        last, _ = N.letter(["Saw it 1:02 PM. Finished 1:04 PM in 2 min: answered"], (1620.0, 2160.0))
+        data = N.with_note(open(path, "rb").read(), last, state); open(path, "wb").write(data)
+        bl = list(read_blocks(io.BytesIO(open(path, "rb").read())))
+        names = {(b.group.node_id.part1, b.group.node_id.part2): b.group.label.value for b in bl if isinstance(b, ss.TreeNodeBlock)}
+        live = [b for b in bl if isinstance(b, ss.SceneLineItemBlock) and isinstance(b.item.value, si.Line)]
+        daemon_layers = [k for k, v in names.items() if v == "Daemon"]
+        print(json.dumps({"marked": marked, "daemon_layers": len(daemon_layers),
+                          "his": sum(1 for b in live if b.item.item_id.part1 == N.AUTHOR), "want": len(last),
+                          "users": sum(1 for b in live if b.item.item_id.part1 != N.AUTHOR)}))
+    """)
+    assert got["marked"] == ["Daemon"]
+    assert got["daemon_layers"] == 1
+    assert got["his"] == got["want"]
+    assert got["users"] == 2
+
+
 def test_a_page_unchanged_is_not_read_again():
     # the editor asks with the version it has: the same page answers 304 and is not read; a write gives the new one
     got = _run("""

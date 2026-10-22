@@ -2,6 +2,9 @@
 
 ## 0.1.66
 
+- Daemon notes are ONE message, one line, rewritten each time: when he saw the job, what it is doing now, and how it ended (finished, failed or skipped). They never wrap; a note too long for its line is cut.
+- False Mirror: the page editor no longer copies the daemon's layer as your own. It saved his notes under your ids, so he could not erase them and made himself a new layer every time: notes piled on top of each other and Daemon layers multiplied. The editor now shows his layer, never draws on it, and keeps it as he wrote it.
+- A job with a picture no longer crashes after the picture lands ("float32 is not JSON serializable"). The picture's box was measured from its traced strokes, whose numbers are numpy's, and went back to the model as JSON.
 - New notebook: every template's icon is the same size and color (rM Methods' icons were bigger and gray), and the list scrolls without a scrollbar, fading out where there are more. The tags field is gone for now. The page editor's template picker draws the same icons.
 - The selection bars say "Tag", and the tag dialog is titled by the notebook's name.
 - Daemon notes: the devil stands clear of the signature, and a line leaves exactly the signature's room. The traced signature is optional content (`content\signaturem_sig_daemon.json`); without it the name is lettered.

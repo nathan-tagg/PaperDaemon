@@ -336,10 +336,10 @@ def band(frame):
 
 
 def letter(lines, frame, box=False, latest=False):
-    """`lines` lettered in the band, signed at the end of the last line, with a retry box after the signature when
-    `box`. -> (Drawing strokes, the box (x0, y0, x1, y1) or None). Each line is wrapped to the band's width; lines past
-    what the band holds are dropped (the last kept one ends with an ellipsis). `latest`: a running account instead --
-    each line one row, cut to fit, and the first line kept with as many of the LAST ones as the band holds."""
+    """The note: ONE line in the band, `lines` run together, signed at its end, with a retry box at the band's right
+    end when `box`. -> (Drawing strokes, the box (x0, y0, x1, y1) or None). It never wraps: a note too long for the
+    line is cut, with an ellipsis, where the signature (and the box) begin. (`latest` is kept for its callers; one line
+    is all there is.)"""
     from paperdaemon.pipeline import draw as A
     from paperdaemon.pipeline.draw import lettering as T
     from paperdaemon.pipeline.draw import signature as SIG
@@ -347,21 +347,11 @@ def letter(lines, frame, box=False, latest=False):
     s = (bottom - top) / 115.0                                 # a Paper Pro page's band is 115 units deep
     size, lead = SIZE * s, LEAD * s
     first = top + lead + 2 * s
-    rows = max(1, int((bottom - 4 * s - first) // lead) + 1)
     sig_w = size * 0.9 + SIG.signature_width(size * 0.9)       # the signature's room at the end of the last line
     box_w = (BOX * s + size * 5.5) if box else 0.0             # the retry box, at the band's right end, and its word
     width = x1 - x0 - box_w
-    wrapped = []
-    if latest:
-        wrapped = [_cut(T, " ".join(str(ln).split()), size, width) for ln in lines] or [""]
-        if len(wrapped) > rows:
-            wrapped = wrapped[:1] + wrapped[len(wrapped) - (rows - 1):] if rows > 1 else wrapped[-1:]
-    for ln in ([] if latest else lines):
-        wrapped += T.wrap(str(ln), size, width) or [""]
-    if len(wrapped) > rows:
-        wrapped = wrapped[:rows]
-        wrapped[-1] = _cut(T, wrapped[-1] + " ...", size, width)
-    last = len(wrapped) - 1
+    wrapped = [" ".join(" ".join(str(ln).split()) for ln in lines)]
+    last = 0
     wrapped[last] = _cut(T, wrapped[last], size, width - sig_w)
     d = A.Drawing(int(round(frame[0])), int(round(frame[1])))
     y = first

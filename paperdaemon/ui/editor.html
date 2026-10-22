@@ -2338,7 +2338,7 @@ span.lname { cursor: default; }
     if (b.dataset.erase) { eraseMode = b.dataset.erase; paintPop(); }
     if (b.dataset.esize) eraseSize = Number(b.dataset.esize);
     if (b.dataset.pickmode) { if (pickMode !== b.dataset.pickmode) clearPick(); pickMode = b.dataset.pickmode; }
-    if (b.dataset.lact !== undefined) { activeLayer = Number(b.dataset.lact); paintPop(); return; }
+    if (b.dataset.lact !== undefined) { if (!page.layers[Number(b.dataset.lact)].daemon) activeLayer = Number(b.dataset.lact); paintPop(); return; }
     if (b.dataset.tvis) { const k = b.dataset.tvis === "text" ? "textVisible" : "templateVisible"; layerEdit(() => { page[k] = !page[k]; }); return; }
     if (b.dataset.tmpl) { popFor = null; paintPop(); paintControls(); if (tplLocked) whyNoTemplates(); else openTemplates(); return; }
     if (b.dataset.lvis !== undefined) { const i = Number(b.dataset.lvis); layerEdit(() => { page.layers[i].visible = !page.layers[i].visible; }); return; }
@@ -3058,9 +3058,11 @@ span.lname { cursor: default; }
   function fromScene(sc) {
     page.paperSize = sc.paperSize || [1620, 2160];
     page.source = sc.source || null;                           // "pdf" or "epub": a page of a PDF or a book
-    page.layers = (sc.layers || []).map((L, i) => ({ nodeId: [0, 11 + i], label: L.label, visible: L.visible, lines: (L.lines || []).map(lineIn) }));
+    // the daemon's layer is shown and marked: it is his, written by him, and never the layer the pens work on
+    page.layers = (sc.layers || []).map((L, i) => ({ nodeId: [0, 11 + i], label: L.label, visible: L.visible, daemon: !!L.daemon, lines: (L.lines || []).map(lineIn) }));
     if (!page.layers.length) page.layers = [{ nodeId: [0, 11], label: "Layer 1", visible: true, lines: [] }];
     activeLayer = page.layers.length - 1;
+    while (activeLayer > 0 && page.layers[activeLayer].daemon) activeLayer--;
     if (sc.text) page.text = textIn(sc.text);
     page.textVisible = sc.textVisible !== false; page.templateVisible = sc.templateVisible !== false; page.template = sc.template || "Blank";
     page.images = picturesIn(sc); loadPictures();
@@ -3073,12 +3075,12 @@ span.lname { cursor: default; }
   const textShape = t => !t || !t.paras.length ? "" : JSON.stringify([Math.round(t.x), Math.round(t.y), Math.round(t.width),
     t.paras.map(p => [p.style, p.list || null, p.chars.map(c => c.c + (c.b ? "b" : "") + (c.i ? "i" : "")).join("\u0001")])]);
   const shapeOf = sc => ({                                     // a scene (the file's, as the engine sends it) as keys
-    layers: (sc.layers || []).map(L => ({ label: L.label, visible: L.visible !== false, lines: (L.lines || []).map(lineKey) })),
+    layers: (sc.layers || []).map(L => ({ label: L.label, visible: L.visible !== false, daemon: !!L.daemon, lines: (L.lines || []).map(lineKey) })),
     text: sc.text ? textShape(textIn(sc.text)) : "",
     meta: JSON.stringify([sc.paperSize || [1620, 2160], sc.textVisible !== false, sc.templateVisible !== false, sc.template || "Blank"]),
     pics: picturesKey(picturesIn(sc)) });
   const shapeOfPage = () => ({
-    layers: page.layers.map(L => ({ label: L.label, visible: L.visible !== false, lines: L.lines.map(lineKey) })),
+    layers: page.layers.map(L => ({ label: L.label, visible: L.visible !== false, daemon: !!L.daemon, lines: L.lines.map(lineKey) })),
     text: textShape(page.text),
     meta: JSON.stringify([page.paperSize, page.textVisible, page.templateVisible, page.template]),
     pics: picturesKey(page.images) });
@@ -3102,9 +3104,23 @@ span.lname { cursor: default; }
     setKnown(sc, there);
     if (!was || JSON.stringify(there) === JSON.stringify(was)) return false;
     let landed = false, changed = false;
+    // THE DAEMON'S LAYER is taken as the file has it, whole: his note replaces his last one. It is his, so it is not
+    // ink that landed for the user (the text stays), and the user's layers are matched apart from it -- by position
+    // it shifted them all, and his note was merged into the user's own layer.
     there.layers.forEach((TL, i) => {
-      const WL = was.layers[i] || { lines: [] }, src = sc.layers[i];
-      let L = page.layers[i];
+      if (!TL.daemon) return;
+      const src = sc.layers[i];
+      let L = page.layers.find(x => x.daemon);
+      if (!L) {
+        L = { nodeId: [2, page.nextId++], label: TL.label, visible: TL.visible, daemon: true, lines: [] };
+        page.layers.unshift(L); activeLayer++;                 // at the bottom, as on the page
+      }
+      L.lines = (src.lines || []).map(lineIn); L.visible = TL.visible; changed = true;
+    });
+    const wasMine = was.layers.filter(x => !x.daemon), pageMine = page.layers.filter(x => !x.daemon);
+    there.layers.filter(x => !x.daemon).forEach((TL, i) => {
+      const WL = wasMine[i] || { lines: [] }, src = sc.layers.filter(x => !x.daemon)[i];
+      let L = pageMine[i];
       if (!L) { L = { nodeId: [2, page.nextId++], label: TL.label, visible: TL.visible, lines: [] }; page.layers.push(L); changed = true; }
       const left = new Map();                                  // the strokes the file had, by key, counted
       for (const k of WL.lines) left.set(k, (left.get(k) || 0) + 1);
@@ -3116,7 +3132,7 @@ span.lname { cursor: default; }
         const at = L.lines.findIndex(ln => lineKey(ln) === k);
         if (at >= 0) { L.lines.splice(at, 1); changed = true; }
       }
-      if (was.layers[i] && TL.visible !== WL.visible) { L.visible = TL.visible; changed = true; }
+      if (wasMine[i] && TL.visible !== WL.visible) { L.visible = TL.visible; changed = true; }
     });
     if (there.text !== was.text && textShape(page.text) === was.text) {
       page.text = sc.text ? textIn(sc.text) : { ...page.text, paras: [] };
@@ -3212,7 +3228,7 @@ span.lname { cursor: default; }
     };
     return { paperSize: page.paperSize, textVisible: page.textVisible, templateVisible: page.templateVisible, template: page.template,
              images: page.images.map(im => ({ name: im.name, key: im.key, quad: im.quad.map(p => p.slice()) })),
-             layers: page.layers.map(L => ({ label: L.label, visible: L.visible, lines: L.lines.map(ln => ({
+             layers: page.layers.map(L => ({ label: L.label, visible: L.visible, daemon: !!L.daemon, lines: L.lines.map(ln => ({
                pen: ln.pen, penCode: ln.penCode, color: ln.color, colorRgba: ln.colorRgba, thicknessScale: ln.thicknessScale,
                ...(counted ? { n: ln.points.length } : { points: ln.points.map(p => [p.x, p.y, p.speed, p.direction, p.width, p.pressure]) }) })) })),
              text: page.text.paras.length ? { x: page.text.x, y: page.text.y, width: page.text.width,

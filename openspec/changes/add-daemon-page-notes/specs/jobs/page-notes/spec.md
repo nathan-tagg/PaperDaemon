@@ -3,23 +3,23 @@
 ## ADDED Requirements
 
 ### Requirement: The daemon writes on the page as he works
-With Daemon notes on, the daemon SHALL write on the page it is handling: "On it" as soon as he hands the
-job to the host, then each line the host reports (what it read on the page, its plan, each step as it
-ends), then how the job ended. With the setting off, nothing SHALL be written on a page for a note.
+With Daemon notes on, the daemon SHALL write ONE message on the page it is handling, one line, rewritten each
+time: when he saw the job, as soon as he hands it to the host; then what the host is doing now (the latest thing it
+reports); then how the job ended (finished, failed or skipped, with the time it took). With the setting off, nothing
+SHALL be written on a page for a note.
 
 #### Scenario: A job with two steps
 - **WHEN** the host reads a page, plans two steps and finishes them
-- **THEN** the tablet shows "On it", then what was read, then the plan, then each step, then "Done" with
-  the time it took
+- **THEN** the page shows one line: "Saw it" with the time, then "Now:" with the latest step, then "Finished" with
+  the time it took, each replacing the last
 
 ### Requirement: Notes stay in the band above the safe area
 Every stroke of a note SHALL lie in the band across the top of the page, above the safe area, under the
-tablet's toolbar. A note too long for the band SHALL be cut, and a running account SHALL keep its first line
-and its latest ones.
+tablet's toolbar. A note SHALL never wrap: one too long for its line SHALL be cut where the signature begins.
 
 #### Scenario: A long account
 - **WHEN** the host has reported nine steps
-- **THEN** the note shows "On it" and the latest steps that fit, and nothing past the band
+- **THEN** the note is one line with the latest step, and nothing past the band
 
 ### Requirement: The daemon's strokes are his own
 Everything the daemon writes on a page SHALL carry his own author id, registered in the page's author
