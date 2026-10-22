@@ -174,6 +174,8 @@
   <string name="keys.history_d">在打开过的页面之间。</string>
   <string name="keys.close">关闭</string>
   <string name="keys.close_d">关闭文档。</string>
+  <string name="keys.cycle">下一个笔记本</string>
+  <string name="keys.cycle_d">同一文件夹中；按 Shift 为上一个。</string>
   <string name="keys.sync">同步</string>
   <string name="keys.sync_d">立即同步页面；关闭文档也会同步。</string>
   <string name="keys.undo">撤销与重做</string>
@@ -657,15 +659,12 @@
   <string name="fm.new_menu">新建</string>
   <string name="fm.untag">移除标签 {tag}</string>
   <string name="fm.delete_q">删除 {name}？</string>
-  <string name="fm.delete_body">它会进入回收站，与平板上一样。</string>
-  <string name="fm.delete_folder_body">它会连同其中所有内容进入回收站，与平板上一样。</string>
   <string name="fm.save">保存</string>
   <string name="fm.selected_n">已选择:{n}</string>
   <string name="fm.duplicate">复制</string>
   <string name="fm.delete_n_q">删除所选内容 ({n})?</string>
   <string name="fm.select_all">全选</string>
   <string name="fm.delete_pages_q">删除所选页面 ({n})?</string>
-  <string name="fm.delete_pages_body">与平板上一样,页面会被永久删除,不进入回收站。笔记本至少保留一页。</string>
   <string name="fm.move_before">移到前面</string>
   <string name="fm.move_after">移到后面</string>
   <string name="fm.lmove_one">移动“{name}”：打开一个文件夹</string>

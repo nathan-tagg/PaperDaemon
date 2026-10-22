@@ -174,6 +174,8 @@
   <string name="keys.history_d">Drwy'r tudalennau a agoroch.</string>
   <string name="keys.close">Cau</string>
   <string name="keys.close_d">Yn cau'r ddogfen.</string>
+  <string name="keys.cycle">Llyfr nodiadau nesaf</string>
+  <string name="keys.cycle_d">Yn yr un ffolder; gyda Shift, yr un blaenorol.</string>
   <string name="keys.sync">Cysoni</string>
   <string name="keys.sync_d">Yn cysoni'r dudalen nawr; mae cau'r ddogfen yn cysoni hefyd.</string>
   <string name="keys.undo">Dadwneud ac ailwneud</string>
@@ -657,15 +659,12 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="fm.new_menu">Newydd</string>
   <string name="fm.untag">Tynnu'r tag {tag}</string>
   <string name="fm.delete_q">Dileu {name}?</string>
-  <string name="fm.delete_body">Mae'n mynd i'r sbwriel, fel ar y llechen.</string>
-  <string name="fm.delete_folder_body">Mae'n mynd i'r sbwriel gyda phopeth ynddo, fel ar y llechen.</string>
   <string name="fm.save">Cadw</string>
   <string name="fm.selected_n">Wedi'u dewis: {n}</string>
   <string name="fm.duplicate">Dyblygu</string>
   <string name="fm.delete_n_q">Dileu'r hyn a ddewiswyd ({n})?</string>
   <string name="fm.select_all">Dewis y cyfan</string>
   <string name="fm.delete_pages_q">Dileu'r tudalennau a ddewiswyd ({n})?</string>
-  <string name="fm.delete_pages_body">Caiff tudalennau eu dileu am byth, fel ar y llechen: nid ydynt yn mynd i'r sbwriel. Mae llyfr nodiadau'n cadw o leiaf un dudalen.</string>
   <string name="fm.move_before">Symud o flaen</string>
   <string name="fm.move_after">Symud ar ôl</string>
   <string name="fm.lmove_one">Symud “{name}”: agorwch ffolder</string>

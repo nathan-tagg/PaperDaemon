@@ -174,6 +174,8 @@
   <string name="keys.history_d">আপনার খোলা পাতাগুলোর মধ্যে।</string>
   <string name="keys.close">বন্ধ করুন</string>
   <string name="keys.close_d">নথি বন্ধ করে।</string>
+  <string name="keys.cycle">পরের নোটবুক</string>
+  <string name="keys.cycle_d">একই ফোল্ডারে; Shift দিয়ে আগেরটি।</string>
   <string name="keys.sync">সিঙ্ক করুন</string>
   <string name="keys.sync_d">পাতা এখনই সিঙ্ক করে; নথি বন্ধ করলেও হয়।</string>
   <string name="keys.undo">পূর্বাবস্থা ও পুনরায়</string>
@@ -657,15 +659,12 @@
   <string name="fm.new_menu">নতুন</string>
   <string name="fm.untag">{tag} ট্যাগ সরান</string>
   <string name="fm.delete_q">{name} মুছবেন?</string>
-  <string name="fm.delete_body">এটি ট্যাবলেটের মতোই ট্র্যাশে যায়।</string>
-  <string name="fm.delete_folder_body">এটি ভেতরের সবকিছু নিয়ে ট্যাবলেটের মতোই ট্র্যাশে যায়।</string>
   <string name="fm.save">সংরক্ষণ</string>
   <string name="fm.selected_n">নির্বাচিত: {n}</string>
   <string name="fm.duplicate">ডুপ্লিকেট</string>
   <string name="fm.delete_n_q">নির্বাচিতগুলো ({n}) মুছবেন?</string>
   <string name="fm.select_all">সব নির্বাচন</string>
   <string name="fm.delete_pages_q">নির্বাচিত পৃষ্ঠাগুলো ({n}) মুছবেন?</string>
-  <string name="fm.delete_pages_body">ট্যাবলেটের মতোই পৃষ্ঠা চিরতরে মুছে যায়: ট্র্যাশে যায় না। নোটবুকে অন্তত একটি পৃষ্ঠা থাকে।</string>
   <string name="fm.move_before">আগে সরান</string>
   <string name="fm.move_after">পরে সরান</string>
   <string name="fm.lmove_one">“{name}” সরান: একটি ফোল্ডার খুলুন</string>

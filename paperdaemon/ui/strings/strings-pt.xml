@@ -173,6 +173,8 @@
   <string name="keys.history_d">Pelas páginas que você abriu.</string>
   <string name="keys.close">Fechar</string>
   <string name="keys.close_d">Fecha o documento.</string>
+  <string name="keys.cycle">Próximo caderno</string>
+  <string name="keys.cycle_d">Na mesma pasta; com Shift, o anterior.</string>
   <string name="keys.sync">Sincronizar</string>
   <string name="keys.sync_d">Sincroniza a página agora; fechar o documento também.</string>
   <string name="keys.undo">Desfazer e refazer</string>
@@ -657,15 +659,12 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="fm.new_menu">Novo</string>
   <string name="fm.untag">Remover a tag {tag}</string>
   <string name="fm.delete_q">Excluir {name}?</string>
-  <string name="fm.delete_body">Vai para a lixeira, como no tablet.</string>
-  <string name="fm.delete_folder_body">Vai para a lixeira com tudo o que contém, como no tablet.</string>
   <string name="fm.save">Salvar</string>
   <string name="fm.selected_n">Selecionados: {n}</string>
   <string name="fm.duplicate">Duplicar</string>
   <string name="fm.delete_n_q">Excluir o que está selecionado ({n})?</string>
   <string name="fm.select_all">Selecionar tudo</string>
   <string name="fm.delete_pages_q">Excluir as páginas selecionadas ({n})?</string>
-  <string name="fm.delete_pages_body">As páginas são excluídas para sempre, como no tablet: não vão para a lixeira. Um caderno mantém pelo menos uma página.</string>
   <string name="fm.move_before">Mover antes</string>
   <string name="fm.move_after">Mover depois</string>
   <string name="fm.lmove_one">Mover “{name}”: abra uma pasta</string>

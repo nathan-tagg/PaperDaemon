@@ -173,6 +173,8 @@
   <string name="keys.history_d">Por las páginas que abriste.</string>
   <string name="keys.close">Cerrar</string>
   <string name="keys.close_d">Cierra el documento.</string>
+  <string name="keys.cycle">Siguiente cuaderno</string>
+  <string name="keys.cycle_d">En la misma carpeta; con Mayús, el anterior.</string>
   <string name="keys.sync">Sincronizar</string>
   <string name="keys.sync_d">Sincroniza la página ahora; cerrar el documento también.</string>
   <string name="keys.undo">Deshacer y rehacer</string>
@@ -657,15 +659,12 @@ Luego guíame para instalar SearXNG si hace falta, escribe el archivo .bat con u
   <string name="fm.new_menu">Nuevo</string>
   <string name="fm.untag">Quitar la etiqueta {tag}</string>
   <string name="fm.delete_q">¿Eliminar {name}?</string>
-  <string name="fm.delete_body">Va a la papelera, como en la tableta.</string>
-  <string name="fm.delete_folder_body">Va a la papelera con todo lo que contiene, como en la tableta.</string>
   <string name="fm.save">Guardar</string>
   <string name="fm.selected_n">Seleccionados: {n}</string>
   <string name="fm.duplicate">Duplicar</string>
   <string name="fm.delete_n_q">¿Eliminar lo seleccionado ({n})?</string>
   <string name="fm.select_all">Seleccionar todo</string>
   <string name="fm.delete_pages_q">¿Eliminar las páginas seleccionadas ({n})?</string>
-  <string name="fm.delete_pages_body">Las páginas se eliminan para siempre, como en la tableta: no pasan por la papelera. Un cuaderno conserva al menos una página.</string>
   <string name="fm.move_before">Mover antes</string>
   <string name="fm.move_after">Mover después</string>
   <string name="fm.lmove_one">Mover «{name}»: abre una carpeta</string>

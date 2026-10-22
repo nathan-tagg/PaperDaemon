@@ -174,6 +174,8 @@
   <string name="keys.history_d">Açtığın sayfalar arasında.</string>
   <string name="keys.close">Kapat</string>
   <string name="keys.close_d">Belgeyi kapatır.</string>
+  <string name="keys.cycle">Sonraki defter</string>
+  <string name="keys.cycle_d">Aynı klasörde; Shift ile bir önceki.</string>
   <string name="keys.sync">Eşitle</string>
   <string name="keys.sync_d">Sayfayı şimdi eşitler; belgeyi kapatmak da eşitler.</string>
   <string name="keys.undo">Geri al ve yinele</string>
@@ -657,15 +659,12 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="fm.new_menu">Yeni</string>
   <string name="fm.untag">{tag} etiketini kaldır</string>
   <string name="fm.delete_q">{name} silinsin mi?</string>
-  <string name="fm.delete_body">Tabletteki gibi çöp kutusuna gider.</string>
-  <string name="fm.delete_folder_body">İçindeki her şeyle birlikte, tabletteki gibi çöp kutusuna gider.</string>
   <string name="fm.save">Kaydet</string>
   <string name="fm.selected_n">Seçilen: {n}</string>
   <string name="fm.duplicate">Çoğalt</string>
   <string name="fm.delete_n_q">Seçilenler ({n}) silinsin mi?</string>
   <string name="fm.select_all">Tümünü seç</string>
   <string name="fm.delete_pages_q">Seçilen sayfalar ({n}) silinsin mi?</string>
-  <string name="fm.delete_pages_body">Sayfalar tablette olduğu gibi kalıcı olarak silinir: çöp kutusuna gitmez. Bir defterde en az bir sayfa kalır.</string>
   <string name="fm.move_before">Önüne taşı</string>
   <string name="fm.move_after">Arkasına taşı</string>
   <string name="fm.lmove_one">“{name}” taşı: bir klasör aç</string>

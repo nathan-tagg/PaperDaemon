@@ -174,6 +174,8 @@
   <string name="keys.history_d">연 페이지들 사이에서.</string>
   <string name="keys.close">닫기</string>
   <string name="keys.close_d">문서를 닫습니다.</string>
+  <string name="keys.cycle">다음 노트북</string>
+  <string name="keys.cycle_d">같은 폴더에서. Shift는 이전 것.</string>
   <string name="keys.sync">동기화</string>
   <string name="keys.sync_d">지금 페이지를 동기화합니다. 문서를 닫아도 동기화됩니다.</string>
   <string name="keys.undo">실행 취소와 다시 실행</string>
@@ -657,15 +659,12 @@
   <string name="fm.new_menu">새로 만들기</string>
   <string name="fm.untag">태그 {tag} 제거</string>
   <string name="fm.delete_q">{name}을(를) 삭제할까요?</string>
-  <string name="fm.delete_body">태블릿에서처럼 휴지통으로 갑니다.</string>
-  <string name="fm.delete_folder_body">태블릿에서처럼 안의 모든 것과 함께 휴지통으로 갑니다.</string>
   <string name="fm.save">저장</string>
   <string name="fm.selected_n">선택됨: {n}</string>
   <string name="fm.duplicate">복제</string>
   <string name="fm.delete_n_q">선택한 항목 ({n})을(를) 삭제할까요?</string>
   <string name="fm.select_all">모두 선택</string>
   <string name="fm.delete_pages_q">선택한 페이지 ({n})를 삭제할까요?</string>
-  <string name="fm.delete_pages_body">태블릿에서처럼 페이지는 영구히 삭제됩니다. 휴지통으로 가지 않습니다. 노트북에는 최소 한 페이지가 남습니다.</string>
   <string name="fm.move_before">앞으로 이동</string>
   <string name="fm.move_after">뒤로 이동</string>
   <string name="fm.lmove_one">“{name}” 이동: 폴더 열기</string>

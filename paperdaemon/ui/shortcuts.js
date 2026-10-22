@@ -59,7 +59,8 @@
     { title: "keys.s_pages", items: [
       ["turn", [["←", "→"]], "keys.turn", "keys.turn_d", "viewer"],
       ["history", [["alt", "←"], ["alt", "→"]], "keys.history", "keys.history_d"],
-      ["close", [["esc"]], "keys.close", "keys.close_d"]] },
+      ["close", [["esc"], ["ctrl", "W"]], "keys.close", "keys.close_d"],
+      ["across", [["ctrl", "Tab"], ["ctrl", "shift", "Tab"]], "keys.cycle", "keys.cycle_d"]] },
     { title: "keys.s_draw", editor: true, items: [
       ["sync", [["ctrl", "S"]], "keys.sync", "keys.sync_d"],
       ["undo", [["ctrl", "Z"], ["ctrl", "Y"]], "keys.undo", "keys.undo_d"],

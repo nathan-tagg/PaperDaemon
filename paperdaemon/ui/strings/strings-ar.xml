@@ -174,6 +174,8 @@
   <string name="keys.history_d">بين الصفحات التي فتحتها.</string>
   <string name="keys.close">إغلاق</string>
   <string name="keys.close_d">يغلق المستند.</string>
+  <string name="keys.cycle">الدفتر التالي</string>
+  <string name="keys.cycle_d">في المجلد نفسه؛ مع Shift السابق.</string>
   <string name="keys.sync">مزامنة</string>
   <string name="keys.sync_d">يزامن الصفحة الآن؛ وإغلاق المستند يزامنها أيضًا.</string>
   <string name="keys.undo">تراجع وإعادة</string>
@@ -678,15 +680,12 @@
   <string name="fm.new_menu">جديد</string>
   <string name="fm.untag">إزالة الوسم {tag}</string>
   <string name="fm.delete_q">حذف {name}؟</string>
-  <string name="fm.delete_body">يذهب إلى سلة المهملات، كما على الجهاز اللوحي.</string>
-  <string name="fm.delete_folder_body">يذهب إلى سلة المهملات بكل ما فيه، كما على الجهاز اللوحي.</string>
   <string name="fm.save">حفظ</string>
   <string name="fm.selected_n">المحدد: {n}</string>
   <string name="fm.duplicate">تكرار</string>
   <string name="fm.delete_n_q">حذف المحدد ({n})؟</string>
   <string name="fm.select_all">تحديد الكل</string>
   <string name="fm.delete_pages_q">حذف الصفحات المحددة ({n})؟</string>
-  <string name="fm.delete_pages_body">تُحذف الصفحات نهائيًا كما على الجهاز اللوحي: لا تذهب إلى سلة المهملات. يبقى في الدفتر صفحة واحدة على الأقل.</string>
   <string name="fm.move_before">انقل قبلها</string>
   <string name="fm.move_after">انقل بعدها</string>
   <string name="fm.lmove_one">نقل “{name}”: افتح مجلدًا</string>

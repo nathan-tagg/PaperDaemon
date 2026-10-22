@@ -174,6 +174,8 @@
   <string name="keys.history_d">आपके खोले पन्नों में।</string>
   <string name="keys.close">बंद करें</string>
   <string name="keys.close_d">दस्तावेज़ बंद करता है।</string>
+  <string name="keys.cycle">अगली नोटबुक</string>
+  <string name="keys.cycle_d">उसी फ़ोल्डर में; Shift के साथ पिछली।</string>
   <string name="keys.sync">सिंक करें</string>
   <string name="keys.sync_d">पन्ना अभी सिंक करता है; दस्तावेज़ बंद करना भी।</string>
   <string name="keys.undo">पूर्ववत और फिर से करें</string>
@@ -657,15 +659,12 @@
   <string name="fm.new_menu">नया</string>
   <string name="fm.untag">टैग {tag} हटाएँ</string>
   <string name="fm.delete_q">{name} हटाएँ?</string>
-  <string name="fm.delete_body">यह टैबलेट की तरह ही कचरे में जाता है।</string>
-  <string name="fm.delete_folder_body">यह अपनी सारी सामग्री के साथ टैबलेट की तरह ही कचरे में जाता है।</string>
   <string name="fm.save">सहेजें</string>
   <string name="fm.selected_n">चुने गए: {n}</string>
   <string name="fm.duplicate">डुप्लिकेट</string>
   <string name="fm.delete_n_q">चुने गए ({n}) हटाएँ?</string>
   <string name="fm.select_all">सब चुनें</string>
   <string name="fm.delete_pages_q">चुने गए पेज ({n}) हटाएँ?</string>
-  <string name="fm.delete_pages_body">टैबलेट की तरह पेज हमेशा के लिए हटते हैं: वे ट्रैश में नहीं जाते। नोटबुक में कम से कम एक पेज रहता है।</string>
   <string name="fm.move_before">पहले रखें</string>
   <string name="fm.move_after">बाद में रखें</string>
   <string name="fm.lmove_one">“{name}” ले जाएँ: एक फ़ोल्डर खोलें</string>

@@ -173,6 +173,8 @@
   <string name="keys.history_d">Through the pages you opened.</string>
   <string name="keys.close">Close</string>
   <string name="keys.close_d">Closes the document.</string>
+  <string name="keys.cycle">Next notebook</string>
+  <string name="keys.cycle_d">In the same folder; with Shift, the one before.</string>
   <string name="keys.sync">Sync</string>
   <string name="keys.sync_d">Syncs the page now; closing the document syncs too.</string>
   <string name="keys.undo">Undo and redo</string>
@@ -657,15 +659,12 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="fm.new_menu">New</string>
   <string name="fm.untag">Remove the tag {tag}</string>
   <string name="fm.delete_q">Delete {name}?</string>
-  <string name="fm.delete_body">It goes to the trash, as on the tablet.</string>
-  <string name="fm.delete_folder_body">It goes to the trash with everything in it, as on the tablet.</string>
   <string name="fm.save">Save</string>
   <string name="fm.selected_n">Selected: {n}</string>
   <string name="fm.duplicate">Duplicate</string>
   <string name="fm.delete_n_q">Delete what is selected ({n})?</string>
   <string name="fm.select_all">Select all</string>
   <string name="fm.delete_pages_q">Delete the selected pages ({n})?</string>
-  <string name="fm.delete_pages_body">Pages are deleted for good, as on the tablet: they skip the trash. A notebook keeps at least one page.</string>
   <string name="fm.move_before">Move before</string>
   <string name="fm.move_after">Move after</string>
   <string name="fm.lmove_one">Move “{name}”: open a folder</string>

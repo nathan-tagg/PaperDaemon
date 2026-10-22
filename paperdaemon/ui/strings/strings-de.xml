@@ -174,6 +174,8 @@
   <string name="keys.history_d">Durch die geöffneten Seiten.</string>
   <string name="keys.close">Schließen</string>
   <string name="keys.close_d">Schließt das Dokument.</string>
+  <string name="keys.cycle">Nächstes Notizbuch</string>
+  <string name="keys.cycle_d">Im selben Ordner; mit Umschalt das vorige.</string>
   <string name="keys.sync">Synchronisieren</string>
   <string name="keys.sync_d">Synchronisiert die Seite jetzt; Schließen synchronisiert auch.</string>
   <string name="keys.undo">Rückgängig und wiederholen</string>
@@ -657,15 +659,12 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="fm.new_menu">Neu</string>
   <string name="fm.untag">Tag {tag} entfernen</string>
   <string name="fm.delete_q">{name} löschen?</string>
-  <string name="fm.delete_body">Es kommt in den Papierkorb, wie auf dem Tablet.</string>
-  <string name="fm.delete_folder_body">Er kommt mit allem darin in den Papierkorb, wie auf dem Tablet.</string>
   <string name="fm.save">Speichern</string>
   <string name="fm.selected_n">Ausgewählt: {n}</string>
   <string name="fm.duplicate">Duplizieren</string>
   <string name="fm.delete_n_q">Auswahl ({n}) löschen?</string>
   <string name="fm.select_all">Alle auswählen</string>
   <string name="fm.delete_pages_q">Ausgewählte Seiten ({n}) löschen?</string>
-  <string name="fm.delete_pages_body">Seiten werden endgültig gelöscht, wie auf dem Tablet: Sie kommen nicht in den Papierkorb. Ein Notizbuch behält mindestens eine Seite.</string>
   <string name="fm.move_before">Davor verschieben</string>
   <string name="fm.move_after">Dahinter verschieben</string>
   <string name="fm.lmove_one">„{name}“ verschieben: Ordner öffnen</string>

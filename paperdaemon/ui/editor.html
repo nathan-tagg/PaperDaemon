@@ -187,7 +187,7 @@ span.lname { cursor: default; }
         if (window.parent !== window) window.parent.postMessage({ pd: "view-key", key: e.key, altKey: e.altKey }, location.origin);
         return;
       }
-      const zoom = (e.ctrlKey || e.metaKey) && ["+", "-", "=", "0", "c"].includes(e.key.toLowerCase());
+      const zoom = (e.ctrlKey || e.metaKey) && ["+", "-", "=", "0", "c", "w"].includes(e.key.toLowerCase());   // (w: the viewer's close)
       if (LOOK.includes(e.key) || zoom) return;
       e.stopImmediatePropagation();
       if (e.key.length === 1 || ["Delete", "Backspace", "Enter"].includes(e.key)) e.preventDefault();
@@ -202,6 +202,12 @@ span.lname { cursor: default; }
   }
   // ALT+LEFT AND ALT+RIGHT, the page open to edit or to look at, walk the viewer's history of pages (as the mouse's back
   // and forward buttons do): never the browser's Back, which took the app behind the viewer a screen back
+  // CTRL+W and CTRL+TAB (with Shift: back) are the viewer's: close the notebook, go to the next one
+  window.addEventListener("keydown", e => {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey || (e.key !== "w" && e.key !== "W" && e.key !== "Tab")) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (window.parent !== window) window.parent.postMessage({ pd: "viewer-key", key: e.key === "Tab" ? "Tab" : "w", shiftKey: e.shiftKey }, location.origin);
+  }, true);
   window.addEventListener("keydown", e => {
     if (!e.altKey || e.ctrlKey || e.metaKey || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return;
     e.preventDefault(); e.stopImmediatePropagation();

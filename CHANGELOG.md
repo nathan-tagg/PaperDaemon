@@ -2,6 +2,9 @@
 
 ## 0.1.76
 
+- Daemon > Notes shows the False Mirror's notebooks too, under their own heading. Their notes are kept by the False Mirror's own engine, and the panel only ever asked the tablet's.
+- Ctrl+W closes the open notebook; Ctrl+Tab and Ctrl+Shift+Tab go to the next and the previous one in its folder. They work from the page too, and are on the shortcuts sheet.
+- Deleting in the False Mirror asks only "Delete ...?", without the line about the trash.
 - Written replies are the size of the typed text: lettering at 26 (it was 32; a one-line title 30, was 38), its lines at the typed lines' own pitch, so the user's lines and the reply's read as one column.
 - A reply starts closer to what is above it: under typed text, after the typed text's own space between paragraphs (25); under ink or a picture, 40. It was 80 under anything.
 - The daemon's notes keep to one layer. The record of each page's layer could be lost when two notes were written at once (one of them read the file while the other replaced it, took it for empty, and wrote over every other page's record); a page that lost its record got a second Daemon layer, and notes could end up on a layer the tablet no longer showed. The record is now kept safely, the layer is always found on the page itself, and a page that already has two takes the empty one out.

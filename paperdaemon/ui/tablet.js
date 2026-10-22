@@ -254,6 +254,12 @@
       // the Mirror's view (the editor with view=1): a page's link followed, a page turned from the keys
       if (d.pd === "view-go") { go(Number(d.page)); return; }
       if (d.pd === "view-open") { PD.api("POST", "/open-link", { url: String(d.uri || "") }); return; }
+      if (d.pd === "viewer-key") {                          // Ctrl+W, Ctrl+Tab pressed in the page
+        const dlg = $("#" + VIEWER);
+        if (d.key === "w" && dlg && dlg.open) dlg.close();
+        else if (d.key === "Tab") cycleDoc(d.shiftKey ? -1 : 1);
+        return;
+      }
       if (d.pd === "view-key") {
         if (d.altKey && (d.key === "ArrowLeft" || d.key === "ArrowRight")) { walk(d.key === "ArrowLeft" ? -1 : 1); return; }
         go(S.page + (d.key === "ArrowRight" || d.key === "PageDown" ? 1 : -1));
@@ -346,6 +352,18 @@
       paintBar(); paintBody(); paintTagPop();
     }
 
+    // the next (or previous) document in the open one's folder: this one closed first (it saves and syncs as a close
+    // does), then that one opened
+    function cycleDoc(step) {
+      const dlg = $("#" + VIEWER);
+      if (!dlg || !dlg.open || !S.doc) return;
+      const here = (S.list || []).filter(x => x.type === "document" && x.parent === S.doc.parent);
+      const i = here.findIndex(x => x.id === S.doc.id);
+      if (here.length < 2 || i < 0) return;
+      const next = here[(i + step + here.length) % here.length].id;
+      dlg.close();
+      setTimeout(() => openDoc(next), 250);
+    }
     function walk(step) {
       const dlg = $("#" + VIEWER);
       if (!dlg || !dlg.open) return false;
@@ -473,6 +491,13 @@
         document.body.append(dlg);
         // the mouse's back (button 3) and forward (button 4) buttons, while a notebook is open: its pages, not the
         // app's screens. The press and the release are both taken, or the window would also go back a screen.
+        // CTRL+W CLOSES THE NOTEBOOK; CTRL+TAB AND CTRL+SHIFT+TAB GO TO THE NEXT AND THE PREVIOUS ONE in its folder (as
+        // the library lists them, round from the last to the first), wherever the keys are while it is open
+        window.addEventListener("keydown", e => {
+          if (!dlg.open || !(e.ctrlKey || e.metaKey) || e.altKey) return;
+          if (e.key === "w" || e.key === "W") { e.preventDefault(); e.stopImmediatePropagation(); dlg.close(); }
+          else if (e.key === "Tab") { e.preventDefault(); e.stopImmediatePropagation(); cycleDoc(e.shiftKey ? -1 : 1); }
+        }, true);
         // and Alt+Left and Alt+Right wherever the keys are while it is open: the same walk, never the app's Back
         window.addEventListener("keydown", e => {
           if (!dlg.open || !e.altKey || e.ctrlKey || (e.key !== "ArrowLeft" && e.key !== "ArrowRight") || dlg.contains(e.target)) return;
@@ -582,7 +607,7 @@
       if (act === "all") { S.pp = Array.from({ length: pageCount() }, (_, i) => i + 1); paintPagePick(); return; }
       if (act === "duplicate") { await run("duplicate"); return; }
       if (act === "delete") {
-        if (!await PD.confirm({ title: PD.t("fm.delete_pages_q", { n: pages.length }), body: [esc(PD.t("fm.delete_pages_body"))],
+        if (!await PD.confirm({ title: PD.t("fm.delete_pages_q", { n: pages.length }),
                                 action: PD.t("common.delete"), danger: true })) return;
         await run("delete");
         return;
@@ -808,7 +833,6 @@
       }
       if (act === "delete") {
         if (!await PD.confirm({ title: one ? PD.t("fm.delete_q", { name: one.name }) : PD.t("fm.delete_n_q", { n: its.length }),
-                                body: [esc(PD.t(its.some(it => it.type === "folder") ? "fm.delete_folder_body" : "fm.delete_body"))],
                                 action: PD.t("common.delete"), danger: true })) return;
         for (const it of its) {
           const [, e] = await PD.safe(api("DELETE", "/library/" + it.id));

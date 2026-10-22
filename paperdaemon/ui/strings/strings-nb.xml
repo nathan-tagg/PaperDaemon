@@ -174,6 +174,8 @@
   <string name="keys.history_d">Gjennom sidene du har åpnet.</string>
   <string name="keys.close">Lukk</string>
   <string name="keys.close_d">Lukker dokumentet.</string>
+  <string name="keys.cycle">Neste notatbok</string>
+  <string name="keys.cycle_d">I samme mappe; med Shift den forrige.</string>
   <string name="keys.sync">Synkroniser</string>
   <string name="keys.sync_d">Synkroniserer siden nå; å lukke dokumentet gjør det også.</string>
   <string name="keys.undo">Angre og gjør om</string>
@@ -657,15 +659,12 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="fm.new_menu">Ny</string>
   <string name="fm.untag">Fjern merket {tag}</string>
   <string name="fm.delete_q">Slette {name}?</string>
-  <string name="fm.delete_body">Den havner i papirkurven, som på nettbrettet.</string>
-  <string name="fm.delete_folder_body">Den havner i papirkurven med alt innhold, som på nettbrettet.</string>
   <string name="fm.save">Lagre</string>
   <string name="fm.selected_n">Valgt: {n}</string>
   <string name="fm.duplicate">Dupliser</string>
   <string name="fm.delete_n_q">Slette det som er valgt ({n})?</string>
   <string name="fm.select_all">Velg alle</string>
   <string name="fm.delete_pages_q">Slette de valgte sidene ({n})?</string>
-  <string name="fm.delete_pages_body">Sider slettes for godt, som på nettbrettet: de går ikke i papirkurven. En notatbok beholder minst én side.</string>
   <string name="fm.move_before">Flytt foran</string>
   <string name="fm.move_after">Flytt etter</string>
   <string name="fm.lmove_one">Flytt «{name}»: åpne en mappe</string>

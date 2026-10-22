@@ -1,6 +1,9 @@
 "use strict";
 /* Notes (Daemon > Notes): each notebook's memory of its jobs. Pick a notebook, read its entries, wipe it. A panel of
-   the Daemon screen, not a screen of its own: PD.notes.mount(el), show(), poll(). */
+   the Daemon screen, not a screen of its own: PD.notes.mount(el), show(), poll().
+   BOTH LIBRARIES: the tablet's notebooks keep their notes in the engine's state, the False Mirror's in the False
+   Mirror's own (its own engine, reached through /fm): the list shows each under its library's name. A notebook is
+   (base, doc): S.doc is the key "base|doc". */
 (() => {
   const { $, esc } = PD;
   let R = null;
@@ -17,12 +20,19 @@
     });
   }
 
+  const keyOf = n => (n.base || "") + "|" + n.doc;
+  const partsOf = k => { const i = k.indexOf("|"); return { base: k.slice(0, i), doc: k.slice(i + 1) }; };
   function listHtml() {
     if (S.err) return '<p class="notice attn" role="alert"><strong>' + esc(PD.t("np.list_unreadable")) + "</strong> " + esc(S.err) + "</p>";
     if (!S.list) return '<p class="sub" style="margin-top: var(--s3)">' + esc(PD.t("np.reading_list")) + "</p>";
-    return '<ul class="booklist">' + S.list.map(n =>
-      '<li><button type="button" data-doc="' + esc(n.doc) + '"' + (n.doc === S.doc ? ' aria-current="true"' : "") + "><strong>" + esc(n.notebook || n.doc) +
-      "</strong></button></li>").join("") + "</ul>";
+    const group = (base, label) => {
+      const its = S.list.filter(n => (n.base || "") === base);
+      if (!its.length) return "";
+      return '<p class="meta np-lib">' + esc(label) + '</p><ul class="booklist">' + its.map(n =>
+        '<li><button type="button" data-doc="' + esc(keyOf(n)) + '"' + (keyOf(n) === S.doc ? ' aria-current="true"' : "") + "><strong>" + esc(n.notebook || n.doc) +
+        "</strong></button></li>").join("") + "</ul>";
+    };
+    return group("", PD.t("tablet.label")) + group("/fm", PD.t("fm.label"));
   }
 
   function entriesHtml(text) {
@@ -50,8 +60,8 @@
 
   function padHtml() {
     if (!S.doc) return '<p class="sub" style="margin-top: var(--s3)">' + esc(PD.t("np.select")) + "</p>";
-    const n = (S.list || []).find(x => x.doc === S.doc) || {};
-    const name = n.notebook || S.doc;
+    const n = (S.list || []).find(x => keyOf(x) === S.doc) || {};
+    const name = n.notebook || partsOf(S.doc).doc;
     if (S.wiped === S.doc) {
       return '<header class="padhead"><div><h2>' + esc(name) + '</h2></div></header>' + PD.empty("notepad",
         "<strong>" + esc(PD.t("np.wiped_at", { time: PD.clock(new Date()) })) + "</strong> " + esc(PD.t("np.wiped_body", { name })));
@@ -74,26 +84,32 @@
     PD.html($("#np-pad", R), padHtml());
   }
 
+  const fmHere = () => !!((PD.status || {}).false_mirror || {}).exists;
+  async function listOf(base) {
+    const [d, e] = await PD.safe(PD.api("GET", base + "/notepads"));
+    return [e ? null : (Array.isArray(d) ? d : d.notepads || []).map(n => Object.assign({}, n, { base })), e];
+  }
   async function loadList() {
-    const [d, e] = await PD.safe(PD.api("GET", "/notepads"));
+    const [[mine, e], [fmList]] = await Promise.all([listOf(""), fmHere() ? listOf("/fm") : Promise.resolve([[], null])]);
     if (e) { S.err = PD.errText(e); S.list = S.list || null; }
-    else { S.err = ""; S.list = Array.isArray(d) ? d : d.notepads || []; }
-    if (S.list && S.doc && !S.list.some(n => n.doc === S.doc)) { S.doc = null; S.text = null; }
-    if (S.list && !S.doc && S.list.length) await open(S.list[0].doc);
+    else { S.err = ""; S.list = mine.concat(fmList || []); }       // the False Mirror's, when it answers
+    if (S.list && S.doc && !S.list.some(n => keyOf(n) === S.doc)) { S.doc = null; S.text = null; }
+    if (S.list && !S.doc && S.list.length) await open(keyOf(S.list[0]));
     render();
   }
 
+  const padPath = k => { const p = partsOf(k); return p.base + "/notepads/" + encodeURIComponent(p.doc); };
   async function open(doc) {
     S.doc = doc; S.text = null; S.entries = []; S.textErr = ""; S.wipeErr = ""; S.all = false; S.wiped = null;
     render();
-    const [d, e] = await PD.safe(PD.api("GET", "/notepads/" + encodeURIComponent(doc)));
+    const [d, e] = await PD.safe(PD.api("GET", padPath(doc)));
     if (S.doc !== doc) return;
     if (e) S.textErr = PD.errText(e); else { S.text = d.text || ""; S.entries = d.entries || []; }
     render();
   }
 
   async function wipe() {
-    const n = (S.list || []).find(x => x.doc === S.doc) || {}, name = n.notebook || PD.t("np.this_notebook");
+    const n = (S.list || []).find(x => keyOf(x) === S.doc) || {}, name = n.notebook || PD.t("np.this_notebook");
     const ok = await PD.confirm({
       title: PD.t("np.wipe_q", { name }),
       body: [esc(PD.t("np.wipe_body", { entries: PD.count("count.entry", n.entries || 0), name })), esc(PD.t("np.wipe_body2"))],
@@ -101,12 +117,10 @@
     });
     if (!ok) return;
     const doc = S.doc;
-    const [, e] = await PD.safe(PD.api("POST", "/notepads/" + encodeURIComponent(doc) + "/wipe"));
+    const [, e] = await PD.safe(PD.api("POST", padPath(doc) + "/wipe"));
     if (e) { S.wipeErr = PD.errText(e); render(); return; }
     S.wiped = doc; S.text = ""; S.textErr = ""; S.wipeErr = "";
-    const [d] = await PD.safe(PD.api("GET", "/notepads"));
-    if (Array.isArray(d)) S.list = d;
-    render();
+    await loadList();
   }
 
   PD.notes = {
@@ -123,6 +137,6 @@
       });
     },
     show() { render(); loadList(); },
-    async poll() { if (S.doc && !S.wiped) { const [d] = await PD.safe(PD.api("GET", "/notepads/" + encodeURIComponent(S.doc))); if (d && S.doc) { const t = d.text || ""; if (t !== S.text) { S.text = t; S.entries = d.entries || []; loadList(); } } } },
+    async poll() { if (S.doc && !S.wiped) { const [d] = await PD.safe(PD.api("GET", padPath(S.doc))); if (d && S.doc) { const t = d.text || ""; if (t !== S.text) { S.text = t; S.entries = d.entries || []; loadList(); } } } },
   };
 })();

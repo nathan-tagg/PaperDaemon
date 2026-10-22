@@ -174,6 +174,8 @@
   <string name="keys.history_d">Melalui halaman yang Anda buka.</string>
   <string name="keys.close">Tutup</string>
   <string name="keys.close_d">Menutup dokumen.</string>
+  <string name="keys.cycle">Buku catatan berikutnya</string>
+  <string name="keys.cycle_d">Di folder yang sama; dengan Shift, yang sebelumnya.</string>
   <string name="keys.sync">Sinkronkan</string>
   <string name="keys.sync_d">Menyinkronkan halaman sekarang; menutup dokumen juga menyinkronkan.</string>
   <string name="keys.undo">Urungkan dan ulangi</string>
@@ -657,15 +659,12 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="fm.new_menu">Baru</string>
   <string name="fm.untag">Hapus tag {tag}</string>
   <string name="fm.delete_q">Hapus {name}?</string>
-  <string name="fm.delete_body">Masuk ke tempat sampah, seperti di tablet.</string>
-  <string name="fm.delete_folder_body">Masuk ke tempat sampah beserta seluruh isinya, seperti di tablet.</string>
   <string name="fm.save">Simpan</string>
   <string name="fm.selected_n">Dipilih: {n}</string>
   <string name="fm.duplicate">Duplikat</string>
   <string name="fm.delete_n_q">Hapus yang dipilih ({n})?</string>
   <string name="fm.select_all">Pilih semua</string>
   <string name="fm.delete_pages_q">Hapus halaman yang dipilih ({n})?</string>
-  <string name="fm.delete_pages_body">Halaman dihapus selamanya, seperti di tablet: tidak masuk tempat sampah. Buku catatan menyimpan setidaknya satu halaman.</string>
   <string name="fm.move_before">Pindah ke sebelum</string>
   <string name="fm.move_after">Pindah ke sesudah</string>
   <string name="fm.lmove_one">Pindahkan “{name}”: buka folder</string>
