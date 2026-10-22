@@ -163,9 +163,9 @@ what lies outside staying as strokes of their own.
 - **THEN** the middle of the line is gone and its two ends stay, each cut at the loop
 
 ### Requirement: Shapes and fills with the pen in hand
-With a pen in hand, Shift or Ctrl and clicks SHALL set corners, drawn when the keys are let go: two corners a line, more
-a closed shape (as is clicking the first corner again; Esc drops them). Ctrl and Shift together SHALL put each edge on
-the clock's hours, every 30 degrees. Alt and a click SHALL fill the area of one
+With a pen in hand, Ctrl and clicks SHALL set corners, drawn when Ctrl is let go: two corners a line, more a closed
+shape (as is clicking the first corner again; Esc drops them). Ctrl and Alt together SHALL snap each edge to an angle,
+every 15 degrees. Alt and a click SHALL fill the area of one
 color under the click, bounded by what the page shows and never past the view. They SHALL be ordinary strokes of the
 pen in hand, a fill laid in overlapping rows joined into one stroke where they touch, so a highlighter's fill does not
 darken where its rows meet. Typing SHALL never start from these keys.
@@ -182,13 +182,37 @@ Opened in the viewer, the page editor SHALL take the keys at once, and a key pre
 - **WHEN** the user opens a notebook page in the false mirror and types
 - **THEN** the text appears on the page without a click first
 
-### Requirement: Right-click erases
-A right-click or right-drag on the page SHALL erase, whatever tool is in hand, and leave that tool in hand: what it
-passes over; with Shift whole strokes; with Ctrl and Shift a zone, the loop it draws.
+### Requirement: The keys erase
+A left drag with keys held SHALL erase, whatever tool is in hand, and leave that tool in hand: with Shift what it passes
+over; with Ctrl and Shift whole strokes; with Ctrl, Shift and Alt a zone, the loop it draws, or with 2 to 5 pressed (or
+that shape chosen for the pen, or 2 to 5 pressed with the zone eraser in hand) a circle, triangle, square or rectangle
+dragged out, for one erase. Shift and a click without moving SHALL extend the text's selection to the click instead.
+While the keys are held the pointer SHALL be the eraser's own, as wide as the eraser's size in its menu: an empty circle,
+the circle crossed through, a small dotted circle or the zone's shape dotted. It SHALL show once the mouse moves or a
+quarter second passes with nothing typed, so capitals typed with Shift do not flicker it. The eraser tool's pointer
+SHALL be the same.
 
 #### Scenario: Erasing with the pen in hand
-- **WHEN** the user, drawing with the fineliner, Shift-right-drags across a stroke
+- **WHEN** the user, drawing with the fineliner, Ctrl-Shift-drags across a stroke
 - **THEN** the stroke is gone and the fineliner is still in hand
+
+### Requirement: The right button is a menu
+A right-click SHALL open a menu for what is under the pointer: on a selection Cut, Copy, Delete and Duplicate; on the
+typed text, or with a caret, Cut, Copy, Paste (bold and italic kept), Paste matching formatting, Paste as strokes and
+Select all; on the paper Paste, Paste as strokes and Select all (the strokes of the layer in hand).
+
+#### Scenario: Duplicating a selection
+- **WHEN** the user right-clicks a selection of strokes and chooses Duplicate
+- **THEN** a copy appears a little down and to the right, selected
+
+### Requirement: Typing with a pen in hand
+While text is being typed with a pen in hand, the pointer SHALL be the I-beam over the text, and a click there SHALL put
+the caret (a drag select); off the text the pen SHALL draw. A mouse click that does not move SHALL draw nothing; a pen's
+tap SHALL still make a dot.
+
+#### Scenario: Clicking into the text
+- **WHEN** the user, typing with the fineliner in hand, clicks a word of the text
+- **THEN** the caret goes there and no ink is drawn
 
 ### Requirement: A fill is the decomposer's
 A fill SHALL be painted by the decomposer itself: the engine runs its ring planner in C (fastdecomp rf_fill) on the
@@ -215,8 +239,9 @@ press, Esc or the wheel, and held and moved it ends when let go. The press that 
 
 ### Requirement: Shapes by number
 With a pen in hand and no text being typed, the keys 1 to 6 SHALL choose what a click makes: 1 the pen's own strokes, 2
-a circle, 3 a triangle, 4 a square, 5 a rectangle, 6 an arrow, the pointer showing the shape. The first click SHALL set
-one corner or edge and the second the other (Shift putting it on the clock's hours from the first), a preview following
+a circle, 3 a triangle, 4 a square, 5 a rectangle, 6 an arrow, the pointer showing the shape. A drag SHALL set one
+corner or edge where it starts and the other where it is let go; a click without moving SHALL set the first, and the
+next press the other where that press is let go (Alt snapping it to an angle from the first), a preview following
 the pointer between them; the shape SHALL be one stroke of the pen in hand, and the keys SHALL go back to 1 after it. A
 circle SHALL span the clicks as its diameter, a triangle be equilateral with its tip at the first click and the middle
 of the side across at the second, a square have the clicks as its diagonal, a rectangle as upright opposite corners,
@@ -247,14 +272,14 @@ template and under the ink and text, and SHALL keep them through every save, wri
 ### Requirement: Select and capture
 One slot in the bar, right of the eraser, SHALL hold Select and Capture, its menu choosing between them. Select SHALL take
 the strokes of the layer in hand that a drawn loop holds (most of their points inside), framed, to move by the frame's
-inside, scale by its corners (strokes and their widths alike) and turn by the handle above it (Shift: on the clock's
-hours), each change one undo step; while dragged the strokes SHALL be drawn as plain lines and changed only when let go.
+inside, scale by its corners (strokes and their widths alike) and turn by the handle above it (Alt: snap to angle),
+each change one undo step; while dragged the strokes SHALL be drawn as plain lines and changed only when let go.
 Capture SHALL copy what the page shows inside a drawn loop, pixel for pixel, to the system clipboard as a picture; a click
 on a picture SHALL select it, to move, scale and turn the same way. Delete or Backspace SHALL remove what is selected and
 Esc let it go.
 
 #### Scenario: Turning a selection
-- **WHEN** the user selects a flat stroke and turns the frame's handle a quarter, with Shift
+- **WHEN** the user selects a flat stroke and turns the frame's handle a quarter, with Alt
 - **THEN** the stroke stands upright
 
 ### Requirement: The clipboard

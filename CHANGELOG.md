@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.71
+
+The page editor's mouse and keys, reworked:
+- A mouse click that does not move draws nothing: no more stray dots. A drag draws; a pen's tap still makes a dot.
+- Erasing is on the keys, with the left button, whatever is in hand: Shift + drag erases what it passes over, Ctrl + Shift + drag whole strokes, Ctrl + Shift + Alt + drag a zone. With the zone's keys held (or the zone eraser in hand), 2, 3, 4 and 5 make the zone a circle, triangle, square or rectangle, dragged out. The pointer becomes the eraser itself, as wide as its size in the eraser menu: an empty circle, the circle crossed through, or the zone dotted. Typing capitals with Shift does not flicker it.
+- The right button opens a menu for what is under it: on a selection Cut, Copy, Delete and Duplicate; on the text Cut, Copy, Paste, Paste matching formatting, Paste as strokes and Select all; on the paper Paste, Paste as strokes and Select all.
+- Typing with a pen in hand: over the text the pointer is the I-beam and a click puts the caret there (a drag selects); off the text the pen draws. Shift + click extends the selection. The text tool's icon is the I-beam.
+- Snap to angle, every 15 degrees (the 30s and the 45s), is Alt: a shape's second point, Ctrl + Alt + click for corners, and turning a selection. Corners are Ctrl + click. A shape (2-6) can be dragged out, or set with a click and then a second press, ended where it is let go.
+- Paste keeps bold and italic; Ctrl + Shift + V pastes in the caret's formatting.
+- The shortcuts sheet (the ?) shows all of this, in every language.
+
 ## 0.1.70
 
 Measured on the tablet's own pixels (its screen share of a calibration notebook, 2026-10-22):

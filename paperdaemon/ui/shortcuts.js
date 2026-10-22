@@ -18,7 +18,7 @@
     undo: svg('<path d="M9 6.5 4.5 11 9 15.5"/><path d="M4.5 11H14a5 5 0 0 1 0 10h-2.5"/>'),
     fill: svg('<path d="M4.6 10.4 11 4l7.5 7.5-6.4 6.4a1.4 1.4 0 0 1-2 0l-5.5-5.5a1.4 1.4 0 0 1 0-2z"/><path d="M4.5 11.5h13.6"/><path d="M20.5 16.5c0 1.4-.8 2.5-1.7 2.5s-1.7-1.1-1.7-2.5c0-1 1.7-3 1.7-3s1.7 2 1.7 3z"/>'),
     corners: svg('<path d="M4.5 18 9 5.5l10.5 4-5 9z"/><circle cx="4.5" cy="18" r="1.3" fill="currentColor"/><circle cx="9" cy="5.5" r="1.3" fill="currentColor"/><circle cx="19.5" cy="9.5" r="1.3" fill="currentColor"/>'),
-    hours: svg('<circle cx="12" cy="12" r="8.5"/><path d="M12 6.5V12l4 2.5"/><path d="M12 3.5v1.2M20.5 12h-1.2M12 20.5v-1.2M3.5 12h1.2"/>'),
+    snap: svg('<path d="M4 19h16M4 19 16.5 6.5"/><path d="M12 19a8 8 0 0 0-2.3-5.7"/>'),
     pen: svg(COLLAR + '<path d="M8.5 15.2V10.5h7v4.7"/><path d="M11 10.5V3.5h2v7"/>'),
     circle: svg('<circle cx="12" cy="12" r="8"/>'),
     triangle: svg('<path d="M12 4l8.5 15h-17z"/>'),
@@ -28,7 +28,9 @@
     ePass: svg('<path d="M3 16c3-7 6.5-9.5 9.5-5.5S17.5 13 21 7" stroke-dasharray="1.6 2.6"/><circle cx="12.3" cy="11" r="3.6"/>'),
     eStrokes: svg('<path d="M3 16c3-7 6.5-9.5 9.5-5.5S17.5 13 21 7"/><path d="M13 3.5l5 5M18 3.5l-5 5" stroke-width="1.7"/>'),
     eZone: svg('<path d="M5 9c0-3.5 3.5-5.5 7.5-5.5S20 6 20 10s-3 7.5-8 7.5S5 13.5 5 9z" stroke-dasharray="2 2.4"/><path d="M8 11c2-2.5 3.5-2.5 5 0s3 2.5 4 0"/>'),
-    type: svg('<path d="M5 7V4.5h14V7"/><path d="M12 4.5V19.5"/><path d="M9 19.5h6"/>'),
+    type: svg('<path d="M9 4h2c.6 0 1 .4 1 1v14c0 .6-.4 1-1 1H9M15 4h-2c-.6 0-1 .4-1 1v14c0 .6.4 1 1 1h2"/>'),
+    extend: svg('<path d="M5 4.5v15"/><rect x="7" y="8" width="12" height="8" rx="1" fill="currentColor" stroke="none" opacity=".35"/><path d="M19 4.5v15"/>'),
+    menu: svg('<rect x="5" y="4" width="14" height="16" rx="1.5"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h5"/>'),
     back: svg('<path d="M8.5 5.5H20v13H8.5L3.5 12z"/><path d="M11 9.5l5 5M16 9.5l-5 5"/>'),
     letgo: svg('<path d="M8.5 4.5h3M8.5 19.5h3M10 4.5v15"/><path d="M15 9.5l4 4M19 9.5l-4 4"/>'),
     styles: svg('<path d="M4 5.5h11" stroke-width="2.6"/><path d="M4 10.5h8" stroke-width="2"/><path d="M4 15h12M4 19h12"/>'),
@@ -44,7 +46,7 @@
   };
   // the keys, each combination a list: a word the window says in its own language, or a symbol as printed on a key
   const WORD = { ctrl: "keys.k_ctrl", shift: "keys.k_shift", alt: "keys.k_alt", esc: "keys.k_esc", backspace: "keys.k_backspace",
-                 click: "keys.k_click", loop: "keys.k_loop", delete: "keys.k_delete", wheel: "keys.k_wheel", middle: "keys.k_middle", right: "keys.k_right", type: "keys.k_type" };
+                 click: "keys.k_click", loop: "keys.k_loop", delete: "keys.k_delete", wheel: "keys.k_wheel", middle: "keys.k_middle", right: "keys.k_right", drag: "keys.k_drag", type: "keys.k_type" };
   const keyOf = k => WORD[k] ? PD.t(WORD[k]) : k;
   const combo = c => '<span class="kc">' + c.map(k => "<kbd>" + esc(keyOf(k)) + "</kbd>").join('<span class="kplus">+</span>') + "</span>";
   // [icon, combinations, action, line]; `editor` sections only where the page editor is open
@@ -62,8 +64,8 @@
       ["sync", [["ctrl", "S"]], "keys.sync", "keys.sync_d"],
       ["undo", [["ctrl", "Z"], ["ctrl", "Y"]], "keys.undo", "keys.undo_d"],
       ["fill", [["alt", "click"]], "keys.fill", "keys.fill_d"],
-      ["corners", [["shift", "click"], ["ctrl", "click"]], "keys.corners", "keys.corners_d"],
-      ["hours", [["ctrl", "shift", "click"]], "keys.hours", "keys.hours_d"]] },
+      ["corners", [["ctrl", "click"]], "keys.corners", "keys.corners_d"],
+      ["snap", [["ctrl", "alt", "click"]], "keys.snap_corners", "keys.snap_corners_d"]] },
     { title: "keys.s_shapes", editor: true, items: [
       ["pen", [["1"]], "keys.pen", "keys.pen_d"],
       ["circle", [["2"]], "keys.circle", "keys.circle_d"],
@@ -71,11 +73,11 @@
       ["square", [["4"]], "keys.square", "keys.square_d"],
       ["rect", [["5"]], "keys.rect", "keys.rect_d"],
       ["arrow", [["6"]], "keys.arrow", "keys.arrow_d"],
-      ["hours", [["shift", "click"]], "keys.on_hours", "keys.on_hours_d"]] },
+      ["snap", [["alt", "drag"], ["alt", "click"]], "keys.snap", "keys.snap_d"]] },
     { title: "keys.s_erase", editor: true, items: [
-      ["ePass", [["right"]], "keys.e_pass", "keys.e_pass_d"],
-      ["eStrokes", [["shift", "right"]], "keys.e_strokes", "keys.e_strokes_d"],
-      ["eZone", [["ctrl", "shift", "right"]], "keys.e_zone", "keys.e_zone_d"]] },
+      ["ePass", [["shift", "drag"]], "keys.e_pass", "keys.e_pass_d"],
+      ["eStrokes", [["ctrl", "shift", "drag"]], "keys.e_strokes", "keys.e_strokes_d"],
+      ["eZone", [["ctrl", "shift", "alt", "drag"]], "keys.e_zone", "keys.e_zone_d"]] },
     { title: "keys.s_pick", editor: true, items: [
       ["select", [["loop"]], "keys.select", "keys.select_d"],
       ["capture", [["loop"], ["click"]], "keys.capture", "keys.capture_d"],
@@ -90,7 +92,9 @@
       ["styles", [["ctrl", "1–4"]], "keys.styles", "keys.styles_d"],
       ["bold", [["ctrl", "B"], ["ctrl", "I"]], "keys.bold", "keys.bold_d"],
       ["move", [["alt", "↑"], ["alt", "↓"]], "keys.move", "keys.move_d"],
-      ["cursors", [["ctrl", "alt", "↑"], ["ctrl", "alt", "↓"], ["ctrl", "alt", "click"]], "keys.cursors", "keys.cursors_d"]] },
+      ["cursors", [["ctrl", "alt", "↑"], ["ctrl", "alt", "↓"], ["ctrl", "alt", "click"]], "keys.cursors", "keys.cursors_d"],
+      ["extend", [["shift", "click"]], "keys.extend", "keys.extend_d"],
+      ["menu", [["right"]], "keys.menu", "keys.menu_d"]] },
   ];
 
   // over the viewer (a dialog over a dialog: the top one takes the keys, and Esc closes only it)
