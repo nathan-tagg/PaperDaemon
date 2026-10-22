@@ -858,8 +858,11 @@ def main():
             sts = [ents.get(k, {}).get("status") for k in INFLIGHT["keys"]]
             # RECORDED BY THE HOST: done or skipped -- or already reopened by a scan (the page changed while the job
             # worked: the host recorded it, flagged "checked", and the scan made it pending again before this look).
-            # Waiting for done or skipped alone, the daemon then waited for good, and no job ran again.
-            if all(x in ("done", "skipped") or ents.get(k, {}).get("checked")
+            # Waiting for done or skipped alone, the daemon then waited for good, and no job ran again. "Checked" alone
+            # is not a record: the host flags it a moment BEFORE it records, the page still "working" -- taken for the
+            # record, the job was wrapped up early, the host's own answer seen as a change, and the page answered
+            # itself over and over.
+            if all(x in ("done", "skipped") or (x == "pending" and ents.get(k, {}).get("checked"))
                    for k, x in zip(INFLIGHT["keys"], sts)):
                 finish_job(attempts)
                 last_fp = None

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.63
+
+- A page no longer answers itself over and over. Since 0.1.61 the daemon took the host's note that it had checked the page for its record, and wrapped the job up a moment before the host wrote it: the host's own answer was then seen as a change, and the page went back to the host again and again.
+
 ## 0.1.62
 
 - A job's working bar and the window's spinners move even with Windows' "Show animations" off. The window took that setting as "reduce motion" and stopped them, so the bar looked stuck.
