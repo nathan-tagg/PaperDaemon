@@ -257,6 +257,9 @@
       if (d.pd === "viewer-key") {                          // Ctrl+W, Ctrl+Tab pressed in the page
         const dlg = $("#" + VIEWER);
         if (d.key === "w" && dlg && dlg.open) dlg.close();
+        else if (d.key === "Escape" && dlg && dlg.open) {   // Esc the page had no use for: the tags' menu first, then close
+          if (S.tagPop) { S.tagPop = false; paintBar(); paintTagPop(); } else dlg.close();
+        }
         else if (d.key === "Tab") cycleDoc(d.shiftKey ? -1 : 1);
         return;
       }

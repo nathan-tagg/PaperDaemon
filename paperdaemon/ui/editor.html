@@ -2801,7 +2801,7 @@ span.lname { cursor: default; }
   });
   window.addEventListener("keydown", e => {
     if (e.target.closest && e.target.closest("select")) return;
-    if (e.key === "Escape" && popFor) { popFor = null; paintPop(); return; }
+    if (e.key === "Escape" && popFor) { e.preventDefault(); popFor = null; paintPop(); return; }
     const ctrl = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
     if (ctrl && k === "z" && !e.shiftKey) { e.preventDefault(); undo(); return; }
     if (ctrl && (k === "y" || (k === "z" && e.shiftKey))) { e.preventDefault(); redo(); return; }
@@ -3848,6 +3848,16 @@ span.lname { cursor: default; }
   paintControls(); layout(); findFaces(); loadPage(); checkTemplates();
   window.editorPage = page;                                  // the page's data, for a look from outside
   window.editorView = view;                                  // and where it is scrolled and zoomed to
+  // ESC WITH NOTHING HERE TO LET GO (no menu, caret, selection, shape, corners, zone, template picker: each of those
+  // takes its Esc first) CLOSES THE NOTEBOOK, as Esc in the viewer around the page does. Last of the page's listeners,
+  // so it hears only an Esc no one else took
+  window.addEventListener("keydown", e => {
+    if (e.key !== "Escape" || e.defaultPrevented || !EMBED) return;
+    const tp = document.getElementById("tpl-pick");
+    if (tp && !tp.hidden) { e.preventDefault(); tp.hidden = true; return; }
+    e.preventDefault();
+    window.parent.postMessage({ pd: "viewer-key", key: "Escape" }, location.origin);
+  });
 })();
 </script>
 </body>

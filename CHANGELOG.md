@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.77
+
+- Esc on a page closes the notebook, as it does from the viewer's bar. The page lets go of what it has first, one Esc each: a menu, the caret, a selection, a shape or corners being set, the template picker. In the page grid, Esc still steps back to the page first.
+
 ## 0.1.76
 
 - Daemon > Notes shows the False Mirror's notebooks too, under their own heading. Their notes are kept by the False Mirror's own engine, and the panel only ever asked the tablet's.
