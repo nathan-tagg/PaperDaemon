@@ -403,7 +403,7 @@
           if (v === "close") dlg.close();
           else if (v === "prev" || v === "next") go(S.page + (v === "next" ? 1 : -1));
           else if (v === "tagpop") { S.tagPop = !S.tagPop; paintBar(); paintTagPop(); }
-          else if (v === "keys") PD.openShortcuts(!!editorFrame());
+          else if (v === "keys") PD.openShortcuts(fm && !!editorFrame());   // the Mirror's view: only what looks
           else if (v === "tagadd") addTypedTag();
           else if (v === "newpage") {
             const [got] = await PD.safe(api("POST", "/library/" + S.doc.id + "/pages", { after: S.page }));

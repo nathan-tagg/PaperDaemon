@@ -200,6 +200,13 @@ span.lname { cursor: default; }
       if (el.closest("#vp")) { e.preventDefault(); e.stopImmediatePropagation(); }
     }, true);
   }
+  // THE MOUSE'S BACK AND FORWARD BUTTONS over the page walk the viewer's history, as Alt+Left and Alt+Right do: the
+  // press and the release both taken here, or the app's window would go back a screen behind the viewer
+  for (const t of ["pointerdown", "pointerup", "mousedown", "mouseup", "auxclick"]) window.addEventListener(t, e => {
+    if (e.button !== 3 && e.button !== 4) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (t === "mouseup" && window.parent !== window) window.parent.postMessage({ pd: "view-key", key: e.button === 3 ? "ArrowLeft" : "ArrowRight", altKey: true }, location.origin);
+  }, true);
   const SCREEN_W = 1620;                                                               // what the Paper Pro shows at 1x
 
   // ================================================================ PENS AND COLORS
@@ -873,11 +880,14 @@ span.lname { cursor: default; }
   // WHAT THE TABLET SHOWS AT 1x, in page units across: a notebook's screen; a page of a PDF or a book as the document's
   // zoom mode fits it on the screen (bestFit: the whole page, so the wider of its width and three quarters of its
   // height; fitToWidth; fitToHeight). Its frame is its own size -- a cover 1245 wide, a planner 5095 -- and shown on a
-  // notebook's 1620 it sat small in a white margin, or showed only its corner.
+  // notebook's 1620 it sat small in a white margin, or showed only its corner. A page so tall that the whole of it
+  // would be less than half the screen wide (a long scroll of a page) is fit to its width instead, and scrolls.
   const screenW = () => {
     if (!page.source) return SCREEN_W;
     const [w, h] = page.paperSize;
-    return page.zoom === "fitToWidth" ? w : page.zoom === "fitToHeight" ? h * 3 / 4 : Math.max(w, h * 3 / 4);
+    if (page.zoom === "fitToWidth") return w;
+    if (page.zoom === "fitToHeight") return h * 3 / 4;
+    return h * 3 / 4 > 2 * w ? w : Math.max(w, h * 3 / 4);
   };
   const scale = () => vpW / (screenW() / view.zoom);           // CSS pixels per page unit
   const toScreen = (x, y) => [vpW / 2 + (x - view.cx) * scale(), (y - view.top) * scale()];

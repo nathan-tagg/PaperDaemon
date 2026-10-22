@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.73
+
+- A PDF page far taller than it is wide (a long scroll of a page) is shown at the page's width and scrolls, in the Mirror, the page editor and the page pictures. Since 0.1.69 the whole of it was squeezed onto one screen.
+- The mouse's back and forward buttons over a page turn the viewer's pages, as Alt+Left and Alt+Right do. Over the page they used to take the app's window back a screen, behind the viewer.
+- The ? on a page of the Mirror (which only looks) lists only what works there: moving around and turning pages, not drawing, erasing and typing.
+
 ## 0.1.72
 
 - The page editor's right-click menu is the only one: the window's own menu (Back, Refresh, Inspect) no longer opens over it.
