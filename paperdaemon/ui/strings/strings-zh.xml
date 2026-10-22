@@ -498,6 +498,7 @@
 - 在前台运行服务器，并让脚本在服务器运行期间一直运行。不要使用 `start`。
 - 输出服务器的消息。
 - PaperDaemon 还会设置 %PAPERDAEMON_ROLE%（text 或 image）、%PAPERDAEMON_LOCATION%（完整地址）、%PAPERDAEMON_OTHER_LOCATION%（另一个模型的地址）、%PAPERDAEMON_LINEUP% 和 %PAPERDAEMON_DATA%。
+- 从 PaperDaemon 在 %PAPERDAEMON_LORAS% 中传入的文件夹加载 LoRA 文件（stable-diffusion.cpp 的服务器：--lora-model-dir "%PAPERDAEMON_LORAS%"）。每张图片用哪些由 PaperDaemon 决定。
 - PaperDaemon 只停止它自己启动的程序。如果其他模型服务器可能占用我的显卡内存，脚本应先停止它们。
 - PaperDaemon 本身会占用我显卡的一些内存：通常不到 150 MB，在最糟糕的时刻（页面编辑器中打开着超大页面，同时有任务在绘制另一个页面）最多约 550 MB，因此模型应预留这么多空间。
 - 服务器必须支持 Stable Diffusion web UI API（/sdapi/v1/txt2img），就像 stable-diffusion.cpp 的服务器、Forge 或 AUTOMATIC1111 那样，或者支持 OpenAI 的图像 API。
@@ -676,4 +677,6 @@
   <string name="fm.cover.last">上次查看的页面</string>
   <string name="fm.cover.first">第一页</string>
   <string name="fm.template">模板</string>
+  <string name="slot.loras_folder">LoRA 文件夹</string>
+  <string name="slot.loras_folder.help">打开此阵容的 LoRA 文件夹。其中的每个 LoRA 都会按此阵容的图像适配器所述，应用到它生成的每张图片。</string>
 </resources>

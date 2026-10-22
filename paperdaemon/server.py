@@ -739,8 +739,12 @@ def put_lineup(name: str, body: dict = Body(...)):
         if s["lineup"] == name:
             s["lineup"] = merged["name"]
         if merged["name"] != name:
-            from . import memories
+            from . import loras, memories
             memories.rename(name, merged["name"])        # a renamed lineup keeps its memories
+            try:
+                loras.rename(name, merged["name"])       # and its LoRAs
+            except OSError:
+                pass
             if settings.in_use() == name:
                 settings.use(merged["name"])
     else:
@@ -750,6 +754,18 @@ def put_lineup(name: str, body: dict = Body(...)):
     except ValueError as ex:
         return _bad(str(ex))
     return _lineups_view()
+
+
+@app.post(API + "/lineups/{name}/loras/open")
+def post_lineup_loras_open(name: str):
+    """The lineup's LoRA folder in the file manager (made when it is not there) -> {path, files}."""
+    from . import loras
+    if settings.lineup(settings.load(), name) is None:
+        return _bad("no lineup named %r" % name, 404)
+    try:
+        return {"path": loras.open_folder(name), "files": loras.files(name)}
+    except OSError as ex:
+        return _bad(str(ex)[:200])
 
 
 @app.delete(API + "/lineups/{name}")

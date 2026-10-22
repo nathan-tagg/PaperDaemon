@@ -20,6 +20,10 @@
   ],
   "cfg": 1.0,
   "sampler": "euler",
+  "loras": {
+    "via": "request",
+    "strength": 1.0
+  },
   "abilities": [
     "generate",
     "edit_reference",

@@ -498,6 +498,7 @@
 - सर्वर को फ़ोरग्राउंड में चलाए और जब तक सर्वर चले, स्क्रिप्ट को चलता रखे। `start` का इस्तेमाल न करे।
 - सर्वर का आउटपुट छापे।
 - PaperDaemon ये भी सेट करता है: %PAPERDAEMON_ROLE% (text या image), %PAPERDAEMON_LOCATION% (पूरा पता), %PAPERDAEMON_OTHER_LOCATION% (दूसरे मॉडल का पता), %PAPERDAEMON_LINEUP% और %PAPERDAEMON_DATA%।
+- LoRA फ़ाइलें उस फ़ोल्डर से लोड करें जो PaperDaemon %PAPERDAEMON_LORAS% में देता है (stable-diffusion.cpp का सर्वर: --lora-model-dir "%PAPERDAEMON_LORAS%")। हर तस्वीर कौन-सी इस्तेमाल करे, यह PaperDaemon चुनता है।
 - PaperDaemon सिर्फ़ वही प्रोग्राम रोकता है जो उसने शुरू किए। अगर दूसरे मॉडल सर्वर मेरे ग्राफ़िक्स कार्ड की मेमोरी इस्तेमाल कर रहे हों, तो स्क्रिप्ट पहले उन्हें रोके।
 - PaperDaemon खुद मेरे ग्राफ़िक्स कार्ड की कुछ मेमोरी इस्तेमाल करता है: आम तौर पर 150 MB से कम, और सबसे बुरे पल में (पेज एडिटर में बहुत बड़ा पेज खुला हो और कोई काम दूसरा पेज बना रहा हो) लगभग 550 MB तक, इसलिए मॉडल को इतनी जगह खाली छोड़नी चाहिए।
 - सर्वर को Stable Diffusion web UI API (/sdapi/v1/txt2img) बोलना चाहिए, जैसा stable-diffusion.cpp का सर्वर, Forge या AUTOMATIC1111 करते हैं, या OpenAI Images API।
@@ -676,4 +677,6 @@
   <string name="fm.cover.last">आख़िरी देखा गया पेज</string>
   <string name="fm.cover.first">पहला पेज</string>
   <string name="fm.template">टेम्पलेट</string>
+  <string name="slot.loras_folder">LoRA फ़ोल्डर</string>
+  <string name="slot.loras_folder.help">इस लाइनअप का LoRA फ़ोल्डर खोलें। इसमें रखा हर LoRA इस लाइनअप की बनाई हर तस्वीर पर लगता है, जैसा इसका इमेज हार्नेस कहता है।</string>
 </resources>

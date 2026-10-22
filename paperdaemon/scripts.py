@@ -16,6 +16,7 @@ What it gets. The script runs with its own folder as the working directory and t
                                 wait for the other model to go idle, or stop it
     PAPERDAEMON_LINEUP          the name of the lineup the slot belongs to
     PAPERDAEMON_DATA            PaperDaemon's data folder
+    PAPERDAEMON_LORAS           the lineup's LoRA folder (loras.py): an image server loads its LoRAs from here
 
 What PaperDaemon waits for. Either the location answers while something the script started is still
 running (the usual case: the script runs its server in the foreground), or the script exits with code

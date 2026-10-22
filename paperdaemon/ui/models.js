@@ -95,7 +95,7 @@
       : S.tab === "memories" ? memoriesHtml()
       : S.tab === "jobs" ? '<div id="md-jobs"></div>'
       : S.tab === "tests" ? '<div id="md-tests"></div>'
-      : PD.slots.html(P, S.tab, S.forms[S.tab], S.harnesses, PD.slots.testHtml(S.test[S.tab])) + (S.tab === "text" ? renderHtml() : "");
+      : PD.slots.html(P, S.tab, S.forms[S.tab], S.harnesses, PD.slots.testHtml(S.test[S.tab]), S.show) + (S.tab === "text" ? renderHtml() : "");
     const msg = '<span class="msg' + (S.bad ? " err" : "") + '" id="md-msg" role="status">' + esc(S.msg) + "</span>";
     box.innerHTML = top +
       '<div class="ftabs" role="tablist">' + tab("text", PD.t("tab.text")) + tab("image", PD.t("tab.image")) + tab("search", PD.t("tab.network")) + tab("tags", PD.t("tab.tags")) +
@@ -163,6 +163,10 @@
       PD.busy(el, () => memAct(a, el.dataset.id));
     }
     else if (a === "test") test(el.dataset.role);
+    else if (a === "loras") {                         // the lineup's LoRA folder, in Explorer (made when it is not there)
+      const [, e] = await PD.safe(PD.api("POST", "/lineups/" + encodeURIComponent(el.dataset.lineup) + "/loras/open"));
+      if (e) { S.msg = PD.errText(e); S.bad = true; paint(); }
+    }
     else if (a === "addharness") { readAll(); PD.api("POST", "/harnesses/open", { kind: el.dataset.kind }); S.stale = true; }
     else if (a === "new" || a === "rename") {
       const v = await PD.ask({ title: PD.t(a === "new" ? "lineup.new" : "lineup.rename_title"), action: PD.t(a === "new" ? "lineup.create" : "lineup.rename"),

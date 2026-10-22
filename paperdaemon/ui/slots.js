@@ -67,8 +67,9 @@
     return h ? h.id : "auto";
   }
 
-  /** The form for one slot. p: the id prefix; test: the test line's html (hosted only). */
-  function html(p, role, f, harnesses, test) {
+  /** The form for one slot. p: the id prefix; test: the test line's html (hosted only); lineup: the lineup's name, for
+      the link to its LoRA folder under the image model's start script (none in the first-run setup). */
+  function html(p, role, f, harnesses, test, lineup) {
     const id = p + "-" + role;
     const kinds = (role === "image" ? [["none", PD.t("slot.none")]] : []).concat([["hosted", PD.t("slot.api_key")], ["local", PD.t("slot.local")]]);
     let out = '<div class="grid2">' + lab(id + "-kind", "slot.source", "slot.source.help") + select(id + "-kind", kinds, f.kind) + "</label><span></span></div>";
@@ -85,7 +86,10 @@
         harnessRow(p, role, f, harnesses) +
         '<div class="script-box"><div class="label-row"><span>' + esc(PD.t("slot.script_label")) + "</span>" +
         PD.scriptHelpLink(role) + "</div>" +
-        PD.codeHtml(id + "-scripttext", f.scriptText || "", 14, PD.t("slot.script"), false, "bat") + "</div>";
+        PD.codeHtml(id + "-scripttext", f.scriptText || "", 14, PD.t("slot.script"), false, "bat") +
+        // the lineup's LoRA folder, a small link under the box's right edge, in the space already below it
+        (role === "image" && lineup ? '<a href="#" class="script-link" data-act="loras" data-lineup="' + esc(lineup) + '" title="' +
+          esc(PD.t("slot.loras_folder.help")) + '">' + esc(PD.t("slot.loras_folder")) + "</a>" : "") + "</div>";
     }
     return out;
   }

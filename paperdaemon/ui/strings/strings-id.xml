@@ -498,6 +498,7 @@ Aturan yang harus diikuti skrip:
 - Jalankan server di latar depan dan biarkan skrip tetap berjalan selama server berjalan. Jangan pakai `start`.
 - Cetak keluaran server.
 - PaperDaemon juga mengatur %PAPERDAEMON_ROLE% (text atau image), %PAPERDAEMON_LOCATION% (alamat lengkap), %PAPERDAEMON_OTHER_LOCATION% (alamat model lainnya), %PAPERDAEMON_LINEUP% dan %PAPERDAEMON_DATA%.
+- Muat berkas LoRA dari folder yang diberikan PaperDaemon di %PAPERDAEMON_LORAS% (server stable-diffusion.cpp: --lora-model-dir "%PAPERDAEMON_LORAS%"). PaperDaemon memilih mana yang dipakai setiap gambar.
 - PaperDaemon hanya menghentikan program yang dijalankannya. Jika server model lain mungkin memakai memori kartu grafis saya, skrip harus menghentikannya terlebih dahulu.
 - PaperDaemon sendiri memakai sebagian memori kartu grafis saya: biasanya di bawah 150 MB, dan hingga sekitar 550 MB pada saat terburuk (halaman sangat besar terbuka di editor halamannya sementara sebuah tugas menggambar halaman lain), jadi model harus menyisakan sebanyak itu.
 - Server harus berbicara dengan API web UI Stable Diffusion (/sdapi/v1/txt2img), seperti server stable-diffusion.cpp, Forge, atau AUTOMATIC1111, atau dengan API Images OpenAI.
@@ -676,4 +677,6 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="fm.cover.last">Halaman terakhir dikunjungi</string>
   <string name="fm.cover.first">Halaman pertama</string>
   <string name="fm.template">Templat</string>
+  <string name="slot.loras_folder">Folder LoRA</string>
+  <string name="slot.loras_folder.help">Buka folder LoRA susunan ini. Setiap LoRA di dalamnya ikut pada setiap gambar yang dibuat susunan ini, seperti kata harness gambarnya.</string>
 </resources>

@@ -37,7 +37,27 @@ PaperDaemon shows these and never acts on them. A harness you build on another s
 | `sampler`, `scheduler`, `shift` | The server's sampler and scheduler names, and the shift (or `null`). |
 | `size` | Width and height of a picture, 64 to 4096: `[1024, 1024]`. |
 | `workflows` | Named recipes the text model can ask for (below). |
+| `loras` | How the lineup's LoRA folder is applied (below): `{"via": "request", "strength": 1.0}`. |
 | `features` | Things this model should not be asked to do: `{"off": [...]}`. |
+
+## The lineup's LoRA folder
+
+Every lineup has a LoRA folder of its own: the LoRA folder link under the image model's start script opens it.
+Each LoRA put in it goes with every picture that lineup makes, as its harness's `loras` says:
+
+| `loras` field | What it is |
+| --- | --- |
+| `via` | `"request"`: in the request's list of LoRAs, as stable-diffusion.cpp's server takes them (it ignores LoRA tags in a prompt). `"prompt"`: as `<lora:name:strength>` tags at the end of the prompt, as the Stable Diffusion web UI (Forge, AUTOMATIC1111) takes them. |
+| `strength` | How strongly each is applied, -4 to 4. Optional: 1.0. |
+
+A harness without `loras` applies none of them, and each job's log says they were left out. PaperDaemon's
+stable-diffusion.cpp harnesses say `"via": "request"`.
+
+The image server must load LoRAs from that folder: its start script is given it in `%PAPERDAEMON_LORAS%`. For
+stable-diffusion.cpp's server: `--lora-model-dir "%PAPERDAEMON_LORAS%"`. A LoRA the server does not list is left out
+of the picture and named in the job's log. Put in only LoRAs made for the lineup's image model: one made for another
+model is not applied, or is applied wrongly. Nothing is merged into the model; take a file out and the next picture
+is made without it.
 
 ## Workflows
 

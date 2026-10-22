@@ -498,6 +498,7 @@
 - سرور کو پیش منظر میں چلاؤ اور جب تک سرور چلے اسکرپٹ کو چلتا رکھو۔ `start` استعمال نہ کرو۔
 - سرور کا آؤٹ پٹ چھاپو۔
 - PaperDaemon یہ بھی طے کرتا ہے: %PAPERDAEMON_ROLE% (text یا image)، %PAPERDAEMON_LOCATION% (پورا پتا)، %PAPERDAEMON_OTHER_LOCATION% (دوسرے ماڈل کا پتا)، %PAPERDAEMON_LINEUP% اور %PAPERDAEMON_DATA%۔
+- LoRA فائلیں اس فولڈر سے لوڈ کریں جو PaperDaemon %PAPERDAEMON_LORAS% میں دیتا ہے (stable-diffusion.cpp کا سرور: --lora-model-dir "%PAPERDAEMON_LORAS%")۔ ہر تصویر کون سی استعمال کرے، یہ PaperDaemon چنتا ہے۔
 - PaperDaemon صرف وہی پروگرام روکتا ہے جو اس نے شروع کیے ہوں۔ اگر دوسرے ماڈل سرور میرے گرافکس کارڈ کی میموری استعمال کر رہے ہو سکتے ہیں تو اسکرپٹ پہلے انہیں روکے۔
 - PaperDaemon خود میرے گرافکس کارڈ کی کچھ میموری استعمال کرتا ہے: عام طور پر 150 MB سے کم، اور سب سے برے لمحے میں (پیج ایڈیٹر میں بہت بڑا صفحہ کھلا ہو اور کوئی کام دوسرا صفحہ بنا رہا ہو) تقریباً 550 MB تک، اس لیے ماڈل کو اتنی جگہ خالی چھوڑنی چاہیے۔
 - سرور کو Stable Diffusion ویب UI کی API (/sdapi/v1/txt2img) بولنی چاہیے، جیسے stable-diffusion.cpp کا سرور، Forge یا AUTOMATIC1111، یا OpenAI کی Images API۔
@@ -676,4 +677,6 @@
   <string name="fm.cover.last">آخری دیکھا گیا صفحہ</string>
   <string name="fm.cover.first">پہلا صفحہ</string>
   <string name="fm.template">ٹیمپلیٹ</string>
+  <string name="slot.loras_folder">LoRA فولڈر</string>
+  <string name="slot.loras_folder.help">اس لائن اپ کا LoRA فولڈر کھولیں۔ اس میں موجود ہر LoRA اس لائن اپ کی بنائی ہر تصویر پر لگتا ہے، جیسا اس کا امیج ہارنیس کہتا ہے۔</string>
 </resources>

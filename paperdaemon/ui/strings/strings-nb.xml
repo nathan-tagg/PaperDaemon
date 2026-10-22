@@ -498,6 +498,7 @@ Regler skriptet må følge:
 - Kjøre serveren i forgrunnen og holde skriptet i gang så lenge serveren kjører. Ikke bruke `start`.
 - Skrive ut serverens utdata.
 - PaperDaemon setter også %PAPERDAEMON_ROLE% (text eller image), %PAPERDAEMON_LOCATION% (hele adressen), %PAPERDAEMON_OTHER_LOCATION% (adressen til den andre modellen), %PAPERDAEMON_LINEUP% og %PAPERDAEMON_DATA%.
+- Last inn LoRA-filer fra mappen PaperDaemon gir i %PAPERDAEMON_LORAS% (serveren til stable-diffusion.cpp: --lora-model-dir "%PAPERDAEMON_LORAS%"). PaperDaemon velger hvilke hvert bilde bruker.
 - PaperDaemon stopper bare programmer den har startet. Hvis andre modellservere kan bruke minnet på grafikkortet mitt, bør skriptet stoppe dem først.
 - PaperDaemon selv bruker litt av grafikkortets minne: vanligvis under 150 MB, og opptil omtrent 550 MB i verste øyeblikk (en enorm side åpen i sideredigeringen mens en jobb tegner en annen), så modellen bør la så mye være ledig.
 - Serveren må snakke Stable Diffusion web UI-API-et (/sdapi/v1/txt2img), slik serveren til stable-diffusion.cpp, Forge eller AUTOMATIC1111 gjør, eller OpenAI Images-API-et.
@@ -676,4 +677,6 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="fm.cover.last">Sist besøkte side</string>
   <string name="fm.cover.first">Første side</string>
   <string name="fm.template">Mal</string>
+  <string name="slot.loras_folder">LoRA-mappe</string>
+  <string name="slot.loras_folder.help">Åpner LoRA-mappen til dette oppsettet. Hver LoRA i den brukes på hvert bilde oppsettet lager, slik bildeharnessen sier.</string>
 </resources>

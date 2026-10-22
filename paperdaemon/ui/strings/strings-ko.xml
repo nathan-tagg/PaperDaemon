@@ -498,6 +498,7 @@
 - 서버를 포그라운드에서 실행하고, 서버가 실행되는 동안 스크립트도 계속 실행되게 한다. `start`를 쓰지 않는다.
 - 서버의 출력을 표시한다.
 - PaperDaemon은 %PAPERDAEMON_ROLE%(text 또는 image), %PAPERDAEMON_LOCATION%(전체 주소), %PAPERDAEMON_OTHER_LOCATION%(다른 모델의 주소), %PAPERDAEMON_LINEUP%, %PAPERDAEMON_DATA%도 설정한다.
+- PaperDaemon이 %PAPERDAEMON_LORAS%로 넘기는 폴더에서 LoRA 파일을 불러옵니다(stable-diffusion.cpp 서버: --lora-model-dir "%PAPERDAEMON_LORAS%"). 각 그림에 어느 것을 쓸지는 PaperDaemon이 정합니다.
 - PaperDaemon은 자신이 시작한 프로그램만 멈춘다. 다른 모델 서버가 내 그래픽 카드 메모리를 쓰고 있을 수 있다면 스크립트가 먼저 그것들을 멈춘다.
 - PaperDaemon 자체도 내 그래픽 카드 메모리를 일부 씁니다. 보통 150MB 미만이고, 최악의 순간(페이지 편집기에 아주 큰 페이지가 열려 있고 작업이 다른 페이지를 그리는 동안)에는 최대 약 550MB를 쓰므로 모델은 그만큼 비워 두어야 합니다.
 - 서버는 stable-diffusion.cpp의 서버, Forge, AUTOMATIC1111처럼 Stable Diffusion web UI API(/sdapi/v1/txt2img)를 지원하거나, OpenAI 이미지 API를 지원해야 한다.
@@ -676,4 +677,6 @@
   <string name="fm.cover.last">마지막으로 본 페이지</string>
   <string name="fm.cover.first">첫 페이지</string>
   <string name="fm.template">템플릿</string>
+  <string name="slot.loras_folder">LoRA 폴더</string>
+  <string name="slot.loras_folder.help">이 라인업의 LoRA 폴더를 엽니다. 그 안의 모든 LoRA는 이 라인업이 만드는 모든 그림에 이미지 하네스가 정한 방식대로 적용됩니다.</string>
 </resources>

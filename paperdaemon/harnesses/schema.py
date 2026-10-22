@@ -54,6 +54,13 @@ def _workflow(wf):
             and isinstance(wf.get("reference", False), bool))
 
 
+def _lineup_loras(v):
+    """How the lineup's LoRA folder is applied: {"via": "request" | "prompt", "strength": its weight}; None (a
+    harness that does not say) applies none of them."""
+    return v is None or (isinstance(v, dict) and set(v) <= {"via", "strength"} and v.get("via") in ("request", "prompt")
+            and _number(v.get("strength", 1.0)) and -4.0 <= v.get("strength", 1.0) <= 4.0)
+
+
 def _workflows(v):
     return isinstance(v, dict) and len(v) <= 50 and all(_workflow_name(k) and _workflow(w) for k, w in v.items())
 
@@ -106,6 +113,9 @@ RULES = {
                               "\"about\": what it is for, \"steps\": a step count, \"loras\": [{\"file\", "
                               "\"strength\"}], \"reference\": true or false}"),
     "abilities": (_abilities, "a list of: generate, edit_reference, img2img, inpaint"),
+    "loras": (_lineup_loras, "{\"via\": \"request\" (the server's request list, as stable-diffusion.cpp's server takes "
+                             "them) or \"prompt\" (<lora:name:strength> tags, as the Stable Diffusion web UI takes them), "
+                             "and optionally \"strength\": from -4 to 4; or empty}"),
     "features": (lambda v: isinstance(v, dict) and set(v) <= {"off"} and isinstance(v.get("off", []), list)
                  and all(isinstance(n, str) for n in v.get("off", [])), "{\"off\": [feature names]}"),
     "request": (lambda v: isinstance(v, dict) and all(isinstance(c, str) and isinstance(by, dict)

@@ -512,6 +512,7 @@
 - Запускать сервер на переднем плане и держать скрипт запущенным, пока работает сервер. Не использовать `start`.
 - Выводить сообщения сервера.
 - PaperDaemon также задаёт %PAPERDAEMON_ROLE% (text или image), %PAPERDAEMON_LOCATION% (полный адрес), %PAPERDAEMON_OTHER_LOCATION% (адрес другой модели), %PAPERDAEMON_LINEUP% и %PAPERDAEMON_DATA%.
+- Загружай файлы LoRA из папки, которую PaperDaemon передаёт в %PAPERDAEMON_LORAS% (сервер stable-diffusion.cpp: --lora-model-dir "%PAPERDAEMON_LORAS%"). Какие из них нужны каждому изображению, выбирает PaperDaemon.
 - PaperDaemon останавливает только программы, которые запустил сам. Если другие серверы моделей могут занимать память моей видеокарты, скрипт должен сначала их остановить.
 - Сам PaperDaemon использует часть памяти моей видеокарты: обычно меньше 150 МБ, а в худший момент (огромная страница открыта в редакторе, пока задача рисует другую) — до 550 МБ, поэтому модель должна оставлять столько свободным.
 - Сервер должен поддерживать API Stable Diffusion web UI (/sdapi/v1/txt2img), как сервер stable-diffusion.cpp, Forge или AUTOMATIC1111, или API изображений OpenAI.
@@ -690,4 +691,6 @@
   <string name="fm.cover.last">Последняя открытая страница</string>
   <string name="fm.cover.first">Первая страница</string>
   <string name="fm.template">Шаблон</string>
+  <string name="slot.loras_folder">Папка LoRA</string>
+  <string name="slot.loras_folder.help">Открывает папку LoRA этого набора. Каждая LoRA из неё применяется к каждому изображению этого набора так, как велит его харнесс изображений.</string>
 </resources>

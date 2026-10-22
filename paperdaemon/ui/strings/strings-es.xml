@@ -497,6 +497,7 @@ Reglas que debe seguir el script:
 - Ejecutar el servidor en primer plano y mantener el script en marcha mientras el servidor funcione. No usar `start`.
 - Mostrar la salida del servidor.
 - PaperDaemon también define %PAPERDAEMON_ROLE% (text o image), %PAPERDAEMON_LOCATION% (la dirección completa), %PAPERDAEMON_OTHER_LOCATION% (la dirección del otro modelo), %PAPERDAEMON_LINEUP% y %PAPERDAEMON_DATA%.
+- Carga los archivos LoRA de la carpeta que PaperDaemon pasa en %PAPERDAEMON_LORAS% (servidor de stable-diffusion.cpp: --lora-model-dir "%PAPERDAEMON_LORAS%"). PaperDaemon elige cuáles usa cada imagen.
 - PaperDaemon solo detiene los programas que arrancó. Si otros servidores de modelos pudieran estar usando la memoria de mi tarjeta gráfica, el script debe detenerlos primero.
 - El propio PaperDaemon usa parte de la memoria de mi tarjeta gráfica: normalmente menos de 150 MB, y hasta unos 550 MB en el peor momento (una página enorme abierta en su editor de páginas mientras un trabajo dibuja otra), así que el modelo debe dejar libre esa cantidad.
 - El servidor debe hablar la API de Stable Diffusion web UI (/sdapi/v1/txt2img), como lo hacen el servidor de stable-diffusion.cpp, Forge o AUTOMATIC1111, o la API de imágenes de OpenAI.
@@ -676,4 +677,6 @@ Luego guíame para instalar SearXNG si hace falta, escribe el archivo .bat con u
   <string name="fm.cover.last">Última página visitada</string>
   <string name="fm.cover.first">Primera página</string>
   <string name="fm.template">Plantilla</string>
+  <string name="slot.loras_folder">Carpeta de LoRA</string>
+  <string name="slot.loras_folder.help">Abre la carpeta de LoRA de esta alineación. Cada LoRA que contiene se aplica a cada imagen que hace esta alineación, como indica su arnés de imagen.</string>
 </resources>

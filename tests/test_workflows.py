@@ -193,3 +193,77 @@ def test_the_host_asks_by_name_and_logs_what_the_image_model_lacked(tmp_path):
     log = "\n".join(lines[:-1])
     assert "no 'characterTurnaround' workflow: the subject went as a plain prompt" in log
     assert "LoRA 'ink-wash.safetensors' is not in the image server's LoRA folder" in log
+
+
+def _put_lora(lineup, name):
+    from paperdaemon import loras
+    p = os.path.join(loras.folder(lineup), *name.split("/"))
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    with open(p, "wb") as f:
+        f.write(b"lora")
+    return p
+
+
+def test_the_lineups_lora_folder_goes_with_every_picture_as_its_harness_says(server):
+    """Each lineup has a LoRA folder; its image harness says how what is in it is applied (Klein: in the
+    request's list, as stable-diffusion.cpp's server takes them), and every picture that lineup makes carries it."""
+    from paperdaemon import loras
+    name = settings.active(settings.load())["name"]
+    made = [_put_lora(name, "ink-wash.safetensors"), _put_lora(name, "faces/soft.safetensors")]
+    try:
+        assert loras.files(name) == ["faces/soft.safetensors", "ink-wash.safetensors"]
+        server["listed"] = ["faces/soft.safetensors", "ink-wash.safetensors"]
+        item = card.generate({"prompt": "a heron"})
+        body = server["bodies"][-1][1]
+        assert body["lora"] == [{"path": "faces/soft.safetensors", "multiplier": 1.0},
+                                {"path": "ink-wash.safetensors", "multiplier": 1.0}]
+        assert body["prompt"] == "a heron" and item["loras_missing"] == []
+        # with a workflow's own LoRA too: both go
+        _harness("ink.json", {"id": "ink", "extends": "flux.2-klein-9b", "loras": {"via": "request", "strength": 0.6},
+                              "workflows": {"inkWash": {"prompt": "An ink wash painting of {subject}.",
+                                                        "loras": [{"file": "styles/w.safetensors", "strength": 0.8}]}}})
+        s = settings.load()
+        settings.active(s)["image"]["harness"] = "ink"
+        settings.save(s)
+        server["listed"] += ["styles/w.safetensors"]
+        card.generate({"prompt": "a heron", "workflow": "inkWash"})
+        assert [x["multiplier"] for x in server["bodies"][-1][1]["lora"]] == [0.8, 0.6, 0.6]
+        # a server that does not list them (its start script does not load this folder): left out, and said
+        server["listed"] = []
+        item = card.generate({"prompt": "a heron"})
+        assert "lora" not in server["bodies"][-1][1] and len(item["loras_missing"]) == 2
+    finally:
+        for p in made:
+            os.remove(p)
+
+
+def test_prompt_tags_when_the_harness_says_so_and_none_when_it_says_nothing(server):
+    name = settings.active(settings.load())["name"]
+    made = _put_lora(name, "ink-wash.safetensors")
+    try:
+        _harness("tags.json", {"id": "tags", "extends": "default-image", "loras": {"via": "prompt", "strength": 0.7}})
+        s = settings.load()
+        settings.active(s)["image"]["harness"] = "tags"
+        settings.save(s)
+        card.generate({"prompt": "a heron"})
+        body = server["bodies"][-1][1]
+        assert body["prompt"] == "a heron <lora:ink-wash:0.7>" and "lora" not in body
+        s = settings.load()
+        settings.active(s)["image"]["harness"] = "default-image"
+        settings.save(s)
+        item = card.generate({"prompt": "a heron"})
+        assert server["bodies"][-1][1]["prompt"] == "a heron" and item["loras_missing"] == ["ink-wash.safetensors"]
+    finally:
+        os.remove(made)
+
+
+def test_a_renamed_lineup_keeps_its_lora_folder_and_its_script_is_told_where_it_is():
+    from paperdaemon import loras
+    from paperdaemon.models import hotswap
+    p = _put_lora("Old: name?", "a.safetensors")
+    assert os.path.basename(os.path.dirname(p)) == "Old_ name_"          # a folder name Windows takes
+    loras.rename("Old: name?", "New")
+    assert loras.files("New") == ["a.safetensors"] and loras.files("Old: name?") == []
+    os.remove(os.path.join(loras.folder("New"), "a.safetensors"))
+    env = hotswap.environment("image")
+    assert env["PAPERDAEMON_LORAS"] == loras.folder(settings.active(settings.load())["name"])

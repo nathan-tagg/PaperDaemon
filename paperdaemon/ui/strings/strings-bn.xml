@@ -498,6 +498,7 @@
 - সার্ভার সামনে (ফোরগ্রাউন্ডে) চালাবে আর সার্ভার যতক্ষণ চলে ততক্ষণ স্ক্রিপ্ট চালু রাখবে। `start` ব্যবহার করবে না।
 - সার্ভারের আউটপুট দেখাবে।
 - PaperDaemon আরও ঠিক করে দেয় %PAPERDAEMON_ROLE% (text বা image), %PAPERDAEMON_LOCATION% (পুরো ঠিকানা), %PAPERDAEMON_OTHER_LOCATION% (অন্য মডেলের ঠিকানা), %PAPERDAEMON_LINEUP% আর %PAPERDAEMON_DATA%।
+- PaperDaemon যে ফোল্ডারটি %PAPERDAEMON_LORAS%-এ দেয়, সেখান থেকে LoRA ফাইল লোড করুন (stable-diffusion.cpp-এর সার্ভার: --lora-model-dir "%PAPERDAEMON_LORAS%")। কোন ছবিতে কোনগুলো লাগবে তা PaperDaemon ঠিক করে।
 - PaperDaemon শুধু নিজে চালু করা প্রোগ্রামই থামায়। অন্য মডেল সার্ভার আমার গ্রাফিক্স কার্ডের মেমরি ব্যবহার করতে পারলে স্ক্রিপ্ট আগে সেগুলো থামাবে।
 - PaperDaemon নিজেও আমার গ্রাফিক্স কার্ডের মেমরির কিছুটা ব্যবহার করে: সাধারণত ১৫০ MB-এর কম, আর সবচেয়ে খারাপ মুহূর্তে (পেজ এডিটরে বিশাল একটি পাতা খোলা, আর একটি কাজ আরেকটি পাতা আঁকছে) প্রায় ৫৫০ MB পর্যন্ত, তাই মডেলের উচিত ততটুকু খালি রাখা।
 - সার্ভারকে Stable Diffusion web UI API (/sdapi/v1/txt2img) বলতে পারতে হবে, যেমন stable-diffusion.cpp-এর সার্ভার, Forge বা AUTOMATIC1111 পারে, অথবা OpenAI Images API।
@@ -676,4 +677,6 @@
   <string name="fm.cover.last">শেষ দেখা পৃষ্ঠা</string>
   <string name="fm.cover.first">প্রথম পৃষ্ঠা</string>
   <string name="fm.template">টেমপ্লেট</string>
+  <string name="slot.loras_folder">LoRA ফোল্ডার</string>
+  <string name="slot.loras_folder.help">এই লাইনআপের LoRA ফোল্ডার খুলুন। এর প্রতিটি LoRA এই লাইনআপের তৈরি প্রতিটি ছবিতে যায়, এর ইমেজ হারনেস যেভাবে বলে।</string>
 </resources>

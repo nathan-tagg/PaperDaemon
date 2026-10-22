@@ -498,6 +498,7 @@ Các quy tắc tập lệnh phải tuân theo:
 - Chạy máy chủ ở tiền cảnh và giữ tập lệnh chạy chừng nào máy chủ còn chạy. Không dùng `start`.
 - In ra đầu ra của máy chủ.
 - PaperDaemon cũng đặt %PAPERDAEMON_ROLE% (text hoặc image), %PAPERDAEMON_LOCATION% (địa chỉ đầy đủ), %PAPERDAEMON_OTHER_LOCATION% (địa chỉ của mô hình kia), %PAPERDAEMON_LINEUP% và %PAPERDAEMON_DATA%.
+- Nạp các tệp LoRA từ thư mục PaperDaemon truyền trong %PAPERDAEMON_LORAS% (máy chủ của stable-diffusion.cpp: --lora-model-dir "%PAPERDAEMON_LORAS%"). PaperDaemon chọn tệp nào cho từng ảnh.
 - PaperDaemon chỉ dừng các chương trình do nó khởi động. Nếu các máy chủ mô hình khác có thể đang dùng bộ nhớ card đồ họa của tôi, tập lệnh nên dừng chúng trước.
 - Bản thân PaperDaemon dùng một phần bộ nhớ card đồ họa của tôi: thường dưới 150 MB, và tới khoảng 550 MB vào lúc tệ nhất (một trang rất lớn đang mở trong trình chỉnh sửa trang trong khi một tác vụ vẽ trang khác), nên mô hình cần chừa lại chừng đó.
 - Máy chủ phải dùng API của web UI Stable Diffusion (/sdapi/v1/txt2img), như máy chủ của stable-diffusion.cpp, Forge hoặc AUTOMATIC1111, hoặc API Images của OpenAI.
@@ -676,4 +677,6 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="fm.cover.last">Trang xem gần nhất</string>
   <string name="fm.cover.first">Trang đầu tiên</string>
   <string name="fm.template">Mẫu</string>
+  <string name="slot.loras_folder">Thư mục LoRA</string>
+  <string name="slot.loras_folder.help">Mở thư mục LoRA của đội hình này. Mọi LoRA trong đó được áp dụng cho mọi ảnh đội hình này tạo, theo cách harness ảnh của nó quy định.</string>
 </resources>

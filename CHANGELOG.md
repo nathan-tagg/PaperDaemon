@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.57
+
+- Every lineup has a LoRA folder of its own. The LoRA folder link under the image model's start script opens it. Every LoRA put in it goes with every picture that lineup makes, with no harness to write: the image harness says how they are applied. PaperDaemon's FLUX.2 Klein and Z-Image Turbo harnesses send them in the request, the way stable-diffusion.cpp's server takes them. Nothing is merged into the model: take a file out and the next picture is made without it.
+- The start script is told where the folder is, in %PAPERDAEMON_LORAS%. For stable-diffusion.cpp's server, load LoRAs with --lora-model-dir "%PAPERDAEMON_LORAS%". A LoRA the server does not list is left out of the picture, and the job's log names it.
+
 ## 0.1.56
 
 - False Mirror: the + menu's Quick sheets is now Quick sheet.

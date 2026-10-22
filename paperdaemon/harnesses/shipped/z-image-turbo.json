@@ -17,6 +17,10 @@
   ],
   "cfg": 1.0,
   "sampler": "euler",
+  "loras": {
+    "via": "request",
+    "strength": 1.0
+  },
   "workflows": {
     "childrensColoringBook": {
       "about": "a page of a children's coloring book",

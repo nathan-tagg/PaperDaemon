@@ -317,16 +317,39 @@ def lora_list(wanted, listed):
     return got, missing
 
 
-def _with_loras(body, wf, ad):
-    """Put the workflow's LoRAs on a server request. -> the files left out."""
-    if not wf["loras"]:
-        return []
+def lineup_loras(s=None):
+    """THE LINEUP'S OWN LoRAs (loras.py): the files in its folder, and how its image harness applies them ->
+    (its `loras` instructions or None, [files])."""
+    from . import loras as LF
+    lu = S.active(s)
+    mine = LF.files(lu["name"]) if lu else []
+    return slots.pick("image", s)[0].loras, mine
+
+
+def _with_loras(body, wf, ad, s=None):
+    """Put the workflow's LoRAs and the lineup's on a server request: the lineup's as its image harness says,
+    "request" in the request's list (stable-diffusion.cpp's server ignores tags in the prompt), "prompt" as
+    <lora:name:strength> tags. -> the files left out."""
+    how, mine = lineup_loras(s)
+    wanted = list((wf or {}).get("loras") or [])
+    missing = []
+    if mine and how is None:
+        missing += mine                                        # the harness does not say how to apply them
+    elif mine and how["via"] == "request":
+        wanted += [{"file": f, "strength": float(how.get("strength", 1.0))} for f in mine]
+    elif mine and ad.family == "sdapi":
+        body["prompt"] = (str(body.get("prompt") or "") + " " + " ".join(
+            "<lora:%s:%g>" % (os.path.splitext(f)[0], float(how.get("strength", 1.0))) for f in mine)).strip()
+    elif mine:
+        missing += mine
+    if not wanted:
+        return missing
     if ad.family != "sdapi":
-        return [str(lo.get("file")) for lo in wf["loras"]]     # only a Stable Diffusion server takes them
-    got, missing = lora_list(wf["loras"], server_loras(ad.base))
+        return missing + [str(lo.get("file")) for lo in wanted]   # only a Stable Diffusion server takes them
+    got, left = lora_list(wanted, server_loras(ad.base))
     if got:
         body["lora"] = got
-    return missing
+    return missing + left
 
 
 def generate(p, s=None):
@@ -352,12 +375,12 @@ def generate(p, s=None):
                                           seed, caps.get("shift"))
             if str(p.get("negative") or "").strip():
                 body["negative_prompt"] = p["negative"]
-            lora_missing = _with_loras(body, wf, ad)
+            lora_missing = _with_loras(body, wf, ad, s)
             raw = _sd_post(ad.base, "txt2img", body)
             scheduler = body.get("scheduler") or "default"
             loras = [x["path"] for x in body.get("lora") or []]
         else:
-            lora_missing = _with_loras({}, wf, ad)
+            lora_missing = _with_loras({}, wf, ad, s)
             raw = ad.generate(wf["prompt"], width, height, steps, cfg, sampler, caps.get("scheduler"), seed,
                               caps.get("shift"))
             scheduler, loras = "default", []
@@ -424,7 +447,7 @@ def edit(p, s=None):
         if ad.family != "sdapi":
             raise NotReady("editing a picture needs a Stable Diffusion web UI server in the image slot")
         route, body = edit_body(p, caps, src, size, wf)
-        lora_missing = _with_loras(body, wf, ad) if wf else []
+        lora_missing = _with_loras(body, wf, ad, s)
         t0 = time.time()
         raw = _sd_post(ad.base, route, body)
     name = _save(raw, body["seed"], "edit")

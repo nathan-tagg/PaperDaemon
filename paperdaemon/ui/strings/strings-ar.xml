@@ -498,6 +498,7 @@
 - أن يشغّل الخادم في المقدمة ويُبقي النص يعمل ما دام الخادم يعمل. لا تستخدم `start`.
 - أن يطبع مخرجات الخادم.
 - يضبط PaperDaemon أيضًا %PAPERDAEMON_ROLE% (text أو image) و%PAPERDAEMON_LOCATION% (العنوان الكامل) و%PAPERDAEMON_OTHER_LOCATION% (عنوان النموذج الآخر) و%PAPERDAEMON_LINEUP% و%PAPERDAEMON_DATA%.
+- حمّل ملفات LoRA من المجلد الذي يمرّره PaperDaemon في %PAPERDAEMON_LORAS% (خادم stable-diffusion.cpp: --lora-model-dir "%PAPERDAEMON_LORAS%"). يختار PaperDaemon ما تستخدمه كل صورة منها.
 - لا يوقف PaperDaemon إلا البرامج التي بدأها. إذا كانت خوادم نماذج أخرى قد تستخدم ذاكرة بطاقة الرسومات لديّ، فيجب أن يوقفها النص أولًا.
 - يستخدم PaperDaemon نفسه جزءًا من ذاكرة بطاقة الرسومات لديّ: عادةً أقل من 150 ميغابايت، وحتى نحو 550 ميغابايت في أسوأ لحظة (صفحة ضخمة مفتوحة في محرر الصفحات بينما ترسم مهمة صفحة أخرى)، لذا يجب أن يترك النموذج هذا القدر فارغًا.
 - يجب أن يدعم الخادم واجهة Stable Diffusion web UI (/sdapi/v1/txt2img)، كما يفعل خادم stable-diffusion.cpp أو Forge أو AUTOMATIC1111، أو واجهة الصور من OpenAI.
@@ -697,4 +698,6 @@
   <string name="fm.cover.last">آخر صفحة زرتها</string>
   <string name="fm.cover.first">الصفحة الأولى</string>
   <string name="fm.template">القالب</string>
+  <string name="slot.loras_folder">مجلد LoRA</string>
+  <string name="slot.loras_folder.help">افتح مجلد LoRA لهذه التشكيلة. كل LoRA فيه يُطبّق على كل صورة تصنعها هذه التشكيلة، كما يقول محوّل الصور الخاص بها.</string>
 </resources>

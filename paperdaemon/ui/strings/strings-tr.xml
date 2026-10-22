@@ -498,6 +498,7 @@ Betiğin uyması gereken kurallar:
 - Sunucuyu ön planda çalıştır ve sunucu çalıştığı sürece betiği açık tut. `start` kullanma.
 - Sunucunun çıktısını yazdır.
 - PaperDaemon ayrıca %PAPERDAEMON_ROLE% (text ya da image), %PAPERDAEMON_LOCATION% (tam adres), %PAPERDAEMON_OTHER_LOCATION% (diğer modelin adresi), %PAPERDAEMON_LINEUP% ve %PAPERDAEMON_DATA% değişkenlerini ayarlar.
+- LoRA dosyalarını PaperDaemon'un %PAPERDAEMON_LORAS% ile verdiği klasörden yükle (stable-diffusion.cpp sunucusu: --lora-model-dir "%PAPERDAEMON_LORAS%"). Her resmin hangilerini kullanacağını PaperDaemon seçer.
 - PaperDaemon yalnızca kendi başlattığı programları durdurur. Başka model sunucuları ekran kartımın belleğini kullanıyor olabilirse, betik önce onları durdurmalı.
 - PaperDaemon'un kendisi ekran kartımın belleğinin bir kısmını kullanır: genellikle 150 MB'tan az, en kötü anda ise (sayfa düzenleyicide çok büyük bir sayfa açıkken bir iş başka bir sayfa çizerken) yaklaşık 550 MB'a kadar, bu yüzden model bu kadarını boş bırakmalıdır.
 - Sunucu, stable-diffusion.cpp sunucusu, Forge ya da AUTOMATIC1111 gibi Stable Diffusion web UI API'sini (/sdapi/v1/txt2img) ya da OpenAI Images API'sini konuşmalı.
@@ -676,4 +677,6 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="fm.cover.last">Son ziyaret edilen sayfa</string>
   <string name="fm.cover.first">İlk sayfa</string>
   <string name="fm.template">Şablon</string>
+  <string name="slot.loras_folder">LoRA klasörü</string>
+  <string name="slot.loras_folder.help">Bu dizilimin LoRA klasörünü açar. İçindeki her LoRA, bu dizilimin yaptığı her resme, görüntü koşumunun dediği gibi uygulanır.</string>
 </resources>

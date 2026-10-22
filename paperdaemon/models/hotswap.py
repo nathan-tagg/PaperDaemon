@@ -211,6 +211,12 @@ _servers = {}                  # role -> Server
 _lock = threading.RLock()
 
 
+def _loras_folder(lu):
+    """The lineup's LoRA folder (loras.py), for its start scripts: PAPERDAEMON_LORAS."""
+    from paperdaemon import loras
+    return loras.folder(str(lu.get("name") or ""))
+
+
 def environment(role, s=None, lineup=None):
     """The variables a start script is given (the contract in paperdaemon/scripts.py)."""
     s = s or S.load()
@@ -228,7 +234,8 @@ def environment(role, s=None, lineup=None):
     env = dict(os.environ)
     env.update(PAPERDAEMON_ROLE=role, PAPERDAEMON_LOCATION=loc, PAPERDAEMON_HOST=host, PAPERDAEMON_PORT=port,
                PAPERDAEMON_OTHER_LOCATION=str(lu[other].get("location") or "").strip(),
-               PAPERDAEMON_LINEUP=str(lu.get("name") or ""), PAPERDAEMON_DATA=paths.data_dir())
+               PAPERDAEMON_LINEUP=str(lu.get("name") or ""), PAPERDAEMON_DATA=paths.data_dir(),
+               PAPERDAEMON_LORAS=_loras_folder(lu))
     return env
 
 

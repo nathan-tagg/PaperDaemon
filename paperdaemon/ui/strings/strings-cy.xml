@@ -498,6 +498,7 @@ Rheolau y mae'n rhaid i'r sgript eu dilyn:
 - Rhedeg y gweinydd yn y blaendir a chadw'r sgript i redeg cyhyd ag y mae'r gweinydd yn rhedeg. Peidio â defnyddio `start`.
 - Argraffu allbwn y gweinydd.
 - Mae PaperDaemon hefyd yn gosod %PAPERDAEMON_ROLE% (text neu image), %PAPERDAEMON_LOCATION% (y cyfeiriad llawn), %PAPERDAEMON_OTHER_LOCATION% (cyfeiriad y model arall), %PAPERDAEMON_LINEUP% a %PAPERDAEMON_DATA%.
+- Llwytho ffeiliau LoRA o'r ffolder mae PaperDaemon yn ei roi yn %PAPERDAEMON_LORAS% (gweinydd stable-diffusion.cpp: --lora-model-dir "%PAPERDAEMON_LORAS%"). PaperDaemon sy'n dewis pa rai mae pob llun yn eu defnyddio.
 - Dim ond rhaglenni a gychwynnodd y mae PaperDaemon yn eu stopio. Os gallai gweinyddion model eraill fod yn defnyddio cof fy ngherdyn graffeg, dylai'r sgript eu stopio yn gyntaf.
 - Mae PaperDaemon ei hun yn defnyddio rhywfaint o gof fy ngherdyn graffeg: fel arfer llai na 150 MB, a hyd at tua 550 MB ar yr eiliad waethaf (tudalen enfawr ar agor yn ei olygydd tudalennau tra bo tasg yn tynnu un arall), felly dylai'r model adael cymaint â hynny'n rhydd.
 - Rhaid i'r gweinydd siarad API Stable Diffusion web UI (/sdapi/v1/txt2img), fel y mae gweinydd stable-diffusion.cpp, Forge neu AUTOMATIC1111 yn ei wneud, neu API Images OpenAI.
@@ -676,4 +677,6 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="fm.cover.last">Y dudalen olaf a welwyd</string>
   <string name="fm.cover.first">Y dudalen gyntaf</string>
   <string name="fm.template">Templed</string>
+  <string name="slot.loras_folder">Ffolder LoRA</string>
+  <string name="slot.loras_folder.help">Agor ffolder LoRA y llinell hon. Mae pob LoRA ynddo'n mynd gyda phob llun mae'r llinell hon yn ei wneud, fel mae ei harnais delwedd yn dweud.</string>
 </resources>

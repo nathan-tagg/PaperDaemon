@@ -127,10 +127,11 @@ class TextHarness(Harness, TextProtocols):
 class ImageHarness(Harness):
     kind = "image"
     CAPABILITIES = ("steps", "steps_range", "cfg", "sampler", "scheduler", "shift", "size")
-    FIELDS = CAPABILITIES + ("workflows", "abilities")
+    FIELDS = CAPABILITIES + ("workflows", "abilities", "loras")
     size_multiple = 16                  # width and height are rounded to this
     workflows = {}
     abilities = ()
+    loras = None                        # how the lineup's LoRA folder is applied (loras.py); None: it is not
 
     @classmethod
     def workflow(cls, name):
