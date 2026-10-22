@@ -514,7 +514,6 @@ textarea.field { height: auto; padding: 8px 10px; }
 .job-bar.busy i { animation: job-busy 1.4s ease-in-out infinite; }
 @keyframes job-busy { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
 dialog.viewer > .job-bar { height: 4px; }
-@media (prefers-reduced-motion: reduce) { .job-bar.busy i { animation: none; } }
 /* the start script help: a wider sheet that scrolls, and the note shown where the pointer is */
 dialog.sheet.wide { width: min(720px, calc(100vw / var(--pd-zoom, 1) - 48px)); }
 .script-help-body { max-height: calc(60vh / var(--pd-zoom, 1)); overflow-y: auto; padding-inline-end: var(--s3); line-height: 1.5; }
@@ -604,6 +603,11 @@ html, .viewer-page, .script-help-body, .terminal, textarea, .chapter-list { scro
   .bulb.draw svg path + path, .warn svg > * + * { animation-delay: 0.55s !important; }
   .warn.flash { animation: warn-flash 1.2s ease-in-out 2 !important; }
   #st-lang-label { transition: opacity 0.35s ease !important; }
+  /* WORK UNDER WAY moves whatever the setting: a still bar or a still spinner says nothing is happening (Windows'
+     "Show animations" off stopped a job's bar, and it looked stuck) */
+  .job-bar.busy i { animation: job-busy 1.4s ease-in-out infinite !important; }
+  .job-bar i { transition: width 0.4s ease-out !important; }
+  .mk.spin, .viewer-page.img-wait::after { animation: mk-spin 0.8s linear infinite !important; }
 }
 /* the False Mirror's imports: how they go, and files held over the screen */
 .import-msg { margin: var(--s2) 0 0; min-height: 0; }

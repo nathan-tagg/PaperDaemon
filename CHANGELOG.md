@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.62
+
+- A job's working bar and the window's spinners move even with Windows' "Show animations" off. The window took that setting as "reduce motion" and stopped them, so the bar looked stuck.
+- A page is never queued twice when the daemon hands it over after a job that did not finish.
+
 ## 0.1.61
 
 - Page editor: the eraser's circle stays under the pointer when the view scrolls (the wheel, or typing that takes the view down). It used to run away from it.

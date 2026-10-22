@@ -598,6 +598,13 @@ def hand_over(job):
     key = job.get("bkey", job["key"])
     if set(keys) & queued_keys():
         return False                      # already waiting; do not duplicate it
+    # A RECORD IS THIS JOB'S OR NONE: a "checked" left by a job that never finished (the daemon stopped) would make this
+    # one look recorded the moment it was handed over, and the page was queued a second time
+    with rm_scan.locked():
+        led = rm_scan.load()
+        stale = [k for k in keys if (led["entries"].get(k) or {}).pop("checked", None) is not None]
+        if stale:
+            rm_scan.save(led)
     os.makedirs(QUEUE, exist_ok=True)
     stamp = "%d-%s" % (int(time.time() * 1000), key[:8])
     body = {"keys": keys, "where": where(job)}
