@@ -181,7 +181,7 @@ def test_a_picture_after_a_short_reply_goes_right_below_it():
         H._drain_host_steps()
     finally:
         H._run_images = real
-    assert seen["box"]["y0"] < planned["y0"] and seen["box"]["y0"] <= 690 + PL.GAP + 1
+    assert seen["box"]["y0"] <= planned["y0"] and seen["box"]["y0"] <= 690 + PL.GAP + 1
     # a traced picture's points are numpy's: what the model is told about its box must still be JSON
     import json
     import numpy as np

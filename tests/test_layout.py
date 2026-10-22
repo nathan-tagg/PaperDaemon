@@ -50,3 +50,17 @@ def test_a_full_coloring_page_alone_takes_the_whole_screen():
                      {"id": "t", "kind": "text", "size": "small", "near": "stack"}], first_free_y=300, safe=safe,
                     screen=screen)
     assert both["c"]["y0"] >= 300 and both["t"]["y0"] > both["c"]["y1"]
+
+
+def test_a_picture_is_the_pages_width_under_the_words_and_never_shrinks():
+    """A stacked picture has its own size, not a share of the room left: the safe area's width (half when small), as
+    tall as its square source, centered, below the reply's words, the page extending below it when it must."""
+    from paperdaemon.pipeline.host import layout as PL
+    for free in (300, 1500):
+        b = PL.solve([{"id": "pic", "kind": "image", "size": "medium"},
+                      {"id": "reply", "kind": "text", "size": "medium"}], first_free_y=free)
+        pic, reply = b["pic"], b["reply"]
+        assert (pic["x0"], pic["x1"], pic["w"], pic["h"]) == (-800.0, 800.0, 1600.0, 1600.0)
+        assert pic["y0"] >= reply["y1"] + PL.GAP
+    small = PL.solve([{"id": "pic", "kind": "image", "size": "small"}], first_free_y=300)["pic"]
+    assert (small["w"], small["h"], small["cx"]) == (800.0, 800.0, 0.0)

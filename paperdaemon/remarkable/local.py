@@ -547,6 +547,19 @@ def _rows(points, arrays):
     return fastrm.points_of(rows) if arrays else rows
 
 
+def _moved(points, dx, dy):
+    """A stroke's points (rows, or a fastrm.POINT array) moved by (dx, dy): a copy, the page's own left alone."""
+    if not dx and not dy:
+        return points
+    import numpy as np
+    if isinstance(points, np.ndarray):
+        out = points.copy()
+        out["x"] += dx
+        out["y"] += dy
+        return out
+    return [[r[0] + dx, r[1] + dy] + list(r[2:]) for r in points]
+
+
 def page_version(doc, page_no):
     """A short stamp of the page as its files are now (the page's .rm, and the notebook's .content, which holds its
     template): the same stamp, the same page. The editor asks with it, and a page that has not changed is not read."""
@@ -596,14 +609,20 @@ def scene_of(doc, page_no, arrays=False):
             tree = SceneTree()
             ss.build_tree(tree, blocks)
 
+    # WHERE THE TABLET DRAWS EACH GROUP: one anchored to the typed text moves with it (render._anchor_offsets, as the
+    # renderer places it). Read at their stored coordinates, a drawing anchored below the text sat at the top left,
+    # over the text -- and a save from the editor wrote it there.
+    offs = R._anchor_offsets(doc, page_no, blocks)
+
     def lines_in(group, out):
+        dx, dy = offs.get(group.node_id, (0.0, 0.0))
         for item in group.children.values():
             if isinstance(item, si.Line):
                 out.append({"pen": item.tool.name if hasattr(item.tool, "name") else str(item.tool),
                             "penCode": int(item.tool), "color": int(item.color),
                             "colorRgba": list(item.color_rgba) if getattr(item, "color_rgba", None) else None,
                             "thicknessScale": float(item.thickness_scale),
-                            "points": _rows(item.points, arrays)})
+                            "points": _moved(_rows(item.points, arrays), dx, dy)})
             elif isinstance(item, si.Group):
                 lines_in(item, out)
         return out
@@ -612,7 +631,8 @@ def scene_of(doc, page_no, arrays=False):
     for g in tree.root.children.values():
         if isinstance(g, si.Group):
             if parts:
-                lines = [dict(ln, points=_rows(ln["points"], arrays)) for ln in parts[1].get(g.node_id, [])]
+                dx, dy = offs.get(g.node_id, (0.0, 0.0))
+                lines = [dict(ln, points=_moved(_rows(ln["points"], arrays), dx, dy)) for ln in parts[1].get(g.node_id, [])]
             else:
                 lines = lines_in(g, [])
             # THE DAEMON'S LAYER (his author id on its node): shown, and marked, so the editor leaves it to him

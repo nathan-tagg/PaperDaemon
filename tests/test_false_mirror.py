@@ -410,6 +410,28 @@ def test_what_a_job_writes_is_remembered_as_its_own():
     assert got == {"error": None, "owners": ["mine"]}
 
 
+def test_the_editor_draws_a_group_where_the_tablet_does():
+    """A group anchored to the typed text is drawn moved by its anchor, in the editor as in the renderer (both forms of
+    the scene). Read at its stored coordinates it sat at the top left, over the text."""
+    got = _run("""
+        import json
+        from paperdaemon.remarkable import local
+        from paperdaemon.pipeline.page import render as R
+        a = local.new_notebook("A")
+        sc = local.scene_of(a, 1)
+        sc["layers"][0]["lines"].append({"pen": "FINELINER_2", "penCode": 17, "color": 0, "thicknessScale": 1.0,
+                                         "points": [[0, 100, 0, 0, 16, 190], [60, 150, 0, 0, 16, 190]]})
+        local.write_scene(a, 1, sc)
+        R._anchor_offsets = lambda doc, page, blocks: {b.group.node_id: (210.0, 900.0) for b in blocks
+                                                       if type(b).__name__ == "TreeNodeBlock" and b.group.label is not None
+                                                       and b.group.label.value == "Layer 1"}
+        rows = local.scene_of(a, 1)["layers"][0]["lines"][0]["points"]
+        arr = local.scene_of(a, 1, arrays=True)["layers"][0]["lines"][0]["points"]
+        print(json.dumps({"rows": [rows[0][:2], rows[1][:2]], "arr": [float(arr["x"][0]), float(arr["y"][0])]}))
+    """)
+    assert got == {"rows": [[210.0, 1000.0], [270.0, 1050.0]], "arr": [210.0, 1000.0]}
+
+
 def test_a_page_unchanged_is_not_read_again():
     # the editor asks with the version it has: the same page answers 304 and is not read; a write gives the new one
     got = _run("""

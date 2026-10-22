@@ -37,9 +37,22 @@ ANCHORED = {"small": 1.0, "medium": 1.8, "large": 2.8, "full": 4.0}
 MIN_H = {"text": 90.0, "drawing": 240.0, "chart": 320.0, "image": 240.0, "calendar": 1500.0,
          "coloring": 1400.0}
 # Width as a multiple of height, for things that are not text. Text always takes the full width.
-ASPECT = {"drawing": 1.0, "chart": 1.45, "image": 1.2, "calendar": 1450.0 / 1960.0,
+ASPECT = {"drawing": 1.0, "chart": 1.45, "image": 1.0, "calendar": 1450.0 / 1960.0,
           "coloring": (SAFE[2] - SAFE[0]) / (SAFE[3] - SAFE[1])}   # the safe area's own shape
 GAP = 40.0                     # breathing room between two placed things
+# A PICTURE STACKED ON THE PAGE HAS ITS OWN SIZE, not a share of the room left: the safe area's full width (half of it
+# when the plan asks for it "small"), as tall as its source's shape (ASPECT["image"]: a square source), centered,
+# below the reply's words. It is never shrunk to fit the page's height: the page extends below.
+IMAGE_SMALL = 0.5
+
+
+def _own_height(p, band_w):
+    """A stacked place's own height when it has one (a picture alone in its row), else None."""
+    if p["kind"] != "image" or p["near"] != "stack":
+        return None
+    w = band_w * (IMAGE_SMALL if p["size"] == "small" else 1.0)
+    return w / ASPECT["image"]
+
 INSET = 30.0                   # a corner place stays this far off the safe edge
 # LETTERING LIVES IN THE TYPED COLUMN. The app's text block is 1152 wide, centered (pos_x -576); a reply
 # written to the safe area's full width would sit out of line with the user's own typed lines. So a text place
@@ -334,6 +347,8 @@ def solve(places, first_free_y=None, safe=SAFE, arrow_tip=None, marks=None, obst
         out[p["id"]] = b
 
     if stacked:
+        # THE WORDS ABOVE THE PICTURE: a stacked picture goes after the places that are not pictures
+        stacked.sort(key=lambda q: 1 if _own_height(q, band_w) is not None else 0)
         # ROWS: a "left" place and the "right" place that follows it share a row; everything else
         # is a row of its own. A row's appetite is its largest member's.
         rows, i = [], 0
@@ -349,14 +364,15 @@ def solve(places, first_free_y=None, safe=SAFE, arrow_tip=None, marks=None, obst
             else:
                 rows.append([p])
                 i += 1
-        need = sum(max(MIN_H[p["kind"]] for p in row) for row in rows) + GAP * (len(rows) - 1)
+        own = lambda row: _own_height(row[0], band_w) if len(row) == 1 else None
+        need = sum(own(row) or max(MIN_H[p["kind"]] for p in row) for row in rows) + GAP * (len(rows) - 1)
         # THE PAGE EXTENDS BELOW. A reMarkable page scrolls, and extending it is preferred to refusing or
         # adding a page: the places get their minimum heights, stacked from the first free line down.
         if need > band_h:
             bottom = top + need
             band_h = need
         slack = band_h - need
-        total_w = sum(max(SIZES[p["size"]] for p in row) for row in rows)
+        total_w = sum(max(SIZES[p["size"]] for p in row) for row in rows if own(row) is None) or 1.0
         y = top
         half = (band_w - GAP) / 2.0
         # STACKED ROWS GO AROUND THE ANCHORED BOXES, not through them: an anchored box is an obstacle to the
@@ -364,7 +380,7 @@ def solve(places, first_free_y=None, safe=SAFE, arrow_tip=None, marks=None, obst
         # follow.
         fixed = list(boxes) + [_dict_box(f) for f in (fixed or [])]
         for row in rows:
-            h = max(MIN_H[p["kind"]] for p in row) + slack * (max(SIZES[p["size"]] for p in row) / total_w)
+            h = own(row) or (max(MIN_H[p["kind"]] for p in row) + slack * (max(SIZES[p["size"]] for p in row) / total_w))
             for _ in range(8):
                 hit = [b for b in fixed if b["y0"] < y + h and b["y1"] > y]
                 if not hit:
@@ -372,8 +388,10 @@ def solve(places, first_free_y=None, safe=SAFE, arrow_tip=None, marks=None, obst
                 y = max(b["y1"] for b in hit) + GAP
             if y + h > bottom:
                 # pushed down past a fixed box: shrink into what is left if the row still gets its
-                # minimum, and otherwise the page extends below (it scrolls), as it does for the stack
-                h = max(bottom - y, max(MIN_H[p["kind"]] for p in row))
+                # minimum, and otherwise the page extends below (it scrolls), as it does for the stack; a picture
+                # keeps its own size
+                if own(row) is None:
+                    h = max(bottom - y, max(MIN_H[p["kind"]] for p in row))
                 bottom = max(bottom, y + h)
             if len(row) == 1:
                 p = row[0]

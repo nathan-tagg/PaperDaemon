@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.68
+
+- The page editor and the Mirror draw a drawing where the tablet does. A group of strokes anchored to the typed text (below it, or at a paragraph) was drawn at its stored coordinates, top left and over the text, and the grid's pictures and covers with it; a save from the editor wrote it there.
+- A picture has one size: the page's full width (half when the plan asks for it small), as tall as its picture, centered, under the reply's words. It used to be a share of whatever room was left, so the same request gave a big picture on an empty page and a small one lower down. It is never shrunk to fit; the page extends below.
+
 ## 0.1.67
 
 - What a job writes is remembered as its own again. Since 0.1.15 the host recorded its ink only when a job ran onto a new page, so the next job read everything it had written before as yours: its own answers as requests, and a picture's thousands of strokes as your handwriting.
