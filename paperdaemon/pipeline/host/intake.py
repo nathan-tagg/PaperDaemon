@@ -45,7 +45,7 @@ def t_page_info():
     except Exception as ex:
         return {"error": "could not read the page: %s: %s. Do NOT treat this "
                          "as an empty page." % (type(ex).__name__, str(ex)[:80])}
-    bottom = None
+    bottom, typed_last = None, False
     for line in strokes:
         for p in getattr(line, "points", ()):
             if bottom is None or p.y > bottom:
@@ -57,6 +57,7 @@ def t_page_info():
         tb = TY.text_bottom(doc, page, skip=JOB.hide_typed)
         if tb and (bottom is None or tb > bottom):
             bottom = tb
+            typed_last = True
     except Exception as ex:
         # never report a page as empty because the typed text could not be measured: a reply would land on
         # the user's words
@@ -71,14 +72,17 @@ def t_page_info():
     for pic in H._pictures(doc, page):
         pb = pic["box"][3]
         if bottom is None or pb > bottom:
-            bottom = pb
+            bottom, typed_last = pb, False
+    # THE ROOM ABOVE A REPLY: under typed text, the typed text's own space between paragraphs (25), so a reply reads
+    # as the next paragraph; under ink or a picture, a little more (40). It was 80 under anything: too cautious.
+    gap = 25 if typed_last else 40
     kind, src, idx = R.source_page(doc, page)
     return {"page": page, "existing_strokes": len(strokes),
             **({"typed_text_warning": typed_err} if typed_err else {}),
             "lowest_content_y": round(bottom) if bottom else None,
             # an empty page is free from the safe area's top, which follows the page's margins
-            "first_free_y": round(bottom + 80) if bottom else int(H._safe()[1]),
-            "room_left": (bottom is None or bottom + 80 < H._safe()[3] - 40),
+            "first_free_y": round(bottom + gap) if bottom else int(H._safe()[1]),
+            "room_left": (bottom is None or bottom + gap < H._safe()[3] - 40),
             "safe_area": {"x_min": H._safe()[0], "x_max": H._safe()[2],
                           "y_min": H._safe()[1], "y_max": H._safe()[3]},
             # Named places, stated rather than left for the model to infer: the middle of the page is not

@@ -131,7 +131,7 @@ def _letter(d, words, x, y, size):
         T.text(d, w, wx, y, size=size, width=BOLD_W if b else 13, slant=ITALIC if i else 0.0)
 
 
-def t_write_line(text, y=None, size=38, align="left", place=None):
+def t_write_line(text, y=None, size=30, align="left", place=None):
     text, words = H._md_words(str(text))
     box = None
     if place is None and y is None:
@@ -184,13 +184,15 @@ def t_write_line(text, y=None, size=38, align="left", place=None):
     return dict({"ok": True, "placed_x": round(x), "baseline_y": round(float(y))}, **H._did())
 
 
-def t_write_paragraph(lines, start_y=None, size=32, place=None):
+# THE REPLY'S SIZE IS THE TYPED TEXT'S: lettering at 26 stands as tall as the typed body text, and its lines, 1.7 sizes
+# apart, run at the typed lines' own pitch (45), so the user's lines and the reply's read as one column
+def t_write_paragraph(lines, start_y=None, size=26, place=None):
     """Several lines of lettering, placed by the host.
 
     A LINE THAT IS TOO LONG IS WRAPPED, NOT REFUSED. Refusing sent the model round again to
     re-split its own prose -- a turn spent on typesetting, which is the host's job -- and when
     the text then did not fit the box vertically it was refused again. So: wrap every line to the
-    box, and if the block is still too tall step the size down (32 -> 28 -> 24) before saying no.
+    box, and if the block is still too tall step the size down (26 -> 22) before saying no.
     Only a single word wider than the column is genuinely unwritable.
     """
     if isinstance(lines, str):
@@ -235,7 +237,7 @@ def t_write_paragraph(lines, start_y=None, size=32, place=None):
         return out, None
 
     chosen, why, rest = None, None, []
-    for sz in sorted({int(size), 28}, reverse=True):
+    for sz in sorted({int(size), 22}, reverse=True):
         if sz > int(size):
             continue
         wrapped, why = fit(sz)

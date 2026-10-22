@@ -14,6 +14,7 @@ import logging
 import os
 from paperdaemon import paths
 import sys
+import threading
 import time
 
 # rmscene logs "Some data has not been read. The data may have been written
@@ -413,26 +414,48 @@ def _letter(lines, frame, box=False, latest=False):
 # WHAT HE HAS PUT ON EACH PAGE, and his next id there (notes._write's state), in a file only the daemon writes: the
 # host saves the ledger as it works, and a count lost there would let a note reuse ids the tablet already has.
 INK = os.path.join(_STATE, "daemon-ink.json")
+# ONE WRITER AT A TIME, AND A READ THAT FAILED IS NOT AN EMPTY FILE: the notes are written from more than one thread
+# (the progress note runs beside the job), and on Windows a read while the file is being replaced fails. Taken for
+# empty, the next write kept only its own page and every other page's record was lost -- and a page without its record
+# made a second layer of his. Reads are retried; a file that still cannot be read is not written over.
+_INK_LOCK = threading.Lock()
+
+
+class _InkUnread(Exception):
+    pass
 
 
 def _ink_all():
-    try:
-        with open(INK, encoding="utf-8") as f:
-            d = json.load(f)
-        return d if isinstance(d, dict) else {}
-    except (OSError, ValueError):
+    if not os.path.exists(INK):
         return {}
+    for k in range(8):
+        try:
+            with open(INK, encoding="utf-8") as f:
+                d = json.load(f)
+            return d if isinstance(d, dict) else {}
+        except (OSError, ValueError):
+            time.sleep(0.05 * (k + 1))
+    raise _InkUnread("daemon-ink.json could not be read")
 
 
 def _ink(doc, pid):
-    st = _ink_all().get("%s/%s" % (doc, pid))
+    with _INK_LOCK:
+        try:
+            st = _ink_all().get("%s/%s" % (doc, pid))
+        except _InkUnread:
+            st = None
     return st if isinstance(st, dict) else {}
 
 
 def _ink_keep(doc, pid, state):
-    d = _ink_all()
-    d["%s/%s" % (doc, pid)] = state
-    paths.write_atomic(INK, json.dumps(d))
+    with _INK_LOCK:
+        try:
+            d = _ink_all()
+        except _InkUnread as ex:
+            log("  %s: this page's record is not kept (the page's own layer is found again next time)" % ex)
+            return
+        d["%s/%s" % (doc, pid)] = state
+        paths.write_atomic(INK, json.dumps(d))
 
 
 def _note_copy(doc, pid, base, lines, what):

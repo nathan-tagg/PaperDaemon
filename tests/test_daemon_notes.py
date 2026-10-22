@@ -146,6 +146,39 @@ def test_a_layer_the_user_deleted_is_made_anew():
     assert state["layer"][0] != first and _counts(again) == (len(strokes), 1, 1)
 
 
+def test_a_record_lost_never_makes_a_second_layer_and_two_become_one():
+    """The page says which layer is his: a record (daemon-ink.json) lost takes up the layer the page already shows; a
+    page that already has two of his (from before) keeps the first and takes the empty other out of the list."""
+    strokes, _ = N.letter(["On it."], FRAME)
+    page = N.with_note(_page([(0.0, 900.0)]), strokes, {})
+    again = N.with_note(page, strokes, {})                      # its record gone
+    assert _counts(again) == (len(strokes), 1, 1)
+    frames, kinds = [], []
+    from rmscene.tagged_block_common import HEADER_V6
+    data, rows, _b = N._parts(page)
+    for r in rows:
+        frames.append(data[r[1] - 8:r[2]]); kinds.append(r[0])
+    first = next(b.item.value for b in _blocks(page) if isinstance(b, ss.SceneGroupItemBlock) and b.item.item_id.part1 == N.AUTHOR)
+    frames, kinds = N._put(frames, kinds, N._layer_blocks(900, "Daemon", (first.part1, first.part2)))
+    two = data[:len(HEADER_V6)] + b"".join(frames)
+    assert _counts(two)[2] == 2
+    one = N.with_note(two, strokes, {})
+    assert _counts(one) == (len(strokes), 1, 1)
+
+
+def test_a_record_file_that_cannot_be_read_is_not_written_over(tmp_path, monkeypatch):
+    from paperdaemon.pipeline import daemon as D
+    ink = tmp_path / "daemon-ink.json"
+    ink.write_text('{"x/1": {"next": 5}, "x/2": {"next": 9}}', encoding="utf-8")
+    monkeypatch.setattr(D, "INK", str(ink))
+    monkeypatch.setattr(D.time, "sleep", lambda s: None)
+    real = open
+    monkeypatch.setattr("builtins.open", lambda f, *a, **k: (_ for _ in ()).throw(PermissionError("busy")) if str(f) == str(ink) else real(f, *a, **k))
+    D._ink_keep("x", "3", {"next": 1})
+    monkeypatch.setattr("builtins.open", real)
+    assert set(__import__("json").loads(ink.read_text(encoding="utf-8"))) == {"x/1", "x/2"}
+
+
 def test_the_users_writing_on_his_layer_is_theirs_and_stays(tmp_path, monkeypatch):
     """The tablet writes on whatever layer is current: the user's strokes that land on his layer are read, kept, and
     change the page's fingerprint."""

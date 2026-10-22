@@ -192,11 +192,16 @@ def _write(data, state, strokes=None, also=()):
     seen, dead, trees, nodes, places = set(), set(), set(), set(), {}
     top, erased, changed, table = 0, 0, False, False
     root_items = []
+    # HIS LAYERS AS THE PAGE HAS THEM: each live place of his in the root's list -> (its layer, where the place frame
+    # is, its item); and whose strokes (live, not his) lie on which layer
+    his_places, users_on = {}, set()
     for r, b in zip(rows, blocks):
         raw = data[r[1] - 8:r[2]]
         if r[0] == LINE:
             k = (r[7], r[8])
             seen.add(k)
+            if r[14] and not _mine(r, old):
+                users_on.add((r[5], r[6]))
             if r[14] and (_mine(r, old) or k in also):
                 raw, erased, changed = _tomb(r), erased + 1, True
             elif not r[14]:
@@ -212,6 +217,8 @@ def _write(data, state, strokes=None, also=()):
                 places[k] = it.value is not None and it.deleted_length == 0
             if _key(b.parent_id) == ROOT:
                 root_items.append(it)
+                if it.value is not None and it.deleted_length == 0 and getattr(it.value, "part1", None) == AUTHOR:
+                    his_places[_key(it.value)] = (len(frames), it)
         elif isinstance(b, ss.SceneTreeBlock):
             trees.add(_key(b.tree_id))
             if b.tree_id.part1 == AUTHOR:
@@ -248,10 +255,24 @@ def _write(data, state, strokes=None, also=()):
         if not table:
             raise RuntimeError("the page has no author table for the daemon's note")
         # HIS LAYER: one per page, made once and sent whole with every note (the same blocks, the same ids, so copies
-        # merge into one layer); a new one only when the user deleted it on the tablet
+        # merge into one layer); a new one only when the user deleted it on the tablet. THE PAGE SAYS WHICH: the
+        # record kept (state) is used while the page still has that layer; else the layer of his the page already
+        # shows is taken up again -- a record lost must never make a second one. More than one of his on the page
+        # (from before): the first is his, and each other one that holds nothing of the user's is taken out of the
+        # list of layers (its place erased, as the tablet deletes a layer).
         lay = state.get("layer")
-        if lay and places.get((AUTHOR, int(lay[0]) + 3)) is False:
+        if lay and (places.get((AUTHOR, int(lay[0]) + 3)) is False or
+                    (his_places and (AUTHOR, int(lay[0])) not in his_places)):
             lay = None
+        if not lay and his_places:
+            ln0 = min(his_places)
+            it0 = his_places[ln0][1]
+            lay = [ln0[1], it0.right_id.part1, it0.right_id.part2, layer_name()]
+        for lk, (at, it) in sorted(his_places.items()):
+            if lay and lk == (AUTHOR, int(lay[0])) or lk in users_on:
+                continue
+            frames[at] = _frame(ss.SceneGroupItemBlock(parent_id=CrdtId(*ROOT), item=CrdtSequenceItem(
+                item_id=it.item_id, left_id=it.left_id, right_id=it.right_id, deleted_length=1, value=None)))
         if not lay:
             first = _first_layer(root_items)
             lay = [n, first[0], first[1], layer_name()]
