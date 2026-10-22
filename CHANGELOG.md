@@ -3,6 +3,7 @@
 ## 0.1.61
 
 - Page editor: the eraser's circle stays under the pointer when the view scrolls (the wheel, or typing that takes the view down). It used to run away from it.
+- The daemon no longer stops working when a page changes while a job works on it. The host recorded the job and the page was opened again for the change before the daemon looked, and the daemon then waited for good: no job ran, and no working bar showed.
 
 ## 0.1.60
 

@@ -50,6 +50,7 @@ WIRING = {
 
 # Developer switches: for measuring and debugging; nothing a user sets.
 DEVELOPER = {
+    "PAPERDAEMON_CPU_RENDER": "every page drawn on the processor, the graphics card never asked (Settings has the user's switch)",
     "RM_DRY_RUN": "the daemon queues nothing",
     "RM_HOST_DRY_DOCS": "the host stages documents and never publishes them (the benchmark)",
     "RM_HOST_DRAW_LOOKS": "look-and-fix rounds for drawings",

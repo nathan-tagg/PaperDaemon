@@ -849,7 +849,11 @@ def main():
                 log("  could not note the host's progress: %s" % str(ex)[:120])
             ents = rm_scan.load()["entries"]
             sts = [ents.get(k, {}).get("status") for k in INFLIGHT["keys"]]
-            if all(x in ("done", "skipped") for x in sts):
+            # RECORDED BY THE HOST: done or skipped -- or already reopened by a scan (the page changed while the job
+            # worked: the host recorded it, flagged "checked", and the scan made it pending again before this look).
+            # Waiting for done or skipped alone, the daemon then waited for good, and no job ran again.
+            if all(x in ("done", "skipped") or ents.get(k, {}).get("checked")
+                   for k, x in zip(INFLIGHT["keys"], sts)):
                 finish_job(attempts)
                 last_fp = None
             elif host_started_at() > INFLIGHT["since"] and not (set(INFLIGHT["keys"]) & queued_keys()):
