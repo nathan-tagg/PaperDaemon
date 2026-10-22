@@ -698,6 +698,7 @@ def finish_job(attempts):
                 requeue.discard(r["key"])      # the host compared exactly; the timing guess stands down
                 touched = True
             fresh = rm_scan.page_state(r["doc_id"], r.get("page_id"))
+            rm_scan.hold(r["doc_id"], r.get("page_id"), fresh)     # the false mirror: the job's writing is synced
             if ent.get("handled_sha") != fresh["sha"]:
                 ent["handled_sha"] = fresh["sha"]
                 touched = True
@@ -734,6 +735,17 @@ def finish_job(attempts):
 def main():
     reset_log(LOGFILE)
     log("daemon start  interval=%ds dry=%s" % (INTERVAL, DRY))
+    # NO RECORD IS HALF TAKEN AT START: a host's "checked" is cleared as the daemon wraps its job up, and the scan treats
+    # a page carrying it as the job left it -- one left by a daemon that stopped in between would hide the user's later
+    # changes to that page for good. The host starts afresh with the daemon, so none of them is pending now.
+    if not DRY:
+        try:
+            with rm_scan.locked():
+                led = rm_scan.load()
+                if sum(1 for e in led["entries"].values() if e.pop("checked", None) is not None):
+                    rm_scan.save(led)
+        except Exception as ex:
+            log("  could not clear the host's old record flags: %s" % str(ex)[:120])
     # The daemon never talks to a model: it queues jobs and the host chooses the model it runs
     log("watching for %s; jobs go to rm-queue/ for the host; log %s"
         % (", ".join(repr(t) for t in rm_scan.TRIGGERS) or "no tags yet", LOGFILE))

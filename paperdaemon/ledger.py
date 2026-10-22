@@ -637,6 +637,15 @@ def sync_request_path():
     return os.path.join(paths.false_mirror_state_dir(), "sync-request")
 
 
+def hold(doc, pid, state=None):
+    """THE JOB'S OWN WRITING IS SYNCED: in the false mirror the daemon sees a page as at the last sync (_held_state),
+    and a page a job has just answered is held as the job left it -- held as before, its answer looked like a change
+    the user made, and the page went back to the host, which answered its own answer, over and over. What the user
+    changes after it still waits for their sync."""
+    if paths.local_only():
+        _HELD[(doc, pid)] = state if state is not None else page_state(doc, pid)
+
+
 def _held_state(doc, pid):
     if not paths.local_only():
         return page_state(doc, pid)
@@ -791,6 +800,11 @@ def classify(found, led):
                             and f["tag_ts"] != e["handled_tag_ts"])
                 unchanged = (e.get("handled_sha") in (st.get("sha"), st.get("raw"))
                              or e.get("handled_raw") == st.get("raw"))
+                # JUST RECORDED, NOT YET TAKEN IN: the host flags "checked" with its record and the daemon clears it as
+                # it wraps the job up (and, in the false mirror, holds the page as the job left it). Until then the
+                # page is as the job left it, whatever an older view of it says.
+                if e.get("checked"):
+                    unchanged = True
                 if unchanged and not retagged:
                     status = "DONE" if e["status"] == "done" else "SKIPPED"
                 elif st.get("empty"):

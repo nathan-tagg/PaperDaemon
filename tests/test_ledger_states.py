@@ -248,3 +248,30 @@ def test_reverting_puts_back_only_what_was_written_since_the_job_began(tmp_path,
     assert (tmp_path / "d0c.content").read_bytes() == b"cloud content"
     assert not (tmp_path / "d0c" / "new-page.rm").exists()
     assert (tmp_path / "d0c" / "p2.rm").read_bytes() == b"an earlier job's unpushed write"     # older: left alone
+
+
+def test_a_page_just_answered_is_not_handed_back_by_an_older_view_of_it():
+    """The host records its job ("checked" with it) before the daemon takes it in. Meanwhile a view of the page from
+    before the answer (the false mirror's last sync) must not reopen it: the page answered itself over and over."""
+    led = {"entries": {}, "watching_since": 0}
+    status(found(sha="s1"), led)
+    e = led["entries"]["aaaaaaaa/bbbbbbbb"]
+    e.update(status="done", handled_sha="s2", handled_tag_ts="100", checked=True)   # s2: the page with the answer
+    assert status(found(sha="s1"), led) == "DONE"                                   # s1: the view before it
+    e.pop("checked")
+    assert status(found(sha="s3"), led) == "REOPENED"                               # a real change still reopens
+
+
+def test_the_false_mirror_holds_a_page_as_the_job_left_it(monkeypatch):
+    from paperdaemon import paths
+    monkeypatch.setattr(paths, "local_only", lambda: True)
+    states = {"now": {"sha": "before"}}
+    monkeypatch.setattr(ledger, "page_state", lambda doc, pid: dict(states["now"]))
+    monkeypatch.setattr(ledger, "sync_request_path", lambda: "no-such-file")
+    ledger._HELD.clear()
+    assert ledger._held_state("d", "p")["sha"] == "before"
+    states["now"] = {"sha": "answered"}                         # the job wrote its answer
+    assert ledger._held_state("d", "p")["sha"] == "before"      # held as at the last sync
+    ledger.hold("d", "p", {"sha": "answered"})                  # the daemon takes the job in
+    assert ledger._held_state("d", "p")["sha"] == "answered"
+    ledger._HELD.clear()

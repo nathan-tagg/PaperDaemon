@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.64
+
+- False Mirror: a page no longer goes back to the host after every answer. The daemon there sees a page as at your last sync (closing it, or Ctrl+S), and a page it had just answered still looked, in that older view, like it had changed since the answer. So the host answered again, its own answer this time, over and over. A job's own writing now counts as synced; what you change after it still waits for your sync.
+
 ## 0.1.63
 
 - A page no longer answers itself over and over. Since 0.1.61 the daemon took the host's note that it had checked the page for its record, and wrapped the job up a moment before the host wrote it: the host's own answer was then seen as a change, and the page went back to the host again and again.
