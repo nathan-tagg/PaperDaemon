@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.72
+
+- The page editor's right-click menu is the only one: the window's own menu (Back, Refresh, Inspect) no longer opens over it.
+
 ## 0.1.71
 
 The page editor's mouse and keys, reworked:

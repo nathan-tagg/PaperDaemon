@@ -2333,7 +2333,9 @@ span.lname { cursor: default; }
     }
     if (erasing) { if (gone) eraseSoon(); else paint(); }    // the layer made again and drawn, once a frame at most
   });
-  vp.addEventListener("contextmenu", e => e.preventDefault());
+  // the window's own menu never opens over the page: our menu opens on the press, under the pointer, so the let-go that
+  // asks for the window's menu lands on ours, outside the viewport
+  document.addEventListener("contextmenu", e => { if (!(e.target.closest && e.target.closest("input, textarea"))) e.preventDefault(); });
   vp.addEventListener("mousedown", e => { if (e.button === 1) e.preventDefault(); });   // no autoscroll on the page
   vp.addEventListener("pointerleave", () => { eraserAt = null; paint(); });
   function finish(e) {
