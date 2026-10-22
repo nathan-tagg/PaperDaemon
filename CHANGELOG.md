@@ -2,8 +2,8 @@
 
 ## 0.1.65
 
-- False Mirror: select several notebooks and folders at once. A long press or a right-click selects, and while anything is selected a click adds an item or takes it away (Esc, or a click on nothing, lets them all go). The menu acts on all of them: Export, Duplicate, Move, Tags, Delete.
-- False Mirror: pages in the grid are selected the same way, and a strip at the top of the grid acts on them: Select all, Duplicate (each copy right after its page), Move (before or after a page of this notebook or another, or to its end), Tags, and Delete (for good, after you confirm, as on the tablet).
+- False Mirror: select several notebooks and folders at once. A long press or a right-click selects, and while anything is selected a click adds an item or takes it away (Esc, or a click on nothing, lets them all go). Their actions take the place of the library's title bar, as the tablet's action bar does, so nothing is covered and nothing moves: Export, Duplicate, Move, Tags, Delete, Done.
+- False Mirror: pages in the grid are selected the same way, and their actions take the place of the viewer's bar the same way: Select all, Duplicate (each copy right after its page), Move (before or after a page of this notebook or another, or to its end), Tags, and Delete (for good, after you confirm, as on the tablet).
 - False Mirror: New notebook takes tags.
 - False Mirror: its notebooks get Daemon notes too, on the Daemon layer, where the page editor shows them. The host still never sees them.
 - The setting is called "Daemon notes" again.

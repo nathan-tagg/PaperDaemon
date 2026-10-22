@@ -138,8 +138,7 @@
       body.scrollTop = 0;
       if (S.view === "pages") {
         body.className = "viewer-page grid";
-        body.innerHTML = (fm ? '<div class="page-pick" role="toolbar" hidden></div>' : "") +
-          Array.from({ length: n }, (_, i) => '<button type="button" class="thumb' + (i + 1 === S.page ? " here" : "") + '" data-go="' + (i + 1) + '">' +
+        body.innerHTML = Array.from({ length: n }, (_, i) => '<button type="button" class="thumb' + (i + 1 === S.page ? " here" : "") + '" data-go="' + (i + 1) + '">' +
           '<span class="cover"><img alt="" data-thumb="' + (i + 1) + '"></span><span class="meta">' + (i + 1) + "</span></button>").join("");
         paintPagePick();
         const d = S.doc.id, io = new IntersectionObserver(es => es.forEach(x => {
@@ -376,7 +375,8 @@
         dlg.id = VIEWER; dlg.className = "viewer";
         dlg.innerHTML = '<div class="viewer-head"><span class="viewer-name"><span class="viewer-title"></span><button type="button" class="keys-q" data-v="keys" title="' +
           esc(PD.t("keys.open")) + '" aria-label="' + esc(PD.t("keys.open")) + '">?</button></span><button type="button" class="link-btn" data-v="close">' + esc(PD.t("common.close")) + "</button></div>" +
-          '<div class="viewer-bar"><span class="viewer-tools"></span><span class="viewer-tags"></span><span class="viewer-nav"></span></div>' +
+          '<div class="viewer-bar"><span class="viewer-tools"></span><span class="viewer-tags"></span><span class="viewer-nav"></span>' +
+          '<div class="select-bar page-pick" role="toolbar" hidden></div></div>' +
           '<div class="viewer-page" tabindex="-1" autofocus></div>';
         dlg.addEventListener("click", async e => {
           const et = e.target.closest(".ed-tools [data-tool]");
@@ -408,7 +408,7 @@
             const [got] = await PD.safe(api("POST", "/library/" + S.doc.id + "/pages", { after: S.page }));
             if (got) { S.doc.pages = (S.doc.pages || 1) + 1; go(got.page); }
           }
-          else if (v === "pages" || v === "chapters") { S.view = S.view === v ? "page" : v; S.pp = []; paintBar(); paintBody(); }
+          else if (v === "pages" || v === "chapters") { S.view = S.view === v ? "page" : v; S.pp = []; paintPagePick(); paintBar(); paintBody(); }
         });
         // A LONG PRESS OR A RIGHT-CLICK ON A PAGE IN THE GRID selects it (the False Mirror's own notebooks)
         let ppTimer = 0;
@@ -493,15 +493,16 @@
       const dlg = $("#" + VIEWER); if (!dlg) return;
       dlg.querySelectorAll(".thumb[data-go]").forEach(t => t.classList.toggle("picked", S.pp.includes(Number(t.dataset.go))));
       const strip = dlg.querySelector(".page-pick"); if (!strip) return;
-      strip.hidden = !S.pp.length;
-      if (!S.pp.length) { strip.innerHTML = ""; return; }
+      const on = S.pp.length > 0 && gridHere();
+      strip.hidden = !on;
+      strip.parentElement.classList.toggle("choosing", on);
+      if (!on) { strip.innerHTML = ""; return; }
       const nb = S.doc.kind === "notebook";
       const btn = (act, l, cls) => '<button type="button" class="btn' + (cls ? " " + cls : "") + '" data-pp="' + act + '">' + esc(l) + "</button>";
-      strip.innerHTML = '<span class="pick-name">' + esc(PD.t("fm.selected_n", { n: S.pp.length })) + '</span><span class="pick-acts">' +
+      strip.innerHTML = '<span class="pick-name" role="status">' + esc(PD.t("fm.selected_n", { n: S.pp.length })) + '</span><span class="pick-acts">' +
         (S.pp.length < pageCount() ? btn("all", PD.t("fm.select_all")) : "") +
         (nb ? btn("duplicate", PD.t("fm.duplicate")) + btn("move", PD.t("fm.move")) : "") + btn("tags", PD.t("fm.tags")) +
-        btn("delete", PD.t("common.delete"), "danger") + btn("done", PD.t("fm.done")) + "</span>" +
-        '<p class="hint pick-msg" role="status"></p>';
+        btn("delete", PD.t("common.delete"), "danger") + btn("done", PD.t("fm.done")) + "</span>";
     }
     // after a change: the notebook as it is now, the grid drawn anew, nothing chosen
     async function pagesChanged() {
@@ -517,8 +518,8 @@
     async function pagePickAct(act) {
       if (!S.pp.length) return;
       const doc = S.doc.id, pages = S.pp.slice();
-      const strip = $("#" + VIEWER + " .page-pick"), msg = strip && strip.querySelector(".pick-msg");
-      const fail = e => { if (msg) { msg.textContent = PD.errText(e); msg.className = "hint pick-msg attn"; } };
+      const strip = $("#" + VIEWER + " .page-pick"), msg = strip && strip.querySelector(".pick-name");
+      const fail = e => { if (msg) { msg.textContent = PD.errText(e); msg.classList.add("attn"); } };
       const run = async (what, body) => {
         const [, e] = await PD.safe(api("POST", "/library/" + doc + "/pages/" + what, Object.assign({ pages }, body || {})));
         if (e) { fail(e); return; }
@@ -708,23 +709,17 @@
       const m = $("#" + id + "-menu", R);
       const docs = its.every(it => it.type === "document");
       const btn = (act, l, cls) => '<button type="button" class="btn' + (cls ? " " + cls : "") + '" data-pick-act="' + act + '">' + esc(l) + "</button>";
-      m.innerHTML = '<span class="pick-name">' + esc(its.length === 1 ? its[0].name : PD.t("fm.selected_n", { n: its.length })) + '</span><span class="pick-acts">' +
+      m.innerHTML = '<span class="pick-name" role="status">' + esc(its.length === 1 ? its[0].name : PD.t("fm.selected_n", { n: its.length })) + '</span><span class="pick-acts">' +
         (docs ? btn("export", PD.t("fm.export")) + btn("duplicate", PD.t("fm.duplicate")) : "") + btn("move", PD.t("fm.move")) + btn("tags", PD.t("fm.tags")) +
-        btn("delete", PD.t("common.delete"), "danger") + "</span>" +
-        '<p class="hint pick-msg" role="status"></p>';
-      // as tall as the rail's foot beside it (the version), from the same rule down, and as wide as the page
-      const rail = document.querySelector(".rail"), foot = rail && rail.querySelector(".rail-foot");
-      if (rail && foot && foot.offsetParent) {
-        m.style.height = (rail.offsetHeight - foot.offsetTop) + "px";
-        m.style.insetInlineStart = rail.offsetWidth + "px";
-      } else { m.style.height = ""; m.style.insetInlineStart = "0px"; }
-      m.classList.add("open");
+        btn("delete", PD.t("common.delete"), "danger") + btn("close", PD.t("fm.done")) + "</span>";
+      m.hidden = false;
+      m.parentElement.classList.add("choosing");
     }
 
     function unpick() {
       S.picked = [];
       const m = R && $("#" + id + "-menu", R);
-      if (m) m.classList.remove("open");
+      if (m) { m.hidden = true; m.parentElement.classList.remove("choosing"); }
       paint();
     }
 
@@ -762,8 +757,9 @@
 
     async function pickAct(act) {
       const its = picked(); if (!its.length) return;
-      const msg = $("#" + id + "-menu .pick-msg", R);
-      const say = (text, bad) => { msg.textContent = text; msg.className = "hint pick-msg" + (bad ? " attn" : ""); };
+      // what happened is said where the bar names the selection: nothing appears under it, nothing moves
+      const msg = $("#" + id + "-menu .pick-name", R);
+      const say = (text, bad) => { msg.textContent = text; msg.classList.toggle("attn", !!bad); };
       const one = its.length === 1 ? its[0] : null;
       if (act === "close") { unpick(); return; }
       if (act === "export") {
@@ -838,8 +834,9 @@
           '<button type="button" role="menuitem" data-act="quick-sheets">' + esc(PD.t("fm.quick_sheets")) + "</button>" +
           '<button type="button" role="menuitem" data-act="new-notebook">' + esc(PD.t("fm.new_notebook")) + "</button>" +
           '<button type="button" role="menuitem" data-act="new-folder">' + esc(PD.t("fm.new_folder")) + "</button>" +
-          '<button type="button" role="menuitem" data-act="import">' + esc(PD.t("fm.import")) + "</button></span></span>" : "") + "</div>" +
-          (fm ? '<p class="hint import-msg" id="' + id + '-import" role="status"></p><div class="pick-menu" id="' + id + '-menu" role="toolbar"></div>' +
+          '<button type="button" role="menuitem" data-act="import">' + esc(PD.t("fm.import")) + "</button></span></span>" +
+          '<div class="select-bar" id="' + id + '-menu" role="toolbar" hidden></div>' : "") + "</div>" +
+          (fm ? '<p class="hint import-msg" id="' + id + '-import" role="status"></p>' +
                 '<div class="drop-here" id="' + id + '-drop" hidden>' + esc(PD.t("fm.drop")) + "</div>" : "") +
           '<div class="lib-box" id="' + id + '-files"></div>';
         // WHILE ANYTHING IS SELECTED a click on a notebook or folder adds it or takes it away; a crumb still goes there
@@ -852,7 +849,7 @@
         });
         PD.on(root, "click", "[data-open]", (e, el) => { if (S.held) { S.held = false; return; } if (choosing()) { pick(el.dataset.item); return; } openDoc(el.dataset.open); });
         root.addEventListener("click", e => {
-          if (choosing() && !e.target.closest("[data-item], .pick-menu, .head-acts, button, a, input")) unpick();
+          if (choosing() && !e.target.closest("[data-item], .select-bar, .head-acts, button, a, input")) unpick();
         });
         if (!fm) return;
         const menu = $(".head-menu", root), menuBtn = $("[data-act=fm-menu]", root);

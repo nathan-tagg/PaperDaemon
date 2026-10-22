@@ -176,16 +176,19 @@ pre.snippet.pad-text { white-space: pre-wrap; padding: var(--s3) var(--s4); font
 .page-head .head-acts { display: flex; gap: var(--s2); margin-inline-start: auto; }
 .page-head:has(.head-acts) { display: flex; align-items: center; gap: var(--s4); }
 .folder.picked, .doc-card.picked .cover { outline: 2px solid var(--mark); outline-offset: 2px; }
-/* THE MENU OF WHAT IS SELECTED rises at the bottom of the window beside the rail, as tall as the rail's foot beside it
-   and under the same rule (tablet.js sizes it): fixed, so nothing on the screen moves for it; Esc puts it away */
-.pick-menu { position: fixed; bottom: 0; inset-inline-end: 0; z-index: 30; display: flex; flex-wrap: wrap; align-items: center; align-content: center;
-  gap: var(--s3); padding: 0 var(--s5); box-sizing: border-box; background: var(--paper-sunk); border-top: 1px solid var(--rule);
-  transform: translateY(110%); transition: transform 0.22s ease-out; visibility: hidden; }
-.pick-menu.open { transform: none; visibility: visible; }
-.pick-menu .pick-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40%; }
-.pick-menu .pick-acts { display: flex; gap: var(--s2); align-items: center; margin-inline-start: auto; }
-.pick-menu .pick-msg { flex-basis: 100%; margin: 0; }
-.pick-menu .pick-msg:empty { display: none; }
+/* WHAT IS SELECTED, AS THE TABLET'S ACTION BAR: its actions take the place of the top bar they belong to -- the
+   library's head (its title and +), the viewer's bar for pages in the grid. The bar's own content hides under it and
+   keeps its room, so nothing is covered and nothing moves; Done or Esc gives the bar back (tablet.js). */
+.page-head:has(.select-bar) { position: relative; }
+.choosing > :not(.select-bar) { visibility: hidden; }
+.select-bar { position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; gap: var(--s3); min-width: 0;
+  background: var(--paper); animation: select-in 0.16s ease-out; }
+.viewer-bar > .select-bar { padding: 0 var(--s5); background: inherit; }
+.select-bar[hidden] { display: none; }
+.select-bar .pick-name { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.select-bar .pick-name.attn { color: var(--mark); font-weight: 400; }
+.select-bar .pick-acts { display: flex; gap: var(--s2); align-items: center; margin-inline-start: auto; flex: none; }
+@keyframes select-in { from { opacity: 0; } to { opacity: 1; } }
 .chip-x { margin-inline-start: 4px; padding: 0 2px; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
 .chip-x:hover { color: var(--ink); }
 .tag-add { width: 9em; height: 22px; padding: 0 6px; font-size: 12.5px; }
@@ -221,7 +224,7 @@ dialog.sheet fieldset.field-row legend { padding: 0; margin-bottom: var(--s1); }
 /* WITH REDUCED MOTION (Windows' "Animation effects" off) it still comes up slowly: a fade is not motion, so only the
    blur and the letters' drift are left out (the page's every other animation stays off) */
 @keyframes haunt-still { 0% { opacity: 0; } 60% { opacity: 0.55; } 100% { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .fm-section.haunt { animation: haunt-still 6s ease-out both !important; } .pick-menu { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .fm-section.haunt { animation: haunt-still 6s ease-out both !important; } .select-bar { animation: none; } }
 #ov-terms .term-about { margin: var(--s3) 0; }
 .fpanel { padding: var(--s5); border: 1px solid var(--edge); border-top: 0; }
 .script-box { display: grid; gap: var(--s1); margin-top: var(--s4); color: var(--ink-2); }
@@ -472,15 +475,8 @@ textarea.field { height: auto; padding: 8px 10px; }
 .thumb .cover { display: block; aspect-ratio: 3 / 4; background: #F4F4EC; border: 1px solid var(--edge); overflow: hidden; }
 .thumb .cover img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
 .thumb.here .cover, .thumb:hover .cover { border-color: var(--mark); }
-/* PAGES CHOSEN in the False Mirror's grid, and the strip across its top that acts on them (tablet.js) */
+/* PAGES CHOSEN in the False Mirror's grid (their actions: the select bar, in the viewer's bar) */
 .thumb.picked .cover { outline: 2px solid var(--mark); outline-offset: 2px; }
-.page-pick { grid-column: 1 / -1; position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3);
-  padding: var(--s2) var(--s3); background: var(--paper-sunk); border-bottom: 1px solid var(--rule); }
-.page-pick[hidden] { display: none; }
-.page-pick .pick-name { font-weight: 600; }
-.page-pick .pick-acts { display: flex; flex-wrap: wrap; gap: var(--s2); margin-inline-start: auto; }
-.page-pick .pick-msg { flex-basis: 100%; margin: 0; }
-.page-pick .pick-msg:empty { display: none; }
 .viewer-page.chapters { display: block; }
 .chapter-list { list-style: none; margin: 0 auto; padding: 0; max-width: 720px; }
 .chapter { display: flex; justify-content: space-between; gap: var(--s4); width: 100%; padding: var(--s2) var(--s3); border: 0; border-bottom: 1px solid var(--rule);
