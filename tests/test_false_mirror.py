@@ -301,6 +301,52 @@ def test_a_new_notebook_takes_the_tablets_options():
     assert got == [[-1, "Blank"], [0, "P Grid medium"]]
 
 
+def test_pages_chosen_are_deleted_duplicated_moved_and_tagged_as_the_tablet_does():
+    got = _run("""
+        import json, os
+        from paperdaemon.remarkable import local
+        a = local.new_notebook("A", tags=["Joi"])
+        for _ in range(4):
+            local.new_page(a)
+        b = local.new_notebook("B")
+        ids = lambda d: [p["id"] for p in local._live(local._content(d))]
+        p = ids(a)
+        out = {"tags": [t["name"] for t in local._content(a).get("tags") or []]}
+        local.duplicate_pages(a, [2])
+        now = ids(a)
+        out["dup"] = [len(now), now[:2] == p[:2], now[2] not in p, now[3:] == p[2:]]
+        local.move_pages(a, [1, 2], at=5, where="after")            # page 5 of six: the old fourth
+        out["moved"] = ids(a)[:4] == [now[2], p[2], p[3], p[0]] and ids(a)[4] == p[1]
+        local.move_pages(a, [6], at=1, where="before")
+        out["first"] = ids(a)[0] == p[4]
+        local.tag_pages(a, [1, 2], add=["Notes"])
+        local.tag_pages(a, [1], remove=["notes"])
+        pt = local._content(a).get("pageTags") or []
+        out["ptags"] = sorted((ids(a).index(t["pageId"]) + 1, t["name"]) for t in pt)
+        gone = ids(a)[1]
+        local.move_pages(a, [2], to=b)
+        out["across"] = [len(ids(a)), ids(b)[-1] == gone, gone not in ids(a), local._content(b)["pageCount"],
+                         [t["name"] for t in local._content(b).get("pageTags") or []]]
+        local.delete_pages(a, [1, 2])
+        out["deleted"] = [len(ids(a)), local._content(a)["pageCount"]]
+        try:
+            local.delete_pages(a, list(range(1, len(ids(a)) + 1))); out["all"] = "deleted"
+        except ValueError:
+            out["all"] = "refused"
+        c = local.duplicate(a)
+        out["copy"] = [local._read(os.path.join(local.M, c + ".metadata"))["visibleName"], ids(c) == ids(a)]
+        print(json.dumps(out))
+    """)
+    assert got["tags"] == ["Joi"]
+    assert got["dup"] == [6, True, True, True]
+    assert got["moved"] and got["first"]
+    assert got["ptags"] == [[2, "Notes"]]
+    assert got["across"] == [5, True, True, 2, ["Notes"]]
+    assert got["deleted"] == [3, 3]
+    assert got["all"] == "refused"
+    assert got["copy"] == ["A copy", True]
+
+
 def test_a_page_unchanged_is_not_read_again():
     # the editor asks with the version it has: the same page answers 304 and is not read; a write gives the new one
     got = _run("""

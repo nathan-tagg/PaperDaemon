@@ -41,3 +41,10 @@ The host appends a line to `run/progress.json` (`events`) for what it read, for 
 step as it ends. The daemon checks the file each second while a job runs. When it holds new lines, a copy
 goes up with "On it" and the latest lines that fit the band (four rows). Lines that arrive together go up
 as one note.
+
+## D6. In the False Mirror
+
+The False Mirror has no tablet to send a copy to, so its notes go into the page file itself, where its page editor
+shows them; the host and the fingerprint never see them, as anywhere. "On it" is written before the host gets the
+page and the last note after it is done. A note while the job runs is written only if the page is still as the daemon
+read it: a page the host wrote in between keeps what it wrote, and that note is skipped.

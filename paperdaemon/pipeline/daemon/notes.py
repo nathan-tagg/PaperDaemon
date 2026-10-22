@@ -1,4 +1,4 @@
-r"""The daemon's notes on a page (Settings: "Notes on the page"): that he is on it, what the host makes of the page and
+r"""The daemon's notes on a page (Settings: "Daemon notes"): that he is on it, what the host makes of the page and
 does with it, step by step, and how it ended, lettered small in the band across the top of the page, under the
 tablet's toolbar, and signed.
 

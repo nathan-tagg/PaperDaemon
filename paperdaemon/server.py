@@ -1511,8 +1511,9 @@ def post_library_notebook(body: dict = Body(default={})):
     from .remarkable import local
     template = str(body.get("template") or "Blank") if _signed_in() else "Blank"
     cover = "first" if body.get("cover") == "first" else "last"
+    tags = [str(t) for t in body.get("tags") or [] if str(t).strip()][:20]
     return _local(lambda: {"id": local.new_notebook(str(body.get("name") or ""), str(body.get("parent") or ""),
-                                                    template, cover)})
+                                                    template, cover, tags)})
 
 
 @app.post(API + "/library/quick-sheets")
@@ -1534,6 +1535,37 @@ async def post_library_import(request: Request, name: str = "", parent: str = ""
     from .remarkable import local
     data = await request.body()
     return await run_in_threadpool(_local, lambda: {"id": local.import_file(name, data, parent)})
+
+
+@app.post(API + "/library/{doc}/pages/{act}")
+def post_library_pages_act(doc: str, act: str, body: dict = Body(default={})):
+    """Several pages of a notebook at once, as the tablet's page overview does them: delete, duplicate, move ({to, at,
+    where: before | after}) or tags ({add, remove}). {pages: [page numbers]} -> {pages: how many}."""
+    from .remarkable import local
+    if not _doc_ok(doc) or (body.get("to") and not _doc_ok(str(body.get("to")))):
+        return _bad("not a document id")
+    nos = [int(n) for n in body.get("pages") or [] if str(n).isdigit()]
+    if act == "delete":
+        return _local(lambda: {"pages": local.delete_pages(doc, nos)})
+    if act == "duplicate":
+        return _local(lambda: {"pages": local.duplicate_pages(doc, nos)})
+    if act == "move":
+        at = body.get("at")
+        return _local(lambda: {"pages": local.move_pages(doc, nos, str(body.get("to") or "") or None,
+                                                          int(at) if at not in (None, "") else None,
+                                                          str(body.get("where") or "after"))})
+    if act == "tags":
+        return _local(lambda: {"pages": local.tag_pages(doc, nos, [str(t) for t in body.get("add") or []],
+                                                         [str(t) for t in body.get("remove") or []])})
+    return _bad("no such page action", 404)
+
+
+@app.post(API + "/library/{u}/duplicate")
+def post_library_duplicate(u: str):
+    from .remarkable import local
+    if not _doc_ok(u):
+        return _bad("not a document id")
+    return _local(lambda: {"id": local.duplicate(u)})
 
 
 @app.post(API + "/library/{doc}/pages")

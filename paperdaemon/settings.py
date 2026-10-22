@@ -115,7 +115,7 @@ SCHEMA = [
      "message": "daemon.retries must be a number from 0 to 5",
      "help": "How many more times a job that failed is tried, on its own, before it is left. A page with nothing to do "
              "is not a failure, and is never tried again."},
-    {"path": "daemon.page_notes", "type": "bool", "default": False, "label": "Notes on the page",
+    {"path": "daemon.page_notes", "type": "bool", "default": False, "label": "Daemon notes",
      "help": "The daemon writes on the page as he works: that he got the job, the work at hand, and how it ended, with "
              "a box to tick to try it again. Small, across the very top, under the tablet's toolbar, on a layer of his "
              "own that nothing else reads."},

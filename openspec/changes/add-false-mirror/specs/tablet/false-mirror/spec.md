@@ -40,9 +40,12 @@ The False Mirror tab SHALL offer New notebook, New page, Import and, for noteboo
 the screen's own controls are. Import SHALL take PDFs and EPUBs, several at a time, from the file chooser it
 opens at once or from files dropped on the screen, each named by its file and landing in the folder open in the false
 mirror; an EPUB SHALL be filed as the desktop app files a book, without a PDF, and read by PaperDaemon (add-epub-reading).
-A long press on a notebook SHALL select it, and a menu with Export,
-Move and Delete SHALL slide down from the top of the screen over the content, moving nothing on the
-screen. Export SHALL write the notebook as a PDF. Tags on folders, notebooks and pages SHALL be set and
+A long press or a right-click on a notebook or folder SHALL select it, and while anything is selected a click
+SHALL add an item to the selection or take it away; a menu with Export and Duplicate (notebooks only), Move, Tags and
+Delete SHALL act on all of them, moving nothing on the screen. The page grid SHALL select pages the same way, with a
+strip that acts on all of them: Select all, Duplicate (each copy right after its page), Move (before or after a page of
+this notebook or another, or to its end), Tags and Delete (for good, after a confirm; a notebook keeps one page).
+New notebook SHALL take tags. Export SHALL write the notebook as a PDF. Tags on folders, notebooks and pages SHALL be set and
 removed there, written as the tablet writes them. None of these controls SHALL appear in the tablet's
 mirror, which SHALL keep showing tags as it does today (the folder's tag mark, the path's pills, the
 covers' and the page's tags) without changing them.
@@ -56,6 +59,10 @@ covers' and the page's tags) without changing them.
 - **WHEN** the user presses and holds a notebook
 - **THEN** the notebook shows as selected and a menu with Export, Move and Delete slides down over the
   top of the screen, and no notebook, folder or control on the screen moves
+
+#### Scenario: Deleting two pages
+- **WHEN** the user right-clicks page 2 in the grid, clicks page 4, and chooses Delete and confirms
+- **THEN** pages 2 and 4 are gone, and the pages after them move up
 
 #### Scenario: The tablet's mirror
 - **WHEN** the user presses and holds a notebook in the Mirror tab

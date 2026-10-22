@@ -472,6 +472,15 @@ textarea.field { height: auto; padding: 8px 10px; }
 .thumb .cover { display: block; aspect-ratio: 3 / 4; background: #F4F4EC; border: 1px solid var(--edge); overflow: hidden; }
 .thumb .cover img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
 .thumb.here .cover, .thumb:hover .cover { border-color: var(--mark); }
+/* PAGES CHOSEN in the False Mirror's grid, and the strip across its top that acts on them (tablet.js) */
+.thumb.picked .cover { outline: 2px solid var(--mark); outline-offset: 2px; }
+.page-pick { grid-column: 1 / -1; position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3);
+  padding: var(--s2) var(--s3); background: var(--paper-sunk); border-bottom: 1px solid var(--rule); }
+.page-pick[hidden] { display: none; }
+.page-pick .pick-name { font-weight: 600; }
+.page-pick .pick-acts { display: flex; flex-wrap: wrap; gap: var(--s2); margin-inline-start: auto; }
+.page-pick .pick-msg { flex-basis: 100%; margin: 0; }
+.page-pick .pick-msg:empty { display: none; }
 .viewer-page.chapters { display: block; }
 .chapter-list { list-style: none; margin: 0 auto; padding: 0; max-width: 720px; }
 .chapter { display: flex; justify-content: space-between; gap: var(--s4); width: 100%; padding: var(--s2) var(--s3); border: 0; border-bottom: 1px solid var(--rule);

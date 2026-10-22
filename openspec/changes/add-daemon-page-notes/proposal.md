@@ -13,7 +13,7 @@ top of each other. Their strokes were then read as the user's handwriting.
 
 ## What Changes
 
-- New capability `jobs/page-notes`: the daemon's notes on the page (Settings: Notes on the page) and his
+- New capability `jobs/page-notes`: the daemon's notes on the page (Settings: Daemon notes) and his
   retries (Settings: Retries). What the notes say and when, where they go, the layer they are on and its
   name (Settings: Daemon layer), the daemon's own author id, erasing before every write, the retry box, and
   how the renderer and the fingerprint leave the notes out.

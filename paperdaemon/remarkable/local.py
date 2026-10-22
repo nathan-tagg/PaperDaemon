@@ -100,7 +100,7 @@ def page_id(doc, page_no):
 
 # ---------------------------------------------------------------- notebooks, folders, pages
 
-def new_notebook(name, parent="", template="Blank", cover="last"):
+def new_notebook(name, parent="", template="Blank", cover="last", tags=()):
     """A notebook with one page, in the Paper Pro's frame, as the tablet makes one: its cover the page last visited
     (`cover` "last") or its first page ("first"), its page's `template` (the tablet's file name, "P Grid medium";
     "Blank" for none). -> its id."""
@@ -120,6 +120,8 @@ def new_notebook(name, parent="", template="Blank", cover="last"):
     c.update(pageCount=1, sizeInBytes=str(len(blank)), coverPageNumber=0 if cover == "first" else -1)
     _save_content(doc, c)
     paths.write_atomic(os.path.join(M, doc + ".pagedata"), template + "\n")
+    if tags:
+        set_tags(doc, tags)                          # the notebook's own tags, as New notebook was given them
     return doc
 
 
@@ -254,6 +256,200 @@ def export_pdf(doc):
     buf = io.BytesIO()
     pics[0].save(buf, format="PDF", save_all=True, append_images=pics[1:], resolution=229.0)
     return buf.getvalue()
+
+
+def duplicate(u):
+    """A copy of a document beside it, as the tablet duplicates one: every file of it, under a new id, its name with
+    " copy" after it. -> the copy's id."""
+    _guard()
+    import shutil
+    md = _read(os.path.join(M, u + ".metadata"))
+    if md.get("type") != "DocumentType":
+        raise ValueError("only a document is duplicated")
+    new = str(uuid.uuid4())
+    for f in os.listdir(M):
+        if f.startswith(u + ".") and not f.endswith(".metadata"):
+            shutil.copyfile(os.path.join(M, f), os.path.join(M, new + f[len(u):]))
+    if os.path.isdir(os.path.join(M, u)):
+        shutil.copytree(os.path.join(M, u), os.path.join(M, new))
+    now = str(_now())
+    md.update(visibleName=(md.get("visibleName") or "Notebook") + " copy", createdTime=now, lastModified=now,
+              lastOpened="", lastOpenedPage=0)
+    paths.write_json_atomic(os.path.join(M, new + ".metadata"), md)
+    return new
+
+
+# ---------------------------------------------------------------- several pages at once (the page grid's selection)
+# AS THE TABLET'S PAGE OVERVIEW DOES: the pages chosen are deleted (for good: a page skips the trash), duplicated
+# (each copy right after its page), moved (before or after a page of this notebook or another, or to the end) or
+# tagged. A notebook keeps at least one page. Pages are ordered by their keys alone (library.key_between): no other
+# page's key, id or file changes.
+
+def _chosen(doc, page_nos):
+    c = _content(doc)
+    live = _live(c)
+    nos = sorted(set(int(n) for n in page_nos or []))
+    if not nos or nos[0] < 1 or nos[-1] > len(live):
+        raise ValueError("choose pages of the notebook")
+    return c, live, [live[n - 1] for n in nos]
+
+
+def _notebook(doc):
+    if _content(doc).get("fileType", "notebook") != "notebook":
+        raise ValueError("pages are moved and copied between notebooks only")
+
+
+def _page_files(doc, pid):
+    """A page's files: its ink, and the folder its pictures are kept in."""
+    return os.path.join(M, doc, pid + ".rm"), os.path.join(M, doc, pid)
+
+
+def _copy_page(src_doc, src_pid, dst_doc, dst_pid):
+    import shutil
+    rm, pics = _page_files(src_doc, src_pid)
+    rm2, pics2 = _page_files(dst_doc, dst_pid)
+    os.makedirs(os.path.dirname(rm2), exist_ok=True)
+    if os.path.exists(rm):
+        shutil.copyfile(rm, rm2)
+    if os.path.isdir(pics):
+        shutil.copytree(pics, pics2, dirs_exist_ok=True)
+
+
+def _drop_page_files(doc, pid):
+    import shutil
+    rm, pics = _page_files(doc, pid)
+    try:
+        os.remove(rm)
+    except OSError:
+        pass
+    shutil.rmtree(pics, ignore_errors=True)
+
+
+def _pages_done(doc, c):
+    """The notebook's page count and its older list of templates brought up to date, saved, and touched."""
+    live = _live(c)
+    c["pageCount"] = len(live)
+    _save_content(doc, c)
+    pd = os.path.join(M, doc + ".pagedata")
+    if os.path.exists(pd):
+        paths.write_atomic(pd, "".join(((p.get("template") or {}).get("value") or "Blank") + "\n" for p in live))
+    _touch(doc)
+
+
+def _keys_at(live, moving, at, where, n):
+    """`n` keys for pages put before or after page `at` (1-based in `live`; None: after the last), the
+    pages being moved left out of the reckoning."""
+    rest = [p for p in live if p["id"] not in moving]
+    if at is None:
+        lo, hi = (rest[-1]["idx"]["value"] if rest else ""), None
+    else:
+        anchor = live[int(at) - 1]
+        if anchor["id"] in moving:
+            raise ValueError("choose a page that is not one of those being moved")
+        i = next(k for k, p in enumerate(rest) if p["id"] == anchor["id"])
+        if where == "before":
+            lo, hi = (rest[i - 1]["idx"]["value"] if i else ""), anchor["idx"]["value"]
+        else:
+            lo, hi = anchor["idx"]["value"], (rest[i + 1]["idx"]["value"] if i + 1 < len(rest) else None)
+    return F.keys_between(lo, hi, n)
+
+
+def delete_pages(doc, page_nos):
+    """-> how many went."""
+    _guard()
+    c, live, chosen = _chosen(doc, page_nos)
+    if len(chosen) >= len(live):
+        raise ValueError("a notebook keeps at least one page")
+    ids = {p["id"] for p in chosen}
+    for p in c["cPages"]["pages"]:
+        if p["id"] in ids:
+            p["deleted"] = {"timestamp": "1:2", "value": 0}
+    c["pageTags"] = [t for t in c.get("pageTags") or [] if t.get("pageId") not in ids]
+    _pages_done(doc, c)
+    for pid in ids:
+        _drop_page_files(doc, pid)
+    return len(ids)
+
+
+def duplicate_pages(doc, page_nos):
+    """Each page chosen copied right after itself, its ink, pictures, template and tags with it. -> how many."""
+    _guard()
+    _notebook(doc)
+    c, _live0, chosen = _chosen(doc, page_nos)
+    now = str(_now())
+    for p in chosen:
+        live = _live(c)
+        i = next(k for k, q in enumerate(live) if q["id"] == p["id"])
+        key = F.key_between(p["idx"]["value"], live[i + 1]["idx"]["value"] if i + 1 < len(live) else None)
+        new = str(uuid.uuid4())
+        _copy_page(doc, p["id"], doc, new)
+        entry = {"id": new, "idx": {"timestamp": p["idx"]["timestamp"], "value": key}, "modifed": now}
+        if p.get("template"):
+            entry["template"] = dict(p["template"])
+        c["cPages"]["pages"].append(entry)
+        c["pageTags"] = (c.get("pageTags") or []) + [dict(t, pageId=new) for t in c.get("pageTags") or []
+                                                      if t.get("pageId") == p["id"]]
+    _pages_done(doc, c)
+    return len(chosen)
+
+
+def move_pages(doc, page_nos, to=None, at=None, where="after"):
+    """The pages chosen, in their order, put before or after page `at` of notebook `to` (this one when None; `at`
+    None: at its end). -> how many."""
+    _guard()
+    where = "before" if where == "before" else "after"
+    to = to or doc
+    c, live, chosen = _chosen(doc, page_nos)
+    ids = [p["id"] for p in chosen]
+    if to == doc:
+        for p, key in zip(chosen, _keys_at(live, set(ids), at, where, len(ids))):
+            p["idx"] = {"timestamp": p["idx"]["timestamp"], "value": key}
+        _pages_done(doc, c)
+        return len(chosen)
+    _notebook(doc)
+    _notebook(to)
+    if len(chosen) >= len(live):
+        raise ValueError("a notebook keeps at least one page")
+    dc = _content(to)
+    dlive = _live(dc)
+    if at is not None and not 1 <= int(at) <= len(dlive):
+        raise ValueError("there is no page %s there" % at)
+    now = str(_now())
+    for p, key in zip(chosen, _keys_at(dlive, set(), at, where, len(ids))):
+        _copy_page(doc, p["id"], to, p["id"])
+        entry = {"id": p["id"], "idx": {"timestamp": p["idx"]["timestamp"], "value": key}, "modifed": now}
+        if p.get("template"):
+            entry["template"] = dict(p["template"])
+        dc["cPages"]["pages"].append(entry)
+        dc["pageTags"] = (dc.get("pageTags") or []) + [t for t in c.get("pageTags") or [] if t.get("pageId") == p["id"]]
+    _pages_done(to, dc)
+    for p in c["cPages"]["pages"]:
+        if p["id"] in ids:
+            p["deleted"] = {"timestamp": "1:2", "value": 0}
+    c["pageTags"] = [t for t in c.get("pageTags") or [] if t.get("pageId") not in ids]
+    _pages_done(doc, c)
+    for pid in ids:
+        _drop_page_files(doc, pid)
+    return len(chosen)
+
+
+def tag_pages(doc, page_nos, add=(), remove=()):
+    """Tags put on and taken off every page chosen (no case: "Joi" is "joi"). -> how many pages."""
+    _guard()
+    c, _live0, chosen = _chosen(doc, page_nos)
+    add, gone = _clean(add), {t.lower() for t in _clean(remove)}
+    now = _now()
+    tags = list(c.get("pageTags") or [])
+    for p in chosen:
+        mine = [t for t in tags if t.get("pageId") == p["id"]]
+        keep = [t for t in mine if str(t.get("name", "")).lower() not in gone]
+        have = {str(t.get("name", "")).lower() for t in keep}
+        keep += [{"name": t, "pageId": p["id"], "timestamp": now} for t in add if t.lower() not in have]
+        tags = [t for t in tags if t.get("pageId") != p["id"]] + keep
+    c["pageTags"] = tags
+    _save_content(doc, c)
+    _touch(doc)
+    return len(chosen)
 
 
 def move(u, parent):

@@ -357,7 +357,7 @@ def next_try(e, allowed):
 
 
 def notes_on():
-    return bool(_setting("daemon.page_notes", False)) and not DRY and not paths.local_only()
+    return bool(_setting("daemon.page_notes", False)) and not DRY
 
 
 def retries_allowed():
@@ -437,15 +437,45 @@ def _ink_keep(doc, pid, state):
 
 def _note_copy(doc, pid, base, lines, what):
     """A copy of the page as it was handed over, his layer deleted and a new one with `lines` on it, up to the tablet;
-    the page in the mirror, which the host works on, is not touched."""
+    the page in the mirror, which the host works on, is not touched. THE FALSE MIRROR has no tablet to send a copy to:
+    there the note goes into the page itself (_note_in_place), where its editor shows it."""
     from paperdaemon.pipeline.daemon import notes as N
     if base is None:
+        return
+    if paths.local_only():
+        _note_in_place(doc, pid, lines, what)
         return
     state = _ink(doc, pid)
     strokes, _box = _letter(lines, _frame_of(doc, pid), latest=True)
     data = N.with_note(base, strokes, state)
     _ink_keep(doc, pid, state)
     _push_copy(doc, pid, data, what)
+
+
+def _note_in_place(doc, pid, lines, what):
+    """The note written into the false mirror's page as it is now, while the host may be working on it: his strokes
+    alone change (the host and the fingerprint never see them), and only if the page is still as it was read -- a
+    page the host wrote in between keeps what it wrote, and the note waits for the next one."""
+    from paperdaemon.pipeline.daemon import notes as N
+    path = N.page_file(doc, pid)
+    try:
+        st0 = os.stat(path)
+        data = open(path, "rb").read()
+    except OSError:
+        return
+    state = _ink(doc, pid)
+    strokes, _box = _letter(lines, _frame_of(doc, pid), latest=True)
+    new = N.with_note(data, strokes, state)
+    try:
+        st1 = os.stat(path)
+    except OSError:
+        return
+    if (st1.st_mtime_ns, st1.st_size) != (st0.st_mtime_ns, st0.st_size):
+        log("  the %s note waits: the page changed as it was written" % what)
+        return
+    paths.write_atomic(path, new)
+    _ink_keep(doc, pid, state)
+    log("  the %s note is on the page" % what)
 
 
 def prepare_page(job):

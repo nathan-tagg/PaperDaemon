@@ -3,7 +3,7 @@
 ## ADDED Requirements
 
 ### Requirement: The daemon writes on the page as he works
-With Notes on the page on, the daemon SHALL write on the page it is handling: "On it" as soon as he hands the
+With Daemon notes on, the daemon SHALL write on the page it is handling: "On it" as soon as he hands the
 job to the host, then each line the host reports (what it read on the page, its plan, each step as it
 ends), then how the job ended. With the setting off, nothing SHALL be written on a page for a note.
 

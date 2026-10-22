@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.65
+
+- False Mirror: select several notebooks and folders at once. A long press or a right-click selects, and while anything is selected a click adds an item or takes it away (Esc, or a click on nothing, lets them all go). The menu acts on all of them: Export, Duplicate, Move, Tags, Delete.
+- False Mirror: pages in the grid are selected the same way, and a strip at the top of the grid acts on them: Select all, Duplicate (each copy right after its page), Move (before or after a page of this notebook or another, or to its end), Tags, and Delete (for good, after you confirm, as on the tablet).
+- False Mirror: New notebook takes tags.
+- False Mirror: its notebooks get Daemon notes too, on the Daemon layer, where the page editor shows them. The host still never sees them.
+- The setting is called "Daemon notes" again.
+- The page's tag button says "Add" again (it had become "New", the + menu's word).
+
 ## 0.1.64
 
 - False Mirror: a page no longer goes back to the host after every answer. The daemon there sees a page as at your last sync (closing it, or Ctrl+S), and a page it had just answered still looked, in that older view, like it had changed since the answer. So the host answered again, its own answer this time, over and over. A job's own writing now counts as synced; what you change after it still waits for your sync.

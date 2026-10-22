@@ -29,7 +29,7 @@
   function library(id, { label, base, fm }) {
     let R = null, seen = null;
     const S = { list: null, err: "", at: "", doc: null, page: 1, view: "page", tags: null, chapters: null, hist: [1], hpos: 0,
-                picked: null, held: false };
+                picked: null, held: false, pp: [], ppHeld: false };
     const api = (m, p, b) => PD.api(m, base + p, b);
     const byId = x => (S.list || []).find(d => d.id === x);
     const VIEWER = id + "-viewer";
@@ -60,7 +60,7 @@
       const crumbs = [{ id: "", name: PD.t("tablet.my_files") }].concat(path(S.at));
       const here = S.list.filter(x => x.parent === S.at && x.parent !== "trash");
       const folders = here.filter(x => x.type === "folder"), docs = here.filter(x => x.type === "document");
-      const on = x => S.picked === x ? " picked" : "";
+      const on = x => (S.picked || []).includes(x) ? " picked" : "";
       box.innerHTML =
         '<nav class="crumbs" aria-label="' + esc(PD.t("tablet.folder")) + '">' + crumbs.map((c, i) => (i === crumbs.length - 1
           ? '<span aria-current="page">' + esc(c.name) + "</span>"
@@ -138,8 +138,10 @@
       body.scrollTop = 0;
       if (S.view === "pages") {
         body.className = "viewer-page grid";
-        body.innerHTML = Array.from({ length: n }, (_, i) => '<button type="button" class="thumb' + (i + 1 === S.page ? " here" : "") + '" data-go="' + (i + 1) + '">' +
+        body.innerHTML = (fm ? '<div class="page-pick" role="toolbar" hidden></div>' : "") +
+          Array.from({ length: n }, (_, i) => '<button type="button" class="thumb' + (i + 1 === S.page ? " here" : "") + '" data-go="' + (i + 1) + '">' +
           '<span class="cover"><img alt="" data-thumb="' + (i + 1) + '"></span><span class="meta">' + (i + 1) + "</span></button>").join("");
+        paintPagePick();
         const d = S.doc.id, io = new IntersectionObserver(es => es.forEach(x => {
           if (!x.isIntersecting) return;
           io.unobserve(x.target);
@@ -365,7 +367,7 @@
     }
 
     function openDoc(x) {
-      S.doc = byId(x); S.page = 1; S.tags = null; S.chapters = null; S.hist = [1]; S.hpos = 0;
+      S.doc = byId(x); S.page = 1; S.tags = null; S.chapters = null; S.hist = [1]; S.hpos = 0; S.pp = [];
       if (S.doc) opened(S.doc.id, 0);                       // its cover drawn anew at the next look
       S.view = PD.firstTab === "pages" || PD.firstTab === "chapters" ? PD.firstTab : "page"; PD.firstTab = "";
       let dlg = $("#" + VIEWER);
@@ -384,7 +386,13 @@
           if (S.tagPop && !e.target.closest(".tag-pop") && !e.target.closest('[data-v="tagpop"]')) { S.tagPop = false; paintBar(); paintTagPop(); }
           const tg = e.target.closest("[data-tagtoggle]");
           if (tg) { const t = tg.dataset.tagtoggle; pageTags(now => hasTag(now, t) ? now.filter(x => x.toLowerCase() !== t.toLowerCase()) : now.concat([t])); return; }
+          const pa = e.target.closest("[data-pp]");
+          if (pa) { pagePickAct(pa.dataset.pp); return; }
           const g = e.target.closest("[data-go]");
+          if (g && g.matches(".thumb") && gridHere()) {
+            if (S.ppHeld) { S.ppHeld = false; return; }              // the click that ends a long press
+            if (S.pp.length) { pickPage(Number(g.dataset.go)); return; }
+          }
           if (g) { go(Number(g.dataset.go)); return; }
           const x = e.target.closest("[data-untag]");
           if (x) { pageTags(now => now.filter(t => t !== x.dataset.untag)); return; }
@@ -400,7 +408,20 @@
             const [got] = await PD.safe(api("POST", "/library/" + S.doc.id + "/pages", { after: S.page }));
             if (got) { S.doc.pages = (S.doc.pages || 1) + 1; go(got.page); }
           }
-          else if (v === "pages" || v === "chapters") { S.view = S.view === v ? "page" : v; paintBar(); paintBody(); }
+          else if (v === "pages" || v === "chapters") { S.view = S.view === v ? "page" : v; S.pp = []; paintBar(); paintBody(); }
+        });
+        // A LONG PRESS OR A RIGHT-CLICK ON A PAGE IN THE GRID selects it (the False Mirror's own notebooks)
+        let ppTimer = 0;
+        dlg.addEventListener("pointerdown", e => {
+          S.ppHeld = false;
+          const t = e.target.closest(".thumb[data-go]"); if (!t || e.button !== 0 || !gridHere()) return;
+          clearTimeout(ppTimer);
+          ppTimer = setTimeout(() => { S.ppHeld = true; pickPage(Number(t.dataset.go)); }, 500);
+        });
+        ["pointerup", "pointerleave", "pointercancel"].forEach(t => dlg.addEventListener(t, () => clearTimeout(ppTimer)));
+        dlg.addEventListener("contextmenu", e => {
+          const t = e.target.closest(".thumb[data-go]"); if (!t || !gridHere()) return;
+          e.preventDefault(); clearTimeout(ppTimer); pickPage(Number(t.dataset.go));
         });
         dlg.addEventListener("wheel", wheelPage, { passive: false });
         new ResizeObserver(sizeViewer).observe($(".viewer-bar", dlg));    // a bar that wraps makes the viewer taller
@@ -426,6 +447,7 @@
         // CLOSING A FALSE-MIRROR DOCUMENT SYNCS it, as on the tablet: the page editor saves and tells the daemon to look
         // ESC CLOSES WHAT IS OPEN FIRST: the tags' menu, then the editor's menus, and only then the viewer
         dlg.addEventListener("cancel", e => {
+          if (S.pp.length && gridHere()) { e.preventDefault(); S.pp = []; paintPagePick(); return; }
           if (S.tagPop) { e.preventDefault(); S.tagPop = false; paintBar(); paintTagPop(); return; }
           const fr = editorFrame();
           if (S.edMenu && fr && fr.contentWindow) { e.preventDefault(); S.edMenu = false; fr.contentWindow.postMessage({ pd: "editor-close" }, location.origin); }
@@ -459,6 +481,90 @@
       });
     }
 
+    // ---- PAGES CHOSEN IN THE GRID, as the tablet's page overview chooses them: a long press or a right-click on a page
+    // selects it, and while any is selected a click adds a page or takes it away. A strip at the top of the grid says
+    // how many and does it to all of them: Select all, Duplicate, Move, Tags, Delete. S.pp: the page numbers chosen.
+    const gridHere = () => fm && S.doc && S.view === "pages";
+    function pickPage(n) {
+      S.pp = S.pp.includes(n) ? S.pp.filter(x => x !== n) : S.pp.concat([n]).sort((a, b) => a - b);
+      paintPagePick();
+    }
+    function paintPagePick() {
+      const dlg = $("#" + VIEWER); if (!dlg) return;
+      dlg.querySelectorAll(".thumb[data-go]").forEach(t => t.classList.toggle("picked", S.pp.includes(Number(t.dataset.go))));
+      const strip = dlg.querySelector(".page-pick"); if (!strip) return;
+      strip.hidden = !S.pp.length;
+      if (!S.pp.length) { strip.innerHTML = ""; return; }
+      const nb = S.doc.kind === "notebook";
+      const btn = (act, l, cls) => '<button type="button" class="btn' + (cls ? " " + cls : "") + '" data-pp="' + act + '">' + esc(l) + "</button>";
+      strip.innerHTML = '<span class="pick-name">' + esc(PD.t("fm.selected_n", { n: S.pp.length })) + '</span><span class="pick-acts">' +
+        (S.pp.length < pageCount() ? btn("all", PD.t("fm.select_all")) : "") +
+        (nb ? btn("duplicate", PD.t("fm.duplicate")) + btn("move", PD.t("fm.move")) : "") + btn("tags", PD.t("fm.tags")) +
+        btn("delete", PD.t("common.delete"), "danger") + btn("done", PD.t("fm.done")) + "</span>" +
+        '<p class="hint pick-msg" role="status"></p>';
+    }
+    // after a change: the notebook as it is now, the grid drawn anew, nothing chosen
+    async function pagesChanged() {
+      const x = S.doc.id;
+      S.pp = [];
+      await load();
+      S.doc = byId(x) || S.doc;
+      S.page = Math.min(S.page, pageCount());
+      const [d] = await PD.safe(api("GET", "/library/" + x));
+      if (d) S.tags = d;
+      paintBar(); paintBody();
+    }
+    async function pagePickAct(act) {
+      if (!S.pp.length) return;
+      const doc = S.doc.id, pages = S.pp.slice();
+      const strip = $("#" + VIEWER + " .page-pick"), msg = strip && strip.querySelector(".pick-msg");
+      const fail = e => { if (msg) { msg.textContent = PD.errText(e); msg.className = "hint pick-msg attn"; } };
+      const run = async (what, body) => {
+        const [, e] = await PD.safe(api("POST", "/library/" + doc + "/pages/" + what, Object.assign({ pages }, body || {})));
+        if (e) { fail(e); return; }
+        await pagesChanged();
+      };
+      if (act === "done") { S.pp = []; paintPagePick(); return; }
+      if (act === "all") { S.pp = Array.from({ length: pageCount() }, (_, i) => i + 1); paintPagePick(); return; }
+      if (act === "duplicate") { await run("duplicate"); return; }
+      if (act === "delete") {
+        if (!await PD.confirm({ title: PD.t("fm.delete_pages_q", { n: pages.length }), body: [esc(PD.t("fm.delete_pages_body"))],
+                                action: PD.t("common.delete"), danger: true })) return;
+        await run("delete");
+        return;
+      }
+      if (act === "tags") {
+        const per = (S.tags && S.tags.page_tags) || [];
+        tagsDialog(PD.t("fm.tags_pages", { n: pages.length }), common(pages.map(n => per[n - 1] || [])), async (add, remove) => {
+          await api("POST", "/library/" + doc + "/pages/tags", { pages, add, remove });
+          await pagesChanged();
+        });
+        return;
+      }
+      if (act === "move") {
+        // WHERE TO: a notebook (this one first), and before or after one of its pages, or at its end
+        const books = [S.doc].concat((S.list || []).filter(b => b.type === "document" && b.kind === "notebook" && b.id !== doc)
+          .sort((a, b) => a.name.localeCompare(b.name)));
+        const inner = '<label class="field-row"><span>' + esc(PD.t("fm.move_to_notebook")) + '</span><select class="select w-l" data-to>' +
+          books.map(b => '<option value="' + esc(b.id) + '">' + esc(b.id === doc ? PD.t("fm.this_notebook", { name: b.name }) : b.name) + "</option>").join("") + "</select></label>" +
+          '<fieldset class="field-row"><legend>' + esc(PD.t("fm.move_where")) + "</legend>" +
+          '<label class="check-label"><input type="radio" name="pp-where" value="before"> ' + esc(PD.t("fm.move_before")) + "</label>" +
+          '<label class="check-label"><input type="radio" name="pp-where" value="after" checked> ' + esc(PD.t("fm.move_after")) + "</label>" +
+          '<label class="field-row"><span>' + esc(PD.t("fm.move_page")) + '</span><input class="field num" type="number" min="1" step="1" data-at placeholder="' +
+          esc(PD.t("fm.move_end")) + '"></label></fieldset>';
+        const dlg = ask(PD.t("fm.move_pages_q", { n: pages.length }), inner, PD.t("fm.move"), async d => {
+          const to = d.querySelector("[data-to]").value, at = d.querySelector("[data-at]").value.trim();
+          const where = (d.querySelector("[name=pp-where]:checked") || {}).value || "after";
+          await api("POST", "/library/" + doc + "/pages/move", Object.assign({ pages, where }, to !== doc ? { to } : {}, at ? { at: Number(at) } : {}));
+          await pagesChanged();
+        });
+        const sel = dlg.querySelector("[data-to]"), atf = dlg.querySelector("[data-at]");
+        const most = () => { const b = byId(sel.value) || S.doc; atf.max = String(Math.max(1, b.pages || 1)); };
+        sel.addEventListener("change", most); most();
+        sel.focus();
+      }
+    }
+
     async function load() {
       const [list, e] = await PD.safe(api("GET", "/library"));
       // THE SAME LIBRARY IS NOT DRAWN AGAIN: the false mirror asks every five seconds, and redrawing every cover each
@@ -468,7 +574,7 @@
       S.libSeen = seen;
       S.err = e ? PD.errText(e) : ""; S.list = list || [];
       if (S.at && !byId(S.at)) S.at = "";
-      if (S.picked && !byId(S.picked)) unpick();
+      if ((S.picked || []).length) { S.picked = S.picked.filter(byId); if (!S.picked.length) unpick(); }
       if (!same) paint();
       if (!fm && PD.firstOpen && byId(PD.firstOpen)) { const x = PD.firstOpen; PD.firstOpen = ""; openDoc(x); }
     }
@@ -514,15 +620,29 @@
         (list.length ? '<div class="field-row"><span>' + esc(PD.t("fm.template")) + '</span><div class="nb-tpls" role="radiogroup">' +
           list.map((t, i) => '<button type="button" class="nb-tpl' + (i ? "" : " here") + '" role="radio" aria-checked="' + (i ? "false" : "true") +
             '" data-tpl="' + esc(t.file) + '" title="' + esc(t.name) + '">' + tplIcon(t) + "<span>" + esc(t.name) + "</span></button>").join("") +
-          "</div></div>" : "");
+          "</div></div>" : "") +
+        '<div class="field-row"><span>' + esc(PD.t("fm.tags")) + '</span><div class="tag-edit" data-tags></div>' +
+        '<input class="field w-l" type="text" data-new-tag spellcheck="false" placeholder="' + esc(PD.t("fm.tag_add")) + '"></div>';
       const dlg = ask(PD.t("fm.new_notebook"), inner, PD.t("fm.create"), async d => {
+        const tags = [...d.querySelectorAll("[data-tag]")].map(c => c.dataset.tag);
+        const extra = knownSpelling(d.querySelector("[data-new-tag]").value.trim());
+        if (extra && !hasTag(tags, extra)) tags.push(extra);
         const cover = (d.querySelector("[name=nb-cover]:checked") || {}).value || "last";
         const tp = d.querySelector(".nb-tpl.here");
-        await api("POST", "/library/notebook", Object.assign({ name: nameOf(d), parent: S.at, cover },
+        await api("POST", "/library/notebook", Object.assign({ name: nameOf(d), parent: S.at, cover, tags },
                                                              tp ? { template: tp.dataset.tpl } : {}));   // none: the engine's Blank
         await load();
       });
+      // a tag goes in with Enter (no case: "Joi" is "joi"), and comes out with its ×
+      const chip = t => '<span class="chip" data-tag="' + esc(t) + '">' + esc(t) + '<button type="button" class="chip-x" aria-label="' + esc(PD.t("fm.untag", { tag: t })) + '">×</button></span>';
+      dlg.querySelector("[data-new-tag]").addEventListener("keydown", e => {
+        if (e.key !== "Enter" || !e.target.value.trim()) return;
+        e.preventDefault(); e.stopPropagation();
+        const t = knownSpelling(e.target.value.trim()); e.target.value = "";
+        if (!hasTag([...dlg.querySelectorAll("[data-tag]")].map(c => c.dataset.tag), t)) dlg.querySelector("[data-tags]").insertAdjacentHTML("beforeend", chip(t));
+      });
       dlg.addEventListener("click", e => {
+        const x = e.target.closest(".chip-x"); if (x) { x.closest("[data-tag]").remove(); return; }
         const b = e.target.closest(".nb-tpl"); if (!b) return;
         dlg.querySelectorAll(".nb-tpl").forEach(x => { x.classList.toggle("here", x === b); x.setAttribute("aria-checked", String(x === b)); });
       });
@@ -573,14 +693,23 @@
       pick.click();
     }
 
-    // THE MENU OF WHAT IS SELECTED slides down over the top of the screen, as the tablet's does: nothing under it moves
+    // THE MENU OF WHAT IS SELECTED slides down over the top of the screen, as the tablet's does: nothing under it moves.
+    // SEVERAL AT ONCE, as on the tablet: a long press or a right-click selects, and while anything is selected a click
+    // adds an item or takes it away; Esc, or a click on nothing, lets them all go. S.picked: the ids, in the order chosen.
+    const picked = () => (S.picked || []).map(byId).filter(Boolean);
     function pick(x) {
-      S.picked = x; paint();
-      const it = byId(x); if (!it) return;
+      const was = S.picked || [];
+      S.picked = was.includes(x) ? was.filter(y => y !== x) : was.concat([x]);
+      if (!S.picked.length) { unpick(); return; }
+      paint(); paintPickMenu();
+    }
+    function paintPickMenu() {
+      const its = picked(); if (!its.length) return;
       const m = $("#" + id + "-menu", R);
+      const docs = its.every(it => it.type === "document");
       const btn = (act, l, cls) => '<button type="button" class="btn' + (cls ? " " + cls : "") + '" data-pick-act="' + act + '">' + esc(l) + "</button>";
-      m.innerHTML = '<span class="pick-name">' + esc(it.name) + '</span><span class="pick-acts">' +
-        (it.type === "document" ? btn("export", PD.t("fm.export")) : "") + btn("move", PD.t("fm.move")) + btn("tags", PD.t("fm.tags")) +
+      m.innerHTML = '<span class="pick-name">' + esc(its.length === 1 ? its[0].name : PD.t("fm.selected_n", { n: its.length })) + '</span><span class="pick-acts">' +
+        (docs ? btn("export", PD.t("fm.export")) + btn("duplicate", PD.t("fm.duplicate")) : "") + btn("move", PD.t("fm.move")) + btn("tags", PD.t("fm.tags")) +
         btn("delete", PD.t("common.delete"), "danger") + "</span>" +
         '<p class="hint pick-msg" role="status"></p>';
       // as tall as the rail's foot beside it (the version), from the same rule down, and as wide as the page
@@ -593,67 +722,98 @@
     }
 
     function unpick() {
-      S.picked = null;
+      S.picked = [];
       const m = R && $("#" + id + "-menu", R);
       if (m) m.classList.remove("open");
       paint();
     }
 
     function folderChoices(skip) {
-      // every folder but the one being moved and those inside it, as the path the user knows
-      const inside = f => { for (let d = f, n = 0; d && n < 30; d = byId(d.parent), n++) if (d.id === skip) return true; return false; };
+      // every folder but those being moved and those inside them, as the path the user knows
+      const out = [].concat(skip || []);
+      const inside = f => { for (let d = f, n = 0; d && n < 30; d = byId(d.parent), n++) if (out.includes(d.id)) return true; return false; };
       const folders = (S.list || []).filter(f => f.type === "folder" && !inside(f));
       const name = f => path(f.id).map(d => d.name).join(" / ");
       return [{ id: "", label: PD.t("tablet.my_files") }].concat(folders.map(f => ({ id: f.id, label: name(f) })).sort((a, b) => a.label.localeCompare(b.label)));
     }
 
+    // TAGS OF SEVERAL: the tags they all carry, each to take off all of them, and a field to put one on all of them
+    // (no case: "Joi" is "joi"); one item: its own tags, as before. -> the dialog
+    function tagsDialog(title, current, onSave) {
+      const chip = t => '<span class="chip" data-tag="' + esc(t) + '">' + esc(t) + '<button type="button" class="chip-x" aria-label="' + esc(PD.t("fm.untag", { tag: t })) + '">×</button></span>';
+      const dlg = ask(title, '<div class="tag-edit" data-tags>' + current.map(chip).join("") +
+        '</div><input class="field w-l" type="text" data-new-tag spellcheck="false" placeholder="' + esc(PD.t("fm.tag_add")) + '">', PD.t("fm.save"), async d => {
+          const now = [...d.querySelectorAll("[data-tag]")].map(c => c.dataset.tag);
+          const extra = knownSpelling(d.querySelector("[data-new-tag]").value.trim());
+          if (extra && !hasTag(now, extra)) now.push(extra);
+          await onSave(now.filter(t => !hasTag(current, t)), current.filter(t => !hasTag(now, t)));
+        });
+      dlg.addEventListener("click", e => { const x = e.target.closest(".chip-x"); if (x) x.closest("[data-tag]").remove(); });
+      dlg.querySelector("[data-new-tag]").addEventListener("keydown", e => {
+        if (e.key !== "Enter" || !e.target.value.trim()) return;
+        e.preventDefault(); e.stopPropagation();
+        const t = knownSpelling(e.target.value.trim()); e.target.value = "";
+        if (hasTag([...dlg.querySelectorAll("[data-tag]")].map(c => c.dataset.tag), t)) return;   // already there, in any case
+        dlg.querySelector("[data-tags]").insertAdjacentHTML("beforeend", chip(t));
+      });
+      return dlg;
+    }
+    const common = lists => (lists[0] || []).filter(t => lists.every(l => hasTag(l, t)));
+
     async function pickAct(act) {
-      const it = byId(S.picked); if (!it) return;
+      const its = picked(); if (!its.length) return;
       const msg = $("#" + id + "-menu .pick-msg", R);
+      const say = (text, bad) => { msg.textContent = text; msg.className = "hint pick-msg" + (bad ? " attn" : ""); };
+      const one = its.length === 1 ? its[0] : null;
       if (act === "close") { unpick(); return; }
       if (act === "export") {
-        msg.textContent = PD.t("fm.exporting"); msg.className = "hint pick-msg";
-        const [got, e] = await PD.safe(PD.api("POST", "/false-mirror/export", { doc: it.id, name: it.name }));
-        msg.textContent = e ? PD.errText(e) : PD.t("fm.exported", { name: got.name });
-        msg.className = "hint pick-msg" + (e ? " attn" : "");
+        for (const it of its) {
+          say(PD.t("fm.exporting"));
+          const [got, e] = await PD.safe(PD.api("POST", "/false-mirror/export", { doc: it.id, name: it.name }));
+          if (e) { say(PD.errText(e), true); return; }
+          say(PD.t("fm.exported", { name: got.name }));
+        }
+        return;
+      }
+      if (act === "duplicate") {
+        for (const it of its) {
+          const [, e] = await PD.safe(api("POST", "/library/" + it.id + "/duplicate"));
+          if (e) { say(PD.errText(e), true); return; }
+        }
+        unpick(); load();
         return;
       }
       if (act === "delete") {
-        if (!await PD.confirm({ title: PD.t("fm.delete_q", { name: it.name }), body: [esc(PD.t(it.type === "folder" ? "fm.delete_folder_body" : "fm.delete_body"))],
+        if (!await PD.confirm({ title: one ? PD.t("fm.delete_q", { name: one.name }) : PD.t("fm.delete_n_q", { n: its.length }),
+                                body: [esc(PD.t(its.some(it => it.type === "folder") ? "fm.delete_folder_body" : "fm.delete_body"))],
                                 action: PD.t("common.delete"), danger: true })) return;
-        const [, e] = await PD.safe(api("DELETE", "/library/" + it.id));
-        if (e) { msg.textContent = PD.errText(e); msg.className = "hint pick-msg attn"; return; }
+        for (const it of its) {
+          const [, e] = await PD.safe(api("DELETE", "/library/" + it.id));
+          if (e) { say(PD.errText(e), true); load(); return; }
+        }
         unpick(); load();
         return;
       }
       if (act === "move") {
-        const opts = folderChoices(it.id);
-        ask(PD.t("fm.move_q", { name: it.name }), '<div class="move-list" role="radiogroup">' + opts.map(o =>
-          '<label class="check-label"><input type="radio" name="dest" value="' + esc(o.id) + '"' + (o.id === it.parent ? " checked" : "") + "> " + esc(o.label) + "</label>").join("") + "</div>",
+        const opts = folderChoices(its.map(it => it.id));
+        const here = one ? one.parent : null;
+        ask(one ? PD.t("fm.move_q", { name: one.name }) : PD.t("fm.move_n_q", { n: its.length }), '<div class="move-list" role="radiogroup">' + opts.map(o =>
+          '<label class="check-label"><input type="radio" name="dest" value="' + esc(o.id) + '"' + (o.id === here ? " checked" : "") + "> " + esc(o.label) + "</label>").join("") + "</div>",
           PD.t("fm.move"), async d => {
             const c = d.querySelector("input[name=dest]:checked");
-            await api("POST", "/library/" + it.id + "/move", { parent: c ? c.value : "" });
+            for (const it of its) await api("POST", "/library/" + it.id + "/move", { parent: c ? c.value : "" });
             unpick(); await load();
           });
         return;
       }
       if (act === "tags") {
-        const dlg = ask(PD.t("fm.tags_of", { name: it.name }), '<div class="tag-edit" data-tags>' + (it.tags || []).map(t =>
-          '<span class="chip" data-tag="' + esc(t) + '">' + esc(t) + '<button type="button" class="chip-x" aria-label="' + esc(PD.t("fm.untag", { tag: t })) + '">×</button></span>').join("") +
-          '</div><input class="field w-l" type="text" data-new-tag spellcheck="false" placeholder="' + esc(PD.t("fm.tag_add")) + '">', PD.t("fm.save"), async d => {
-            const tags = [...d.querySelectorAll("[data-tag]")].map(c => c.dataset.tag);
-            const extra = knownSpelling(d.querySelector("[data-new-tag]").value.trim());
-            await api("PUT", "/library/" + it.id + "/tags", { tags: extra && !hasTag(tags, extra) ? tags.concat([extra]) : tags });
-            await load(); pick(it.id);
-          });
-        dlg.addEventListener("click", e => { const x = e.target.closest(".chip-x"); if (x) x.closest("[data-tag]").remove(); });
-        dlg.querySelector("[data-new-tag]").addEventListener("keydown", e => {
-          if (e.key !== "Enter" || !e.target.value.trim()) return;
-          e.preventDefault(); e.stopPropagation();
-          const t = knownSpelling(e.target.value.trim()); e.target.value = "";
-          if (hasTag([...dlg.querySelectorAll("[data-tag]")].map(c => c.dataset.tag), t)) return;   // already there, in any case
-          dlg.querySelector("[data-tags]").insertAdjacentHTML("beforeend", '<span class="chip" data-tag="' + esc(t) + '">' + esc(t) +
-            '<button type="button" class="chip-x" aria-label="' + esc(PD.t("fm.untag", { tag: t })) + '">×</button></span>');
+        tagsDialog(one ? PD.t("fm.tags_of", { name: one.name }) : PD.t("fm.tags_n", { n: its.length }), common(its.map(it => it.tags || [])), async (add, remove) => {
+          for (const it of its) {
+            const now = (it.tags || []).filter(t => !hasTag(remove, t)).concat(add.filter(t => !hasTag(it.tags || [], t)));
+            await api("PUT", "/library/" + it.id + "/tags", { tags: now });
+          }
+          const keep = its.map(it => it.id);
+          await load(); S.picked = keep.filter(byId); paint(); paintPickMenu();
         });
       }
     }
@@ -674,7 +834,7 @@
         R = root;
         // THE FALSE MIRROR'S ACTIONS under a + at the top right: Quick sheets, New notebook, New folder, Import
         root.innerHTML = '<div class="page-head"><h1>' + esc(label) + "</h1>" + (fm ? '<span class="head-acts"><button type="button" class="icon-btn" data-act="fm-menu" aria-haspopup="menu" aria-expanded="false" title="' +
-          esc(PD.t("fm.add")) + '" aria-label="' + esc(PD.t("fm.add")) + '">' + ICON.add + '</button><span class="head-menu" role="menu" hidden>' +
+          esc(PD.t("fm.new_menu")) + '" aria-label="' + esc(PD.t("fm.new_menu")) + '">' + ICON.add + '</button><span class="head-menu" role="menu" hidden>' +
           '<button type="button" role="menuitem" data-act="quick-sheets">' + esc(PD.t("fm.quick_sheets")) + "</button>" +
           '<button type="button" role="menuitem" data-act="new-notebook">' + esc(PD.t("fm.new_notebook")) + "</button>" +
           '<button type="button" role="menuitem" data-act="new-folder">' + esc(PD.t("fm.new_folder")) + "</button>" +
@@ -682,8 +842,18 @@
           (fm ? '<p class="hint import-msg" id="' + id + '-import" role="status"></p><div class="pick-menu" id="' + id + '-menu" role="toolbar"></div>' +
                 '<div class="drop-here" id="' + id + '-drop" hidden>' + esc(PD.t("fm.drop")) + "</div>" : "") +
           '<div class="lib-box" id="' + id + '-files"></div>';
-        PD.on(root, "click", "[data-at]", (e, el) => { if (S.held) { S.held = false; return; } if (S.picked) { unpick(); } S.at = el.dataset.at; paint(); });
-        PD.on(root, "click", "[data-open]", (e, el) => { if (S.held) { S.held = false; return; } if (S.picked) { unpick(); return; } openDoc(el.dataset.open); });
+        // WHILE ANYTHING IS SELECTED a click on a notebook or folder adds it or takes it away; a crumb still goes there
+        const choosing = () => (S.picked || []).length > 0;
+        PD.on(root, "click", "[data-at]", (e, el) => {
+          if (S.held) { S.held = false; return; }
+          if (choosing() && el.dataset.item) { pick(el.dataset.item); return; }
+          if (choosing()) unpick();
+          S.at = el.dataset.at; paint();
+        });
+        PD.on(root, "click", "[data-open]", (e, el) => { if (S.held) { S.held = false; return; } if (choosing()) { pick(el.dataset.item); return; } openDoc(el.dataset.open); });
+        root.addEventListener("click", e => {
+          if (choosing() && !e.target.closest("[data-item], .pick-menu, .head-acts, button, a, input")) unpick();
+        });
         if (!fm) return;
         const menu = $(".head-menu", root), menuBtn = $("[data-act=fm-menu]", root);
         const closeMenu = () => { menu.hidden = true; menuBtn.setAttribute("aria-expanded", "false"); };
@@ -692,7 +862,7 @@
         root.addEventListener("keydown", e => { if (e.key === "Escape" && !menu.hidden) closeMenu(); });
         // Esc puts the selection's menu away (it has no close button)
         document.addEventListener("keydown", e => {
-          if (e.key === "Escape" && S.picked && !R.hidden && !document.querySelector("dialog[open]")) unpick();
+          if (e.key === "Escape" && (S.picked || []).length && !R.hidden && !document.querySelector("dialog[open]")) unpick();
         });
         PD.on(root, "click", "[data-act=quick-sheets]", () => { closeMenu(); quickSheets(); });
         PD.on(root, "click", "[data-act=new-notebook]", () => { closeMenu(); newNotebook(); });
@@ -722,13 +892,17 @@
           timer = setTimeout(() => { S.held = true; pick(it.dataset.item); }, 500);
         });
         ["pointerup", "pointerleave", "pointercancel"].forEach(t => root.addEventListener(t, () => clearTimeout(timer)));
-        root.addEventListener("contextmenu", e => { if (e.target.closest("[data-item]")) e.preventDefault(); });
+        // A RIGHT-CLICK SELECTS, as a long press does
+        root.addEventListener("contextmenu", e => {
+          const it = e.target.closest("[data-item]"); if (!it) return;
+          e.preventDefault(); clearTimeout(timer); pick(it.dataset.item);
+        });
       },
       show() { load(); loadProgress(); },
-      hide() { if (S.picked) unpick(); },
+      hide() { if ((S.picked || []).length) unpick(); },
       poll(n) {
         loadProgress();
-        if (fm) { if (n % 5 === 0 && !S.picked) load(); return; }       // the daemon's answers appear as they land
+        if (fm) { if (n % 5 === 0 && !(S.picked || []).length) load(); return; }       // the daemon's answers appear as they land
         const b = PD.mirrorState(PD.status).building;
         if ((b && n % 3 === 0) || (!b && S.pulling)) load();
         S.pulling = b;
