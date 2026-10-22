@@ -1687,9 +1687,11 @@ span.lname { cursor: default; }
       for (const [x, y] of poly.pts) { const [a, b] = toScreen(x, y); ctx.fillRect(a - 2.5, b - 2.5, 5, 5); }
     }
   }
+  // THE ERASER'S RING IS WHERE THE POINTER IS ON THE SCREEN: kept as a page point, it ran away from the pointer when the
+  // view scrolled under a still mouse (the wheel, or typing that took the view down)
   function drawEraser() {
     if (!eraserAt || tool !== "eraser" || eraseMode === "zone") return;
-    const [ex, ey] = toScreen(eraserAt[0], eraserAt[1]);
+    const [ex, ey] = eraserAt;
     ctx.strokeStyle = "rgba(0,0,0,0.45)"; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.arc(ex, ey, eraserR() * scale(), 0, Math.PI * 2); ctx.stroke();
   }
@@ -2113,7 +2115,7 @@ span.lname { cursor: default; }
         poly.pts.push(cornerAt(e, [x, y])); paint(); return;
       }
     }
-    if (tool === "eraser") { eraseStart(layer(), null, x, y); eraserAt = [x, y]; }
+    if (tool === "eraser") { eraseStart(layer(), null, x, y); eraserAt = local(e); }
     else {
       if (!drawable(x, y)) return;                            // as on the tablet: no stroke starts in the gray
       contentLanded();                                        // the stroke wins: the text lets go as the pen goes down
@@ -2126,7 +2128,7 @@ span.lname { cursor: default; }
   });
   vp.addEventListener("pointermove", e => {
     if (pickMove(e)) return;
-    if (tool === "eraser") eraserAt = toPage(...local(e));
+    if (tool === "eraser") eraserAt = local(e);
     if (boxPress) { const [ax, ay] = boxPress.at, [bx, by] = local(e); if (Math.hypot(bx - ax, by - ay) > 4) boxPress = null; }
     if (e.pointerId !== pointer && !pickDrag && !pickLoop) {   // over a checkbox, anything but a pen: the pointing hand
       const [hx, hy] = toPage(...local(e)), over = !pickers[tool] && checkboxAt(hx, hy) >= 0;

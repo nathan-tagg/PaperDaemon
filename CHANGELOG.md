@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.61
+
+- Page editor: the eraser's circle stays under the pointer when the view scrolls (the wheel, or typing that takes the view down). It used to run away from it.
+
 ## 0.1.60
 
 - A picture a job makes after writing a reply goes right below the reply. The page's places are planned before anything is written, and laying out what is still to come below what really landed had stopped running: it shared its name with another function, and that one took its place. So a picture after a short reply went half a page down.
