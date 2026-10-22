@@ -108,8 +108,10 @@ def _cpu(img, flat, ss=1):
 
 # the inked share at pressures 0, 16, 32, 64, 96, 128, 160, 208 and 255 (measured; see the module's note)
 _AT = [0, 16, 32, 64, 96, 128, 160, 208, 255]
-GRAIN = {"PENCIL": [0.02, 0.027, 0.03, 0.096, 0.19, 0.32, 0.48, 0.66, 0.81],
-         "MECHANICAL": [0.02, 0.03, 0.03, 0.12, 0.21, 0.29, 0.35, 0.42, 0.52],
+# the pencils' set on the calibration notebook through the tablet's screen share (patches at pressure 40, 128,
+# 255 at three thicknesses, and single lines), with the paper's grain (shaders.js FS_SEG)
+GRAIN = {"PENCIL": [0.025, 0.034, 0.037, 0.125, 0.27, 0.478, 0.663, 0.866, 1.0],
+         "MECHANICAL": [0.023, 0.034, 0.034, 0.161, 0.31, 0.469, 0.639, 0.869, 1.0],
          "PAINTBRUSH": [0, 0, 0, 0.12, 0.73, 0.87, 0.87, 0.87, 0.87],
          "BALLPOINT": [0.8, 0.83, 0.87, 1, 1, 1, 1, 1, 1]}
 
@@ -121,8 +123,10 @@ def drawn(widths, k):
     return np.where(np.asarray(k) > 0, np.maximum(1.0, w), 0.0)
 
 
-# how much wider than render.py's scale the tablet draws a pen (the shader's is its wash)
-WIDER = {"PENCIL": 1.25, "MECHANICAL": 1.3, "PAINTBRUSH": 1.25, "CALIGRAPHY": 1.37, "MARKER": 1.1, "SHADER": 1.63}
+# how much wider than render.py's scale (field / 4) the tablet draws a pen: measured on the calibration
+# notebook's widths page through the tablet's screen share (the pencils' with their grain counted out); the shader's is
+# its wash, kept as it was
+WIDER = {"PENCIL": 0.76, "MECHANICAL": 0.78, "PAINTBRUSH": 0.86, "CALIGRAPHY": 1.0, "MARKER": 0.8, "SHADER": 0.94}
 _SPEED_AT = [0, 50, 200, 800]
 
 

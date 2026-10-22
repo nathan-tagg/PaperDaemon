@@ -211,11 +211,12 @@ span.lname { cursor: default; }
   const SIZES = ["Thin", "Medium", "Thick"];
   // render.py's tables: ENUM, the pens' ink (D3: the tablet's pens are pure colors; this stays until that is decided);
   // HL_ENUM, the highlighters' washes
-  const ENUM = { 0: [0, 0, 0], 1: [144, 144, 144], 2: [255, 255, 255], 3: [254, 253, 96], 4: [169, 250, 92], 5: [255, 85, 207],
-                 6: [48, 74, 224], 7: [194, 49, 50], 8: [191, 191, 191], 9: [255, 255, 255], 10: [145, 218, 113], 11: [116, 210, 232],
-                 12: [192, 127, 210], 13: [250, 231, 25] };
-  const HL_ENUM = { 3: [255, 237, 117], 13: [255, 237, 117], 4: [172, 255, 133], 10: [172, 255, 133], 5: [242, 158, 255],
-                    12: [242, 158, 255], 6: [190, 234, 254], 11: [190, 234, 254], 1: [199, 199, 198], 8: [199, 199, 198] };
+  const ENUM = { 0: [0, 0, 0], 1: [148, 146, 148], 2: [255, 255, 255], 3: [255, 239, 115], 4: [173, 255, 132], 5: [247, 158, 255],
+                 6: [0, 0, 255], 7: [255, 0, 0], 8: [189, 190, 189], 9: [255, 255, 255], 10: [0, 255, 0], 11: [0, 255, 255],
+                 12: [255, 0, 255], 13: [255, 255, 0] };
+  const PEN_ENUM = { MARKER: { 8: [0, 0, 0], 9: [0, 0, 0] } };
+  const HL_ENUM = ENUM;
+  const SHADER_PLAIN = { 0: [0, 0, 0, 255], 1: [82, 82, 82, 158] };
   // each pen's colors as its menu offers them: the stored color, the stored RGBA when the color is one, and the swatch the
   // tablet's menu shows (sampled from its screen share)
   const PEN_COLORS = [
@@ -232,7 +233,7 @@ span.lname { cursor: default; }
   const SH_CODE = { Gray: 1, Orange: 9, Magenta: 12, Blue: 6, Red: 7, Green: 4, Yellow: 3, Cyan: 11 };
   const SH_COLORS = Object.keys(SH_TOP).map(n => [n, SH_CODE[n], SH_TOP[n].concat([96]), SH_TOP[n], false, true]);  // shader: the renderer's alpha
   const colorsOf = id => id === "highlighter" ? HL_COLORS : id === "shader" ? SH_COLORS : PEN_COLORS;
-  const WSCALE = { HIGHLIGHTER: 0.25 }, WSCALE_DEFAULT = 0.144;
+  const WSCALE = { HIGHLIGHTER: 0.25 }, WSCALE_DEFAULT = 0.25;     // render.py's: a pen's width field / 4 on the tablet (measured)
 
   const pickers = { a: { pen: "fineliner", size: 1, pick: 0 }, b: { pen: "highlighter", size: 0, pick: 0 } };
   let tool = "a", eraseMode = "stroke", popFor = null;
@@ -259,7 +260,6 @@ span.lname { cursor: default; }
   // THE GRAIN (render.c's GRAIN): a pen stroke with a density per point is inked at that share of its pixels, each pixel
   // decided once per stroke from a hash of where it sits along and across the stroke. `unit` is the canvas pixels to a
   // tablet pixel (render.c's ss), so the grain is the tablet's size at any zoom.
-  const GRAIN_STREAK = 3;
   const mix = h => { h ^= h >>> 16; h = Math.imul(h, 0x7feb352d); h ^= h >>> 15; h = Math.imul(h, 0x846ca68b); h ^= h >>> 16; return h >>> 0; };
   const hash01 = (seed, a, b) => mix((seed ^ mix(Math.imul(a, 0x9e3779b9) ^ mix((b + 0x85ebca6b) | 0))) >>> 0) / 4294967296;
   function grainInk(c, x, y, g, u, v, r, t, sid) {
@@ -267,11 +267,10 @@ span.lname { cursor: default; }
     if (c.stamp[s] === sid) return false;
     c.stamp[s] = sid;
     const q = r > 0 ? v / r : 0;
-    const d = (g.da + (g.db - g.da) * t) * (1.25 - 0.5 * q * q) / (1.25 - 0.5 / 3);
+    const d = g.da + (g.db - g.da) * t;                        // even across the width (shaders.js)
     if (d >= 1) return true;
     if (d <= 0) return false;
-    const cv = Math.floor(v / g.unit), jitter = hash01((g.seed ^ 0x51ed27) >>> 0, cv, 0) * GRAIN_STREAK;
-    return hash01(g.seed, Math.floor((u / g.unit + jitter) / GRAIN_STREAK), cv) < d;
+    return hash01(0x2545f491, Math.floor(x / g.unit), Math.floor(y / g.unit)) < d;   // the paper's grain (shaders.js)
   }
   function capsule(c, ax, ay, bx, by, r, kind, rgba, sid, g) {
     if (!(r > 0)) return;
@@ -365,11 +364,11 @@ span.lname { cursor: default; }
   // HOW EACH PEN ANSWERS PRESSURE AND SPEED: paint.py's response(), measured on the pen-test pages (see its note) ->
   // [width factor, density] at a pressure 0..255 and the speed field
   const GRAIN_AT = [0, 16, 32, 64, 96, 128, 160, 208, 255];
-  const GRAIN = { PENCIL: [0.02, 0.027, 0.03, 0.096, 0.19, 0.32, 0.48, 0.66, 0.81],
-                  MECHANICAL: [0.02, 0.03, 0.03, 0.12, 0.21, 0.29, 0.35, 0.42, 0.52],
+  const GRAIN = { PENCIL: [0.025, 0.034, 0.037, 0.125, 0.27, 0.478, 0.663, 0.866, 1.0],
+                  MECHANICAL: [0.023, 0.034, 0.034, 0.161, 0.31, 0.469, 0.639, 0.869, 1.0],
                   PAINTBRUSH: [0, 0, 0, 0.12, 0.73, 0.87, 0.87, 0.87, 0.87],
                   BALLPOINT: [0.8, 0.83, 0.87, 1, 1, 1, 1, 1, 1] };
-  const WIDER = { PENCIL: 1.25, MECHANICAL: 1.3, PAINTBRUSH: 1.25, CALIGRAPHY: 1.37, MARKER: 1.1, SHADER: 1.63 };
+  const WIDER = { PENCIL: 0.76, MECHANICAL: 0.78, PAINTBRUSH: 0.86, CALIGRAPHY: 1.0, MARKER: 0.8, SHADER: 0.94 };
   const SPEED_AT = [0, 50, 200, 800];
   function interp(p, xs, ys) {
     if (p <= xs[0]) return ys[0];
@@ -389,11 +388,12 @@ span.lname { cursor: default; }
   function prepared(L) {                                      // render.py's preparation of a line
     const fam = L.pen.split("_")[0], scaleW = WSCALE[fam] || WSCALE_DEFAULT;
     const widths = L.points.map(p => Math.max(1, p.width * scaleW));
-    if (L.pen.startsWith("HIGHLIGHTER")) return { kind: RF_HIGHLIGHTER, rgba: (L.colorRgba ? L.colorRgba.slice(0, 3) : (HL_ENUM[L.color] || [255, 237, 117])), widths };
-    const dens = L.points.map((p, i) => { const [k, d] = response(fam, p.pressure, p.speed); widths[i] = k > 0 ? Math.max(1, widths[i] * k) : 0; return d; });
-    if (L.pen === "SHADER") return { kind: RF_SHADER, rgba: L.colorRgba || [128, 128, 128, 96], widths };
+    if (L.pen.startsWith("HIGHLIGHTER")) return { kind: RF_HIGHLIGHTER, rgba: (L.colorRgba ? L.colorRgba.slice(0, 3) : (HL_ENUM[L.color] || [255, 239, 115])), widths };
+    const least = fam === "PENCIL" || fam === "MECHANICAL" ? 2 : 1;   // the tablet draws no pencil narrower than 2 units
+    const dens = L.points.map((p, i) => { const [k, d] = response(fam, p.pressure, p.speed); widths[i] = k > 0 ? Math.max(least, widths[i] * k) : 0; return d; });
+    if (L.pen === "SHADER") return { kind: RF_SHADER, rgba: L.colorRgba || SHADER_PLAIN[L.color] || (ENUM[L.color] || [0, 0, 0]).concat([255]), widths };
     const p0 = L.points[0], seed = mix((Math.imul(Math.round((p0.x + page.paperSize[0] / 2) * 16), 0x27d4eb2d) ^ mix(Math.round(p0.y * 16))) >>> 0);
-    return { kind: RF_PEN, rgba: ENUM[L.color] || [0, 0, 0], widths, dens, seed };
+    return { kind: RF_PEN, rgba: (PEN_ENUM[fam] || {})[L.color] || ENUM[L.color] || [0, 0, 0], widths, dens, seed };
   }
 
   // ================================================================ THE RENDERER ON THE GRAPHICS CARD (WebGL2)

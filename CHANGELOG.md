@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.70
+
+Measured on the tablet's own pixels (its screen share of a calibration notebook, 2026-10-22):
+- Pen lines are as wide as the tablet draws them: a pen's width is its width field / 4 (fineliner, ballpoint and calligraphy exactly; marker, paintbrush and the pencils by their own measured factors), whatever its thickness setting. They were drawn at 0.58 of that. What PaperDaemon writes to the tablet is unchanged.
+- Colors are the tablet's: pure pen colors (blue 0,0,255, red 255,0,0, and so on), highlighters in the pens' colors (blue is blue, gray is 148), a shader without a stored color black or gray as the tablet draws it, and a marker in the gray-overlap and highlight colors black.
+- Pencil and mechanical pencil look like the tablet's: the grain is single pixels fixed to the paper, the same pixels under every stroke, as even across a stroke as along it, and as dense as the tablet's at every pressure; no pencil line narrower than 2 units.
+
 ## 0.1.69
 
 - A page of a PDF or a book fills the screen as the tablet shows it (its zoom, "best fit": the whole page, as large as fits). Its frame is its own size -- a cover 1245 units wide, a planner 5095 -- and shown on a notebook's 1620 it sat small in a white margin, or showed only its top corner. Covers fill the page now, in the Mirror, the page grid and the covers.

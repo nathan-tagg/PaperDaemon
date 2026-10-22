@@ -49,7 +49,6 @@ typedef struct {
    start, and the densities at its two ends */
 typedef struct { uint32_t seed; double u0, da, db; } grain;
 
-#define GRAIN_STREAK 3.0   /* a grain's length along the stroke, in target pixels (one pixel across) */
 
 static inline uint32_t mix(uint32_t h) {
     h ^= h >> 16; h *= 0x7feb352dU; h ^= h >> 15; h *= 0x846ca68bU; h ^= h >> 16;
@@ -87,14 +86,13 @@ static inline int grain_ink(canvas *c, int32_t x, int32_t y, const grain *g, dou
     if (*s == sid) return 0;
     *s = sid;
     double d = g->da + (g->db - g->da) * t, q = r > 0 ? v / r : 0;
-    d *= (1.25 - 0.5 * q * q) / (1.25 - 0.5 / 3.0);       /* denser toward the middle, the same share over the width */
+    (void)q;                                                /* even across the width, as the tablet's grain */
     if (d >= 1) return 1;
     if (d <= 0) return 0;
+    /* THE PAPER'S GRAIN (ui/shaders.js FS_SEG): one texture fixed to the page, the same pixels for every stroke */
     double ss = c->ss;
-    int32_t cv = (int32_t)floor(v / ss);
-    double jitter = hash01(g->seed ^ 0x51ed27u, cv, 0) * GRAIN_STREAK;    /* the rows' streaks do not line up */
-    int32_t cu = (int32_t)floor((u / ss + jitter) / GRAIN_STREAK);
-    return hash01(g->seed, cu, cv) < d;
+    (void)u;
+    return hash01(0x2545f491u, (int32_t)floor(x / ss), (int32_t)floor(y / ss)) < d;
 }
 
 /* a capsule: the points within r of the segment a-b (a disc when a == b); with `g`, a grain stroke's segment */

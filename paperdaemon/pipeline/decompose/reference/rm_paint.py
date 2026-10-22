@@ -64,7 +64,7 @@ from paperdaemon.pipeline.decompose.reference.rm_trace import place
 from paperdaemon.pipeline.decompose.reference.rmb_npops import simplify
 from paperdaemon.pipeline.decompose.reference.rmb_params import *              # noqa: F401,F403  every tuned constant, in one place
 
-_W = R.WSCALE_DEFAULT
+_W = R.WSCALE_WRITER
 
 
 def _field(page_px):

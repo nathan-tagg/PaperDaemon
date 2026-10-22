@@ -102,7 +102,7 @@ def _footprint(s, ss, ox, oy, W, H, eps=0.0):
         return np.empty(0, np.int32)
     if is_wash(s) and not FLOOR_MODEL:
         return RS.wash_pixels(pts, widths, ox * ss, oy * ss, W, H, eps=eps, scale=ss)
-    k = R.WSCALE.get(_fam(tool), R.WSCALE_DEFAULT)
+    k = R.WSCALE.get(_fam(tool), R.WSCALE_WRITER)
     wf = [max(1.0, float(w) * k) * ss / k for w in widths]
     P = [((x - ox) * ss, (y - oy) * ss) for x, y in pts]
     pad = max(wf) * k + 3
@@ -417,7 +417,7 @@ def simplify(strokes, tol=TOL):
         if len(pts) < 3 or is_grain(s):
             out.append(s)
             continue
-        k = R.WSCALE.get(_fam(tool), R.WSCALE_DEFAULT)
+        k = R.WSCALE.get(_fam(tool), R.WSCALE_WRITER)
         P = np.column_stack([np.asarray(pts, float).reshape(-1, 2),
                              np.maximum(1.0, np.asarray(widths, float) * k) / 2.0])
         done = s
@@ -665,7 +665,7 @@ def render(strokes, box, scale=1.0):
             # DARKENS whatever is under it. rm_render._stipple scattered light dots over the wash instead, which
             # rendered the hatch shading badly: it looks right on the tablet and wrong in the renders.
             # One opacity canvas per run of pencil color, composited at the flush.
-            col = R.ENUM.get(getattr(s[3], "value", 0), (0, 0, 0))
+            col = R.ENUM_WRITER.get(getattr(s[3], "value", 0), (0, 0, 0))
             if st["pending"] is None or st["pending"][0] != ("pencil", col):
                 flush()
                 st["pending"] = (("pencil", col), np.zeros((H, W), np.float32))
@@ -673,10 +673,10 @@ def render(strokes, box, scale=1.0):
                             seed=int(abs(s[0][0][0]) * 7919 + abs(s[0][0][1])))
         else:
             flush()
-            k = R.WSCALE.get(_fam(s[2]), R.WSCALE_DEFAULT)
+            k = R.WSCALE.get(_fam(s[2]), R.WSCALE_WRITER)
             widths = [max(1.0, float(w) * k) * scale / k for w in s[1]]       # pens: PIL, floored -- not modeled yet
             pts = [((x - x0) * scale, (y - y0) * scale) for x, y in s[0]]
-            R._draw(st["d"], _line(s, widths), R.ENUM.get(getattr(s[3], "value", 0), (0, 0, 0)), pts)
+            R._draw(st["d"], _line(s, widths), R.ENUM_WRITER.get(getattr(s[3], "value", 0), (0, 0, 0)), pts)
     flush()
     return st["canvas"]
 

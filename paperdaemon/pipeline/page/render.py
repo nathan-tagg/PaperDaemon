@@ -54,21 +54,26 @@ PAGE_W, PAGE_H = 1620, 2160
 # fitted, most of the ink lay off the page.
 PDF_SCALE = 1404 / (157.5 / 25.4 * 72)       # page units per PDF point
 
-# Pen colors as the desktop app renders them -- read off screenshots of a calibration page:
-# a marker bar of every PenColor, sampled where it covers a
-# highlighter swatch (opaque, so pure). The earlier table had the HIGHLIGHTER pastels in the
-# marker slots 3-7 (blue was (190,234,254); the marker is a deep (48,74,224)). 9 (HIGHLIGHT) is
-# invisible as a pen; 2 is white.
-ENUM = {0: (0, 0, 0), 1: (144, 144, 144), 2: (255, 255, 255), 3: (254, 253, 96),
-        4: (169, 250, 92), 5: (255, 85, 207), 6: (48, 74, 224), 7: (194, 49, 50),
-        8: (191, 191, 191), 9: (255, 255, 255), 10: (145, 218, 113), 11: (116, 210, 232),
-        12: (192, 127, 210), 13: (250, 231, 25)}
-# A HIGHLIGHTER WITH NO color_rgba says its color in the Line.color enum: a pink highlighter stroke the user drew
-# on the tablet carried PenColor.PINK and no rgba, and was drawn yellow. Its wash is the highlighter's own pastel
-# (the measured highlighter palette: yellow, orange, green, blue, pink, gray), not the pen color of that name.
-HL_ENUM = {3: (255, 237, 117), 13: (255, 237, 117), 4: (172, 255, 133), 10: (172, 255, 133),
-           5: (242, 158, 255), 12: (242, 158, 255), 6: (190, 234, 254), 11: (190, 234, 254),
-           1: (199, 199, 198), 8: (199, 199, 198)}
+# THE TABLET'S COLORS, read off its own pixels (the screen share of the calibration notebook): every
+# PenColor drawn by a fineliner and a marker. The earlier table was the desktop app's, which mutes them (its blue was
+# (48,74,224), the tablet's is (0,0,255)). 9 (HIGHLIGHT) is invisible as a fineliner; 2 is white.
+ENUM = {0: (0, 0, 0), 1: (148, 146, 148), 2: (255, 255, 255), 3: (255, 239, 115),
+        4: (173, 255, 132), 5: (247, 158, 255), 6: (0, 0, 255), 7: (255, 0, 0),
+        8: (189, 190, 189), 9: (255, 255, 255), 10: (0, 255, 0), 11: (0, 255, 255),
+        12: (255, 0, 255), 13: (255, 255, 0)}
+# THE DECOMPOSER'S PALETTE, frozen: the colors it chooses between (rm_lean, rm_paint), as they were, so its output stays
+ENUM_WRITER = {0: (0, 0, 0), 1: (144, 144, 144), 2: (255, 255, 255), 3: (254, 253, 96), 4: (169, 250, 92), 5: (255, 85, 207),
+               6: (48, 74, 224), 7: (194, 49, 50), 8: (191, 191, 191), 9: (255, 255, 255), 10: (145, 218, 113),
+               11: (116, 210, 232), 12: (192, 127, 210), 13: (250, 231, 25)}
+# THE MARKER in 8 (GRAY_OVERLAP) and 9 (HIGHLIGHT) is black on the tablet, where the fineliner is light gray and nothing
+PEN_ENUM = {"MARKER": {8: (0, 0, 0), 9: (0, 0, 0)}}
+# A HIGHLIGHTER WITH NO color_rgba says its color in the Line.color enum, and the tablet washes it in the pens' own
+# color of that name (measured: yellow, blue (0,0,255), pink, green, gray (148,146,148)); HIGHLIGHT without an rgba
+# leaves nothing.
+HL_ENUM = dict(ENUM)
+# A SHADER WITH NO color_rgba (one the tablet never writes itself; our own pen tests did): black is solid, gray a mid
+# gray that darkens where it is laid twice (measured 148 once, 107 twice: ink 82 at 0.62); any other its pen color.
+SHADER_PLAIN = {0: (0, 0, 0, 255), 1: (82, 82, 82, 158)}
 
 # highlighter's width field uses a wider internal unit than the pens
 WSCALE = {"HIGHLIGHTER": 0.25}
@@ -77,7 +82,13 @@ WSCALE = {"HIGHLIGHTER": 0.25}
 # pressure varies 179..255, so pressure must drive grain/darkness, not width.
 # Approximated here by stippling -- close enough to preview, not pixel-exact.
 PENCIL_FAMILY = ("PENCIL", "MECHANICAL")
-WSCALE_DEFAULT = 0.144                      # fineliner ts=3.0 -> width 24 -> 3.5 px
+# A PEN'S WIDTH ON THE TABLET is its width field / 4 page units: measured on the calibration notebook through
+# the tablet's screen share (1:1), every pen at thickness 1-3 -- fineliner, ballpoint and calligraphy exactly field / 4,
+# the rest by paint.WIDER. It was 0.144 ("ts=3 -> 3.5 px"), and every pen line drawn here was 0.58 of the tablet's.
+WSCALE_DEFAULT = 0.25
+# THE WRITERS' SCALE, frozen: the width field PaperDaemon gives a pixel it wants drawn (the lettering, the decomposer's
+# pens). Their output stays as it was, as it looks on the tablet; only what the renderer draws follows the tablet.
+WSCALE_WRITER = 0.144
 
 
 def _meta(doc):
@@ -332,15 +343,18 @@ def _ink(S, tx, ty):
                       else KINDS["pen"] for n in names], _np.int32)
     kp = _np.repeat(kind, counts)
     w = _np.where(kp == KINDS["highlighter"], widths, drawn(widths, k))
+    # THE TABLET DRAWS NO PENCIL NARROWER THAN 2 UNITS (its screen share: width fields 3, 6 and 12 all drew 2 wide)
+    least = _np.array([2.0 if f in PENCIL_FAMILY else 1.0 for f in uniq])[fp]
+    w = _np.where((w > 0) & (kp == KINDS["pen"]), _np.maximum(w, least), w)
     d = _np.where(kp == KINDS["pen"], dens, 1.0)
     rgba = _np.empty((len(keep), 4), _np.uint8)
     for i, (L, n) in enumerate(zip(keep, names)):
         if n.startswith("SHADER"):
-            c = tuple(L.color_rgba) if getattr(L, "color_rgba", None) else (128, 128, 128, 96)
+            c = tuple(L.color_rgba) if getattr(L, "color_rgba", None) else                 SHADER_PLAIN.get(L.color.value, ENUM.get(L.color.value, (0, 0, 0)) + (255,))
         elif n.startswith("HIGHLIGHTER"):
-            c = tuple(L.color_rgba[:3]) if L.color_rgba else HL_ENUM.get(L.color.value, (255, 237, 117))
+            c = tuple(L.color_rgba[:3]) if L.color_rgba else HL_ENUM.get(L.color.value, (255, 239, 115))
         else:
-            c = ENUM.get(L.color.value, (0, 0, 0))
+            c = PEN_ENUM.get(n.split("_")[0], {}).get(L.color.value) or ENUM.get(L.color.value, (0, 0, 0))
         rgba[i] = (list(c) + [255])[:4]
     xy = _np.ascontiguousarray(a[:, :2] + (tx, ty))
     return Flat(xy, _np.ascontiguousarray(w), _np.ascontiguousarray(d), counts.astype(_np.int32), kind, rgba)

@@ -47,7 +47,7 @@ window.PD_SHADERS = {
   FS_SEG: `#version 300 es
   precision highp float; precision highp int;
   flat in vec4 vAB; flat in vec4 vRC; flat in vec4 vG;
-  uniform int grainOn; uniform float alpha; uniform uint seed;
+  uniform int grainOn; uniform float alpha; uniform uint seed; uniform float k; uniform vec2 off;
   out vec4 color;
   uint mixh(uint h) { h ^= h >> 16; h *= 0x7feb352du; h ^= h >> 15; h *= 0x846ca68bu; h ^= h >> 16; return h; }
   float hash01(uint s, int a, int b) { return float(mixh(s ^ mixh(uint(a) * 0x9e3779b9u ^ mixh(uint(b) + 0x85ebca6bu)))) / 4294967296.0; }
@@ -60,14 +60,16 @@ window.PD_SHADERS = {
     float ink = 1.0;
     if (grainOn == 1) {
       float L = sqrt(L2), v = L > 0.0 ? ((p.x - a.x) * d.y - (p.y - a.y) * d.x) / L : length(e), q = r > 0.0 ? v / r : 0.0;
-      float den = (vG.x + (vG.y - vG.x) * t) * (1.25 - 0.5 * q * q) / (1.25 - 0.5 / 3.0);
+      float den = (vG.x + (vG.y - vG.x) * t);                // even across the width, as the tablet's grain
       if (den < 1.0) {
         if (den <= 0.0) ink = 0.0;
         else {
-          float unit = vG.w; int cv = int(floor(v / unit));
-          float jitter = hash01(seed ^ 0x51ed27u, cv, 0) * 3.0;
-          int cu = int(floor(((vG.z + tu * L) / unit + jitter) / 3.0));
-          ink = hash01(seed, cu, cv) < den ? 1.0 : 0.0;
+          // THE TABLET'S GRAIN IS THE PAPER'S: one texture fixed to the page, a pixel of it inked where it lies under the
+          // stroke's density -- the same pixels for every stroke and every pass, so strokes laid over each other do not
+          // add grain (its screen share: a patch is as dark at every thickness, and darker than a line only
+          // by the line's own edges). Its cells are the page's units, whatever the zoom (k: target pixels a unit).
+          ivec2 cell = ivec2(floor((p - off) / k));
+          ink = hash01(0x2545f491u, cell.x, cell.y) < den ? 1.0 : 0.0;
         }
       }
     }
