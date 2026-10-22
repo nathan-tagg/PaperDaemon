@@ -3104,9 +3104,9 @@ span.lname { cursor: default; }
     setKnown(sc, there);
     if (!was || JSON.stringify(there) === JSON.stringify(was)) return false;
     let landed = false, changed = false;
-    // THE DAEMON'S LAYER is taken as the file has it, whole: his note replaces his last one. It is his, so it is not
+    // THE DAEMON'S LAYER is taken as the file has it, whole: the daemon's new note replaces the last one. It is his, so it is not
     // ink that landed for the user (the text stays), and the user's layers are matched apart from it -- by position
-    // it shifted them all, and his note was merged into the user's own layer.
+    // it shifted them all, and the daemon's note was merged into the user's own layer.
     there.layers.forEach((TL, i) => {
       if (!TL.daemon) return;
       const src = sc.layers[i];
