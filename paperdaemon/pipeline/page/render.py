@@ -190,7 +190,7 @@ _LINES = {}          # path -> ((mtime_ns, size), fastrm.page_lines(...))
 # hand on the tablet makes. NOT the user's strokes on his layer: the tablet writes on whatever layer is current, and
 # the user's writing has landed there. HE WRITES AS THE TABLET'S OWN AUTHOR (1): the tablet will not open a page that
 # holds an item of any author it does not know -- his notes under an author of their own (218) left every page they
-# were on unreadable there (measured 2026-10-25: those pages opened again once the 218 items were taken out). What is
+# were on unreadable there (measured: those pages opened again once the 218 items were taken out). What is
 # left of 218 on a page is his, and the next note takes it out of the file outright (notes._write).
 DAEMON_LAYER = "Daemon"
 DAEMON_LEGACY = "PaperDaemon"
