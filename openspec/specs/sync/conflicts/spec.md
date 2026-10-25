@@ -31,3 +31,13 @@ queued: a newer conflict on the same page replaces it.
 #### Scenario: The user keeps writing
 - **WHEN** a CONFLICT job for page 3 is queued and the user writes on page 3 again before it runs
 - **THEN** one CONFLICT job for page 3 is queued, carrying the newest pages
+
+### Requirement: A page marked not deleted is live
+A page entry whose deleted mark says 0 (the tablet keeps one on pages it brought back) SHALL be a live page; only a
+mark that says 1 deletes it. A page PaperDaemon deletes SHALL be stamped later than every change the document holds.
+The tablet keeps a page it has changed locally (it marks it not deleted again, later), so such a page SHALL be deleted
+on the tablet.
+
+#### Scenario: A page the tablet brought back
+- **WHEN** a page carries {"deleted": {"value": 0}}
+- **THEN** PaperDaemon shows it, numbers it and renders it as the tablet does

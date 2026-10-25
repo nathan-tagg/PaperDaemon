@@ -312,7 +312,7 @@ def _content_sha(path, data, raw):
         from paperdaemon.pipeline.page import render as _R
         if parts is not None:
             daemon = _R.daemon_layer_ids(p[1] for p in parts if p[0] == "B")
-            parts = [p for p in parts if p[0] != "L" or not _R.daemon_stroke(p[9], (p[7], p[8]), daemon)]
+            parts = [p for p in parts if p[0] != "L" or not _R.daemon_stroke(p[9], (p[7], p[8]), daemon, lambda p=p: fastrm.synthetic_at(data, p[10], p[4]))]
             for p in parts:
                 if p[0] == "L":
                     _k, tool, color, rgba, n, first, last = p[:7]
@@ -335,7 +335,7 @@ def _content_sha(path, data, raw):
                 v = getattr(b.item, "value", None)
                 if not isinstance(v, Line):
                     continue          # erased stroke; carries no content
-                if _R.daemon_stroke(b.item.item_id.part1, (b.parent_id.part1, b.parent_id.part2), daemon):
+                if _R.daemon_stroke(b.item.item_id.part1, (b.parent_id.part1, b.parent_id.part2), daemon, lambda v=v: _R.synthetic(v.points)):
                     continue          # the daemon's note
                 pts = v.points
                 h.update(("L%s|%s|%s|%d|" % (

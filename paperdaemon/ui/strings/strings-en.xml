@@ -253,6 +253,7 @@
   <string name="dc.paste_denied">PaperDaemon could not read the clipboard. Press Ctrl+V instead.</string>
   <string name="dc.save">Save</string>
   <string name="dc.saving">Saving…</string>
+  <string name="dc.saved">Saved to Downloads</string>
   <string name="dc.sending">Sending…</string>
   <string name="dc.send">Send to Tablet</string>
   <string name="dc.look">Look closely</string>

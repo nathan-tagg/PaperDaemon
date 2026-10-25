@@ -254,6 +254,7 @@
   <string name="dc.paste_denied">PaperDaemon이 클립보드를 읽지 못했습니다. 대신 Ctrl+V를 누르세요.</string>
   <string name="dc.save">저장</string>
   <string name="dc.saving">저장 중…</string>
+  <string name="dc.saved">다운로드에 저장됨</string>
   <string name="dc.sending">보내는 중…</string>
   <string name="dc.send">태블릿으로 보내기</string>
   <string name="dc.look">자세히 보기</string>

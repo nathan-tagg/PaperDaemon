@@ -254,6 +254,7 @@
   <string name="dc.paste_denied">PaperDaemon کلپ بورڈ نہیں پڑھ سکا۔ اس کی جگہ Ctrl+V دبائیں۔</string>
   <string name="dc.save">محفوظ کریں</string>
   <string name="dc.saving">محفوظ ہو رہا ہے…</string>
+  <string name="dc.saved">ڈاؤن لوڈز میں محفوظ</string>
   <string name="dc.sending">بھیجا جا رہا ہے…</string>
   <string name="dc.send">ٹیبلیٹ کو بھیجیں</string>
   <string name="dc.look">قریب سے دیکھیں</string>

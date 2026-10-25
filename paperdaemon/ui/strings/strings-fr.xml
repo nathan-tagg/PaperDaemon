@@ -253,6 +253,7 @@
   <string name="dc.paste_denied">PaperDaemon n'a pas pu lire le presse-papiers. Appuyez plutôt sur Ctrl+V.</string>
   <string name="dc.save">Enregistrer</string>
   <string name="dc.saving">Enregistrement…</string>
+  <string name="dc.saved">Enregistré dans Téléchargements</string>
   <string name="dc.sending">Envoi…</string>
   <string name="dc.send">Envoyer à la tablette</string>
   <string name="dc.look">Regarder de près</string>

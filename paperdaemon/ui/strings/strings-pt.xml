@@ -253,6 +253,7 @@
   <string name="dc.paste_denied">O PaperDaemon não conseguiu ler a área de transferência. Prima Ctrl+V em vez disso.</string>
   <string name="dc.save">Guardar</string>
   <string name="dc.saving">A guardar…</string>
+  <string name="dc.saved">Salvo em Downloads</string>
   <string name="dc.sending">Enviando…</string>
   <string name="dc.send">Enviar ao tablet</string>
   <string name="dc.look">Ver de perto</string>

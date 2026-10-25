@@ -254,6 +254,7 @@
   <string name="dc.paste_denied">Methodd PaperDaemon ddarllen y clipfwrdd. Pwyswch Ctrl+V yn lle hynny.</string>
   <string name="dc.save">Cadw</string>
   <string name="dc.saving">Yn cadw…</string>
+  <string name="dc.saved">Wedi'i gadw yn Llwythi i Lawr</string>
   <string name="dc.sending">Yn anfon…</string>
   <string name="dc.send">Anfon i'r Llechen</string>
   <string name="dc.look">Edrych yn fanwl</string>

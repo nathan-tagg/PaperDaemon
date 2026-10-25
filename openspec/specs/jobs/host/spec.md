@@ -160,3 +160,15 @@ refused with the numbers, so the model can plan again.
 #### Scenario: A plan that does not fit
 - **WHEN** the model plans three large pictures on a nearly full page
 - **THEN** the host refuses the plan, says how much room is left, and the model plans again
+
+### Requirement: What a job writes is the tablet's own author's
+Everything a job writes on a page (its strokes, typed text and pictures) SHALL carry the tablet's own author id (1),
+numbered after every id the page already holds. The tablet does not open a page holding an item of an author it does
+not know: a page written under an author of PaperDaemon's own (219, tried in 0.1.79) would not open, and the same
+answer under the tablet's author on a fresh page did. Another author SHALL NOT be used until a page under it is shown
+to open on the device. A picture's ids SHALL be written with their author in one byte, as the format has it.
+
+#### Scenario: An answer lettered on a page
+- **WHEN** a job writes its answer on a page
+- **THEN** every new item is of author 1, numbered past every id already there, and the page's author table is
+  unchanged

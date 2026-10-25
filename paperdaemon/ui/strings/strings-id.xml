@@ -254,6 +254,7 @@
   <string name="dc.paste_denied">PaperDaemon tidak bisa membaca papan klip. Tekan Ctrl+V saja.</string>
   <string name="dc.save">Simpan</string>
   <string name="dc.saving">Menyimpan…</string>
+  <string name="dc.saved">Disimpan ke Unduhan</string>
   <string name="dc.sending">Mengirim…</string>
   <string name="dc.send">Kirim ke Tablet</string>
   <string name="dc.look">Lihat lebih dekat</string>

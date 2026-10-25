@@ -377,8 +377,8 @@ def test_the_editor_leaves_the_daemons_layer_to_him():
         live = [b for b in bl if isinstance(b, ss.SceneLineItemBlock) and isinstance(b.item.value, si.Line)]
         daemon_layers = [k for k, v in names.items() if v == "Daemon"]
         print(json.dumps({"marked": marked, "daemon_layers": len(daemon_layers),
-                          "his": sum(1 for b in live if b.item.item_id.part1 == N.AUTHOR), "want": len(last),
-                          "users": sum(1 for b in live if b.item.item_id.part1 != N.AUTHOR)}))
+                          "his": sum(1 for b in live if (b.parent_id.part1, b.parent_id.part2) in daemon_layers), "want": len(last),
+                          "users": sum(1 for b in live if (b.parent_id.part1, b.parent_id.part2) not in daemon_layers)}))
     """)
     assert got["marked"] == ["Daemon"]
     assert got["daemon_layers"] == 1

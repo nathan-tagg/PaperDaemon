@@ -254,6 +254,7 @@
   <string name="dc.paste_denied">PaperDaemon non è riuscito a leggere gli appunti. Premi invece Ctrl+V.</string>
   <string name="dc.save">Salva</string>
   <string name="dc.saving">Sto salvando…</string>
+  <string name="dc.saved">Salvato in Download</string>
   <string name="dc.sending">Invio…</string>
   <string name="dc.send">Invia al tablet</string>
   <string name="dc.look">Guarda da vicino</string>

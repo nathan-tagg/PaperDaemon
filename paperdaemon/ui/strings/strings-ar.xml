@@ -254,6 +254,7 @@
   <string name="dc.paste_denied">تعذّر على PaperDaemon قراءة الحافظة. اضغط Ctrl+V بدلًا من ذلك.</string>
   <string name="dc.save">حفظ</string>
   <string name="dc.saving">جارٍ الحفظ…</string>
+  <string name="dc.saved">حُفظ في التنزيلات</string>
   <string name="dc.sending">جارٍ الإرسال…</string>
   <string name="dc.send">إرسال إلى الجهاز اللوحي</string>
   <string name="dc.look">انظر عن قرب</string>

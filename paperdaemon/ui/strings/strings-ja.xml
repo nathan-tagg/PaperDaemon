@@ -254,6 +254,7 @@
   <string name="dc.paste_denied">PaperDaemon はクリップボードを読み取れませんでした。代わりに Ctrl+V を押してください。</string>
   <string name="dc.save">保存</string>
   <string name="dc.saving">保存中…</string>
+  <string name="dc.saved">ダウンロードに保存しました</string>
   <string name="dc.sending">送信中…</string>
   <string name="dc.send">タブレットに送信</string>
   <string name="dc.look">拡大して見る</string>

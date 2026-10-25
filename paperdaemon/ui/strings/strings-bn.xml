@@ -254,6 +254,7 @@
   <string name="dc.paste_denied">PaperDaemon ক্লিপবোর্ড পড়তে পারেনি। এর বদলে Ctrl+V চাপুন।</string>
   <string name="dc.save">সংরক্ষণ</string>
   <string name="dc.saving">সংরক্ষণ হচ্ছে…</string>
+  <string name="dc.saved">ডাউনলোডে সংরক্ষিত</string>
   <string name="dc.sending">পাঠানো হচ্ছে…</string>
   <string name="dc.send">ট্যাবলেটে পাঠান</string>
   <string name="dc.look">কাছ থেকে দেখুন</string>

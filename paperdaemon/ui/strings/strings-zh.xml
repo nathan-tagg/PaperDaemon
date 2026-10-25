@@ -254,6 +254,7 @@
   <string name="dc.paste_denied">PaperDaemon 无法读取剪贴板。请改按 Ctrl+V。</string>
   <string name="dc.save">保存</string>
   <string name="dc.saving">正在保存…</string>
+  <string name="dc.saved">已保存到“下载”</string>
   <string name="dc.sending">正在发送…</string>
   <string name="dc.send">发送到平板</string>
   <string name="dc.look">仔细查看</string>

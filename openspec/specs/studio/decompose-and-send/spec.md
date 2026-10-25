@@ -60,3 +60,12 @@ sent or the user leaves the screen. The decomposer reads its picture from a temp
 #### Scenario: After sending
 - **WHEN** the user sends an image and leaves the screen
 - **THEN** no copy of the image or its preview exists in PaperDaemon's data folder
+
+### Requirement: A card says what happened on one line
+Saving a decomp SHALL say "Saved to Downloads" and nothing more. A card SHALL keep one line, one line high, for what
+happened to it (saved, or why not), there whether it says anything or not: a card never grows when it speaks, and
+nothing in its row moves. A message too long for the line SHALL be cut, the whole of it shown on hover.
+
+#### Scenario: Saving a decomp
+- **WHEN** the user saves a decomp
+- **THEN** its card says "Saved to Downloads" and no card in its row changes height or moves

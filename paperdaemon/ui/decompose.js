@@ -73,7 +73,10 @@
       // Delete and Save together at the left, Send to Tablet at the right
       '<span class="decomp-actions"><span class="decomp-keep"><button type="button" class="btn small" data-del="' + it.id + '">' + esc(PD.t("common.delete")) + "</button>" +
       '<button type="button" class="btn small" data-save="' + it.id + '"' + (it.saving ? ' disabled aria-busy="true"' : "") + ">" + esc(PD.t(it.saving ? "dc.saving" : "dc.save")) + "</button></span>" +
-      act + "</span>" + (it.note ? '<span class="meta' + (it.noteBad ? " attn-text" : "") + '" role="status">' + esc(it.note) + "</span>" : "") + "</figcaption></figure>";
+      // THE CARD'S ONE LINE FOR WHAT HAPPENED (saved, or why not): always there, one line high, cut short with the whole
+      // of it on hover -- a card never grows when it speaks, and nothing in its row moves
+      act + '</span><span class="meta decomp-note' + (it.noteBad ? " attn-text" : "") + '" role="status" title="' + esc(it.note || "") + '">' +
+      esc(it.note || "") + "</span></figcaption></figure>";
   }
 
   function pagerHtml() {
@@ -134,7 +137,7 @@
     if (!it || it.saving) return;
     it.saving = true; it.note = ""; renderItems();
     const [got, e] = await PD.safe(PD.api("POST", "/decompose/save", { id: it.id }));
-    it.saving = false; it.note = e ? PD.errText(e) : PD.t("fm.exported", { name: got.name }); it.noteBad = !!e;
+    it.saving = false; it.note = e ? PD.errText(e) : PD.t("dc.saved"); it.noteBad = !!e;
     renderItems();
   }
 

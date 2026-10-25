@@ -635,9 +635,10 @@ def scene_of(doc, page_no, arrays=False):
                 lines = [dict(ln, points=_moved(_rows(ln["points"], arrays), dx, dy)) for ln in parts[1].get(g.node_id, [])]
             else:
                 lines = lines_in(g, [])
-            # THE DAEMON'S LAYER (his author id on its node): shown, and marked, so the editor leaves it to him
+            # THE DAEMON'S LAYER (named as his, or under his old author): shown, and marked, so the editor leaves it to him
             layers.append({"label": g.label.value or "Layer %d" % (len(layers) + 1), "visible": bool(g.visible.value),
-                           "lines": lines, "daemon": g.node_id.part1 == R.DAEMON_AUTHOR})
+                           "lines": lines, "daemon": g.node_id.part1 == R.DAEMON_AUTHOR
+                           or g.label.value in (R.daemon_layer_name(), R.DAEMON_LEGACY)})
     if not layers:
         layers = [{"label": "Layer 1", "visible": True, "lines": []}]
     text = None

@@ -141,6 +141,7 @@ pre.snippet.pad-text { white-space: pre-wrap; padding: var(--s3) var(--s4); font
 .decomp .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
 .decomp .meta { font-size: 14px; color: var(--ink-3); }
 .decomp-actions { display: flex; gap: var(--s2); align-items: center; justify-content: space-between; margin-top: var(--s1); }
+.decomp .decomp-note { display: block; height: 1.5em; line-height: 1.5em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .decomp-keep { display: flex; gap: var(--s2); }      /* Delete and Save together at the left; Send to Tablet at the right */
 /* THE DECOMPS' PAGER, on the title's row at its right: the count, the per page, the arrows (the viewer's) and pages */
 .dc-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s4); flex-wrap: wrap;

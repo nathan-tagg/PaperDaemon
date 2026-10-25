@@ -254,6 +254,7 @@
   <string name="dc.paste_denied">PaperDaemon क्लिपबोर्ड नहीं पढ़ सका। इसके बजाय Ctrl+V दबाएँ।</string>
   <string name="dc.save">सहेजें</string>
   <string name="dc.saving">सहेजा जा रहा है…</string>
+  <string name="dc.saved">डाउनलोड में सहेजा गया</string>
   <string name="dc.sending">भेजा जा रहा है…</string>
   <string name="dc.send">टैबलेट पर भेजें</string>
   <string name="dc.look">पास से देखें</string>

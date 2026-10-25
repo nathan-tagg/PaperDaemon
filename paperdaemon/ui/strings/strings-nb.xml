@@ -254,6 +254,7 @@
   <string name="dc.paste_denied">PaperDaemon kunne ikke lese utklippstavlen. Trykk Ctrl+V i stedet.</string>
   <string name="dc.save">Lagre</string>
   <string name="dc.saving">Lagrer…</string>
+  <string name="dc.saved">Lagret i Nedlastinger</string>
   <string name="dc.sending">Sender…</string>
   <string name="dc.send">Send til nettbrett</string>
   <string name="dc.look">Se nærmere</string>

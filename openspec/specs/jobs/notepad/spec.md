@@ -75,3 +75,20 @@ says how many entries go. This is the only way a notepad is emptied: nothing wri
 - **WHEN** the user wipes the Garden plans notepad and confirms
 - **THEN** its entries are gone with no copy kept, and the next job in that notebook sees an empty
   notepad
+
+### Requirement: Both libraries' notepads, newest first
+Daemon > Notes SHALL list the notepads of the tablet's notebooks and of the False Mirror's (kept by the False Mirror's
+own engine), each under its library's name, and within each the notebook that had a job most recently first.
+
+#### Scenario: A job in the False Mirror
+- **WHEN** a job runs in a False Mirror notebook
+- **THEN** its notepad is listed under the False Mirror, at the top
+
+### Requirement: A deleted notebook takes its notepad with it
+When a notebook is deleted (in the trash, or gone from its library), its notepad SHALL be removed for good. A library
+that has not been read SHALL never count its notebooks as deleted, and a notebook's metadata caught mid-write or
+unreadable SHALL NOT count as deleted.
+
+#### Scenario: A notebook moved to the trash
+- **WHEN** the user deletes a notebook and opens Daemon > Notes
+- **THEN** its notepad is gone, and the other notebooks' are as they were

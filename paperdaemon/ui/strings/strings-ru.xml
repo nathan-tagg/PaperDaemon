@@ -260,6 +260,7 @@
   <string name="dc.paste_denied">PaperDaemon не смог прочитать буфер обмена. Нажмите Ctrl+V.</string>
   <string name="dc.save">Сохранить</string>
   <string name="dc.saving">Сохранение…</string>
+  <string name="dc.saved">Сохранено в «Загрузки»</string>
   <string name="dc.sending">Отправка…</string>
   <string name="dc.send">Отправить на планшет</string>
   <string name="dc.look">Посмотреть вблизи</string>

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.81
+
+- Pages with the daemon's notes open on the tablet again. The tablet will not open a page holding an item of an author it does not know, and the notes were written under an author of their own (218): every page they reached became unreadable there. The notes are now written as the tablet's own author, numbered well clear of what the tablet adds meanwhile, and known as the daemon's by their layer and their machine-drawn strokes. Anything left under the old author is taken out of the page the next time a note is written, and the page opens again. Writing a hand puts on the Daemon layer is read as the user's.
+- Decompose: saving a picture says only "Saved to Downloads", on a line every card keeps, so nothing in the row grows or moves.
+
 ## 0.1.80
 
 - What a job writes is numbered as the tablet's own again (author 1). The author of its own that 0.1.79 gave it broke a page on the tablet: a page of strokes under it would not open.

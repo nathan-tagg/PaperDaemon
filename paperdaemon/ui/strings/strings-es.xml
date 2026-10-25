@@ -253,6 +253,7 @@
   <string name="dc.paste_denied">PaperDaemon no pudo leer el portapapeles. Pulsa Ctrl+V en su lugar.</string>
   <string name="dc.save">Guardar</string>
   <string name="dc.saving">Guardando…</string>
+  <string name="dc.saved">Guardado en Descargas</string>
   <string name="dc.sending">Enviando…</string>
   <string name="dc.send">Enviar a la tableta</string>
   <string name="dc.look">Ver de cerca</string>

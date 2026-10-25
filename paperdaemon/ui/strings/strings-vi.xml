@@ -254,6 +254,7 @@
   <string name="dc.paste_denied">PaperDaemon không đọc được bảng tạm. Hãy nhấn Ctrl+V.</string>
   <string name="dc.save">Lưu</string>
   <string name="dc.saving">Đang lưu…</string>
+  <string name="dc.saved">Đã lưu vào Tải xuống</string>
   <string name="dc.sending">Đang gửi…</string>
   <string name="dc.send">Gửi đến máy tính bảng</string>
   <string name="dc.look">Xem kỹ</string>

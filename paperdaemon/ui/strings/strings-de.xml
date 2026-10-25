@@ -254,6 +254,7 @@
   <string name="dc.paste_denied">PaperDaemon konnte die Zwischenablage nicht lesen. Drück stattdessen Strg+V.</string>
   <string name="dc.save">Speichern</string>
   <string name="dc.saving">Wird gespeichert…</string>
+  <string name="dc.saved">In Downloads gespeichert</string>
   <string name="dc.sending">Wird gesendet…</string>
   <string name="dc.send">An das Tablet senden</string>
   <string name="dc.look">Genau ansehen</string>

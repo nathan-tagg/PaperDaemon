@@ -413,8 +413,14 @@ def fingerprint_parts(data):
         n = r[20] // POINT.itemsize
         first = struct.unpack_from("<ff", data, r[19]) if n else None
         last = struct.unpack_from("<ff", data, r[19] + (n - 1) * POINT.itemsize) if n else None
-        out.append(("L", r[15], r[16], rgba, n, first, last, r[5], r[6], r[7]))
+        out.append(("L", r[15], r[16], rgba, n, first, last, r[5], r[6], r[7], r[19]))   # and where its points start
     return out
+
+
+def synthetic_at(data, offset, n):
+    """Were the `n` points at `offset` drawn by a machine (render.synthetic), read straight off the bytes."""
+    from paperdaemon.pipeline.page import render as R
+    return R.synthetic(np.frombuffer(data, dtype=POINT, count=n, offset=offset)) if n else False
 
 
 def read_blocks_arrays(data):

@@ -254,6 +254,7 @@
   <string name="dc.paste_denied">PaperDaemon panoyu okuyamadı. Bunun yerine Ctrl+V'ye basın.</string>
   <string name="dc.save">Kaydet</string>
   <string name="dc.saving">Kaydediliyor…</string>
+  <string name="dc.saved">İndirilenler'e kaydedildi</string>
   <string name="dc.sending">Gönderiliyor…</string>
   <string name="dc.send">Tablete Gönder</string>
   <string name="dc.look">Yakından bak</string>
