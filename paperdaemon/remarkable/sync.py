@@ -83,6 +83,13 @@ def content(doc):
         return {}
 
 
+def page_deleted(p):
+    """Is a page entry deleted: its `deleted` marker's value says so. The tablet also keeps a marker on pages it brought
+    back ({"timestamp": "1:2", "value": 0}): those are live, and counting every marker as deleted hid them."""
+    d = p.get("deleted")
+    return bool(d.get("value")) if isinstance(d, dict) else bool(d)
+
+
 def live_pages(c):
     """The pages a .content lists that are not deleted, in the app's order (by their keys), each as {id, redir?: {value}}.
 
@@ -90,7 +97,7 @@ def live_pages(c):
     and each page's source page in `redirectionPageMap` (-1 for a sheet inserted between them). Those are read
     into the same shape."""
     if "cPages" in c or not isinstance(c.get("pages"), list):
-        live = [p for p in c.get("cPages", {}).get("pages", []) if "deleted" not in p]
+        live = [p for p in c.get("cPages", {}).get("pages", []) if not page_deleted(p)]
         # the app shows pages in the order of their keys, and stores them in that order too; a list written out of
         # order (an entry appended for a page inserted in the middle) is still shown by key
         if all(isinstance((p.get("idx") or {}).get("value"), str) for p in live):
@@ -528,13 +535,13 @@ def _keep_our_pages(name, incoming, st):
     known = set(p.get("id") for p in tp)
     doc = name.split("/")[0].split(".")[0]
     extra = [p for p in ours.get("cPages", {}).get("pages", [])
-             if p.get("id") not in known and "deleted" not in p
+             if p.get("id") not in known and not page_deleted(p)
              and os.path.exists(os.path.join(MIRROR, doc, p["id"] + ".rm"))]
     if not extra:
         return incoming
     print("  kept %d page(s) of ours the cloud's %s does not know yet" % (len(extra), name))
     tp.extend(extra)
-    theirs["pageCount"] = len([p for p in tp if "deleted" not in p])
+    theirs["pageCount"] = len([p for p in tp if not page_deleted(p)])
     return json.dumps(theirs, indent=4).encode()
 
 
@@ -1100,7 +1107,7 @@ def touch(doc_uuid, page_ids=None, when=None):
         want = set(page_ids or [p.get("id") for p in pages])
         hit = 0
         for p in pages:
-            if p.get("id") in want and "deleted" not in p:
+            if p.get("id") in want and not page_deleted(p):
                 p["modifed"] = str(ms)          # sic: the field is spelled this way in the format
                 hit += 1
         if hit:

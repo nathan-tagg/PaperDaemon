@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.80
+
+- What a job writes is numbered as the tablet's own again (author 1). The author of its own that 0.1.79 gave it broke a page on the tablet: a page of strokes under it would not open.
+- A page the tablet keeps a "not deleted" mark on ({value: 0}) is a live page: PaperDaemon counted every such mark as deleted and hid those pages. A page PaperDaemon deletes is stamped after the document's latest change.
+
 ## 0.1.79
 
 - A page could stop opening on the tablet after a job wrote on it. Everything a job writes (its strokes, typed text and pictures) was numbered as the tablet's own items, after the highest number the page had when the job read it; whatever the user added on the tablet meanwhile got the same numbers, and the tablet cannot open a page with two items of one number. What PaperDaemon writes now has an author of its own, as the daemon's notes already did, so it can never share a number with the user's. (Pictures written under it also needed their author stored as one byte, as the file format has it.)

@@ -225,7 +225,7 @@ def insert_pages(doc, after_page_id, count, template_from=None):
     cpath = os.path.join(R.RM, doc + ".content")
     c = json.load(open(cpath, encoding="utf-8"))
     pages = c["cPages"]["pages"]
-    live = sorted((p for p in pages if "deleted" not in p), key=lambda p: p["idx"]["value"])
+    live = sorted((p for p in pages if not RC.page_deleted(p)), key=lambda p: p["idx"]["value"])
     at = next((i for i, p in enumerate(live) if p["id"] == after_page_id), None)
     if at is None:
         raise RuntimeError("page %s is not in the document" % after_page_id)
@@ -249,7 +249,7 @@ def insert_pages(doc, after_page_id, count, template_from=None):
     pages[at_raw + 1:at_raw + 1] = new
     for pid, _ in added:
         paths.write_atomic(os.path.join(R.RM, doc, pid + ".rm"), template)
-    c["pageCount"] = len([p for p in pages if "deleted" not in p])
+    c["pageCount"] = len([p for p in pages if not RC.page_deleted(p)])
     c["sizeInBytes"] = str(int(c.get("sizeInBytes") or 0) + len(template) * count)
     if os.path.exists(os.path.join(R.RM, doc + ".pagedata")):
         with open(os.path.join(R.RM, doc + ".pagedata"), "a") as f:
@@ -273,6 +273,14 @@ def tag_page(doc, page_id, name):
 
 
 
+def _later(c):
+    """A timestamp later than every one the document holds ("author:counter", the tablet's 1 counted on): a deletion
+    stamped 1:1 lost to the tablet's own marker on a live page ({"timestamp": "1:2", "value": 0}) and was undone."""
+    import re as _re
+    n = max([int(b) for a, b in _re.findall(r'"timestamp": "(\d+):(\d+)"', json.dumps(c)) if a == "1"] or [1])
+    return "1:%d" % (n + 1)
+
+
 def delete_pages(doc_name, page_ids, dry_run=False):
     """Delete pages the way the app does: the `cPages.pages` entry STAYS, marked
     `deleted: {timestamp, value: 1}`, its `.rm` goes, `pageCount` is the live count.
@@ -288,12 +296,12 @@ def delete_pages(doc_name, page_ids, dry_run=False):
     want = set(page_ids)
     gone, missing = [], []
     for p in c["cPages"]["pages"]:
-        if p["id"] in want and "deleted" not in p:
-            p["deleted"] = {"timestamp": "1:1", "value": 1}
+        if p["id"] in want and not RC.page_deleted(p):
+            p["deleted"] = {"timestamp": _later(c), "value": 1}
             p["modifed"] = str(int(time.time() * 1000))
             gone.append(p["id"])
     missing = sorted(want - set(gone))
-    live = [p for p in c["cPages"]["pages"] if "deleted" not in p]
+    live = [p for p in c["cPages"]["pages"] if not RC.page_deleted(p)]
     c["pageCount"] = len(live)
     if dry_run:
         return dict(deleted=gone, not_found=missing, written=False, page_count=c["pageCount"])

@@ -148,7 +148,7 @@ def with_author(blocks, author, uid):
     author the table does not name is not the page's."""
     for i, b in enumerate(blocks):
         if isinstance(b, ss.AuthorIdsBlock):
-            if b.author_uuids.get(author) != uid:
+            if author not in b.author_uuids:                 # an author the page already names keeps its own uuid
                 blocks[i] = ss.AuthorIdsBlock(author_uuids={**b.author_uuids, author: uid})
             return blocks
     raise RuntimeError("the page has no author table")

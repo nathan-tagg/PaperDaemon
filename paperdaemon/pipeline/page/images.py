@@ -40,7 +40,7 @@ def _with_author(data, parsed, author, uid):
     table = next((b for b in parsed if isinstance(b, ss.AuthorIdsBlock)), None)
     if table is None:
         raise RuntimeError("the page has no author table")
-    if table.author_uuids.get(author) == uid:
+    if author in table.author_uuids:                    # an author the page already names keeps its own uuid
         return data
     buf = io.BytesIO()
     write_blocks(buf, [ss.AuthorIdsBlock(author_uuids={**table.author_uuids, author: uid})])
