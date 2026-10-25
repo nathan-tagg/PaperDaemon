@@ -192,11 +192,28 @@ def test_notepads_are_listed_read_and_wiped():
         json.dump({"visibleName": "Garden notes"}, f)
     c = client()
     d = c.get("/api/v1/notepads").json()
-    assert d == [{"doc": DOC, "notebook": "Garden notes", "entries": 2, "chars": d[0]["chars"]}] and d[0]["chars"] > 40
+    assert d == [{"doc": DOC, "notebook": "Garden notes", "entries": 2, "chars": d[0]["chars"], "updated": d[0]["updated"]}]
+    assert d[0]["chars"] > 40 and d[0]["updated"] > 0
     assert "note: b" in c.get("/api/v1/notepads/" + DOC).json()["text"]
     assert c.post("/api/v1/notepads/" + DOC + "/wipe").json() == {"wiped": 2}
     assert c.get("/api/v1/notepads").json() == []
     assert c.post("/api/v1/notepads/not-an-id/wipe").status_code == 404
+
+
+def test_a_deleted_notebook_takes_its_notepad_with_it():
+    folder = notepad.folder()
+    os.makedirs(folder, exist_ok=True)
+    gone, kept = DOC, DOC[:-1] + ("b" if DOC[-1] != "b" else "c")
+    for d in (gone, kept):
+        with open(os.path.join(folder, d + ".md"), "w", encoding="utf-8") as f:
+            f.write("## 10:00, page id x\n- note: a\n\n")
+    with open(os.path.join(paths.mirror_dir(), gone + ".metadata"), "w", encoding="utf-8") as f:
+        json.dump({"visibleName": "Old notes", "parent": "trash"}, f)
+    with open(os.path.join(paths.mirror_dir(), kept + ".metadata"), "w", encoding="utf-8") as f:
+        json.dump({"visibleName": "Live notes", "parent": ""}, f)
+    d = client().get("/api/v1/notepads").json()
+    assert [p["doc"] for p in d] == [kept]
+    assert not os.path.exists(os.path.join(folder, gone + ".md")) and os.path.exists(os.path.join(folder, kept + ".md"))
 
 
 def test_a_notepad_is_not_wiped_while_a_job_works():

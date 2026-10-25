@@ -2499,7 +2499,7 @@ dependencies = [
 
 [[package]]
 name = "paperdaemon-shell"
-version = "0.1.78"
+version = "0.1.79"
 dependencies = [
  "serde_json",
  "tauri",

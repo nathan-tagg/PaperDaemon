@@ -26,7 +26,7 @@
     if (S.err) return '<p class="notice attn" role="alert"><strong>' + esc(PD.t("np.list_unreadable")) + "</strong> " + esc(S.err) + "</p>";
     if (!S.list) return '<p class="sub" style="margin-top: var(--s3)">' + esc(PD.t("np.reading_list")) + "</p>";
     const group = (base, label) => {
-      const its = S.list.filter(n => (n.base || "") === base);
+      const its = S.list.filter(n => (n.base || "") === base).sort((a, b) => (b.updated || 0) - (a.updated || 0));   // newest first
       if (!its.length) return "";
       return '<p class="meta np-lib">' + esc(label) + '</p><ul class="booklist">' + its.map(n =>
         '<li><button type="button" data-doc="' + esc(keyOf(n)) + '"' + (keyOf(n) === S.doc ? ' aria-current="true"' : "") + "><strong>" + esc(n.notebook || n.doc) +

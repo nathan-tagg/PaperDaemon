@@ -630,9 +630,14 @@ def insert(doc_name, page_no, text, dry_run=False):
         left = CrdtId(tail.item_id.part1, tail.item_id.part2 + span - 1)
     else:
         left = CrdtId(0, 0)
-    end = max(_end_of(items), _A.next_free_id(allb) - 1)
+    # PAPERDAEMON'S OWN IDS (render.HOST_AUTHOR), counted on from its own: never the tablet's, which the user's typing
+    # on the tablet meanwhile takes up
+    from paperdaemon.pipeline.page import render as _R
+    HOST = _R.HOST_AUTHOR
+    _A.with_author(allb, HOST, _R.HOST_UUID)
+    end = _A.next_free_id(allb, HOST) - 1
     body = ("\n" if items else "") + text
-    new_id = CrdtId(1, end + 1)
+    new_id = CrdtId(HOST, end + 1)
     items[new_id] = CrdtSequenceItem(
         item_id=new_id, left_id=left,
         right_id=CrdtId(0, 0), deleted_length=0, value=body)
@@ -642,7 +647,7 @@ def insert(doc_name, page_no, text, dry_run=False):
     # is the first character of what we just added.
     if items and body.startswith("\n"):
         tb.value.styles[new_id] = LwwValue(
-            timestamp=CrdtId(1, end + len(body) + 1),
+            timestamp=CrdtId(HOST, end + len(body) + 1),
             value=ParagraphStyle.PLAIN)
 
     buf = io.BytesIO()

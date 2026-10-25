@@ -192,6 +192,12 @@ _LINES = {}          # path -> ((mtime_ns, size), fastrm.page_lines(...))
 DAEMON_LAYER = "Daemon"
 DAEMON_LEGACY = "PaperDaemon"
 DAEMON_AUTHOR = 218                  # his author number on a page (CrdtId part1), beside the tablet's 1 and other devices'
+# WHAT A JOB WRITES (its strokes, typed text and pictures) HAS AN AUTHOR OF ITS OWN, as the daemon's notes do: written
+# under the tablet's own number (1), after the highest id the page had when the job read it, it took the very ids the
+# tablet gave to what the user added meanwhile -- two items with one id, which the tablet cannot merge, and the page
+# would not open. Ids of this author are only ever PaperDaemon's, so nothing it writes can meet the user's.
+HOST_AUTHOR = 219
+HOST_UUID = __import__("uuid").uuid5(__import__("uuid").NAMESPACE_DNS, "host.paperdaemon")
 _NAME = {"key": None, "name": DAEMON_LAYER}
 
 

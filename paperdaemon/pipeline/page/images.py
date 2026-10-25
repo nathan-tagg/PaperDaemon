@@ -30,6 +30,30 @@ _QUAD = re.compile(rb"\x3c\x41\x00\x00\x00\x10")      # sub-block id 3, 65 bytes
 _HASH16 = re.compile(rb"\x2c\x10\x00\x00\x00")           # sub-block id 2, 16 bytes: the asset hash
 
 
+def _with_author(data, parsed, author, uid):
+    """The page's bytes with `author` in its author table (AuthorIdsBlock), that one block's frame swapped and every
+    other byte as it was. `parsed`: the page's blocks as rmscene reads them."""
+    import io
+    from rmscene import write_blocks
+    from rmscene import scene_stream as ss
+    from rmscene.tagged_block_common import HEADER_V6
+    table = next((b for b in parsed if isinstance(b, ss.AuthorIdsBlock)), None)
+    if table is None:
+        raise RuntimeError("the page has no author table")
+    if table.author_uuids.get(author) == uid:
+        return data
+    buf = io.BytesIO()
+    write_blocks(buf, [ss.AuthorIdsBlock(author_uuids={**table.author_uuids, author: uid})])
+    frame = buf.getvalue()[len(HEADER_V6):]
+    i, n = 43, len(data)
+    while i + 8 <= n:
+        ln, = struct.unpack_from("<I", data, i)
+        if data[i + 7] == ss.AuthorIdsBlock.BLOCK_TYPE:
+            return data[:i] + frame + data[i + 8 + ln:]
+        i += 8 + ln
+    raise RuntimeError("the page's author table was not found in its bytes")
+
+
 def blocks(data):
     """[(type, body)] straight off the file, tolerant of anything rmscene cannot read."""
     out = []
@@ -47,8 +71,8 @@ def has_images(data):
     return any(bt == 15 for bt, _ in blocks(data))
 
 
-def max_author_id(body):
-    """The largest part2 of any author-1 CrdtId among a block body's leading id tags (parent,
+def max_author_id(body, author=1):
+    """The largest part2 of any CrdtId of `author` among a block body's leading id tags (parent,
     item, left, right) and its value's ids -- so stroke ids never land on a picture's."""
     best = 0
     i = 0
@@ -67,7 +91,7 @@ def max_author_id(body):
                 sh += 7
                 if not b & 0x80:
                     break
-            if p1 == 1:
+            if p1 == author:
                 best = max(best, v)
             i = j
         elif t == 0xC and i + 5 <= n:
@@ -206,14 +230,19 @@ def _read_varuint(b, i):
         shift += 7
 
 
+def _read_cid(b, i):
+    """A CrdtId at `i`: its author ONE byte, its counter a varuint (as rmscene reads it) -> ((part1, part2), next).
+    Read as two varuints it was right only while the author was below 128 -- not PaperDaemon's own (HOST_AUTHOR)."""
+    p2, j = _read_varuint(b, i + 1)
+    return (b[i], p2), j
+
+
 def _parent_of(body):
     """The parent group of a block-15 scene item: the body's first tag (id 1). None if absent."""
     try:
         if not body or body[0] != 0x1F:
             return None
-        p1, i = _read_varuint(body, 1)
-        p2, _ = _read_varuint(body, i)
-        return (p1, p2)
+        return _read_cid(body, 1)[0]
     except IndexError:
         return None
 
@@ -223,13 +252,10 @@ def _item_of(body):
     try:
         if not body or body[0] != 0x1F:
             return None
-        _p1, i = _read_varuint(body, 1)
-        _p2, i = _read_varuint(body, i)
+        _p, i = _read_cid(body, 1)
         if body[i] != 0x2F:
             return None
-        a, i = _read_varuint(body, i + 1)
-        b, _ = _read_varuint(body, i)
-        return (a, b)
+        return _read_cid(body, i + 1)[0]
     except IndexError:
         return None
 
@@ -244,8 +270,7 @@ def _deleted_of(body):
         for tag in (0x1F, 0x2F, 0x3F, 0x4F):
             if body[i] != tag:
                 return None
-            _a, i = _read_varuint(body, i + 1)
-            _b, i = _read_varuint(body, i)
+            _c, i = _read_cid(body, i + 1)
         if body[i] != 0x54:
             return None
         return struct.unpack_from("<I", body, i + 1)[0]
@@ -271,8 +296,7 @@ def _tombstone(body):
         for tag in (0x1F, 0x2F, 0x3F, 0x4F):
             if body[i] != tag:
                 return None
-            _a, i = _read_varuint(body, i + 1)
-            _b, i = _read_varuint(body, i)
+            _c, i = _read_cid(body, i + 1)
         return bytes(body[:i]) + b"\x54" + struct.pack("<I", 1)
     except IndexError:
         return None
@@ -300,9 +324,7 @@ def _asset_entries(body):
             e = body[start + 5:end]
             aid = None
             if len(e) > 23 and e[16] == 0x1C and e[21] == 0x1F:
-                a, j = _read_varuint(e, 22)
-                b, _ = _read_varuint(e, j)
-                aid = (a, b)
+                aid = _read_cid(e, 22)[0]
             m = _NAME.search(e)
             out.append((bytes(e[:16]), aid, m.group(0).decode() if m else None, start, end))
             i = end
@@ -658,7 +680,9 @@ def _varuint(n):
 
 
 def _id(tag_id, part1, part2):
-    return bytes([(tag_id << 4) | 0xF]) + _varuint(part1) + _varuint(part2)
+    # a CrdtId is its author in ONE byte, then its counter as a varuint (rmscene reads part1 as a uint8): a varuint
+    # author was the same byte only while it was below 128 (the tablet's 1), not for PaperDaemon's own (HOST_AUTHOR)
+    return bytes([(tag_id << 4) | 0xF, part1]) + _varuint(part2)
 
 
 def _sub(tag_id, body):
@@ -744,20 +768,25 @@ def insert(doc, page_no, png_path, box, page_id=None):
             layer = b.group.node_id
     if layer is None:
         raise RuntimeError("no Layer 1 on that page")
-    n = A.next_free_id(blocks_)
+    # PAPERDAEMON'S OWN IDS (render.HOST_AUTHOR), as its strokes and typed text have: never the tablet's, which what the
+    # user adds on the tablet meanwhile takes up. The page's author table is given the author first.
+    from paperdaemon.pipeline.page import render as _R
+    HOST = _R.HOST_AUTHOR
+    data = _with_author(data, blocks_, HOST, _R.HOST_UUID)
+    n = A.next_free_id(blocks_, HOST)
     # rmscene does not see image items, so their ids are not in next_free_id's view: step past
-    # every (1, k) a picture on this page already took, item or asset, read as the varuints they are
+    # every (HOST, k) a picture on this page already took, item or asset, read as the varuints they are
     # (a single byte stopped being enough at id 128)
     for bt, body in blocks(data):
         if bt == 15:
             it = _item_of(body)
-            if it and it[0] == 1:
+            if it and it[0] == HOST:
                 n = max(n, it[1] + 1)
         elif bt == 14:
             for _h, aid, _nm, _s, _e in _asset_entries(body) or []:
-                if aid and aid[0] == 1:
+                if aid and aid[0] == HOST:
                     n = max(n, aid[1] + 1)
-    asset_id, item_id = (1, n), (1, n + 1)
+    asset_id, item_id = (HOST, n), (HOST, n + 1)
     raw = open(png_path, "rb").read()
     name = str(_uuid.uuid4()) + os.path.splitext(png_path)[1].lower().replace(".jpeg", ".jpg")
     # UNIQUE PER ASSET, not per image content. It was md5(file): two renders of the same week are
@@ -819,14 +848,19 @@ def to_front(doc, page_no, keys, page_id=None):
     # each picture's box ON THE PAGE (a tied group's stored boxes are offset: _to_page)
     on_page = dict((im["hash"], tuple(im["box"])) for im in
                    _to_page([dict(im) for im in parse(data) if not im["deleted"]], path, d, page_no))
-    n = A.next_free_id(list(read_blocks(io.BytesIO(data))))
+    # PAPERDAEMON'S OWN IDS (render.HOST_AUTHOR), as insert() gives: never the tablet's
+    from paperdaemon.pipeline.page import render as _R
+    HOST = _R.HOST_AUTHOR
+    parsed = list(read_blocks(io.BytesIO(data)))
+    data = _with_author(data, parsed, HOST, _R.HOST_UUID)
+    n = A.next_free_id(parsed, HOST)
     for bt, body in blocks(data):
         if bt == 15:
             it = _item_of(body)
-            if it and it[0] == 1:
+            if it and it[0] == HOST:
                 n = max(n, it[1] + 1)
         elif bt == 14:
-            n = max([n] + [a[1] + 1 for _h, a, _nm, _s, _e in _asset_entries(body) or [] if a and a[0] == 1])
+            n = max([n] + [a[1] + 1 for _h, a, _nm, _s, _e in _asset_entries(body) or [] if a and a[0] == HOST])
     out, again = bytearray(data[:43]), []
     i = 43
     while i + 8 <= len(data):
@@ -840,7 +874,7 @@ def to_front(doc, page_no, keys, page_id=None):
         out += struct.pack("<I", len(body)) + head + body
         i += 8 + ln
     for parent, h, box in sorted(again, key=lambda g: want.index(g[1])):
-        out += item_block(parent, (1, n), aid[h], h, box)
+        out += item_block(parent, (HOST, n), aid[h], h, box)
         n += 1
     new = bytes(out)
     list(read_blocks(io.BytesIO(new)))

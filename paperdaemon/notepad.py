@@ -117,19 +117,56 @@ class Notepad(object):
         return n
 
 
+def _deleted(lib, doc):
+    """Is the notebook deleted: no metadata in the library, marked deleted, or in the trash (directly, or inside a
+    folder that is)?"""
+    import json
+    d, seen = doc, 0
+    while d and seen < 30:
+        try:
+            with open(os.path.join(lib, d + ".metadata"), encoding="utf-8") as f:
+                m = json.load(f) or {}
+        except FileNotFoundError:
+            return d == doc                                  # its own metadata gone: deleted; a lost folder: not judged
+        except (OSError, ValueError):
+            return False                                     # caught mid-write, or unreadable: never taken for deleted
+        if m.get("deleted") or m.get("parent") == "trash":
+            return True
+        d, seen = m.get("parent") or "", seen + 1
+    return False
+
+
 def notepads(state=None, mirror=None):
-    """[{doc, notebook, entries, chars}] for every notebook with a notepad, for the Notepads screen."""
+    """[{doc, notebook, entries, chars, updated}] for every notebook with a notepad, the one written to most recently first."""
     from . import ledger
     out = []
     try:
         names = sorted(os.listdir(folder(state)))
     except OSError:
         return out
+    lib = mirror or os.environ.get("RM_MIRROR") or paths.mirror_dir()
+    try:
+        read = any(f.endswith(".metadata") for f in os.listdir(lib))   # the library is there to judge by
+    except OSError:
+        read = False
     for n in names:
         doc = n[:-3]
         if not n.endswith(".md") or not DOC_ID.match(doc):
             continue
+        # A NOTEBOOK DELETED TAKES ITS NOTEPAD WITH IT: one in the trash, or gone from the library, has its notes
+        # removed for good (never while the library has not been read: an empty one would take every notepad)
+        if read and _deleted(lib, doc):
+            try:
+                os.remove(os.path.join(folder(state), n))
+            except OSError:
+                pass
+            continue
         text = Notepad(doc, state).text()
+        try:
+            updated = os.path.getmtime(os.path.join(folder(state), n))   # when its notebook last had a job: newest first
+        except OSError:
+            updated = 0.0
         out.append({"doc": doc, "notebook": ledger.notebook_name(doc, state, mirror),
-                    "entries": len(re.findall(r"^## ", text, re.MULTILINE)), "chars": len(text)})
+                    "entries": len(re.findall(r"^## ", text, re.MULTILINE)), "chars": len(text), "updated": updated})
+    out.sort(key=lambda p: -p["updated"])
     return out

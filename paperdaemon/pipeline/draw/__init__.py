@@ -125,8 +125,9 @@ def prof_swell(lo, hi, power=1.0):
     return lambda t: lo + (hi - lo) * (math.sin(math.pi * t) ** power)
 
 
-def dead_ranges(blocks):
-    """Inclusive (start, end) id ranges that a tombstone has deleted.
+def dead_ranges(blocks, author=None):
+    """Inclusive (start, end) id ranges that a tombstone has deleted (of `author` only, when given: ids of different
+    authors never meet).
 
     `deleted_length = N` deletes N ids from the item's own id, so a single
     tombstone can bury a whole span. Anything allocated inside one is erased as
@@ -136,13 +137,24 @@ def dead_ranges(blocks):
     for b in blocks:
         it = getattr(b, "item", None)
         n = getattr(it, "deleted_length", 0) or 0
-        if n > 1:
+        if n > 1 and (author is None or it.item_id.part1 == author):
             start = it.item_id.part2
             out.append((start, start + n - 1))
     return out
 
 
-def next_free_id(blocks):
+def with_author(blocks, author, uid):
+    """The page's author table (AuthorIdsBlock) with `author` in it, as the tablet keeps one per page: an id of an
+    author the table does not name is not the page's."""
+    for i, b in enumerate(blocks):
+        if isinstance(b, ss.AuthorIdsBlock):
+            if b.author_uuids.get(author) != uid:
+                blocks[i] = ss.AuthorIdsBlock(author_uuids={**b.author_uuids, author: uid})
+            return blocks
+    raise RuntimeError("the page has no author table")
+
+
+def next_free_id(blocks, author=None):
     """The first id no item -- live, tombstoned, or a deleted RANGE -- occupies.
 
     Scans EVERY block with an item, not just strokes: strokes and typed text
@@ -154,8 +166,11 @@ def next_free_id(blocks):
     Getting this wrong is silent and total: 44 strokes were once written into
     ids 872..915 while a tombstone covered 827..931, and they never appeared on
     the device while rendering perfectly here.
+
+    `author`: count that author's ids alone (render.HOST_AUTHOR, what a job writes: its own id space).
     """
     end = 0
+    mine = (lambda p1: True) if author is None else (lambda p1: p1 == author)
     for b in blocks:
         # TYPED TEXT TOO. Its characters live in the RootTextBlock's own sequence, not in an item block, so
         # the loop below never saw them -- while the docstring above already said they share this id space.
@@ -164,6 +179,8 @@ def next_free_id(blocks):
         text = getattr(getattr(b, "value", None), "items", None)
         if text is not None and hasattr(text, "_items"):
             for tid, ti in text._items.items():
+                if not mine(tid.part1):
+                    continue
                 tv = ti.value
                 span = max(len(tv) if isinstance(tv, str) else 0, getattr(ti, "deleted_length", 0) or 0, 1)
                 end = max(end, tid.part2 + span - 1)
@@ -177,9 +194,11 @@ def next_free_id(blocks):
             if isinstance(raw, (bytes, bytearray)) and len(raw) > 8:
                 try:
                     from paperdaemon.pipeline.page import images as _IM
-                    end = max(end, _IM.max_author_id(bytes(raw)))
+                    end = max(end, _IM.max_author_id(bytes(raw), 1 if author is None else author))
                 except Exception:
                     pass
+            continue
+        if not mine(it.item_id.part1):
             continue
         v = getattr(it, "value", None)
         span = max(len(v) if isinstance(v, str) else 0,
@@ -549,7 +568,11 @@ class Drawing:
                 layer = b.group.node_id
         if layer is None:
             raise RuntimeError("no Layer 1 on that page")
-        seq = [80]
+        # PAPERDAEMON'S OWN IDS (render.HOST_AUTHOR): counted on from the last of its own, never from the tablet's, so
+        # what the user writes on the tablet meanwhile can never take the same ids (see render.HOST_AUTHOR)
+        HOST = R.HOST_AUTHOR
+        with_author(blocks, HOST, R.HOST_UUID)
+        seq = [next_free_id(blocks, HOST) - 1]
         prev = CrdtId(0, 0)
         if kept:
             # Never reuse an id that is already on the page, and hang the new
@@ -568,7 +591,6 @@ class Drawing:
             # device, byte-identical in cloud, mirror and the app's own cache,
             # and drawn by rm_render. Re-emitted at id 1632+ the same geometry
             # rendered immediately.
-            seq[0] = max(seq[0], next_free_id(blocks) - 1)
             children = [b.item for b in blocks
                         if getattr(b, "parent_id", None) == layer
                         and hasattr(b, "item")]
@@ -591,7 +613,7 @@ class Drawing:
                      # (r, g, b), opaque, or (r, g, b, a) as a kept decomp carries it: four values either way
                      color_rgba=(tuple(rgba[:3]) + (tuple(rgba[3:4]) or (255,)) if rgba else None))
             seq[0] += 1
-            iid = CrdtId(1, seq[0])
+            iid = CrdtId(HOST, seq[0])
             blocks.append(ss.SceneLineItemBlock(
                 parent_id=layer,
                 item=CrdtSequenceItem(item_id=iid, left_id=prev,
@@ -622,9 +644,9 @@ class Drawing:
         # hours precisely because every local check passes. Belt and braces on
         # top of next_free_id(): if the allocator is ever wrong again, this
         # stops the file reaching the page instead of letting it look fine.
-        rng = dead_ranges(rb_all)
-        buried = [b.item.item_id.part2 for b in rb
-                  if any(a <= b.item.item_id.part2 <= z for a, z in rng)]
+        rng = dead_ranges(rb_all, HOST)
+        buried = [b.item.item_id.part2 for b in rb if b.item.item_id.part1 == HOST
+                  and any(a <= b.item.item_id.part2 <= z for a, z in rng)]
         if buried:
             raise RuntimeError(
                 "REFUSING TO WRITE: %d stroke id(s) fall inside a deleted "
