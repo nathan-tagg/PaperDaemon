@@ -111,16 +111,18 @@ def _preview_png(strokes, progress=None):
                 pass
 
 
-def decompose(image, width=None, preview=True, job=None, keep=None):
-    """A picture (data URL or base64) -> ({preview, strokes, points, seconds, box, width, height}, the strokes). With
-    `keep` (the picture's name), the decomp is kept on disk (see the module's note) and the answer carries its id, and
-    its preview is the kept file's, not a data URL."""
+def decompose(image, width=None, preview=True, job=None, keep=None, height=None):
+    """A picture (data URL or base64) -> ({preview, strokes, points, seconds, box, box_h, width, height}, the strokes).
+    With `keep` (the picture's name), the decomp is kept on disk (see the module's note) and the answer carries its id,
+    and its preview is the kept file's, not a data URL. `height`: the box as tall as that (up to the page below the
+    toolbar), so a picture taller than wide still comes out `width` wide (the page editor's paste); else a square."""
     raw = _bytes(image)
     box = box_for(width)
+    box_h = int(max(200, min(int(height), int(BOTTOM - TOP - 20)))) if height else box
     with _lock:
         _now.update(job=job, stage="decompose", share=0.0)
         try:
-            out, strokes = _decompose_locked(raw, box, preview and keep is None)
+            out, strokes = _decompose_locked(raw, box, preview and keep is None, box_h)
             if keep is not None:
                 _now["stage"] = "preview"
                 png = _preview_png(strokes, lambda f: _now.update(share=f))
@@ -135,7 +137,8 @@ def decompose(image, width=None, preview=True, job=None, keep=None):
                 pass
 
 
-def _decompose_locked(raw, box, preview):
+def _decompose_locked(raw, box, preview, box_h=None):
+    box_h = box_h or box
     _decomposer_cache()
     import paperdaemon.pipeline  # noqa: F401  (the decomposer's reference imports its neighbors by name)
     from paperdaemon.pipeline import decompose as M
@@ -148,7 +151,7 @@ def _decompose_locked(raw, box, preview):
     try:
         with Image.open(io.BytesIO(raw)) as im:
             im.convert("RGB").save(src)
-        strokes, _params, secs = M.decompose_into(src, box, box, origin=(-box / 2.0, TOP), budget=BUDGET)
+        strokes, _params, secs = M.decompose_into(src, box, box_h, origin=(-box / 2.0, TOP), budget=BUDGET)
     finally:
         try:
             os.remove(src)
@@ -156,7 +159,7 @@ def _decompose_locked(raw, box, preview):
             pass
     xs = [x for st in strokes for x, _y in st[0]]
     ys = [y for st in strokes for _x, y in st[0]]
-    out = {"strokes": len(strokes), "points": len(xs), "seconds": secs, "box": box,
+    out = {"strokes": len(strokes), "points": len(xs), "seconds": secs, "box": box, "box_h": box_h,
            # the drawing's own size on the page, in tablet pixels
            "width": round(max(xs) - min(xs)) if xs else 0, "height": round(max(ys) - min(ys)) if ys else 0}
     if preview:

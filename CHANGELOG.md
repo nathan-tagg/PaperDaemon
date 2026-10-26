@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.83
+
+- The keys change an erase mid-swipe, without a stop: Ctrl pressed or let go during a Shift-drag switches between erasing what it passes over and whole strokes, Alt added starts a zone right there, and Alt let go erases the zone and carries on. The pointer changes with the keys.
+- Paste as strokes (Ctrl+Shift+V) comes out up to 1,600 wide whatever the picture's shape. The limit was on its longest side, so a picture a little taller than wide came out about 1,400 wide; the decomposer now gets a box the picture's own shape (up to 1,934 tall).
+- Zoomed or scrolled sideways, subtle gray dotted lines mark where the window's edges fall at 1x: what the tablet shows across.
+
 ## 0.1.82
 
 - Send to the tablet answers at once. The page is written and its sync started in the background, so the window never waits on the cloud; if there is nowhere for it to land, it says so at once.

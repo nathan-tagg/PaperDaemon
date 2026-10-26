@@ -133,7 +133,13 @@ redraw the page only when it removed something.
 The editor SHALL undo with Ctrl+Z and redo with Ctrl+Y or Ctrl+Shift+Z, for strokes, erasing and text
 alike. Ctrl with the scroll wheel SHALL zoom from 0.5x to 5x around the pointer; the page SHALL always
 open at 1x, showing what the Paper Pro shows at 1x; the zoom SHALL show at the top while it changes and
-return to 1x when clicked.
+return to 1x when clicked. Zoomed or scrolled sideways, subtle gray dotted lines SHALL run down the page where the
+window's edges fall at 1x (what the tablet shows across), and none at 1x.
+
+#### Scenario: Zoomed out
+- **WHEN** the user zooms out to 0.6x
+- **THEN** dotted lines mark the left and right edges of what 1x shows, and the strokes between them are what the tablet
+  shows across
 
 #### Scenario: Undoing an erase
 - **WHEN** the user erases across two strokes and presses Ctrl+Z
@@ -204,6 +210,15 @@ While the keys are held the pointer SHALL be the eraser's own, as wide as the er
 the circle crossed through, a small dotted circle or the zone's shape dotted, drawn smooth at the screen's own pixels.
 It SHALL show the moment the keys go down; while text is being typed, once the mouse moves or the typing has stopped
 for 0.4 seconds, so capitals typed with Shift do not flicker it. The eraser tool's pointer SHALL be the same.
+The keys changed in the middle of a drag SHALL change the erase there and then, without a stop, the pointer with it:
+Ctrl added or let go switches between whole strokes and what it passes over in the same swipe; Alt added starts a zone
+where the pointer is (what was erased before it stays erased), and Alt let go erases the zone and goes on erasing from
+there. Shift let go goes on as it was until the button is let go.
+
+#### Scenario: Changing the erase mid-swipe
+- **WHEN** the user Shift-drags down across three lines, pressing Ctrl while crossing the second and letting it go
+  before the third
+- **THEN** the first and third lines are cut where the eraser crossed them and the second is gone whole, in one drag
 
 #### Scenario: Erasing with the pen in hand
 - **WHEN** the user, drawing with the fineliner, Ctrl-Shift-drags across a stroke
@@ -306,7 +321,8 @@ Ctrl+C and Ctrl+X SHALL put selected strokes on the system clipboard both as str
 picture any program takes, and a selected picture as its image. With no text being typed, Ctrl+V SHALL put back, centered
 under the pointer, strokes as strokes (selected) or an image (PNG, JPEG, SVG and the like) as a picture at one screen pixel
 a pixel; Ctrl+Shift+V SHALL put an image down as strokes, decomposed at the same size, and strokes copied from a page as
-the strokes they are. With a caret, Ctrl+Shift+V SHALL still put an image or copied strokes down as strokes (the text let
+the strokes they are. A decomposed image SHALL be at most 1,600 across (and 1,934 down), its width the limit and
+not its longest side, so a picture taller than wide still comes out the full 1,600 wide. With a caret, Ctrl+Shift+V SHALL still put an image or copied strokes down as strokes (the text let
 go first); only text goes into the text, in the caret's formatting.
 
 #### Scenario: Paste as strokes while typing

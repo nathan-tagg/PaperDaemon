@@ -1208,7 +1208,7 @@ span.lname { cursor: default; }
     }
     ctx.drawImage(shownCv, 0, 0);
     ctx.save(); ctx.scale(dpr, dpr);
-    drawSelection(); drawCaret(); drawEraser(); drawShaping(); drawPick(); drawDecomposing();
+    drawScreenEdges(); drawSelection(); drawCaret(); drawEraser(); drawShaping(); drawPick(); drawDecomposing();
     ctx.restore();
     placeLinks();
   }
@@ -1834,6 +1834,18 @@ span.lname { cursor: default; }
   }
   // THE ERASER'S RING, only when it is wider than a pointer can be, IS WHERE THE POINTER IS ON THE SCREEN: kept as a page
   // point, it ran away from the pointer when the view scrolled under a still mouse (the wheel, or typing that took the view down)
+  // THE SCREEN AT 1x, zoomed or scrolled sideways: where the window's edges fall at 1x (the tablet's screen across),
+  // subtle gray dotted lines down the page, so what the tablet shows at once stays in sight
+  function drawScreenEdges() {
+    if (Math.abs(view.zoom - 1) < 1e-3 && Math.abs(view.cx) < 0.5) return;
+    ctx.save(); ctx.setLineDash([2, 5]); ctx.strokeStyle = "rgba(0,0,0,0.22)"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (const ex of [-screenW() / 2, screenW() / 2]) {
+      const sx = Math.round(toScreen(ex, 0)[0]) + 0.5;
+      if (sx > 0 && sx < vpW) { ctx.moveTo(sx, 0); ctx.lineTo(sx, vpH); }
+    }
+    ctx.stroke(); ctx.restore();
+  }
   function drawEraser() {
     if (!eraserAt || vp.dataset.erase !== "big") return;
     const [ex, ey] = eraserAt;
@@ -2291,9 +2303,9 @@ span.lname { cursor: default; }
     if (!zoneKey && !["Shift", "Control", "Alt", "Meta"].includes(e.key)) { typedAt = performance.now(); heldMoved = false; }
     heldKeys(e);
     if (zoneKey) { e.preventDefault(); e.stopImmediatePropagation(); zoneShape = dg[1] === "1" ? 0 : Number(dg[1]); }
-    updateCursor(); soon();
+    swipeFollow(); updateCursor(); soon();
   }, true);
-  window.addEventListener("keyup", e => { heldKeys(e); updateCursor(); soon(); }, true);
+  window.addEventListener("keyup", e => { heldKeys(e); swipeFollow(); updateCursor(); soon(); }, true);
   window.addEventListener("blur", () => { held.shiftKey = held.ctrlKey = held.altKey = false; updateCursor(); });
   function overTextAt(x, y) {                                 // on a line of the typed text, as far as its characters go
     if (!textLayout || !page.textVisible) return false;
@@ -2330,7 +2342,7 @@ span.lname { cursor: default; }
     if (byKeys) {
       e.preventDefault();
       shapeAt = shapeHover = null; poly = null;
-      pending = { mode: byKeys, at: local(e), pt: [x, y] };
+      pending = { mode: byKeys, at: local(e), pt: [x, y], byKeys: true }; swipeAt = [x, y];
       pointer = e.pointerId; vp.setPointerCapture(e.pointerId); paint(); return;
     }
     if (shapeKind > 1 && pickers[tool]) {                     // a shape: a drag, or two clicks, from one corner or edge to the other
@@ -2398,6 +2410,7 @@ span.lname { cursor: default; }
     if (pickMove(e)) return;
     eraserAt = local(e);
     heldKeys(e);
+    if (e.pointerId === pointer) { swipeAt = toPage(...local(e)); swipeFollow(); }   // the keys as this move has them
     if (keyErase(held)) heldMoved = true;
     if (e.pointerId !== pointer) overText = !!pickers[tool] && editing() && overTextAt(...toPage(...local(e)));
     updateCursor();
@@ -2422,8 +2435,8 @@ span.lname { cursor: default; }
       const p = pending; pending = null;
       if (!layer().visible) return;                           // a hidden layer can't be erased
       contentLanded();
-      if (p.mode === "zone") zone = { layer: layer(), pts: [p.pt], shape: zoneShapeNow() };
-      else { eraseStart(layer(), p.mode, ...p.pt); if (eraseAt(...p.pt)) eraseSoon(); }
+      if (p.mode === "zone") zone = { layer: layer(), pts: [p.pt], shape: zoneShapeNow(), byKeys: p.byKeys };
+      else { eraseStart(layer(), p.mode, ...p.pt); erasing.byKeys = p.byKeys; if (eraseAt(...p.pt)) eraseSoon(); }
       updateCursor();
     }
     if (zone) {
@@ -2487,14 +2500,43 @@ span.lname { cursor: default; }
       } else { work = null; rebuild(); }
     }
     if (erasing) {
-      cancelAnimationFrame(eraseFrame); eraseFrame = 0; dirty = null;
-      const onCard = GL && !gpuFailed;
-      if (onCard) rebuild();                                  // the swipe's last steps, as drawn during it
-      eraseEnd();
-      // the screen already shows the page as it is now: the chunks are made again for it while idle (or at the next draw)
-      if (onCard) { saveSoon(); (window.requestIdleCallback || (f => setTimeout(f, 50)))(() => { if (!erasing) rebuild(); }, { timeout: 600 }); }
-      else rebuild();
+      swipeDone();
       updateCursor();                                         // the keys may have been let go during the swipe
+    }
+  }
+  function swipeDone() {                                      // a swipe of the eraser over: one undo step, the page made again
+    cancelAnimationFrame(eraseFrame); eraseFrame = 0; dirty = null;
+    const onCard = GL && !gpuFailed;
+    if (onCard) rebuild();                                    // the swipe's last steps, as drawn during it
+    eraseEnd();
+    // the screen already shows the page as it is now: the chunks are made again for it while idle (or at the next draw)
+    if (onCard) { saveSoon(); (window.requestIdleCallback || (f => setTimeout(f, 50)))(() => { if (!erasing) rebuild(); }, { timeout: 600 }); }
+    else rebuild();
+  }
+  // THE KEYS CHANGED IN THE MIDDLE OF A SWIPE they started: the swipe goes on as the keys now say, without a stop. Passing
+  // and whole strokes are one swipe, its mode changed where the pointer is; into a zone, the swipe so far is done and the
+  // zone's loop starts there; out of one, the zone is erased and the swipe goes on from there. Shift let go: it goes on
+  // as it was, until the button is.
+  let swipeAt = null;
+  function swipeFollow() {
+    const mode = keyErase(held);
+    if (!mode) return;
+    if (pending) { if (pending.byKeys) pending.mode = mode; return; }
+    if (erasing && erasing.byKeys && pointer !== null) {
+      if (mode === "zone") {
+        swipeDone();
+        zone = { layer: layer(), pts: [swipeAt || erasing.last], shape: zoneShapeNow(), byKeys: true };
+        paint();
+      } else if (erasing.mode !== mode) erasing.mode = mode;
+      updateCursor(); return;
+    }
+    if (zone && zone.byKeys && pointer !== null && mode !== "zone") {
+      const z = zone, at = swipeAt || (z.shape ? z.end || z.pts[0] : z.pts[z.pts.length - 1]); zone = null;
+      eraseZone(z.layer, zoneLoop(z));
+      if (z.shape) { zoneShape = 0; if (shapeKind > 1) setShape(1); }
+      eraseStart(layer(), mode, ...at); erasing.byKeys = true;
+      if (eraseAt(...at)) eraseSoon(); else rebuild();
+      updateCursor();
     }
   }
   vp.addEventListener("pointerup", finish);
@@ -3363,12 +3405,15 @@ span.lname { cursor: default; }
     if (src) { placeImage(await (await fetch(src[1])).blob(), asStrokes); return true; }
     return false;
   }
-  // WHERE A PASTE LANDS (a picture or a decomp), each way on its own: at most 1,600 across its longest side; centered on
+  // WHERE A PASTE LANDS (a picture or a decomp), each way on its own: a picture at most 1,600 across its longest side, a
+  // decomp at most 1,600 across (and 1,934 down); centered on
   // the pointer; bigger than the view (what is on screen, smaller when zoomed in), centered in the view; fitting but over
   // an edge, moved in until it is against that edge -- its center as near the pointer as the view allows. Never above the
   // page's top (y 0): the page goes on downward only, so what lay above it would be lost
-  function landing(cx, cy, w, h) {
-    const fit = Math.min(1, 1600 / Math.max(w, h));
+  // asStrokes: a decomp is held to 1,600 across and the page's 1,934 below the toolbar down (studio.box_for), so a
+  // picture taller than wide still comes out the full 1,600 wide
+  function landing(cx, cy, w, h, asStrokes) {
+    const fit = asStrokes ? Math.min(1, 1600 / w, 1934 / h) : Math.min(1, 1600 / Math.max(w, h));
     w *= fit; h *= fit;
     const [vx0, vy0] = toPage(0, 0), [vx1, vy1] = toPage(vpW, vpH);
     const land = (c, size, a, b) => size >= b - a ? (a + b) / 2 : Math.min(Math.max(c, a + size / 2), b - size / 2);
@@ -3402,14 +3447,15 @@ span.lname { cursor: default; }
   // WHILE AN IMAGE IS DECOMPOSED its place on the page shows: a dashed frame the image's size, under the pointer, saying so
   let decomposing = null;
   async function pasteDecomposed(img, cx, cy, w, h) {        // Ctrl+Shift+V: the decomposer's strokes, at the image's own size
-    ({ cx, cy, w, h } = landing(cx, cy, w, h));               // where it lands: as a picture would (landing)
+    ({ cx, cy, w, h } = landing(cx, cy, w, h, true));         // where it lands: as a picture would (landing)
     decomposing = { cx, cy, w, h }; paint();
     const png = await toPng(img), data = await new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(png); });
-    const longest = Math.max(w, h), width = Math.round(Math.max(200, Math.min(1600, longest)));   // the Decompose screen's range
+    // a box the picture's own shape: as wide as it lands (the Decompose screen's range) and as tall
+    const width = Math.round(Math.max(200, Math.min(1600, w))), height = Math.round(Math.max(200, Math.min(1934, h)));
     let got;
     try {
       const r = await fetch("/api/v1/decompose", { method: "POST", headers: { Authorization: "Bearer " + token(), "Content-Type": "application/json" },
-        body: JSON.stringify({ image: data, width, strokes: true }) });
+        body: JSON.stringify({ image: data, width, height, strokes: true }) });
       if (!r.ok) throw new Error(r.status);
       got = await r.json();
     } catch (e) {
@@ -3417,7 +3463,8 @@ span.lname { cursor: default; }
       tell(location.protocol === "file:" ? "Paste as strokes works in the app's page editor, not in this file" : "The image could not be decomposed"); return;
     }
     decomposing = null;
-    const k = longest / got.box, [ox, oy] = got.center;
+    // the picture fitted in the decomposer's box is min(box, box_h * w / h) across; laid down w across
+    const k = w / Math.min(got.box, (got.box_h || got.box) * w / h), [ox, oy] = got.center;
     const lines = got.lines.map(st => lineIn({ pen: st.pen, penCode: st.penCode, color: st.color, colorRgba: st.colorRgba, thicknessScale: 1,
       // at the pressure the decomposer's own pages carry (draw.write_rm: 190), so its pencils grain as they do on the tablet
       points: st.pts.map(([x, y], i) => [cx + (x - ox) * k, cy + (y - oy) * k, 0, 0, Math.max(1, Math.round((st.widths[i] || st.widths[0] || 8) * k)), 190]) }));

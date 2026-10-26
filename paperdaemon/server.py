@@ -1339,7 +1339,8 @@ def post_decompose(body: dict = Body(...)):
         # keep: the Decompose screen's decomps are kept on disk (studio's note), under the picture's name
         out, strokes = studio.decompose(body.get("image"), body.get("width"), preview=not body.get("strokes"),
                                         job=str(body.get("job") or "")[:64] or None,
-                                        keep=(str(body.get("name") or "Picture") if body.get("keep") else None))
+                                        keep=(str(body.get("name") or "Picture") if body.get("keep") else None),
+                                        height=body.get("height"))
     except (ValueError, OSError) as ex:
         return _bad(str(ex)[:300])
     except Exception as ex:
@@ -1349,8 +1350,9 @@ def post_decompose(body: dict = Body(...)):
                          "pen": getattr(st[2], "name", str(st[2])), "penCode": int(st[2]), "color": int(st[3]),
                          # the page keeps a color as four numbers, alpha last: the decomposer's three, opaque
                          "colorRgba": ([int(v) for v in st[4]] + [255])[:4] if len(st) > 4 and st[4] else None} for st in strokes]
-        # the picture lies centered in a square `box` wide, its longest side the box's, from the decomposer's top
-        out["center"] = [0.0, studio.TOP + out["box"] / 2.0]
+        # the picture lies centered in a box `box` wide and `box_h` tall (a square without a height), fitted to it, from
+        # the decomposer's top
+        out["center"] = [0.0, studio.TOP + out["box_h"] / 2.0]
     return out
 
 
