@@ -80,7 +80,7 @@
       ["eStrokes", [["ctrl", "shift", "drag"]], "keys.e_strokes", "keys.e_strokes_d"],
       ["eZone", [["ctrl", "shift", "alt", "drag"]], "keys.e_zone", "keys.e_zone_d"]] },
     { title: "keys.s_pick", editor: true, items: [
-      ["select", [["loop"]], "keys.select", "keys.select_d"],
+      ["select", [["loop"], ["2–5"]], "keys.select", "keys.select_d"],
       ["capture", [["loop"], ["click"]], "keys.capture", "keys.capture_d"],
       ["delete", [["delete"], ["backspace"]], "keys.delete", "keys.delete_d"],
       ["copy", [["ctrl", "C"], ["ctrl", "X"]], "keys.copy", "keys.copy_d"],

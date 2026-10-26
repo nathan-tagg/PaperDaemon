@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.82
+
+- Send to the tablet answers at once. The page is written and its sync started in the background, so the window never waits on the cloud; if there is nowhere for it to land, it says so at once.
+- The passing eraser leaves a clean path. A piece it had already cut was never cut again (it kept its count of points, and was taken as untouched), so each stroke was cut only where the eraser first reached it, a stub left standing in the swipe. Strokes are now cut back to the eraser's full reach, measured to the edge of their widest ink, and crumbs left between the eraser's circles go with them.
+- Erasing no longer hitches when a swipe pauses: the page is not read back from the graphics card while a swipe is under way, and an erase frame no longer lays the typed text out again.
+- Ctrl+Shift+V pastes as strokes while typing too: with an image or copied strokes on the clipboard it lets the text go and puts them down as strokes (only text goes into the text). Strokes copied from a page come back as the strokes they are, not their picture decomposed.
+- With Select (or Capture) in hand, the number keys shape the loop: 2 a circle, 3 a triangle, 4 a square, 5 a rectangle, for one drag, then a freehand loop again. No key starts typing while Select is in hand.
+
 ## 0.1.81
 
 - Pages with the daemon's notes open on the tablet again. The tablet will not open a page holding an item of an author it does not know, and the notes were written under an author of their own (218): every page they reached became unreadable there. The notes are now written as the tablet's own author, numbered well clear of what the tablet adds meanwhile, and known as the daemon's by their layer and their machine-drawn strokes. Anything left under the old author is taken out of the page the next time a note is written, and the page opens again. Writing a hand puts on the Daemon layer is read as the user's.

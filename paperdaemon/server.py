@@ -1444,24 +1444,35 @@ def post_decompose_send(body: dict = Body(...)):
     real, fake = _signed_in(), paths.false_mirror_exists()
     if not real and not fake:
         return _bad("sign in to a reMarkable account to send to the tablet")
-    out, errors = {"sent": False}, []
+    if not body.get("id") and not body.get("image"):
+        return _bad("send what: a decomp's id or an image")
+    # SEND IS KICKED OFF, NOT WAITED FOR: the page written into each inbox and the sync to the tablet (a pull first, a
+    # push after, retried while the tablet syncs) take their time in the background; the button is answered at once.
+    # Only what can be told at once is said at once -- a Mirror with no inbox to land in; what goes wrong after is
+    # logged.
+    import threading
+    errors = []
     if real:
         try:
-            out["mirror"] = studio.send(body.get("image"), body.get("width"), settings.load(), decomp=body.get("id"))
-            out["sent"] = True
-        except Exception as ex:
+            studio._targets(settings.load())
+        except ValueError as ex:
             errors.append("Mirror: %s" % str(ex)[:200])
-    if fake:
-        code, got = _fm_call("POST", "/decompose/send", body)
-        if code == 200:
-            out["false_mirror"] = got
-            out["sent"] = True
-        else:
-            errors.append("False Mirror: %s" % ((got or {}).get("error") if isinstance(got, dict) else got))
-    out["errors"] = errors
-    if not out["sent"]:
+            real = False
+    if not real and not fake:
         return _bad("; ".join(errors)[:300], 502)
-    return out
+
+    def run():
+        if real:
+            try:
+                studio.send(body.get("image"), body.get("width"), settings.load(), decomp=body.get("id"))
+            except Exception as ex:
+                print("send to the tablet: Mirror: %s" % str(ex)[:200], flush=True)
+        if fake:
+            code, got = _fm_call("POST", "/decompose/send", body)
+            if code != 200:
+                print("send to the tablet: False Mirror: %s" % ((got or {}).get("error") if isinstance(got, dict) else got), flush=True)
+    threading.Thread(target=run, name="decompose-send", daemon=True).start()
+    return {"sent": True, "queued": True, "mirror": bool(real), "false_mirror": bool(fake), "errors": errors}
 
 
 def _fm_call(method, path, body=None, timeout=600):

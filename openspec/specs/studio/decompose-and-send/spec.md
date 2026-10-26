@@ -23,12 +23,18 @@ safe area below the caption.
 ### Requirement: Sending adds a page to the inbox notebook
 Sending SHALL append one new page to the inbox notebook named in the settings, holding a small caption
 (the image's file name, the seconds the decomposing took, the date and time) with the strokes below
-it. Sending SHALL NOT change any existing page.
+it. Sending SHALL NOT change any existing page. Sending SHALL be kicked off, not waited for: the window SHALL hear back
+at once (or at once why it cannot land, such as no inbox to land in), and the page SHALL be written and its sync started
+in the background, the window never waiting on a cloud sync.
 
 #### Scenario: A second picture
 - **WHEN** the inbox notebook has three pages and the user sends an image
 - **THEN** the notebook has a fourth page holding the caption and the strokes, and its other pages are
   unchanged
+
+#### Scenario: Send answers at once
+- **WHEN** the user presses Send on a decomp
+- **THEN** its card is marked sent at once, while the page is written and synced in the background
 
 ### Requirement: The first send makes the inbox
 When no notebook matches the inbox path, or only one in the trash does, sending SHALL create the

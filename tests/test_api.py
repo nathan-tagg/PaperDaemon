@@ -270,24 +270,37 @@ def test_a_notepad_comes_back_in_parts():
 
 
 def test_send_to_tablet_lands_in_both_mirrors_inboxes(monkeypatch):
+    """Send is kicked off, not waited for: it answers at once and lands in both mirrors' inboxes in the background."""
+    import threading
     from paperdaemon import studio
+    done = []
     monkeypatch.setattr(paths, "false_mirror_exists", lambda: True)
-    monkeypatch.setattr(server, "_fm_call", lambda m, p, b=None: (200, {"sent": True, "notebooks": 1}))
-    monkeypatch.setattr(studio, "send", lambda image=None, width=None, s=None, decomp=None: {"sent": True, "notebooks": 2})
+    monkeypatch.setattr(server, "_fm_call", lambda m, p, b=None: done.append("false mirror") or (200, {"sent": True, "notebooks": 1}))
+    monkeypatch.setattr(studio, "send", lambda image=None, width=None, s=None, decomp=None: done.append("mirror") or {"sent": True, "notebooks": 2})
+    monkeypatch.setattr(studio, "_targets", lambda s: ["inbox"])
     body = {"image": "data:image/png;base64,", "width": 400}
+
+    def settle():
+        for t in threading.enumerate():
+            if t.name == "decompose-send":
+                t.join(5)
     # no account: the Mirror is skipped, the False Mirror takes it
     monkeypatch.setattr(server, "_signed_in", lambda: False)
     got = client().post("/api/v1/decompose/send", json=body).json()
-    assert got["sent"] and got["false_mirror"]["notebooks"] == 1 and "mirror" not in got
+    settle()
+    assert got["sent"] and got["false_mirror"] and not got["mirror"] and done == ["false mirror"]
     # both
+    done.clear()
     monkeypatch.setattr(server, "_signed_in", lambda: True)
     got = client().post("/api/v1/decompose/send", json=body).json()
-    assert got["mirror"]["notebooks"] == 2 and got["false_mirror"]["notebooks"] == 1
-    # a mirror with nowhere to land: the other still takes it, and the reason is said
-    def nowhere(image=None, width=None, s=None, decomp=None):
+    settle()
+    assert got["mirror"] and got["false_mirror"] and sorted(done) == ["false mirror", "mirror"]
+    # a mirror with nowhere to land: the other still takes it, and the reason is said at once
+    def nowhere(s):
         raise ValueError("no notebook is tagged inbox, and there is no Quick sheets")
-    monkeypatch.setattr(studio, "send", nowhere)
+    monkeypatch.setattr(studio, "_targets", nowhere)
     got = client().post("/api/v1/decompose/send", json=body).json()
+    settle()
     assert got["sent"] and "no notebook is tagged inbox" in got["errors"][0]
     # no account and no False Mirror: said why
     monkeypatch.setattr(paths, "false_mirror_exists", lambda: False)

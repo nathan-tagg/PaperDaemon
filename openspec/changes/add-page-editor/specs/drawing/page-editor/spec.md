@@ -38,11 +38,19 @@ The highlighter SHALL offer six colors, the shader eight and every other pen nin
 
 ### Requirement: The eraser erases strokes or what it passes over
 The eraser SHALL offer two modes: erasing whole strokes, and erasing what it passes over by splitting
-strokes where it crosses them. It SHALL sweep the whole path between two pointer samples.
+strokes where it crosses them. It SHALL sweep the whole path between two pointer samples. Passing SHALL leave a clean
+path: every stroke cut back to the eraser's full reach (measured to the edge of the stroke's widest ink, not its width
+setting), however many times the eraser comes back over a piece it already cut, and no crumb shorter than half the
+eraser's size left in it. A swipe SHALL NOT stop for work the page can do later (no copy of the page read back from the
+card while a swipe is under way, even paused).
 
 #### Scenario: A fast pass across a thin stroke
 - **WHEN** the user drags the eraser quickly across a fineliner line in the passing-over mode
 - **THEN** the line is cut where the eraser crossed it and both ends remain
+
+#### Scenario: A line of few points
+- **WHEN** the user swipes the eraser down across a line drawn in one quick movement (long segments, few points)
+- **THEN** the gap is as wide as the eraser reaches, the same as across a slowly drawn line, with nothing left in it
 
 ### Requirement: Typing on the page
 Typing SHALL NOT need the text tool: with no cursor, a key that types SHALL put the cursor at the end of
@@ -281,7 +289,13 @@ inside, scale by its corners (strokes and their widths alike) and turn by the ha
 each change one undo step; while dragged the strokes SHALL be drawn as plain lines and changed only when let go.
 Capture SHALL copy what the page shows inside a drawn loop, pixel for pixel, to the system clipboard as a picture; a click
 on a picture SHALL select it, to move, scale and turn the same way. Delete or Backspace SHALL remove what is selected and
-Esc let it go.
+Esc let it go. With Select or Capture in hand the number keys SHALL shape the loop as they shape a pen's strokes: 2 a
+circle, 3 a triangle, 4 a square, 5 a rectangle, dragged out from one corner or edge to the other, for one use, then 1 (a
+loop drawn freehand) again; Esc lets the shape go. With Select or Capture in hand no key SHALL start typing.
+
+#### Scenario: A rectangle selection
+- **WHEN** the user, with Select in hand, presses 5 and drags from one corner of some strokes to the other
+- **THEN** the strokes inside the rectangle are selected, nothing is typed, and the next loop is drawn freehand
 
 #### Scenario: Turning a selection
 - **WHEN** the user selects a flat stroke and turns the frame's handle a quarter, with Alt
@@ -291,7 +305,13 @@ Esc let it go.
 Ctrl+C and Ctrl+X SHALL put selected strokes on the system clipboard both as strokes PaperDaemon reads back and as a
 picture any program takes, and a selected picture as its image. With no text being typed, Ctrl+V SHALL put back, centered
 under the pointer, strokes as strokes (selected) or an image (PNG, JPEG, SVG and the like) as a picture at one screen pixel
-a pixel; Ctrl+Shift+V SHALL put an image down as strokes, decomposed at the same size.
+a pixel; Ctrl+Shift+V SHALL put an image down as strokes, decomposed at the same size, and strokes copied from a page as
+the strokes they are. With a caret, Ctrl+Shift+V SHALL still put an image or copied strokes down as strokes (the text let
+go first); only text goes into the text, in the caret's formatting.
+
+#### Scenario: Paste as strokes while typing
+- **WHEN** the user is typing on the page, copies an image elsewhere and presses Ctrl+Shift+V
+- **THEN** the image is decomposed onto the page as strokes, and no text is pasted
 
 #### Scenario: Copying strokes to another page
 - **WHEN** the user selects strokes, presses Ctrl+C, opens another page and presses Ctrl+V

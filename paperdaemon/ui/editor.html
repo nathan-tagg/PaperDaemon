@@ -1160,10 +1160,15 @@ span.lname { cursor: default; }
     shownCtx.drawImage(GL.canvas, 0, 0); shownDirty = false;
     base = null; shown = null; cpuStale = true;
     inkTime = { on: GL.name, ms: performance.now() - t, lines: lines.length, whole: true };
-    clearTimeout(cpuSoon); cpuSoon = setTimeout(() => {                 // the copy, and the eraser's grid, while the page is idle
+    // the copy, and the eraser's grid, while the page is idle -- never in a swipe that paused: reading the whole page
+    // back from the card under a moving eraser was its hitch
+    clearTimeout(cpuSoon);
+    const later = () => { cpuSoon = setTimeout(() => {
+      if (erasing) { later(); return; }
       const idle = f => (window.requestIdleCallback ? requestIdleCallback(f) : f());
-      idle(() => { cpuCopy(); idle(gridWarm); });
-    }, 400);
+      idle(() => { if (erasing) { later(); return; } cpuCopy(); idle(gridWarm); });
+    }, 400); };
+    later();
     return true;
   }
   function cpuCopy() {                                        // the editor's own copy of the page, from the card, when wanted
@@ -1433,6 +1438,7 @@ span.lname { cursor: default; }
         if (c) c.push(L); else g.grid.set(k, [L]);
       }
   }
+  const runLength = run => { let d = 0; for (let i = 1; i < run.length; i++) d += Math.hypot(run[i].x - run[i - 1].x, run[i].y - run[i - 1].y); return d; };
   function eraseAt(x, y) {                                    // on the layer in hand; true when something went
     const R = eraserR() + erasing.reach, seen = new Set(), mode = erasing.mode || eraseMode, made = [];
     let gone = false;
@@ -1441,7 +1447,9 @@ span.lname { cursor: default; }
         for (const L of erasing.grid.get(cellKey(gx, gy)) || []) {
           if (seen.has(L) || erasing.dead.has(L) || !erasing.alive.has(L)) continue;
           seen.add(L);
-          const reach = eraserR() + widthOf(L) / 2, P = L.points, bx = boxOf(L);
+          // the reach by the stroke's widest point (a pressed pen draws wider than its width field): a cut by the field alone
+          // left the end of the ink inside the eraser's circle, a thin sliver along the swipe
+          const P = L.points, bx = boxOf(L), reach = eraserR() + Math.max(bx[4], L.width) * (WSCALE[L.pen.split("_")[0]] || WSCALE_DEFAULT) / 2;
           if (x < bx[0] - reach || x > bx[2] + reach || y < bx[1] - reach || y > bx[3] + reach) continue;
           const hit = P.some((q, i) => {
             const b = P[Math.min(i + 1, P.length - 1)], dx = b.x - q.x, dy = b.y - q.y, L2 = dx * dx + dy * dy;
@@ -1452,8 +1460,13 @@ span.lname { cursor: default; }
           if (mode === "stroke") { erasing.dead.add(L); dirtyRows(bx); gone = true; continue; }
           // what it passes over: the line breaks where the eraser crossed it, its own points kept on either side. An eraser
           // that only grazes it (touching the line between two points, none of the points along it) takes nothing: it stays
-          const runs = cutOut(P, q => near(q.x, q.y, x, y, reach), x, y, reach);
-          if (runs.length === 1 && runs[0].length === P.length) continue;
+          // a crumb left between the eraser's circles (shorter than the eraser is wide) goes with it: the swipe is clean
+          const runs = cutOut(P, q => near(q.x, q.y, x, y, reach), x, y, reach)
+            .filter(run => run.length === P.length || runLength(run) >= eraserR() / 2);
+          // untouched only when the run is the stroke's own points, every one: a piece cut before ([its end, the cut]) cut
+          // shorter again keeps its count of points, and was taken for untouched -- each stroke cut only where the eraser
+          // first reached it, a stub left standing in the swipe
+          if (runs.length === 1 && runs[0].length === P.length && runs[0].every((q, i) => q === P[i])) continue;
           erasing.dead.add(L); dirtyRows(bx); gone = true;
           const ps = runs.map(run => Object.assign({}, L, { itemId: [2, page.nextId++], points: run }));
           erasing.pieces.set(L, ps);
@@ -1477,7 +1490,8 @@ span.lname { cursor: default; }
     if (eraseFrame) return;
     eraseFrame = requestAnimationFrame(() => {
       eraseFrame = 0;
-      if (GL && !gpuFailed) { dirty = null; rebuild(); return; }   // on the card: the swipe's state drawn as it is
+      // on the card: the swipe's state drawn as it is, the text not laid out again (a swipe changes no text)
+      if (GL && !gpuFailed) { dirty = null; if (!thumbHold && rebuildOnCard()) paint(); else rebuild(); return; }
       eraseApply();
       const d = dirty; dirty = null;
       if (d) rebuildBand(d[1] - 60, d[3] + 60); else paint();
@@ -2816,6 +2830,11 @@ span.lname { cursor: default; }
       return;
     }
     if (!editing() && !ctrl && !e.altKey && pickers[tool] && /^[1-6]$/.test(e.key)) { e.preventDefault(); setShape(Number(e.key)); return; }
+    // SELECT IN HAND: 1 to 5 its loop's shape (pickShape), and no key starts typing -- the keyboard stays the selection's
+    if (tool === "pick" && !editing()) {
+      if (!ctrl && !e.altKey && /^[1-5]$/.test(e.key)) { e.preventDefault(); setShape(Number(e.key)); return; }
+      if (!ctrl && !e.altKey && (e.key.length === 1 || e.key === "Enter")) { e.preventDefault(); return; }
+    }
     if (!editing() && !ctrl && !e.altKey && (e.key.length === 1 || e.key === "Enter")) startTyping();
     // BACKSPACE (or Delete) WITH NO CARET goes back into the text at its end, to take back what was typed last: no new
     // line below the ink for it, as a typed key makes
@@ -3007,14 +3026,18 @@ span.lname { cursor: default; }
       if (i >= 0) { selectPicture(i); pickDrag = { op: "move", start: [x, y], f0: { ...pick.frame } }; hiddenPics.add(page.images[i]); rebuild(); return; }
     }
     pickLand(); pick = null;
-    pickLoop = { pts: [[x, y]] };
+    pickLoop = { pts: [[x, y]], shape: shapeKind >= 2 && shapeKind <= 5 ? shapeKind : 0 };
     paint();
   }
+  // THE LOOP'S SHAPE, by number with Select in hand: 1 a loop drawn freehand, 2 a circle, 3 a triangle, 4 a square, 5 a
+  // rectangle, each dragged out from one corner or edge to the other as the pen's shapes are; one use, then a loop again
+  const pickRing = l => l.shape ? shapePoints(l.shape, l.pts[0], l.end || l.pts[0]) : l.pts;
   function pickMove(e) {
     const [sx, sy] = local(e), [x, y] = toPage(sx, sy);
     lastAt = [x, y];
     if (pickLoop && e.pointerId === pointer) {
-      for (const ev of (e.getCoalescedEvents ? e.getCoalescedEvents() : [e])) pickLoop.pts.push(toPage(...local(ev)));
+      if (pickLoop.shape) pickLoop.end = [x, y];
+      else for (const ev of (e.getCoalescedEvents ? e.getCoalescedEvents() : [e])) pickLoop.pts.push(toPage(...local(ev)));
       paint(); return true;
     }
     if (pickDrag && e.pointerId === pointer) {
@@ -3040,8 +3063,9 @@ span.lname { cursor: default; }
   }
   function pickUp() {
     if (pickLoop) {
-      const loop = pickLoop.pts; pickLoop = null;
-      if (loop.length < 3) { paint(); return true; }
+      const l = pickLoop, loop = pickRing(l); pickLoop = null;
+      if (l.shape) setShape(1);
+      if (loop.length < 3 || (l.shape && (!l.end || Math.hypot(l.end[0] - l.pts[0][0], l.end[1] - l.pts[0][1]) < 2))) { paint(); return true; }
       if (pickMode === "capture") { captureLoop(loop); paint(); return true; }
       // a stroke whose box misses the loop's is out at once; the rest are in when half their points are
       let lx0 = Infinity, ly0 = Infinity, lx1 = -Infinity, ly1 = -Infinity;
@@ -3115,7 +3139,7 @@ span.lname { cursor: default; }
   function drawPick() {                                       // the loop being drawn, and the selection's frame and handles
     if (pickLoop) {
       ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = "rgba(0,0,0,0.65)"; ctx.lineWidth = 1;
-      ctx.beginPath(); pickLoop.pts.forEach(([x, y], i) => { const [a, b] = toScreen(x, y); i ? ctx.lineTo(a, b) : ctx.moveTo(a, b); });
+      ctx.beginPath(); pickRing(pickLoop).forEach(([x, y], i) => { const [a, b] = toScreen(x, y); i ? ctx.lineTo(a, b) : ctx.moveTo(a, b); });
       ctx.closePath(); ctx.stroke(); ctx.restore();
     }
     if (!pick) return;
@@ -3203,16 +3227,31 @@ span.lname { cursor: default; }
   // PASTE, when no text is being typed: strokes back as strokes; an image as a picture (Ctrl+Shift+V: as strokes).
   // Ctrl+V comes as the paste it is. Ctrl+Shift+V does not: the browser pastes it as plain text, the image left out, so
   // for it (and for a Ctrl+V the viewer around the page passed on, which has no paste of its own) the clipboard is read.
+  // With a caret, Ctrl+Shift+V is still Paste as strokes when the clipboard holds an image or copied strokes (the text
+  // let go first); only text goes into the text, in the caret's formatting.
   const pasteAt = () => lastAt || toPage(vpW / 2, vpH / 2);
   window.addEventListener("keydown", e => {
-    if (!(e.ctrlKey || e.metaKey) || e.altKey || (e.key !== "v" && e.key !== "V") || editing()) return;
+    if (!(e.ctrlKey || e.metaKey) || e.altKey || (e.key !== "v" && e.key !== "V")) return;
+    if (editing()) {
+      if (!e.shiftKey) return;                                // the paste event takes it, into the text
+      e.preventDefault(); e.stopImmediatePropagation();
+      shiftPasteWithCaret();
+      return;
+    }
     if (!e.shiftKey && e.isTrusted) return;                   // the paste event takes it
     e.preventDefault(); e.stopImmediatePropagation();
     readClipboard(e.shiftKey);
   }, true);
-  async function readClipboard(asStrokes) {
+  async function shiftPasteWithCaret() {
     let items;
     try { items = await navigator.clipboard.read(); }
+    catch (err) { tell("The clipboard could not be read here"); return; }
+    let ink = items.some(it => it.types.some(t => /^image\//.test(t)));
+    for (const it of items) if (!ink && it.types.includes("text/html")) ink = /data-pd-strokes=|<svg|<img[^>]+src="data:image\//i.test(await (await it.getType("text/html")).text());
+    if (ink) { contentLanded(); readClipboard(true, items); } else pasteText(false);
+  }
+  async function readClipboard(asStrokes, items) {
+    if (!items) try { items = await navigator.clipboard.read(); }
     catch (err) { tell("The clipboard could not be read here"); return; }
     for (const it of items) {
       const img = it.types.find(t => /^image\//.test(t));
@@ -3312,7 +3351,8 @@ span.lname { cursor: default; }
   }
   async function pasteFrom(html, text, asStrokes) {           // our own strokes, or an image carried as markup -> handled?
     const m = /data-pd-strokes="([^"]+)"/.exec(html);
-    if (m && !asStrokes) {                                    // our own strokes, back as strokes, selected
+    if (m) {                                                  // our own strokes, back as strokes, selected (as strokes already:
+                                                              // Ctrl+Shift+V gives them back too, not their picture decomposed)
       let got; try { got = JSON.parse(decodeURIComponent(escape(atob(m[1])))); } catch (err) { return false; }
       const [cx, cy] = pasteAt();
       const lines = (got.lines || []).map(ln => lineIn({ ...ln, points: ln.points.map(p => [p[0] + cx, p[1] + cy, p[2], p[3], p[4], p[5]]) }));
