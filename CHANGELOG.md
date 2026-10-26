@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.84
+
+- The page editor, made quick on full pages. Measured on a page of 30,000 strokes (a decomp, with hand strokes of every pen over it): a passing swipe's longest pause went from 31 ms to 7 ms, and the graphics card's work for it from 5.1 s to 0.9 s; letting go of a pen stroke from 35 ms to 3 ms; the longest pause while scrolling from 114 ms to 9 ms, and while zooming from 164 ms to 6 ms. What is drawn is the same, pixel for pixel: checked against a full redraw and against the same strokes loaded fresh, on the card and off it.
+- Erasing: the eraser's path since the last move is swept at once, and each stroke is cut there once, exactly where it enters and leaves it (it was cut at every half radius of the path, and the pieces of everything cut were drawn over the page each frame, more of them every frame: the hitches). Only the area that changed is drawn again, the strokes changed in place among the page's, so what lies over what stays exact. Letting go of a swipe draws nothing again.
+- A stroke being drawn goes onto the card where it will lie: nothing is copied off the card when it starts, and nothing is drawn again when it ends. Typing redraws only the rows of text it changed; a zone erase, a shape, a fill and a paste only their area.
+- Nothing is read back from the graphics card while the page is idle: a copy of the whole page was made 0.4 s after every redraw, and a swipe or a stroke that began just then waited for it.
+- Saves wait for the pen or the eraser to lift, and make only the new strokes' part of the file. A page's points are held once (the file as read kept a second copy of every point), scrolling no longer lays out the text or walks every stroke each step, and the eraser's index of the strokes is made while the page is idle and kept through every change.
+- Without a graphics card, the page drawn again after an erase was the wrong rows of it: fixed.
+
 ## 0.1.83
 
 - The keys change an erase mid-swipe, without a stop: Ctrl pressed or let go during a Shift-drag switches between erasing what it passes over and whole strokes, Alt added starts a zone right there, and Alt let go erases the zone and carries on. The pointer changes with the keys.

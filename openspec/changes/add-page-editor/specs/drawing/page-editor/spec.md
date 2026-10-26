@@ -38,11 +38,13 @@ The highlighter SHALL offer six colors, the shader eight and every other pen nin
 
 ### Requirement: The eraser erases strokes or what it passes over
 The eraser SHALL offer two modes: erasing whole strokes, and erasing what it passes over by splitting
-strokes where it crosses them. It SHALL sweep the whole path between two pointer samples. Passing SHALL leave a clean
-path: every stroke cut back to the eraser's full reach (measured to the edge of the stroke's widest ink, not its width
-setting), however many times the eraser comes back over a piece it already cut, and no crumb shorter than half the
-eraser's size left in it. A swipe SHALL NOT stop for work the page can do later (no copy of the page read back from the
-card while a swipe is under way, even paused).
+strokes where it crosses them. It SHALL sweep its circle along the whole of its path since the last pointer move, and
+cut each stroke there once, exactly where the stroke enters and leaves that swept area, however far the pointer moved and
+however the stroke's points are spaced. Passing SHALL leave a clean path: every stroke cut back to the eraser's full
+reach (measured to the edge of the stroke's widest ink, not its width setting), however many times the eraser comes back
+over a piece it already cut, and no crumb shorter than half the eraser's size left in it. A swipe SHALL NOT stop for
+work the page can do later (no copy of the page read back from the card, no save, while a swipe is under way, even
+paused), and the keys it takes are only those that change it.
 
 #### Scenario: A fast pass across a thin stroke
 - **WHEN** the user drags the eraser quickly across a fineliner line in the passing-over mode
@@ -121,9 +123,10 @@ calligraphy lines throughout) SHALL run on across the drawable square and down a
 - **THEN** the page's template is Grid medium, drawn under the text and every layer
 
 ### Requirement: Drawing keeps up with the pen
-A stroke being drawn SHALL be drawn one segment at a time over the page and SHALL redraw only the part of
-the screen it touched, with the same result as drawing the finished stroke whole. The eraser SHALL
-redraw the page only when it removed something.
+A stroke being drawn SHALL be put among the page's strokes where it will lie (the end of the layer in hand) and SHALL
+redraw only the area of its newest points, with the same result as drawing the finished stroke whole -- under the layers
+above it, its grain and its wash as they will be. Nothing SHALL be copied off the graphics card when it starts, and
+nothing drawn again when it ends. The eraser SHALL redraw only when it removed something, and only the area it changed.
 
 #### Scenario: A long stroke on a full page
 - **WHEN** the user draws a long stroke on a page of forty strokes
@@ -342,14 +345,26 @@ it; a stroke of the eraser passing over a checkbox SHALL NOT tick it. The eraser
 - **THEN** the click ticks it and the drag leaves it ticked
 
 ### Requirement: The editor keeps up
-A text edit SHALL redraw only the band of the page it touched (from the first paragraph changed to the end of the text),
-an eraser only the rows its erased strokes took, and a repaint SHALL copy the page as shown rather than draw it again;
-each SHALL show exactly what a full redraw shows. The editor SHALL not read the page's file to compare it while the user
-is at work, only after a pause and before each save.
+A change SHALL redraw only the area it changed: a text edit the band it touched (from the first paragraph changed to the
+end of the text), an erase the area its swept path changed (all of a stroke whose ink is decided whole: a grain, a
+shader's wash), a stroke drawn the area of its newest points, a zone erased or strokes added (a shape, a fill, a paste)
+their area. On the graphics card the strokes changed SHALL be changed in place among the page's strokes, their order
+(what lies over what) kept, and only the strokes that can reach that area drawn again; a repaint SHALL copy the page as
+shown rather than draw it again. Each SHALL show exactly what a full redraw shows, and what the same strokes loaded fresh
+show, pixel for pixel. The editor SHALL NOT read the page back from the card while it is idle (a fill and a capture ask
+for it), SHALL make the eraser's index of the strokes while the page is idle, a little at a time, and keep it through
+every change made to them, and SHALL hold each stroke's points once. A save SHALL wait for the pen, the eraser or a drag
+to be let go, and SHALL make only the new strokes' part of the file (each stroke's is made once). The editor SHALL not
+read the page's file to compare it while the user is at work, only after a pause and before each save.
 
 #### Scenario: Holding Delete
 - **WHEN** the user holds Delete on a page with text and ink
 - **THEN** each key redraws only the text's band, as fast as the key repeats
+
+#### Scenario: A swipe across a decomp
+- **WHEN** the user swipes the passing eraser back and forth across a page of thirty thousand strokes
+- **THEN** each frame draws only the area the swipe changed in it, no frame waits on the whole page, and the page then
+  equals a full redraw of it and a fresh load of it, pixel for pixel
 
 ### Requirement: A mouse draws with an inferred hand
 A stroke drawn with a mouse SHALL take a pressure inferred from its speed (slow pressed hard, fast lightly, smoothed) and
