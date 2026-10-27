@@ -46,6 +46,14 @@ over a piece it already cut, and no crumb shorter than half the eraser's size le
 work the page can do later (no copy of the page read back from the card, no save, while a swipe is under way, even
 paused), and the keys it takes are only those that change it.
 
+A swipe SHALL keep the screen's pace on any machine: the pointer only marks the path, and each frame sweeps as much of it
+as a sixtieth of a second has room for (sweeping, then drawing again what changed, then making strokes of what was cut),
+at least a step of each, and leaves the rest to the next frame. A swipe faster than the machine trails the pointer and
+catches up as it slows; letting go SHALL NOT wait for it (the frames after finish it), and anything else done on the page
+meanwhile (a key, a press, a paste, leaving the page) finishes it first. No stroke SHALL be made while the eraser moves:
+each stroke cut is kept as what is left of it, the card draws it so in its place, and its pieces are made from that as
+the frames have time and when the swipe ends.
+
 #### Scenario: A fast pass across a thin stroke
 - **WHEN** the user drags the eraser quickly across a fineliner line in the passing-over mode
 - **THEN** the line is cut where the eraser crossed it and both ends remain
@@ -53,6 +61,11 @@ paused), and the keys it takes are only those that change it.
 #### Scenario: A line of few points
 - **WHEN** the user swipes the eraser down across a line drawn in one quick movement (long segments, few points)
 - **THEN** the gap is as wide as the eraser reaches, the same as across a slowly drawn line, with nothing left in it
+
+#### Scenario: A swipe faster than the machine
+- **WHEN** the user flicks the passing eraser back and forth across a page of thirty thousand strokes on a slow machine
+- **THEN** no frame takes much more than a sixtieth of a second, the erase follows the pointer as fast as the machine
+  allows and catches up when it stops, and letting go and starting the next swipe are not held up
 
 ### Requirement: Typing on the page
 Typing SHALL NOT need the text tool: with no cursor, a key that types SHALL put the cursor at the end of
@@ -346,8 +359,9 @@ it; a stroke of the eraser passing over a checkbox SHALL NOT tick it. The eraser
 
 ### Requirement: The editor keeps up
 A change SHALL redraw only the area it changed: a text edit the band it touched (from the first paragraph changed to the
-end of the text), an erase the area its swept path changed (all of a stroke whose ink is decided whole: a grain, a
-shader's wash), a stroke drawn the area of its newest points, a zone erased or strokes added (a shape, a fill, a paste)
+end of the text), an erase the cells of the page where ink went and then those of each piece whose ink is decided whole
+and is made anew (a grain's piece that now starts at the cut, a shader's wash cut in two), each cell once however often
+it changed, a stroke drawn the area of its newest points, a zone erased or strokes added (a shape, a fill, a paste)
 their area. On the graphics card the strokes changed SHALL be changed in place among the page's strokes, their order
 (what lies over what) kept, and only the strokes that can reach that area drawn again; a repaint SHALL copy the page as
 shown rather than draw it again. Each SHALL show exactly what a full redraw shows, and what the same strokes loaded fresh

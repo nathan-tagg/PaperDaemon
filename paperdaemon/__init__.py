@@ -1,2 +1,2 @@
 """PaperDaemon: a reMarkable assistant that answers tagged pages with the models you choose."""
-__version__ = "0.1.84"
+__version__ = "0.1.85"

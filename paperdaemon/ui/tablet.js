@@ -387,8 +387,9 @@
       if (d) { S.tags = d; paintBar(); paintTagPop(); }
     }
 
-    function openDoc(x) {
-      S.doc = byId(x); S.page = 1; S.tags = null; S.chapters = null; S.hist = [1]; S.hpos = 0; S.pp = [];
+    function openDoc(x) {                                     // at the page it was last open on, as the tablet opens it
+      S.doc = byId(x); S.page = Math.min(Math.max(1, (S.doc && S.doc.at_page) || 1), pageCount());
+      S.tags = null; S.chapters = null; S.hist = [S.page]; S.hpos = 0; S.pp = [];
       if (S.doc) opened(S.doc.id, 0);                       // its cover drawn anew at the next look
       S.view = PD.firstTab === "pages" || PD.firstTab === "chapters" ? PD.firstTab : "page"; PD.firstTab = "";
       if (S.pmove && S.pmove.out) { S.pmove.out = false; S.pmove.at = 0; S.view = "pages"; unpick(); }   // where they go: its pages

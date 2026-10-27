@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.85
+
+- Passing erase, made smooth on full pages and on slow machines. The pointer now only marks the eraser's path, and each frame does as much of the erasing as a sixtieth of a second has room for (sweeping the path, drawing again what changed, then making the pieces), leaving the rest to the next frame. The screen never stops: on a slow machine a very fast swipe trails the pointer and catches up as it slows. Measured on a page of 30,000 strokes flicked across end to end: at full speed every frame took under 11 ms and letting go 9.5 ms; with the processor slowed four times, 99 frames in 100 took under 21 ms, with 38 pauses over 16 ms where 0.1.84 had 280, and each pointer move cost 0.3 ms where it cost 14 ms.
+- No stroke is made while the eraser moves. Each stroke it cuts is kept as what is left of it, and the graphics card draws it so in its place. The pieces are made in the frames' spare time and when the swipe ends, from what the card already drew.
+- What a swipe changed is drawn again in cells of the page, each once however often it changed: where ink went first, then the grain or wash of the pieces it changes, which only change how they look.
+- A swipe let go while it is still catching up finishes in the frames after. A key, a press, a paste or leaving the page finishes it first. What is drawn is the same pixel for pixel as a full redraw and as the same strokes loaded fresh, also after a swipe ended that way.
+- A notebook opens on the page its cover names (Page 2 of 2), the page it was last open on. It opened on page 1.
+
 ## 0.1.84
 
 - The page editor, made quick on full pages. Measured on a page of 30,000 strokes (a decomp, with hand strokes of every pen over it): a passing swipe's longest pause went from 31 ms to 7 ms, and the graphics card's work for it from 5.1 s to 0.9 s; letting go of a pen stroke from 35 ms to 3 ms; the longest pause while scrolling from 114 ms to 9 ms, and while zooming from 164 ms to 6 ms. What is drawn is the same, pixel for pixel: checked against a full redraw and against the same strokes loaded fresh, on the card and off it.

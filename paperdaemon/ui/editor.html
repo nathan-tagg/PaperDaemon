@@ -200,6 +200,11 @@ span.lname { cursor: default; }
       if (el.closest("#vp")) { e.preventDefault(); e.stopImmediatePropagation(); }
     }, true);
   }
+  // A SWIPE LET GO THAT IS STILL CATCHING UP (eraseFlush) is finished at once before anything else reaches the page: a
+  // key (a modifier alone may be the next swipe's), a press, a paste or a copy, a word from the viewer
+  for (const t of ["keydown", "pointerdown", "paste", "cut", "copy", "drop", "message"]) window.addEventListener(t, e => {
+    if (t !== "keydown" || !["Shift", "Control", "Alt", "Meta"].includes(e.key)) settleSwipe();
+  }, true);
   // ALT+LEFT AND ALT+RIGHT, the page open to edit or to look at, walk the viewer's history of pages (as the mouse's back
   // and forward buttons do): never the browser's Back, which took the app behind the viewer a screen back
   // CTRL+W and CTRL+TAB (with Shift: back) are the viewer's: close the notebook, go to the next one
@@ -417,6 +422,8 @@ span.lname { cursor: default; }
     else if (fam === "MARKER") d = interp(sp, SPEED_AT, [1, 1, 0.97, 0.86]);
     return [k, d];
   }
+  // a grain's seed, from where its stroke starts
+  const seedOf = p0 => mix((Math.imul(Math.round((p0.x + page.paperSize[0] / 2) * 16), 0x27d4eb2d) ^ mix(Math.round(p0.y * 16))) >>> 0);
   function prepared(L) {                                      // render.py's preparation of a line
     const fam = L.pen.split("_")[0], scaleW = WSCALE[fam] || WSCALE_DEFAULT;
     const widths = L.points.map(p => Math.max(1, p.width * scaleW));
@@ -424,7 +431,7 @@ span.lname { cursor: default; }
     const least = fam === "PENCIL" || fam === "MECHANICAL" ? 2 : 1;   // the tablet draws no pencil narrower than 2 units
     const dens = L.points.map((p, i) => { const [k, d] = response(fam, p.pressure, p.speed); widths[i] = k > 0 ? Math.max(least, widths[i] * k) : 0; return d; });
     if (L.pen === "SHADER") return { kind: RF_SHADER, rgba: L.colorRgba || SHADER_PLAIN[L.color] || (ENUM[L.color] || [0, 0, 0]).concat([255]), widths };
-    const p0 = L.points[0], seed = mix((Math.imul(Math.round((p0.x + page.paperSize[0] / 2) * 16), 0x27d4eb2d) ^ mix(Math.round(p0.y * 16))) >>> 0);
+    const seed = seedOf(L.points[0]);
     return { kind: RF_PEN, rgba: (PEN_ENUM[fam] || {})[L.color] || ENUM[L.color] || [0, 0, 0], widths, dens, seed };
   }
 
@@ -439,6 +446,21 @@ span.lname { cursor: default; }
   // the offset). What is under the ink (paper, template, pictures, text) goes up as a texture, the strokes are drawn
   // over it, and the result comes back into the canvas the rest of the editor works on. Without WebGL2 (or with #cpu
   // in the address) the renderer above draws everything, as before.
+  // A PIECE AN ERASE LEFT -> where it was cut from: {from: the stroke, i0..i1: the points of it kept, head/tail: a new
+  // point at the cut before/after them}. The card makes the piece's part from that stroke's (pieceFrom)
+  const pieceOf = new WeakMap();
+  const pointAt = (P, s) => {                                 // the stroke's point at place s (index + t), as the far end's
+    const j = Math.floor(s), t = s - j, a = P[j], b = P[j + 1];
+    return Object.assign({}, b, { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+  };
+  function piecePoints(P, s0, s1) {                           // the points of a stroke's piece from place s0 to s1
+    const i0 = Math.ceil(s0), i1 = Math.floor(s1);
+    if (s0 >= i0) { const pts = P.slice(i0, i1 + 1); if (s1 > i1) pts.push(pointAt(P, s1)); return pts; }
+    const pts = [pointAt(P, s0)];
+    for (let i = i0; i <= i1; i++) pts.push(P[i]);
+    if (s1 > i1) pts.push(pointAt(P, s1));
+    return pts;
+  }
   const GL = (() => {
     // the shaders: ui/shaders.js, the one copy the engine draws with too (loaded before this script)
     const { VS_SEG, FS_SEG, VS_HL, FS_TRI, VS_FULL, FS_COPY, FS_AREA } = window.PD_SHADERS || {};
@@ -488,6 +510,18 @@ span.lname { cursor: default; }
     function partOf(L) {
       const had = parts.get(L);
       if (had && had.pts === L.points && had.n0 === L.points.length) return had;
+      const cut = pieceOf.get(L);
+      return made(L, (cut && pieceFrom(L, cut)) || freshPart(L));
+    }
+    function made(L, out) {                                   // a part kept as the line's
+      out.serial = ++serial; out.line = L;
+      out.ix = 0; out.runs = null; out.gone = false; out.root = null;   // the area index's (ixAdd), and an erase's (replace)
+      out.aq = 0; out.ah = -1; out.aa = false; out.ak = 0; out.ms = 0; out.mc = 0; out.cc = null;   // an area's (areaStrokes)
+      if (out.from === undefined) out.from = null;
+      parts.set(L, out);
+      return out;
+    }
+    function freshPart(L) {
       const P = prepared(L), n0 = L.points.length, pts = L.points;
       const out = { pts, n0, kind: P.kind, grain: false, alpha: 1, seed: 0, gr: null };
       let idx;                                                // the points on the card: a highlighter's repeats dropped
@@ -531,19 +565,135 @@ span.lname { cursor: default; }
         }
       }
       out.rec = u8; out.n = n;
-      out.serial = ++serial;
-      parts.set(L, out);
+      out.idx = P.kind === RF_HIGHLIGHTER && n !== n0 ? Int32Array.from(idx) : null;   // which points have records (else all)
+      return out;
+    }
+    const keptAt = (idx, i) => {                             // the record of point i, by its kept points' list (-1: none)
+      let lo = 0, hi = idx.length - 1;
+      while (lo <= hi) { const m = (lo + hi) >> 1; if (idx[m] === i) return m; if (idx[m] < i) lo = m + 1; else hi = m - 1; }
+      return -1;
+    };
+    // A PIECE'S RECORDS -- of a stroke's part pp: the points i0..i1 of it the piece keeps, and its new points at the cuts
+    // (hp before them, tp after: {x, y}, or null) -- into u8/f32 at record `at`: that stroke's records of the points kept,
+    // copied; a record for each new point, a copy of the record of the point beyond it moved to the cut (the piece's own
+    // point there is a copy of that point); and the flags at its ends made as a fresh part makes them. The records a
+    // fresh part of the piece has, made without going over its points. One way for a piece made (pieceFrom) and for one
+    // drawn while a swipe cuts it (areaStrokes) -> how many records (-1: made fresh instead: a highlighter's repeat at an end)
+    const PI = { r0: 0, r1: 0, mid: 0 };                      // (the last piece's records of the stroke)
+    function turnAt(p0, a, b) {                               // a highlighter's flag at a, as a fresh part works it out
+      let ex = a.x - p0.x, ey = a.y - p0.y, Ln = Math.sqrt(ex * ex + ey * ey);
+      const pdx = ex / Ln, pdy = ey / Ln;
+      ex = b.x - a.x; ey = b.y - a.y; Ln = Math.sqrt(ex * ex + ey * ey);
+      const cross = pdx * (ey / Ln) - pdy * (ex / Ln);
+      return Math.abs(cross) >= 1e-6 ? SEG | (cross > 0 ? BEVEL | OTHER : BEVEL) : SEG;
+    }
+    function pieceInto(pp, i0, i1, hp, tp, u8, f32, at) {
+      const P = pp.pts, h = hp ? 1 : 0, t = tp ? 1 : 0;
+      const rOf = i => pp.idx ? keptAt(pp.idx, i) : i;
+      const r0 = rOf(i0), r1 = rOf(i1), rt = t ? rOf(i1 + 1) : 0, mid = r1 - r0 + 1;
+      if (r0 < 0 || r1 < 0 || rt < 0 || mid < 0 || (pp.idx && !mid)) return -1;
+      const n = h + mid + t;
+      if (n < 2) return -1;
+      if (pp.kind === RF_HIGHLIGHTER) {                       // a new end on the point beside it: a fresh part drops one
+        const same = (a, b) => Math.abs(a.x - b.x) <= 1e-6 && Math.abs(a.y - b.y) <= 1e-6;
+        const first = mid ? P[pp.idx ? pp.idx[r0] : i0] : tp, last = mid ? P[pp.idx ? pp.idx[r1] : i1] : hp;
+        if ((h && same(hp, first)) || (t && same(last, tp))) return -1;
+      }
+      const o = at * PT;
+      if (mid) u8.set(pp.rec.subarray(r0 * PT, (r1 + 1) * PT), o + h * PT);
+      if (h) { u8.set(pp.rec.subarray(r0 * PT, r0 * PT + PT), o); f32[o / 4] = hp.x; f32[o / 4 + 1] = hp.y; }
+      if (t) { const e = o + (n - 1) * PT; u8.set(pp.rec.subarray(rt * PT, rt * PT + PT), e); f32[e / 4] = tp.x; f32[e / 4 + 1] = tp.y; }
+      u8[o + 12] = SEG; u8[o + (n - 1) * PT + 12] = 0;        // its first point turns nowhere, its last ends it
+      if (pp.kind === RF_HIGHLIGHTER && n > 2) {              // and the points beside a new end turn against its segment
+        const pt = k => k < h ? hp : k >= n - t ? tp : P[pp.idx ? pp.idx[r0 + k - h] : i0 + k - h];
+        u8[o + PT + 12] = turnAt(pt(0), pt(1), pt(2));
+        u8[o + (n - 2) * PT + 12] = turnAt(pt(n - 3), pt(n - 2), pt(n - 1));
+      }
+      PI.r0 = r0; PI.r1 = r1; PI.mid = mid;
+      return n;
+    }
+    // a grain piece's densities (its points' own) and its length along it at each point, into g at grain record `gat`
+    // -> whether it has grain at all (a piece of a grain stroke may have none)
+    function pieceGrainInto(pp, i0, i1, hp, tp, n, g, gat) {
+      if (!pp.gr) return false;
+      const P = pp.pts, h = hp ? 1 : 0, t = tp ? 1 : 0;
+      let has = false;
+      for (let k = 0; k < n; k++) {
+        const d = pp.gr[2 * (k < h ? i0 : k >= n - t ? i1 + 1 : i0 + k - h)];
+        g[2 * (gat + k)] = d;
+        if (d < 1) has = true;
+      }
+      if (!has) return false;
+      let u = 0, prev = null;
+      for (let k = 0; k < n; k++) {
+        const q = k < h ? hp : k >= n - t ? tp : P[i0 + k - h];
+        if (k) u += Math.hypot(q.x - prev.x, q.y - prev.y);
+        g[2 * (gat + k) + 1] = u; prev = q;
+      }
+      return true;
+    }
+    // A PIECE'S PART FROM THE RECORDS ITS STROKE'S CUT WAS DRAWN WITH (cutPieces, k: which piece): what pieceFrom makes,
+    // not made again -> null: made as partOf makes it
+    function cachedPart(N, pp, c, k) {
+      if (c.fresh[k] || parts.has(N)) return null;
+      const P = N.points, n0 = P.length, at = c.at[k], n = c.cnt[k], s0 = c.A[2 * k], s1 = c.A[2 * k + 1];
+      const i0 = Math.ceil(s0), i1 = Math.floor(s1), h = s0 < i0 ? 1 : 0, t = s1 > i1 ? 1 : 0, r0 = c.r0[k], mid = c.mid[k];
+      if (n0 !== h + Math.max(0, i1 - i0 + 1) + t) return null;
+      const grain = c.grain[k];
+      const out = { pts: P, n0, kind: pp.kind, grain, alpha: pp.alpha, seed: c.seed[k], gr: grain ? c.gr.subarray(2 * at, 2 * (at + n)) : null,
+                    rec: c.rec.subarray(at * PT, (at + n) * PT), n, idx: null };
+      if (pp.idx) {
+        const ix = new Int32Array(n);                         // (its first, a new point, is the piece's point 0)
+        for (let q = 0; q < mid; q++) ix[h + q] = pp.idx[r0 + q] - i0 + h;
+        if (t) ix[n - 1] = n0 - 1;
+        out.idx = ix;
+      }
+      out.bb = pp.bb.slice();
+      out.from = { pp, r0, r1: r0 + mid - 1, h, mid };
+      return made(N, out);
+    }
+    // A PIECE AN ERASE LEFT, its part made from the part of the stroke it was cut from (pieceOf), by pieceInto. A long
+    // wash cut again as the eraser runs along it is not gone over point by point each time. null: made fresh instead
+    function pieceFrom(L, cut) {
+      const pp = parts.get(cut.from) || partOf(cut.from);    // a piece cut from a piece made in the same go: that one's
+      if (!pp || pp.pts !== cut.from.points || pp.n0 !== cut.from.points.length) return null;
+      const P = L.points, n0 = P.length, hp = cut.head ? P[0] : null, tp = cut.tail ? P[n0 - 1] : null;
+      const u8 = new Uint8Array(n0 * PT), n = pieceInto(pp, cut.i0, cut.i1, hp, tp, u8, new Float32Array(u8.buffer), 0);
+      if (n < 0) return null;
+      const { r0, r1, mid } = PI, h = hp ? 1 : 0;
+      const out = { pts: P, n0, kind: pp.kind, grain: false, alpha: pp.alpha, seed: 0, gr: null, rec: n === n0 ? u8 : u8.slice(0, n * PT), n, idx: null };
+      if (pp.idx) {
+        const ix = new Int32Array(n);
+        if (h) ix[0] = 0;
+        for (let k = 0; k < mid; k++) ix[h + k] = pp.idx[r0 + k] - cut.i0 + h;
+        if (tp) ix[n - 1] = n0 - 1;
+        out.idx = ix;
+      }
+      if (pp.kind !== RF_HIGHLIGHTER && pp.gr) {
+        const gr = new Float32Array(n * 2);
+        if (pieceGrainInto(pp, cut.i0, cut.i1, hp, tp, n, gr, 0)) { out.grain = true; out.gr = gr; out.seed = seedOf(P[0]) >>> 0; }
+      }
+      out.bb = pp.bb.slice();                                 // its ink lies within its stroke's: that box will do to cull by
+      out.from = { pp, r0, r1, h, mid };                      // (the area index makes its stretches from the stroke's)
       return out;
     }
 
-    // THE PAGE'S SET ON THE CARD, IN CHUNKS of some sixty lines, each with its own buffers and its draws in file order.
-    // Where a chunk ends is decided by its last line's part (a random draw on the part's serial), not by its position, so
-    // a line erased, added or changed remakes only the chunk it is in, and the rest of the page stays on the card as it is.
-    // Each part, each draw and each chunk knows where its ink can be (bb, page units): a draw that cannot reach the area
-    // being drawn is not made at all.
+    // THE PAGE'S SET ON THE CARD, IN CHUNKS of a few hundred lines, each with its draws in file order: what a draw of
+    // the whole page draws. Where a chunk ends is decided by its last line's part (a random draw on the part's serial),
+    // not by its position, so a line added or changed remakes only the chunk it is in, and the rest of the page stays on
+    // the card as it is. Each part, each draw and each chunk knows where its ink can be (bb, page units): a draw that
+    // cannot reach what is being drawn is not made. A chunk is a view of a buffer on the card -- a run of parts whose
+    // records lie in it one after another -- so a chunk split (a stroke put in between) leaves its records where they are.
+    // A STROKE AN ERASE TOOK stays in its chunk, its pieces drawn in its place (repl: its part -> the parts there now,
+    // in order; each piece's part knows that stroke: root). The chunks holding such strokes are made again with their
+    // pieces while the page is idle, or before the whole page is drawn (commit) -- never during the erase.
     let serial = 0, chunks = [], gen = 0, have = [], edited = false;
     const kept = new Map();                                   // chunk key -> chunk
     const partChunk = new WeakMap();                          // a stroke's part -> the chunk last made with it
+    const repl = new Map();                                   // a chunk's part an erase took -> the parts in its place
+    // A SWIPE UNDER WAY cuts strokes only on paper: a part being cut -> the stretches of it left ([s0, s1, ...], places
+    // along its points), drawn so in its place (areaStrokes) until the swipe makes them strokes (replace)
+    const cutOf = new Map();
     const grow = (b, c) => { if (c[0] < b[0]) b[0] = c[0]; if (c[1] < b[1]) b[1] = c[1]; if (c[2] > b[2]) b[2] = c[2]; if (c[3] > b[3]) b[3] = c[3]; };
     function keyOf(ps) {                                      // the run's serials, hashed (a chunk found by it is checked part by part)
       let h = 2166136261;
@@ -554,43 +704,57 @@ span.lname { cursor: default; }
     function keep(c) { if (kept.has(c.key) && kept.get(c.key) !== c) c.key += "#" + (++serial); kept.set(c.key, c); return c; }
     function chunkOf(ps) {
       const c = kept.get(keyOf(ps));
-      if (c && c.ptBuf && sameParts(c.ps, ps)) { for (const p of ps) partChunk.set(p, c); return c; }
+      if (c && c.buf && sameParts(c.ps, ps)) { for (const p of ps) partChunk.set(p, c); return c; }
       return keep(build(ps, keyOf(ps)));
     }
-    // a chunk's buffers on the card, from its parts (reuse: the chunk it takes the place of gives its buffers over;
-    // loose: a picture's own, not the page's -- the parts are not marked as in it)
-    // The records are put together in one buffer kept for it (the card takes a copy): an erase remakes many chunks a
-    // frame, and a new buffer for each was garbage made faster than it was collected -- the collector's pauses were felt
+    // The records are put together in one array kept for it (the card takes a copy): a new one for each buffer was
+    // garbage made faster than it was collected, and the collector's pauses were felt
     let scratchRec = new Uint8Array(1 << 18), scratchGr = new Float32Array(1 << 14);
-    function build(ps, key, reuse, loose) {
+    function upload(ps) {                                     // the parts' records put up in a buffer of their own
       let nP = 2, nG = 1;                                     // a record each side of the points; one after the grain
       for (const p of ps) { nP += p.n; if (p.gr) nG += p.n; }
       if (scratchRec.length < nP * PT) scratchRec = new Uint8Array(Math.max(nP * PT, 2 * scratchRec.length));
       if (nG > 1 && scratchGr.length < nG * 2) scratchGr = new Float32Array(Math.max(nG * 2, 2 * scratchGr.length));
-      const rec = scratchRec.subarray(0, nP * PT), gr = nG > 1 ? scratchGr.subarray(0, nG * 2) : null, plan = [];
+      const rec = scratchRec.subarray(0, nP * PT), gr = nG > 1 ? scratchGr.subarray(0, nG * 2) : null;
       rec.fill(0, 0, PT); rec.fill(0, (nP - 1) * PT);         // the records each side: nothing to draw
       if (gr) gr.fill(0, (nG - 1) * 2);
-      const bb = [Infinity, Infinity, -Infinity, -Infinity];
-      let pN = 1, gN = 0, own = false;
+      const at = new Map(), gat = new Map();
+      let pN = 1, gN = 0;
       for (const p of ps) {
-        rec.set(p.rec, pN * PT);
-        const kind = p.kind === RF_HIGHLIGHTER ? "hl" : (p.kind === RF_SHADER || p.grain) ? "own" : "pen", last = plan[plan.length - 1];
-        if (kind !== "own" && last && last.type === kind) { last.count += p.n; grow(last.bb, p.bb); }
-        else plan.push({ type: kind, first: pN, count: p.n, grain: p.grain, alpha: p.alpha, seed: p.seed, gfirst: gN, bb: p.bb.slice() });
-        grow(bb, p.bb);
-        if (p.gr) { gr.set(p.gr, gN * 2); gN += p.n; }
-        if (kind === "own") own = true;
-        pN += p.n;
+        rec.set(p.rec, pN * PT); at.set(p, pN); pN += p.n;
+        if (p.gr) { gr.set(p.gr, gN * 2); gat.set(p, gN); gN += p.n; }
       }
-      const c = { key, ps, plan, own, bb, gen, on: false, ptBuf: reuse && reuse.ptBuf || gl.createBuffer(), grBuf: null };
-      if (gr) c.grBuf = reuse && reuse.grBuf || gl.createBuffer();
-      if (reuse) { if (reuse.grBuf && !gr) gl.deleteBuffer(reuse.grBuf); reuse.ptBuf = reuse.grBuf = null; reuse.on = false; }
+      const b = { ptBuf: gl.createBuffer(), grBuf: gr ? gl.createBuffer() : null, refs: 0, at, gat };
+      gl.bindBuffer(gl.ARRAY_BUFFER, b.ptBuf); gl.bufferData(gl.ARRAY_BUFFER, rec, gl.STATIC_DRAW);
+      if (gr) { gl.bindBuffer(gl.ARRAY_BUFFER, b.grBuf); gl.bufferData(gl.ARRAY_BUFFER, gr, gl.STATIC_DRAW); }
+      return b;
+    }
+    const kindOf = p => p.kind === RF_HIGHLIGHTER ? "hl" : (p.kind === RF_SHADER || p.grain) ? "own" : "pen";
+    // a chunk: these parts of buffer b (one after another there), and their draws (loose: a picture's own, not the page's
+    // -- the parts are not marked as in it)
+    function view(b, ps, key, loose) {
+      const plan = [], bb = [Infinity, Infinity, -Infinity, -Infinity];
+      let own = false, end = -1;
+      for (const p of ps) {
+        const first = b.at.get(p), kind = kindOf(p), last = plan[plan.length - 1];
+        if (kind !== "own" && last && last.type === kind && first === end) { last.count += p.n; grow(last.bb, p.bb); }
+        else plan.push({ type: kind, first, count: p.n, grain: p.grain, alpha: p.alpha, seed: p.seed, gfirst: p.gr ? b.gat.get(p) : 0, bb: p.bb.slice() });
+        end = first + p.n;
+        grow(bb, p.bb);
+        if (kind === "own") own = true;
+      }
+      b.refs++;
+      const c = { key, ps, buf: b, plan, own, bb, gen, on: false, idx: 0 };
       if (!loose) for (const p of ps) partChunk.set(p, c);
-      gl.bindBuffer(gl.ARRAY_BUFFER, c.ptBuf); gl.bufferData(gl.ARRAY_BUFFER, rec, gl.STATIC_DRAW);
-      if (gr) { gl.bindBuffer(gl.ARRAY_BUFFER, c.grBuf); gl.bufferData(gl.ARRAY_BUFFER, gr, gl.STATIC_DRAW); }
       return c;
     }
-    const drop = c => { if (c.ptBuf) gl.deleteBuffer(c.ptBuf); if (c.grBuf) gl.deleteBuffer(c.grBuf); c.ptBuf = c.grBuf = null; c.on = false; };
+    const build = (ps, key, loose) => view(upload(ps), ps, key, loose);
+    function drop(c) {                                        // a chunk off the card, and its buffer once no chunk views it
+      const b = c.buf;
+      c.buf = null; c.on = false;
+      if (b && --b.refs <= 0) { gl.deleteBuffer(b.ptBuf); if (b.grBuf) gl.deleteBuffer(b.grBuf); }
+    }
+    const number = () => { for (let i = 0; i < chunks.length; i++) chunks[i].idx = i; };   // each chunk's place, for order
     function sync(lines) {
       // THE SAME STROKES AS LAST TIME (a pan, a zoom): the chunks as they are
       if (!edited && lines.length === have.length) {
@@ -598,15 +762,16 @@ span.lname { cursor: default; }
         for (let i = 0; i < lines.length; i++) if (lines[i] !== have[i]) { same = false; break; }
         if (same) { for (const c of chunks) c.gen = gen; return; }
       }
-      have = lines.slice(); edited = false;
+      have = lines.slice(); edited = false; repl.clear();
+      for (const p of cutOf.keys()) p.cc = null;
+      cutOf.clear();
+      if (ixDead > 60000) { ixGen++; cells.clear(); ixDead = 0; }   // more gone than not in the area index: made anew
       const now = [];
       let run = [];
       for (const L of lines) {
         const p = partOf(L);
         run.push(p);
-        // about one in 64: an erase or a stroke being drawn remakes the few chunks it touches, and file order is not the
-        // page's (a decomp's strokes are some 160 units apart one to the next), so it touches many: each is kept small
-        if (Math.imul(p.serial, 0x9e3779b1) >>> 26 === 0 || run.length >= 128) { now.push(chunkOf(run)); run = []; }
+        if (Math.imul(p.serial, 0x9e3779b1) >>> 24 === 0 || run.length >= 512) { now.push(chunkOf(run)); run = []; }   // about one in 256
       }
       if (run.length) now.push(chunkOf(run));
       gen++;
@@ -614,71 +779,136 @@ span.lname { cursor: default; }
       for (const c of now) { c.gen = gen; c.on = true; }
       // a chunk not drawn for two draws is off the card (kept that long, the page's survive the selection's picture)
       for (const [key, c] of kept) if (c.gen < gen - 2) { drop(c); kept.delete(key); }
-      chunks = now;
+      chunks = now; number();
+      for (const c of now) for (const p of c.ps) { p.gone = false; if (p.ix !== ixGen) ixAdd(p); }
     }
-    // THE PAGE CHANGED WHERE IT IS DRAWN (an erase, a stroke being drawn): only the chunks holding what changed are made
-    // again, in their places -- the order of the page's strokes, and so what lies over what, stays exact -- and then only
-    // the area that changed is drawn again (region). The editor's own list of the strokes is taken once it is settled
-    // (adopt); until then a draw of the whole page makes the chunks from the editor's list again.
+    // THE PAGE CHANGED WHERE IT IS DRAWN (an erase, a stroke being drawn): the strokes changed change in place -- the
+    // order of the page's strokes, and so what lies over what, stays exact -- and only the area that changed is drawn again
+    // (region). The editor's own list of the strokes is taken once it is settled (adopt); until then a draw of the whole
+    // page makes the chunks from the editor's list again.
     function chunkHolding(p) {                                // the drawn chunk holding a part, or null
       const c = partChunk.get(p);
       if (c && c.on) return c;
       for (const d of chunks) if (d.ps.includes(p)) { partChunk.set(p, d); return d; }
       return null;
     }
-    function remake(c, ps) {                                  // chunk c made anew from these parts, in its place -> done?
+    function settle(c, out, i) {                              // the chunks `out` in c's place (at i), c let go
+      if (kept.get(c.key) === c) kept.delete(c.key);
+      for (const v of out) { keep(v); v.on = true; }
+      chunks.splice(i, 1, ...out);
+      drop(c); number();
+      edited = true;
+    }
+    function remake(c, ps) {                                  // chunk c made of these parts, in its place -> done?
       const i = chunks.indexOf(c);
       if (i < 0) return false;
-      if (kept.get(c.key) === c) kept.delete(c.key);
-      edited = true;
-      if (!ps.length) { chunks.splice(i, 1); drop(c); return true; }
-      const n = keep(build(ps, keyOf(ps), c));
-      n.on = true; chunks[i] = n;
+      // the runs of parts c's buffer holds one after another, views of it as they are; the parts new to it, a buffer of
+      // their own, each run of them a view of that
+      const runs = [];
+      let cur = null, end = -1;
+      for (const p of ps) {
+        const at = c.buf.at.get(p), old = at !== undefined;
+        if (cur && cur.old === old && (!old || at === end)) cur.ps.push(p); else runs.push(cur = { old, ps: [p] });
+        if (old) end = at + p.n;
+      }
+      if (runs.length > 7) { settle(c, [build(ps, keyOf(ps))], i); return true; }   // cut up too far: one buffer again
+      const fresh = [];
+      for (const r of runs) if (!r.old) for (const p of r.ps) fresh.push(p);
+      const nb = fresh.length ? upload(fresh) : null;
+      settle(c, runs.map(r => view(r.old ? c.buf : nb, r.ps, keyOf(r.ps))), i);
+      for (const p of fresh) if (p.ix !== ixGen) ixAdd(p);
       return true;
     }
-    function replace(pairs) {                                 // [[line, [the lines in its place]], ...] -> done? (else: draw it all)
-      const by = new Map();
-      for (const [L, news] of pairs) {
-        const p = parts.get(L), c = p && chunkHolding(p);
-        if (!c) return false;
-        let m = by.get(c);
-        if (!m) by.set(c, m = new Map());
-        m.set(p, news);
+    // AN ERASE: each stroke taken replaced by what is left of it, where it is -- nothing of the chunks changes, nothing is
+    // put up on the card: the pieces are drawn from the area index, in their stroke's place
+    // [[line, [the lines in its place], the cut they were made from (or nothing)], ...] -> done? (else: draw it all)
+    function replace(pairs) {
+      for (const [L, news, A] of pairs) {
+        const p = parts.get(L);
+        if (!p) return false;
+        const c = partChunk.get(p);
+        let root, list;
+        if (c && c.on && c.buf) {                             // a stroke of a chunk, taken for the first time
+          if (repl.has(p)) return false;
+          root = p; list = [p];
+        } else {                                              // a piece, taken again
+          root = p.root; list = root && repl.get(root);
+          if (!list || !list.includes(p)) return false;
+        }
+        const cc = A && p.cc && p.cc.A === A && p.cc.n === news.length ? p.cc : null;   // as the cut drew them
+        const ps = news.map((N, k) => (cc && cachedPart(N, p, cc, k)) || partOf(N));
+        list.splice(list.indexOf(p), 1, ...ps);
+        repl.set(root, list);
+        if (p !== root) p.gone = true;
+        cutOf.delete(p); p.cc = null;
+        ixDead++;
+        for (const q of ps) { q.root = root; ixPiece(q); }
       }
-      for (const [c, m] of by) {
-        const ps = [];
-        for (const p of c.ps) { const r = m.get(p); if (r) for (const N of r) ps.push(partOf(N)); else ps.push(p); }
-        if (!remake(c, ps)) return false;
-      }
+      edited = true;
       return true;
+    }
+    // THE PIECES TAKEN INTO THEIR CHUNKS: each chunk holding strokes with pieces in their places made again, its buffer
+    // put up anew (a few a call while the page is idle; all of them before the whole page is drawn) -> more to do?
+    function commit(deadline) {
+      for (const [root] of repl) {
+        if (deadline && deadline.timeRemaining() < 3) return true;
+        const c = chunkHolding(root);
+        if (!c) { repl.delete(root); continue; }
+        const ps = [];
+        for (const p of c.ps) { const l = repl.get(p); if (l) { for (const q of l) ps.push(q); repl.delete(p); } else ps.push(p); }
+        settle(c, ps.length ? [build(ps, keyOf(ps))] : [], chunks.indexOf(c));
+      }
+      return false;
     }
     function insertAfter(prev, Ls) {                          // strokes put in after another (null: before all) -> done?
       let i = 0;
       if (prev) {
-        const q = parts.get(prev), c = q && chunkHolding(q);
+        let q = parts.get(prev);
+        if (q && q.root && repl.has(q.root) && !(partChunk.get(q) || {}).on) q = q.root;   // a piece: after its stroke's place
+        const c = q && chunkHolding(q);
         if (!c) return false;
         i = chunks.indexOf(c);
         const j = c.ps.indexOf(q);
-        if (j < c.ps.length - 1) {                            // in the middle of a chunk: it is split there
+        if (j < c.ps.length - 1) {                            // in the middle of a chunk: it is split there, as two views
           const a = c.ps.slice(0, j + 1), b = c.ps.slice(j + 1);
-          if (kept.get(c.key) === c) kept.delete(c.key);
-          const ca = keep(build(a, keyOf(a), c)), cb = keep(build(b, keyOf(b)));
-          ca.on = cb.on = true;
-          chunks.splice(i, 1, ca, cb);
+          settle(c, [view(c.buf, a, keyOf(a)), view(c.buf, b, keyOf(b))], i);
         }
         i += 1;
       }
       const all = (Array.isArray(Ls) ? Ls : [Ls]).map(partOf);
-      for (let k = 0; k < all.length; k += 128) {
-        const ps = all.slice(k, k + 128), n = keep(build(ps, keyOf(ps)));
+      for (let k = 0; k < all.length; k += 512) {
+        const ps = all.slice(k, k + 512), n = keep(build(ps, keyOf(ps)));
         n.on = true; chunks.splice(i++, 0, n);
+        for (const p of ps) if (p.ix !== ixGen) ixAdd(p);
       }
+      number();
       edited = true;
       return true;
     }
-    // every stroke drawn in place is a chunk of its own: when they have grown many against the strokes, the next draw of
-    // the whole page makes the chunks again from the list (more strokes a draw)
-    function loose() { if (chunks.length > have.length / 32 + 64) { edited = true; return true; } return false; }
+    // THE CHUNKS PUT BACK TOGETHER while the page is idle: an erase's pieces taken into their chunks, then neighbors that
+    // between them hold no more than a chunk's worth of strokes made one (one buffer, fewer draws), a slice at a time
+    // -> more to do?
+    function tidy(deadline) {
+      if (commit(deadline)) return true;
+      let i = 0;
+      while (i < chunks.length) {
+        if (deadline && deadline.timeRemaining() < 3) return true;
+        let j = i, n = 0;
+        while (j < chunks.length && n + chunks[j].ps.length <= 384) n += chunks[j++].ps.length;
+        if (j - i >= 2) {
+          const old = chunks.slice(i, j), ps = [];
+          for (const c of old) for (const p of c.ps) ps.push(p);
+          const m = keep(build(ps, keyOf(ps)));
+          m.on = true; m.gen = gen;
+          chunks.splice(i, j - i, m);
+          for (const c of old) { if (kept.get(c.key) === c) kept.delete(c.key); drop(c); }
+          number();
+        }
+        i += 1;
+      }
+      return false;
+    }
+    const scattered = () => repl.size > 0 || chunks.length > have.length / 128 + 64;   // pieces to take in, or chunks to join
     function refresh(L) {                                     // a stroke whose points grew (the one being drawn) -> done?
       const old = parts.get(L), c = old && chunkHolding(old);
       if (!c) return false;
@@ -687,14 +917,235 @@ span.lname { cursor: default; }
     }
     function adopt(lines) {                                   // the editor's strokes, as the chunks now hold them -> so?
       let j = 0;
-      for (const c of chunks) for (const p of c.ps) { const L = lines[j++]; if (!L || parts.get(L) !== p) { edited = true; return false; } }
-      if (j !== lines.length) { edited = true; return false; }
+      const bad = () => { edited = true; return false; };
+      for (const c of chunks) for (const p of c.ps) {
+        const l = repl.get(p);
+        if (l) { for (const q of l) { const L = lines[j++]; if (!L || parts.get(L) !== q) return bad(); } }
+        else { const L = lines[j++]; if (!L || parts.get(L) !== p) return bad(); }
+      }
+      if (j !== lines.length) return bad();
       have = lines.slice(); edited = false;
       return true;
     }
+    const inkWhole = L => { const p = parts.get(L); return p ? p.kind === RF_SHADER || p.grain : null; };   // decided whole?
+    function cut(L, A) {                                      // what is left of a stroke a swipe is cutting -> drawn so?
+      const p = parts.get(L);
+      if (!p || !alive(p)) return false;
+      cutOf.set(p, A);
+      return true;
+    }
+
+    // THE AREA INDEX: each part's records in stretches of RUNR, each in the cells (RCELL units) its ink's box reaches, kept
+    // as the page changes -- an erase's pieces put in from the stretches of the stroke they were cut from, what an erase
+    // took skipped, and dropped from a cell when next met there. An area of the page is drawn from the stretches that can
+    // reach it, in the page's order (areaStrokes) -- what it costs is what is near the area, never the whole page.
+    const RUNR = 16, RCELL = 128, rkey = (gx, gy) => gx * 100003 + gy;
+    const cells = new Map();
+    let ixGen = 1, ixDead = 0;
+    function ixPut(p, r0, r1, x0, y0, x1, y1) {
+      const e = { p, r0, r1, x0, y0, x1, y1 };
+      p.runs.push(e);
+      for (let gx = Math.floor(x0 / RCELL); gx <= Math.floor(x1 / RCELL); gx++)
+        for (let gy = Math.floor(y0 / RCELL); gy <= Math.floor(y1 / RCELL); gy++) {
+          const k = rkey(gx, gy), c = cells.get(k);
+          if (c) c.push(e); else cells.set(k, [e]);
+        }
+    }
+    function ixAdd(p) {                                       // a part's stretches, from its records: each the box of its
+      p.ix = ixGen; p.runs = [];                              // segments' ink (the points it starts and the one after)
+      const n = p.n, f = new Float32Array(p.rec.buffer, p.rec.byteOffset, n * 4);
+      for (let r0 = 0; r0 < n; r0 += RUNR) {
+        const r1 = Math.min(n - 1, r0 + RUNR - 1), e1 = Math.min(n - 1, r1 + 1);
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, wm = 0;
+        for (let k = r0; k <= e1; k++) {
+          const x = f[4 * k], y = f[4 * k + 1], w = f[4 * k + 2];
+          if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; if (w > wm) wm = w;
+        }
+        const h = wm / 2 + 0.5;
+        ixPut(p, r0, r1, x0 - h, y0 - h, x1 + h, y1 + h);
+      }
+    }
+    function ixPiece(q) {                                     // a piece's stretches: its stroke's, over the records it keeps
+      const d = q.from;
+      q.from = null;
+      if (!d || d.pp.ix !== ixGen || !d.pp.runs) { ixAdd(q); return; }
+      q.ix = ixGen; q.runs = [];
+      const { pp, r0, r1, h, mid } = d;
+      if (h || !mid) {                                        // the segment from its new first point: its own box
+        const f = new Float32Array(q.rec.buffer, q.rec.byteOffset, q.n * 4), e1 = Math.min(q.n - 1, 1);
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, wm = 0;
+        for (let k = 0; k <= e1; k++) {
+          const x = f[4 * k], y = f[4 * k + 1], w = f[4 * k + 2];
+          if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; if (w > wm) wm = w;
+        }
+        const hh = wm / 2 + 0.5;
+        ixPut(q, 0, 0, x0 - hh, y0 - hh, x1 + hh, y1 + hh);
+      }
+      if (mid) for (const e of pp.runs) {                     // (a segment to a new last point lies in the stretch it was in)
+        if (e.r1 < r0 || e.r0 > r1) continue;
+        ixPut(q, Math.max(e.r0, r0) - r0 + h, Math.min(e.r1, r1) - r0 + h, e.x0, e.y0, e.x1, e.y1);
+      }
+    }
+    function alive(p) {                                       // drawn now: in a chunk and not taken, or a piece in its place
+      const c = partChunk.get(p);
+      if (c && c.on && c.buf) return !repl.has(p);
+      const l = p.root && repl.get(p.root);
+      return !!l && !p.gone;
+    }
+    function orderKey(p) {                                    // its place in the page's order, as one number: its chunk,
+      const c = partChunk.get(p);                             // its place there, its place among its stroke's pieces
+      if (c && c.on && c.buf && !repl.has(p)) return c.idx * 1e12 + c.buf.at.get(p) * 1e4;
+      const r = p.root, rc = partChunk.get(r);
+      return rc.idx * 1e12 + rc.buf.at.get(r) * 1e4 + 1 + repl.get(r).indexOf(p);
+    }
+    const lowerAt = (idx, i) => { let lo = 0, hi = idx.length; while (lo < hi) { const m = (lo + hi) >> 1; if (idx[m] < i) lo = m + 1; else hi = m; } return lo; };
+    // THE PIECES LEFT OF A STROKE BEING CUT (A: [s0, s1, ...]), their records made once for each A (pieceInto, as their
+    // parts will be made; fresh where it cannot), kept with the stroke's part: from one frame of a swipe to the next
+    // they are copied, not made again
+    function cutPieces(p, A) {
+      let c = p.cc;
+      if (c && c.A === A) return c;
+      const was = c, P = p.pts, hl = p.kind === RF_HIGHLIGHTER, k = A.length / 2;
+      let room = 0;
+      for (let i = 0; i < A.length; i += 2) room += Math.max(0, Math.floor(A[i + 1]) - Math.ceil(A[i]) + 1) + 2;
+      const rec = new Uint8Array(room * PT), f32 = new Float32Array(rec.buffer), gr = p.gr ? new Float32Array(room * 2) : null;
+      c = p.cc = { A, rec, gr, n: 0, size: 0, at: new Int32Array(k), cnt: new Int32Array(k), lo: new Int32Array(k), hi: new Int32Array(k),
+                   kind: [], grain: [], seed: new Uint32Array(k), r0: new Int32Array(k), mid: new Int32Array(k), fresh: new Uint8Array(k) };
+      let pos = 0, w = 0;
+      for (let i = 0; i < A.length; i += 2) {
+        const s0 = A[i], s1 = A[i + 1], i0 = Math.ceil(s0), i1 = Math.floor(s1);
+        while (was && w < was.n && was.A[2 * w] < s0) w++;  // a piece it had before, the same: its records as they were
+        if (was && w < was.n && was.A[2 * w] === s0 && was.A[2 * w + 1] === s1) {
+          const at = was.at[w], n = was.cnt[w], j = c.n++;
+          rec.set(was.rec.subarray(at * PT, (at + n) * PT), pos * PT);
+          if (was.grain[w]) gr.set(was.gr.subarray(2 * at, 2 * (at + n)), pos * 2);
+          c.at[j] = pos; c.cnt[j] = n; c.seed[j] = was.seed[w]; c.kind.push(was.kind[w]); c.grain.push(was.grain[w]);
+          c.lo[j] = was.lo[w]; c.hi[j] = was.hi[w]; c.r0[j] = was.r0[w]; c.mid[j] = was.mid[w]; c.fresh[j] = was.fresh[w];
+          pos += n;
+          continue;
+        }
+        const hp = s0 < i0 ? pointAt(P, s0) : null, tp = s1 > i1 ? pointAt(P, s1) : null;
+        let n = pieceInto(p, i0, i1, hp, tp, rec, f32, pos), grain = false, seed = 0;
+        const j = c.n++;
+        if (n < 0) {                                          // made fresh, as the piece will be (pieceFrom could not either)
+          const f = freshPart(Object.assign({}, p.line, { points: piecePoints(P, s0, s1) }));
+          rec.set(f.rec, pos * PT); n = f.n; grain = f.grain; seed = f.seed; c.fresh[j] = 1;
+          if (grain) gr.set(f.gr, pos * 2);
+        } else {
+          c.r0[j] = PI.r0; c.mid[j] = PI.mid;
+          if (!hl && gr) { grain = pieceGrainInto(p, i0, i1, hp, tp, n, gr, pos); if (grain) seed = seedOf(hp || P[i0]) >>> 0; }
+        }
+        c.at[j] = pos; c.cnt[j] = n; c.seed[j] = seed;
+        c.kind.push(hl ? "hl" : (p.kind === RF_SHADER || grain) ? "own" : "pen"); c.grain.push(grain);
+        c.lo[j] = p.idx ? lowerAt(p.idx, Math.floor(s0)) : Math.floor(s0); c.hi[j] = p.idx ? lowerAt(p.idx, Math.ceil(s1)) : Math.ceil(s1);
+        pos += n;
+      }
+      c.size = pos;
+      return c;
+    }
+    // the strokes that can reach `cull` (page units), from the index, as one buffer of their stretches' records in the
+    // page's order -- each stretch with the record before it (a highlighter's turn reads it) and after it (its last
+    // segment's end), those two drawing nothing; a stroke a swipe is cutting, as the pieces left of it (cutPieces) -- and
+    // its draws: pens and highlighters a run each, a grain or a wash a draw of its own (its stencil, its seed). The same
+    // strokes, segments and order as a draw of the whole page there. What the query finds is marked on the parts
+    // themselves (aq, ah, ...) and kept in arrays kept for it: a frame of a swipe makes little garbage here.
+    let areaRec = new Uint8Array(1 << 18), areaG = new Float32Array(1 << 15), areaPt = null, areaGr = null;
+    let aq = 0, rr0 = new Int32Array(1 << 13), rr1 = new Int32Array(1 << 13), rnx = new Int32Array(1 << 13), mm = new Int32Array(1 << 13);
+    const alist = [], grow32 = a => { const b = new Int32Array(a.length * 2); b.set(a); return b; };
+    function areaStrokes(W, H, k, ox, oy, sq, cull) {
+      const m = 3 / k, x0 = cull[0] - m, y0 = cull[1] - m, x1 = cull[2] + m, y1 = cull[3] + m, q = ++aq;
+      alist.length = 0;
+      let rn = 0;
+      for (let gx = Math.floor(x0 / RCELL); gx <= Math.floor(x1 / RCELL); gx++)
+        for (let gy = Math.floor(y0 / RCELL); gy <= Math.floor(y1 / RCELL); gy++) {
+          const key = rkey(gx, gy), cell = cells.get(key);
+          if (!cell) continue;
+          let stale = 0;
+          for (let i = 0; i < cell.length; i++) {
+            const e = cell[i], p = e.p;
+            if (p.ix !== ixGen) { stale++; continue; }
+            if (e.x1 < x0 || e.x0 > x1 || e.y1 < y0 || e.y0 > y1) continue;
+            if (p.aq !== q) { p.aq = q; p.ah = -1; p.aa = alive(p); if (p.aa) { p.ak = orderKey(p); alist.push(p); } }
+            if (!p.aa) { stale++; continue; }
+            if (rn === rr0.length) { rr0 = grow32(rr0); rr1 = grow32(rr1); rnx = grow32(rnx); }
+            rr0[rn] = e.r0; rr1[rn] = e.r1; rnx[rn] = p.ah; p.ah = rn++;
+          }
+          if (stale > 64 && stale * 2 > cell.length) cells.set(key, cell.filter(e => e.p.ix === ixGen && alive(e.p)));
+        }
+      if (!alist.length) return 0;
+      alist.sort((a, b) => a.ak - b.ak);
+      // each part's stretches in order, overlapping and touching ones as one (into mm), and the room their records take
+      let mn = 0, need = 2, gneed = 1;
+      for (const p of alist) {
+        if (mn + 2 * (rn + 1) > mm.length) while (mn + 2 * (rn + 1) > mm.length) mm = grow32(mm);
+        const s0 = mn;
+        for (let r = p.ah; r >= 0; r = rnx[r]) {             // in order of start (few: insertion), merged as they come
+          let at = mn;
+          while (at > s0 && mm[at - 2] > rr0[r]) { mm[at] = mm[at - 2]; mm[at + 1] = mm[at - 1]; at -= 2; }
+          mm[at] = rr0[r]; mm[at + 1] = rr1[r]; mn += 2;
+        }
+        let w = s0;
+        for (let i = s0; i < mn; i += 2) {
+          if (w > s0 && mm[i] <= mm[w - 1] + 1) { if (mm[i + 1] > mm[w - 1]) mm[w - 1] = mm[i + 1]; }
+          else { mm[w] = mm[i]; mm[w + 1] = mm[i + 1]; w += 2; }
+        }
+        mn = w; p.ms = s0; p.mc = w - s0;
+        const A = cutOf.get(p);
+        if (A) { const c = cutPieces(p, A); need += c.size; if (c.gr) gneed += c.size; }
+        else for (let i = s0; i < w; i += 2) { const len = Math.min(p.n - 1, mm[i + 1] + 1) - Math.max(0, mm[i] - 1) + 1; need += len; if (p.gr) gneed += len; }
+      }
+      if (areaRec.length < need * PT) areaRec = new Uint8Array(Math.max(need * PT, 2 * areaRec.length));
+      if (areaG.length < gneed * 2) areaG = new Float32Array(Math.max(gneed * 2, 2 * areaG.length));
+      const rec = areaRec, g = areaG, plan = [];
+      rec.fill(0, 0, PT);
+      let pos = 1, gpos = 0, own = false;
+      const put = (kind, start, count, grain, alpha, seed, gfirst) => {
+        const last = plan[plan.length - 1];
+        if (kind !== "own" && last && last.type === kind && last.first + last.count === start) last.count += count;
+        else plan.push({ type: kind, first: start, count, grain, alpha, seed, gfirst, bb: ALL });
+        if (kind === "own") own = true;
+      };
+      for (const p of alist) {
+        const A = cutOf.get(p);
+        if (A) {                                              // a stroke being cut: the pieces left of it the area reaches
+          const c = p.cc;
+          for (let i = 0; i < c.n; i++) {
+            const lo = c.lo[i], hi = c.hi[i];
+            let near = false;
+            for (let j = p.ms; j < p.ms + p.mc && !near; j += 2) if (lo - 1 <= mm[j + 1] && hi >= mm[j]) near = true;
+            if (!near) continue;
+            const at = c.at[i], n = c.cnt[i], grain = c.grain[i];
+            rec.set(c.rec.subarray(at * PT, (at + n) * PT), pos * PT);
+            if (grain) g.set(c.gr.subarray(2 * at, 2 * (at + n)), gpos * 2);
+            put(c.kind[i], pos, n, grain, p.alpha, c.seed[i], gpos);
+            if (grain) gpos += n;
+            pos += n;
+          }
+          continue;
+        }
+        const kind = kindOf(p), start = pos, gstart = gpos;
+        for (let i = p.ms; i < p.ms + p.mc; i += 2) {
+          const a = mm[i], b = mm[i + 1], r0 = Math.max(0, a - 1), r1 = Math.min(p.n - 1, b + 1), len = r1 - r0 + 1;
+          rec.set(p.rec.subarray(r0 * PT, (r1 + 1) * PT), pos * PT);
+          if (r0 < a) rec[pos * PT + 12] = 0;                 // the record before: read, not drawn
+          if (r1 > b) rec[(pos + len - 1) * PT + 12] = 0;     // the record after: read, not drawn
+          if (p.gr) { g.set(p.gr.subarray(2 * r0, 2 * (r1 + 1)), gpos * 2); gpos += len; }
+          pos += len;
+        }
+        put(kind, start, pos - start, p.grain, p.alpha, p.seed, gstart);
+      }
+      if (!plan.length) return 0;
+      rec.fill(0, pos * PT, (pos + 1) * PT);
+      if (!areaPt) { areaPt = gl.createBuffer(); areaGr = gl.createBuffer(); }
+      gl.bindBuffer(gl.ARRAY_BUFFER, areaPt); gl.bufferData(gl.ARRAY_BUFFER, rec.subarray(0, (pos + 1) * PT), gl.STREAM_DRAW);
+      if (gpos) { g.fill(0, gpos * 2, gpos * 2 + 2); gl.bindBuffer(gl.ARRAY_BUFFER, areaGr); gl.bufferData(gl.ARRAY_BUFFER, g.subarray(0, gpos * 2 + 2), gl.STREAM_DRAW); }
+      strokes([{ buf: { ptBuf: areaPt, grBuf: areaGr }, plan, own, bb: ALL }], W, H, k, ox, oy, sq, ALL);
+      return plan.length;
+    }
+    const ALL = [-Infinity, -Infinity, Infinity, Infinity];
     function points(c, first) {                               // this point (a) and the next (b), from the chunk's buffer
       const o = first * PT;
-      gl.bindBuffer(gl.ARRAY_BUFFER, c.ptBuf);
+      gl.bindBuffer(gl.ARRAY_BUFFER, c.buf.ptBuf);
       gl.vertexAttribPointer(1, 2, gl.FLOAT, false, PT, o); gl.vertexAttribPointer(2, 1, gl.FLOAT, false, PT, o + 8);
       gl.vertexAttribIPointer(3, 4, gl.UNSIGNED_BYTE, PT, o + 12);                         // the flags and the color, one attribute
       gl.vertexAttribPointer(5, 2, gl.FLOAT, false, PT, o + PT); gl.vertexAttribPointer(6, 1, gl.FLOAT, false, PT, o + PT + 8);
@@ -753,7 +1204,7 @@ span.lname { cursor: default; }
           }
           gl.useProgram(segP); gl.bindVertexArray(segVao); points(c, d.first);
           if (d.grain) {                                         // its densities and lengths along it
-            gl.bindBuffer(gl.ARRAY_BUFFER, c.grBuf); gl.enableVertexAttribArray(7); gl.enableVertexAttribArray(8);
+            gl.bindBuffer(gl.ARRAY_BUFFER, c.buf.grBuf); gl.enableVertexAttribArray(7); gl.enableVertexAttribArray(8);
             gl.vertexAttribPointer(7, 2, gl.FLOAT, false, GR, d.gfirst * GR); gl.vertexAttribPointer(8, 2, gl.FLOAT, false, GR, (d.gfirst + 1) * GR);
           } else {                                               // solid: density 1 everywhere
             gl.disableVertexAttribArray(7); gl.disableVertexAttribArray(8); gl.vertexAttrib2f(7, 1, 0); gl.vertexAttrib2f(8, 1, 0);
@@ -793,7 +1244,7 @@ span.lname { cursor: default; }
       for (let i = 0, j = 0; i < n; i++, j += 3) { const o = i * 4; up[o] = px[j]; up[o + 1] = px[j + 1]; up[o + 2] = px[j + 2]; up[o + 3] = 255; }
       gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, c.W, c.H, gl.RGBA, gl.UNSIGNED_BYTE, up);
       const own = [];
-      for (let i = 0; i < lines.length; i += 1024) own.push(build(lines.slice(i, i + 1024).map(partOf), "", null, true));
+      for (let i = 0; i < lines.length; i += 1024) own.push(build(lines.slice(i, i + 1024).map(partOf), "", true));
       try { strokes(own, c.W, c.H, k, ox, oy, c, [-Infinity, -Infinity, Infinity, Infinity]); } finally { own.forEach(drop); }
       readInto(c);
       return true;
@@ -821,6 +1272,7 @@ span.lname { cursor: default; }
         gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, under);
         underW = W; underH = H;
       }
+      if (repl.size) commit();                               // an erase's pieces taken into their chunks first
       sync(lines);
       gl.bindFramebuffer(gl.FRAMEBUFFER, fb); gl.viewport(0, 0, W, H);
       gl.useProgram(copyP); gl.uniform1i(uCopy.tex, 0); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, underTex);
@@ -854,7 +1306,7 @@ span.lname { cursor: default; }
       gl.useProgram(copyP); gl.uniform1i(uCopy.tex, 0); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, underTex);
       gl.disable(gl.BLEND); gl.drawArrays(gl.TRIANGLES, 0, 3);
       const q = { cx0: Math.max(sq.cx0, wx0), cx1: Math.min(sq.cx1, wx1), cy0: Math.max(sq.cy0, wy0), cy1: Math.min(sq.cy1, wy1) };
-      strokes(chunks, W, H, k, ox, oy, q, [(wx0 - ox) / k, (wy0 - oy) / k, (wx1 + 1 - ox) / k, (wy1 + 1 - oy) / k]);
+      if (areaStrokes(W, H, k, ox, oy, q, [(wx0 - ox) / k, (wy0 - oy) / k, (wx1 + 1 - ox) / k, (wy1 + 1 - oy) / k]) < 0) { gl.disable(gl.SCISSOR_TEST); return null; }
       gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, w, h);
       gl.enable(gl.SCISSOR_TEST); gl.scissor(sx0, h - 1 - sy1, sx1 - sx0 + 1, sy1 - sy0 + 1);   // the canvas's rows run up here
       gl.useProgram(areaP); gl.uniform1i(uArea.tex, 0); gl.uniform1i(uArea.W, W); gl.uniform1i(uArea.cw, w); gl.uniform1i(uArea.h, h);
@@ -872,7 +1324,7 @@ span.lname { cursor: default; }
       gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, y, band.width, band.height, gl.RGBA, gl.UNSIGNED_BYTE, band);
       return true;
     }
-    return { draw, page, region, replace, insertAfter, refresh, adopt, loose, under, readInto, holds: (W, H) => holds && texW === W && texH === H, canvas: cv, name: (() => { const x = gl.getExtension("WEBGL_debug_renderer_info"); return x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : "WebGL2"; })() };
+    return { draw, page, region, replace, insertAfter, refresh, adopt, tidy, scattered, under, inkWhole, cut, readInto, holds: (W, H) => holds && texW === W && texH === H, canvas: cv, name: (() => { const x = gl.getExtension("WEBGL_debug_renderer_info"); return x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : "WebGL2"; })() };
   })();
 
   // ================================================================ TYPED TEXT: typed.py's layout, in fixed units
@@ -1366,18 +1818,24 @@ span.lname { cursor: default; }
   }
   // AN AREA OF THE PAGE DRAWN AGAIN ON THE CARD (what an erase, or the stroke being drawn, changed), the view as it was
   // drawn: only the strokes that can reach it are drawn, and only its pixels go to the screen -> drawn? (else: all of it)
-  function regionOnCard(b) {
-    if (!b || !GL || gpuFailed || thumbHold) return false;
-    let r;
+  function regionOnCard(b) { return !!b && regionsOnCard([b]) === 1; }
+  // several areas, each drawn as one; until: none started past it (one at least) -> how many were drawn (-1: none can be)
+  function regionsOnCard(bs, until) {
+    if (!GL || gpuFailed || thumbHold) return -1;
+    let n = 0;
     try {
-      if (underKey() !== underWas) return false;              // the view or what is under the ink changed meanwhile
-      r = GL.region(b[0], b[1], b[2], b[3]);
-    } catch (e) { gpuDown(e); return false; }
-    if (!r) return false;
-    if (r[2] > 0 && r[3] > 0) shownCtx.drawImage(GL.canvas, r[0], r[1], r[2], r[3], r[0], r[1], r[2], r[3]);
-    base = null; shown = null; cpuStale = true; shownDirty = false; draws.area++;
+      if (underKey() !== underWas) return -1;                 // the view or what is under the ink changed meanwhile
+      for (const b of bs) {
+        if (n && until && performance.now() > until) break;
+        const r = GL.region(b[0], b[1], b[2], b[3]);
+        if (!r) return -1;
+        if (r[2] > 0 && r[3] > 0) shownCtx.drawImage(GL.canvas, r[0], r[1], r[2], r[3], r[0], r[1], r[2], r[3]);
+        n++;
+      }
+    } catch (e) { gpuDown(e); return -1; }
+    if (n) { base = null; shown = null; cpuStale = true; shownDirty = false; draws.area++; }
     paint();
-    return true;
+    return n;
   }
   // STROKES CHANGED IN ONE GO (a zone erased, strokes added: a shape, a fill, a paste), changed on the card where they lie
   // and only their area drawn -> done? (else: the whole page). The card's list must be the editor's, before and after.
@@ -1389,10 +1847,16 @@ span.lname { cursor: default; }
     }
     return b;
   }
-  function settled() {                                        // the card's list taken as the editor's (merged at idle when loose)
+  function settled() {                                        // the card's list taken as the editor's (its chunks tidied)
     if (!GL.adopt(inkList())) return false;
-    if (GL.loose()) (window.requestIdleCallback || (f => setTimeout(f, 300)))(() => { if (!erasing && !live) rebuild(); });
+    tidySoon();
     return true;
+  }
+  let tidyIdle = 0;
+  function tidySoon() {                                       // the card's chunks put back together while the page is idle
+    if (tidyIdle || !GL || gpuFailed || !GL.scattered()) return;
+    const go = d => { tidyIdle = 0; if (erasing || live || pointer !== null) { tidySoon(); return; } try { if (GL.tidy(d)) tidySoon(); } catch (e) { gpuDown(e); } };
+    tidyIdle = window.requestIdleCallback ? requestIdleCallback(go) : setTimeout(() => go(null), 300);
   }
   function swapOnCard(pairs) {                                // [[a stroke, the strokes in its place], ...]
     if (!GL || gpuFailed || thumbHold || !pairs.length) return false;
@@ -1702,23 +2166,53 @@ span.lname { cursor: default; }
   // keeps them); goneN, how many, so the cells are cleared of them now and then while the page is idle
   const newGrid = () => ({ cells: new Map(), reach: 0, gone: new WeakSet(), goneN: 0 });
   const gridOk = Ly => !!gridKept && gridKept.layer === Ly && gridKept.lines === Ly.lines && gridKept.ver === verOf(Ly);
+  const lineRuns = new WeakMap();                             // a line -> its stretches in the index
+  function gridPut(g, e) {
+    for (let gx = Math.floor(e.x0 / CELL); gx <= Math.floor(e.x1 / CELL); gx++)
+      for (let gy = Math.floor(e.y0 / CELL); gy <= Math.floor(e.y1 / CELL); gy++) {
+        const k = cellKey(gx, gy), c = g.cells.get(k);
+        if (c) c.push(e); else g.cells.set(k, [e]);
+      }
+  }
   function gridAdd(L, g) {
     const P = L.points, n = P.length;
     if (!n) return;
-    const h = halfWidth(L);
+    const h = halfWidth(L), es = [];
     if (h > g.reach) g.reach = h;
     for (let i0 = 0; ; i0 += RUN) {
       const i1 = Math.min(n - 1, i0 + RUN);
-      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-      for (let i = i0; i <= i1; i++) { const q = P[i]; if (q.x < x0) x0 = q.x; if (q.x > x1) x1 = q.x; if (q.y < y0) y0 = q.y; if (q.y > y1) y1 = q.y; }
-      const e = { L, i0, i1, x0: x0 - h, y0: y0 - h, x1: x1 + h, y1: y1 + h };
-      for (let gx = Math.floor(e.x0 / CELL); gx <= Math.floor(e.x1 / CELL); gx++)
-        for (let gy = Math.floor(e.y0 / CELL); gy <= Math.floor(e.y1 / CELL); gy++) {
-          const k = cellKey(gx, gy), c = g.cells.get(k);
-          if (c) c.push(e); else g.cells.set(k, [e]);
-        }
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, w = 0;
+      for (let i = i0; i <= i1; i++) { const q = P[i]; if (q.x < x0) x0 = q.x; if (q.x > x1) x1 = q.x; if (q.y < y0) y0 = q.y; if (q.y > y1) y1 = q.y; if (q.width > w) w = q.width; }
+      const e = { L, i0, i1, x0: x0 - h, y0: y0 - h, x1: x1 + h, y1: y1 + h, w };
+      es.push(e); gridPut(g, e);
       if (i1 >= n - 1) break;
     }
+    lineRuns.set(L, es);
+  }
+  // A PIECE'S STRETCHES, from its stroke's: those over the points it keeps (their boxes are the stroke's, no smaller),
+  // and the segments to its new ends, each a box of its own; its half width from them. Made over again from its
+  // points, a long wash cut once a frame as the eraser ran along it was all of its points each time
+  function gridPiece(N, cut, g) {
+    const pr = lineRuns.get(cut.from);
+    if (!pr) { gridAdd(N, g); return; }
+    const P = N.points, n = P.length, h = cut.head ? 1 : 0, i0 = cut.i0, i1 = cut.i1, mid = [];
+    let w = Math.max(P[0].width, P[n - 1].width);
+    for (const e of pr) if (e.i0 < i1 && e.i1 > i0) { mid.push(e); if (e.w > w) w = e.w; }
+    const hw = Math.max(w, N.width) * penScale(N.pen) / 2, es = [];
+    halves.set(N, hw);
+    if (hw > g.reach) g.reach = hw;
+    const end = (a, b) => {                                   // the segment between two of its points, a box of its own
+      const p = P[a], q = P[b];
+      const e = { L: N, i0: a, i1: b, x0: Math.min(p.x, q.x) - hw, y0: Math.min(p.y, q.y) - hw, x1: Math.max(p.x, q.x) + hw, y1: Math.max(p.y, q.y) + hw, w };
+      es.push(e); gridPut(g, e);
+    };
+    if (h) end(0, 1);
+    for (const e of mid) {
+      const d = { L: N, i0: Math.max(e.i0, i0) - i0 + h, i1: Math.min(e.i1, i1) - i0 + h, x0: e.x0, y0: e.y0, x1: e.x1, y1: e.y1, w: e.w };
+      es.push(d); gridPut(g, d);
+    }
+    if (cut.tail) end(n - 2, n - 1);
+    lineRuns.set(N, es);
   }
   function gridSoon() {                                       // the layer in hand's index, made while the page is idle
     if (gridIdle || THUMB_W) return;
@@ -1743,13 +2237,14 @@ span.lname { cursor: default; }
     gridKept = { layer: Ly, lines: m.lines, ver: m.ver, g: m.g }; gridMaking = null;
   }
   function eraseStart(Ly, mode, x, y) {
+    settleSwipe();                                            // the last one first, all of it
     clearPick();                                              // an erase lets the selection go first: its picture of strokes
                                                               // the erase is about to cut would stay over the page
     if (!gridOk(Ly)) gridWarm(null, Ly);                      // not made yet: made now, all of it
-    erasing = { layer: Ly, mode, last: [x, y], before: Ly.lines.slice(), grid: gridKept.g, dead: new Set(), pieces: new Map(),
-                made: new Set(), frameDead: [], frameMade: new Set(), box: null, dirty: false };
+    erasing = { layer: Ly, mode, last: [x, y], todo: [], before: Ly.lines.slice(), grid: gridKept.g, dead: new Set(),
+                pieces: new Map(), made: new Set(), cuts: new Map(), when: new Map(), frame: 0, owed: 0, cutNow: 0, frameCut: new Set(),
+                soon: new Set(), late: new Set(), dirty: false };
   }
-  const runLength = run => { let d = 0; for (let i = 1; i < run.length; i++) d += Math.hypot(run[i].x - run[i - 1].x, run[i].y - run[i - 1].y); return d; };
   // THE SWEEP: the eraser's circle carried along its path since the last move -- a capsule round each step of the path --
   // and every stroke near it cut exactly where it enters and leaves that area: what lies inside goes, a point is put on the
   // edge where the stroke crosses it, and its own points are kept on either side. A stroke's reach is the eraser's radius
@@ -1761,6 +2256,24 @@ span.lname { cursor: default; }
     t = t < 0 ? 0 : t > 1 ? 1 : t;
     const ex = ax + t * dx - px, ey = ay + t * dy - py;
     return ex * ex + ey * ey;
+  }
+  function thin(S, eps) {                                     // a path's points less those within eps of its course
+    const n = S.length / 2;
+    if (n <= 2) return S;
+    const keep = new Uint8Array(n), stack = [0, n - 1];
+    keep[0] = keep[n - 1] = 1;
+    while (stack.length) {
+      const j = stack.pop(), i = stack.pop();
+      let far = -1, fd = eps * eps;
+      for (let k = i + 1; k < j; k++) {
+        const d = segPointD2(S[2 * k], S[2 * k + 1], S[2 * i], S[2 * i + 1], S[2 * j], S[2 * j + 1]);
+        if (d > fd) { fd = d; far = k; }
+      }
+      if (far >= 0) { keep[far] = 1; stack.push(i, far, far, j); }
+    }
+    const out = [];
+    for (let k = 0; k < n; k++) if (keep[k]) out.push(S[2 * k], S[2 * k + 1]);
+    return out;
   }
   function pathD2(x, y, S) {                                  // ... from a point to the path
     if (S.length === 2) return (x - S[0]) * (x - S[0]) + (y - S[1]) * (y - S[1]);
@@ -1791,27 +2304,41 @@ span.lname { cursor: default; }
     return qx * qx + qy * qy;
   }
   // segment a-b against the sweep at reach r: the parts of it inside, as places along it (0..1), [t0, t1, ...] in order,
-  // merged, in IN -> any? A capsule is convex, so a segment is inside it along one stretch: from the nearest point of the
-  // two found, its ends are found by halving (the distance falls toward that point and rises past it)
+  // merged, in IN -> any? A capsule is convex, so a segment's line meets it along one stretch: from where the line enters
+  // the first of its three parts (the circles at its two ends, the band between them) to where it leaves the last,
+  // solved, not searched for. Each stretch is then let out a ten-thousandth of a unit, so the piece kept ends just
+  // outside the eraser: the next move, starting where this one ended, does not cut it again by a hair.
   const IN = [];
-  function inSweep(a, b, S, r2) {
+  function inSweep(a, b, S, r2, r) {
     IN.length = 0;
-    const ax = a.x, ay = a.y, bx = b.x, by = b.y, n = S.length;
+    const ax = a.x, ay = a.y, ex = b.x - ax, ey = b.y - ay, ee = ex * ex + ey * ey, n = S.length;
+    const bx0 = Math.min(ax, b.x) - r, bx1 = Math.max(ax, b.x) + r, by0 = Math.min(ay, b.y) - r, by1 = Math.max(ay, b.y) + r;
+    const nudge = ee > 1e-12 ? 1e-4 / Math.sqrt(ee) : 0;
     for (let i = 0; i < Math.max(2, n - 2); i += 2) {
       const cx = S[i], cy = S[i + 1], dx = n > 2 ? S[i + 2] : cx, dy = n > 2 ? S[i + 3] : cy;
-      if (segSeg(ax, ay, bx, by, cx, cy, dx, dy) > r2) continue;
-      const sm = segS, ex = bx - ax, ey = by - ay;
-      let t0 = 0, t1 = 1;
-      if (segPointD2(ax, ay, cx, cy, dx, dy) > r2) {
-        let lo = 0, hi = sm;
-        for (let k = 0; k < 32; k++) { const m = (lo + hi) / 2; if (segPointD2(ax + ex * m, ay + ey * m, cx, cy, dx, dy) <= r2) hi = m; else lo = m; }
-        t0 = lo;                                             // just outside: the piece kept ends on the edge, not in it
+      if (Math.max(cx, dx) < bx0 || Math.min(cx, dx) > bx1 || Math.max(cy, dy) < by0 || Math.min(cy, dy) > by1) continue;
+      let lo = Infinity, hi = -Infinity;
+      for (let e = 0; e < 2; e++) {                           // the circles at the capsule's ends
+        const fx = ax - (e ? dx : cx), fy = ay - (e ? dy : cy), bq = ex * fx + ey * fy, cq = fx * fx + fy * fy - r2;
+        if (ee <= 1e-12) { if (cq <= 0) { lo = -Infinity; hi = Infinity; } continue; }
+        const disc = bq * bq - ee * cq;
+        if (disc < 0) continue;
+        const sq = Math.sqrt(disc), t0 = (-bq - sq) / ee, t1 = (-bq + sq) / ee;
+        if (t0 < lo) lo = t0; if (t1 > hi) hi = t1;
       }
-      if (segPointD2(bx, by, cx, cy, dx, dy) > r2) {
-        let lo = sm, hi = 1;
-        for (let k = 0; k < 32; k++) { const m = (lo + hi) / 2; if (segPointD2(ax + ex * m, ay + ey * m, cx, cy, dx, dy) <= r2) lo = m; else hi = m; }
-        t1 = hi;
+      const ux = dx - cx, uy = dy - cy, uu = ux * ux + uy * uy;
+      if (uu > 1e-12) {                                       // the band: along the capsule between its ends, within r of it
+        const s0 = (ax - cx) * ux + (ay - cy) * uy, sd = ex * ux + ey * uy;
+        const v0 = ux * (ay - cy) - uy * (ax - cx), vd = ux * ey - uy * ex, rv = r * Math.sqrt(uu);
+        let blo = -Infinity, bhi = Infinity;
+        if (Math.abs(sd) < 1e-12) { if (s0 < 0 || s0 > uu) bhi = -Infinity; }
+        else { const p = -s0 / sd, q = (uu - s0) / sd; blo = Math.max(blo, Math.min(p, q)); bhi = Math.min(bhi, Math.max(p, q)); }
+        if (Math.abs(vd) < 1e-12) { if (Math.abs(v0) > rv) bhi = -Infinity; }
+        else { const p = (-rv - v0) / vd, q = (rv - v0) / vd; blo = Math.max(blo, Math.min(p, q)); bhi = Math.min(bhi, Math.max(p, q)); }
+        if (blo <= bhi) { if (blo < lo) lo = blo; if (bhi > hi) hi = bhi; }
       }
+      if (lo > hi || hi < 0 || lo > 1) continue;
+      const t0 = lo <= 0 ? 0 : Math.max(0, lo - nudge), t1 = hi >= 1 ? 1 : Math.min(1, hi + nudge);
       let j = IN.length;                                      // in order of where it starts, overlapping ones as one
       IN.push(t0, t1);
       while (j > 0 && IN[j - 2] > IN[j]) { [IN[j - 2], IN[j]] = [IN[j], IN[j - 2]]; [IN[j - 1], IN[j + 1]] = [IN[j + 1], IN[j - 1]]; j -= 2; }
@@ -1824,59 +2351,103 @@ span.lname { cursor: default; }
     IN.length = w;
     return w > 0;
   }
-  const pointAt = (P, s) => {                                 // the stroke's point at place s (index + t), as the far end's
-    const j = Math.floor(s), t = s - j, a = P[j], b = P[j + 1];
-    return Object.assign({}, b, { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
-  };
-  // a stroke against the sweep (segs: its segments near it, in order) -> null when untouched, else the runs of points
-  // left of it (none: all of it went). A crumb left between cuts, shorter than half the eraser is wide, goes with them.
-  function cutAlong(L, segs, S, r) {
-    const P = L.points, n = P.length, r2 = r * r;
-    if (n === 1) return pathD2(P[0].x, P[0].y, S) <= r2 ? [] : null;
-    const gone = [];                                          // the places inside, merged: [s0, s1, ...]
-    for (const j of segs) {
-      if (!inSweep(P[j], P[j + 1], S, r2)) continue;
-      for (let k = 0; k < IN.length; k += 2) {
-        const a = j + IN[k], b = j + IN[k + 1], m = gone.length;
-        if (m && a <= gone[m - 1]) { if (b > gone[m - 1]) gone[m - 1] = b; } else gone.push(a, b);
-      }
-    }
-    if (!gone.length) return null;
-    const runs = [], least = eraserR() / 2;
-    const take = (s0, s1) => {
-      if (s1 - s0 < 1e-9) return;
-      const run = [], i0 = Math.ceil(s0), i1 = Math.floor(s1);
-      if (s0 < i0) run.push(pointAt(P, s0));
-      for (let i = i0; i <= i1; i++) run.push(P[i]);
-      if (s1 > i1) run.push(pointAt(P, s1));
-      if (run.length > 1 && runLength(run) >= least) runs.push(run);
-    };
-    let s = 0;
-    for (let k = 0; k < gone.length; k += 2) { if (gone[k] > s) take(s, gone[k]); s = gone[k + 1]; }
-    if (s < n - 1) take(s, n - 1);
-    return runs;
-  }
-  function touches(L, segs, S, r) {                           // the stroke's line within reach of the sweep anywhere?
-    const P = L.points, r2 = r * r, n = S.length;
-    if (P.length === 1) return pathD2(P[0].x, P[0].y, S) <= r2;
-    for (const j of segs) {
+  // A STROKE AGAINST THE SWEEP -- segs: its segments near it, in order; A: what is left of it so far ([s0, s1, ...], places
+  // along it, in order; null: all of it) -> what is left of it now ([]: nothing), or null when the sweep took nothing of
+  // it. Only what is still there is cut: a cut of less than a thousandth of a unit is a graze of an edge an earlier cut
+  // left, and no cut. A crumb left between cuts, shorter than half the eraser is wide, goes with them. CHANGED gets the
+  // stretches (places) whose ink went; ANEW, a piece whose ink is decided whole (changesWhole) that is made anew -- a
+  // grain's piece starting at a new place (its pattern runs from its start), a wash's cut in two (pieces of a wash may
+  // overlap, and each lays its wash once a pixel). bx0..by1: the sweep's box grown by r
+  const CHANGED = [], ANEW = [];
+  function lengthOver(P, c, d, least) {                       // the stroke from place c to d at least `least` long?
+    let len = 0;
+    for (let j = Math.floor(c); j < d; j++) {
       const a = P[j], b = P[j + 1];
-      for (let i = 0; i < Math.max(2, n - 2); i += 2)
-        if (segSeg(a.x, a.y, b.x, b.y, S[i], S[i + 1], n > 2 ? S[i + 2] : S[i], n > 2 ? S[i + 3] : S[i + 1]) <= r2) return true;
+      len += Math.hypot(b.x - a.x, b.y - a.y) * (Math.min(1, d - j) - Math.max(0, c - j));
+      if (len >= least) return true;
     }
     return false;
   }
+  function cutAlong(L, A, segs, S, r, bx0, by0, bx1, by1) {
+    const P = L.points, n = P.length, r2 = r * r;
+    CHANGED.length = 0; ANEW.length = 0;
+    if (n === 1) { if (pathD2(P[0].x, P[0].y, S) > r2) return null; CHANGED.push(0, 0); return []; }
+    const AA = A || [0, n - 1], gone = [];                    // the places inside, of what is there, merged: [g0, g1, ...]
+    let k = 0;
+    for (const j of segs) {
+      const a = P[j], b = P[j + 1];
+      if (Math.max(a.x, b.x) < bx0 || Math.min(a.x, b.x) > bx1 || Math.max(a.y, b.y) < by0 || Math.min(a.y, b.y) > by1) continue;
+      while (k < AA.length && AA[k + 1] <= j) k += 2;         // what is left of it along this segment, if anything
+      if (k >= AA.length || AA[k] >= j + 1) continue;
+      if (!inSweep(a, b, S, r2, r)) continue;
+      const sl = Math.hypot(b.x - a.x, b.y - a.y);
+      for (let q = 0; q < IN.length; q += 2) {
+        const g0 = j + IN[q], g1 = j + IN[q + 1];
+        for (let m = k; m < AA.length && AA[m] < g1; m += 2) {
+          const u0 = Math.max(g0, AA[m]), u1 = Math.min(g1, AA[m + 1]);
+          if ((u1 - u0) * sl < 1e-3) continue;
+          const e = gone.length;
+          if (e && u0 <= gone[e - 1]) { if (u1 > gone[e - 1]) gone[e - 1] = u1; } else gone.push(u0, u1);
+        }
+      }
+    }
+    if (!gone.length) return null;
+    const B = [], least = eraserR() / 2, whole = changesWhole(L), wash = whole && L.pen === "SHADER";
+    const keep = (c, d) => { if (d - c >= 1e-9 && lengthOver(P, c, d, least)) B.push(c, d); };
+    let gi = 0;
+    for (let m = 0; m < AA.length; m += 2) {
+      const a0 = AA[m], a1 = AA[m + 1];
+      while (gi < gone.length && gone[gi + 1] <= a0) gi += 2;
+      if (gi >= gone.length || gone[gi] >= a1) { B.push(a0, a1); continue; }   // untouched: as it was
+      const from = B.length;
+      let at = a0;
+      for (let q = gi; q < gone.length && gone[q] < a1; q += 2) { if (gone[q] > at) keep(at, gone[q]); if (gone[q + 1] > at) at = gone[q + 1]; }
+      if (at < a1) keep(at, a1);
+      let was = a0;                                           // what went of it: all of it between what is kept
+      for (let q = from; q < B.length; q += 2) { if (B[q] > was) CHANGED.push(was, B[q]); was = B[q + 1]; }
+      if (a1 > was) CHANGED.push(was, a1);
+      if (whole) for (let q = from; q < B.length; q += 2) if (wash ? B.length - from > 2 : B[q] !== a0) ANEW.push(B[q], B[q + 1]);
+    }
+    return B;
+  }
+  // THE WHOLE-STROKE ERASER: each piece left of the stroke (a stretch of A) that the sweep reaches goes, all of it
+  function touchedOut(L, A, segs, S, r) {
+    const P = L.points, n = P.length, r2 = r * r, nS = S.length;
+    CHANGED.length = 0; ANEW.length = 0;
+    if (n === 1) { if (pathD2(P[0].x, P[0].y, S) > r2) return null; CHANGED.push(0, 0); return []; }
+    const AA = A || [0, n - 1], hit = new Uint8Array(AA.length / 2);
+    let k = 0, any = false;
+    for (const j of segs) {
+      while (k < AA.length && AA[k + 1] <= j) k += 2;
+      for (let m = k; m < AA.length && AA[m] < j + 1; m += 2) {
+        if (hit[m / 2]) continue;
+        const u0 = Math.max(j, AA[m]), u1 = Math.min(j + 1, AA[m + 1]);
+        const a = u0 === j ? P[j] : pointAt(P, u0), b = u1 === j + 1 ? P[j + 1] : pointAt(P, u1);
+        for (let i = 0; i < Math.max(2, nS - 2); i += 2)
+          if (segSeg(a.x, a.y, b.x, b.y, S[i], S[i + 1], nS > 2 ? S[i + 2] : S[i], nS > 2 ? S[i + 3] : S[i + 1]) <= r2) { hit[m / 2] = 1; any = true; break; }
+      }
+    }
+    if (!any) return null;
+    const B = [];
+    for (let m = 0; m < AA.length; m += 2) if (hit[m / 2]) CHANGED.push(AA[m], AA[m + 1]); else B.push(AA[m], AA[m + 1]);
+    return B;
+  }
   function segsOf(st) {                                       // the stretches' segments, each once, in order
-    if (st.length === 2) { const out = []; for (let j = st[0]; j < st[1]; j++) out.push(j); return out; }
-    const s = new Set();
-    for (let k = 0; k < st.length; k += 2) for (let j = st[k]; j < st[k + 1]; j++) s.add(j);
-    return [...s].sort((a, b) => a - b);
+    const out = [];
+    if (st.length === 2) { for (let j = st[0]; j < st[1]; j++) out.push(j); return out; }
+    const rs = [];
+    for (let k = 0; k < st.length; k += 2) rs.push([st[k], st[k + 1]]);
+    rs.sort((a, b) => a[0] - b[0]);
+    let next = 0;
+    for (const [i0, i1] of rs) for (let j = Math.max(i0, next); j < i1; j++) { out.push(j); next = j + 1; }
+    return out;
   }
   // A STROKE'S CUT CHANGES ITS INK ONLY NEAR THE CUT -- unless its ink is decided once for the whole stroke: a grain's
   // pattern runs from where the stroke starts, and a shader's wash is laid once a pixel a stroke (its pieces may overlap)
   const wholeInk = new WeakMap();
   function changesWhole(L) {
     let w = wholeInk.get(L);
+    if (w === undefined && GL && !gpuFailed) { const g = GL.inkWhole(L); if (g !== null) wholeInk.set(L, w = g); }
     if (w === undefined) {
       const fam = L.pen.split("_")[0];
       w = L.pen === "SHADER" || L.points.some(p => response(fam, p.pressure, p.speed)[1] < 1);
@@ -1884,6 +2455,9 @@ span.lname { cursor: default; }
     }
     return w;
   }
+  // A SWIPE CUTS STROKES ONLY ON PAPER until it is let go: each stroke it cut is kept as what is left of it (cuts: the
+  // stroke -> [s0, s1, ...]), which the card draws in its place (GL.cut). No stroke is made while the eraser moves; the
+  // pieces are made once, when the swipe ends (fold)
   function eraseAlong(S) {                                    // the sweep S on the layer in hand -> did anything go?
     const E = erasing, g = E.grid, R = eraserR(), mode = E.mode || eraseMode;
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
@@ -1893,80 +2467,204 @@ span.lname { cursor: default; }
       for (let gy = Math.floor((y0 - Q) / CELL); gy <= Math.floor((y1 + Q) / CELL); gy++) {
         const key = cellKey(gx, gy), cell = g.cells.get(key);
         if (!cell) continue;
-        let stale = false;
+        let stale = 0;
         for (const e of cell) {
-          if (g.gone.has(e.L)) { stale = true; continue; }
+          if (g.gone.has(e.L)) { stale++; continue; }
           if (e.x1 < x0 - R || e.x0 > x1 + R || e.y1 < y0 - R || e.y0 > y1 + R) continue;
           const v = near.get(e.L);
           if (v) v.push(e.i0, e.i1); else near.set(e.L, [e.i0, e.i1]);
         }
-        if (stale) g.cells.set(key, cell.filter(e => !g.gone.has(e.L)));
+        if (stale > 8 && stale * 4 > cell.length) g.cells.set(key, cell.filter(e => !g.gone.has(e.L)));
       }
     let took = false;
     for (const [L, st] of near) {
+      const A = E.cuts.get(L);
+      if (A && !A.length) continue;                           // all of it gone already
       const segs = segsOf(st), r = R + halfWidth(L);
-      if (mode === "stroke") { if (touches(L, segs, S, r)) { kill(L, [], x0, y0, x1, y1); took = true; } continue; }
-      const left = cutAlong(L, segs, S, r);
-      if (!left) continue;
-      kill(L, left.map(run => Object.assign({}, L, { itemId: [2, page.nextId++], points: run })), x0, y0, x1, y1);
+      const B = mode === "stroke" ? touchedOut(L, A, segs, S, r) : cutAlong(L, A, segs, S, r, x0 - r, y0 - r, x1 + r, y1 + r);
+      if (!B) continue;
+      if (!A) { E.owed++; E.cutNow++; }                       // a stroke newly cut: it is owed its making (foldCold)
+      E.cuts.set(L, B); E.when.set(L, E.frame); E.frameCut.add(L);
+      for (let i = 0; i < CHANGED.length; i += 2) spanCells(L, CHANGED[i], CHANGED[i + 1], E.soon);
+      for (let i = 0; i < ANEW.length; i += 2) spanCells(L, ANEW[i], ANEW[i + 1], E.late);
       took = true;
     }
     return took;
   }
-  // a stroke the eraser took, the pieces left in its place, and the area of the page that changed with it: near the
-  // sweep (x0..y1, its centers' box), or all of the stroke when its ink is decided whole (changesWhole), or it went whole
-  function kill(L, ps, x0, y0, x1, y1) {
-    const E = erasing, b = boxOf(L), h = halfWidth(L) + 1;
-    E.dead.add(L); E.grid.gone.add(L); E.grid.goneN++; E.frameDead.push(L); E.dirty = true;
-    if (ps.length) E.pieces.set(L, ps);
-    for (const q of ps) { E.made.add(q); E.frameMade.add(q); gridAdd(q, E.grid); }
-    let a = [b[0] - h, b[1] - h, b[2] + h, b[3] + h];
-    if (ps.length && !changesWhole(L)) {                      // its removed ink lies within the eraser and its own width twice
-      const m = eraserR() + 2 * h;
-      a = [Math.max(a[0], x0 - m), Math.max(a[1], y0 - m), Math.min(a[2], x1 + m), Math.min(a[3], y1 + m)];
+  // THE AREAS A SWIPE HAS STILL TO DRAW AGAIN, as cells of the page (DCELL units square) in a set, each in it once
+  // however often it changes: where ink went (soon), where pieces whose ink is decided whole were made anew (late). A
+  // frame draws them a run of up to three cells along a row at a time, so it can stop between any two runs
+  const DCELL = 128, dkey = (gx, gy) => (gy + 512) * 1024 + gx + 512;
+  function markCells(set, x0, y0, x1, y1) {
+    for (let gy = Math.floor(y0 / DCELL); gy <= Math.floor(y1 / DCELL); gy++)
+      for (let gx = Math.floor(x0 / DCELL); gx <= Math.floor(x1 / DCELL); gx++) set.add(dkey(gx, gy));
+  }
+  function cellRuns(set) {                                    // -> [[x0, y0, x1, y1, its cells], ...] in rows, top first
+    const ks = [...set].sort((a, b) => a - b), out = [];
+    for (let i = 0; i < ks.length;) {
+      let j = i + 1;
+      while (j < ks.length && j - i < 3 && ks[j] === ks[j - 1] + 1) j++;
+      const gy = Math.floor(ks[i] / 1024) - 512, gx0 = ks[i] % 1024 - 512, gx1 = ks[j - 1] % 1024 - 512;
+      out.push([gx0 * DCELL, gy * DCELL, (gx1 + 1) * DCELL, (gy + 1) * DCELL, ks.slice(i, j)]);
+      i = j;
     }
-    E.box = E.box ? [Math.min(E.box[0], a[0]), Math.min(E.box[1], a[1]), Math.max(E.box[2], a[2]), Math.max(E.box[3], a[3])] : a;
-    dirtyRows(b);
+    return out;
+  }
+  // WHERE A STRETCH OF A STROKE (places c..d along it) HAS INK, marked to be drawn again (in cells): its points' box
+  // grown by its reach; a long stretch, by its stretches' boxes in the eraser's index, not one box round all of it
+  function spanCells(L, c, d, cells) {
+    const P = L.points, j0 = Math.max(0, Math.floor(c)), j1 = Math.min(P.length - 1, Math.ceil(d));
+    const es = j1 - j0 > 32 && lineRuns.get(L);
+    if (es) {
+      for (const e of es) if (e.i1 >= j0 && e.i0 <= j1) { markCells(cells, e.x0 - 2, e.y0 - 2, e.x1 + 2, e.y1 + 2); dirtyRows([0, e.y0 - 2, 0, e.y1 + 2]); }
+      return;
+    }
+    const h = halfWidth(L) + 2;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (let j = j0; j <= j1; j++) { const q = P[j]; if (q.x < x0) x0 = q.x; if (q.x > x1) x1 = q.x; if (q.y < y0) y0 = q.y; if (q.y > y1) y1 = q.y; }
+    markCells(cells, x0 - h, y0 - h, x1 + h, y1 + h); dirtyRows([0, y0 - h, 0, y1 + h]);
+  }
+  // THE SWIPE'S CUTS MADE STROKES: each stroke it cut (these, or all) replaced by the pieces left of it (pieceOf: where
+  // each was cut from) -- in the eraser's index, and on the card in the chunk that holds it, where they draw as the cut
+  // did. Those the eraser has left behind, as the frames have time (foldCold); the rest as the swipe ends, or before the
+  // whole page is drawn during it -> the card took them? (else it draws the page whole)
+  function fold(list) {
+    const E = erasing;
+    if (!E || !E.cuts.size) return true;
+    const pairs = [];
+    for (const L of list || [...E.cuts.keys()]) {
+      const A = E.cuts.get(L);
+      if (!A) continue;
+      const P = L.points, whole = changesWhole(L), ps = [];
+      for (let i = 0; i < A.length; i += 2) {
+        const s0 = A[i], s1 = A[i + 1], i0 = Math.ceil(s0), i1 = Math.floor(s1);
+        const N = Object.assign({}, L, { itemId: [2, page.nextId++], points: piecePoints(P, s0, s1) });
+        pieceOf.set(N, { from: L, i0, i1, head: s0 < i0, tail: s1 > i1 }); wholeInk.set(N, whole);
+        ps.push(N);
+      }
+      E.dead.add(L); E.grid.gone.add(L); E.grid.goneN++;
+      if (ps.length) E.pieces.set(L, ps);
+      for (const q of ps) { E.made.add(q); gridPiece(q, pieceOf.get(q), E.grid); }
+      E.cuts.delete(L); E.when.delete(L); E.frameCut.delete(L);
+      pairs.push([L, ps, A]);
+    }
+    E.dirty = true;
+    if (!list) E.owed = 0;
+    if (!GL || gpuFailed || !pairs.length) return true;
+    try { return GL.replace(pairs); } catch (e) { gpuDown(e); return false; }
+  }
+  // THE CUTS THE ERASER HAS LEFT BEHIND (not cut again for COLD frames) made strokes -- of those owed, up to twice as
+  // many each frame as it cut anew, however busy the frame, and more while it has time -- so that letting go has only
+  // what the eraser was last over to make; once it is let go, all of them, a few each frame at least. -> the card took
+  // them?
+  const COLD = 8;
+  function foldCold(deadline) {
+    const E = erasing, pick = [], cold = E.ending ? 0 : COLD;
+    let due = E.ending ? 4 : Math.min(E.owed, 2 * E.cutNow + 4);
+    E.cutNow = 0;
+    if (!due && performance.now() > deadline) return true;
+    for (const [L] of E.cuts) {
+      if (E.frame - E.when.get(L) < cold) continue;
+      pick.push(L);
+      if (pick.length === 4) {
+        if (!fold(pick)) return false;
+        pick.length = 0; due -= 4; E.owed = Math.max(0, E.owed - 4);
+        if (due <= 0 && performance.now() > deadline) return true;
+      }
+    }
+    if (pick.length) E.owed = Math.max(0, E.owed - pick.length);
+    return !pick.length || fold(pick);
   }
   function swipeLines() {                                     // the swipe's layer as it has left it: each stroke it took
     const E = erasing, out = [];                              // replaced by what is left of it (its pieces, and theirs)
+    fold();
     const left = L => { if (!E.dead.has(L)) { out.push(L); return; } for (const q of E.pieces.get(L) || []) left(q); };
     for (const L of E.before) left(L);
     return out;
   }
   function eraseApply() {                                     // the layer made as the swipe has left it
-    if (!erasing || !erasing.dirty) return;
+    if (!erasing) return;
+    fold();
+    if (!erasing.dirty) return;
     erasing.dirty = false;
     erasing.layer.lines = swipeLines(); inkTick++;
   }
   let eraseFrame = 0;
-  function eraseSoon() {                                      // the page drawn again with the swipe so far, once a frame at most
+  function eraseSoon() {                                      // the swipe so far on the screen, once a frame at most
     if (eraseFrame) return;
-    eraseFrame = requestAnimationFrame(() => { eraseFrame = 0; eraseFlush(); });
+    eraseFrame = requestAnimationFrame(t => { eraseFrame = 0; eraseFlush(t); });
   }
-  // WHAT THE SWIPE TOOK SINCE THE LAST FRAME, ON THE SCREEN. On the card: each stroke taken is replaced by what is left of
-  // it in the chunk that holds it (a piece made and taken in the same frame never reaches the card), and only the area
-  // that changed is drawn again. Off it: the layer made again, and the rows the taken strokes were on drawn again.
-  function eraseFlush() {
+  // THE PATH THE ERASER HAS BEEN ALONG AND NOT YET SWEPT (todo, on from `last`), swept a piece at a time -- each no
+  // longer than the eraser is wide, so each costs about the same -- until the frame's share of time is spent: the frame
+  // keeps its pace however much the pointer covered, and what is left is swept the next frame. A swipe faster than the
+  // machine can follow trails the pointer at the most a frame has room for, and catches up as the pointer slows.
+  // deadline (performance.now()): Infinity sweeps it all
+  function eraseWork(deadline) {
+    const E = erasing;
+    if (!E || !E.todo.length) return;
+    const S = thin([E.last[0], E.last[1]].concat(E.todo), 0.3 / Math.max(1, view.zoom)), U = 2 * eraserR();
+    let k = 0;                                                // S[k], S[k + 1]: where the sweep has got to
+    while (k + 2 < S.length) {
+      const unit = [S[k], S[k + 1]];
+      let len = 0;
+      while (k + 2 < S.length) {
+        const ax = unit[unit.length - 2], ay = unit[unit.length - 1], bx = S[k + 2], by = S[k + 3], d = Math.hypot(bx - ax, by - ay);
+        if (len + d <= U) { unit.push(bx, by); len += d; k += 2; continue; }
+        if (!len) { const t = U / d; S[k] = ax + (bx - ax) * t; S[k + 1] = ay + (by - ay) * t; unit.push(S[k], S[k + 1]); }   // a long step: so far along it
+        break;
+      }
+      eraseAlong(unit);
+      if (performance.now() > deadline) break;
+    }
+    E.last = [S[k], S[k + 1]]; E.todo = S.slice(k + 2);
+  }
+  // WHAT THE SWIPE DID THIS FRAME, ON THE SCREEN, in the frame's time (ms from its start): sweeping its path until
+  // ERASE_CUT, drawing again the areas that changed until ERASE_DRAW (where ink went first, then the pieces whose ink
+  // is decided whole drawn anew, which change only their grain or wash -- once it is let go, after its cuts are all
+  // made strokes), making strokes of the cuts it left behind until ERASE_FOLD -- each at least a step, and what is left
+  // of each the next frame. A frame of a swipe never runs long,
+  // whatever the machine: the erase trails the pointer instead, and catches up. On the card: each stroke cut drawn as
+  // what is left of it, and only the areas that changed drawn again. Off it: the cuts made strokes, the layer made
+  // again, and the rows they were on drawn again. t: the frame's start; all: everything now (the swipe ends)
+  const ERASE_CUT = 6, ERASE_DRAW = 11, ERASE_FOLD = 13;
+  function eraseFlush(t, all) {
     const E = erasing;
     if (!E) return;
+    const t0 = t || performance.now();
+    E.frame++;
+    eraseWork(all ? Infinity : t0 + ERASE_CUT);
     if (GL && !gpuFailed) {
-      const box = E.box, pairs = [];
-      const left = D => (E.pieces.get(D) || []).flatMap(q => E.dead.has(q) ? left(q) : [q]);
-      for (const D of E.frameDead) if (!E.frameMade.has(D)) pairs.push([D, left(D)]);
-      E.frameDead = []; E.frameMade = new Set(); E.box = null; dirty = null;
-      if (!pairs.length) { paint(); return; }
-      let ok = false;
-      try { ok = GL.replace(pairs) && regionOnCard(box); } catch (e) { gpuDown(e); }
-      if (!ok && !(GL && !gpuFailed && rebuildOnCard() && (paint(), true))) rebuild();
+      dirty = null;
+      let ok = true;
+      if (E.frameCut.size) {
+        try { for (const L of E.frameCut) if (!GL.cut(L, E.cuts.get(L))) { ok = false; break; } } catch (e) { gpuDown(e); ok = false; }
+        E.frameCut.clear();
+      }
+      for (const k of E.soon) E.late.delete(k);
+      const soon = cellRuns(E.soon), both = E.ending && E.cuts.size && !all ? soon : soon.concat(cellRuns(E.late));
+      if (ok) {
+        const n = both.length ? regionsOnCard(both, all ? 0 : t0 + ERASE_DRAW) : (paint(), 0);
+        if (n < 0) ok = false;
+        else for (let i = 0; i < n; i++) for (const k of both[i][4]) (i < soon.length ? E.soon : E.late).delete(k);
+      }
+      if (ok && !all) ok = foldCold(t0 + ERASE_FOLD);
+      if (!ok) { E.soon.clear(); E.late.clear(); if (!(GL && !gpuFailed && rebuildOnCard() && (paint(), true))) rebuild(); }
+      if (!all) {
+        if (E.todo.length || E.soon.size || E.late.size || E.cuts.size) eraseSoon();   // more to do: the next frame
+        else if (E.ending) swipeEnded();
+      }
       return;
     }
+    E.soon.clear(); E.late.clear(); E.frameCut.clear();
     eraseApply();
     const d = dirty; dirty = null;
     if (d) rebuildBand(d[0] - 60, d[1] + 60); else paint();
+    if (!all) { if (E.todo.length) eraseSoon(); else if (E.ending) swipeEnded(); }
   }
   function eraseEnd() {                                       // the swipe as one undo step: what went (where it was), what came
     const E = erasing, Ly = E.layer;
+    eraseWork(Infinity);
+    fold();
     if (E.dead.size) {
       E.dirty = true; eraseApply();
       const removed = [], added = [], now = Ly.lines;
@@ -2037,6 +2735,7 @@ span.lname { cursor: default; }
     return pairs;
   }
   function zoneDone(z) {                                      // a zone erased, and the page shown as it now is
+    settleSwipe();
     const pairs = eraseZone(z.layer, zoneLoop(z));
     if (!pairs) { paint(); return; }
     if (swapOnCard(pairs)) saveSoon(); else rebuild();
@@ -2766,7 +3465,7 @@ span.lname { cursor: default; }
   function updateCursor() {
     // at once, unless text is being typed (a key typed in the last 0.4 s): then once the mouse moves or the typing stops
     const byKeys = keyErase(held), armed = byKeys && (heldMoved || !editing() || performance.now() - typedAt >= 400);
-    const mode = erasing ? erasing.mode || eraseMode : zone ? "zone" : tool === "eraser" ? eraseMode : armed ? byKeys : null;
+    const mode = erasing && !erasing.ending ? erasing.mode || eraseMode : zone ? "zone" : tool === "eraser" ? eraseMode : armed ? byKeys : null;
     const key = mode ? eraserCursor(mode, mode === "zone" ? (zone ? zone.shape : zoneShapeNow()) : 0) : null;
     if (key) { if (vp.dataset.erase !== key) vp.dataset.erase = key; } else delete vp.dataset.erase;
     vp.classList.toggle("ibeam", !key && overText);
@@ -2938,23 +3637,22 @@ span.lname { cursor: default; }
       if (hit && c) { if (!c.anchor) c.anchor = { ...c.caret }; c.caret = hit; use(c); paint(); }
       return;
     }
-    const co = e.getCoalescedEvents ? e.getCoalescedEvents() : [], evs = co.length ? co : [e];
+    const co = e.getCoalescedEvents ? e.getCoalescedEvents() : [], evs = co.length ? co : [e], vr = vp.getBoundingClientRect();
     if (live) {
       const from = live.points.length;
       for (const ev of evs) {
-        const [x, y] = toPage(...local(ev));
+        const [x, y] = toPage(ev.clientX - vr.left, ev.clientY - vr.top);
         live.points.push(inkPoint(live, x, y, ev));
         if (!liveOnCard) drawTail(live);
       }
       if (liveOnCard && (liveMoved || !liveFrom)) { liveGrew(liveMoved && from <= 2 ? 0 : from); liveSoon(); }
-    } else if (erasing) {                                     // the eraser's path since the last move, swept at once
-      const S = [erasing.last[0], erasing.last[1]];
+    } else if (erasing) {                                     // the eraser's path, kept to be swept: the next frame sweeps as
+      const E = erasing, Q = E.todo;                          // much of it as it has room for (eraseWork)
       for (const ev of evs) {
-        const [x, y] = toPage(...local(ev)), n = S.length;
-        if (Math.abs(x - S[n - 2]) + Math.abs(y - S[n - 1]) > 0.25) S.push(x, y);
+        const [x, y] = toPage(ev.clientX - vr.left, ev.clientY - vr.top), n = Q.length;
+        if (Math.abs(x - (n ? Q[n - 2] : E.last[0])) + Math.abs(y - (n ? Q[n - 1] : E.last[1])) > 0.25) Q.push(x, y);
       }
-      erasing.last = [S[S.length - 2], S[S.length - 1]];
-      if (S.length > 2 && eraseAlong(S)) eraseSoon(); else paint();   // drawn once a frame at most
+      if (Q.length) eraseSoon(); else paint();
     }
   });
   // the window's own menu never opens over the page: our menu opens on the press, under the pointer, so the let-go that
@@ -3015,14 +3713,50 @@ span.lname { cursor: default; }
   }
   // A SWIPE OVER: its last frame drawn, then one undo step. On the card the page already shows the layer as it now is,
   // in its chunks as they now are: the layer is taken as theirs, and nothing is drawn again
+  // ON THE CARD THE SWIPE IS LET GO AS IT GOES: whatever of its path it has not caught up with yet is swept in the frames
+  // that follow (ending), each in its time, as while the button was down; then the swipe ends (swipeEnded). Anything
+  // else that comes to the page meanwhile finishes it at once first (settleSwipe). Off the card it ends at once.
   function swipeDone() {
     cancelAnimationFrame(eraseFrame); eraseFrame = 0;
-    const onCard = GL && !gpuFailed;
-    if (onCard) eraseFlush();
+    if (GL && !gpuFailed) { erasing.ending = true; eraseFlush(performance.now()); return; }
+    eraseWork(Infinity);
     dirty = null;
     eraseEnd();
-    if (onCard) { if (!GL.adopt(inkList())) rebuildSoon(); saveSoon(); paint(); }
-    else rebuild();
+    rebuild();
+  }
+  function swipeEnded() {                                     // the page already shows it: taken as the layer, one undo step
+    cancelAnimationFrame(eraseFrame); eraseFrame = 0;
+    dirty = null;
+    eraseEnd();
+    if (!(GL && !gpuFailed && settled())) rebuildSoon();
+    saveSoon(); paint(); updateCursor();
+  }
+  function settleSwipe() {
+    if (!erasing || !erasing.ending) return;
+    const E = erasing;
+    cancelAnimationFrame(eraseFrame); eraseFrame = 0;
+    eraseWork(Infinity);                                      // its path, all of it; its cuts on the card, as they are
+    let ok = !!GL && !gpuFailed;
+    try { if (ok) for (const L of E.frameCut) if (!GL.cut(L, E.cuts.get(L))) { ok = false; break; } } catch (e) { gpuDown(e); ok = false; }
+    E.frameCut.clear();
+    for (const k of E.soon) leftCells.add(k);                 // what it had still to draw: in the frames after (drawLeft)
+    for (const k of E.late) leftCells.add(k);
+    E.soon.clear(); E.late.clear();
+    swipeEnded();
+    if (!ok) { leftCells.clear(); rebuildSoon(); } else if (leftCells.size && !leftFrame) leftFrame = requestAnimationFrame(drawLeft);
+  }
+  // THE AREAS A SWIPE FINISHED EARLY LEFT TO DRAW AGAIN, drawn in the frames after it, in the frame's time; a swipe begun
+  // meanwhile takes them as its own
+  const leftCells = new Set();
+  let leftFrame = 0;
+  function drawLeft(t) {
+    leftFrame = 0;
+    if (!leftCells.size) return;
+    if (erasing) { for (const k of leftCells) erasing.late.add(k); leftCells.clear(); eraseSoon(); return; }
+    const runs = cellRuns(leftCells), n = regionsOnCard(runs, (t || performance.now()) + ERASE_DRAW);
+    if (n < 0) { leftCells.clear(); rebuildSoon(); return; }
+    for (let i = 0; i < n; i++) for (const k of runs[i][4]) leftCells.delete(k);
+    if (leftCells.size) leftFrame = requestAnimationFrame(drawLeft);
   }
   // THE KEYS CHANGED IN THE MIDDLE OF A SWIPE they started: the swipe goes on as the keys now say, without a stop. Passing
   // and whole strokes are one swipe, its mode changed where the pointer is; into a zone, the swipe so far is done and the
@@ -3035,10 +3769,11 @@ span.lname { cursor: default; }
     if (pending) { if (pending.byKeys) pending.mode = mode; return; }
     if (erasing && erasing.byKeys && pointer !== null) {
       if (mode === "zone") {
-        swipeDone();
-        zone = { layer: layer(), pts: [swipeAt || erasing.last], shape: zoneShapeNow(), byKeys: true };
+        const at = swipeAt || erasing.last;
+        swipeDone(); settleSwipe();                           // the swipe all done before the zone's loop starts
+        zone = { layer: layer(), pts: [at], shape: zoneShapeNow(), byKeys: true };
         paint();
-      } else if (erasing.mode !== mode) erasing.mode = mode;
+      } else if (erasing.mode !== mode) { eraseWork(Infinity); erasing.mode = mode; eraseSoon(); }   // its path so far as it was
       updateCursor(); return;
     }
     if (zone && zone.byKeys && pointer !== null && mode !== "zone") {
@@ -4274,6 +5009,7 @@ span.lname { cursor: default; }
   }
   async function saveNow(leaving) {
     clearTimeout(saveTimer);
+    if (leaving) settleSwipe();                               // a swipe still catching up: all of it, saved with the page
     if (!loaded || VIEW) return;                              // the Mirror's pages are the tablet's: never written from here
     // NOT IN THE MIDDLE OF A STROKE, A SWIPE OR A DRAG: the page is made into its file on this thread, and a save that
     // came due under the pen was felt there. It waits for the pen to lift (leaving the page, it does not wait)
