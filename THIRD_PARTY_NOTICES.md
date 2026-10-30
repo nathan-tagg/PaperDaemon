@@ -61,12 +61,16 @@ each under its own license.
   BSD, Apache-2.0, HPND or similar). Their license files are gathered into the app's `engine/licenses` folder
   at build time. The packages the decomposer's Python reference runs on (Numba, OpenCV, SciPy, scikit-image,
   Shapely) are development dependencies only and are left out of the app.
-- **ANGLE** (BSD-3-Clause, The ANGLE Project Authors, <https://chromium.googlesource.com/angle/angle>): OpenGL ES 3
-  on Direct3D 11, through which the engine draws its pictures of pages on the graphics card
+- **Dawn and Tint** (BSD-3-Clause, The Dawn & Tint Authors, <https://dawn.googlesource.com/dawn>): WebGPU on
+  Direct3D 12 and 11, through which the engine draws its pictures of pages on the graphics card
   (`paperdaemon/pipeline/page/gpu.py`) with the page editor's own shaders (`paperdaemon/ui/shaders.js`) -- the page
-  editor draws through WebView2's ANGLE, the engine through this copy. Built from source at a pinned commit by
-  `tools/build_angle.py` (Direct3D 11 only): `libEGL.dll` and `libGLESv2.dll`, shipped unmodified in the app's
-  `paperdaemon/pipeline/page/angle` folder with ANGLE's `LICENSE`.
+  editor draws through WebView2's WebGPU, which is Dawn, the engine through this copy. Built from source at a pinned
+  commit by `tools/build_dawn.py` (Direct3D 12 and 11 only): `webgpu_dawn.dll`, shipped unmodified in the app's
+  `paperdaemon/pipeline/page/dawn` folder with Dawn's `LICENSE`, beside the declarations of its own `webgpu.h`
+  (`webgpu.cdef`, `webgpu.flags.json`) that the engine reads it through.
+- **Abseil** (Apache-2.0, The Abseil Authors, <https://github.com/abseil/abseil-cpp>): compiled into
+  `webgpu_dawn.dll` as part of Dawn; its license ships beside it as `LICENSE-abseil`.
+- **cffi** (MIT, Armin Rigo and Maciej Fijalkowski): the engine's binding to Dawn's C API.
 - **Qt for Python (PySide6-Essentials) and Qt 6.10.3** (GNU Lesser General Public License version 3, The Qt
   Company), which lay books out as the tablet lays them out: shipped as the unmodified libraries of the published
   wheel, loaded at run time, so they can be replaced with another build of the same version. Their license files are

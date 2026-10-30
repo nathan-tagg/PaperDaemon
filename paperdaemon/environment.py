@@ -46,11 +46,13 @@ WIRING = {
     "RM_FACES": "tablet or own: the faces a process sets typed text and books in (the false mirror's, chosen by the engine)",
     "QT_QPA_PLATFORM": "offscreen, set by a book's layout child for Qt (remarkable/books.py)",
     "QT_QPA_FONTDIR": "the folder of faces a book's layout child gives Qt, so it sees no others",
+    "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS": "the development window's web view started for the card chosen (gpus.window_args)",
 }
 
 # Developer switches: for measuring and debugging; nothing a user sets.
 DEVELOPER = {
     "PAPERDAEMON_CPU_RENDER": "every page drawn on the processor, the graphics card never asked (Settings has the user's switch)",
+    "PAPERDAEMON_WEBGPU_D3D11": "the window's WebGPU on Direct3D 11 whatever the card (that path checked on a card with Direct3D 12)",
     "RM_DRY_RUN": "the daemon queues nothing",
     "RM_HOST_DRY_DOCS": "the host stages documents and never publishes them (the benchmark)",
     "RM_HOST_DRAW_LOOKS": "look-and-fix rounds for drawings",

@@ -703,7 +703,12 @@
   <string name="fm.tpl_approx">PaperDaemon এই টেমপ্লেটটি reMarkable অ্যাপ থেকে পড়তে পারে না: অ্যাপ এটি নিজের কোডে আঁকে। এটি PaperDaemon-এর নিজের আঁকা, কাছাকাছি তবে নিখুঁত নয়।</string>
   <string name="slot.loras_folder">LoRA ফোল্ডার</string>
   <string name="slot.loras_folder.help">এই লাইনআপের LoRA ফোল্ডার খুলুন। এর প্রতিটি LoRA এই লাইনআপের তৈরি প্রতিটি ছবিতে যায়, এর ইমেজ হারনেস যেভাবে বলে।</string>
-  <string name="settings.render">পৃষ্ঠা আঁকা</string>
-  <string name="settings.render.help">বন্ধ (ডিফল্ট): কাজগুলো যে পৃষ্ঠা পড়ে তা গ্রাফিক্স কার্ডে আঁকে। এটি দ্রুত, আর কাজ চলার সময় কার্ডের কিছু মেমরি (খুব ঘন পৃষ্ঠায় প্রায় 160 MB) নেয়, কাজ শেষে ফেরত দেয়। চালু: এর বদলে প্রসেসরে আঁকে, কার্ডের সব মেমরি আপনার AI সার্ভারের জন্য রেখে, আর প্রতিটি ছবিতে বেশি সময় লাগে, বিশেষ করে বেশি কালির পৃষ্ঠায়। ছবি দুই ক্ষেত্রেই একই, আর সব লাইনআপে একই নিয়ম। পৃষ্ঠা সম্পাদক সবসময় কার্ডে আঁকে।</string>
-  <string name="settings.render.cpu">প্রসেসরে পৃষ্ঠা আঁকুন</string>
+  <string name="settings.render">রেন্ডারার</string>
+  <string name="settings.render.help">GPU (ডিফল্ট): তালিকায় বেছে নেওয়া গ্রাফিক্স কার্ডে পৃষ্ঠা আঁকা হয়। এটি দ্রুত, আর কাজ চলার সময় কার্ডের কিছু মেমরি (খুব ঘন পৃষ্ঠায় প্রায় 160 MB) নেয়, কাজ শেষে ফেরত দেয়। CPU: কাজগুলো যে পৃষ্ঠা পড়ে তা এর বদলে প্রসেসরে আঁকে, কার্ডের সব মেমরি আপনার AI সার্ভারের জন্য রেখে, আর প্রতিটি ছবিতে বেশি সময় লাগে, বিশেষ করে বেশি কালির পৃষ্ঠায়। ছবি দুই ক্ষেত্রেই একই, আর সব লাইনআপে একই নিয়ম। পৃষ্ঠা সম্পাদক বেছে নেওয়া কার্ডে আঁকে।</string>
+  <string name="settings.render.cpu">CPU</string>
+  <string name="settings.render.gpu">GPU</string>
+  <string name="settings.render.card">গ্রাফিক্স কার্ড</string>
+  <string name="settings.render.memory">{gb} GB</string>
+  <string name="settings.render.no_webgpu">এই কার্ড WebGPU চালাতে পারে না: পৃষ্ঠা প্রসেসরে আঁকা হবে, যা ধীর।</string>
+  <string name="settings.render.restart">কাজগুলো পরের কাজ থেকে এই কার্ড ব্যবহার করবে; উইন্ডো, PaperDaemon পরের বার চালু হলে।</string>
 </resources>

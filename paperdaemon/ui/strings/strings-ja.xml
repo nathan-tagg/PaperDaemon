@@ -703,7 +703,12 @@
   <string name="fm.tpl_approx">PaperDaemon はこのテンプレートを reMarkable アプリから読み取れません。アプリが独自のコードで描いているためです。これは PaperDaemon による近似の描画で、正確ではありません。</string>
   <string name="slot.loras_folder">LoRA フォルダー</string>
   <string name="slot.loras_folder.help">このラインナップの LoRA フォルダーを開きます。中の LoRA はすべて、このラインナップが作るすべての画像に、画像ハーネスの指定どおりに適用されます。</string>
-  <string name="settings.render">ページの描画</string>
-  <string name="settings.render.help">オフ（既定）：ジョブは読むページをグラフィックカードで描画します。高速で、ジョブの実行中はカードのメモリを少し使い（非常に密なページで約 160 MB）、ジョブが終わると返します。オン：代わりにプロセッサで描画し、カードのメモリはすべて AI サーバーに残しますが、各画像に時間がかかり、インクの多いページほど長くなります。どちらでも画像は同じで、すべてのラインナップに共通です。ページエディターは常にカードで描画します。</string>
-  <string name="settings.render.cpu">ページをプロセッサで描画する</string>
+  <string name="settings.render">レンダラー</string>
+  <string name="settings.render.help">GPU（既定）：一覧で選んだグラフィックカードでページを描画します。高速で、ジョブの実行中はカードのメモリを少し使い（非常に密なページで約 160 MB）、ジョブが終わると返します。CPU：ジョブは読むページを代わりにプロセッサで描画し、カードのメモリはすべて AI サーバーに残しますが、各画像に時間がかかり、インクの多いページほど長くなります。どちらでも画像は同じで、すべてのラインナップに共通です。ページエディターは選んだカードで描画します。</string>
+  <string name="settings.render.cpu">CPU</string>
+  <string name="settings.render.gpu">GPU</string>
+  <string name="settings.render.card">グラフィックカード</string>
+  <string name="settings.render.memory">{gb} GB</string>
+  <string name="settings.render.no_webgpu">このカードでは WebGPU を実行できません。ページはプロセッサで描画され、遅くなります。</string>
+  <string name="settings.render.restart">ジョブは次回からこのカードを使います。ウィンドウは PaperDaemon の次回起動時からです。</string>
 </resources>

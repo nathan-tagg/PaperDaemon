@@ -109,7 +109,7 @@ def _cpu(img, flat, ss=1):
 # the inked share at pressures 0, 16, 32, 64, 96, 128, 160, 208 and 255 (measured; see the module's note)
 _AT = [0, 16, 32, 64, 96, 128, 160, 208, 255]
 # the pencils' set on the calibration notebook through the tablet's screen share (patches at pressure 40, 128,
-# 255 at three thicknesses, and single lines), with the paper's grain (shaders.js FS_SEG)
+# 255 at three thicknesses, and single lines), with the paper's grain (shaders.js fsSeg)
 GRAIN = {"PENCIL": [0.025, 0.034, 0.037, 0.125, 0.27, 0.478, 0.663, 0.866, 1.0],
          "MECHANICAL": [0.023, 0.034, 0.034, 0.161, 0.31, 0.469, 0.639, 0.869, 1.0],
          "PAINTBRUSH": [0, 0, 0, 0.12, 0.73, 0.87, 0.87, 0.87, 0.87],

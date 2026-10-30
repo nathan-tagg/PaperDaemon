@@ -703,7 +703,12 @@
   <string name="fm.tpl_approx">PaperDaemon یہ ٹیمپلیٹ reMarkable ایپ سے نہیں پڑھ سکتا: ایپ اسے اپنے کوڈ سے بناتی ہے۔ یہ PaperDaemon کی اپنی ڈرائنگ ہے، قریب مگر بالکل درست نہیں۔</string>
   <string name="slot.loras_folder">LoRA فولڈر</string>
   <string name="slot.loras_folder.help">اس لائن اپ کا LoRA فولڈر کھولیں۔ اس میں موجود ہر LoRA اس لائن اپ کی بنائی ہر تصویر پر لگتا ہے، جیسا اس کا امیج ہارنیس کہتا ہے۔</string>
-  <string name="settings.render">صفحات بنانا</string>
-  <string name="settings.render.help">بند (طے شدہ): کام جن صفحات کو پڑھتے ہیں انہیں گرافکس کارڈ پر بناتے ہیں۔ یہ تیز ہے، اور کام چلتے وقت کارڈ کی کچھ میموری (بہت گھنے صفحے پر تقریباً 160 MB) لیتا ہے جو کام ختم ہونے پر واپس ہو جاتی ہے۔ آن: وہ انہیں پروسیسر پر بناتے ہیں، کارڈ کی ساری میموری آپ کے AI سرورز کے لیے چھوڑتے ہوئے، اور ہر تصویر میں زیادہ وقت لگتا ہے، خاص طور پر زیادہ سیاہی والے صفحات پر۔ تصویریں دونوں صورتوں میں ایک جیسی رہتی ہیں، اور یہ ہر لائن اپ پر لاگو ہے۔ صفحہ ایڈیٹر ہمیشہ کارڈ پر بناتا ہے۔</string>
-  <string name="settings.render.cpu">صفحات پروسیسر پر بنائیں</string>
+  <string name="settings.render">رینڈرر</string>
+  <string name="settings.render.help">GPU (طے شدہ): صفحات فہرست میں چنے گئے گرافکس کارڈ پر بنائے جاتے ہیں۔ یہ تیز ہے، اور کام چلتے وقت کارڈ کی کچھ میموری (بہت گھنے صفحے پر تقریباً 160 MB) لیتا ہے جو کام ختم ہونے پر واپس ہو جاتی ہے۔ CPU: کام جن صفحات کو پڑھتے ہیں انہیں اس کے بجائے پروسیسر پر بناتے ہیں، کارڈ کی ساری میموری آپ کے AI سرورز کے لیے چھوڑتے ہوئے، اور ہر تصویر میں زیادہ وقت لگتا ہے، خاص طور پر زیادہ سیاہی والے صفحات پر۔ تصویریں دونوں صورتوں میں ایک جیسی رہتی ہیں، اور یہ ہر لائن اپ پر لاگو ہے۔ صفحہ ایڈیٹر چنے گئے کارڈ پر بناتا ہے۔</string>
+  <string name="settings.render.cpu">CPU</string>
+  <string name="settings.render.gpu">GPU</string>
+  <string name="settings.render.card">گرافکس کارڈ</string>
+  <string name="settings.render.memory">{gb} GB</string>
+  <string name="settings.render.no_webgpu">یہ کارڈ WebGPU نہیں چلا سکتا: صفحات پروسیسر پر بنائے جائیں گے، جو سست ہے۔</string>
+  <string name="settings.render.restart">کام اگلے کام سے یہ کارڈ استعمال کریں گے؛ ونڈو، PaperDaemon کے اگلی بار شروع ہونے سے۔</string>
 </resources>

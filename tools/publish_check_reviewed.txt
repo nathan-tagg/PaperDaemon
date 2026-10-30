@@ -6,3 +6,5 @@ paperdaemon/pipeline/rm-templates/notebook.content uuid
 tests/benchmark/cases uuid
 # Microsoft's public WebView2 runtime app GUID in Tauri's stock installer template
 shell/installer/installer.nsi uuid
+# Microsoft's public DirectX interface ids (IDXGIFactory1, ID3D12Device) the card probe asks for
+paperdaemon/gpus.py uuid

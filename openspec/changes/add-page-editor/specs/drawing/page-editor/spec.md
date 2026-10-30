@@ -46,13 +46,21 @@ over a piece it already cut, and no crumb shorter than half the eraser's size le
 work the page can do later (no copy of the page read back from the card, no save, while a swipe is under way, even
 paused), and the keys it takes are only those that change it.
 
-A swipe SHALL keep the screen's pace on any machine: the pointer only marks the path, and each frame sweeps as much of it
-as a sixtieth of a second has room for (sweeping, then drawing again what changed, then making strokes of what was cut),
-at least a step of each, and leaves the rest to the next frame. A swipe faster than the machine trails the pointer and
-catches up as it slows; letting go SHALL NOT wait for it (the frames after finish it), and anything else done on the page
-meanwhile (a key, a press, a paste, leaving the page) finishes it first. No stroke SHALL be made while the eraser moves:
-each stroke cut is kept as what is left of it, the card draws it so in its place, and its pieces are made from that as
-the frames have time and when the swipe ends.
+A swipe SHALL keep the screen's pace on any machine, its graphics card included: the pointer only marks the path, and
+each frame sweeps as much of it as a sixtieth of a second has room for (sweeping, then drawing again what changed, the
+oldest step first, then making strokes of what was cut), at least a step of each, and leaves the rest to the next frame;
+how much a frame draws follows the card's own measured time, so a slow card draws less a frame. Letting go SHALL NOT wait
+for the work behind (the frames after finish it), and anything else done on the page meanwhile (a key, a press, a paste,
+leaving the page) finishes it first, the page drawn whole when much is left. No stroke SHALL be made while the eraser
+moves: each stroke cut is kept as what is left of it, the card draws it so in its place, and its pieces are made from
+that as the frames have time and when the swipe ends.
+
+While the work is behind the pointer, the part of the path not yet swept, or swept but not yet drawn again, SHALL be
+shown as a clear stroke the eraser's width over the layer being erased (75% clear: what is under the ink, the paper,
+the template, the text and the pictures, shown through it, the ink faintly), until the page there is drawn as it is. The
+screen SHALL never show ink the pointer has erased coming back, nor a step half drawn, nor a square of the page drawn
+without its strokes. Only the layer being erased is cleared: over a page with ink on another visible layer the stroke is
+not drawn, and the erase trails the pointer there instead. A fast enough machine never shows the clear stroke.
 
 #### Scenario: A fast pass across a thin stroke
 - **WHEN** the user drags the eraser quickly across a fineliner line in the passing-over mode
@@ -64,8 +72,13 @@ the frames have time and when the swipe ends.
 
 #### Scenario: A swipe faster than the machine
 - **WHEN** the user flicks the passing eraser back and forth across a page of thirty thousand strokes on a slow machine
-- **THEN** no frame takes much more than a sixtieth of a second, the erase follows the pointer as fast as the machine
-  allows and catches up when it stops, and letting go and starting the next swipe are not held up
+- **THEN** no frame takes much more than a sixtieth of a second, the path shows cleared at once and the exact erase
+  replaces it as the machine catches up, and letting go and starting the next swipe are not held up
+
+#### Scenario: Erasing again after an undo
+- **WHEN** the user makes several fast swipes, undoes some, and erases over the same place again (or redoes, then erases)
+- **THEN** at every moment the page shows what a full redraw of it shows: no square of it without its strokes, no stroke
+  of an undone erase come back
 
 ### Requirement: Typing on the page
 Typing SHALL NOT need the text tool: with no cursor, a key that types SHALL put the cursor at the end of
@@ -370,6 +383,17 @@ for it), SHALL make the eraser's index of the strokes while the page is idle, a 
 every change made to them, and SHALL hold each stroke's points once. A save SHALL wait for the pen, the eraser or a drag
 to be let go, and SHALL make only the new strokes' part of the file (each stroke's is made once). The editor SHALL not
 read the page's file to compare it while the user is at work, only after a pause and before each save.
+
+The editor SHALL hold on the graphics card only what its drawing needs, a card's memory being the system's own on a
+machine without a card of its own: the canvases the paper and what is under the ink are drawn on SHALL be given back once
+the page has been still a moment (each is drawn anew, whole, before it is used again), the order of the strokes over a
+pixel SHALL be kept in two bytes a pixel, and an idle moment SHALL put no more than two megabytes of strokes on the card,
+so that the frame after it is not late.
+
+#### Scenario: A page left still
+- **WHEN** the user stops working on a page for a few seconds, then erases or types on it
+- **THEN** the card no longer holds the canvases of what is under the ink while the page is still, and the swipe or the
+  key shows exactly what it showed before they were given back
 
 #### Scenario: Holding Delete
 - **WHEN** the user holds Delete on a page with text and ink

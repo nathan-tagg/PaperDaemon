@@ -765,10 +765,10 @@ def drop_new_since(since):
 
 
 # ------------------------------------------------------------------- the one way to the tablet
-# EVERYTHING REACHES THE TABLET THROUGH push_pending. A job only writes to the mirror; the daemon pushes after the
-# job is recorded, and the window's own sends (Decompose > send to the inbox) push the same way. Nothing else calls
-# push_doc or push_new_doc: a job that pushed mid-way (an adventure's journal did) put on the tablet what an
-# abandoned job could no longer take back.
+# EVERYTHING A JOB WRITES REACHES THE TABLET THROUGH push_pending. A job only writes to the mirror; the daemon pushes
+# after the job is recorded, and the window's own sends (Decompose > send to the inbox) push the same way. Nothing else
+# calls push_doc or push_new_doc but push_edited (below), for a page the user edited in the window: a job that pushed
+# mid-way (an adventure's journal did) put on the tablet what an abandoned job could no longer take back.
 def unpushed():
     """What the mirror holds that the cloud does not: (new documents, folders first and each folder before the
     folders inside it, [ids]; changed documents, {id: page ids touched})."""
@@ -1078,6 +1078,54 @@ def delete_doc(doc_uuid):
             shutil.rmtree(p, ignore_errors=True) if os.path.isdir(p) else os.remove(p)
     shutil.rmtree(os.path.join(MIRROR, doc_uuid), ignore_errors=True)
     return out
+
+
+# ------------------------------------------------------------------- a page the user edited in the window
+# A MIRROR PAGE EDITED IN THE PAGE EDITOR (inplace.py) is the user's own work, not a job's: nothing can abandon it, so
+# it goes up when the user saves or closes the document, by itself, not with the next job's push. Before it is written,
+# the cloud is asked whether the tablet changed the page since it was pulled (cloud_file): a page the tablet changed is
+# never written over.
+def cloud_file(name, token=None):
+    """One file of the library as the cloud holds it now, and as PaperDaemon last pulled or pushed it -> (its hash in the
+    cloud, or None when the cloud does not list it; its hash as last pulled or pushed, or None). One request when the
+    library has not moved since the last pull; the root's and the document's indexes when it has."""
+    st = _state()
+    known = st.get("files", {}).get(name)
+    doc = name.split("/")[0].split(".")[0]
+    t = token or user_token()
+    root, _gen = get_root(t)
+    if root == st.get("root"):
+        return known, known
+    tree = get_blob(t, root, "root.docSchema").decode()
+    line = next((l for l in tree.splitlines()[1:] if l.split(":")[2] == doc), None)
+    if line is None:
+        return None, known
+    dhash = line.split(":")[0]
+    if dhash == st.get("docs", {}).get(doc):
+        return known, known                     # the document is as pulled
+    di = get_blob(t, dhash, doc + ".docSchema").decode()
+    f = next((l for l in di.splitlines()[1:] if l.split(":")[2] == name), None)
+    return (f.split(":")[0] if f else None), known
+
+
+def push_edited(doc_uuid, page_ids=None, tries=4):
+    """A document the user edited in the window goes up: stamped (touch) so the tablet draws its edited pages again, and
+    pushed (push_doc) in one root move, tried again when the tablet moves the library's generation meanwhile. -> what
+    push_doc said, or {"skipped": why}."""
+    if os.environ.get("RM_HOST_DRY_DOCS") == "1" or paths.local_only():
+        return {"skipped": "this library never reaches the cloud"}
+    if doc_uuid not in _state().get("docs", {}):
+        return {"skipped": "the document is not in the cloud"}
+    if not changed_files(doc_uuid):
+        return {"skipped": "the cloud already matches the mirror"}
+    touch(doc_uuid, page_ids)
+    r = {}
+    for i in range(tries):
+        r = push_doc(doc_uuid, dry_run=False) or {}
+        if r.get("root_put") == 200 or "root_put" not in r:
+            break
+        time.sleep(1 + i)                       # the root moved under the push (the tablet synced): again
+    return r
 
 
 def touch(doc_uuid, page_ids=None, when=None):

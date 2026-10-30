@@ -123,8 +123,9 @@ at different zooms. The opening zoom the tablet shows is remembered on the table
   Header, Section and Body. Title is HEADING and Body is PLAIN by their measured sizes; which code Header
   and Section write is read from the next synced test page. Until then the editor writes Header as BASIC
   and Section as BOLD, and draws Header from screen measurements (serif, about 48 units, lines 56 apart).
-- **D7. No snap to text, no selection-erase.** The highlighter's snap to text is left out, and erasing
-  whole strokes stands in for the tablet's circle-to-erase.
+- **D7. Snap to text; no selection-erase.** The highlighter snaps to text as the tablet's does, typed text and a
+  PDF's or a book's own (`add-pdf-text-selection`); erasing whole strokes stands in for the tablet's
+  circle-to-erase.
 - **D8. A fallback face.** Where the user's desktop app is missing, typed text is drawn in an openly
   licensed family chosen by measuring its advance widths against the tablet's faces, so lines wrap where
   the tablet wraps them. The window says when it is drawing the fallback.

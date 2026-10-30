@@ -219,6 +219,18 @@ def _login_method():
         return None
 
 
+@app.get(API + "/gpus")
+def gpus_list():
+    """The machine's graphics cards for Settings' Renderer row: each card (id, name, memory, Direct3D 12 and 11),
+    the one pages are drawn on now, and the one chosen by default"""
+    from . import gpus
+    cs = gpus.cards()
+    want = settings._get_path(settings.load(), "render.card") or ""
+    now, first = gpus.chosen(cs, want), gpus.chosen(cs)
+    return {"cards": [{k: c[k] for k in ("id", "name", "memory", "d3d12", "d3d11")} for c in cs],
+            "chosen": now["id"] if now else None, "default": first["id"] if first else None}
+
+
 @app.get(API + "/status")
 def status():
     try:
@@ -1052,6 +1064,23 @@ def get_library_page_source(doc: str, page: int):
     return Response(content=b.getvalue(), media_type="image/png")
 
 
+@app.get(API + "/library/{doc}/page/{page}/text")
+def get_library_page_text(doc: str, page: int):
+    """The text layer of the PDF's or book's page under a page, for selecting it in the page editor: {text, boxes (one
+    [x0, y0, x1, y1] per character, page units), lines ([start, end) character ranges)}; 404 for a page with no PDF
+    text. The same for the Mirror and the False Mirror (the document's own PDF, or the book as laid out)."""
+    from .pipeline.page import pdf as pagepdf
+    if not _doc_ok(doc):
+        return _bad("not a document id")
+    try:
+        got = pagepdf.page_text(doc, page)
+    except Exception:
+        got = None
+    if not got:
+        return JSONResponse({"error": "no text on this page"}, status_code=404)
+    return JSONResponse(got, headers={"Cache-Control": "no-store"})
+
+
 @app.post(API + "/harnesses/open")
 def post_harnesses_open(body: dict = Body(default={})):
     """Open the harnesses folder of one kind (`kind`: text -> llm, image -> image; its guide is in it) in the
@@ -1706,6 +1735,133 @@ async def put_library_scene(doc: str, page: int, request: Request):
     if isinstance(got, JSONResponse):                 # refused: the reason in the engine's output too, for a report
         print("[editor] page %s/%d not saved: %s" % (doc[:8], page, got.body.decode("utf-8", "replace")[:300]), flush=True)
     return got
+
+
+# ---------------------------------------------------------------- a Mirror page edited in place (remarkable/inplace.py)
+# THE TABLET'S OWN PAGES are written from their own files, never anew: the editor reads a page with its ids and its
+# stamp, and saves it with that stamp. A save is refused, with the reason the editor shows, when the page changed since
+# it was read ("stale", 409), when the tablet changed it in the cloud ("tablet", 409), when the cloud cannot be asked
+# ("offline", 503), or when the edit cannot be written in place exactly ("cannot", 422).
+def _refused(ex):
+    code = {"stale": 409, "tablet": 409, "offline": 503}.get(getattr(ex, "reason", ""), 422)
+    print("[editor] mirror page not saved (%s): %s" % (getattr(ex, "reason", "?"), str(ex)[:300]), flush=True)
+    return JSONResponse({"error": str(ex), "reason": getattr(ex, "reason", "cannot")}, status_code=code)
+
+
+_stamps = {}
+
+
+def _mirror_stamp(doc, page):
+    """A Mirror page's stamp now (inplace.stamp_of), its digest made again only when the file's size or time changed."""
+    from .remarkable import inplace, local
+    path = os.path.join(local.M, doc, local.page_id(doc, page) + ".rm")
+    try:
+        st = os.stat(path)
+    except OSError:
+        return inplace.stamp_of(None)
+    key, mark = (doc, page), (st.st_size, st.st_mtime_ns)
+    kept = _stamps.get(key)
+    if kept and kept[0] == mark:
+        return kept[1]
+    with open(path, "rb") as f:
+        s = inplace.stamp_of(f.read())
+    if len(_stamps) > 64:
+        _stamps.clear()
+    _stamps[key] = (mark, s)
+    return s
+
+
+@app.get(API + "/library/{doc}/page/{page}/mirror-scene")
+def get_mirror_scene(doc: str, page: int, request: Request):
+    """A Mirror page as the editor holds it (local.scene_of), each stroke and layer with its id, and the page's stamp
+    ("stamp", also the ETag) to save it with: JSON, or the editor's binary form (?form=bin)."""
+    from .remarkable import inplace, fastrm
+    if not _doc_ok(doc):
+        return _bad("not a document id")
+    # ASKED WITH THE STAMP IT HAS (If-None-Match), the editor's look every few seconds: 304 while the page's bytes are the
+    # same, and the page is not read (its digest only, kept while the file's size and time hold)
+    have = (request.headers.get("if-none-match") or "").strip('"')
+    if have:
+        try:
+            if _mirror_stamp(doc, page) == have:
+                return Response(status_code=304, headers={"ETag": have})
+        except Exception:
+            pass
+    arrays = request.query_params.get("form") == "bin"
+    got = _local(lambda: inplace.read_page(doc, page, arrays=arrays))
+    if not isinstance(got, dict):
+        return got
+    headers = {"ETag": got["stamp"], "Cache-Control": "no-store"}
+    if arrays:
+        return Response(fastrm.scene_bytes(got), media_type="application/octet-stream", headers=headers)
+    return JSONResponse(got, headers=headers)
+
+
+@app.put(API + "/library/{doc}/page/{page}/mirror-scene")
+async def put_mirror_scene(doc: str, page: int, request: Request):
+    """A Mirror page saved from the editor, in place: its scene as JSON or in the binary form, with the stamp it was read
+    with (?stamp=, the If-Match header, or the scene's own "stamp"). ?push=1 sends the document to the tablet after.
+    -> {strokes, kept, erased, added, text, layers, untouched, changed, stamp, version[, push]}."""
+    from .remarkable import inplace, fastrm
+    if not _doc_ok(doc):
+        return _bad("not a document id")
+    data = await request.body()
+    try:
+        if (request.headers.get("content-type") or "").startswith("application/octet-stream"):
+            scene = fastrm.scene_from_bytes(data)
+        else:
+            scene = json.loads(data)
+    except ValueError as ex:
+        return _bad("the page could not be read: %s" % str(ex)[:200])
+    if not isinstance(scene, dict):
+        return _bad("not a page")
+    stamp = request.query_params.get("stamp") or (request.headers.get("if-match") or "").strip('"') or scene.get("stamp")
+    push = request.query_params.get("push") in ("1", "true")
+
+    def go():
+        try:
+            got = inplace.write_in_place(doc, page, scene, stamp)
+            if push:
+                got["push"] = inplace.push(doc)
+            return got
+        except inplace.Refused as ex:
+            return _refused(ex)
+        except RuntimeError as ex:                   # written nowhere: the page did not read back
+            print("[editor] mirror page %s/%d not saved: %s" % (doc[:8], page, str(ex)[:300]), flush=True)
+            return JSONResponse({"error": str(ex)[:300], "reason": "cannot"}, status_code=500)
+    return await run_in_threadpool(_local, go)
+
+
+@app.post(API + "/library/{doc}/page/{page}/mirror-picture")
+async def post_mirror_picture(doc: str, page: int, request: Request):
+    """A new picture for a Mirror page (PNG or JPEG bytes, the request's body), kept beside it under a name of its own:
+    -> {name, width, height}. The editor places it on the page with its next save (mirror-scene)."""
+    from .remarkable import inplace
+    if not _doc_ok(doc):
+        return _bad("not a document id")
+    data = await request.body()
+    if not data or len(data) > 40_000_000:
+        return _bad("a picture of up to 40 MB")
+    return await run_in_threadpool(_local, lambda: inplace.add_picture(doc, page, data))
+
+
+@app.post(API + "/library/{doc}/push")
+def post_library_push(doc: str):
+    """A Mirror document's edits sent to the tablet now, by PaperDaemon's own sync (the editor's Ctrl+S, or the document
+    closed). -> what the push said."""
+    from .remarkable import inplace
+    if not _doc_ok(doc):
+        return _bad("not a document id")
+
+    def go():
+        try:
+            return inplace.push(doc)
+        except Exception as ex:
+            if isinstance(ex, (inplace.local.NotHere,)):
+                raise
+            return JSONResponse({"error": "the document could not be sent to the tablet: %s" % str(ex)[:200],
+                                 "reason": "offline"}, status_code=503)
+    return _local(go)
 
 
 @app.post(API + "/library/sync")

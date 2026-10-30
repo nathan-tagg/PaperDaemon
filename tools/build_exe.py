@@ -150,8 +150,9 @@ def arguments(clean=False, dist=DIST):
                 "uvicorn.lifespan.on",
                 # books (remarkable/books.py): Qt's text engine and PDF writer, run offscreen by `--books`
                 "paperdaemon.remarkable.books", "paperdaemon.remarkable.convert", "PySide6.QtCore", "PySide6.QtGui",
-                # the engine's pictures on the graphics card (pipeline/page/gpu.py: ANGLE, its DLLs in the pipeline's files)
-                "paperdaemon.pipeline.page.gpu"):
+                # the engine's pictures on the graphics card (pipeline/page/gpu.py: Dawn, its DLL in the pipeline's files,
+                # through cffi)
+                "paperdaemon.pipeline.page.gpu", "cffi", "_cffi_backend"):
         args += ["--hidden-import", mod]
     # THE WHOLE STANDARD LIBRARY: a harness in the user's llm folder is Python the app loads at start, and may
     # import anything Python ships, not only what the engine happens to use

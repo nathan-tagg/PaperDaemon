@@ -19,7 +19,8 @@ const SKIP_DIRS = new Set([".git", ".venv", "venv", "node_modules", "__pycache__
   ".pytest_cache", ".ruff_cache", ".mypy_cache"]);
 
 // other people's words, kept exactly as they wrote them: their spelling is not ours to change (secrets are still checked)
-const VERBATIM = new Set(["paperdaemon/content/handwriting/samples.json"]);
+const VERBATIM = new Set(["paperdaemon/content/handwriting/samples.json",
+  "paperdaemon/pipeline/page/dawn/_dawn_cffi.py"]);       // (Dawn's own names, as cffi wrote them from its webgpu.h)
 
 export function isText(file) {
   return TEXT_EXT.has(path.extname(file).toLowerCase());

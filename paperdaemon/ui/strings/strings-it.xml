@@ -703,7 +703,12 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="fm.tpl_approx">PaperDaemon non può leggere questo modello dall'app reMarkable: l'app lo disegna nel proprio codice. Questo è il disegno di PaperDaemon, simile ma non esatto.</string>
   <string name="slot.loras_folder">Cartella LoRA</string>
   <string name="slot.loras_folder.help">Apre la cartella LoRA di questa formazione. Ogni LoRA che contiene si applica a ogni immagine che crea, come indica il suo harness per le immagini.</string>
-  <string name="settings.render">Disegno delle pagine</string>
-  <string name="settings.render.help">Disattivato (predefinito): i lavori disegnano le pagine che leggono sulla scheda grafica. È veloce e, durante un lavoro, usa un po' della memoria della scheda (circa 160 MB su una pagina molto densa), restituita alla fine. Attivato: le disegnano sul processore, lasciando tutta la memoria della scheda ai tuoi server di IA, e ogni immagine richiede più tempo, soprattutto sulle pagine con molto inchiostro. Le immagini sono identiche in entrambi i casi, e vale per ogni formazione. L'editor di pagina disegna sempre sulla scheda.</string>
-  <string name="settings.render.cpu">Disegna le pagine sul processore</string>
+  <string name="settings.render">Renderer</string>
+  <string name="settings.render.help">GPU (predefinito): le pagine vengono disegnate sulla scheda grafica scelta nell'elenco. È veloce e, durante un lavoro, usa un po' della memoria della scheda (circa 160 MB su una pagina molto densa), restituita alla fine. CPU: i lavori disegnano le pagine che leggono sul processore, lasciando tutta la memoria della scheda ai tuoi server di IA, e ogni immagine richiede più tempo, soprattutto sulle pagine con molto inchiostro. Le immagini sono identiche in entrambi i casi, e vale per ogni formazione. L'editor di pagina disegna sulla scheda scelta.</string>
+  <string name="settings.render.cpu">CPU</string>
+  <string name="settings.render.gpu">GPU</string>
+  <string name="settings.render.card">Scheda grafica</string>
+  <string name="settings.render.memory">{gb} GB</string>
+  <string name="settings.render.no_webgpu">Questa scheda non può eseguire WebGPU: le pagine verranno disegnate sul processore, che è più lento.</string>
+  <string name="settings.render.restart">I lavori usano questa scheda dal prossimo; la finestra, dal prossimo avvio di PaperDaemon.</string>
 </resources>

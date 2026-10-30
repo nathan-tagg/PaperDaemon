@@ -703,7 +703,12 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="fm.tpl_approx">PaperDaemon cannot read this template from the reMarkable app: the app draws it in its own code. This is PaperDaemon's own drawing of it, close but not exact.</string>
   <string name="slot.loras_folder">LoRA folder</string>
   <string name="slot.loras_folder.help">Open this lineup's LoRA folder. Every LoRA in it goes with every picture this lineup makes, the way its image harness says.</string>
-  <string name="settings.render">Page drawing</string>
-  <string name="settings.render.help">Off (the default): jobs draw the pages they read on the graphics card. That is fast, and while a job runs it uses some of the card's memory (about 160 MB on a very dense page), given back when the job ends. On: they draw them on the processor instead, leaving all of the card's memory to your AI servers, and each picture takes longer, most on pages with a lot of ink. The pictures are the same either way, and every lineup is alike. The page editor always draws on the card.</string>
-  <string name="settings.render.cpu">Draw pages on the processor</string>
+  <string name="settings.render">Renderer</string>
+  <string name="settings.render.help">GPU (the default): pages are drawn on the graphics card chosen in the list. That is fast, and while a job runs it uses some of the card's memory (about 160 MB on a very dense page), given back when the job ends. CPU: jobs draw the pages they read on the processor instead, leaving all of the card's memory to your AI servers, and each picture takes longer, most on pages with a lot of ink. The pictures are the same either way, and every lineup is alike. The page editor draws on the card chosen.</string>
+  <string name="settings.render.cpu">CPU</string>
+  <string name="settings.render.gpu">GPU</string>
+  <string name="settings.render.card">Graphics card</string>
+  <string name="settings.render.memory">{gb} GB</string>
+  <string name="settings.render.no_webgpu">This card cannot run WebGPU: pages will be drawn on the processor, which is slower.</string>
+  <string name="settings.render.restart">Jobs use this card from the next one; the window, from the next time PaperDaemon starts.</string>
 </resources>

@@ -703,7 +703,12 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="fm.tpl_approx">Ni all PaperDaemon ddarllen y templed hwn o ap reMarkable: mae'r ap yn ei lunio yn ei god ei hun. Llun PaperDaemon ei hun yw hwn, yn agos ond nid yn union.</string>
   <string name="slot.loras_folder">Ffolder LoRA</string>
   <string name="slot.loras_folder.help">Agor ffolder LoRA y llinell hon. Mae pob LoRA ynddo'n mynd gyda phob llun mae'r llinell hon yn ei wneud, fel mae ei harnais delwedd yn dweud.</string>
-  <string name="settings.render">Tynnu tudalennau</string>
-  <string name="settings.render.help">I ffwrdd (y rhagosodiad): mae swyddi'n tynnu'r tudalennau maen nhw'n eu darllen ar y cerdyn graffeg. Mae hynny'n gyflym, a thra bo swydd yn rhedeg mae'n defnyddio peth o gof y cerdyn (tua 160 MB ar dudalen drwchus iawn), a roddir yn ôl pan ddaw'r swydd i ben. Ymlaen: maen nhw'n eu tynnu ar y prosesydd yn lle hynny, gan adael holl gof y cerdyn i'ch gweinyddion AI, ac mae pob llun yn cymryd yn hirach, yn enwedig ar dudalennau â llawer o inc. Mae'r lluniau yr un fath y naill ffordd neu'r llall, ac mae pob llinell yr un fath. Mae golygydd y dudalen bob amser yn tynnu ar y cerdyn.</string>
-  <string name="settings.render.cpu">Tynnu tudalennau ar y prosesydd</string>
+  <string name="settings.render">Rendrwr</string>
+  <string name="settings.render.help">GPU (y rhagosodiad): mae tudalennau'n cael eu tynnu ar y cerdyn graffeg a ddewisir yn y rhestr. Mae hynny'n gyflym, a thra bo swydd yn rhedeg mae'n defnyddio peth o gof y cerdyn (tua 160 MB ar dudalen drwchus iawn), a roddir yn ôl pan ddaw'r swydd i ben. CPU: mae swyddi'n tynnu'r tudalennau maen nhw'n eu darllen ar y prosesydd yn lle hynny, gan adael holl gof y cerdyn i'ch gweinyddion AI, ac mae pob llun yn cymryd yn hirach, yn enwedig ar dudalennau â llawer o inc. Mae'r lluniau yr un fath y naill ffordd neu'r llall, ac mae pob llinell yr un fath. Mae golygydd y dudalen yn tynnu ar y cerdyn a ddewiswyd.</string>
+  <string name="settings.render.cpu">CPU</string>
+  <string name="settings.render.gpu">GPU</string>
+  <string name="settings.render.card">Cerdyn graffeg</string>
+  <string name="settings.render.memory">{gb} GB</string>
+  <string name="settings.render.no_webgpu">Ni all y cerdyn hwn redeg WebGPU: bydd tudalennau'n cael eu tynnu ar y prosesydd, sy'n arafach.</string>
+  <string name="settings.render.restart">Mae swyddi'n defnyddio'r cerdyn hwn o'r un nesaf; y ffenestr, o'r tro nesaf y bydd PaperDaemon yn cychwyn.</string>
 </resources>

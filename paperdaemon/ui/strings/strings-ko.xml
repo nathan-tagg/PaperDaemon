@@ -703,7 +703,12 @@
   <string name="fm.tpl_approx">PaperDaemon은 reMarkable 앱에서 이 템플릿을 읽을 수 없습니다. 앱이 자체 코드로 그리기 때문입니다. 이것은 PaperDaemon이 직접 그린 것으로, 비슷하지만 정확하지 않습니다.</string>
   <string name="slot.loras_folder">LoRA 폴더</string>
   <string name="slot.loras_folder.help">이 라인업의 LoRA 폴더를 엽니다. 그 안의 모든 LoRA는 이 라인업이 만드는 모든 그림에 이미지 하네스가 정한 방식대로 적용됩니다.</string>
-  <string name="settings.render">페이지 그리기</string>
-  <string name="settings.render.help">끔(기본값): 작업이 읽는 페이지를 그래픽 카드로 그립니다. 빠르고, 작업 중에는 카드 메모리를 조금(아주 빽빽한 페이지에서 약 160MB) 쓰며 작업이 끝나면 돌려줍니다. 켬: 대신 프로세서로 그려 카드 메모리를 모두 AI 서버에 남기며, 그림마다 시간이 더 걸리고 잉크가 많은 페이지일수록 더 걸립니다. 그림은 어느 쪽이든 같고, 모든 라인업에 똑같이 적용됩니다. 페이지 편집기는 항상 카드로 그립니다.</string>
-  <string name="settings.render.cpu">프로세서로 페이지 그리기</string>
+  <string name="settings.render">렌더러</string>
+  <string name="settings.render.help">GPU(기본값): 목록에서 고른 그래픽 카드로 페이지를 그립니다. 빠르고, 작업 중에는 카드 메모리를 조금(아주 빽빽한 페이지에서 약 160MB) 쓰며 작업이 끝나면 돌려줍니다. CPU: 작업이 읽는 페이지를 대신 프로세서로 그려 카드 메모리를 모두 AI 서버에 남기며, 그림마다 시간이 더 걸리고 잉크가 많은 페이지일수록 더 걸립니다. 그림은 어느 쪽이든 같고, 모든 라인업에 똑같이 적용됩니다. 페이지 편집기는 고른 카드로 그립니다.</string>
+  <string name="settings.render.cpu">CPU</string>
+  <string name="settings.render.gpu">GPU</string>
+  <string name="settings.render.card">그래픽 카드</string>
+  <string name="settings.render.memory">{gb}GB</string>
+  <string name="settings.render.no_webgpu">이 카드는 WebGPU를 실행할 수 없습니다. 페이지는 프로세서로 그려지며 더 느립니다.</string>
+  <string name="settings.render.restart">작업은 다음 작업부터 이 카드를 씁니다. 창은 PaperDaemon을 다음에 시작할 때부터입니다.</string>
 </resources>

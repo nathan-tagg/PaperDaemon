@@ -313,11 +313,34 @@
     });
   }
 
+  // THE RENDERER ROW: the machine's cards (GET /gpus, once a visit to the screen), the one chosen, and a "!" when the
+  // chosen card cannot run WebGPU at all (its pages would be drawn on the processor)
+  async function loadCards() {
+    const [d] = await PD.safe(PD.api("GET", "/gpus"));
+    S.cards = d || { cards: [], chosen: null, default: null };
+    paintRenderer();
+  }
+  function paintRenderer() {
+    const cpu = PD.getK(S.s || {}, "render.processor") === true, sel = $("#st-card", R);
+    $("#st-gpu", R).checked = !cpu; $("#st-cpu", R).checked = cpu;
+    const C = S.cards || { cards: [] }, want = PD.getK(S.s || {}, "render.card") || "";
+    const now = C.cards.find(c => c.id === want) || C.cards.find(c => c.id === C.default) || null;
+    sel.innerHTML = C.cards.map(c => '<option value="' + esc(c.id) + '">' + esc(c.name) + " (" +
+      esc(t("settings.render.memory", { gb: (c.memory / 1073741824).toFixed(c.memory < 4294967296 ? 1 : 0) })) + ")</option>").join("");
+    if (now) sel.value = now.id;
+    $("#st-card-box", R).hidden = cpu || !C.cards.length;
+    $("#st-card-bang", R).hidden = !now || now.d3d12 || now.d3d11;
+  }
+  async function setRenderer(cpu) {
+    await save("render.processor", cpu, $("#st-cpu-msg", R));
+    paintRenderer();
+  }
+
   function fill() {
     const s = S.s || {};
     $("#st-lang", R).value = PD.languageLabel(PD.getK(s, "prefs.language") || "en");
     $("#st-net", R).checked = PD.getK(s, "network.allowed") !== false;
-    $("#st-cpu", R).checked = PD.getK(s, "render.processor") === true;
+    paintRenderer();
     $("#st-retries", R).value = String(PD.getK(s, "daemon.retries") || 0);
     $("#st-notes", R).checked = PD.getK(s, "daemon.page_notes") === true;
     $("#st-layer", R).value = PD.getK(s, "daemon.layer") || "";
@@ -342,10 +365,14 @@
         row(t("settings.network"), t("settings.network.help"),
           '<label class="check-label"><input type="checkbox" id="st-net"> ' + esc(t("settings.network.allow")) +
           '</label><p class="hint" id="st-net-msg" role="status"></p>') +
-        // where jobs draw the pages they read: one setting for PaperDaemon, every lineup alike
+        // THE RENDERER: the graphics card (and which) or the processor; one setting for PaperDaemon, every lineup alike
         row(t("settings.render"), t("settings.render.help"),
-          '<label class="check-label"><input type="checkbox" id="st-cpu"> ' + esc(t("settings.render.cpu")) +
-          '</label><p class="hint" id="st-cpu-msg" role="status"></p>') +
+          '<label class="check-label"><input type="checkbox" id="st-gpu"> ' + esc(t("settings.render.gpu")) + "</label>" +
+          '<span class="card-pick" id="st-card-box"><span class="select"><select class="field" id="st-card" aria-label="' +
+          esc(t("settings.render.card")) + '"></select></span><span class="bang" id="st-card-bang" tabindex="0" hidden title="' +
+          esc(t("settings.render.no_webgpu")) + '" aria-label="' + esc(t("settings.render.no_webgpu")) + '">!</span></span>' +
+          '<label class="check-label"><input type="checkbox" id="st-cpu"> ' + esc(t("settings.render.cpu")) + "</label>" +
+          '<p class="hint" id="st-cpu-msg" role="status"></p>') +
         // the daemon's handling of a job: another try at one that failed, and his notes on the page
         row(t("settings.retries"), t("settings.retries.help"),
           '<input class="field num w-xs" id="st-retries" type="number" inputmode="numeric" min="0" max="5" step="1">' +
@@ -370,7 +397,14 @@
       PD.on(R, "click", "[data-act=fm-create]", (e, el) => createFalseMirror(el));
       PD.on(R, "click", "[data-act=fm-delete]", (e, el) => deleteFalseMirror(el));
       $("#st-net", R).addEventListener("change", e => save("network.allowed", e.target.checked, $("#st-net-msg", R)));
-      $("#st-cpu", R).addEventListener("change", e => save("render.processor", e.target.checked, $("#st-cpu-msg", R)));
+      // GPU and CPU: one of the two ticked, always (ticking one unticks the other; unticking one ticks the other)
+      $("#st-gpu", R).addEventListener("change", e => setRenderer(!e.target.checked));
+      $("#st-cpu", R).addEventListener("change", e => setRenderer(e.target.checked));
+      $("#st-card", R).addEventListener("change", async e => {
+        const msg = $("#st-cpu-msg", R);
+        if (await save("render.card", e.target.value, msg)) { msg.textContent = t("settings.render.restart"); msg.className = "hint"; }
+        paintRenderer();
+      });
       $("#st-retries", R).addEventListener("change", e => {
         const n = Math.max(0, Math.min(5, Math.round(Number(e.target.value) || 0)));
         e.target.value = String(n);
@@ -402,6 +436,7 @@
       S.s = s || PD.settings;
       fill(); fillPrefs(); paintNote(); paintFalseMirror();
       cycleLanguageLabel();
+      loadCards();
     },
     hide() {
       clearTimeout(S.timer);

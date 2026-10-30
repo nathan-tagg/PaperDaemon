@@ -578,6 +578,7 @@ def scene_parts(data):
                 rgba = [(p >> 16) & 0xFF, (p >> 8) & 0xFF, p & 0xFF, (p >> 24) & 0xFF]
             lst.append({"pen": tool.name, "penCode": int(tool), "color": int(color), "colorRgba": rgba,
                         "thicknessScale": struct.unpack("<d", struct.pack("<q", r[17]))[0],
-                        "points": np.frombuffer(data, dtype=POINT, count=r[20] // POINT.itemsize, offset=r[19])})
+                        "points": np.frombuffer(data, dtype=POINT, count=r[20] // POINT.itemsize, offset=r[19]),
+                        "id": [r[7], r[8]], "group": [r[5], r[6]]})
         out[CrdtId(*parent)] = lst
     return blocks, out

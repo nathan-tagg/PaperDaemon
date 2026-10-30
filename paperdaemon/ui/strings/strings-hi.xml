@@ -703,7 +703,12 @@
   <string name="fm.tpl_approx">PaperDaemon इस टेम्पलेट को reMarkable ऐप से नहीं पढ़ सकता: ऐप इसे अपने कोड से बनाता है। यह PaperDaemon का अपना चित्र है, मिलता-जुलता पर सटीक नहीं।</string>
   <string name="slot.loras_folder">LoRA फ़ोल्डर</string>
   <string name="slot.loras_folder.help">इस लाइनअप का LoRA फ़ोल्डर खोलें। इसमें रखा हर LoRA इस लाइनअप की बनाई हर तस्वीर पर लगता है, जैसा इसका इमेज हार्नेस कहता है।</string>
-  <string name="settings.render">पेज बनाना</string>
-  <string name="settings.render.help">बंद (डिफ़ॉल्ट): काम जिन पेजों को पढ़ते हैं, उन्हें ग्राफ़िक्स कार्ड पर बनाते हैं। यह तेज़ है, और काम चलते समय कार्ड की कुछ मेमोरी (बहुत घने पेज पर लगभग 160 MB) लेता है, जो काम ख़त्म होने पर लौट आती है। चालू: वे इन्हें प्रोसेसर पर बनाते हैं, कार्ड की पूरी मेमोरी आपके AI सर्वरों के लिए छोड़ते हुए, और हर तस्वीर में ज़्यादा समय लगता है, ख़ासकर ज़्यादा स्याही वाले पेजों पर। तस्वीरें दोनों तरह एक जैसी रहती हैं, और हर लाइनअप पर यही लागू होता है। पेज एडिटर हमेशा कार्ड पर बनाता है।</string>
-  <string name="settings.render.cpu">पेज प्रोसेसर पर बनाएँ</string>
+  <string name="settings.render">रेंडरर</string>
+  <string name="settings.render.help">GPU (डिफ़ॉल्ट): पेज सूची में चुने गए ग्राफ़िक्स कार्ड पर बनाए जाते हैं। यह तेज़ है, और काम चलते समय कार्ड की कुछ मेमोरी (बहुत घने पेज पर लगभग 160 MB) लेता है, जो काम ख़त्म होने पर लौट आती है। CPU: काम जिन पेजों को पढ़ते हैं, उन्हें इसके बजाय प्रोसेसर पर बनाते हैं, कार्ड की पूरी मेमोरी आपके AI सर्वरों के लिए छोड़ते हुए, और हर तस्वीर में ज़्यादा समय लगता है, ख़ासकर ज़्यादा स्याही वाले पेजों पर। तस्वीरें दोनों तरह एक जैसी रहती हैं, और हर लाइनअप पर यही लागू होता है। पेज एडिटर चुने गए कार्ड पर बनाता है।</string>
+  <string name="settings.render.cpu">CPU</string>
+  <string name="settings.render.gpu">GPU</string>
+  <string name="settings.render.card">ग्राफ़िक्स कार्ड</string>
+  <string name="settings.render.memory">{gb} GB</string>
+  <string name="settings.render.no_webgpu">यह कार्ड WebGPU नहीं चला सकता: पेज प्रोसेसर पर बनाए जाएँगे, जो धीमा है।</string>
+  <string name="settings.render.restart">काम अगले काम से यह कार्ड इस्तेमाल करेंगे; विंडो, PaperDaemon के अगली बार शुरू होने से।</string>
 </resources>

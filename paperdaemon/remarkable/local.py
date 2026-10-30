@@ -573,9 +573,14 @@ def page_version(doc, page_no):
     return "-".join(out)
 
 
-def scene_of(doc, page_no, arrays=False):
+def scene_of(doc, page_no, arrays=False, data=None):
     """The page as the editor holds it (see the module's note). With `arrays`, each stroke's points are its fastrm.POINT
-    array as read, for the editor's binary form (scene_bytes); else rows [x, y, speed, direction, width, pressure]."""
+    array as read, for the editor's binary form (scene_bytes); else rows [x, y, speed, direction, width, pressure].
+
+    EACH THING CARRIES ITS ID, for a page written in place (inplace.py): a stroke its item id ("id", [part1, part2]) and
+    the group it sits in ("group": its layer, or a group anchored to the text inside one), a layer its node id ("id");
+    and "shifts" lists each group the page draws moved ([{group, by: [dx, dy]}]), so a stroke shown moved is known
+    again unchanged. `data`: read these bytes as the page (a page with no file yet, read as the blank it starts from)."""
     from paperdaemon.remarkable import fastrm
     from rmscene import SceneTree
     from paperdaemon.pipeline.page import typed as TY
@@ -584,12 +589,13 @@ def scene_of(doc, page_no, arrays=False):
     # A PAGE OF A PDF OR A BOOK: drawn on as the tablet allows (no typing there), its page under the ink (source.png)
     kind, _src, idx = R.source_page(doc, page_no)
     source = kind if kind in ("pdf", "epub") and idx is not None else None
-    if not os.path.exists(path):                     # never written on: no page file yet, the page's own frame
+    if data is None and not os.path.exists(path):    # never written on: no page file yet, the page's own frame
         w, h = R.page_frame(doc, page_no)
         return {"paperSize": [w, h], "layers": [{"label": "Layer 1", "visible": True, "lines": []}], "text": None,
                 "textVisible": True, "templateVisible": True, "template": page_template(doc, page_no), "source": source,
                 "images": []}
-    data = open(path, "rb").read()
+    if data is None:
+        data = open(path, "rb").read()
     # THE FILE IS PARSED ONCE: the tree is built from the same blocks (rmscene's read_tree parses it again), and the typed
     # text's own reader runs only when the page has typed text -- a page with a decomp on it is seconds a parse
     # IN ONE PASS where it can be (fastrm.scene_parts: the strokes read in C, the few other blocks by rmscene); a page it
@@ -616,13 +622,15 @@ def scene_of(doc, page_no, arrays=False):
 
     def lines_in(group, out):
         dx, dy = offs.get(group.node_id, (0.0, 0.0))
-        for item in group.children.values():
+        gid = [group.node_id.part1, group.node_id.part2]
+        for iid, item in group.children.items():
             if isinstance(item, si.Line):
                 out.append({"pen": item.tool.name if hasattr(item.tool, "name") else str(item.tool),
                             "penCode": int(item.tool), "color": int(item.color),
                             "colorRgba": list(item.color_rgba) if getattr(item, "color_rgba", None) else None,
                             "thicknessScale": float(item.thickness_scale),
-                            "points": _moved(_rows(item.points, arrays), dx, dy)})
+                            "points": _moved(_rows(item.points, arrays), dx, dy),
+                            "id": [iid.part1, iid.part2], "group": gid})
             elif isinstance(item, si.Group):
                 lines_in(item, out)
         return out
@@ -638,25 +646,11 @@ def scene_of(doc, page_no, arrays=False):
             # THE DAEMON'S LAYER (named as his, or under his old author): shown, and marked, so the editor leaves it to him
             layers.append({"label": g.label.value or "Layer %d" % (len(layers) + 1), "visible": bool(g.visible.value),
                            "lines": lines, "daemon": g.node_id.part1 == R.DAEMON_AUTHOR
-                           or g.label.value in (R.daemon_layer_name(), R.DAEMON_LEGACY)})
+                           or g.label.value in (R.daemon_layer_name(), R.DAEMON_LEGACY),
+                           "id": [g.node_id.part1, g.node_id.part2]})
     if not layers:
         layers = [{"label": "Layer 1", "visible": True, "lines": []}]
-    text = None
-    try:
-        # the text read from the page without its strokes: they are most of the file, and seconds to read on a page
-        # with a decomp, for nothing the text needs
-        rec = TY.from_blocks(TY.read_preserved(fastrm.without_strokes(data)), data) if typed_here else {}
-        if rec.get("column"):
-            paras = []
-            for p in rec["paragraphs"]:
-                style, lst = STYLE_OF.get(p.get("style_code"), ("body", None))
-                paras.append({"style": style, "list": lst, "runs": [{"text": r["text"], "bold": bool(r["format"].get("bold")),
-                                                                      "italic": bool(r["format"].get("italic"))}
-                                                                     for r in p.get("runs") or []]})
-            col = rec["column"]
-            text = {"x": col["x"], "y": col["y"], "width": col["width"], "paras": paras}
-    except Exception:
-        text = None
+    text = scene_text(data) if typed_here else None
     size = list(info.paper_size) if info is not None and info.paper_size else [1620, 2160]
     lww = lambda v, d: (v.value if isinstance(v, LwwValue) else v) if v is not None else d
     if source:
@@ -665,7 +659,31 @@ def scene_of(doc, page_no, arrays=False):
             "textVisible": bool(lww(getattr(info, "root_document_visible", None), True)),
             "templateVisible": bool(lww(getattr(info, "background_visible", None), True)),
             "template": page_template(doc, page_no), "source": source, "images": pictures_of(doc, page_no, data),
-            "zoom": _content(doc).get("zoomMode") or "bestFit"}
+            "zoom": _content(doc).get("zoomMode") or "bestFit",
+            "shifts": [{"group": [k.part1, k.part2], "by": [float(v[0]), float(v[1])]} for k, v in offs.items() if v[0] or v[1]]}
+
+
+def scene_text(data):
+    """A page's typed text as the editor holds it ({x, y, width, paras: [{style, list, runs: [{text, bold, italic}]}]}),
+    or None when it has none or it cannot be read."""
+    from paperdaemon.remarkable import fastrm
+    from paperdaemon.pipeline.page import typed as TY
+    try:
+        # the text read from the page without its strokes: they are most of the file, and seconds to read on a page
+        # with a decomp, for nothing the text needs
+        rec = TY.from_blocks(TY.read_preserved(fastrm.without_strokes(data)), data)
+        if not rec.get("column"):
+            return None
+        paras = []
+        for p in rec["paragraphs"]:
+            style, lst = STYLE_OF.get(p.get("style_code"), ("body", None))
+            paras.append({"style": style, "list": lst, "runs": [{"text": r["text"], "bold": bool(r["format"].get("bold")),
+                                                                  "italic": bool(r["format"].get("italic"))}
+                                                                 for r in p.get("runs") or []]})
+        col = rec["column"]
+        return {"x": col["x"], "y": col["y"], "width": col["width"], "paras": paras}
+    except Exception:
+        return None
 
 
 # ---------------------------------------------------------------- pictures on a page
@@ -687,7 +705,10 @@ def pictures_of(doc, page_no, data=None):
     out = []
     for im in got:
         if im.get("name") and PICTURE_NAME.match(im["name"]) and im.get("path"):
-            out.append({"name": im["name"], "key": im.get("hash") or "", "quad": [[float(x), float(y)] for x, y in im["quad"]]})
+            pic = {"name": im["name"], "key": im.get("hash") or "", "quad": [[float(x), float(y)] for x, y in im["quad"]]}
+            if im.get("item"):
+                pic["id"] = list(im["item"])           # its item id, for a page written in place (inplace.py)
+            out.append(pic)
     return out
 
 
@@ -702,6 +723,10 @@ def picture_path(doc, page_no, name):
 def add_picture(doc, page_no, data):
     """A new picture's file (PNG or JPEG bytes) beside the page, under a name of its own. -> {name, width, height}."""
     _guard()
+    return _add_picture(doc, page_no, data)
+
+
+def _add_picture(doc, page_no, data):
     from PIL import Image
     with Image.open(io.BytesIO(data)) as im:
         kind, (w, h) = (im.format or "").upper(), im.size

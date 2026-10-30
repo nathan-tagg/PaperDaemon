@@ -135,7 +135,8 @@ def main(argv=None):
     ap = argparse.ArgumentParser(prog="paperdaemon", description="PaperDaemon %s" % __version__)
     ap.add_argument("--headless", action="store_true", help="run the engine without a window")
     # for the desktop shell that starts the engine: once the API answers, one line on stdout,
-    # PAPERDAEMON_READY {"port": ..., "token": ...}. The pipe goes only to that parent process.
+    # PAPERDAEMON_READY {"port": ..., "token": ..., "webview": [the window's web view arguments: gpus.window_args]}.
+    # The pipe goes only to that parent process.
     ap.add_argument("--announce", action="store_true", help=argparse.SUPPRESS)
     args = ap.parse_args(argv)
 
@@ -152,8 +153,10 @@ def main(argv=None):
     server.fm_start()                # the false mirror's engine, when there is a false mirror
     if args.announce:
         import json
+        from . import gpus
         server._engine["announced"] = True
-        print("PAPERDAEMON_READY " + json.dumps({"port": port, "token": token}), flush=True)
+        webview = gpus.window_args(want=settings._get_path(s, "render.card") or "")
+        print("PAPERDAEMON_READY " + json.dumps({"port": port, "token": token, "webview": webview}), flush=True)
         server.tell_shell("status Idle")
     if args.headless:
         print("PaperDaemon %s -- API on %s, port %d" % (__version__, ", ".join(hosts), port))

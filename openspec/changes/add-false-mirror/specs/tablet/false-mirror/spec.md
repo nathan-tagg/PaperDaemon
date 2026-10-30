@@ -74,13 +74,13 @@ covers' and the page's tags) without changing them.
 - **WHEN** the user presses and holds a notebook in the Mirror tab
 - **THEN** nothing is selected and no menu appears
 
-### Requirement: Editing is found in the false mirror
-The page editor's controls SHALL show only on the false mirror's pages; pages of the tablet's mirror
-SHALL open without them.
+### Requirement: Editing is found in both mirrors
+The page editor's controls SHALL show on the false mirror's pages and on the tablet's mirror's pages; a tablet
+page is written as `add-editable-mirror` describes.
 
 #### Scenario: A tablet page
 - **WHEN** the user opens a page of the tablet's mirror
-- **THEN** it shows as it does today, with no pens, eraser, text or layers controls
+- **THEN** it opens with the pens, eraser, text and layers controls, as a false mirror page does
 
 ### Requirement: The rail names the mirrors
 The rail SHALL name the tablet's library Mirror and, once one exists, show False Mirror directly below

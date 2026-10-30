@@ -703,7 +703,12 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="fm.tpl_approx">PaperDaemon tidak bisa membaca templat ini dari aplikasi reMarkable: aplikasi menggambarnya dengan kodenya sendiri. Ini gambar PaperDaemon sendiri, mirip tetapi tidak persis.</string>
   <string name="slot.loras_folder">Folder LoRA</string>
   <string name="slot.loras_folder.help">Buka folder LoRA susunan ini. Setiap LoRA di dalamnya ikut pada setiap gambar yang dibuat susunan ini, seperti kata harness gambarnya.</string>
-  <string name="settings.render">Menggambar halaman</string>
-  <string name="settings.render.help">Mati (bawaan): tugas menggambar halaman yang dibacanya di kartu grafis. Ini cepat, dan selama tugas berjalan memakai sebagian memori kartu (sekitar 160 MB pada halaman yang sangat padat), yang dikembalikan saat tugas selesai. Nyala: tugas menggambarnya di prosesor, menyisakan seluruh memori kartu untuk server AI Anda, dan tiap gambar butuh waktu lebih lama, terutama pada halaman dengan banyak tinta. Gambarnya sama saja, dan berlaku untuk semua susunan. Editor halaman selalu menggambar di kartu.</string>
-  <string name="settings.render.cpu">Gambar halaman di prosesor</string>
+  <string name="settings.render">Perender</string>
+  <string name="settings.render.help">GPU (bawaan): halaman digambar di kartu grafis yang dipilih di daftar. Ini cepat, dan selama tugas berjalan memakai sebagian memori kartu (sekitar 160 MB pada halaman yang sangat padat), yang dikembalikan saat tugas selesai. CPU: tugas menggambar halaman yang dibacanya di prosesor, menyisakan seluruh memori kartu untuk server AI Anda, dan tiap gambar butuh waktu lebih lama, terutama pada halaman dengan banyak tinta. Gambarnya sama saja, dan berlaku untuk semua susunan. Editor halaman menggambar di kartu yang dipilih.</string>
+  <string name="settings.render.cpu">CPU</string>
+  <string name="settings.render.gpu">GPU</string>
+  <string name="settings.render.card">Kartu grafis</string>
+  <string name="settings.render.memory">{gb} GB</string>
+  <string name="settings.render.no_webgpu">Kartu ini tidak dapat menjalankan WebGPU: halaman akan digambar di prosesor, yang lebih lambat.</string>
+  <string name="settings.render.restart">Tugas memakai kartu ini mulai tugas berikutnya; jendela, mulai PaperDaemon dijalankan lagi.</string>
 </resources>

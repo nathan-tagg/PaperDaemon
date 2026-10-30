@@ -123,11 +123,15 @@ SCHEMA = [
      "message": "the daemon's layer needs a name",
      "help": "The name of the layer the daemon writes his notes on. PaperDaemon never reads a layer of this name as "
              "part of the page; only the page editor shows it."},
-    # WHERE JOBS DRAW THE PAGES THEY READ: the graphics card (pipeline/page/gpu.py), or the processor (render.c), the
-    # card left to the models. One setting for PaperDaemon, not a lineup's. The page editor draws on the card either way.
-    {"path": "render.processor", "type": "bool", "default": False, "label": "Draw pages on the processor",
+    # THE RENDERER: where jobs draw the pages they read -- the graphics card (pipeline/page/gpu.py), or the processor
+    # (render.c), the card left to the models -- and which card. One setting for PaperDaemon, not a lineup's. The page
+    # editor draws on the card chosen either way (on the processor only where that card has no WebGPU).
+    {"path": "render.processor", "type": "bool", "default": False, "label": "Renderer: CPU",
      "help": "Jobs draw the pages they read on the processor instead of the graphics card, leaving all of the card's "
              "memory to the AI servers. Each picture takes longer; the pictures are the same."},
+    {"path": "render.card", "type": "text", "default": "", "label": "Graphics card",
+     "help": "The card pages are drawn on, by what it is (vendor:device:which, gpus.py); empty: the card with "
+             "Direct3D 12 and the most memory of its own. The window takes a new card the next time PaperDaemon starts."},
     {"path": "features.off", "type": "list", "default": [], "label": "Features switched off",
      "help": "Features PaperDaemon never offers the model, whatever the lineup can do."},
     {"path": "server.port", "type": "integer", "default": API_PORT, "min": 1024, "max": 65535, "label": "Port",

@@ -703,7 +703,12 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="fm.tpl_approx">PaperDaemon bu şablonu reMarkable uygulamasından okuyamaz: uygulama onu kendi koduyla çizer. Bu, PaperDaemon'ın kendi çizimi; yakın ama tam değil.</string>
   <string name="slot.loras_folder">LoRA klasörü</string>
   <string name="slot.loras_folder.help">Bu dizilimin LoRA klasörünü açar. İçindeki her LoRA, bu dizilimin yaptığı her resme, görüntü koşumunun dediği gibi uygulanır.</string>
-  <string name="settings.render">Sayfa çizimi</string>
-  <string name="settings.render.help">Kapalı (varsayılan): işler okudukları sayfaları ekran kartında çizer. Bu hızlıdır ve bir iş sürerken kartın belleğinin bir kısmını kullanır (çok yoğun bir sayfada yaklaşık 160 MB), iş bitince geri verir. Açık: bunun yerine işlemcide çizerler, kartın tüm belleğini yapay zekâ sunucularınıza bırakırlar ve her resim daha uzun sürer, en çok bol mürekkepli sayfalarda. Resimler her iki durumda da aynıdır ve tüm dizilimler için geçerlidir. Sayfa düzenleyici her zaman kartta çizer.</string>
-  <string name="settings.render.cpu">Sayfaları işlemcide çiz</string>
+  <string name="settings.render">Oluşturucu</string>
+  <string name="settings.render.help">GPU (varsayılan): sayfalar listede seçilen ekran kartında çizilir. Bu hızlıdır ve bir iş sürerken kartın belleğinin bir kısmını kullanır (çok yoğun bir sayfada yaklaşık 160 MB), iş bitince geri verir. CPU: işler okudukları sayfaları bunun yerine işlemcide çizer, kartın tüm belleğini yapay zekâ sunucularınıza bırakır ve her resim daha uzun sürer, en çok bol mürekkepli sayfalarda. Resimler her iki durumda da aynıdır ve tüm dizilimler için geçerlidir. Sayfa düzenleyici seçilen kartta çizer.</string>
+  <string name="settings.render.cpu">CPU</string>
+  <string name="settings.render.gpu">GPU</string>
+  <string name="settings.render.card">Ekran kartı</string>
+  <string name="settings.render.memory">{gb} GB</string>
+  <string name="settings.render.no_webgpu">Bu kart WebGPU çalıştıramaz: sayfalar işlemcide çizilecek, bu daha yavaştır.</string>
+  <string name="settings.render.restart">İşler bu kartı bir sonrakinden, pencere ise PaperDaemon'un bir sonraki açılışından itibaren kullanır.</string>
 </resources>

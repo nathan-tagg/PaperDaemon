@@ -703,7 +703,12 @@
   <string name="fm.tpl_approx">PaperDaemon 无法从 reMarkable 应用读取此模板：应用用自己的代码绘制它。这是 PaperDaemon 自己的绘制，接近但不精确。</string>
   <string name="slot.loras_folder">LoRA 文件夹</string>
   <string name="slot.loras_folder.help">打开此阵容的 LoRA 文件夹。其中的每个 LoRA 都会按此阵容的图像适配器所述，应用到它生成的每张图片。</string>
-  <string name="settings.render">页面绘制</string>
-  <string name="settings.render.help">关闭（默认）：任务在显卡上绘制所读取的页面。这很快，任务运行时会占用一些显存（非常密的页面约 160 MB），任务结束后归还。开启：改在处理器上绘制，把全部显存留给你的 AI 服务器，每张图片耗时更长，墨迹多的页面尤甚。两种方式图片相同，且对所有阵容都一样。页面编辑器始终在显卡上绘制。</string>
-  <string name="settings.render.cpu">在处理器上绘制页面</string>
+  <string name="settings.render">渲染器</string>
+  <string name="settings.render.help">GPU（默认）：在列表中选定的显卡上绘制页面。这很快，任务运行时会占用一些显存（非常密的页面约 160 MB），任务结束后归还。CPU：任务改在处理器上绘制所读取的页面，把全部显存留给你的 AI 服务器，每张图片耗时更长，墨迹多的页面尤甚。两种方式图片相同，且对所有阵容都一样。页面编辑器在选定的显卡上绘制。</string>
+  <string name="settings.render.cpu">CPU</string>
+  <string name="settings.render.gpu">GPU</string>
+  <string name="settings.render.card">显卡</string>
+  <string name="settings.render.memory">{gb} GB</string>
+  <string name="settings.render.no_webgpu">这块显卡无法运行 WebGPU：页面将在处理器上绘制，速度更慢。</string>
+  <string name="settings.render.restart">任务从下一个起使用这块显卡；窗口从 PaperDaemon 下次启动时起。</string>
 </resources>

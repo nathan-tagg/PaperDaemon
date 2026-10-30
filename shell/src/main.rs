@@ -3,8 +3,10 @@
 //! tray stops the daemon loop and ends the engine with everything it started.
 //!
 //! The engine announces itself on its first line of output:
-//! `PAPERDAEMON_READY {"port": 8770, "token": "..."}`. The window opens the engine's own page with the
-//! pairing token in the URL fragment, the same way the development window does.
+//! `PAPERDAEMON_READY {"port": 8770, "token": "...", "webview": [...]}`. The window opens the engine's own page
+//! with the pairing token in the URL fragment, the same way the development window does, its web view started
+//! with the arguments the engine named for the graphics card it chose (the card to use, and WebGPU's Direct3D 11
+//! backend on a card without Direct3D 12: paperdaemon/gpus.py).
 //!
 //! The engine executable is `engine\PaperDaemon.exe` next to the shell, or whatever
 //! `PAPERDAEMON_ENGINE` names (a development checkout points it at `.venv\Scripts\paperdaemon.exe`).
@@ -35,6 +37,7 @@ struct Engine {
     child: Child,
     port: u16,
     token: String,
+    webview: String, // the web view's arguments the engine named; empty: as WebView2 ships
     paused: bool,
     #[cfg(windows)]
     _job: job::Job, // held for its Drop: closing it ends the engine's whole process tree
@@ -78,7 +81,7 @@ fn start_engine(app: AppHandle) -> Result<Engine, String> {
 
     let out = child.stdout.take().ok_or("the engine has no output pipe")?;
     let mut lines = BufReader::new(out).lines();
-    let (port, token) = loop {
+    let (port, token, webview) = loop {
         match lines.next() {
             Some(Ok(line)) => {
                 if let Some(rest) = line.strip_prefix(READY) {
@@ -86,7 +89,10 @@ fn start_engine(app: AppHandle) -> Result<Engine, String> {
                         serde_json::from_str(rest).map_err(|e| format!("bad announcement: {}", e))?;
                     let port = v["port"].as_u64().ok_or("announcement without a port")? as u16;
                     let token = v["token"].as_str().ok_or("announcement without a token")?.to_string();
-                    break (port, token);
+                    let webview = v["webview"].as_array().map(|a| {
+                        a.iter().filter_map(|x| x.as_str()).collect::<Vec<_>>().join(" ")
+                    }).unwrap_or_default();
+                    break (port, token, webview);
                 }
             }
             _ => {
@@ -113,6 +119,7 @@ fn start_engine(app: AppHandle) -> Result<Engine, String> {
         child,
         port,
         token,
+        webview,
         paused: false,
         #[cfg(windows)]
         _job: job,
@@ -141,11 +148,17 @@ fn show_window(app: &AppHandle) {
         return;
     }
     let shell = app.state::<Shell>();
-    let target = shell.engine.lock().unwrap().as_ref().map(|e| (e.port, e.token.clone()));
-    let Some((port, token)) = target else { return };
+    let target = shell.engine.lock().unwrap().as_ref().map(|e| (e.port, e.token.clone(), e.webview.clone()));
+    let Some((port, token, webview)) = target else { return };
     let url = format!("http://127.0.0.1:{}/#pair={}", port, token);
     let Ok(url) = url.parse() else { return };
-    let _ = WebviewWindowBuilder::new(app, "main", WebviewUrl::External(url))
+    let mut builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::External(url));
+    if !webview.is_empty() {
+        // wry's own arguments (no mini menu, no SmartScreen) are given again: set, they are replaced
+        builder = builder.additional_browser_args(&format!(
+            "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection {}", webview));
+    }
+    let _ = builder
         .title("PaperDaemon")
         .inner_size(1160.0, 780.0)
         .min_inner_size(900.0, 620.0)
@@ -286,7 +299,21 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
     Ok(())
 }
 
+/// The folders earlier updates downloaded their installers to (`%TEMP%\PaperDaemon-<version>-updater-*`), taken
+/// away: the updater leaves each behind, its installer run from it as the shell quits (173 MB an update). One still
+/// in use (an installer running) is locked, and stays.
+fn clear_old_updates() {
+    let Ok(dir) = std::fs::read_dir(std::env::temp_dir()) else { return };
+    for e in dir.flatten() {
+        let name = e.file_name().to_string_lossy().to_string();
+        if name.starts_with("PaperDaemon-") && name.contains("-updater-") && e.path().is_dir() {
+            let _ = std::fs::remove_dir_all(e.path());
+        }
+    }
+}
+
 fn main() {
+    std::thread::spawn(clear_old_updates);
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| show_window(app)))
         .plugin(tauri_plugin_dialog::init())

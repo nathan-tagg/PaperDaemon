@@ -703,7 +703,12 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="fm.tpl_approx">PaperDaemon kan ikke lese denne malen fra reMarkable-appen: appen tegner den i sin egen kode. Dette er PaperDaemons egen tegning, nær, men ikke nøyaktig.</string>
   <string name="slot.loras_folder">LoRA-mappe</string>
   <string name="slot.loras_folder.help">Åpner LoRA-mappen til dette oppsettet. Hver LoRA i den brukes på hvert bilde oppsettet lager, slik bildeharnessen sier.</string>
-  <string name="settings.render">Tegning av sider</string>
-  <string name="settings.render.help">Av (standard): jobber tegner sidene de leser på skjermkortet. Det er raskt, og mens en jobb kjører bruker det litt av kortets minne (omtrent 160 MB på en svært tett side), som gis tilbake når jobben er ferdig. På: de tegner dem på prosessoren i stedet, så hele kortets minne blir igjen til AI-serverne dine, og hvert bilde tar lenger tid, mest på sider med mye blekk. Bildene er like uansett, og det gjelder alle oppsett. Sideredigereren tegner alltid på kortet.</string>
-  <string name="settings.render.cpu">Tegn sider på prosessoren</string>
+  <string name="settings.render">Renderer</string>
+  <string name="settings.render.help">GPU (standard): sidene tegnes på skjermkortet som er valgt i listen. Det er raskt, og mens en jobb kjører bruker det litt av kortets minne (omtrent 160 MB på en svært tett side), som gis tilbake når jobben er ferdig. CPU: jobber tegner sidene de leser på prosessoren i stedet, så hele kortets minne blir igjen til AI-serverne dine, og hvert bilde tar lenger tid, mest på sider med mye blekk. Bildene er like uansett, og det gjelder alle oppsett. Sideredigereren tegner på kortet som er valgt.</string>
+  <string name="settings.render.cpu">CPU</string>
+  <string name="settings.render.gpu">GPU</string>
+  <string name="settings.render.card">Skjermkort</string>
+  <string name="settings.render.memory">{gb} GB</string>
+  <string name="settings.render.no_webgpu">Dette kortet kan ikke kjøre WebGPU: sidene tegnes på prosessoren, som er tregere.</string>
+  <string name="settings.render.restart">Jobber bruker dette kortet fra den neste, vinduet fra neste gang PaperDaemon starter.</string>
 </resources>

@@ -3,7 +3,8 @@
    its folders, then its notebooks and documents as covers. A notebook opens in a viewer the height of the window, one
    page at a time.
 
-   One screen, made twice: MIRROR over the tablet's library (read only: tags shown, never changed), and FALSE MIRROR over
+   One screen, made twice: MIRROR over the tablet's library (its pages edited in the page editor and written in place;
+   nothing else changed there: tags shown, never changed), and FALSE MIRROR over
    the false mirror's (its requests go to /fm/..., which the engine passes to the false mirror's own engine). Only the
    false mirror has the making and changing: New notebook, New folder and Import in the head; a long press selects a
    notebook or folder and a menu slides down over the top of the screen with Export, Move, Tags and Delete; the
@@ -95,7 +96,7 @@
       // page's tags are in the tag button's menu, not in the bar.
       $(".viewer-tags", dlg).innerHTML = "";
       const tool = (v, l) => '<button type="button" class="icon-btn" data-v="' + v + '" aria-pressed="' + (S.view === v) + '" title="' + l + '" aria-label="' + l + '">' + ICON[v] + "</button>";
-      const edHere = fm && ["notebook", "pdf", "epub"].includes(S.doc.kind) && S.view === "page";
+      const edHere = ["notebook", "pdf", "epub"].includes(S.doc.kind) && S.view === "page";
       $(".viewer-tools", dlg).innerHTML = edHere ? '<span class="ed-tools">' + (S.edHtml || "") + "</span>" : "";
       $(".viewer-nav", dlg).innerHTML = S.view === "page"
         ? '<button type="button" class="icon-btn" data-v="tagpop" aria-pressed="' + !!S.tagPop + '" title="' + esc(PD.t("fm.tags")) +
@@ -160,11 +161,11 @@
         return;
       }
       // A PAGE OPENS IN THE PAGE EDITOR (editor.html, in a frame: it draws with PaperDaemon's own renderer, on the card),
-      // the False Mirror's to edit (it saves the page as it goes), the Mirror's to look at: the same editor, `view=1`
-      // stripping its edit controls (the Mirror's pages are the tablet's, never written from here)
+      // with its tools in either library: the False Mirror's saved as it goes, the Mirror's (the tablet's own pages)
+      // written in place when saved (Ctrl+S, the document closed, the page left with changes) and sent to the tablet
       body.className = "viewer-page editing";
       body.innerHTML = '<iframe class="page-editor" allow="clipboard-read; clipboard-write" title="' + esc(PD.t("viewer.page", { n: S.page })) + '" src="/ui/editor.html#doc=' +
-        encodeURIComponent(S.doc.id) + "&page=" + S.page + "&base=" + encodeURIComponent(base) + (fm ? "" : "&view=1") + '"></iframe>';
+        encodeURIComponent(S.doc.id) + "&page=" + S.page + "&base=" + encodeURIComponent(base) + '"></iframe>';
       const efr = $("iframe.page-editor", body);
       efr.addEventListener("load", () => efr.focus());        // the keys go to the page from the start, no click first
     }
@@ -427,7 +428,7 @@
           if (v === "close") dlg.close();
           else if (v === "prev" || v === "next") go(S.page + (v === "next" ? 1 : -1));
           else if (v === "tagpop") { S.tagPop = !S.tagPop; paintBar(); paintTagPop(); }
-          else if (v === "keys") PD.openShortcuts(fm && !!editorFrame());   // the Mirror's view: only what looks
+          else if (v === "keys") PD.openShortcuts(!!editorFrame());
           else if (v === "tagadd") addTypedTag();
           else if (v === "newpage") {
             const [got] = await PD.safe(api("POST", "/library/" + S.doc.id + "/pages", { after: S.page }));
@@ -486,7 +487,12 @@
           paintPagePick();
           if (S.seen) { const [d, n] = S.seen.split("|"); opened(d, Number(n)); S.seen = null; }   // what was written while open
           if (S.doc) opened(S.doc.id, 0);
-          if (!fm) return;
+          if (!fm) {                                         // THE MIRROR: the page written if changed, then the document sent to the tablet
+            const fr = editorFrame();
+            if (fr && fr.contentWindow) fr.contentWindow.postMessage({ pd: "editor-commit" }, location.origin);
+            else if (S.doc) PD.safe(api("POST", "/library/" + S.doc.id + "/push"));
+            return;
+          }
           const fr = editorFrame();
           if (fr && fr.contentWindow) fr.contentWindow.postMessage({ pd: "editor-commit" }, location.origin);
           else PD.safe(api("POST", "/library/sync"));

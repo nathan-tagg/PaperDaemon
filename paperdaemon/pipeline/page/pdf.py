@@ -258,6 +258,117 @@ def text_of(path, idx, limit=3000):
     return t[:limit]
 
 
+def _device_boxes(path, idx):
+    """Every character of the page with its box in the page editor's units -> (text, boxes, (W, H) in
+    points). The device frame comes from pdfium itself (FPDF_PageToDevice), so a page with /Rotate or a
+    crop box not at the origin lands where PDFium's own render draws it (what _paste_source lays down);
+    the char boxes of the text layer are in the unrotated page space and need it."""
+    import ctypes
+    import pypdfium2 as pf
+    import pypdfium2.raw as raw
+    from paperdaemon.pdflock import LOCK
+    from paperdaemon.pipeline.page import render as R
+    s = R.PDF_SCALE
+    k = 1000                                          # device units per point: the call takes integers
+    with LOCK:                                        # PDFium is not safe on two threads at once
+        pdf = pf.PdfDocument(path)
+        try:
+            if not 0 <= idx < len(pdf):
+                return None
+            page = pdf[idx]
+            W, H = page.get_size()
+            tp = page.get_textpage()
+            n = tp.count_chars()
+            text = tp.get_text_range(0, n) if n else ""
+            dx, dy = ctypes.c_int(), ctypes.c_int()
+            ptr = page.raw
+            rot = 0                                   # pdfium adds the page's own /Rotate itself
+            frame_w, frame_h = int(round(W * k)), int(round(H * k))
+
+            def dev(x, y):
+                raw.FPDF_PageToDevice(ptr, 0, 0, frame_w, frame_h, rot, x, y, ctypes.byref(dx), ctypes.byref(dy))
+                return dx.value / float(k) * s - W * s / 2.0, dy.value / float(k) * s
+
+            boxes = []
+            for i in range(n):
+                l, b, r, t = tp.get_charbox(i, loose=True)
+                (ax, ay), (bx, by) = dev(l, b), dev(r, t)
+                boxes.append([min(ax, bx), min(ay, by), max(ax, bx), max(ay, by)])
+        finally:
+            pdf.close()
+    return text, boxes, (W, H)
+
+
+def page_text(doc, page_no):
+    """The text layer of a notebook page's PDF (or laid-out book) page, for selecting it in the page editor ->
+    {"text", "boxes": [[x0, y0, x1, y1] per character, page units, x0 < x1 and y0 < y1], "lines": [[start, end)
+    character ranges, one per text line in reading order]} or None for a page with no PDF under it or no text.
+
+    Page units are the editor's: x centered on 0, y down from the page's top, the PDF page at PDF_SCALE, the way
+    _paste_source draws it (a page with /Rotate included). Text and boxes are the same length. A character with no
+    box of its own (a generated line break, a space pdfium gives none) takes a thin box at the end of the character
+    before it. A line ends at a line break or where the next character is on another line (less than half of its
+    height shares the line's band); the break characters are in no line, and a line of only blanks is left out."""
+    src = source(doc, page_no)
+    if src is None:
+        return None
+    path, idx = src
+    try:
+        got = _device_boxes(path, idx)
+    except Exception:
+        return None
+    if not got:
+        return None
+    text, boxes, _size = got
+    if len(text) < len(boxes):                        # as load() does: one box per character, one character per box
+        text += " " * (len(boxes) - len(text))
+    text = text[:len(boxes)]
+    if not text.strip():
+        return None
+    real = [b[2] - b[0] > 0 and b[3] - b[1] > 0 for b in boxes]
+    out = []
+    prev = None
+    for i, b in enumerate(boxes):
+        if real[i]:
+            prev = b
+            out.append([round(v, 3) for v in b])
+            continue
+        if prev is None:                              # before any box: the next one's left edge
+            nxt = next((boxes[j] for j in range(i + 1, len(boxes)) if real[j]), None)
+            if nxt is None:
+                return None
+            x, y0, y1 = nxt[0], nxt[1], nxt[3]
+        else:
+            x, y0, y1 = prev[2], prev[1], prev[3]
+        out.append([round(x, 3), round(y0, 3), round(x + 1.0, 3), round(y1, 3)])
+    lines, start, band = [], None, None
+
+    def close(end):
+        nonlocal start, band
+        if start is not None and text[start:end].strip():
+            lines.append([start, end])
+        start, band = None, None
+
+    for i, ch in enumerate(text):
+        if ch in "\r\n":
+            close(i)
+            continue
+        if not real[i] or ch.isspace():
+            if start is None:
+                start = i
+            continue
+        y0, y1 = boxes[i][1], boxes[i][3]
+        if band is not None:
+            share = min(y1, band[1]) - max(y0, band[0])
+            if share < 0.5 * min(y1 - y0, band[1] - band[0]):
+                close(i)
+        if start is None:
+            start = i
+        band = [y0, y1] if band is None else [min(band[0], y0), max(band[1], y1)]
+    close(len(text))
+    return {"text": text, "boxes": out, "lines": lines}
+
+
 # -------------------------------------------------------------------- on the tablet
 def source(doc, page_no):
     """A notebook page's PDF, if it is a PDF page -> (path, index) or None."""

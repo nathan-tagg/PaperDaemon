@@ -21,9 +21,11 @@ def test_headless_serves_paired_requests_and_opens_no_window(tmp_path):
         tok = None
         for line in p.stdout:
             if line.startswith("PAPERDAEMON_READY "):
-                tok = json.loads(line.split(" ", 1)[1])["token"]
+                ready = json.loads(line.split(" ", 1)[1])
+                tok = ready["token"]
                 break
         assert tok
+        assert isinstance(ready["webview"], list)             # the window's web view arguments (gpus.window_args)
         req = urllib.request.Request("http://127.0.0.1:8796/api/v1/status", headers={"Authorization": "Bearer " + tok})
         assert json.load(urllib.request.urlopen(req, timeout=30))["version"]
         try:

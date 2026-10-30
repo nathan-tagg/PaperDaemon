@@ -724,7 +724,12 @@
   <string name="fm.tpl_approx">لا يستطيع PaperDaemon قراءة هذا القالب من تطبيق reMarkable: يرسمه التطبيق بشيفرته الخاصة. هذا رسم PaperDaemon الخاص، قريب لكنه ليس دقيقًا.</string>
   <string name="slot.loras_folder">مجلد LoRA</string>
   <string name="slot.loras_folder.help">افتح مجلد LoRA لهذه التشكيلة. كل LoRA فيه يُطبّق على كل صورة تصنعها هذه التشكيلة، كما يقول محوّل الصور الخاص بها.</string>
-  <string name="settings.render">رسم الصفحات</string>
-  <string name="settings.render.help">معطّل (الافتراضي): ترسم المهام الصفحات التي تقرؤها على بطاقة الرسومات. هذا سريع، وأثناء تشغيل المهمة يستخدم جزءًا من ذاكرة البطاقة (نحو 160 ميغابايت في صفحة كثيفة جدًا) يُعاد عند انتهائها. مفعّل: ترسمها على المعالج بدلًا من ذلك، تاركةً كل ذاكرة البطاقة لخوادم الذكاء الاصطناعي، وتستغرق كل صورة وقتًا أطول، خاصة في الصفحات الكثيرة الحبر. الصور هي نفسها في الحالتين، وكل التشكيلات سواء. محرر الصفحات يرسم دائمًا على البطاقة.</string>
-  <string name="settings.render.cpu">رسم الصفحات على المعالج</string>
+  <string name="settings.render">محرك الرسم</string>
+  <string name="settings.render.help">GPU (الافتراضي): تُرسم الصفحات على بطاقة الرسومات المختارة في القائمة. هذا سريع، وأثناء تشغيل المهمة يستخدم جزءًا من ذاكرة البطاقة (نحو 160 ميغابايت في صفحة كثيفة جدًا) يُعاد عند انتهائها. CPU: ترسم المهام الصفحات التي تقرؤها على المعالج بدلًا من ذلك، تاركةً كل ذاكرة البطاقة لخوادم الذكاء الاصطناعي، وتستغرق كل صورة وقتًا أطول، خاصة في الصفحات الكثيرة الحبر. الصور هي نفسها في الحالتين، وكل التشكيلات سواء. محرر الصفحات يرسم على البطاقة المختارة.</string>
+  <string name="settings.render.cpu">CPU</string>
+  <string name="settings.render.gpu">GPU</string>
+  <string name="settings.render.card">بطاقة الرسومات</string>
+  <string name="settings.render.memory">{gb} غيغابايت</string>
+  <string name="settings.render.no_webgpu">لا تستطيع هذه البطاقة تشغيل WebGPU: ستُرسم الصفحات على المعالج، وهو أبطأ.</string>
+  <string name="settings.render.restart">تستخدم المهام هذه البطاقة بدءًا من المهمة التالية، والنافذة بدءًا من التشغيل التالي لـ PaperDaemon.</string>
 </resources>

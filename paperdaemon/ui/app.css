@@ -574,6 +574,10 @@ html, .viewer-page, .script-help-body, .terminal, textarea, .chapter-list { scro
 /* a row's first line is a field's height (30px), and what is shorter than a field (a checkbox, the login's words)
    is centered in it, so it lines up with the label beside it */
 .row > .control .check-label { min-height: 30px; }
+/* Settings' Renderer row: the card list beside GPU, and its "!" when the card cannot run WebGPU */
+.card-pick { display: inline-flex; align-items: center; gap: var(--s2); margin-inline-end: var(--s3); }
+.card-pick[hidden], .bang[hidden] { display: none; }
+.bang { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--mark); color: var(--paper); font-weight: 700; font-size: 12px; line-height: 1; cursor: help; flex: none; }
 #st-login { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); min-height: 30px; }
 #st-login > span, #st-login > .login-state { min-height: 30px; display: inline-flex; align-items: center; }
 /* a message line under a control takes room only when it says something, so every row is as tall as its control */

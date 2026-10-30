@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.0
+
+- The page editor draws with WebGPU on the graphics card (Direct3D 12), and the engine draws the tablet's pages with the same shaders. A page is a handful of draws, in the page's order, kept on the card. Pens, highlighters, pencil grain and washes are decided pixel by pixel in the shaders, so a page looks the same however it was drawn: in place, whole, scrolled or reopened. The engine's pages are byte for byte what they were, and quicker (64 ms a page to 45 ms). WebGL2 is gone. On a card that only runs Direct3D 11, the editor draws on the processor.
+- Nothing draws the whole page again for a change to part of it. Erasing, undo, redo and a selection being moved draw again only the pixels they changed. A selection is moved where it lies, on the card. Scrolling slides the picture by whole pixels and draws only the strip that came into view.
+- Erasing happens on the graphics card. Each stroke the eraser cuts is drawn as what is left of it. Once the eraser has moved on, its pieces are made strokes of their own on the card, a few hundred a frame, so lifting the pen leaves little to do. On a page of 30,000 strokes, a fast swipe that cut 22,000 of them is done 124 ms after the pen lifts on a desktop graphics card and 130 ms on integrated graphics (328 ms and 327 ms before this release's last change), with the swipe's frames as light as before.
+- Ctrl+Z pressed while a swipe was still being finished undid the step before it. Undo and redo now wait for the swipe.
+- The page's file is put together, compared with the file on disk and written in a background thread. A save now takes under a millisecond of the editor's time on a page of 30,000 strokes (10 to 45 ms before).
+- An edit costs what it changed, not the page. The page's end (how far it scrolls), undo and redo, letting go of a selection, the end of a swipe and the first key of typing no longer go over every stroke, and the typed text's layout is kept by a count of its edits instead of being written out and compared every frame.
+- The bucket fill works on the graphics card.
+- Settings, Renderer: GPU (the default) or CPU, and with GPU, which graphics card. The default is the Direct3D 12 card with the most memory.
+- PDF and EPUB pages: with the text tool, the document's own text is selected with the cursor and copied, as the tablet's pen selects it.
+- Mirror pages can be edited. Changes are written into the tablet's own file in place: strokes keep their ids, erased strokes are erased as the tablet erases them, and typed text is edited block by block. They are sent on Ctrl+S and when the document is closed, and a page the tablet changed meanwhile is not written over.
+- When an erase falls behind the pointer on a slow machine, the path not yet erased shows as a 75% clear stroke over the ink until the erase catches up.
+- After an undo brought strokes back, the next swipe could leave a square of page empty, and pieces of an undone erase could come back. Both fixed.
+
 ## 0.1.85
 
 - Passing erase, made smooth on full pages and on slow machines. The pointer now only marks the eraser's path, and each frame does as much of the erasing as a sixtieth of a second has room for (sweeping the path, drawing again what changed, then making the pieces), leaving the rest to the next frame. The screen never stops: on a slow machine a very fast swipe trails the pointer and catches up as it slows. Measured on a page of 30,000 strokes flicked across end to end: at full speed every frame took under 11 ms and letting go 9.5 ms; with the processor slowed four times, 99 frames in 100 took under 21 ms, with 38 pauses over 16 ms where 0.1.84 had 280, and each pointer move cost 0.3 ms where it cost 14 ms.

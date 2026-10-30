@@ -703,7 +703,12 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="fm.tpl_approx">PaperDaemon không đọc được mẫu này từ ứng dụng reMarkable: ứng dụng tự vẽ nó bằng mã riêng. Đây là bản vẽ của PaperDaemon, gần giống nhưng không chính xác.</string>
   <string name="slot.loras_folder">Thư mục LoRA</string>
   <string name="slot.loras_folder.help">Mở thư mục LoRA của đội hình này. Mọi LoRA trong đó được áp dụng cho mọi ảnh đội hình này tạo, theo cách harness ảnh của nó quy định.</string>
-  <string name="settings.render">Vẽ trang</string>
-  <string name="settings.render.help">Tắt (mặc định): tác vụ vẽ các trang chúng đọc bằng card đồ họa. Cách này nhanh, và khi tác vụ chạy thì dùng một ít bộ nhớ của card (khoảng 160 MB với trang rất dày), trả lại khi xong. Bật: chúng vẽ bằng bộ xử lý, để toàn bộ bộ nhớ card cho các máy chủ AI của bạn, và mỗi ảnh lâu hơn, nhất là trang nhiều mực. Ảnh giống nhau dù cách nào, và áp dụng cho mọi đội hình. Trình chỉnh sửa trang luôn vẽ bằng card.</string>
-  <string name="settings.render.cpu">Vẽ trang bằng bộ xử lý</string>
+  <string name="settings.render">Trình kết xuất</string>
+  <string name="settings.render.help">GPU (mặc định): các trang được vẽ bằng card đồ họa chọn trong danh sách. Cách này nhanh, và khi tác vụ chạy thì dùng một ít bộ nhớ của card (khoảng 160 MB với trang rất dày), trả lại khi xong. CPU: tác vụ vẽ các trang chúng đọc bằng bộ xử lý, để toàn bộ bộ nhớ card cho các máy chủ AI của bạn, và mỗi ảnh lâu hơn, nhất là trang nhiều mực. Ảnh giống nhau dù cách nào, và áp dụng cho mọi đội hình. Trình chỉnh sửa trang vẽ bằng card đã chọn.</string>
+  <string name="settings.render.cpu">CPU</string>
+  <string name="settings.render.gpu">GPU</string>
+  <string name="settings.render.card">Card đồ họa</string>
+  <string name="settings.render.memory">{gb} GB</string>
+  <string name="settings.render.no_webgpu">Card này không chạy được WebGPU: các trang sẽ được vẽ bằng bộ xử lý, chậm hơn.</string>
+  <string name="settings.render.restart">Tác vụ dùng card này từ lần tới; cửa sổ, từ lần khởi động PaperDaemon tiếp theo.</string>
 </resources>
