@@ -44,11 +44,11 @@ def test_the_window_follows_the_settings(monkeypatch):
     assert gpus.window_for(s) == gpus.CPU_ARGS
 
 
-def test_a_card_with_no_screen_composes_the_window_on_the_processor(monkeypatch):
-    # composed on a card no screen is on, the window is shown through the screen's card, which is then taken too
+def test_a_card_with_no_screen_still_composes_the_window_on_the_screens_card(monkeypatch):
+    # composed on the processor, the page editor's WebGPU canvas never reached the screen (0.2.1): the card only
     monkeypatch.delenv("PAPERDAEMON_WEBGPU_D3D11", raising=False)
     xtx, igpu = dict(XTX, display=True), dict(IGPU, display=False)
     cs = gpus.named([xtx, igpu])
-    assert gpus.window_args(cs, igpu["id"]) == ["--use-adapter-luid=0,95712"] + gpus.OFF_SCREEN_ARGS
+    assert gpus.window_args(cs, igpu["id"]) == ["--use-adapter-luid=0,95712"]
     assert gpus.window_args(cs, xtx["id"]) == ["--use-adapter-luid=0,82318"]
-    assert gpus.window_args(gpus.named([dict(IGPU, display=False)])) == []   # the only card: nothing else to keep off
+    assert gpus.window_args(gpus.named([dict(IGPU, display=False)])) == []   # the only card: nothing to name

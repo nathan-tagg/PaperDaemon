@@ -121,8 +121,9 @@ Direct3D 12), in ms; the test page has 30,536 strokes (a decomposition with hand
   by the LUID Windows gives it for a session. The engine finds it among the machine's cards (DXGI) at the start
   of each job; the window passes it to WebView2 when it starts (`--use-adapter-luid`). The chosen card is the
   only card PaperDaemon uses, or none: no card is ever occupied that was not chosen (a user may give every byte of
-  another card to a local model). A card without a screen draws off screen (`--disable-gpu-compositing`, else
-  the browser composites on the card the display hangs from); the processor chosen is `--disable-gpu`. A change
+  another card to a local model), except the window's composing: on a card without a screen the browser still
+  composes on the card the display hangs from (composed on the processor, `--disable-gpu-compositing`, the
+  editor's WebGPU canvas never reached the screen: 0.2.1's blank editor); the processor chosen is `--disable-gpu`. A change
   of card or processor restarts the window at once, on the Settings pane. A card counts as having WebGPU when
   Direct3D 12 or Direct3D 11 (feature level 11_0) can be opened on it. When the card cannot be used, the notice
   says why in plain words (lost, refused, none, the card) and the detail goes to the log.

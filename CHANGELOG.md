@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.3
+
+- With a graphics card chosen that no screen is connected to (an integrated card beside a discrete one), the page editor showed blank pages and empty boxes: the window was composed on the processor, and the editor's drawing never reached the screen. The window is composed on the screen's card again; the editor still draws on the card chosen.
+
 ## 0.2.2
 
 - 0.2.1's window showed nothing in its main area: a script of the Daemon panel would not load (a name declared twice). Fixed, and every script of the window is now checked before a release.

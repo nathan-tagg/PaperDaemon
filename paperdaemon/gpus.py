@@ -17,7 +17,6 @@ import uuid
 
 D3D11_ARGS = ["--enable-unsafe-webgpu", "--use-webgpu-adapter=d3d11", "--force-webgpu-compat"]
 CPU_ARGS = ["--disable-gpu"]
-OFF_SCREEN_ARGS = ["--disable-gpu-compositing"]
 
 
 def _guid(s):
@@ -133,9 +132,9 @@ def window_args(cs=None, want="", processor=False):
     WebGPU's Direct3D 11 backend when that card has no Direct3D 12. PAPERDAEMON_WEBGPU_D3D11 asks for the Direct3D 11
     backend whatever the card (checking that path on a machine that has Direct3D 12). With the Renderer on the
     processor, the web view's graphics card is switched off: it draws and composes on the processor and holds nothing
-    on any card. On a card no screen is connected to, the web view composes the window on the processor: composed on
-    the card, the window is shown through the card the screen is on, and that card is taken too (measured: 16 to 25 MB
-    there); the page editor's WebGPU still runs on the card chosen, and nothing of PaperDaemon's goes on the other."""
+    on any card. On a card no screen is connected to, the window is still composed on the card the screen is on (a few
+    tens of MB there): composed on the processor (--disable-gpu-compositing), the page editor's WebGPU canvas never
+    reached the screen -- 0.2.1's blank editor. The page editor's WebGPU runs on the card chosen."""
     if processor:
         return list(CPU_ARGS)
     cs = cards() if cs is None else cs
@@ -145,8 +144,6 @@ def window_args(cs=None, want="", processor=False):
         args.append("--use-adapter-luid=%d,%d" % (c["luid"][0], c["luid"][1]))
     if (c and not c["d3d12"]) or os.environ.get("PAPERDAEMON_WEBGPU_D3D11"):
         args += D3D11_ARGS
-    if c and len(cs) > 1 and not c.get("display", True) and any(o.get("display") for o in cs if o is not c):
-        args += OFF_SCREEN_ARGS
     return args
 
 
