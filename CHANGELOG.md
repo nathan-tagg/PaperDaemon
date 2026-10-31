@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2
+
+- 0.2.1's window showed nothing in its main area: a script of the Daemon panel would not load (a name declared twice). Fixed, and every script of the window is now checked before a release.
+
 ## 0.2.1
 
 - The graphics card chosen in Settings is the only one PaperDaemon uses, or none: with the integrated card chosen, nothing of PaperDaemon's lands on the other card (the window drew on the card the screen hangs from as well). Choosing the processor uses no card at all. A change of card or processor restarts the window at once, on Settings.

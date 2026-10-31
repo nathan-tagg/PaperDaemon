@@ -23,10 +23,10 @@
     else if (pullErr) out.push({ text: PD.t("issue.mirror", { why: pullErr }), fix: "" });
     // the graphics card not drawing (the engine's pictures, or the page editor's): said once a session, until dismissed
     // (why: the engine's or the editor's code, in the window's own words -- what the card said is in the engine's log)
-    const rd = st.render || {}, code = rd.engine || rd.editor;
+    const rd = st.render || {}, rcode = rd.engine || rd.editor;
     let seen = false; try { seen = sessionStorage.getItem("pd-render-told") === "1"; } catch (e) { seen = false; }
-    const why = PD.t("render.why." + (["lost", "refused", "none", "card"].includes(code) ? code : "refused"));
-    if (code && !seen) out.push({ text: PD.t("issue.render_cpu", { why }),
+    const why = PD.t("render.why." + (["lost", "refused", "none", "card"].includes(rcode) ? rcode : "refused"));
+    if (rcode && !seen) out.push({ text: PD.t("issue.render_cpu", { why }),
       fix: '<button type="button" class="btn small" data-act="render-ok">' + esc(PD.t("issue.render_ok")) + "</button>" });
     // the loop says what state it is in by a code; the usual states are no issue, every other one is, in its own words
     const code = lp.code || "not_started";

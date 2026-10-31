@@ -1,6 +1,6 @@
 [project]
 name = "paperdaemon"
-version = "0.2.1"
+version = "0.2.2"
 description = "A reMarkable assistant: it watches your tablet for tagged pages and answers them with the models you choose."
 readme = "README.md"
 license = "Apache-2.0"

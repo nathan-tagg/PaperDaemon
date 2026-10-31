@@ -1,12 +1,14 @@
 #!/usr/bin/env node
-// Two of the project's rules a machine can check:
+// Three of the project's rules a machine can check:
 //   American spelling in code, prompts, UI text and documentation
 //   no secrets in files: tokens and keys live only in the OS credential store
+//   every script of the window parses (one that does not loads none of its part of the window)
 // The Claude Code hooks in .claude/hooks run these on every write. Run them yourself with
 //   node tools/check.mjs [path ...]          (no path: the whole repository)
 // The word list is explicit: a word is flagged only if it is on it, so "precise" and "advertise"
 // (American too) pass. The British forms are stored reversed, so this file holds none itself.
 
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -206,6 +208,14 @@ export function secrets(text) {
   return [...hits.values()].sort((a, b) => a.line - b.line);
 }
 
+// ---- the window's scripts: each must parse (0.2.1 shipped one that did not, and its panel showed nothing)
+
+export function parses(file) {
+  const r = spawnSync(process.execPath, ["--check", file], { encoding: "utf8" });
+  if (r.status === 0) return null;
+  return ((r.stderr || "").split(/\r?\n/).find((l) => /Error/.test(l)) || "does not parse").trim();
+}
+
 // ---- the command line
 
 function* walk(p) {
@@ -223,10 +233,12 @@ function main(args) {
   for (const f of (args.length ? args : [ROOT]).flatMap((p) => [...walk(path.resolve(p))])) {
     let text;
     try { text = fs.readFileSync(f, "utf8"); } catch { continue; }
-    const rel = path.relative(ROOT, f) || f;
+    const rel = path.relative(ROOT, f) || f, slash = rel.split(path.sep).join("/");
+    const broken = slash.startsWith("paperdaemon/ui/") && slash.endsWith(".js") ? parses(f) : null;
     const out = [
-      ...(VERBATIM.has(rel.split(path.sep).join("/")) ? [] : spelling(text)).map((h) => `${rel}:${h.line}  ${h.word} -> ${h.fix}`),
+      ...(VERBATIM.has(slash) ? [] : spelling(text)).map((h) => `${rel}:${h.line}  ${h.word} -> ${h.fix}`),
       ...secrets(text).map((h) => `${rel}:${h.line}  ${h.what}`),
+      ...(broken ? [`${rel}  ${broken}`] : []),
     ];
     if (out.length) { files++; found += out.length; console.log(out.join("\n")); }
   }
