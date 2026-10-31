@@ -34,6 +34,47 @@ struct Own { grain: u32, gfirst: u32, first: u32, alpha: f32, depth: f32 };
 @group(0) @binding(0) var<uniform> V: View;
 @group(0) @binding(1) var<storage, read> owns: array<Own>;
 @group(1) @binding(0) var<storage, read> rec: array<vec4<u32>>;
+// THE POINTS: rec's words. The engine's, four a record (x, y and the width as floats; the flags | the stroke << 8). The
+// editor's (WORD): a block of sixteen records in twenty words -- its header, then a word a point: x and y in 1/32 units
+// from the block's corner (12 bits each), the width over the block's narrowest in 1/16 (8 bits). The header: A the corner
+// (x 12 bits, whole units from OX; y 13, from OY) and the narrowest width (7, whole units); B the stroke of the block's
+// first point (22 bits), that point (4), its last (4), whether its last goes on into the next block (1; a block cleared
+// draws nothing), whether its points are kept aside (1); C which of them start a stroke (16) and whether a highlighter's
+// points are among them (1); D where they are kept aside, two words a point (x in 1/32 units; y in 1/32 from OYS, 19
+// bits, and the width in 1/16, 13) -- a block whose points do not fit a corner. Every point lies on one grid whatever
+// block holds it: decoded, the same numbers wherever it was written. A point read (rec4) as the engine's record: its
+// flags 1 a segment to the next, 2 a dot (a stroke of one point), 32 it starts its stroke, and 64 (WORD) a segment of a
+// block with a highlighter's points, not its stroke's first -- where it may turn, its box reaching the width before (the
+// engine's 4; a highlighter's turns are worked out where it is drawn)
+const WORD: bool = false;
+const OX: i32 = -2048; const OY: i32 = -1024; const OYS: i32 = -2048;
+fn wordOf(i: u32) -> u32 { return (i >> 4u) * 5u + 1u + ((i & 15u) >> 2u); }   // (the load holding raw slot i: its word i & 3)
+fn rawAt(R: u32, w: u32) -> u32 { if (WORD) { let s = R + w; return rec[wordOf(s)][s & 3u]; } return rec[R + (w >> 2u)][w & 3u]; }
+// (WORD: C's bit 17, a point of the block near a cut -- the erase's mark, the engine's flag 16 a block at a time: its
+// stroke's row then says which cut; kept, as the flag is, once made)
+fn nearCut(i: u32) -> bool { return (rec[(i >> 4u) * 5u].z & 0x20000u) != 0u; }
+fn rec4(i: u32) -> vec4<u32> {
+  if (!WORD) { return rec[i]; }
+  let hb = (i >> 4u) * 5u; let k = i & 15u;
+  let H = rec[hb]; let A = H.x; let B = H.y; let C = H.z;
+  var x = 0.0; var y = 0.0; var w = 0.0;
+  if ((B >> 31u) != 0u) {
+    let sa = H.w + 2u * k; let s0 = rawAt(sa, 0u); let s1 = rawAt(sa, 1u);
+    x = f32(bitcast<i32>(s0)) / 32.0; y = f32(i32(s1 & 0x7ffffu) + OYS * 32) / 32.0; w = f32(s1 >> 19u) / 16.0;
+  } else {
+    let p = rec[hb + 1u + (k >> 2u)][k & 3u];
+    x = f32(i32(A & 0xfffu) + OX) + f32(p & 0xfffu) / 32.0;
+    y = f32(i32((A >> 12u) & 0x1fffu) + OY) + f32((p >> 12u) & 0xfffu) / 32.0;
+    w = f32(A >> 25u) + f32(p >> 24u) / 16.0;
+  }
+  let k0 = (B >> 22u) & 15u; let k1 = (B >> 26u) & 15u; let st = C & 0xffffu;
+  let inb = (k >= k0) & (k <= k1);
+  let first = inb & (((st >> k) & 1u) == 1u);
+  let seg = inb & select(((B >> 30u) & 1u) == 1u, ((st >> (k + 1u)) & 1u) == 0u, k < k1);
+  let f = select(select(0u, 2u, first), 1u, seg) | select(0u, 64u, seg & ((C & 0x10000u) != 0u)) | select(0u, 32u, first);
+  let sid = (B & 0x3fffffu) + select(0u, countOneBits(st & ((2u << k) - (2u << k0))), k > k0);
+  return vec4<u32>(bitcast<u32>(x), bitcast<u32>(y), bitcast<u32>(w), f | (sid << 8u));
+}
 @group(1) @binding(1) var<storage, read> grb: array<vec2<u32>>;
 fn xyOf(r: vec4<u32>) -> vec2<f32> { return vec2<f32>(bitcast<f32>(r.x), bitcast<f32>(r.y)); }
 // THE EDITOR'S RECORDS CARRY THEIR STROKE'S NUMBER, not its color (V.stAt: where the editor's table of strokes is in
@@ -58,8 +99,9 @@ fn ew(w: u32) -> u32 { let g = grb[V.evAt + (w >> 1u)]; return select(g.x, g.y, 
 fn stw(sid: u32, w: u32) -> u32 { let g = grb[V.stAt - 1u + sid * 4u + (w >> 1u)]; return select(g.x, g.y, (w & 1u) == 1u); }
 fn colorOf(w: u32) -> u32 { if (V.stAt == 0u) { return w >> 8u; } return stw(w >> 8u, 4u); }
 fn cutEntry(i: u32) -> u32 {                                 // the entry (its first word) of the cut stroke i is of, or NONE
-  let r = rec[i].w;
-  if ((r & 16u) == 0u) { return NONE; }
+  if (WORD && !nearCut(i)) { return NONE; }                 // (WORD: its block's mark, before the point is unpacked)
+  let r = rec4(i).w;
+  if (!WORD && (r & 16u) == 0u) { return NONE; }
   let e0 = stw(r >> 8u, 6u);
   if (e0 == NONE) { return NONE; }
   let e = 8u * e0; let b = ew(e);
@@ -68,7 +110,7 @@ fn cutEntry(i: u32) -> u32 {                                 // the entry (its f
 }
 fn cutOf(i: u32, e: u32) -> u32 {                             // record i's pieces' records (<< 3) and how many, by its entry
   let k = i - ew(e);
-  let w = rec[ew(e + 2u) + (k >> 2u)][k & 3u];
+  let w = rawAt(ew(e + 2u), k);
   return ((ew(e + 3u) + (w >> 3u)) << 3u) | (w & 7u);
 }
 fn cutAt(i: u32) -> u32 {
@@ -80,7 +122,7 @@ fn partRec(c: u32, part: u32) -> u32 {                        // of those record
   var k = 0u;
   for (var q = 0u; q < (c & 7u); q++) {
     let r = (c >> 3u) + q;
-    if ((rec[r].w & 1u) == 0u) { continue; }
+    if ((rec4(r).w & 1u) == 0u) { continue; }
     if (k == part) { return r; }
     k += 1u;
   }
@@ -95,7 +137,7 @@ fn partRec(c: u32, part: u32) -> u32 {                        // of those record
 // for the segment it lies on, the point for itself, a new end for the segment it lies on), seven at the most. Once the
 // pieces are written (the top bit set) they are drawn where they lie
 fn byRange(e: u32) -> bool { return (ew(e + 7u) >> 31u) == 0u; }
-fn vt(e: u32, m: u32, w: u32) -> vec4<u32> { return rec[ew(e + 3u) + 2u * m + w]; }
+fn vt(e: u32, m: u32, w: u32) -> vec4<u32> { let B = ew(e + 3u); let o = 8u * m + 4u * w; return vec4<u32>(rawAt(B, o), rawAt(B, o + 1u), rawAt(B, o + 2u), rawAt(B, o + 3u)); }
 struct Pc { b: u32, j0: u32, j1: u32, h: bool, t: bool, i0: u32, total: u32, n: u32, hd: bool, td: bool, s0: vec4<u32>, s1: vec4<u32> };
 fn pcOf(e: u32, m: u32) -> Pc {                              // stretch m's piece
   let s0 = vt(e, m, 0u); let s1 = vt(e, m, 1u); let j0 = s0.x & 0x3fffffffu;
@@ -112,24 +154,26 @@ fn vsrc(c: Pc, q: u32) -> u32 {                              // its record q's s
 }
 fn vraw(c: Pc, q: u32) -> vec4<u32> {                        // its record q as pieces writes it, before a highlighter's turns
   let qr = q + select(0u, 1u, c.hd && q >= 1u);
-  var r = rec[c.b + vsrc(c, q)];
+  var r = rec4(c.b + vsrc(c, q));
   if (c.h && qr == 0u) { r.x = c.s0.z; r.y = c.s0.w; }
   else if (c.t && qr == c.total - 1u) { r.x = c.s1.z; r.y = c.s1.w; }
   r.w = r.w & 0xffffffefu;
   if (q == c.n - 1u) { r.w = r.w & 0xffffff00u; } else if (q == 0u) { r.w = (r.w & 0xffffff00u) | 1u; }
   return r;
 }
-fn turnOf(p0: vec2<f32>, a: vec2<f32>, b: vec2<f32>) -> u32 {   // a highlighter's flags at a (ERASE's turnAt)
-  var e = a - p0; var Ln = sqrt(dot(e, e));
-  let pdx = e.x / Ln; let pdy = e.y / Ln;
-  e = b - a; Ln = sqrt(dot(e, e));
-  let cross = pdx * (e.y / Ln) - pdy * (e.x / Ln);
+// (WORD) A HIGHLIGHTER'S TURN AT a, every draw's rule (hlAt, vrec, the lean draw): its way in and out, each worked out as
+// hlCore works out a segment's (dirOf: length, then a division; nothing: NaN, no turn) -- in the lean draw the very
+// numbers hlCore goes on to use, so the card works each out once -- and turnAt's test of their cross
+fn dirOf(e: vec2<f32>) -> vec2<f32> { return e / length(e); }
+fn turnOf(p0: vec2<f32>, a: vec2<f32>, b: vec2<f32>) -> u32 {
+  let pd = dirOf(a - p0); let ud = dirOf(b - a);
+  let cross = pd.x * ud.y - pd.y * ud.x;
   if (abs(cross) >= 1e-6) { return select(5u, 13u, cross > 0.0); }
   return 1u;
 }
 fn vrec(c: Pc, q: u32, hl: bool) -> vec4<u32> {              // its record q, a highlighter's turns beside its new ends worked out
   var r = vraw(c, q);
-  if (hl && c.n > 2u && ((c.h && q == 1u) || (c.t && !c.td && q == c.n - 2u))) {
+  if (hl && c.n > 2u && ((WORD && q >= 1u && q + 2u <= c.n) || (c.h && q == 1u) || (c.t && !c.td && q == c.n - 2u))) {
     r.w = (r.w & 0xffffff00u) | turnOf(xyOf(vraw(c, q - 1u)), xyOf(r), xyOf(vraw(c, q + 1u)));
   }
   return r;
@@ -199,7 +243,7 @@ fn ownPartR(i: u32, e: u32, part: u32, v: u32, O: Own, key: u32) -> VS {   // a 
   let mq = partR(e, i - ew(e), part, false);
   if (mq.x == NONE) { var o: VS; o.pos = vec4<f32>(2.0, 2.0, 2.0, 1.0); return o; }
   let c = pcOf(e, mq.x); let q = mq.y;
-  let grainOf = (stw(rec[i].w >> 8u, 2u) & 0xffu) == 2u;     // (a grain stroke's density at the point it came from; a wash's 1)
+  let grainOf = (stw(rec4(i).w >> 8u, 2u) & 0xffu) == 2u;     // (a grain stroke's density at the point it came from; a wash's 1)
   var da = 1.0; var db = 1.0;
   if (grainOf) { da = bitcast<f32>(grb[O.gfirst + vsrc(c, q)].x); db = bitcast<f32>(grb[O.gfirst + vsrc(c, q + 1u)].x); }
   var ga = vec2<f32>(1.0, 0.0); var gb = vec2<f32>(1.0, 0.0);
@@ -236,10 +280,10 @@ fn cutSeg(i: u32, c: u32, v: u32, O: Own) -> VS {
   var np = 0u; var col = 0u; var w = 0.0;
   let s = c >> 3u;
   for (var q = 0u; q < (c & 7u); q++) {
-    let A = rec[s + q];
+    let A = rec4(s + q);
     if ((A.w & 1u) == 0u || np >= 4u) { continue; }
     col = A.w;
-    let B = rec[s + q + 1u];
+    let B = rec4(s + q + 1u);
     P[np] = vec4<f32>(xyOf(A) * V.k + V.off, xyOf(B) * V.k + V.off);
     R[np] = (bitcast<f32>(A.z) + bitcast<f32>(B.z)) * 0.25 * V.k; w = max(w, R[np]); np += 1u;
   }
@@ -248,7 +292,7 @@ fn cutSeg(i: u32, c: u32, v: u32, O: Own) -> VS {
 fn cutShape(i: u32, P: array<vec4<f32>, 4>, R: array<f32, 4>, np: u32, col: u32, w: f32, v: u32, O: Own) -> VS {   // over all of segment i
   var o: VS;
   if (np == 0u) { o.pos = vec4<f32>(2.0, 2.0, 2.0, 1.0); return o; }
-  let A = rec[i]; let B = rec[i + 1u];
+  let A = rec4(i); let B = rec4(i + 1u);
   let a = xyOf(A) * V.k + V.off; let b = xyOf(B) * V.k + V.off;
   let d = b - a; let L = length(d);
   let u = select(vec2<f32>(1.0, 0.0), d / L, L > 0.0); let n = vec2<f32>(-u.y, u.x);
@@ -281,10 +325,10 @@ fn pieceAt(r: u32, j: u32, v: u32, O: Own, gi: u32, key: u32) -> VS {
   return segCore(r, v, O, ga, gb, z, -1.0);
 }
 fn segCore(i: u32, v: u32, O: Own, ga: vec2<f32>, gb: vec2<f32>, z: f32, rw: f32) -> VS {   // (rw >= 0: its half width)
-  let A = rec[i];
+  let A = rec4(i);
   let fa = A.w & 0xffu;
   if ((fa & 3u) == 0u) { var o: VS; o.pos = vec4<f32>(2.0, 2.0, 2.0, 1.0); return o; }
-  return segQuad(A, rec[i + 1u], v, O, ga, gb, z, rw);
+  return segQuad(A, rec4(i + 1u), v, O, ga, gb, z, rw);
 }
 fn segQuad(A: vec4<u32>, B: vec4<u32>, v: u32, O: Own, ga: vec2<f32>, gb: vec2<f32>, z: f32, rw: f32) -> VS {   // (A a segment's start, or a dot)
   var o: VS;
@@ -313,6 +357,7 @@ fn segQuad(A: vec4<u32>, B: vec4<u32>, v: u32, O: Own, ga: vec2<f32>, gb: vec2<f
   let O = owns[vi / 32u];
   let w = vi % 32u; let part = w / 6u; let k = w % 6u;
   let v = select(select(k, 2u, k == 3u), select(1u, 3u, k == 5u), k >= 4u);   // (0 1 2, 2 1 3)
+  if (WORD && part != 0u && !nearCut(j)) { var o: VS; o.pos = vec4<f32>(2.0, 2.0, 2.0, 1.0); return o; }   // (no cut in its block: part 0 alone)
   let e = cutEntry(j);
   if (e == NONE) {
     if (part != 0u) { var o: VS; o.pos = vec4<f32>(2.0, 2.0, 2.0, 1.0); return o; }
@@ -360,6 +405,7 @@ struct VH { @builtin(position) pos: vec4<f32>, @location(0) @interpolate(flat, e
 }
 fn hlPart(i: u32, w: u32, z: f32) -> VH {                    // record i's part w / 16, its corner w % 16, at depth z
   let part = w / 16u;
+  if (WORD && part != 0u && !nearCut(i)) { var o: VH; o.pos = vec4<f32>(2.0, 2.0, 2.0, 1.0); return o; }   // (no cut in its block: part 0 alone)
   let e = cutEntry(i);
   if (e == NONE) {
     if (part != 0u) { var o: VH; o.pos = vec4<f32>(2.0, 2.0, 2.0, 1.0); return o; }
@@ -376,10 +422,14 @@ fn hlPart(i: u32, w: u32, z: f32) -> VH {                    // record i's part 
 // triangle sa, t1, sa + s n against the rectangle's start (t1 to fsHl, with s and the sign of its area) -- one quad laid
 // round both, along and across the segment, a hair out
 fn hlAt(i: u32, v: u32, z: f32) -> VH {
-  let A = rec[i]; let fa = A.w & 0xffu;
+  var A = rec4(i); let fa = A.w & 0xffu;
   if ((fa & 1u) == 0u || v >= 4u) { var o: VH; o.pos = vec4<f32>(2.0, 2.0, 2.0, 1.0); return o; }
-  var Pp = A; if ((fa & 4u) != 0u) { Pp = rec[i - 1u]; }
-  return hlCore(A, rec[i + 1u], Pp, v, z);
+  let B = rec4(i + 1u);
+  if (WORD) {                                              // (its turn, from the points beside it: the one rule)
+    if ((fa & 32u) == 0u) { A.w = (A.w & 0xffffff00u) | turnOf(xyOf(rec4(i - 1u)), xyOf(A), xyOf(B)); } else { A.w = (A.w & 0xffffff00u) | 1u; }
+  }
+  var Pp = A; if ((A.w & 4u) != 0u) { Pp = rec4(i - 1u); }
+  return hlCore(A, B, Pp, v, z);
 }
 fn hlCore(A: vec4<u32>, B: vec4<u32>, Pp: vec4<u32>, v: u32, z: f32) -> VH {
   var o: VH;
@@ -474,7 +524,7 @@ fn listed(vi: u32, per: u32, j: u32) -> u32 {                // the record insta
   let S = spn[e.y];
   return select(NONE, i, i >= S.x && i < S.y);
 }
-fn keyOf(i: u32) -> u32 { return grb[LVU.skAt + (rec[i].w >> 8u)].x; }
+fn keyOf(i: u32) -> u32 { return grb[LVU.skAt + (rec4(i).w >> 8u)].x; }
 @vertex fn vsPenL(@builtin(vertex_index) vi: u32, @builtin(instance_index) j: u32) -> VS {
   let i = listed(vi, 16u, j);
   if (i == NONE) { var o: VS; o.pos = vec4<f32>(2.0, 2.0, 2.0, 1.0); return o; }
@@ -488,11 +538,12 @@ fn keyOf(i: u32) -> u32 { return grb[LVU.skAt + (rec[i].w >> 8u)].x; }
 @vertex fn vsOwnL(@builtin(vertex_index) vi: u32, @builtin(instance_index) j: u32) -> VS {
   let i = listed(vi, 32u, j);
   if (i == NONE) { var o: VS; o.pos = vec4<f32>(2.0, 2.0, 2.0, 1.0); return o; }
-  let sid = rec[i].w >> 8u; let key = grb[LVU.skAt + sid].x;
+  let sid = rec4(i).w >> 8u; let key = grb[LVU.skAt + sid].x;
   let gs = stw(sid, 5u); let a = stw(sid, 4u) >> 24u;
   let O = Own(select(1u, 0u, gs == NONE), gs, stw(sid, 0u), LVU.alpha[a / 4u][a % 4u], keyZ(key));
   let w = vi % 32u; let part = w / 6u; let k = w % 6u;
   let v = select(select(k, 2u, k == 3u), select(1u, 3u, k == 5u), k >= 4u);   // (0 1 2, 2 1 3)
+  if (WORD && part != 0u && !nearCut(i)) { var o: VS; o.pos = vec4<f32>(2.0, 2.0, 2.0, 1.0); return o; }   // (no cut in its block: part 0 alone)
   let e = cutEntry(i);
   if (e == NONE) {
     if (part != 0u) { var o: VS; o.pos = vec4<f32>(2.0, 2.0, 2.0, 1.0); return o; }
@@ -502,6 +553,98 @@ fn keyOf(i: u32) -> u32 { return grb[LVU.skAt + (rec[i].w >> 8u)].x; }
   let r = partRec(cutOf(i, e), part);
   if (r == NONE) { var o: VS; o.pos = vec4<f32>(2.0, 2.0, 2.0, 1.0); return o; }
   return pieceAt(r, i, v, O, ew(e + 4u) + (r - ew(e + 3u)), key);
+}
+// THE LISTED DRAWS WHILE NO STROKE IS BEING CUT (the editor's, no erase live: a record's one part, classArgs' parts 1):
+// each draws as the one above it draws a record no cut reaches -- the same functions, without the paths a cut stroke
+// takes. Every record a vertex reads is asked for first, the span's bounds after (a record outside it draws nothing)
+fn listedAt(vi: u32, per: u32, j: u32) -> vec2<u32> {        // the record instance j of a listed draw draws, and 1 if its span's
+  let e = lst[vi / per + j / 16u]; let i = e.x * 16u + j % 16u; let S = spn[e.y];
+  return vec2<u32>(i, select(0u, 1u, i >= S.x && i < S.y));
+}
+struct VP { @builtin(position) pos: vec4<f32>, @location(0) @interpolate(flat, either) ab: vec4<f32>, @location(1) @interpolate(flat, either) rc: vec4<f32> };
+// (WORD) A POINT AS ITS BLOCK HOLDS IT: its block's header (hdrOf), its word (wordAt), and from them its place and width
+// as a corner block keeps them (cornerP) -- or, kept aside, as its block's side slot keeps them (sideP) -- and its flags
+// and stroke (flagsOf): rec4's, a part at a time, so a draw reads each part once and tests for a point kept aside once
+fn hdrOf(i: u32) -> vec4<u32> { return rec[(i >> 4u) * 5u]; }
+fn wordAt(i: u32) -> u32 { return rec[(i >> 4u) * 5u + 1u + ((i & 15u) >> 2u)][i & 3u]; }
+fn cornerP(H: vec4<u32>, p: u32) -> vec3<f32> {
+  return vec3<f32>(f32(i32(((H.x & 0xfffu) << 5u) + (p & 0xfffu)) + OX * 32) / 32.0,
+                   f32(i32((((H.x >> 12u) & 0x1fffu) << 5u) + ((p >> 12u) & 0xfffu)) + OY * 32) / 32.0,
+                   f32(((H.x >> 25u) << 4u) + (p >> 24u)) / 16.0);
+}
+fn sideP(H: vec4<u32>, k: u32) -> vec3<f32> {
+  let sa = H.w + 2u * k; let s0 = rawAt(sa, 0u); let s1 = rawAt(sa, 1u);
+  return vec3<f32>(f32(bitcast<i32>(s0)) / 32.0, f32(i32(s1 & 0x7ffffu) + OYS * 32) / 32.0, f32(s1 >> 19u) / 16.0);
+}
+fn flagsOf(H: vec4<u32>, k: u32) -> u32 {
+  let B = H.y; let C = H.z;
+  let k0 = (B >> 22u) & 15u; let k1 = (B >> 26u) & 15u; let st = C & 0xffffu;
+  let inb = (k >= k0) & (k <= k1);
+  let first = inb & (((st >> k) & 1u) == 1u);
+  let seg = inb & select(((B >> 30u) & 1u) == 1u, ((st >> (k + 1u)) & 1u) == 0u, k < k1);
+  let f = select(select(0u, 2u, first), 1u, seg) | select(0u, 64u, seg & ((C & 0x10000u) != 0u)) | select(0u, 32u, first);
+  return f | (((B & 0x3fffffu) + select(0u, countOneBits(st & ((2u << k) - (2u << k0))), k > k0)) << 8u);
+}
+fn pt(p: vec3<f32>, w: u32) -> vec4<u32> { return vec4<u32>(bitcast<u32>(p.x), bitcast<u32>(p.y), bitcast<u32>(p.z), w); }
+@vertex fn vsPenL0(@builtin(vertex_index) vi: u32, @builtin(instance_index) j: u32) -> VP {
+  let t = listedAt(vi, 16u, j); let i = t.x;
+  let HA = hdrOf(i); let HB = hdrOf(i + 1u);
+  var a = cornerP(HA, wordAt(i)); var b = cornerP(HB, wordAt(i + 1u));
+  if (((HA.y | HB.y) >> 31u) != 0u) {                         // (a point kept aside)
+    if ((HA.y >> 31u) != 0u) { a = sideP(HA, i & 15u); }
+    if ((HB.y >> 31u) != 0u) { b = sideP(HB, (i + 1u) & 15u); }
+  }
+  let fw = flagsOf(HA, i & 15u);
+  let o = segQuad(pt(a, fw), pt(b, 0u), vi % 16u, Own(0u, 0u, 0u, 1.0, 0.0), vec2<f32>(1.0, 0.0), vec2<f32>(1.0, 0.0), keyZ(grb[LVU.skAt + (fw >> 8u)].x), -1.0);
+  var p: VP; p.pos = select(o.pos, vec4<f32>(2.0, 2.0, 2.0, 1.0), t.y == 0u); p.ab = o.ab; p.rc = o.rc;
+  return p;
+}
+@fragment fn fsPen0(i: VP) -> @location(0) vec4<f32> {       // (fsSeg's, for a segment no cut reaches and no grain)
+  if (within(i.pos.xy - V.io, i.ab, i.rc.x) < 0.0) { discard; }
+  return vec4<f32>(i.rc.yzw, 1.0);
+}
+// fsHl's test without its branches (WGSL's && and || take a branch each, & and | do not): the same edges, the same
+// answers -- the lean highlighters'
+fn edgeIn0(p: vec2<f32>, q: vec2<f32>, r: vec2<f32>, sg: f32) -> bool {
+  let ex = (r.x - q.x) * sg; let ey = (r.y - q.y) * sg;
+  let e = ex * (p.y - q.y) - ey * (p.x - q.x);
+  return (e > 0.0) | ((e == 0.0) & ((ey > 0.0) | ((ey == 0.0) & (ex < 0.0))));
+}
+@fragment fn fsHl0(i: VH) -> @location(0) vec4<f32> {
+  let p = i.pos.xy - V.io; let k = i.cs >> 24u;
+  let n = i.q2; let q0 = i.q01.xy + n; let q1 = i.q01.zw + n; let q2 = i.q01.zw - n; let q3 = i.q01.xy - n;
+  var ink = edgeIn0(p, q0, q1, -1.0) & edgeIn0(p, q1, q2, -1.0) & edgeIn0(p, q2, q3, -1.0) & edgeIn0(p, q3, q0, -1.0);
+  if (!ink && (k & 1u) != 0u) {
+    let sa = i.q01.xy; let t2 = sa + select(1.0, -1.0, (k & 2u) != 0u) * n; let sg = select(-1.0, 1.0, (k & 4u) != 0u);
+    ink = edgeIn0(p, sa, i.t1, sg) & edgeIn0(p, i.t1, t2, sg) & edgeIn0(p, t2, sa, sg);
+  }
+  if (!ink) { discard; }
+  let c = i.cs;
+  return vec4<f32>(f32(c & 0xffu), f32((c >> 8u) & 0xffu), f32((c >> 16u) & 0xffu), 255.0) / 255.0;
+}
+@vertex fn vsHlL0(@builtin(vertex_index) vi: u32, @builtin(instance_index) j: u32) -> VH {
+  let t = listedAt(vi, 64u, j); let i = t.x;
+  let HA = hdrOf(i); let HB = hdrOf(i + 1u); let HP = hdrOf(i - 1u);
+  var a = cornerP(HA, wordAt(i)); var b = cornerP(HB, wordAt(i + 1u)); var p = cornerP(HP, wordAt(i - 1u));
+  if (((HA.y | HB.y | HP.y) >> 31u) != 0u) {                  // (a point kept aside)
+    if ((HA.y >> 31u) != 0u) { a = sideP(HA, i & 15u); }
+    if ((HB.y >> 31u) != 0u) { b = sideP(HB, (i + 1u) & 15u); }
+    if ((HP.y >> 31u) != 0u) { p = sideP(HP, (i - 1u) & 15u); }
+  }
+  let fw = flagsOf(HA, i & 15u);
+  var A = pt(a, fw); let B = pt(b, 0u); let P = pt(p, 0u);   // (P: the bevel's point, wherever it turns)
+  A.w = select(A.w, (A.w & 0xffffff00u) | select(turnOf(xyOf(P), xyOf(A), xyOf(B)), 1u, (A.w & 32u) != 0u), (A.w & 1u) != 0u);   // (its turn: hlAt's rule, first)
+  var o = hlCore(A, B, P, vi % 64u, keyZ(grb[LVU.skAt + (fw >> 8u)].x));
+  if (t.y == 0u) { o.pos = vec4<f32>(2.0, 2.0, 2.0, 1.0); }
+  return o;
+}
+@vertex fn vsOwnL0(@builtin(vertex_index) vi: u32, @builtin(instance_index) j: u32) -> VS {
+  let i = listed(vi, 32u, j);
+  if (i == NONE) { var o: VS; o.pos = vec4<f32>(2.0, 2.0, 2.0, 1.0); return o; }
+  let sid = rec4(i).w >> 8u; let key = grb[LVU.skAt + sid].x;
+  let gs = stw(sid, 5u); let a = stw(sid, 4u) >> 24u;
+  let O = Own(select(1u, 0u, gs == NONE), gs, stw(sid, 0u), LVU.alpha[a / 4u][a % 4u], keyZ(key));
+  return segAt(i, vi % 32u, O);                            // (a strip of four: its corners as segAt numbers them)
 }
 // THE MASK'S DRAW (ERASE's mk): each record it lists marks every pixel its ink can have touched -- within half its widest
 // width there (a highlighter's turn by the segment before's), its wash's reach and EDGE pixels, of its segment (a band with
@@ -519,11 +662,11 @@ fn unord(u: u32) -> f32 { return bitcast<f32>(select(~u, u ^ 0x80000000u, (u >> 
     return o;
   }
   let i = mkr[16u + j];
-  let A = rec[i]; let f = A.w & 0xffu;
+  let A = rec4(i); let f = A.w & 0xffu;
   if ((f & 3u) == 0u) { o.pos = vec4<f32>(2.0, 2.0, 2.0, 1.0); return o; }
   let a = xyOf(A); var b = a; var w = bitcast<f32>(A.z);
-  if ((f & 1u) != 0u) { let B = rec[i + 1u]; b = xyOf(B); w = max(w, bitcast<f32>(B.z)); }
-  if ((f & 4u) != 0u) { w = max(w, bitcast<f32>(rec[i - 1u].z)); }
+  if ((f & 1u) != 0u) { let B = rec4(i + 1u); b = xyOf(B); w = max(w, bitcast<f32>(B.z)); }
+  if ((f & 68u) != 0u) { w = max(w, bitcast<f32>(rec4(i - 1u).z)); }
   let pa = a * V.k + V.off; let pb = b * V.k + V.off;
   let m = (w * 0.5 + 0.35) * V.k + EDGE;
   let d = pb - pa; let L = length(d);
@@ -592,6 +735,41 @@ struct AT { sc: u32, sr: u32, rowAt: u32, n: u32 };
   let n = UT.n;
   return vec4<f32>(vec3<f32>((sum + n / 2u) / n) / 255.0, 1.0);
 }
+// fsAreaT from packed tables (the editor's, a column or row over six texels at the most): a column's first texel and how
+// many (below, and in the top byte), then its weights two to a word, a vec4 a column (at x) and a vec4 a row (at
+// UT.rowAt + y) -- two loads a pixel. A row's sum in floats (its bytes times their weights: whole numbers under 2^24),
+// the rows' in integers: the same sums
+@group(0) @binding(5) var<storage, read> tq: array<vec4<u32>>;
+fn wOf(C: vec4<u32>, q: u32) -> u32 { return (C[1u + (q >> 1u)] >> ((q & 1u) * 16u)) & 0xffffu; }
+@fragment fn fsAreaP(i: VF) -> @location(0) vec4<f32> {
+  let C = tq[u32(i.pos.x)]; let R = tq[UT.rowAt + u32(i.pos.y)];
+  let i0 = i32(C.x & 0xffffffu); let nx = C.x >> 24u; let j0 = i32(R.x & 0xffffffu); let ny = R.x >> 24u;
+  var sum = vec3<u32>(0u);
+  for (var j = 0u; j < ny; j++) {
+    var row = vec3<f32>(0.0);
+    for (var q = 0u; q < nx; q++) { row += floor(textureLoad(tex, vec2<i32>(i0 + i32(q), j0 + i32(j)), 0).rgb * 255.0 + 0.5) * f32(wOf(C, q)); }
+    sum += vec3<u32>(row) * wOf(R, j);
+  }
+  let n = UT.n;
+  return vec4<f32>(vec3<f32>((sum + n / 2u) / n) / 255.0, 1.0);
+}
+@fragment fn fsAreaP3(i: VF) -> @location(0) vec4<f32> {   // (three texels each way at the most: its nine reads at once)
+  let C = tq[u32(i.pos.x)]; let R = tq[UT.rowAt + u32(i.pos.y)];
+  let i0 = i32(C.x & 0xffffffu); let j0 = i32(R.x & 0xffffffu);
+  let wx0 = f32(wOf(C, 0u)); let wx1 = f32(wOf(C, 1u)); let wx2 = f32(wOf(C, 2u));   // (a weight past the count: 0)
+  var sum = vec3<u32>(0u);   // (a texel past a count weighs nothing: its weight 0)
+  sum += vec3<u32>(floor(textureLoad(tex, vec2<i32>(i0 + 0, j0 + 0), 0).rgb * 255.0 + 0.5) * wx0
+                   + floor(textureLoad(tex, vec2<i32>(i0 + 1, j0 + 0), 0).rgb * 255.0 + 0.5) * wx1
+                   + floor(textureLoad(tex, vec2<i32>(i0 + 2, j0 + 0), 0).rgb * 255.0 + 0.5) * wx2) * wOf(R, 0u);
+  sum += vec3<u32>(floor(textureLoad(tex, vec2<i32>(i0 + 0, j0 + 1), 0).rgb * 255.0 + 0.5) * wx0
+                   + floor(textureLoad(tex, vec2<i32>(i0 + 1, j0 + 1), 0).rgb * 255.0 + 0.5) * wx1
+                   + floor(textureLoad(tex, vec2<i32>(i0 + 2, j0 + 1), 0).rgb * 255.0 + 0.5) * wx2) * wOf(R, 1u);
+  sum += vec3<u32>(floor(textureLoad(tex, vec2<i32>(i0 + 0, j0 + 2), 0).rgb * 255.0 + 0.5) * wx0
+                   + floor(textureLoad(tex, vec2<i32>(i0 + 1, j0 + 2), 0).rgb * 255.0 + 0.5) * wx1
+                   + floor(textureLoad(tex, vec2<i32>(i0 + 2, j0 + 2), 0).rgb * 255.0 + 0.5) * wx2) * wOf(R, 2u);
+  let n = UT.n;
+  return vec4<f32>(vec3<f32>((sum + n / 2u) / n) / 255.0, 1.0);
+}
 // THE SCREEN'S PIXELS OVER THE MASK'S BOX (ERASE's mk): the box, page units to the working canvas's pixels (BX: k, the
 // offset) to the screen's (a working pixel i lies under screen pixel i * cw / W), out by two -- fsArea makes each anew
 @group(0) @binding(2) var<storage, read> mkb: array<u32>;
@@ -620,7 +798,52 @@ fn unord(u: u32) -> f32 { return bitcast<f32>(select(~u, u ^ 0x80000000u, (u >> 
 struct C { lo: vec2<f32>, hi: vec2<f32>, n: u32, nb: u32, first: u32, count: u32 };
 @group(0) @binding(0) var<uniform> A: C;
 @group(0) @binding(1) var<storage, read> rec: array<vec4<u32>>;
-@group(0) @binding(2) var<storage, read_write> boxes: array<vec4<f32>>;
+// THE POINTS: rec's words. The engine's, four a record (x, y and the width as floats; the flags | the stroke << 8). The
+// editor's (WORD): a block of sixteen records in twenty words -- its header, then a word a point: x and y in 1/32 units
+// from the block's corner (12 bits each), the width over the block's narrowest in 1/16 (8 bits). The header: A the corner
+// (x 12 bits, whole units from OX; y 13, from OY) and the narrowest width (7, whole units); B the stroke of the block's
+// first point (22 bits), that point (4), its last (4), whether its last goes on into the next block (1; a block cleared
+// draws nothing), whether its points are kept aside (1); C which of them start a stroke (16) and whether a highlighter's
+// points are among them (1); D where they are kept aside, two words a point (x in 1/32 units; y in 1/32 from OYS, 19
+// bits, and the width in 1/16, 13) -- a block whose points do not fit a corner. Every point lies on one grid whatever
+// block holds it: decoded, the same numbers wherever it was written. A point read (rec4) as the engine's record: its
+// flags 1 a segment to the next, 2 a dot (a stroke of one point), 32 it starts its stroke, and 64 (WORD) a segment of a
+// block with a highlighter's points, not its stroke's first -- where it may turn, its box reaching the width before (the
+// engine's 4; a highlighter's turns are worked out where it is drawn)
+const WORD: bool = false;
+const OX: i32 = -2048; const OY: i32 = -1024; const OYS: i32 = -2048;
+fn wordOf(i: u32) -> u32 { return (i >> 4u) * 5u + 1u + ((i & 15u) >> 2u); }   // (the load holding raw slot i: its word i & 3)
+fn rawAt(R: u32, w: u32) -> u32 { if (WORD) { let s = R + w; return rec[wordOf(s)][s & 3u]; } return rec[R + (w >> 2u)][w & 3u]; }
+// (WORD: C's bit 17, a point of the block near a cut -- the erase's mark, the engine's flag 16 a block at a time: its
+// stroke's row then says which cut; kept, as the flag is, once made)
+fn nearCut(i: u32) -> bool { return (rec[(i >> 4u) * 5u].z & 0x20000u) != 0u; }
+fn rec4(i: u32) -> vec4<u32> {
+  if (!WORD) { return rec[i]; }
+  let hb = (i >> 4u) * 5u; let k = i & 15u;
+  let H = rec[hb]; let A = H.x; let B = H.y; let C = H.z;
+  var x = 0.0; var y = 0.0; var w = 0.0;
+  if ((B >> 31u) != 0u) {
+    let sa = H.w + 2u * k; let s0 = rawAt(sa, 0u); let s1 = rawAt(sa, 1u);
+    x = f32(bitcast<i32>(s0)) / 32.0; y = f32(i32(s1 & 0x7ffffu) + OYS * 32) / 32.0; w = f32(s1 >> 19u) / 16.0;
+  } else {
+    let p = rec[hb + 1u + (k >> 2u)][k & 3u];
+    x = f32(i32(A & 0xfffu) + OX) + f32(p & 0xfffu) / 32.0;
+    y = f32(i32((A >> 12u) & 0x1fffu) + OY) + f32((p >> 12u) & 0xfffu) / 32.0;
+    w = f32(A >> 25u) + f32(p >> 24u) / 16.0;
+  }
+  let k0 = (B >> 22u) & 15u; let k1 = (B >> 26u) & 15u; let st = C & 0xffffu;
+  let inb = (k >= k0) & (k <= k1);
+  let first = inb & (((st >> k) & 1u) == 1u);
+  let seg = inb & select(((B >> 30u) & 1u) == 1u, ((st >> (k + 1u)) & 1u) == 0u, k < k1);
+  let f = select(select(0u, 2u, first), 1u, seg) | select(0u, 64u, seg & ((C & 0x10000u) != 0u)) | select(0u, 32u, first);
+  let sid = (B & 0x3fffffu) + select(0u, countOneBits(st & ((2u << k) - (2u << k0))), k > k0);
+  return vec4<u32>(bitcast<u32>(x), bitcast<u32>(y), bitcast<u32>(w), f | (sid << 8u));
+}
+@group(0) @binding(2) var<storage, read_write> boxes: array<vec2<u32>>;   // (a block's box: two words, 16 bits a side -- boxAt)
+fn boxAt(b: u32) -> vec4<f32> {                              // a block's box: its four sides in whole page units
+  let v = boxes[b];
+  return vec4<f32>(f32(bitcast<i32>(v.x << 16u) >> 16u), f32(bitcast<i32>(v.x) >> 16u), f32(bitcast<i32>(v.y << 16u) >> 16u), f32(bitcast<i32>(v.y) >> 16u));
+}
 @group(0) @binding(3) var<storage, read_write> flags: array<u32>;
 @group(0) @binding(4) var<storage, read_write> scan: array<u32>;
 @group(0) @binding(5) var<storage, read_write> sums: array<u32>;
@@ -632,7 +855,8 @@ fn xyOf(r: vec4<u32>) -> vec2<f32> { return vec2<f32>(bitcast<f32>(r.x), bitcast
 var<workgroup> ws: array<u32, 128>;
 // spans: the ranges of blocks whose records went up, each [its first block, where its boxes start in this dispatch],
 // A.count of them; A.first the blocks in all
-@compute @workgroup_size(64) fn boxOf(@builtin(global_invocation_id) id: vec3<u32>) {
+@compute @workgroup_size(64) fn boxOf(@builtin(global_invocation_id) gi: vec3<u32>) {
+  let id = vec3<u32>(gi.x + gi.y * 4194240u, 0u, 0u);   // (past 65,535 workgroups: DW)
   if (id.x >= A.first) { return; }
   var j = 0u;
   for (var q = 1u; q < A.count; q++) { if (spans[q].y <= id.x) { j = q; } }
@@ -640,22 +864,27 @@ var<workgroup> ws: array<u32, 128>;
   var lo = vec2<f32>(3.0e38); var hi = vec2<f32>(-3.0e38); var w = 0.0;
   for (var k = 0u; k < 16u; k++) {
     let i = b * 16u + k;
-    let R = rec[i]; let f = R.w & 0xffu;
+    let R = rec4(i); let f = R.w & 0xffu;
     if ((f & 3u) == 0u) { continue; }
     let p = xyOf(R); lo = min(lo, p); hi = max(hi, p); w = max(w, bitcast<f32>(R.z));
-    if ((f & 1u) != 0u) { let Q = rec[i + 1u]; let q2 = xyOf(Q); lo = min(lo, q2); hi = max(hi, q2); w = max(w, bitcast<f32>(Q.z)); }
-    if ((f & 4u) != 0u) { w = max(w, bitcast<f32>(rec[i - 1u].z)); }
+    if ((f & 1u) != 0u) { let Q = rec4(i + 1u); let q2 = xyOf(Q); lo = min(lo, q2); hi = max(hi, q2); w = max(w, bitcast<f32>(Q.z)); }
+    if ((f & 68u) != 0u) { w = max(w, bitcast<f32>(rec4(i - 1u).z)); }
   }
   let m = w * 0.5 + 0.35 + 1.0;
-  boxes[b] = select(vec4<f32>(3.0e38, 3.0e38, -3.0e38, -3.0e38), vec4<f32>(lo - vec2<f32>(m), hi + vec2<f32>(m)), hi.x >= lo.x);
+  let Lo = vec2<i32>(clamp(floor(lo - vec2<f32>(m)), vec2<f32>(-32768.0), vec2<f32>(32767.0)));   // (whole units, out from its ink)
+  let Hi = vec2<i32>(clamp(ceil(hi + vec2<f32>(m)), vec2<f32>(-32768.0), vec2<f32>(32767.0)));
+  boxes[b] = select(vec2<u32>(0x7fff7fffu, 0x80008000u),   // (no ink: low sides past the high, reaching nothing)
+                    vec2<u32>((u32(Lo.x) & 0xffffu) | (u32(Lo.y) << 16u), (u32(Hi.x) & 0xffffu) | (u32(Hi.y) << 16u)), hi.x >= lo.x);
 }
-@compute @workgroup_size(128) fn reach(@builtin(global_invocation_id) id: vec3<u32>) {
+@compute @workgroup_size(128) fn reach(@builtin(global_invocation_id) gi: vec3<u32>) {
+  let id = vec3<u32>(gi.x + gi.y * 8388480u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let b = id.x;
   if (b >= A.n) { return; }
-  let B = boxes[b];
+  let B = boxAt(b);
   flags[b] = select(0u, 1u, B.z >= A.lo.x && B.x <= A.hi.x && B.w >= A.lo.y && B.y <= A.hi.y);
 }
-@compute @workgroup_size(128) fn scanBlocks(@builtin(workgroup_id) wid: vec3<u32>, @builtin(local_invocation_index) li: u32) {
+@compute @workgroup_size(128) fn scanBlocks(@builtin(workgroup_id) wq: vec3<u32>, @builtin(local_invocation_index) li: u32) {
+  let wid = vec3<u32>(wq.x + wq.y * 65535u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let i = wid.x * 128u + li;
   var f = 0u;
   if (i < A.n) { f = flags[i]; }
@@ -688,14 +917,16 @@ var<workgroup> ws: array<u32, 128>;
   for (var j = 0u; j < per; j++) { let g = g0 + j; if (g < ng) { let t = sums[g]; sums[g] = acc; acc += t; } }
   if (li == 127u) { scan[A.n] = ws[127]; }
 }
-@compute @workgroup_size(128) fn place(@builtin(global_invocation_id) id: vec3<u32>) {
+@compute @workgroup_size(128) fn place(@builtin(global_invocation_id) gi: vec3<u32>) {
+  let id = vec3<u32>(gi.x + gi.y * 8388480u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let i = id.x;
   if (i >= A.n) { return; }
   let at = scan[i] + sums[i / 128u];
   scan[i] = at;
   if (flags[i] == 1u) { clist[at] = i; }
 }
-@compute @workgroup_size(64) fn drawArgs(@builtin(global_invocation_id) id: vec3<u32>) {
+@compute @workgroup_size(64) fn drawArgs(@builtin(global_invocation_id) gi: vec3<u32>) {
+  let id = vec3<u32>(gi.x + gi.y * 4194240u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let k = id.x;
   if (k >= A.nb) { return; }
   let T = runs[k];
@@ -724,8 +955,10 @@ struct LQ { ncCap: u32, n: u32, skAt: u32, stAt: u32, wide: u32, p1: u32, p2: u3
 @group(0) @binding(15) var<storage, read_write> largs: array<u32>;
 @group(0) @binding(16) var<storage, read_write> grbw: array<vec2<u32>>;
 @group(0) @binding(27) var<storage, read_write> lh: array<u32>;   // (the order's header: 0 spans, 1 classes, 2 pens, 3 others, 4 strokes)
+@group(0) @binding(17) var<storage, read_write> lcnt: array<atomic<u32>>;   // (an erase's frame: a class's blocks no cut marked, and marked)
 var<workgroup> wsS: array<u32, 128>;
-@compute @workgroup_size(64) fn spanCount(@builtin(global_invocation_id) id: vec3<u32>) {
+@compute @workgroup_size(64) fn spanCount(@builtin(global_invocation_id) gi: vec3<u32>) {
+  let id = vec3<u32>(gi.x + gi.y * 4194240u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let k = id.x;
   if (k >= lh[0]) { return; }
   let S = sp[k];
@@ -752,15 +985,18 @@ var<workgroup> wsS: array<u32, 128>;
     largs[0] = min(g, 65535u); largs[1] = (g + 65534u) / 65535u; largs[2] = 1u;
   }
 }
-@compute @workgroup_size(64) fn classArgs(@builtin(global_invocation_id) id: vec3<u32>) {
+@compute @workgroup_size(64) fn classArgs(@builtin(global_invocation_id) gi: vec3<u32>) {
+  let id = vec3<u32>(gi.x + gi.y * 4194240u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let c = id.x;
   if (c >= Q.ncCap) { return; }
+  atomicStore(&lcnt[2u * c], 0u); atomicStore(&lcnt[2u * c + 1u], 0u);
   let o = (c + 1u) * 8u;
   if (c >= lh[1]) { largs[o] = 0u; largs[o + 1u] = 0u; largs[o + 2u] = 0u; largs[o + 3u] = 0u; largs[o + 4u] = 0u; return; }
   let T = ctab[c]; let s0 = soff[T.x]; let n = soff[T.y] - s0;
   let parts = max(Q.p2, 1u);                                 // (a record's parts: four while the card cuts strokes, else its one)
   if (T.z == 1u) { largs[o] = 6u * parts; largs[o + 1u] = n * 16u; largs[o + 2u] = 0u; largs[o + 3u] = s0 * 64u; largs[o + 4u] = 0u; }
-  else if (T.z == 2u) { largs[o] = 6u * parts; largs[o + 1u] = n * 16u; largs[o + 2u] = s0 * 32u; largs[o + 3u] = 0u; }
+  else if (T.z == 2u) { largs[o] = select(6u * parts, 4u, parts == 1u);   // (one part: vsOwnL0's strip of four)
+     largs[o + 1u] = n * 16u; largs[o + 2u] = s0 * 32u; largs[o + 3u] = 0u; }
   else { largs[o] = 4u; largs[o + 1u] = n * 16u; largs[o + 2u] = s0 * 16u; largs[o + 3u] = 0u; }
 }
 @compute @workgroup_size(64) fn expand(@builtin(global_invocation_id) id: vec3<u32>) {
@@ -768,8 +1004,36 @@ var<workgroup> wsS: array<u32, 128>;
   if (e >= soff[n]) { return; }
   var lo = 0u; var hi = n;                                   // the span whose list holds entry e: soff[lo] <= e < soff[lo + 1]
   while (hi - lo > 1u) { let m = (lo + hi) / 2u; if (soff[m] <= e) { lo = m; } else { hi = m; } }
-  let S = sp[lo];
-  lst[e] = vec2<u32>(clist[scan[S.x / 16u] + (e - soff[lo])], lo);
+  let S = sp[lo]; let b = clist[scan[S.x / 16u] + (e - soff[lo])];
+  var at = e;
+  if (WORD && Q.p2 == 4u) {                                  // (an erase's frame: a pen's or highlighter's class in two, the marked at its end)
+    let T = ctab[S.z];
+    if (T.z <= 1u) {
+      if ((rec[b * 5u].z & 0x20000u) != 0u) { at = soff[T.y] - 1u - atomicAdd(&lcnt[2u * S.z + 1u], 1u); }
+      else { at = soff[T.x] + atomicAdd(&lcnt[2u * S.z], 1u); }
+    }
+  }
+  lst[at] = vec2<u32>(b, lo);
+}
+// AN ERASE'S FRAME'S TWO DRAWS of a pen's or highlighter's class (expand's halves): its blocks no cut marked, one part a
+// record, as its draw (largs at c + 1), then its marked blocks', four parts a highlighter's record, past the classes'
+// (Q.ncCap + 1 + c; nothing for a grain or wash class: its one draw as classArgs wrote it)
+@compute @workgroup_size(64) fn splitArgs(@builtin(global_invocation_id) gi: vec3<u32>) {
+  let c = gi.x + gi.y * 4194240u;   // (past 65,535 workgroups: DW)
+  if (c >= Q.ncCap) { return; }
+  let o = (c + 1u) * 8u; let m = (Q.ncCap + 1u + c) * 8u;
+  largs[m] = 0u; largs[m + 1u] = 0u; largs[m + 2u] = 0u; largs[m + 3u] = 0u; largs[m + 4u] = 0u;
+  if (c >= lh[1]) { return; }
+  let T = ctab[c];
+  if (T.z > 1u) { return; }
+  let c0 = soff[T.x]; let u = atomicLoad(&lcnt[2u * c]); let k = atomicLoad(&lcnt[2u * c + 1u]);
+  if (T.z == 1u) {
+    largs[o] = 6u; largs[o + 1u] = u * 16u; largs[o + 2u] = 0u; largs[o + 3u] = c0 * 64u; largs[o + 4u] = 0u;
+    largs[m] = 24u; largs[m + 1u] = k * 16u; largs[m + 2u] = 0u; largs[m + 3u] = (c0 + u) * 64u; largs[m + 4u] = 0u;
+  } else {
+    largs[o] = 4u; largs[o + 1u] = u * 16u; largs[o + 2u] = c0 * 16u; largs[o + 3u] = 0u;
+    largs[m] = 4u; largs[m + 1u] = k * 16u; largs[m + 2u] = (c0 + u) * 16u; largs[m + 3u] = 0u;
+  }
 }
 // A MASK THE PROCESSOR LISTS (the stroke being drawn: its new segments; a fold's pieces made fresh; a selection moved):
 // its records in the mask (ERASE's msk: its header, then the records), its box worked out here (listBoxes, a thread a
@@ -779,15 +1043,16 @@ var<workgroup> wsS: array<u32, 128>;
 @group(0) @binding(19) var<storage, read_write> mkw: array<atomic<u32>>;
 fn ordW(f: f32) -> u32 { let b = bitcast<u32>(f); return select(b ^ 0x80000000u, ~b, (b >> 31u) == 1u); }
 var<workgroup> wbx: array<vec4<u32>, 64>;
-@compute @workgroup_size(64) fn listBoxes(@builtin(global_invocation_id) id: vec3<u32>, @builtin(local_invocation_index) li: u32) {
+@compute @workgroup_size(64) fn listBoxes(@builtin(global_invocation_id) gi: vec3<u32>, @builtin(local_invocation_index) li: u32) {
+  let id = vec3<u32>(gi.x + gi.y * 4194240u, 0u, 0u);   // (past 65,535 workgroups: DW)
   var B = vec4<u32>(0xffffffffu, 0xffffffffu, 0u, 0u);       // (ordered words: no box)
   if (id.x < min(atomicLoad(&mkw[0]), Q.p1)) {
     let i = atomicLoad(&mkw[16u + id.x]);
-    let R0 = rec[i]; let f = R0.w & 0xffu;
+    let R0 = rec4(i); let f = R0.w & 0xffu;
     if ((f & 3u) != 0u) {
       let a = xyOf(R0); var b = a; var w = bitcast<f32>(R0.z);
-      if ((f & 1u) != 0u) { let R1 = rec[i + 1u]; b = xyOf(R1); w = max(w, bitcast<f32>(R1.z)); }
-      if ((f & 4u) != 0u) { w = max(w, bitcast<f32>(rec[i - 1u].z)); }
+      if ((f & 1u) != 0u) { let R1 = rec4(i + 1u); b = xyOf(R1); w = max(w, bitcast<f32>(R1.z)); }
+      if ((f & 68u) != 0u) { w = max(w, bitcast<f32>(rec4(i - 1u).z)); }
       let r = w * 0.5 + 0.35 + 1.0;
       B = vec4<u32>(ordW(min(a.x, b.x) - r), ordW(min(a.y, b.y) - r), ordW(max(a.x, b.x) + r), ordW(max(a.y, b.y) + r));
     }
@@ -813,10 +1078,11 @@ var<workgroup> wbx: array<vec4<u32>, 64>;
 // second mark may list nothing and still have the first's box (swap)
 @group(0) @binding(18) var<storage, read> mkb: array<u32>;
 fn unord(u: u32) -> f32 { return bitcast<f32>(select(~u, u ^ 0x80000000u, (u >> 31u) == 1u)); }
-@compute @workgroup_size(128) fn reachBox(@builtin(global_invocation_id) id: vec3<u32>) {
+@compute @workgroup_size(128) fn reachBox(@builtin(global_invocation_id) gi: vec3<u32>) {
+  let id = vec3<u32>(gi.x + gi.y * 8388480u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let b = id.x;
   if (b >= A.n) { return; }
-  let B = boxes[b]; let m = A.lo.x;
+  let B = boxAt(b); let m = A.lo.x;
   let lo = vec2<f32>(unord(mkb[1]), unord(mkb[2])) - vec2<f32>(m); let hi = vec2<f32>(unord(mkb[3]), unord(mkb[4])) + vec2<f32>(m);
   flags[b] = select(0u, 1u, mkb[1] != 0xffffffffu && B.z >= lo.x && B.x <= hi.x && B.w >= lo.y && B.y <= hi.y);
 }
@@ -854,7 +1120,8 @@ fn kindOfSid(sid: u32) -> u32 {                               // 0 a pen, 1 a hi
 }
 // A PREFIX SUM of osc[0..lh[7]): each the sum of those before it, osc[lh[7]] and lh[8] the total (three passes: each 128's
 // own, their sums', each 128's start added)
-@compute @workgroup_size(128) fn oScanLocal(@builtin(workgroup_id) wid: vec3<u32>, @builtin(local_invocation_index) li: u32) {
+@compute @workgroup_size(128) fn oScanLocal(@builtin(workgroup_id) wq: vec3<u32>, @builtin(local_invocation_index) li: u32) {
+  let wid = vec3<u32>(wq.x + wq.y * 65535u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let n = lh[7]; let i = wid.x * 128u + li;
   var f = 0u;
   if (i < n) { f = osc[i]; }
@@ -887,19 +1154,22 @@ fn kindOfSid(sid: u32) -> u32 {                               // 0 a pen, 1 a hi
   for (var j = 0u; j < per; j++) { let g = g0 + j; if (g < ng) { let t = osb[g]; osb[g] = acc; acc += t; } }
   if (li == 127u) { lh[8] = wsO[127]; osc[n] = wsO[127]; }
 }
-@compute @workgroup_size(128) fn oScanAdd(@builtin(global_invocation_id) id: vec3<u32>) {
+@compute @workgroup_size(128) fn oScanAdd(@builtin(global_invocation_id) gi: vec3<u32>) {
+  let id = vec3<u32>(gi.x + gi.y * 8388480u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let i = id.x;
   if (i >= lh[7]) { return; }
   osc[i] += osb[i / 128u];
 }
 // THE EDITS: the anchors marked; each place's count (an anchor: its list, and itself if it stays; any other: itself);
 // each place's strokes put where they now go, the strokes before all first; the marks cleared
-@compute @workgroup_size(128) fn ordMark(@builtin(global_invocation_id) id: vec3<u32>) {
+@compute @workgroup_size(128) fn ordMark(@builtin(global_invocation_id) gi: vec3<u32>) {
+  let id = vec3<u32>(gi.x + gi.y * 8388480u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let i = id.x;
   if (i >= lh[9]) { return; }
   ed[eb[3u * i]] = vec2<u32>(eb[3u * i + 1u], eb[3u * i + 2u] | 0x40000000u);
 }
-@compute @workgroup_size(128) fn ordCount(@builtin(global_invocation_id) id: vec3<u32>) {
+@compute @workgroup_size(128) fn ordCount(@builtin(global_invocation_id) gi: vec3<u32>) {
+  let id = vec3<u32>(gi.x + gi.y * 8388480u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let k = id.x; let n = lh[4];
   if (k == 0u) { lh[7] = n; }
   if (k >= n) { return; }
@@ -908,7 +1178,8 @@ fn kindOfSid(sid: u32) -> u32 {                               // 0 a pen, 1 a hi
   if (((e.y >> 30u) & 1u) == 1u) { c = (e.y & 0x3fffffffu) + (e.y >> 31u); }
   osc[k] = c;
 }
-@compute @workgroup_size(128) fn ordPut(@builtin(global_invocation_id) id: vec3<u32>) {
+@compute @workgroup_size(128) fn ordPut(@builtin(global_invocation_id) gi: vec3<u32>) {
+  let id = vec3<u32>(gi.x + gi.y * 8388480u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let k = id.x; let hn = lh[10]; let n = lh[7];
   if (k == 0u) {
     for (var j = 0u; j < hn; j++) { ordw[j] = eb[3u * lh[9] + j]; }
@@ -922,13 +1193,15 @@ fn kindOfSid(sid: u32) -> u32 {                               // 0 a pen, 1 a hi
   let c = e.y & 0x3fffffffu;
   for (var j = 0u; j < c; j++) { ordw[o + j] = eb[e.x + j]; }
 }
-@compute @workgroup_size(128) fn ordClear(@builtin(global_invocation_id) id: vec3<u32>) {
+@compute @workgroup_size(128) fn ordClear(@builtin(global_invocation_id) gi: vec3<u32>) {
+  let id = vec3<u32>(gi.x + gi.y * 8388480u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let i = id.x;
   if (i >= lh[9]) { return; }
   ed[eb[3u * i]] = vec2<u32>(0u, 0u);
 }
 // WHAT THE DRAWS NEED, from the order (lh[4] its strokes): the keys, and which are not pens (counted)
-@compute @workgroup_size(128) fn ordKey(@builtin(global_invocation_id) id: vec3<u32>) {
+@compute @workgroup_size(128) fn ordKey(@builtin(global_invocation_id) gi: vec3<u32>) {
+  let id = vec3<u32>(gi.x + gi.y * 8388480u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let k = id.x; let m = lh[4];
   if (k == 0u) { lh[7] = m; }
   if (k >= m) { return; }
@@ -936,14 +1209,16 @@ fn kindOfSid(sid: u32) -> u32 {                               // 0 a pen, 1 a hi
   grbw[O.skAt + sid].x = k;
   osc[k] = select(1u, 0u, kindOfSid(sid) == 0u);
 }
-@compute @workgroup_size(128) fn ordSplit(@builtin(global_invocation_id) id: vec3<u32>) {   // the classes' order
+@compute @workgroup_size(128) fn ordSplit(@builtin(global_invocation_id) gi: vec3<u32>) {   // the classes' order
+  let id = vec3<u32>(gi.x + gi.y * 8388480u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let k = id.x; let nn = lh[8]; let np = lh[4] - nn;
   if (k == 0u) { lh[2] = np; lh[3] = nn; }
   if (k >= lh[4]) { return; }
   let sid = ordr[k]; let kd = kindOfSid(sid); let rn = osc[k];
   if (kd == 0u) { ok[k - rn] = sid; } else { ok[np + rn] = sid | (kd << 30u); }
 }
-@compute @workgroup_size(128) fn ordTrans(@builtin(global_invocation_id) id: vec3<u32>) {   // where a level begins
+@compute @workgroup_size(128) fn ordTrans(@builtin(global_invocation_id) gi: vec3<u32>) {   // where a level begins
+  let id = vec3<u32>(gi.x + gi.y * 8388480u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let r = id.x; let nn = lh[3]; let np = lh[2];
   if (r == 0u) { lh[7] = nn; }
   if (r >= nn) { return; }
@@ -951,7 +1226,8 @@ fn kindOfSid(sid: u32) -> u32 {                               // 0 a pen, 1 a hi
   if ((ok[np + r] >> 30u) == 1u && r > 0u && (ok[np + r - 1u] >> 30u) == 2u) { t = 1u; }
   osc[r] = t;
 }
-@compute @workgroup_size(128) fn ordClass(@builtin(global_invocation_id) id: vec3<u32>) {
+@compute @workgroup_size(128) fn ordClass(@builtin(global_invocation_id) gi: vec3<u32>) {
+  let id = vec3<u32>(gi.x + gi.y * 8388480u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let q = id.x; let np = lh[2]; let nn = lh[3];
   if (q == 0u) {
     let lv = select(0u, lh[8] + 1u, nn > 0u);
@@ -965,7 +1241,8 @@ fn kindOfSid(sid: u32) -> u32 {                               // 0 a pen, 1 a hi
   ocl[q] = 2u * (osc[r] + t) + kd;
 }
 fn rowAt(q: u32) -> vec2<u32> { return grbw[O.stAt + (ok[q] & 0x3fffffffu) * 4u]; }   // a place's stroke's first record, how many
-@compute @workgroup_size(128) fn ordStart(@builtin(global_invocation_id) id: vec3<u32>) {
+@compute @workgroup_size(128) fn ordStart(@builtin(global_invocation_id) gi: vec3<u32>) {
+  let id = vec3<u32>(gi.x + gi.y * 8388480u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let q = id.x;
   if (q == 0u) { lh[7] = lh[4]; }
   if (q >= lh[4]) { return; }
@@ -973,7 +1250,8 @@ fn rowAt(q: u32) -> vec2<u32> { return grbw[O.stAt + (ok[q] & 0x3fffffffu) * 4u]
   if (q > 0u) { let a = rowAt(q - 1u); let c = rowAt(q); if (ocl[q] == ocl[q - 1u] && a.x + a.y == c.x) { b = 0u; } }
   osc[q] = b;
 }
-@compute @workgroup_size(128) fn ordSpan(@builtin(global_invocation_id) id: vec3<u32>) {
+@compute @workgroup_size(128) fn ordSpan(@builtin(global_invocation_id) gi: vec3<u32>) {
+  let id = vec3<u32>(gi.x + gi.y * 8388480u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let q = id.x;
   if (q == 0u) { lh[0] = lh[8]; }
   if (q >= lh[4]) { return; }
@@ -983,26 +1261,20 @@ fn rowAt(q: u32) -> vec2<u32> { return grbw[O.stAt + (ok[q] & 0x3fffffffu) * 4u]
   if (start) { spw[4u * at] = c.x; spw[4u * at + 2u] = ocl[q]; spw[4u * at + 3u] = 0u; }
   if (q + 1u >= lh[4] || osc[q + 2u] != osc[q + 1u]) { spw[4u * at + 1u] = c.x + c.y; }
 }
-@compute @workgroup_size(64) fn ordCtabClear(@builtin(global_invocation_id) id: vec3<u32>) {
+@compute @workgroup_size(64) fn ordCtabClear(@builtin(global_invocation_id) gi: vec3<u32>) {
+  let id = vec3<u32>(gi.x + gi.y * 4194240u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let c = id.x;
   if (c >= O.ncCap) { return; }
   ctw[4u * c] = 0u; ctw[4u * c + 1u] = 0u; ctw[4u * c + 2u] = select(select(2u, 1u, (c & 1u) == 1u), 0u, c == 0u); ctw[4u * c + 3u] = 0u;
 }
-@compute @workgroup_size(128) fn ordCtab(@builtin(global_invocation_id) id: vec3<u32>) {
+@compute @workgroup_size(128) fn ordCtab(@builtin(global_invocation_id) gi: vec3<u32>) {
+  let id = vec3<u32>(gi.x + gi.y * 8388480u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let i = id.x; let ns = lh[0];
   if (i >= ns) { return; }
   let c = spw[4u * i + 2u];
   if (c >= O.ncCap) { return; }
   if (i == 0u || spw[4u * (i - 1u) + 2u] != c) { ctw[4u * c] = i; }
   if (i + 1u == ns || spw[4u * (i + 1u) + 2u] != c) { ctw[4u * c + 1u] = i + 1u; }
-}
-// THE CARD'S OWN EDIT (an erase's pieces put where their stroke was: ERASE's flip): the order written back where it is
-// read, so its buffers stay the processor's whether the card made one or not
-@group(0) @binding(17) var<storage, read_write> ordx: array<u32>;
-@compute @workgroup_size(128) fn ordBack(@builtin(global_invocation_id) id: vec3<u32>) {
-  let k = id.x;
-  if (k >= lh[4]) { return; }
-  ordx[k] = ordw[k];
 }
 `,
   // ERASING ON THE CARD (the editor's eraser, a swipe): the processor sends the swipe's path, a step a frame, and the card
@@ -1040,10 +1312,8 @@ fn rowAt(q: u32) -> vec2<u32> { return grbw[O.stAt + (ok[q] & 0x3fffffffu) * 4u]
   // the touched list, 4 the slots' room, 8 the records' pool, 16 the grain's pool, 32 the table of strokes being cut, 64
   // the cells, 128 the list of slots), 3 the step, 4 and 5 the slots' room (next, end), 6 and 7 the records' pool's, 8 and
   // 9 the grain pool's, 10 and 11 the table's entries, 12 the slots made, 13 their pieces' size (words), 14 the
-  // blocks found (as many as are entered), 15 found in all; 16 the numbers taken, 17 how many the processor gave, 18 the
-// first of them, 19 the slots flipped this frame, 20 the log's words, 21 the order's anchors, 22 their lists' words, 23
-// the log's room, 24 the anchors' room, 25 the lists', 26 the order's room, 27 the classes drawn, 28 the slots done (made
-// strokes, or let go as they were); then the strokes touched, the cells listed (a cell's key as the editor's dkey), the cells' map (a bit
+  // blocks found (as many as are entered), 15 found in all; 19 the slots logged this frame (planPick), 20 the log's words,
+  // 23 the log's room; then the strokes touched, the cells listed (a cell's key as the editor's dkey), the cells' map (a bit
   // a cell), the slots made (where each is in es), and each stroke number's last step touched
   ERASE: `
 struct Step { lo: vec2<f32>, hi: vec2<f32>, R: f32, least: f32, reach: f32, nS: u32, frame: u32, mode: u32, layer: u32, nb: u32,
@@ -1052,20 +1322,95 @@ struct Step { lo: vec2<f32>, hi: vec2<f32>, R: f32, least: f32, reach: f32, nS: 
 @group(0) @binding(0) var<storage, read_write> es: array<u32>;
 @group(0) @binding(1) var<storage, read> fin: array<u32>;
 @group(0) @binding(2) var<storage, read_write> rec: array<vec4<u32>>;
+// THE POINTS: rec's words. The engine's, four a record (x, y and the width as floats; the flags | the stroke << 8). The
+// editor's (WORD): a block of sixteen records in twenty words -- its header, then a word a point: x and y in 1/32 units
+// from the block's corner (12 bits each), the width over the block's narrowest in 1/16 (8 bits). The header: A the corner
+// (x 12 bits, whole units from OX; y 13, from OY) and the narrowest width (7, whole units); B the stroke of the block's
+// first point (22 bits), that point (4), its last (4), whether its last goes on into the next block (1; a block cleared
+// draws nothing), whether its points are kept aside (1); C which of them start a stroke (16) and whether a highlighter's
+// points are among them (1); D where they are kept aside, two words a point (x in 1/32 units; y in 1/32 from OYS, 19
+// bits, and the width in 1/16, 13) -- a block whose points do not fit a corner. Every point lies on one grid whatever
+// block holds it: decoded, the same numbers wherever it was written. A point read (rec4) as the engine's record: its
+// flags 1 a segment to the next, 2 a dot (a stroke of one point), 32 it starts its stroke, and 64 (WORD) a segment of a
+// block with a highlighter's points, not its stroke's first -- where it may turn, its box reaching the width before (the
+// engine's 4; a highlighter's turns are worked out where it is drawn)
+const WORD: bool = false;
+const OX: i32 = -2048; const OY: i32 = -1024; const OYS: i32 = -2048;
+fn wordOf(i: u32) -> u32 { return (i >> 4u) * 5u + 1u + ((i & 15u) >> 2u); }   // (the load holding raw slot i: its word i & 3)
+fn rawAt(R: u32, w: u32) -> u32 { if (WORD) { let s = R + w; return rec[wordOf(s)][s & 3u]; } return rec[R + (w >> 2u)][w & 3u]; }
+// (WORD: C's bit 17, a point of the block near a cut -- the erase's mark, the engine's flag 16 a block at a time: its
+// stroke's row then says which cut; kept, as the flag is, once made)
+fn nearCut(i: u32) -> bool { return (rec[(i >> 4u) * 5u].z & 0x20000u) != 0u; }
+fn rec4(i: u32) -> vec4<u32> {
+  if (!WORD) { return rec[i]; }
+  let hb = (i >> 4u) * 5u; let k = i & 15u;
+  let H = rec[hb]; let A = H.x; let B = H.y; let C = H.z;
+  var x = 0.0; var y = 0.0; var w = 0.0;
+  if ((B >> 31u) != 0u) {
+    let sa = H.w + 2u * k; let s0 = rawAt(sa, 0u); let s1 = rawAt(sa, 1u);
+    x = f32(bitcast<i32>(s0)) / 32.0; y = f32(i32(s1 & 0x7ffffu) + OYS * 32) / 32.0; w = f32(s1 >> 19u) / 16.0;
+  } else {
+    let p = rec[hb + 1u + (k >> 2u)][k & 3u];
+    x = f32(i32(A & 0xfffu) + OX) + f32(p & 0xfffu) / 32.0;
+    y = f32(i32((A >> 12u) & 0x1fffu) + OY) + f32((p >> 12u) & 0xfffu) / 32.0;
+    w = f32(A >> 25u) + f32(p >> 24u) / 16.0;
+  }
+  let k0 = (B >> 22u) & 15u; let k1 = (B >> 26u) & 15u; let st = C & 0xffffu;
+  let inb = (k >= k0) & (k <= k1);
+  let first = inb & (((st >> k) & 1u) == 1u);
+  let seg = inb & select(((B >> 30u) & 1u) == 1u, ((st >> (k + 1u)) & 1u) == 0u, k < k1);
+  let f = select(select(0u, 2u, first), 1u, seg) | select(0u, 64u, seg & ((C & 0x10000u) != 0u)) | select(0u, 32u, first);
+  let sid = (B & 0x3fffffu) + select(0u, countOneBits(st & ((2u << k) - (2u << k0))), k > k0);
+  return vec4<u32>(bitcast<u32>(x), bitcast<u32>(y), bitcast<u32>(w), f | (sid << 8u));
+}
+fn rawPut(R: u32, w: u32, v: u32) { if (WORD) { let s = R + w; rec[wordOf(s)][s & 3u] = v; } else { rec[R + (w >> 2u)][w & 3u] = v; } }
+fn rawPut4(R: u32, w: u32, v: vec4<u32>) { rawPut(R, w, v.x); rawPut(R, w + 1u, v.y); rawPut(R, w + 2u, v.z); rawPut(R, w + 3u, v.w); }
+fn recPut(i: u32, v: vec4<u32>) { rec[i] = v; }   // (the engine's layout only)
+fn recPutW(i: u32, w: u32) { rec[i].w = w; }
+fn gq(v: f32) -> i32 { return i32(floor(v * 32.0 + 0.5)); }   // (a place on the grid: 1/32 units)
+fn wq(v: f32) -> i32 { return i32(floor(v * 16.0 + 0.5)); }   // (a width: 1/16)
+// a point kept aside at sa (its block's D, and two words a point after it), as the move writes it
+fn sideWrite(sa: u32, x: f32, y: f32, w: f32) {
+  rawPut(sa, 0u, bitcast<u32>(gq(x)));
+  rawPut(sa, 1u, u32(clamp(gq(y) - OYS * 32, 0, 0x7ffff)) | (u32(clamp(wq(w), 0, 8191)) << 19u));
+}
+fn sidePut(i: u32, x: f32, y: f32, w: f32) { sideWrite(rec[(i >> 4u) * 5u].w + 2u * (i & 15u), x, y, w); }
+fn markBlock(q: u32) { rec[q * 5u].z = rec[q * 5u].z | 0x20000u; }   // (every writer sets the same bit)
+// A BLOCK WRITTEN (WORD): its points bx[k0..k1] (x, y, width), its first point's stroke, which start one (st), whether its
+// last ends its own -> written? (false: they do not fit one corner, and nothing is written)
+var<private> bx: array<vec3<f32>, 16>;
+fn blockPut(b: u32, k0: u32, k1: u32, st: u32, ends: bool, sid: u32) -> bool {
+  var lo = vec3<i32>(2147483647); var hi = vec3<i32>(-2147483647);
+  for (var k = k0; k <= k1; k++) { let q = vec3<i32>(gq(bx[k].x), gq(bx[k].y), wq(bx[k].z)); lo = min(lo, q); hi = max(hi, q); }
+  let cx = i32(floor(f32(lo.x) / 32.0)); let cy = i32(floor(f32(lo.y) / 32.0)); let nw = max(lo.z, 0) / 16;
+  if (cx < OX || cx - OX > 4095 || cy < OY || cy - OY > 8191 || nw > 127 || hi.x - cx * 32 > 4095 || hi.y - cy * 32 > 4095 || hi.z - nw * 16 > 255) { return false; }
+  let hb = b * 5u;
+  rec[hb] = vec4<u32>(u32(cx - OX) | (u32(cy - OY) << 12u) | (u32(nw) << 25u),
+                      (sid & 0x3fffffu) | (k0 << 22u) | (k1 << 26u) | select(1u << 30u, 0u, ends), st, 0u);
+  for (var g = 0u; g < 4u; g++) {
+    var q = vec4<u32>(0u);
+    for (var c = 0u; c < 4u; c++) {
+      let k = 4u * g + c;
+      if (k >= k0 && k <= k1) { q[c] = u32(gq(bx[k].x) - cx * 32) | (u32(gq(bx[k].y) - cy * 32) << 12u) | (u32(wq(bx[k].z) - nw * 16) << 24u); }
+    }
+    rec[hb + 1u + g] = q;
+  }
+  return true;
+}
 @group(0) @binding(3) var<storage, read_write> grb: array<vec2<u32>>;
 @group(0) @binding(4) var<uniform> F: Step;
-@group(0) @binding(5) var<storage, read> boxes: array<vec4<f32>>;
+@group(0) @binding(5) var<storage, read> boxes: array<vec2<u32>>;
+fn boxAt(b: u32) -> vec4<f32> {                              // a block's box: its four sides in whole page units
+  let v = boxes[b];
+  return vec4<f32>(f32(bitcast<i32>(v.x << 16u) >> 16u), f32(bitcast<i32>(v.x) >> 16u), f32(bitcast<i32>(v.y << 16u) >> 16u), f32(bitcast<i32>(v.y) >> 16u));
+}
 @group(0) @binding(6) var<storage, read_write> flags: array<u32>;
 @group(0) @binding(7) var<storage, read> clist: array<u32>;
 @group(0) @binding(8) var<storage, read> scan: array<u32>;
 @group(0) @binding(9) var<storage, read_write> ctl: array<atomic<u32>>;
 @group(0) @binding(10) var<storage, read_write> ent: array<u32>;
 @group(0) @binding(11) var<storage, read_write> eargs: array<u32>;
-@group(0) @binding(12) var<storage, read_write> pack: array<u32>;   // (the flips' log, read back)
-@group(0) @binding(14) var<storage, read_write> oeb: array<u32>;    // (the order's edits: flip)
-@group(0) @binding(15) var<storage, read_write> boxw: array<vec4<f32>>;   // (the blocks' boxes: flipBox)
-@group(0) @binding(16) var<storage, read_write> olh: array<u32>;    // (the order's header: flipEnd)
-@group(0) @binding(17) var<storage, read_write> oargs: array<u32>;  // (the order's passes' dispatches for the card's own edit: flipEnd)
+@group(0) @binding(12) var<storage, read_write> pack: array<u32>;   // (the plan's log, read back each frame; the swipe's pack once it is let go)
 const NONE: u32 = 0xffffffffu;
 const HDR: u32 = 24u;
 struct Pl { j: u32, t: f32, p: vec2<f32> };
@@ -1076,17 +1421,18 @@ var<private> fm: u32; var<private> fat: Pl; var<private> ft: bool;
 var<private> mAt: u32; var<private> mk: u32; var<private> ms: u32; var<private> mc: u32;
 var<private> wk: u32; var<private> st0: Pl; var<private> sk0: u32; var<private> sk1: u32;   // (what a cut made anew)
 var<private> kn: u32; var<private> klo: u32; var<private> khi: u32; var<private> nlo: u32; var<private> nhi: u32;
-fn P(j: u32) -> vec2<f32> { let r = rec[base + j]; return vec2<f32>(bitcast<f32>(r.x), bitcast<f32>(r.y)); }
+fn P(j: u32) -> vec2<f32> { let r = rec4(base + j); return vec2<f32>(bitcast<f32>(r.x), bitcast<f32>(r.y)); }
 fn seg(i: u32) -> vec4<f32> {                                // the step's path, a segment at a time (a point: one of no length)
   let o = 4u * i;
   return vec4<f32>(bitcast<f32>(fin[o]), bitcast<f32>(fin[o + 1u]), bitcast<f32>(fin[o + 2u]), bitcast<f32>(fin[o + 3u]));
 }
 fn lt(a: Pl, b: Pl) -> bool { return a.j < b.j || (a.j == b.j && a.t < b.t); }
+fn onGrid(p: vec2<f32>) -> vec2<f32> { if (!WORD) { return p; } return floor(p * 32.0 + 0.5) / 32.0; }
 fn placeAt(j: u32, t: f32) -> Pl {
   if (t <= 0.0) { return Pl(j, 0.0, P(j)); }
   if (t >= 1.0) { return Pl(j + 1u, 0.0, P(j + 1u)); }
   let a = P(j); let b = P(j + 1u);
-  return Pl(j, t, a + (b - a) * t);
+  return Pl(j, t, onGrid(a + (b - a) * t));
 }
 fn aStart(A: u32, m: u32) -> Pl { let o = A + m * 10u; return Pl(es[o], bitcast<f32>(es[o + 1u]), vec2<f32>(bitcast<f32>(es[o + 2u]), bitcast<f32>(es[o + 3u]))); }
 fn aEnd(A: u32, m: u32) -> Pl { let o = A + m * 10u + 4u; return Pl(es[o], bitcast<f32>(es[o + 1u]), vec2<f32>(bitcast<f32>(es[o + 2u]), bitcast<f32>(es[o + 3u]))); }
@@ -1325,10 +1671,11 @@ fn segBox(a: vec2<f32>, b: vec2<f32>, lo: vec2<f32>, hi: vec2<f32>) -> bool {   
   return abs(d.x * (c.y - a.y) - d.y * (c.x - a.x)) <= abs(d.y) * e.x + abs(d.x) * e.y + 1e-3;
 }
 // find: each block whose box, out by the eraser's radius and the widest half width, the step's path crosses
-@compute @workgroup_size(128) fn find(@builtin(global_invocation_id) id: vec3<u32>) {
+@compute @workgroup_size(128) fn find(@builtin(global_invocation_id) gi: vec3<u32>) {
+  let id = vec3<u32>(gi.x + gi.y * 8388480u, 0u, 0u);   // (past 65,535 workgroups: DW)
   let b = id.x;
   if (b >= F.nb) { return; }
-  let B = boxes[b];
+  let B = boxAt(b);
   var hit = false;
   if (B.x < B.z) {                                          // (a box worked out is never one point: all zero, none)
     let lo = B.xy - vec2<f32>(F.reach); let hi = B.zw + vec2<f32>(F.reach);
@@ -1354,7 +1701,7 @@ fn segBox(a: vec2<f32>, b: vec2<f32>, lo: vec2<f32>, hi: vec2<f32>) -> bool {   
   let i = clist[g >> 4u] * 16u + (g & 15u);
   let o = g * 3u;
   ent[o] = 0u;
-  let R0 = rec[i]; let f = R0.w & 0xffu;
+  let R0 = rec4(i); let f = R0.w & 0xffu;
   if ((f & 3u) == 0u) { return; }
   let sid = R0.w >> 8u;
   if (sid >= F.stCap) { return; }
@@ -1366,7 +1713,7 @@ fn segBox(a: vec2<f32>, b: vec2<f32>, lo: vec2<f32>, hi: vec2<f32>) -> bool {   
   var c = 0u;
   if ((f & 2u) != 0u) { if (pathD2(a) <= r2) { c = 1u; } }   // a dot
   else if (i + 1u < t0.x + t0.y) {
-    let R1 = rec[i + 1u]; let b = vec2<f32>(bitcast<f32>(R1.x), bitcast<f32>(R1.y));
+    let R1 = rec4(i + 1u); let b = vec2<f32>(bitcast<f32>(R1.x), bitcast<f32>(R1.y));
     if (F.mode == 1u) { if (nearPath(a, b, r2 * 1.0001 + 1e-6)) { c = 1u; } }   // (touched at all: its stretches tested in stitch)
     else if (inSweep(a, b, r2, r)) {
       c = nIN / 2u;
@@ -1396,20 +1743,21 @@ fn segBox(a: vec2<f32>, b: vec2<f32>, lo: vec2<f32>, hi: vec2<f32>) -> bool {   
   let b = t0.x; let n = t0.y; let kind = t1.x & 0xffu; let gs = t2.y;
   let most = u32(ceil(bitcast<f32>(t3.y) / (F.R / 2.0))) + 3u;   // (a kept stretch is half the eraser long at least)
   let cap = min(most, 4u);
-  let mapN = (n + 3u) / 4u; let nB = n + 2u * cap + 2u;   // (its pieces; drawn by range, its stretches' table: spans)
+  let mapN = select((n + 3u) / 4u, n, WORD); let nB = select(n + 2u * cap + 2u, n + 18u * cap + 16u, WORD);   // (its pieces, each from a block of its own (WORD); drawn by range, its stretches' table: spans)
   let esN = HDR + 20u * cap;
   let S = atomicAdd(&ctl[4], esN);
   if (S + esN > atomicLoad(&ctl[5])) { atomicOr(&ctl[2], 4u); return; }
-  let allocAt = atomicAdd(&ctl[6], mapN + nB);
-  if (allocAt + mapN + nB > atomicLoad(&ctl[7])) { atomicOr(&ctl[2], 8u); return; }
+  let pad = select(0u, 15u, WORD);                           // (its pieces' place on a block's start)
+  let allocAt = atomicAdd(&ctl[6], mapN + nB + pad);
+  if (allocAt + mapN + nB + pad > atomicLoad(&ctl[7])) { atomicOr(&ctl[2], 8u); return; }
   var gAt = 0u;
   if (kind >= 2u) { gAt = atomicAdd(&ctl[8], nB); if (gAt + nB > atomicLoad(&ctl[9])) { atomicOr(&ctl[2], 16u); return; } }
   let e = atomicAdd(&ctl[10], 1u);
   if (e >= atomicLoad(&ctl[11])) { atomicOr(&ctl[2], 32u); return; }
   let k = atomicAdd(&ctl[12], 1u);
   if (k >= F.slCap) { atomicOr(&ctl[2], 128u); return; }
-  let areaAt = allocAt + mapN; let mapAt = allocAt;         // (its map, a word a point, just before its pieces)
-  let p0 = rec[b]; let p1 = rec[b + n - 1u];
+  let areaAt = select(allocAt + mapN, (allocAt + mapN + 15u) & ~15u, WORD); let mapAt = allocAt;   // (its map, a word a point, before its pieces)
+  let p0 = rec4(b); let p1 = rec4(b + n - 1u);
   es[S] = b; es[S + 1u] = n; es[S + 2u] = kind; es[S + 3u] = t1.y; es[S + 4u] = cap; es[S + 5u] = S + HDR; es[S + 6u] = 0u; es[S + 7u] = 1u;
   es[S + 8u] = areaAt; es[S + 9u] = nB; es[S + 10u] = gAt; es[S + 11u] = nB; es[S + 12u] = F.frame; es[S + 13u] = select(gs, 0u, gs == NONE);
   es[S + 14u] = 0u; es[S + 15u] = 0u; es[S + 16u] = 1u; es[S + 17u] = 0u; es[S + 18u] = sid; es[S + 19u] = allocAt;
@@ -1429,18 +1777,19 @@ fn grow(S: u32, A: u32, nA: u32) -> bool {
   let cap = es[S + 4u]; let most = es[S + 20u];
   if (cap >= most) { return false; }                         // (at its most already: not cut, as it was)
   let nc = min(most, cap * 4u); let n = es[S + 1u];
-  let mapN = (n + 3u) / 4u; let nB = n + 2u * nc + 2u;
+  let mapN = select((n + 3u) / 4u, n, WORD); let nB = select(n + 2u * nc + 2u, n + 18u * nc + 16u, WORD); let pad = select(0u, 15u, WORD);
   let A2 = atomicAdd(&ctl[4], 20u * nc);
   if (A2 + 20u * nc > atomicLoad(&ctl[5])) { atomicOr(&ctl[2], 4u); return false; }
-  let at = atomicAdd(&ctl[6], mapN + nB);
-  if (at + mapN + nB > atomicLoad(&ctl[7])) { atomicOr(&ctl[2], 8u); return false; }
+  let at = atomicAdd(&ctl[6], mapN + nB + pad);
+  if (at + mapN + nB + pad > atomicLoad(&ctl[7])) { atomicOr(&ctl[2], 8u); return false; }
+  let area2 = select(at + mapN, (at + mapN + 15u) & ~15u, WORD);
   var g = 0u;
   if (es[S + 2u] >= 2u) { g = atomicAdd(&ctl[8], nB); if (g + nB > atomicLoad(&ctl[9])) { atomicOr(&ctl[2], 16u); return false; } }
   for (var k = 0u; k < nA * 10u; k++) { es[A2 + k] = es[A + k]; }
   es[S + 4u] = nc; es[S + 5u] = A2; es[S + 6u] = 0u;
-  es[S + 8u] = at + mapN; es[S + 9u] = nB; es[S + 10u] = g; es[S + 11u] = nB; es[S + 12u] = F.frame; es[S + 19u] = at;
+  es[S + 8u] = area2; es[S + 9u] = nB; es[S + 10u] = g; es[S + 11u] = nB; es[S + 12u] = F.frame; es[S + 19u] = at;
   let v = F.evAt + grb[F.stAt + es[S + 18u] * 4u + 3u].x * 4u;
-  grb[v + 1u] = vec2<u32>(at, at + mapN); grb[v + 2u] = vec2<u32>(g, S);
+  grb[v + 1u] = vec2<u32>(at, area2); grb[v + 2u] = vec2<u32>(g, S);
   return true;
 }
 // STITCH, DATA-PARALLEL (a workgroup a stroke touched): cutAlong and touchedOut made by its sixty-four threads at once,
@@ -1479,7 +1828,7 @@ fn xEnd(m: u32) -> Pl { return xPl(xS[2u * m + 1u]); }
 fn placeAB(j: u32, t: f32, a: vec2<f32>, b: vec2<f32>) -> Pl {   // placeAt, the segment's ends in hand
   if (t <= 0.0) { return Pl(j, 0.0, a); }
   if (t >= 1.0) { return Pl(j + 1u, 0.0, b); }
-  return Pl(j, t, a + (b - a) * t);
+  return Pl(j, t, onGrid(a + (b - a) * t));
 }
 fn wscan(li: u32, v: u32, most: bool) -> vec3<u32> {         // over the sixty-four (sums, or the most): to here, before here, all
   xA[li] = v;
@@ -1751,16 +2100,17 @@ var<workgroup> wS: u32;
   let w = wg.x + wg.y * 65535u;
   if (li == 0u) {
     var need = 0u; var S = NONE;
-    if (w < nTouched()) { S = slotOf(touched(w)); if (S != NONE && es[S + 14u] > 0u && es[S + 2u] >= 2u && (rec[es[S]].w & 16u) == 0u) { need = 1u; } }
+    if (w < nTouched()) { S = slotOf(touched(w)); if (S != NONE && es[S + 14u] > 0u && es[S + 2u] >= 2u && (WORD || (rec4(es[S]).w & 16u) == 0u)) { need = 1u; } }
     wNeed = need; wS = S;
   }
   workgroupBarrier();
   if (wNeed == 0u) { return; }
   let S = wS; let b = es[S]; let n = es[S + 1u];
-  for (var k = li; k < n; k += 64u) { rec[b + k].w = rec[b + k].w | 16u; }
+  if (WORD) { for (var q = (b >> 4u) + li; q <= (b + n - 1u) >> 4u; q += 64u) { markBlock(q); } return; }
+  for (var k = li; k < n; k += 64u) { recPutW(b + k, rec4(b + k).w | 16u); }
 }
-fn xy(i: u32) -> vec2<f32> { let r = rec[i]; return vec2<f32>(bitcast<f32>(r.x), bitcast<f32>(r.y)); }
-fn mapDone() { if (mk != 0xffffffffu && mc > 0u) { rec[mAt + (mk >> 2u)][mk & 3u] = (ms << 3u) | min(mc, 7u); } }
+fn xy(i: u32) -> vec2<f32> { let r = rec4(i); return vec2<f32>(bitcast<f32>(r.x), bitcast<f32>(r.y)); }
+fn mapDone() { if (mk != 0xffffffffu && mc > 0u) { rawPut(mAt, mk, (ms << 3u) | min(mc, 7u)); } }
 fn mapNote(k: u32, pos: u32) {                               // a piece's record at pos came from point k's segment
   if (k != mk) { mapDone(); mk = k; ms = pos; mc = 0u; }
   mc += 1u;
@@ -1780,15 +2130,15 @@ fn piecesOne(S: u32) {                                      // (a stroke's piece
   let kind = es[S + 2u]; let cap = es[S + 4u]; let A = es[S + 5u] + es[S + 6u] * cap * 10u; let nA = es[S + 7u];
   let area = es[S + 8u]; let g = es[S + 10u]; let hi = es[S + 11u]; let gs = es[S + 13u];
   let hl = kind == 1u; let gr = kind >= 2u;
-  mAt = area - (nR + 3u) / 4u; mk = 0xffffffffu; ms = 0u; mc = 0u;   // its map, just before its pieces
-  for (var z = 0u; z < (nR + 3u) / 4u; z++) { rec[mAt + z] = vec4<u32>(0u); }
+  mAt = es[S + 19u]; mk = 0xffffffffu; ms = 0u; mc = 0u;   // its map, before its pieces
+  for (var z = 0u; z < nR; z++) { rawPut(mAt, z, 0u); }
   var pos = 0u;
   for (var m = 0u; m < nA; m++) {
     let o = A + m * 10u;
     let j0 = es[o]; let t0 = bitcast<f32>(es[o + 1u]); let j1 = es[o + 4u]; let t1 = bitcast<f32>(es[o + 5u]);
     let start = pos;
     if (nR == 1u) {                                          // a dot, as it is
-      var d0 = rec[base]; d0.w = d0.w & 0xffffffefu; rec[area + pos] = d0; mapNote(0u, pos);
+      var d0 = rec4(base); d0.w = d0.w & 0xffffffefu; recPut(area + pos, d0); mapNote(0u, pos);
       if (gr) { var d = 1.0; if (kind == 2u) { d = grain(gs); } grainPut(g + pos, d, m); }
       pos += 1u; es[o + 8u] = start; es[o + 9u] = 1u; continue;
     }
@@ -1800,36 +2150,36 @@ fn piecesOne(S: u32) {                                      // (a stroke's piece
       var src = i0 + q - select(0u, 1u, h);
       var r: vec4<u32>;
       let isT = t && q == total - 1u;
-      if (h && q == 0u) { src = i0; r = rec[base + src]; r.x = es[o + 2u]; r.y = es[o + 3u]; }
-      else if (isT) { src = j1 + 1u; r = rec[base + src]; r.x = es[o + 6u]; r.y = es[o + 7u]; }
-      else { r = rec[base + src]; }
+      if (h && q == 0u) { src = i0; r = rec4(base + src); r.x = es[o + 2u]; r.y = es[o + 3u]; }
+      else if (isT) { src = j1 + 1u; r = rec4(base + src); r.x = es[o + 6u]; r.y = es[o + 7u]; }
+      else { r = rec4(base + src); }
       r.w = r.w & 0xffffffefu;                                 // (a piece's records: the stroke's number, not the cut's flag)
       if (hl && pos > start && ((h && q == 1u) || isT)) {       // on the record beside a new end: dropped
-        let lp = rec[area + pos - 1u];
+        let lp = rec4(area + pos - 1u);
         if (abs(bitcast<f32>(r.x) - bitcast<f32>(lp.x)) <= 1e-6 && abs(bitcast<f32>(r.y) - bitcast<f32>(lp.y)) <= 1e-6) { if (isT) { tailGone = true; } continue; }
       }
-      rec[area + pos] = r; mapNote(select(select(src, j1, isT), j0, h && q == 0u), pos);
+      recPut(area + pos, r); mapNote(select(select(src, j1, isT), j0, h && q == 0u), pos);
       if (gr) { var d = 1.0; if (kind == 2u) { d = grain(gs + src); } grainPut(g + pos, d, m); }
       pos += 1u;
     }
     let n = pos - start;
     if (n > 0u) {
-      rec[area + start].w = (rec[area + start].w & 0xffffff00u) | 1u;
-      rec[area + pos - 1u].w = rec[area + pos - 1u].w & 0xffffff00u;
+      recPutW(area + start, (rec4(area + start).w & 0xffffff00u) | 1u);
+      recPutW(area + pos - 1u, rec4(area + pos - 1u).w & 0xffffff00u);
       if (hl && n > 2u) {
-        if (h) { let i = area + start + 1u; rec[i].w = (rec[i].w & 0xffffff00u) | turnAt(xy(i - 1u), xy(i), xy(i + 1u)); }
-        if (t && !tailGone) { let i = area + pos - 2u; rec[i].w = (rec[i].w & 0xffffff00u) | turnAt(xy(i - 1u), xy(i), xy(i + 1u)); }
+        if (h) { let i = area + start + 1u; recPutW(i, (rec4(i).w & 0xffffff00u) | turnAt(xy(i - 1u), xy(i), xy(i + 1u))); }
+        if (t && !tailGone) { let i = area + pos - 2u; recPutW(i, (rec4(i).w & 0xffffff00u) | turnAt(xy(i - 1u), xy(i), xy(i + 1u))); }
       }
     }
     es[o + 8u] = start; es[o + 9u] = n;
   }
   mapDone();
-  for (var z = pos; z < hi; z++) { rec[area + z] = vec4<u32>(0u); if (gr) { grb[g + z] = vec2<u32>(0u); } }
+  for (var z = pos; z < hi; z++) { recPut(area + z, vec4<u32>(0u)); if (gr) { grb[g + z] = vec2<u32>(0u); } }
   es[S + 11u] = pos;
   if (hl) { atomicAdd(&ctl[13], (pos - es[S + 22u]) * 4u); es[S + 22u] = pos; }   // (a highlighter's pack: its pieces' records)
 }
-// THE PIECES, WRITTEN AS A SLOT IS FLIPPED (while it is cut it is drawn by range: spans), SIXTY-FOUR THREADS A STROKE (a
-// workgroup a slot of the frame's flips): each stretch's records counted (pCnt: how many, bit 31
+// THE PIECES, WRITTEN ONCE THE SWIPE IS LET GO (while it goes the cut strokes are drawn by range: spans), SIXTY-FOUR
+// THREADS A STROKE (a workgroup a slot of the swipe's list, one cut at least): each stretch's records counted (pCnt: how many, bit 31
 // the record beside its head dropped, bit 30 its tail dropped -- a highlighter's, where it lies on the record before), their
 // places summed (pOff), then each record written by a thread of its own, its point's map word by the first of that
 // point's records, and last each piece's turns and place: the same records, bit for bit, as piecesOne writes them
@@ -1863,8 +2213,8 @@ fn stretchHolding(p: u32, nA: u32) -> u32 {                 // the stretch whose
   while (lo + 1u < hi) { let m = (lo + hi) >> 1u; if (pOff[m] <= p) { lo = m; } else { hi = m; } }
   return lo;
 }
-fn pieceAt(A: u32, p: u32, nA: u32) -> vec4<u32> {          // place p -> its stretch, the q it is, its source record, its point
-  let m = stretchHolding(p, nA);
+fn pieceAt(A: u32, p: u32, nA: u32) -> vec4<u32> { return pieceAtM(A, p, stretchHolding(p, nA)); }
+fn pieceAtM(A: u32, p: u32, m: u32) -> vec4<u32> {          // place p in stretch m -> m, the q it is, its source record, its point
   if (nR == 1u) { return vec4<u32>(m, 0u, 0u, 0u); }
   let o = A + m * 10u;
   let j0 = es[o]; let j1 = es[o + 4u]; let h = bitcast<f32>(es[o + 1u]) > 0.0; let t = bitcast<f32>(es[o + 5u]) > 0.0;
@@ -1877,16 +2227,17 @@ fn pieceAt(A: u32, p: u32, nA: u32) -> vec4<u32> {          // place p -> its st
   let src = i0 + q - select(0u, 1u, h);
   return vec4<u32>(m, q, src, src);
 }
-@compute @workgroup_size(64) fn piecesF(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) li: u32) {
+@compute @workgroup_size(64) fn pieces(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) li: u32) {
   let w = wg.x + wg.y * 65535u;
   if (li == 0u) {
     var go = 0u; var S0 = NONE;
-    if (w < min(atomicLoad(&ctl[19]), F.slCap)) { S0 = ent[5u * w]; go = select(1u, 2u, es[S0 + 7u] > 1024u); }
+    if (w < min(atomicLoad(&ctl[12]), F.slCap)) { S0 = atomicLoad(&ctl[F.offSL + w]); if (es[S0 + 14u] > 0u) { go = select(1u, 2u, es[S0 + 7u] > 1024u); } }
     pGo = go; pS = S0;
   }
   let go = workgroupUniformLoad(&pGo);
   if (go == 0u) { return; }
   let S = workgroupUniformLoad(&pS);
+  if (WORD) { piecesW(S, li, go); return; }
   if (go == 2u) { if (li == 0u) { piecesOne(S); written(S); } return; }   // (more stretches than the workgroup keeps)
   piecesOf(S, li);
 }
@@ -1894,8 +2245,8 @@ fn piecesOf(S: u32, li: u32) {
   base = es[S]; nR = es[S + 1u];
   let kind = es[S + 2u]; let cap = es[S + 4u]; let A = es[S + 5u] + es[S + 6u] * cap * 10u; let nA = es[S + 7u];
   let area = es[S + 8u]; let g = es[S + 10u]; let hi = es[S + 11u]; let gs = es[S + 13u];
-  let hl = kind == 1u; let gr = kind >= 2u; let mapAt = area - (nR + 3u) / 4u;
-  for (var z = li; z < (nR + 3u) / 4u; z += 64u) { rec[mapAt + z] = vec4<u32>(0u); }
+  let hl = kind == 1u; let gr = kind >= 2u; let mapAt = es[S + 19u];
+  for (var z = li; z < nR; z += 64u) { rawPut(mapAt, z, 0u); }
   for (var m = li; m < nA; m += 64u) { pCnt[m] = stretchCount(A, m, hl); }
   workgroupBarrier();
   if (li == 0u) { var at = 0u; for (var m = 0u; m < nA; m++) { pOff[m] = at; at += pCnt[m] & 0x3fffffffu; } pTot = at; }
@@ -1904,7 +2255,7 @@ fn piecesOf(S: u32, li: u32) {
   for (var p = li; p < pos; p += 64u) {                      // each record, as piecesOne writes it
     let c = pieceAt(A, p, nA);
     let m = c.x; let o = A + m * 10u;
-    var r = rec[base + c.z];
+    var r = rec4(base + c.z);
     if (nR > 1u) {
       let h = bitcast<f32>(es[o + 1u]) > 0.0; let t = bitcast<f32>(es[o + 5u]) > 0.0;
       let j0 = es[o]; let j1 = es[o + 4u]; let i0 = select(j0, j0 + 1u, h);
@@ -1917,13 +2268,13 @@ fn piecesOf(S: u32, li: u32) {
       let n = pCnt[m] & 0x3fffffffu; let qq = p - pOff[m];
       if (qq == n - 1u) { r.w = r.w & 0xffffff00u; } else if (qq == 0u) { r.w = (r.w & 0xffffff00u) | 1u; }
     }
-    rec[area + p] = r;
+    recPut(area + p, r);
     if (gr) { var d = 1.0; if (kind == 2u) { d = grain(gs + c.z); } grainPut(g + p, d, m); }
     let k = c.w;                                             // its point's map word, by the first of its records
     if (p == 0u || pieceAt(A, p - 1u, nA).w != k) {
       var n = 1u;
       while (p + n < pos && n < 8u && pieceAt(A, p + n, nA).w == k) { n += 1u; }
-      rec[mapAt + (k >> 2u)][k & 3u] = (p << 3u) | min(n, 7u);
+      rawPut(mapAt, k, (p << 3u) | min(n, 7u));
     }
   }
   storageBarrier();
@@ -1931,13 +2282,144 @@ fn piecesOf(S: u32, li: u32) {
     let o = A + m * 10u; let n = pCnt[m] & 0x3fffffffu; let start = pOff[m];
     if (hl && nR > 1u && n > 2u) {
       let h = bitcast<f32>(es[o + 1u]) > 0.0; let t = bitcast<f32>(es[o + 5u]) > 0.0; let td = ((pCnt[m] >> 30u) & 1u) == 1u;
-      if (h) { let i = area + start + 1u; rec[i].w = (rec[i].w & 0xffffff00u) | turnAt(xy(i - 1u), xy(i), xy(i + 1u)); }
-      if (t && !td) { let i = area + start + n - 2u; rec[i].w = (rec[i].w & 0xffffff00u) | turnAt(xy(i - 1u), xy(i), xy(i + 1u)); }
+      if (h) { let i = area + start + 1u; recPutW(i, (rec4(i).w & 0xffffff00u) | turnAt(xy(i - 1u), xy(i), xy(i + 1u))); }
+      if (t && !td) { let i = area + start + n - 2u; recPutW(i, (rec4(i).w & 0xffffff00u) | turnAt(xy(i - 1u), xy(i), xy(i + 1u))); }
     }
     es[o + 8u] = start; es[o + 9u] = n;
   }
-  for (var z = pos + li; z < hi; z += 64u) { rec[area + z] = vec4<u32>(0u); if (gr) { grb[g + z] = vec2<u32>(0u); } }
+  for (var z = pos + li; z < hi; z += 64u) { recPut(area + z, vec4<u32>(0u)); if (gr) { grb[g + z] = vec2<u32>(0u); } }
   if (li == 0u) { es[S + 11u] = pos; if (hl) { atomicAdd(&ctl[13], (pos - es[S + 22u]) * 4u); es[S + 22u] = pos; } written(S); }
+}
+// THE PIECES, A BLOCK AT A TIME (WORD): each piece from a block of its own (pOff: where each starts, on a block's start),
+// a thread a block -- its points as pieces writes them (pieceAt), written with its header (blockPut). A piece whose block
+// does not fit one corner leaves the slot's pieces unwritten, its stretches' table kept (its stroke drawn by range, each
+// piece's count 0: the processor makes them, fresh); more stretches than the workgroup keeps, the same
+var<workgroup> wFit: atomic<u32>;
+var<workgroup> wFitU: u32;
+var<workgroup> gLo: array<atomic<i32>, 12>;                 // (piecesW: four blocks' least gq x, gq y and wq w, three a block)
+var<workgroup> gHi: array<atomic<i32>, 12>;                 // (and their greatest)
+var<workgroup> gKey: array<u32, 64>;                        // (the four blocks' points' map words, a thread a point)
+var<workgroup> pRoom: u32;                                  // (1: the slot's pieces fit the room it has)
+fn pieceX(A: u32, p: u32, nA: u32) -> vec4<u32> { return pieceXM(A, p, stretchHolding(p, nA)); }
+fn pieceXM(A: u32, p: u32, m: u32) -> vec4<u32> {          // place p's point (pieces' arithmetic), and its source record
+  let c = pieceAtM(A, p, m);
+  var r = rec4(base + c.z);
+  if (nR > 1u) {
+    let o = A + c.x * 10u;
+    let h = bitcast<f32>(es[o + 1u]) > 0.0; let t = bitcast<f32>(es[o + 5u]) > 0.0;
+    let j0 = es[o]; let j1 = es[o + 4u]; let i0 = select(j0, j0 + 1u, h);
+    let total = select(0u, 1u, h) + (j1 + 1u - i0) + select(0u, 1u, t);
+    if (h && c.y == 0u) { r.x = es[o + 2u]; r.y = es[o + 3u]; }
+    else if (t && c.y == total - 1u) { r.x = es[o + 6u]; r.y = es[o + 7u]; }
+  }
+  return vec4<u32>(r.x, r.y, r.z, c.z);
+}
+fn piecesW(S: u32, li: u32, go: u32) {
+  base = es[S]; nR = es[S + 1u];
+  let kind = es[S + 2u]; let cap = es[S + 4u]; let A = es[S + 5u] + es[S + 6u] * cap * 10u; let nA = es[S + 7u];
+  let area = es[S + 8u]; let g = es[S + 10u]; let hi = es[S + 11u]; let gs = es[S + 13u];
+  let hl = kind == 1u; let gr = kind >= 2u; let mapAt = es[S + 19u];
+  if (go == 2u) {                                            // (more stretches than kept here: the processor's)
+    for (var m = li; m < nA; m += 64u) { es[A + m * 10u + 8u] = 0u; es[A + m * 10u + 9u] = 0u; }
+    if (li == 0u) { es[S + 22u] = 0u; }
+    return;
+  }
+  for (var m = li; m < nA; m += 64u) { pCnt[m] = stretchCount(A, m, hl); }
+  if (li == 0u) { atomicStore(&wFit, 1u); }
+  workgroupBarrier();
+  if (li == 0u) { var at = 0u; for (var m = 0u; m < nA; m++) { pOff[m] = at; at += ((pCnt[m] & 0x3fffffffu) + 15u) & ~15u; } pTot = at; pRoom = select(0u, 1u, at <= hi); }
+  let pos = workgroupUniformLoad(&pTot);
+  let nb = pos >> 4u; let b0 = area >> 4u;
+  if (pos > hi) { if (li == 0u) { atomicStore(&wFit, 0u); } }   // (room: the same, for every thread)
+  let room = workgroupUniformLoad(&pRoom);
+  let groups = (nb + 3u) >> 2u; let j = li >> 4u; let k = li & 15u;   // (four blocks at a time: block j of the four, its point k)
+  for (var gi = 0u; gi < groups && room == 1u; gi++) {         // each block's points: fit one corner?
+    if (li < 12u) { atomicStore(&gLo[li], 2147483647); atomicStore(&gHi[li], -2147483647); }
+    workgroupBarrier();
+    let bb = gi * 4u + j; var has = false;
+    if (bb < nb) {
+      let m = stretchHolding(bb * 16u, nA); let n = pCnt[m] & 0x3fffffffu; let q0 = bb * 16u - pOff[m];
+      has = q0 < n;
+      if (has && k <= min(15u, n - 1u - q0)) {
+        let r = pieceXM(A, bb * 16u + k, m); let q = vec3<i32>(gq(bitcast<f32>(r.x)), gq(bitcast<f32>(r.y)), wq(bitcast<f32>(r.z)));
+        atomicMin(&gLo[3u * j], q.x); atomicMin(&gLo[3u * j + 1u], q.y); atomicMin(&gLo[3u * j + 2u], q.z);
+        atomicMax(&gHi[3u * j], q.x); atomicMax(&gHi[3u * j + 1u], q.y); atomicMax(&gHi[3u * j + 2u], q.z);
+      }
+    }
+    workgroupBarrier();
+    if (has && k == 0u) {
+      let lo = vec3<i32>(atomicLoad(&gLo[3u * j]), atomicLoad(&gLo[3u * j + 1u]), atomicLoad(&gLo[3u * j + 2u]));
+      let hi2 = vec3<i32>(atomicLoad(&gHi[3u * j]), atomicLoad(&gHi[3u * j + 1u]), atomicLoad(&gHi[3u * j + 2u]));
+      let cx = i32(floor(f32(lo.x) / 32.0)); let cy = i32(floor(f32(lo.y) / 32.0)); let nw = max(lo.z, 0) / 16;
+      if (cx < OX || cx - OX > 4095 || cy < OY || cy - OY > 8191 || nw > 127 || hi2.x - cx * 32 > 4095 || hi2.y - cy * 32 > 4095 || hi2.z - nw * 16 > 255) { atomicStore(&wFit, 0u); }
+    }
+    workgroupBarrier();
+  }
+  workgroupBarrier();
+  if (li == 0u) { wFitU = atomicLoad(&wFit); }
+  let fit = workgroupUniformLoad(&wFitU);
+  if (fit == 0u) {                                           // (one does not: the processor makes them all, fresh)
+    for (var m = li; m < nA; m += 64u) { es[A + m * 10u + 8u] = 0u; es[A + m * 10u + 9u] = 0u; }
+    if (li == 0u) { es[S + 22u] = 0u; }
+    return;
+  }
+  for (var z = li; z < nR; z += 64u) { rawPut(mapAt, z, 0u); }
+  storageBarrier();
+  for (var gi = 0u; gi < groups; gi++) {                      // (four blocks at a time, a thread a point: blockPut's words)
+    if (li < 12u) { atomicStore(&gLo[li], 2147483647); }
+    workgroupBarrier();
+    let bb = gi * 4u + j;
+    var m = 0u; var n = 0u; var q0 = 0u; var k1 = 0u; var has = false; var mine = false; var x = vec3<f32>(0.0); var key = NONE;
+    if (bb < nb) {
+      m = stretchHolding(bb * 16u, nA); n = pCnt[m] & 0x3fffffffu; q0 = bb * 16u - pOff[m];
+      has = q0 < n;
+      if (has) {
+        k1 = min(15u, n - 1u - q0); mine = k <= k1;
+        if (mine) {
+          let p = bb * 16u + k; let r = pieceXM(A, p, m);
+          x = vec3<f32>(bitcast<f32>(r.x), bitcast<f32>(r.y), bitcast<f32>(r.z));
+          if (gr) { var d = 1.0; if (kind == 2u) { d = grain(gs + r.w); } grainPut(g + p, d, m); }
+          key = pieceAtM(A, p, m).w;                          // its point's map word, by the first of its records (in its piece)
+          atomicMin(&gLo[3u * j], gq(x.x)); atomicMin(&gLo[3u * j + 1u], gq(x.y)); atomicMin(&gLo[3u * j + 2u], wq(x.z));
+        }
+      }
+    }
+    gKey[li] = key;
+    workgroupBarrier();
+    if (mine) {                                               // (a run of one map word: its first point says where, and how many)
+      let p = bb * 16u + k;
+      var before = NONE;
+      if (k > 0u) { before = gKey[li - 1u]; } else if (q0 > 0u) { before = pieceAtM(A, p - 1u, m).w; }
+      if (p == pOff[m] || before != key) {
+        var c = 1u;
+        loop {
+          if (!(p + c < pOff[m] + n && c < 8u)) { break; }
+          var kc = NONE;
+          if (k + c <= 15u) { kc = gKey[li + c]; } else { kc = pieceAtM(A, p + c, m).w; }
+          if (kc != key) { break; }
+          c += 1u;
+        }
+        rawPut(mapAt, key, (p << 3u) | min(c, 7u));
+      }
+    }
+    if (has) {                                                // (the block's words: its header by its first thread, a word each)
+      let lo = vec3<i32>(atomicLoad(&gLo[3u * j]), atomicLoad(&gLo[3u * j + 1u]), atomicLoad(&gLo[3u * j + 2u]));
+      let cx = i32(floor(f32(lo.x) / 32.0)); let cy = i32(floor(f32(lo.y) / 32.0)); let nw = max(lo.z, 0) / 16;
+      let hb = (b0 + bb) * 5u;
+      if (k == 0u) {
+        rec[hb] = vec4<u32>(u32(cx - OX) | (u32(cy - OY) << 12u) | (u32(nw) << 25u),
+                            (es[S + 18u] & 0x3fffffu) | (k1 << 26u) | select(1u << 30u, 0u, q0 + k1 + 1u == n),
+                            select(0u, 1u, q0 == 0u) | select(0u, 0x10000u, hl), 0u);
+      }
+      var v = 0u;
+      if (mine) { v = u32(gq(x.x) - cx * 32) | (u32(gq(x.y) - cy * 32) << 12u) | (u32(wq(x.z) - nw * 16) << 24u); }
+      rec[hb + 1u + (k >> 2u)][k & 3u] = v;
+    }
+    workgroupBarrier();
+  }
+  storageBarrier();
+  for (var m = li; m < nA; m += 64u) { let o = A + m * 10u; es[o + 8u] = pOff[m]; es[o + 9u] = pCnt[m] & 0x3fffffffu; }
+  if (li == 0u) { es[S + 11u] = max(es[S + 11u], pos); if (hl) { atomicAdd(&ctl[13], (pos - es[S + 22u]) * 4u); es[S + 22u] = pos; } written(S); }
 }
 fn written(S: u32) {                                         // its pieces written: drawn where they lie (its entry's word 7, top bit)
   let v = F.evAt + es[S + 21u] * 4u + 3u;
@@ -1962,8 +2444,8 @@ var<workgroup> sTot: atomic<u32>;
   let hl = es[S + 2u] == 1u; let A = es[S + 5u] + es[S + 6u] * es[S + 4u] * 10u; let nA = es[S + 7u]; let area = es[S + 8u];
   for (var m = li; m < nA; m += 64u) {
     let o = A + m * 10u; let cnt = stretchCount(A, m, hl);
-    rec[area + 2u * m] = vec4<u32>(es[o] | (cnt & 0xc0000000u), es[o + 1u], es[o + 2u], es[o + 3u]);
-    rec[area + 2u * m + 1u] = vec4<u32>(es[o + 4u], es[o + 5u], es[o + 6u], es[o + 7u]);
+    rawPut4(area, 8u * m, vec4<u32>(es[o] | (cnt & 0xc0000000u), es[o + 1u], es[o + 2u], es[o + 3u]));
+    rawPut4(area, 8u * m + 4u, vec4<u32>(es[o + 4u], es[o + 5u], es[o + 6u], es[o + 7u]));
     atomicAdd(&sTot, cnt & 0x3fffffffu);
   }
   workgroupBarrier();
@@ -1974,113 +2456,68 @@ var<workgroup> sTot: atomic<u32>;
     if (hl) { atomicAdd(&ctl[13], (pos - es[S + 22u]) * 4u); es[S + 22u] = pos; }
   }
 }
-// FLIP, AS THE SWIPE GOES: a slot not changed for COLD steps (every slot, once the swipe is let go: F.p1) made its pieces --
-// each a stroke of its own, numbered from the room the processor gave (ctl 17, 18), its row written as the processor would
-// write it (a grain stroke's piece with no grain left a pen's), its records given its number, in the order where its stroke
-// was (the order's edit: its stroke an anchor, its pieces the list) -- and its stroke taken out (not drawn, not cut, its
-// map cleared); what was done written in the log for the processor (pack: the slot's stroke, how many pieces, its kind, the
-// first number, its places, a highlighter's records' count; each stretch, 10 words; each piece's row, 8; a highlighter's
-// pieces' records). A slot never cut is let go as it was. The log's entries lie one after another from its start: none
-// is given room once one was refused (the numbers first: one refused there leaves no hole)
+// THE PLAN, AS THE SWIPE GOES: a slot the eraser has left alone for COLD steps since it last changed (every slot, once the
+// swipe is let go: F.p1) logged for the processor, which makes its pieces from it -- its stroke, how many stretches, its
+// kind, how often it was cut (the log's version: cut again, it is logged again), where its pieces will go and their grain,
+// its place in es, then each stretch (10 words) -- once a version. The slot stays as it is: its stroke is cut and drawn in
+// its place until the swipe is let go. The log's entries lie one after another from its start (none is given room once
+// one was refused: the log full, the rest the next frames)
 const COLD: u32 = 8u;
-@compute @workgroup_size(64) fn flipPick(@builtin(global_invocation_id) id: vec3<u32>) {
+@compute @workgroup_size(64) fn planPick(@builtin(global_invocation_id) id: vec3<u32>) {
   let k = id.x + id.y * 65535u * 64u;
   if (k >= min(atomicLoad(&ctl[12]), F.slCap)) { return; }
   let S = atomicLoad(&ctl[F.offSL + k]);
-  if (es[S + 23u] != 0u) { return; }                          // (made strokes already)
+  let v = es[S + 14u];
+  if (v == 0u || es[S + 23u] == v) { return; }                // (never cut, or logged as it is)
   if (F.p1 == 0u && es[S + 12u] + COLD > F.frame) { return; } // (changed in the last steps: it may be cut again)
-  if (es[S + 14u] == 0u) {                                    // never cut: let go as it was
-    es[S + 23u] = 1u; grb[F.stAt + es[S + 18u] * 4u + 3u].x = NONE; atomicAdd(&ctl[28], 1u); return;
-  }
-  let nA = es[S + 7u];
-  let size = 8u + nA * 18u + select(0u, es[S + 22u] * 4u, es[S + 2u] == 1u);
-  let s0 = atomicAdd(&ctl[16], nA);
-  if (s0 + nA > atomicLoad(&ctl[17])) { atomicOr(&ctl[2], 256u); return; }
+  let nA = es[S + 7u]; let size = 8u + nA * 10u;
   let lg = atomicAdd(&ctl[20], size);
   if (lg + size > atomicLoad(&ctl[23])) { atomicOr(&ctl[2], 512u); return; }
-  let a = atomicAdd(&ctl[21], 1u); let la = atomicAdd(&ctl[22], nA);   // (room for every slot's anchor and every number's place: the processor's)
-  let j = atomicAdd(&ctl[19], 1u);
-  es[S + 23u] = 2u;
-  ent[5u * j] = S; ent[5u * j + 1u] = atomicLoad(&ctl[18]) + s0; ent[5u * j + 2u] = lg; ent[5u * j + 3u] = a; ent[5u * j + 4u] = la;
+  atomicAdd(&ctl[19], 1u);
+  es[S + 23u] = v;
+  pack[lg] = es[S + 18u]; pack[lg + 1u] = nA; pack[lg + 2u] = es[S + 2u]; pack[lg + 3u] = v;
+  pack[lg + 4u] = es[S + 8u]; pack[lg + 5u] = es[S + 10u]; pack[lg + 6u] = S; pack[lg + 7u] = es[S + 19u];
+  let A = es[S + 5u] + es[S + 6u] * es[S + 4u] * 10u;
+  for (var z = 0u; z < nA * 10u; z++) { pack[lg + 8u + z] = es[A + z]; }
 }
-@compute @workgroup_size(1) fn flipArgs() {                  // the slots flipped: a workgroup each
-  let n = min(atomicLoad(&ctl[19]), F.slCap);
-  eargs[9] = min(n, 65535u); eargs[10] = (n + 65534u) / 65535u; eargs[11] = 1u;
+// PACK (the swipe let go, its pieces written): each slot cut, for the processor to put its pieces in the order -- its
+// stroke, how many pieces, its version, a highlighter's records' count; each piece's first record in its slot's place and
+// how many; a highlighter's records (its repeats and turns beside a new end worked out here in 32 bits). packScan: where
+// each starts (ent), as the slots' list has them, and where they end (pack[0]); packCopy: each written there, sixty-four
+// threads a slot
+fn packSize(S: u32) -> u32 {
+  if (es[S + 14u] == 0u) { return 0u; }
+  return 4u + es[S + 7u] * 2u + select(0u, es[S + 22u] * 4u, es[S + 2u] == 1u);
 }
-var<workgroup> fN: u32;
-@compute @workgroup_size(64) fn flip(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) li: u32) {
-  let w = wg.x + wg.y * 65535u;
-  if (li == 0u) { fN = min(atomicLoad(&ctl[19]), F.slCap); }
-  if (w >= workgroupUniformLoad(&fN)) { return; }
-  let S = ent[5u * w]; let s0 = ent[5u * w + 1u]; let lg = ent[5u * w + 2u]; let a = ent[5u * w + 3u]; let la = ent[5u * w + 4u];
-  let sid = es[S + 18u]; let nA = es[S + 7u]; let kind = es[S + 2u]; let nr = es[S + 1u];
-  let at = F.stAt + sid * 4u; let t1 = grb[at + 1u]; let t2 = grb[at + 2u];
-  let A = es[S + 5u] + es[S + 6u] * es[S + 4u] * 10u; let area = es[S + 8u]; let g = es[S + 10u];
-  let hl = kind == 1u; let m = select(0u, es[S + 22u], hl); let lb = atomicLoad(&ctl[24]) * 3u + la;
-  if (li == 0u) {
-    pack[lg] = sid; pack[lg + 1u] = nA; pack[lg + 2u] = kind; pack[lg + 3u] = s0; pack[lg + 4u] = area; pack[lg + 5u] = g; pack[lg + 6u] = m; pack[lg + 7u] = 0u;
-    oeb[3u * a] = sid; oeb[3u * a + 1u] = lb; oeb[3u * a + 2u] = nA;
-    grb[at + 1u] = vec2<u32>(t1.x & 0x7fffffffu, t1.y);       // its stroke out: not drawn, not cut
-    grb[at + 3u] = vec2<u32>(NONE, grb[at + 3u].y);
-    es[S + 23u] = 1u; atomicAdd(&ctl[28], 1u);
+var<workgroup> pk: array<u32, 128>;
+@compute @workgroup_size(128) fn packScan(@builtin(local_invocation_index) li: u32) {
+  let n = min(atomicLoad(&ctl[12]), F.slCap); let per = (n + 127u) / 128u; let k0 = li * per; let k1 = min(k0 + per, n);
+  var sum = 0u;
+  for (var k = k0; k < k1; k++) { sum += packSize(atomicLoad(&ctl[F.offSL + k])); }
+  pk[li] = sum;
+  workgroupBarrier();
+  for (var off = 1u; off < 128u; off *= 2u) {
+    var v = 0u;
+    if (li >= off) { v = pk[li - off]; }
+    workgroupBarrier();
+    pk[li] += v;
+    workgroupBarrier();
   }
-  for (var q = li; q < nA; q += 64u) {                         // each piece (a thread each): its row, its place in the list, the log
-    let o = A + q * 10u; let st = es[o + 8u]; let cnt = es[o + 9u]; let b = area + st;
-    var kd = kind; var gs = NONE;
-    if (kind == 2u) {
-      var any = false;
-      for (var k = 0u; k < cnt && !any; k++) { any = grain(g + st + k) < 1.0; }
-      if (any) { gs = g + st; } else { kd = 0u; }
-    }
-    var len = 0.0;
-    for (var k = 1u; k < cnt; k++) { len += length(xy(b + k) - xy(b + k - 1u)); }
-    let ns = s0 + q; let r = F.stAt + ns * 4u;
-    let w0 = vec2<u32>(b, cnt); let w1 = vec2<u32>((t1.x & 0xffffff00u) | kd, t1.y); let w2 = vec2<u32>(t2.x, gs); let w3 = vec2<u32>(NONE, bitcast<u32>(len));
-    grb[r] = w0; grb[r + 1u] = w1; grb[r + 2u] = w2; grb[r + 3u] = w3;
-    oeb[lb + q] = ns;
-    let E = lg + 8u + q * 10u;
-    for (var z = 0u; z < 10u; z++) { pack[E + z] = es[o + z]; }
-    let R = lg + 8u + nA * 10u + q * 8u;
-    pack[R] = w0.x; pack[R + 1u] = w0.y; pack[R + 2u] = w1.x; pack[R + 3u] = w1.y; pack[R + 4u] = w2.x; pack[R + 5u] = w2.y; pack[R + 6u] = w3.x; pack[R + 7u] = w3.y;
-  }
-  if (hl) { let H = lg + 8u + nA * 18u; for (var i = li; i < m * 4u; i += 64u) { pack[H + i] = rec[area + i / 4u][i % 4u]; } }
-  storageBarrier();
-  for (var q = 0u; q < nA; q++) {                               // each piece's records given its number (sixty-four threads a piece)
-    let o = A + q * 10u; let b = area + es[o + 8u]; let cnt = es[o + 9u]; let ns = s0 + q;
-    for (var k = li; k < cnt; k += 64u) { rec[b + k].w = (rec[b + k].w & 0xffu) | (ns << 8u); }
-  }
-  let mapAt = area - (nr + 3u) / 4u;                            // its map: no longer read (its stroke is not drawn by range)
-  for (var z = li; z < (nr + 3u) / 4u; z += 64u) { rec[mapAt + z] = vec4<u32>(0u); }
+  var at = pk[li] - sum + 1u;
+  for (var k = k0; k < k1; k++) { ent[k] = at; at += packSize(atomicLoad(&ctl[F.offSL + k])); }
+  if (li == 127u) { pack[0] = pk[127] + 1u; }
 }
-// the blocks its pieces lie in boxed anew (CULL's boxOf, here): the eraser finds them as it finds any stroke
-@compute @workgroup_size(64) fn flipBox(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) li: u32) {
-  let w = wg.x + wg.y * 65535u;
-  if (w >= min(atomicLoad(&ctl[19]), F.slCap)) { return; }
-  let S = ent[5u * w]; let area = es[S + 8u]; let pos = es[S + 11u];
-  if (pos == 0u) { return; }
-  for (var b = area / 16u + li; b <= (area + pos - 1u) / 16u; b += 64u) {
-    var lo = vec2<f32>(3.0e38); var hi = vec2<f32>(-3.0e38); var wd = 0.0;
-    for (var k = 0u; k < 16u; k++) {
-      let i = b * 16u + k;
-      let R = rec[i]; let f = R.w & 0xffu;
-      if ((f & 3u) == 0u) { continue; }
-      let q = xy(i); lo = min(lo, q); hi = max(hi, q); wd = max(wd, bitcast<f32>(R.z));
-      if ((f & 1u) != 0u) { let q2 = xy(i + 1u); lo = min(lo, q2); hi = max(hi, q2); wd = max(wd, bitcast<f32>(rec[i + 1u].z)); }
-      if ((f & 4u) != 0u) { wd = max(wd, bitcast<f32>(rec[i - 1u].z)); }
-    }
-    let mg = wd * 0.5 + 0.35 + 1.0;
-    boxw[b] = select(vec4<f32>(3.0e38, 3.0e38, -3.0e38, -3.0e38), vec4<f32>(lo - vec2<f32>(mg), hi + vec2<f32>(mg)), hi.x >= lo.x);
-  }
-}
-// the order's edit as the card made it: how many anchors, and its passes' dispatches (oargs: over the order, over its
-// anchors, the classes' table cleared, one workgroup -- none when nothing was flipped)
-@compute @workgroup_size(1) fn flipEnd() {
-  let nA = atomicLoad(&ctl[21]); let go = nA > 0u;
-  olh[9] = nA; olh[10] = 0u;
-  oargs[0] = select(0u, (olh[4] + atomicLoad(&ctl[22]) + 127u) / 128u, go); oargs[1] = 1u; oargs[2] = 1u;   // (as long as it is, and as it will be)
-  oargs[3] = select(0u, (nA + 127u) / 128u, go); oargs[4] = 1u; oargs[5] = 1u;
-  oargs[6] = select(0u, (atomicLoad(&ctl[27]) + 63u) / 64u, go); oargs[7] = 1u; oargs[8] = 1u;
-  oargs[9] = select(0u, 1u, go); oargs[10] = 1u; oargs[11] = 1u;
+@compute @workgroup_size(64) fn packCopy(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) li: u32) {
+  let k = wg.x + wg.y * 65535u;
+  if (k >= min(atomicLoad(&ctl[12]), F.slCap)) { return; }
+  let S = atomicLoad(&ctl[F.offSL + k]);
+  if (es[S + 14u] == 0u) { return; }
+  let o = ent[k]; let nA = es[S + 7u]; let m = select(0u, es[S + 22u], es[S + 2u] == 1u);
+  let A = es[S + 5u] + es[S + 6u] * es[S + 4u] * 10u;
+  if (li == 0u) { pack[o] = es[S + 18u]; pack[o + 1u] = nA; pack[o + 2u] = es[S + 14u]; pack[o + 3u] = m; }
+  for (var q = li; q < nA; q += 64u) { pack[o + 4u + 2u * q] = es[A + q * 10u + 8u]; pack[o + 5u + 2u * q] = es[A + q * 10u + 9u]; }
+  let area = es[S + 8u]; let p = o + 4u + 2u * nA;
+  for (var i = li; i < m * 4u; i += 64u) { pack[p + i] = rec4(area + i / 4u)[i % 4u]; }
 }
 // unslot (the swipe let go, its slots made strokes or not): no stroke of the swipe's is drawn as one the card is cutting --
 // each slot's stroke's entry cleared at once on the card (the processor's own copy is written later, and a slot never read
@@ -2090,6 +2527,24 @@ var<workgroup> fN: u32;
   if (k >= min(atomicLoad(&ctl[12]), F.slCap)) { return; }
   let a = F.stAt + es[atomicLoad(&ctl[F.offSL + k]) + 18u] * 4u + 3u;
   grb[a] = vec2<u32>(NONE, grb[a].y);
+}
+// unmark (with unslot: no stroke is cut any more): every block's mark cleared, a thread a block -- the next swipe's lists
+// start with no block marked (its frames draw the blocks no cut reaches as every other frame does)
+@compute @workgroup_size(64) fn unmark(@builtin(global_invocation_id) id: vec3<u32>) {
+  let q = id.x + id.y * 65535u * 64u;
+  if (!WORD || q >= arrayLength(&rec) / 5u) { return; }
+  rec[q * 5u].z = rec[q * 5u].z & 0xfffdffffu;
+}
+// resid: the pieces put in the order (the processor's numbers for them) -- their records given their numbers where the
+// card wrote them (fin: how many, then three words each: its first record, how many, its number; NONE: records cleared --
+// a slot's map), sixty-four threads each
+@compute @workgroup_size(64) fn resid(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) li: u32) {
+  let w = wg.x + wg.y * 65535u;
+  if (w >= fin[0]) { return; }
+  let at = fin[1u + 3u * w]; let n = fin[2u + 3u * w]; let sid = fin[3u + 3u * w];
+  if (sid == NONE) { let nw = select(4u * n, n, WORD); for (var k = li; k < nw; k += 64u) { rawPut(at, k, 0u); } return; }
+  if (WORD) { for (var b = (at >> 4u) + li; b <= ((at + n - 1u) >> 4u); b += 64u) { let a = b * 5u; rec[a].y = (rec[a].y & 0xffc00000u) | (sid & 0x3fffffu); } return; }
+  for (var k = li; k < n; k += 64u) { recPutW(at + k, (rec4(at + k).w & 0xffu) | (sid << 8u)); }
 }
 // THE MASK (msk): what the frame's steps changed on the page, for the card to draw again there and nowhere else (STROKES'
 // vsMask marks those pixels; the page's own draws then make them anew). Its header: 0 how many records, 1 to 4 their box
@@ -2101,17 +2556,17 @@ var<workgroup> fN: u32;
 @group(0) @binding(13) var<storage, read_write> msk: array<atomic<u32>>;
 fn ordU(f: f32) -> u32 { let b = bitcast<u32>(f); return select(b ^ 0x80000000u, ~b, (b >> 31u) == 1u); }   // (in order as the floats)
 fn maskBox(i: u32) {                                         // record i's box into the mask's (it has ink)
-  let R0 = rec[i]; let f = R0.w & 0xffu;
+  let R0 = rec4(i); let f = R0.w & 0xffu;
   let a = vec2<f32>(bitcast<f32>(R0.x), bitcast<f32>(R0.y));
   var b = a; var w = bitcast<f32>(R0.z);
-  if ((f & 1u) != 0u) { let R1 = rec[i + 1u]; b = vec2<f32>(bitcast<f32>(R1.x), bitcast<f32>(R1.y)); w = max(w, bitcast<f32>(R1.z)); }
-  if ((f & 4u) != 0u) { w = max(w, bitcast<f32>(rec[i - 1u].z)); }
+  if ((f & 1u) != 0u) { let R1 = rec4(i + 1u); b = vec2<f32>(bitcast<f32>(R1.x), bitcast<f32>(R1.y)); w = max(w, bitcast<f32>(R1.z)); }
+  if ((f & 68u) != 0u) { w = max(w, bitcast<f32>(rec4(i - 1u).z)); }
   let r = w * 0.5 + 0.35 + 1.0;
   atomicMin(&msk[1], ordU(min(a.x, b.x) - r)); atomicMin(&msk[2], ordU(min(a.y, b.y) - r));
   atomicMax(&msk[3], ordU(max(a.x, b.x) + r)); atomicMax(&msk[4], ordU(max(a.y, b.y) + r));
 }
 fn maskAdd(i: u32) {                                         // record i into the mask, if it has ink
-  if ((rec[i].w & 3u) == 0u) { return; }
+  if ((rec4(i).w & 3u) == 0u) { return; }
   let k = atomicAdd(&msk[0], 1u);
   if (k < F.mCap) { atomicStore(&msk[16u + k], i); } else { atomicOr(&ctl[2], 64u); }
   maskBox(i);
@@ -2127,13 +2582,14 @@ fn maskAdd(i: u32) {                                         // record i into th
 // a pen's or a highlighter's records about record i, of a stroke cut (two each side: a new start's record beside it, a
 // highlighter's turn beside a new end) say CUT -- drawn as its pieces will be (STROKES, by range or where they lie)
 fn cutNear(i: u32) {
-  let sid = rec[i].w >> 8u;
+  let sid = rec4(i).w >> 8u;
   if (sid >= F.stCap) { return; }
   let S = slotOf(sid);
   if (S == NONE || es[S + 14u] == 0u || es[S + 2u] >= 2u) { return; }
   let b = es[S]; let n = es[S + 1u];
   let hi = min(i + 2u, b + n - 1u);
-  for (var k = max(i, b + 2u) - 2u; k <= hi; k++) { rec[k].w = rec[k].w | 16u; }
+  if (WORD) { for (var q = (max(i, b + 2u) - 2u) >> 4u; q <= hi >> 4u; q++) { markBlock(q); } return; }
+  for (var k = max(i, b + 2u) - 2u; k <= hi; k++) { recPutW(k, rec4(k).w | 16u); }
 }
 var<workgroup> aGo: u32;
 var<workgroup> aS: u32;
@@ -2154,7 +2610,8 @@ var<workgroup> aS: u32;
   for (var k = es[S + 16u] + li; k <= k1; k += 64u) { maskAdd(b + k); }
   if (es[S + 2u] < 2u) {                                     // (a pen's or a highlighter's: those records and two each side CUT)
     let f1 = min(k1 + 2u, n - 1u);
-    for (var k = max(es[S + 16u], 2u) - 2u + li; k <= f1; k += 64u) { rec[b + k].w = rec[b + k].w | 16u; }
+    if (WORD) { for (var q = ((b + max(es[S + 16u], 2u) - 2u) >> 4u) + li; q <= (b + f1) >> 4u; q += 64u) { markBlock(q); } }
+    else { for (var k = max(es[S + 16u], 2u) - 2u + li; k <= f1; k += 64u) { recPutW(b + k, rec4(b + k).w | 16u); } }
   }
 }
 `,
@@ -2169,25 +2626,114 @@ var<workgroup> aS: u32;
 struct MU { a: vec4<f32>, t: vec2<f32>, n: u32, wide: u32, w: u32, p0: u32, p1: u32, p2: u32 };
 @group(0) @binding(0) var<uniform> U: MU;
 @group(0) @binding(1) var<storage, read_write> rec: array<vec4<u32>>;
+// THE POINTS: rec's words. The engine's, four a record (x, y and the width as floats; the flags | the stroke << 8). The
+// editor's (WORD): a block of sixteen records in twenty words -- its header, then a word a point: x and y in 1/32 units
+// from the block's corner (12 bits each), the width over the block's narrowest in 1/16 (8 bits). The header: A the corner
+// (x 12 bits, whole units from OX; y 13, from OY) and the narrowest width (7, whole units); B the stroke of the block's
+// first point (22 bits), that point (4), its last (4), whether its last goes on into the next block (1; a block cleared
+// draws nothing), whether its points are kept aside (1); C which of them start a stroke (16) and whether a highlighter's
+// points are among them (1); D where they are kept aside, two words a point (x in 1/32 units; y in 1/32 from OYS, 19
+// bits, and the width in 1/16, 13) -- a block whose points do not fit a corner. Every point lies on one grid whatever
+// block holds it: decoded, the same numbers wherever it was written. A point read (rec4) as the engine's record: its
+// flags 1 a segment to the next, 2 a dot (a stroke of one point), 32 it starts its stroke, and 64 (WORD) a segment of a
+// block with a highlighter's points, not its stroke's first -- where it may turn, its box reaching the width before (the
+// engine's 4; a highlighter's turns are worked out where it is drawn)
+const WORD: bool = false;
+const OX: i32 = -2048; const OY: i32 = -1024; const OYS: i32 = -2048;
+fn wordOf(i: u32) -> u32 { return (i >> 4u) * 5u + 1u + ((i & 15u) >> 2u); }   // (the load holding raw slot i: its word i & 3)
+fn rawAt(R: u32, w: u32) -> u32 { if (WORD) { let s = R + w; return rec[wordOf(s)][s & 3u]; } return rec[R + (w >> 2u)][w & 3u]; }
+// (WORD: C's bit 17, a point of the block near a cut -- the erase's mark, the engine's flag 16 a block at a time: its
+// stroke's row then says which cut; kept, as the flag is, once made)
+fn nearCut(i: u32) -> bool { return (rec[(i >> 4u) * 5u].z & 0x20000u) != 0u; }
+fn rec4(i: u32) -> vec4<u32> {
+  if (!WORD) { return rec[i]; }
+  let hb = (i >> 4u) * 5u; let k = i & 15u;
+  let H = rec[hb]; let A = H.x; let B = H.y; let C = H.z;
+  var x = 0.0; var y = 0.0; var w = 0.0;
+  if ((B >> 31u) != 0u) {
+    let sa = H.w + 2u * k; let s0 = rawAt(sa, 0u); let s1 = rawAt(sa, 1u);
+    x = f32(bitcast<i32>(s0)) / 32.0; y = f32(i32(s1 & 0x7ffffu) + OYS * 32) / 32.0; w = f32(s1 >> 19u) / 16.0;
+  } else {
+    let p = rec[hb + 1u + (k >> 2u)][k & 3u];
+    x = f32(i32(A & 0xfffu) + OX) + f32(p & 0xfffu) / 32.0;
+    y = f32(i32((A >> 12u) & 0x1fffu) + OY) + f32((p >> 12u) & 0xfffu) / 32.0;
+    w = f32(A >> 25u) + f32(p >> 24u) / 16.0;
+  }
+  let k0 = (B >> 22u) & 15u; let k1 = (B >> 26u) & 15u; let st = C & 0xffffu;
+  let inb = (k >= k0) & (k <= k1);
+  let first = inb & (((st >> k) & 1u) == 1u);
+  let seg = inb & select(((B >> 30u) & 1u) == 1u, ((st >> (k + 1u)) & 1u) == 0u, k < k1);
+  let f = select(select(0u, 2u, first), 1u, seg) | select(0u, 64u, seg & ((C & 0x10000u) != 0u)) | select(0u, 32u, first);
+  let sid = (B & 0x3fffffu) + select(0u, countOneBits(st & ((2u << k) - (2u << k0))), k > k0);
+  return vec4<u32>(bitcast<u32>(x), bitcast<u32>(y), bitcast<u32>(w), f | (sid << 8u));
+}
+fn rawPut(R: u32, w: u32, v: u32) { if (WORD) { let s = R + w; rec[wordOf(s)][s & 3u] = v; } else { rec[R + (w >> 2u)][w & 3u] = v; } }
+fn rawPut4(R: u32, w: u32, v: vec4<u32>) { rawPut(R, w, v.x); rawPut(R, w + 1u, v.y); rawPut(R, w + 2u, v.z); rawPut(R, w + 3u, v.w); }
+fn recPut(i: u32, v: vec4<u32>) { rec[i] = v; }   // (the engine's layout only)
+fn recPutW(i: u32, w: u32) { rec[i].w = w; }
+fn gq(v: f32) -> i32 { return i32(floor(v * 32.0 + 0.5)); }   // (a place on the grid: 1/32 units)
+fn wq(v: f32) -> i32 { return i32(floor(v * 16.0 + 0.5)); }   // (a width: 1/16)
+// a point kept aside at sa (its block's D, and two words a point after it), as the move writes it
+fn sideWrite(sa: u32, x: f32, y: f32, w: f32) {
+  rawPut(sa, 0u, bitcast<u32>(gq(x)));
+  rawPut(sa, 1u, u32(clamp(gq(y) - OYS * 32, 0, 0x7ffff)) | (u32(clamp(wq(w), 0, 8191)) << 19u));
+}
+fn sidePut(i: u32, x: f32, y: f32, w: f32) { sideWrite(rec[(i >> 4u) * 5u].w + 2u * (i & 15u), x, y, w); }
+fn markBlock(q: u32) { rec[q * 5u].z = rec[q * 5u].z | 0x20000u; }   // (every writer sets the same bit)
+// A BLOCK WRITTEN (WORD): its points bx[k0..k1] (x, y, width), its first point's stroke, which start one (st), whether its
+// last ends its own -> written? (false: they do not fit one corner, and nothing is written)
+var<private> bx: array<vec3<f32>, 16>;
+fn blockPut(b: u32, k0: u32, k1: u32, st: u32, ends: bool, sid: u32) -> bool {
+  var lo = vec3<i32>(2147483647); var hi = vec3<i32>(-2147483647);
+  for (var k = k0; k <= k1; k++) { let q = vec3<i32>(gq(bx[k].x), gq(bx[k].y), wq(bx[k].z)); lo = min(lo, q); hi = max(hi, q); }
+  let cx = i32(floor(f32(lo.x) / 32.0)); let cy = i32(floor(f32(lo.y) / 32.0)); let nw = max(lo.z, 0) / 16;
+  if (cx < OX || cx - OX > 4095 || cy < OY || cy - OY > 8191 || nw > 127 || hi.x - cx * 32 > 4095 || hi.y - cy * 32 > 4095 || hi.z - nw * 16 > 255) { return false; }
+  let hb = b * 5u;
+  rec[hb] = vec4<u32>(u32(cx - OX) | (u32(cy - OY) << 12u) | (u32(nw) << 25u),
+                      (sid & 0x3fffffu) | (k0 << 22u) | (k1 << 26u) | select(1u << 30u, 0u, ends), st, 0u);
+  for (var g = 0u; g < 4u; g++) {
+    var q = vec4<u32>(0u);
+    for (var c = 0u; c < 4u; c++) {
+      let k = 4u * g + c;
+      if (k >= k0 && k <= k1) { q[c] = u32(gq(bx[k].x) - cx * 32) | (u32(gq(bx[k].y) - cy * 32) << 12u) | (u32(wq(bx[k].z) - nw * 16) << 24u); }
+    }
+    rec[hb + 1u + g] = q;
+  }
+  return true;
+}
 @group(0) @binding(2) var<storage, read_write> org: array<vec4<u32>>;
 @group(0) @binding(3) var<storage, read> mkr: array<u32>;
 @group(0) @binding(4) var<storage, read> wid: array<f32>;
+// A DRAG'S BLOCKS MADE TO KEEP THEIR POINTS ASIDE (WORD), as it begins: block mkr[16 + 2t] (U.n of them), its place
+// aside mkr[17 + 2t] (the processor's, held with the block's place) -- its points read as they are, written there, and the
+// block marked so; the move then writes each point where it is now, whatever corner its block had
+@compute @workgroup_size(16) fn aside(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) k: u32) {
+  let t = wg.x + wg.y * 65535u;
+  if (t >= U.n) { return; }
+  let b = mkr[16u + 2u * t]; let sa = mkr[17u + 2u * t];
+  let R = rec4(b * 16u + k);
+  storageBarrier();                                          // (every point read before its block is marked)
+  sideWrite(sa + 2u * k, bitcast<f32>(R.x), bitcast<f32>(R.y), bitcast<f32>(R.z));
+  if (k == 0u) { rec[b * 5u].w = sa; rec[b * 5u].y = rec[b * 5u].y | 0x80000000u; }
+}
 @compute @workgroup_size(64) fn grab(@builtin(global_invocation_id) id: vec3<u32>) {
   let j = id.x + id.y * U.wide;
   if (j >= U.n) { return; }
-  org[j] = rec[mkr[16u + j]];
+  org[j] = rec4(mkr[16u + j]);
 }
 @compute @workgroup_size(64) fn carry(@builtin(global_invocation_id) id: vec3<u32>) {
   let j = id.x + id.y * U.wide;
   if (j >= U.n) { return; }
   let R = org[j]; let x = bitcast<f32>(R.x); let y = bitcast<f32>(R.y);
   let p = vec2<f32>(U.a.x * x + U.a.y * y + U.t.x, U.a.z * x + U.a.w * y + U.t.y);
-  rec[mkr[16u + j]] = vec4<u32>(bitcast<u32>(p.x), bitcast<u32>(p.y), select(R.z, bitcast<u32>(wid[j]), U.w != 0u), R.w);
+  if (WORD) { sidePut(mkr[16u + j], p.x, p.y, select(bitcast<f32>(R.z), wid[j], U.w != 0u)); return; }
+  recPut(mkr[16u + j], vec4<u32>(bitcast<u32>(p.x), bitcast<u32>(p.y), select(R.z, bitcast<u32>(wid[j]), U.w != 0u), R.w));
 }
 @compute @workgroup_size(64) fn back(@builtin(global_invocation_id) id: vec3<u32>) {
   let j = id.x + id.y * U.wide;
   if (j >= U.n) { return; }
-  rec[mkr[16u + j]] = org[j];
+  if (WORD) { let o = org[j]; sidePut(mkr[16u + j], bitcast<f32>(o.x), bitcast<f32>(o.y), bitcast<f32>(o.z)); return; }
+  recPut(mkr[16u + j], org[j]);
 }
 `,
   // THE ENGINE'S CANVAS ONTO THE CARD AND ITS PICTURE BACK, as bytes (pipeline/page/gpu.py; the editor uses none of it):

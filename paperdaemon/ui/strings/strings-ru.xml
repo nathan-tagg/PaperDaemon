@@ -65,8 +65,12 @@
   <string name="issue.setup_go">Продолжить настройку</string>
   <string name="issue.tablet">PaperDaemon не может связаться с вашим reMarkable.</string>
   <string name="issue.mirror">Не удалось обновить Зеркало: {why}</string>
-  <string name="issue.render_cpu">Страницы рисуются без видеокарты, это медленнее: {why}</string>
+  <string name="issue.render_cpu">Страницы рисуются на процессоре, это медленнее: {why}</string>
   <string name="issue.render_ok">ОК</string>
+  <string name="render.why.lost">видеокарта перестала отвечать.</string>
+  <string name="render.why.refused">видеокарта не смогла выполнить один из шагов рисования PaperDaemon.</string>
+  <string name="render.why.none">эта видеокарта не поддерживает WebGPU.</string>
+  <string name="render.why.card">окно всё ещё работает на карте, с которой запустилось. Перезапустите PaperDaemon, чтобы использовать выбранную карту.</string>
   <string name="editor.large_title">Эта страница становится очень большой</string>
   <string name="editor.large_body">Планшету будет трудно загрузить эту страницу, а редактор страниц займёт больше памяти видеокарты, чем задумано. Продолжайте, только если уверены, что это нормально. Если на той же видеокарте работает локальный ИИ-сервер, учтите, что эта страница забирает у него память.</string>
   <string name="editor.large_ok">Понятно</string>
@@ -718,11 +722,11 @@
   <string name="slot.loras_folder">Папка LoRA</string>
   <string name="slot.loras_folder.help">Открывает папку LoRA этого набора. Каждая LoRA из неё применяется к каждому изображению этого набора так, как велит его харнесс изображений.</string>
   <string name="settings.render">Отрисовка</string>
-  <string name="settings.render.help">GPU (по умолчанию): страницы рисуются на видеокарте, выбранной в списке. Это быстро, и во время задания занимает немного памяти карты (около 160 МБ на очень плотной странице), которая освобождается по завершении. CPU: задания рисуют читаемые страницы на процессоре, оставляя всю память карты вашим ИИ-серверам, и каждое изображение занимает больше времени, особенно на страницах с большим количеством чернил. Изображения одинаковы в обоих случаях, и это относится ко всем наборам. Редактор страниц рисует на выбранной карте.</string>
+  <string name="settings.render.help">GPU (по умолчанию): страницы рисуются на видеокарте, выбранной в списке, и PaperDaemon не рисует ни на какой другой карте. Это быстро, и во время задания занимает немного памяти карты (около 160 МБ на очень плотной странице), которая освобождается по завершении. CPU: PaperDaemon рисует всё на процессоре, включая редактор страниц, и не трогает ни одну видеокарту. Каждое изображение занимает больше времени, особенно на страницах с большим количеством чернил. Изображения, которые рисуют задания, одинаковы в обоих случаях, и это относится ко всем наборам.</string>
   <string name="settings.render.cpu">CPU</string>
   <string name="settings.render.gpu">GPU</string>
   <string name="settings.render.card">Видеокарта</string>
   <string name="settings.render.memory">{gb} ГБ</string>
   <string name="settings.render.no_webgpu">Эта карта не поддерживает WebGPU: страницы будут рисоваться на процессоре, а это медленнее.</string>
-  <string name="settings.render.restart">Задания используют эту карту со следующего, окно — со следующего запуска PaperDaemon.</string>
+  <string name="settings.render.restart">Окно сейчас откроется заново с этим изменением.</string>
 </resources>

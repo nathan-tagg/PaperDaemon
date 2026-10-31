@@ -61,8 +61,12 @@
   <string name="issue.setup_go">Continuar la configuración</string>
   <string name="issue.tablet">PaperDaemon no puede llegar a tu reMarkable.</string>
   <string name="issue.mirror">No se pudo actualizar el Espejo: {why}</string>
-  <string name="issue.render_cpu">Las páginas se dibujan sin la tarjeta gráfica, lo que es más lento: {why}</string>
+  <string name="issue.render_cpu">Las páginas se dibujan en el procesador, lo que es más lento: {why}</string>
   <string name="issue.render_ok">Aceptar</string>
+  <string name="render.why.lost">la tarjeta gráfica dejó de responder.</string>
+  <string name="render.why.refused">la tarjeta gráfica no pudo ejecutar uno de los pasos de dibujo de PaperDaemon.</string>
+  <string name="render.why.none">esta tarjeta gráfica no puede ejecutar WebGPU.</string>
+  <string name="render.why.card">la ventana sigue en la tarjeta con la que se abrió. Reinicia PaperDaemon para usar la tarjeta que elegiste.</string>
   <string name="editor.large_title">Esta página se está haciendo muy grande</string>
   <string name="editor.large_body">A tu tableta le costará cargar esta página, y el editor de páginas usará más memoria de la tarjeta gráfica de lo previsto. Continúa solo si estás seguro de que está bien. Si ejecutas un servidor de IA local en la misma tarjeta gráfica, ten en cuenta que esta página le quita memoria a ese servidor.</string>
   <string name="editor.large_ok">Entendido</string>
@@ -704,11 +708,11 @@ Luego guíame para instalar SearXNG si hace falta, escribe el archivo .bat con u
   <string name="slot.loras_folder">Carpeta de LoRA</string>
   <string name="slot.loras_folder.help">Abre la carpeta de LoRA de esta alineación. Cada LoRA que contiene se aplica a cada imagen que hace esta alineación, como indica su arnés de imagen.</string>
   <string name="settings.render">Renderizador</string>
-  <string name="settings.render.help">GPU (predeterminado): las páginas se dibujan en la tarjeta gráfica elegida en la lista. Es rápido y, mientras un trabajo se ejecuta, usa algo de la memoria de la tarjeta (unos 160 MB en una página muy densa), que se libera al terminar. CPU: los trabajos dibujan las páginas que leen en el procesador, dejando toda la memoria de la tarjeta a tus servidores de IA, y cada imagen tarda más, sobre todo en páginas con mucha tinta. Las imágenes son iguales de una forma u otra, y vale para todas las alineaciones. El editor de páginas dibuja en la tarjeta elegida.</string>
+  <string name="settings.render.help">GPU (predeterminado): las páginas se dibujan en la tarjeta gráfica elegida en la lista, y PaperDaemon no dibuja en ninguna otra tarjeta. Es rápido y, mientras un trabajo se ejecuta, usa algo de la memoria de la tarjeta (unos 160 MB en una página muy densa), que se libera al terminar. CPU: PaperDaemon lo dibuja todo en el procesador, también el editor de páginas, y no toca ninguna tarjeta gráfica. Cada imagen tarda más, sobre todo en páginas con mucha tinta. Las imágenes que dibujan los trabajos son iguales de una forma u otra, y vale para todas las alineaciones.</string>
   <string name="settings.render.cpu">CPU</string>
   <string name="settings.render.gpu">GPU</string>
   <string name="settings.render.card">Tarjeta gráfica</string>
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">Esta tarjeta no puede ejecutar WebGPU: las páginas se dibujarán en el procesador, que es más lento.</string>
-  <string name="settings.render.restart">Los trabajos usan esta tarjeta desde el próximo; la ventana, desde el próximo inicio de PaperDaemon.</string>
+  <string name="settings.render.restart">La ventana se vuelve a abrir ahora con este cambio.</string>
 </resources>

@@ -61,8 +61,12 @@
   <string name="issue.setup_go">Einrichtung fortsetzen</string>
   <string name="issue.tablet">PaperDaemon erreicht dein reMarkable nicht.</string>
   <string name="issue.mirror">Der Spiegel konnte nicht aktualisiert werden: {why}</string>
-  <string name="issue.render_cpu">Seiten werden ohne die Grafikkarte gezeichnet, das ist langsamer: {why}</string>
+  <string name="issue.render_cpu">Seiten werden auf dem Prozessor gezeichnet, das ist langsamer: {why}</string>
   <string name="issue.render_ok">OK</string>
+  <string name="render.why.lost">die Grafikkarte reagiert nicht mehr.</string>
+  <string name="render.why.refused">die Grafikkarte konnte einen der Zeichenschritte von PaperDaemon nicht ausführen.</string>
+  <string name="render.why.none">diese Grafikkarte kann kein WebGPU ausführen.</string>
+  <string name="render.why.card">das Fenster läuft noch auf der Karte, mit der es gestartet wurde. Starten Sie PaperDaemon neu, um die gewählte Karte zu nutzen.</string>
   <string name="editor.large_title">Diese Seite wird sehr groß</string>
   <string name="editor.large_body">Dein Tablet wird Mühe haben, diese Seite zu laden, und der Seiteneditor belegt mehr Grafikkartenspeicher als vorgesehen. Mach nur weiter, wenn du sicher bist, dass das in Ordnung ist. Wenn auf derselben Grafikkarte ein lokaler KI-Server läuft, nimmt diese Seite ihm Speicher weg.</string>
   <string name="editor.large_ok">Verstanden</string>
@@ -704,11 +708,11 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="slot.loras_folder">LoRA-Ordner</string>
   <string name="slot.loras_folder.help">Öffnet den LoRA-Ordner dieser Aufstellung. Jede LoRA darin wird bei jedem Bild dieser Aufstellung angewendet, so wie ihr Bild-Harness es vorgibt.</string>
   <string name="settings.render">Renderer</string>
-  <string name="settings.render.help">GPU (Standard): Seiten werden auf der Grafikkarte gezeichnet, die in der Liste gewählt ist. Das ist schnell und belegt während eines Auftrags etwas Grafikspeicher (etwa 160 MB bei einer sehr dichten Seite), der am Ende wieder frei wird. CPU: Aufträge zeichnen die Seiten, die sie lesen, stattdessen auf dem Prozessor, der ganze Grafikspeicher bleibt Ihren KI-Servern, und jedes Bild dauert länger, am meisten auf Seiten mit viel Tinte. Die Bilder sind in beiden Fällen gleich, und es gilt für jede Aufstellung. Der Seiteneditor zeichnet auf der gewählten Karte.</string>
+  <string name="settings.render.help">GPU (Standard): Seiten werden auf der Grafikkarte gezeichnet, die in der Liste gewählt ist, und PaperDaemon zeichnet auf keiner anderen Karte. Das ist schnell und belegt während eines Auftrags etwas Grafikspeicher (etwa 160 MB bei einer sehr dichten Seite), der am Ende wieder frei wird. CPU: PaperDaemon zeichnet alles auf dem Prozessor, auch den Seiteneditor, und lässt jede Grafikkarte in Ruhe. Jedes Bild dauert länger, am meisten auf Seiten mit viel Tinte. Die Bilder der Aufträge sind in beiden Fällen gleich, und es gilt für jede Aufstellung.</string>
   <string name="settings.render.cpu">CPU</string>
   <string name="settings.render.gpu">GPU</string>
   <string name="settings.render.card">Grafikkarte</string>
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">Diese Karte kann kein WebGPU ausführen: Seiten werden auf dem Prozessor gezeichnet, was langsamer ist.</string>
-  <string name="settings.render.restart">Aufträge nutzen diese Karte ab dem nächsten, das Fenster ab dem nächsten Start von PaperDaemon.</string>
+  <string name="settings.render.restart">Das Fenster öffnet sich jetzt mit dieser Änderung neu.</string>
 </resources>

@@ -518,11 +518,13 @@ def _log_text():
     return out
 
 
-def _log_pages(lines, w=1404, h=1872):
-    """The lines as page-sized pictures, in a monospace face -> [PIL image]."""
+def _log_pages(lines, w=1404, h=1872, k=2):
+    """The lines as page-sized pictures, in a monospace face -> [PIL image]: a w x h page laid out in page units, drawn
+    k pixels a unit (two: a picture sent to the tablet is 2x its resolution), the same lines on each page at any k."""
     import textwrap
     from PIL import Image, ImageDraw, ImageFont
-    size, margin = 20, 60
+    w, h = w * k, h * k
+    size, margin = 20 * k, 60 * k
     try:
         font = ImageFont.truetype(os.path.join(os.environ.get("WINDIR", "C:/Windows"), "Fonts", "consola.ttf"), size)
     except OSError:

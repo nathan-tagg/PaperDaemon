@@ -25,6 +25,9 @@ import struct
 HERE = os.path.dirname(os.path.abspath(__file__))
 from paperdaemon.remarkable.sync import MIRROR as _LIBRARY
 RM = os.environ.get("RM_CACHE") or _LIBRARY
+# A PICTURE SENT TO THE TABLET is made at twice its resolution: PICTURE_K pixels a page unit, laid out in page units
+# (charts render at the same scale). The tablet scales a picture into its box, so only its sharpness changes
+PICTURE_K = 2
 _NAME = re.compile(rb"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(?:png|jpg|jpeg)")
 _QUAD = re.compile(rb"\x3c\x41\x00\x00\x00\x10")      # sub-block id 3, 65 bytes: count 16 then floats
 _HASH16 = re.compile(rb"\x2c\x10\x00\x00\x00")           # sub-block id 2, 16 bytes: the asset hash

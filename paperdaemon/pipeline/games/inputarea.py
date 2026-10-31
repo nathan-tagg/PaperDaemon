@@ -34,12 +34,11 @@ def column_x(doc, page_no):
     return COLUMN_X
 
 
-def foot(im, top, label, col_px, font, color, rule):
+def foot(d, top, label, col_px, font, color, rule):
     """The instruction at the picture's foot, above `top` (design pixels): `label` from `col_px` (the typed-text
-    column's left edge, design pixels), and a rule along the picture's last row, the top of the player's space."""
-    from PIL import ImageDraw
-    d = ImageDraw.Draw(im)
-    d.line((0, top - 2, im.width, top - 2), fill=rule, width=3)
+    column's left edge, design pixels), and a rule along the picture's last row, the top of the player's space. `d`:
+    the picture's drawing, in design pixels (draw.scaled.Draw)."""
+    d.line((0, top - 2, d.width, top - 2), fill=rule, width=3)
     d.text((col_px, top - LABEL_H + 4), label, font=font, fill=color)
 
 
@@ -50,12 +49,12 @@ def column_px(doc, page_no, page_w):
 
 
 def place(doc, page_no, page_id, png, top):
-    """The page's picture, cut at `top` (design pixels: where the player's space begins), onto the page -> its
-    placement {hash, name, box}."""
+    """The page's picture, cut at `top` (design pixels: where the player's space begins; the picture PICTURE_K pixels
+    one), onto the page -> its placement {hash, name, box}."""
     from PIL import Image
     from paperdaemon.pipeline.page import images as IM
     with Image.open(png) as im:
-        im.crop((0, 0, im.width, int(top))).save(png)
+        im.crop((0, 0, im.width, int(round(top * IM.PICTURE_K)))).save(png)
     x0, y0, x1, _y1 = TB.picture_page(TB.frame_of(doc, page_no))[0]
     s = TB.picture_page(TB.frame_of(doc, page_no))[1]
     box = (x0, y0, x1, top * s)

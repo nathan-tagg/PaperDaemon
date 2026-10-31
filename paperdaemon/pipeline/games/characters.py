@@ -965,8 +965,8 @@ def cover_page(title=None, subtitle="the cast"):
     [(cid, box)]): where each face and its name sit, so the book can link them to their pages."""
     from PIL import Image, ImageDraw
     title = title or cast_name()
-    im = Image.new("RGB", (SHEET_W, SHEET_H), "white")
-    d = ImageDraw.Draw(im)
+    from paperdaemon.pipeline.draw import scaled as SD
+    im, d = SD.canvas(SHEET_W, SHEET_H)                # (laid out in the page's pixels; sent at twice the tablet's resolution)
     big, reg = _font("reMarkableSans-Bold.ttf", 64), _font("reMarkableSans-Medium.ttf", 30)
     d.text((64, 56), title, font=big, fill=(24, 24, 26))
     d.text((64, 136), subtitle, font=reg, fill=(95, 95, 100))
@@ -984,8 +984,7 @@ def cover_page(title=None, subtitle="the cast"):
             x = 64 + (i % per) * (s + 9)
             yy = y + (i // per) * (s + 26)
             with Image.open(face_png(cid, "neutral")) as f:
-                pic = f.convert("RGBA").resize((s, s), Image.LANCZOS)
-            im.paste(pic, (x, yy), pic)
+                SD.paste(im, f.convert("RGBA"), (x, yy), (s, s), mask=True)
             name = r[cid]["short"]
             d.text((x + (s - d.textlength(name, font=small)) / 2, yy + s + 2), name, font=small, fill=(60, 60, 64))
             boxes.append((cid, (x, yy, x + s, yy + s + 24)))
@@ -1043,8 +1042,8 @@ def sheet_image(cid, spoilers=False, front=None):
     from PIL import Image, ImageDraw
     base = get(cid)
     p = profile(cid, front)
-    im = Image.new("RGB", (SHEET_W, SHEET_H), "white")
-    d = ImageDraw.Draw(im)
+    from paperdaemon.pipeline.draw import scaled as SD
+    im, d = SD.canvas(SHEET_W, SHEET_H)                # (laid out in the page's pixels; sent at twice the tablet's resolution)
     ink, gray = (24, 24, 26), (95, 95, 100)
     M, W = 64, SHEET_W - 128
     reg, ital, med = (_font("reMarkableSans-Regular.ttf", 26), _font("reMarkableSans-RegularItalic.ttf", 26),
@@ -1054,8 +1053,7 @@ def sheet_image(cid, spoilers=False, front=None):
 
     def face(emotion, box, marks=()):
         with Image.open(face_png(cid, emotion, marks, front)) as f:
-            pic = f.convert("RGBA").resize((box[2], box[2]), Image.LANCZOS)
-        im.paste(pic, (box[0], box[1]), pic)
+            SD.paste(im, f.convert("RGBA"), (box[0], box[1]), (box[2], box[2]), mask=True)
 
     def para(text, y, font=reg, color=ink, width=W, x=M, gap=34):
         for line in _wrap(d, text, font, width):
@@ -1200,8 +1198,8 @@ def system_page(cid):
     chess -> (PIL image, [(alter id, box)]), the boxes for links to each alter's page."""
     from PIL import Image, ImageDraw
     base, A = get(cid), alters(cid)
-    im = Image.new("RGB", (SHEET_W, SHEET_H), "white")
-    d = ImageDraw.Draw(im)
+    from paperdaemon.pipeline.draw import scaled as SD
+    im, d = SD.canvas(SHEET_W, SHEET_H)                # (laid out in the page's pixels; sent at twice the tablet's resolution)
     ink, gray = (24, 24, 26), (95, 95, 100)
     _index_tag(d)
     d.text((64, 60), "%s: the system" % base["short"], font=_font("reMarkableSans-Bold.ttf", 50), fill=ink)
@@ -1215,8 +1213,7 @@ def system_page(cid):
         x = 64 + (i % per) * col + (col - s) // 2
         y = 190 + (i // per) * (s + 96)
         with Image.open(face_png(cid, "neutral", (), aid)) as f:
-            pic = f.convert("RGBA").resize((s, s), Image.LANCZOS)
-        im.paste(pic, (x, y), pic)
+            SD.paste(im, f.convert("RGBA"), (x, y), (s, s), mask=True)
         cx = x + s / 2.0
         d.text((cx - d.textlength(al["name"], font=name_f) / 2, y + s + 4), al["name"], font=name_f, fill=ink)
         for j, line in enumerate(_wrap(d, "%s · chess %d" % (al["role"], chess_elo(profile(cid, aid))), small, col - 8)[:2]):

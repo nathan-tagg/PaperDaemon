@@ -155,7 +155,8 @@ def main(argv=None):
         import json
         from . import gpus
         server._engine["announced"] = True
-        webview = gpus.window_args(want=settings._get_path(s, "render.card") or "")
+        webview = gpus.window_for(s)
+        server._window["args"] = webview             # (the shell starts the window with these; a change starts it again)
         print("PAPERDAEMON_READY " + json.dumps({"port": port, "token": token, "webview": webview}), flush=True)
         server.tell_shell("status Idle")
     if args.headless:

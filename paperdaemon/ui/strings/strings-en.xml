@@ -61,8 +61,12 @@
   <string name="issue.setup_go">Continue setup</string>
   <string name="issue.tablet">PaperDaemon can't reach your reMarkable.</string>
   <string name="issue.mirror">The Mirror could not be updated: {why}</string>
-  <string name="issue.render_cpu">Pages are being drawn without the graphics card, which is slower: {why}</string>
+  <string name="issue.render_cpu">Pages are being drawn on the processor, which is slower: {why}</string>
   <string name="issue.render_ok">OK</string>
+  <string name="render.why.lost">the graphics card stopped responding.</string>
+  <string name="render.why.refused">the graphics card could not run one of PaperDaemon's drawing steps.</string>
+  <string name="render.why.none">this graphics card cannot run WebGPU.</string>
+  <string name="render.why.card">the window is still on the card it started with. Restart PaperDaemon to use the card you chose.</string>
   <string name="editor.large_title">This page is getting very large</string>
   <string name="editor.large_body">Your tablet will struggle to load this page, and the page editor will use more of your graphics card's memory than intended. Go on only if you are sure this is fine. If you run a local AI server on the same graphics card, understand that this page takes memory that server would otherwise have.</string>
   <string name="editor.large_ok">I understand</string>
@@ -704,11 +708,11 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="slot.loras_folder">LoRA folder</string>
   <string name="slot.loras_folder.help">Open this lineup's LoRA folder. Every LoRA in it goes with every picture this lineup makes, the way its image harness says.</string>
   <string name="settings.render">Renderer</string>
-  <string name="settings.render.help">GPU (the default): pages are drawn on the graphics card chosen in the list. That is fast, and while a job runs it uses some of the card's memory (about 160 MB on a very dense page), given back when the job ends. CPU: jobs draw the pages they read on the processor instead, leaving all of the card's memory to your AI servers, and each picture takes longer, most on pages with a lot of ink. The pictures are the same either way, and every lineup is alike. The page editor draws on the card chosen.</string>
+  <string name="settings.render.help">GPU (the default): pages are drawn on the graphics card chosen in the list, and PaperDaemon draws on no other card. That is fast, and while a job runs it uses some of the card's memory (about 160 MB on a very dense page), given back when the job ends. CPU: PaperDaemon draws everything on the processor, the page editor too, and leaves every graphics card alone. Each picture takes longer, most on pages with a lot of ink. The pictures jobs draw are the same either way, and every lineup is alike.</string>
   <string name="settings.render.cpu">CPU</string>
   <string name="settings.render.gpu">GPU</string>
   <string name="settings.render.card">Graphics card</string>
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">This card cannot run WebGPU: pages will be drawn on the processor, which is slower.</string>
-  <string name="settings.render.restart">Jobs use this card from the next one; the window, from the next time PaperDaemon starts.</string>
+  <string name="settings.render.restart">The window reopens now with this change.</string>
 </resources>

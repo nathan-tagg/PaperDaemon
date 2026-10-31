@@ -432,26 +432,30 @@ def safe_top():
 
 
 def page_image(im, margin=36, caption=None, caption_px=26, top=None):
-    """One white 1404 x 1872 page with the picture fitted inside the margins.
+    """One white 1404 x 1872 page with the picture fitted inside the margins, drawn PICTURE_K pixels a device pixel
+    (sent to the tablet: twice its resolution); `margin`, `caption_px` and `top` are device pixels.
 
     The picture keeps its aspect and is centered horizontally; vertically it sits at `top` px if
     given, else centered (a chart sheet reads better a little above center, so the caller can
     pass top=). A caption, if any, is lettered at the foot in the tablet font.
     """
     from PIL import Image, ImageDraw, ImageFont
+    from paperdaemon.pipeline.page.images import PICTURE_K as k
     im = _open(im)
-    page = Image.new("RGB", (PAGE_W, PAGE_H), "white")
-    cap_h = (caption_px + 18) if caption else 0
+    W, H = PAGE_W * k, PAGE_H * k
+    page = Image.new("RGB", (W, H), "white")
+    margin, caption_px = margin * k, caption_px * k
+    cap_h = (caption_px + 18 * k) if caption else 0
     # THE TOP IS BELOW THE TABLET'S TOOLBAR: a document page is shown fitted to the screen as a
     # notebook page is, so its safe area's top (rm_page.safe_area) is where the picture may start
-    head = max(margin, safe_top())
-    avail_w, avail_h = PAGE_W - 2 * margin, PAGE_H - head - margin - cap_h
+    head = max(margin, safe_top() * k)
+    avail_w, avail_h = W - 2 * margin, H - head - margin - cap_h
     s = min(avail_w / float(im.width), avail_h / float(im.height))
     w, h = max(1, int(round(im.width * s))), max(1, int(round(im.height * s)))
     if abs(s - 1.0) > 1e-6:
         im = im.resize((w, h), Image.LANCZOS)
-    x = (PAGE_W - w) // 2
-    y = head + (avail_h - h) // 2 if top is None else max(head, int(top))
+    x = (W - w) // 2
+    y = head + (avail_h - h) // 2 if top is None else max(head, int(top * k))
     page.paste(im, (x, y))
     if caption:
         d = ImageDraw.Draw(page)
@@ -460,7 +464,7 @@ def page_image(im, margin=36, caption=None, caption_px=26, top=None):
         except Exception:
             font = ImageFont.load_default()
         tw = d.textlength(caption, font=font)
-        d.text(((PAGE_W - tw) / 2.0, PAGE_H - margin - caption_px - 4), caption,
+        d.text(((W - tw) / 2.0, H - margin - caption_px - 4 * k), caption,
                fill=(70, 70, 70), font=font)
     return page
 
@@ -557,7 +561,8 @@ def write_pdf(pages, out_path, encode="auto", links=None):
     page_refs = []
     for n, im in enumerate(pages):
         im = _open(im)
-        if im.size != (PAGE_W, PAGE_H):
+        from paperdaemon.pipeline.page.images import PICTURE_K as k
+        if im.size not in ((PAGE_W, PAGE_H), (PAGE_W * k, PAGE_H * k)):   # (a page, at the tablet's resolution or twice it)
             im = page_image(im)
         if encode == "flate":
             extra, raw = "/ColorSpace /DeviceRGB /Filter /FlateDecode", zlib.compress(im.tobytes(), 9)

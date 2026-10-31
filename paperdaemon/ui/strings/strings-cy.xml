@@ -61,8 +61,12 @@
   <string name="issue.setup_go">Parhau â'r gosod</string>
   <string name="issue.tablet">Ni all PaperDaemon gyrraedd eich reMarkable.</string>
   <string name="issue.mirror">Doedd dim modd diweddaru'r Drych: {why}</string>
-  <string name="issue.render_cpu">Mae'r tudalennau'n cael eu tynnu heb y cerdyn graffeg, sy'n arafach: {why}</string>
+  <string name="issue.render_cpu">Mae'r tudalennau'n cael eu tynnu ar y prosesydd, sy'n arafach: {why}</string>
   <string name="issue.render_ok">Iawn</string>
+  <string name="render.why.lost">fe beidiodd y cerdyn graffeg ag ymateb.</string>
+  <string name="render.why.refused">ni allai'r cerdyn graffeg redeg un o gamau tynnu PaperDaemon.</string>
+  <string name="render.why.none">ni all y cerdyn graffeg hwn redeg WebGPU.</string>
+  <string name="render.why.card">mae'r ffenestr yn dal ar y cerdyn y dechreuodd arno. Ailgychwynnwch PaperDaemon i ddefnyddio'r cerdyn a ddewisoch.</string>
   <string name="editor.large_title">Mae'r dudalen hon yn mynd yn fawr iawn</string>
   <string name="editor.large_body">Bydd eich llechen yn cael trafferth llwytho'r dudalen hon, a bydd y golygydd tudalennau'n defnyddio mwy o gof eich cerdyn graffeg na'r bwriad. Ewch ymlaen dim ond os ydych yn siŵr bod hyn yn iawn. Os ydych yn rhedeg gweinydd AI lleol ar yr un cerdyn graffeg, deallwch fod y dudalen hon yn cymryd cof y byddai'r gweinydd hwnnw fel arall yn ei gael.</string>
   <string name="editor.large_ok">Rwy'n deall</string>
@@ -704,11 +708,11 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="slot.loras_folder">Ffolder LoRA</string>
   <string name="slot.loras_folder.help">Agor ffolder LoRA y llinell hon. Mae pob LoRA ynddo'n mynd gyda phob llun mae'r llinell hon yn ei wneud, fel mae ei harnais delwedd yn dweud.</string>
   <string name="settings.render">Rendrwr</string>
-  <string name="settings.render.help">GPU (y rhagosodiad): mae tudalennau'n cael eu tynnu ar y cerdyn graffeg a ddewisir yn y rhestr. Mae hynny'n gyflym, a thra bo swydd yn rhedeg mae'n defnyddio peth o gof y cerdyn (tua 160 MB ar dudalen drwchus iawn), a roddir yn ôl pan ddaw'r swydd i ben. CPU: mae swyddi'n tynnu'r tudalennau maen nhw'n eu darllen ar y prosesydd yn lle hynny, gan adael holl gof y cerdyn i'ch gweinyddion AI, ac mae pob llun yn cymryd yn hirach, yn enwedig ar dudalennau â llawer o inc. Mae'r lluniau yr un fath y naill ffordd neu'r llall, ac mae pob llinell yr un fath. Mae golygydd y dudalen yn tynnu ar y cerdyn a ddewiswyd.</string>
+  <string name="settings.render.help">GPU (y rhagosodiad): mae tudalennau'n cael eu tynnu ar y cerdyn graffeg a ddewisir yn y rhestr, a dyw PaperDaemon ddim yn tynnu ar unrhyw gerdyn arall. Mae hynny'n gyflym, a thra bo swydd yn rhedeg mae'n defnyddio peth o gof y cerdyn (tua 160 MB ar dudalen drwchus iawn), a roddir yn ôl pan ddaw'r swydd i ben. CPU: mae PaperDaemon yn tynnu popeth ar y prosesydd, golygydd y dudalen hefyd, ac yn gadael pob cerdyn graffeg yn llonydd. Mae pob llun yn cymryd yn hirach, yn enwedig ar dudalennau â llawer o inc. Mae'r lluniau a dynnir gan swyddi yr un fath y naill ffordd neu'r llall, ac mae pob llinell yr un fath.</string>
   <string name="settings.render.cpu">CPU</string>
   <string name="settings.render.gpu">GPU</string>
   <string name="settings.render.card">Cerdyn graffeg</string>
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">Ni all y cerdyn hwn redeg WebGPU: bydd tudalennau'n cael eu tynnu ar y prosesydd, sy'n arafach.</string>
-  <string name="settings.render.restart">Mae swyddi'n defnyddio'r cerdyn hwn o'r un nesaf; y ffenestr, o'r tro nesaf y bydd PaperDaemon yn cychwyn.</string>
+  <string name="settings.render.restart">Mae'r ffenestr yn ailagor nawr gyda'r newid hwn.</string>
 </resources>

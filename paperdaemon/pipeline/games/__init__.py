@@ -74,8 +74,9 @@ NARRATOR_INK = (0x4F, 0x7F, 0x3A)          # the board's green, as in the dialog
 def talk_png(lines, width, out):
     """The talk strip as a picture: each line is (speaker, mood, text); speaker "narrator" is the
     game's own voice, set apart in italics. A stand-in until the characters' dialog chart draws
-    faces and bubbles. -> (path, height in page units)"""
+    faces and bubbles. Laid out in page units, drawn at twice the tablet's resolution. -> (path, height in page units)"""
     from PIL import Image, ImageDraw
+    from paperdaemon.pipeline.draw import scaled as SD
     name_f, text_f, narr_f = _font("reMarkableSans-Bold.ttf", 34), _font("reMarkableSans-Regular.ttf", 34), \
         _font("reMarkableSans-RegularItalic.ttf", 40)
     probe = ImageDraw.Draw(Image.new("RGB", (10, 10)))
@@ -98,8 +99,7 @@ def talk_png(lines, width, out):
     rows = rows[:-1] if rows and rows[-1] == ("gap",) else rows
     lh = 50
     h = max(60, sum(16 if r[0] == "gap" else lh for r in rows) + 16)
-    im = Image.new("RGB", (int(width), int(h)), PAPER)
-    d = ImageDraw.Draw(im)
+    im, d = SD.canvas(int(width), int(h), PAPER)
     y = 8
     for r in rows:
         if r[0] == "gap":
@@ -147,8 +147,11 @@ def express(state, feel, intensity=0.6, at=""):
 
 def _trim(png, pad=14):
     """Cut a picture's empty bottom off (the dialog builder lays out from the top), and its empty left
-    edge, so what it shows first -- the opponent's face -- starts where the picture is placed."""
+    edge, so what it shows first -- the opponent's face -- starts where the picture is placed (`pad`: page units;
+    the picture PICTURE_K pixels one)."""
     from PIL import Image, ImageChops
+    from paperdaemon.pipeline.page.images import PICTURE_K
+    pad = int(round(pad * PICTURE_K))
     with Image.open(png) as im:
         im.load()
     flat = Image.alpha_composite(Image.new("RGBA", im.size, "white"), im.convert("RGBA")).convert("RGB")
@@ -184,7 +187,8 @@ def dialog_png(state, lines, out, width=None):
         spec = RC.dialog(spec_lines, page="strip")
         if width:
             spec["width"], spec["height"] = int(round(width)), 800
-        CHART.render(spec, out)
+        from paperdaemon.pipeline.page.images import PICTURE_K
+        CHART.render(spec, out, scale=float(PICTURE_K))           # (sent to the tablet: twice its resolution)
         if not os.path.exists(out):
             return None
         _trim(out)
@@ -236,7 +240,7 @@ def place_talk(doc, page_no, state, lines, page_id=None, workdir=None):
     # the strip keeps its own proportions, as large as the other side's space allows (never larger than it
     # was drawn), at the top, its left edge -- the opponent's face -- on the board's left edge
     with Image.open(png) as im:
-        pw, ph = im.size
+        pw, ph = im.size[0] / float(IM.PICTURE_K), im.size[1] / float(IM.PICTURE_K)   # (its page units: PICTURE_K px each)
     s = min(1.0, w / float(pw), (y1 - y0) / float(ph))
     bw, bh = pw * s, ph * s
     box = (x0, y0, x0 + bw, y0 + bh)

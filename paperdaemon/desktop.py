@@ -10,8 +10,9 @@ from . import gpus
 
 
 def run(port, token):
-    from . import settings
-    args = gpus.window_args(want=settings._get_path(settings.load(), "render.card") or "")
+    from . import server, settings
+    args = gpus.window_for(settings.load())
+    server._window["args"] = args              # (a change of card here waits for the next start: the editor says so)
     if args:
         os.environ["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"] = " ".join(args)
     webview.create_window("PaperDaemon", "http://127.0.0.1:%d/#pair=%s" % (port, token),

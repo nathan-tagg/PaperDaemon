@@ -331,8 +331,11 @@
     $("#st-card-box", R).hidden = cpu || !C.cards.length;
     $("#st-card-bang", R).hidden = !now || now.d3d12 || now.d3d11;
   }
+  // (either change starts the window again -- on the card chosen, or with no card for the processor: the engine has
+  // the shell do it, and the window comes back here)
   async function setRenderer(cpu) {
-    await save("render.processor", cpu, $("#st-cpu-msg", R));
+    const msg = $("#st-cpu-msg", R);
+    if (await save("render.processor", cpu, msg)) { msg.textContent = t("settings.render.restart"); msg.className = "hint"; }
     paintRenderer();
   }
 

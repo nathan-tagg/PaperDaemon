@@ -61,8 +61,12 @@
   <string name="issue.setup_go">Tiếp tục thiết lập</string>
   <string name="issue.tablet">PaperDaemon không kết nối được với reMarkable của bạn.</string>
   <string name="issue.mirror">Không thể cập nhật Bản sao: {why}</string>
-  <string name="issue.render_cpu">Các trang đang được vẽ mà không dùng card đồ họa, chậm hơn: {why}</string>
+  <string name="issue.render_cpu">Các trang đang được vẽ bằng bộ xử lý, chậm hơn: {why}</string>
   <string name="issue.render_ok">OK</string>
+  <string name="render.why.lost">card đồ họa đã ngừng phản hồi.</string>
+  <string name="render.why.refused">card đồ họa không chạy được một bước vẽ của PaperDaemon.</string>
+  <string name="render.why.none">card đồ họa này không chạy được WebGPU.</string>
+  <string name="render.why.card">cửa sổ vẫn đang dùng card nó khởi động cùng. Hãy khởi động lại PaperDaemon để dùng card bạn đã chọn.</string>
   <string name="editor.large_title">Trang này đang trở nên rất lớn</string>
   <string name="editor.large_body">Máy tính bảng của bạn sẽ khó tải trang này, và trình chỉnh sửa trang sẽ dùng nhiều bộ nhớ card đồ họa hơn dự định. Chỉ tiếp tục nếu bạn chắc rằng điều này ổn. Nếu bạn chạy máy chủ AI cục bộ trên cùng card đồ họa, hãy hiểu rằng trang này lấy bộ nhớ mà máy chủ đó lẽ ra được dùng.</string>
   <string name="editor.large_ok">Tôi hiểu</string>
@@ -704,11 +708,11 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="slot.loras_folder">Thư mục LoRA</string>
   <string name="slot.loras_folder.help">Mở thư mục LoRA của đội hình này. Mọi LoRA trong đó được áp dụng cho mọi ảnh đội hình này tạo, theo cách harness ảnh của nó quy định.</string>
   <string name="settings.render">Trình kết xuất</string>
-  <string name="settings.render.help">GPU (mặc định): các trang được vẽ bằng card đồ họa chọn trong danh sách. Cách này nhanh, và khi tác vụ chạy thì dùng một ít bộ nhớ của card (khoảng 160 MB với trang rất dày), trả lại khi xong. CPU: tác vụ vẽ các trang chúng đọc bằng bộ xử lý, để toàn bộ bộ nhớ card cho các máy chủ AI của bạn, và mỗi ảnh lâu hơn, nhất là trang nhiều mực. Ảnh giống nhau dù cách nào, và áp dụng cho mọi đội hình. Trình chỉnh sửa trang vẽ bằng card đã chọn.</string>
+  <string name="settings.render.help">GPU (mặc định): các trang được vẽ bằng card đồ họa chọn trong danh sách, và PaperDaemon không vẽ bằng card nào khác. Cách này nhanh, và khi tác vụ chạy thì dùng một ít bộ nhớ của card (khoảng 160 MB với trang rất dày), trả lại khi xong. CPU: PaperDaemon vẽ mọi thứ bằng bộ xử lý, kể cả trình chỉnh sửa trang, và không đụng tới card đồ họa nào. Mỗi ảnh lâu hơn, nhất là trang nhiều mực. Ảnh mà tác vụ vẽ giống nhau dù cách nào, và áp dụng cho mọi đội hình.</string>
   <string name="settings.render.cpu">CPU</string>
   <string name="settings.render.gpu">GPU</string>
   <string name="settings.render.card">Card đồ họa</string>
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">Card này không chạy được WebGPU: các trang sẽ được vẽ bằng bộ xử lý, chậm hơn.</string>
-  <string name="settings.render.restart">Tác vụ dùng card này từ lần tới; cửa sổ, từ lần khởi động PaperDaemon tiếp theo.</string>
+  <string name="settings.render.restart">Cửa sổ đang mở lại với thay đổi này.</string>
 </resources>

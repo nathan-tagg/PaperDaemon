@@ -61,8 +61,12 @@
   <string name="issue.setup_go">Continua la configurazione</string>
   <string name="issue.tablet">PaperDaemon non riesce a raggiungere il tuo reMarkable.</string>
   <string name="issue.mirror">Impossibile aggiornare lo Specchio: {why}</string>
-  <string name="issue.render_cpu">Le pagine vengono disegnate senza la scheda grafica, più lentamente: {why}</string>
+  <string name="issue.render_cpu">Le pagine vengono disegnate sul processore, più lentamente: {why}</string>
   <string name="issue.render_ok">OK</string>
+  <string name="render.why.lost">la scheda grafica ha smesso di rispondere.</string>
+  <string name="render.why.refused">la scheda grafica non è riuscita a eseguire uno dei passaggi di disegno di PaperDaemon.</string>
+  <string name="render.why.none">questa scheda grafica non può eseguire WebGPU.</string>
+  <string name="render.why.card">la finestra è ancora sulla scheda con cui è stata avviata. Riavvia PaperDaemon per usare la scheda che hai scelto.</string>
   <string name="editor.large_title">Questa pagina sta diventando molto grande</string>
   <string name="editor.large_body">Il tablet farà fatica a caricare questa pagina, e l'editor di pagina userà più memoria della scheda grafica del previsto. Continua solo se sei sicuro che vada bene. Se esegui un server di IA locale sulla stessa scheda grafica, sappi che questa pagina gli toglie memoria.</string>
   <string name="editor.large_ok">Ho capito</string>
@@ -704,11 +708,11 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="slot.loras_folder">Cartella LoRA</string>
   <string name="slot.loras_folder.help">Apre la cartella LoRA di questa formazione. Ogni LoRA che contiene si applica a ogni immagine che crea, come indica il suo harness per le immagini.</string>
   <string name="settings.render">Renderer</string>
-  <string name="settings.render.help">GPU (predefinito): le pagine vengono disegnate sulla scheda grafica scelta nell'elenco. È veloce e, durante un lavoro, usa un po' della memoria della scheda (circa 160 MB su una pagina molto densa), restituita alla fine. CPU: i lavori disegnano le pagine che leggono sul processore, lasciando tutta la memoria della scheda ai tuoi server di IA, e ogni immagine richiede più tempo, soprattutto sulle pagine con molto inchiostro. Le immagini sono identiche in entrambi i casi, e vale per ogni formazione. L'editor di pagina disegna sulla scheda scelta.</string>
+  <string name="settings.render.help">GPU (predefinito): le pagine vengono disegnate sulla scheda grafica scelta nell'elenco, e PaperDaemon non disegna su nessun'altra scheda. È veloce e, durante un lavoro, usa un po' della memoria della scheda (circa 160 MB su una pagina molto densa), restituita alla fine. CPU: PaperDaemon disegna tutto sul processore, anche l'editor di pagina, e non tocca nessuna scheda grafica. Ogni immagine richiede più tempo, soprattutto sulle pagine con molto inchiostro. Le immagini disegnate dai lavori sono identiche in entrambi i casi, e vale per ogni formazione.</string>
   <string name="settings.render.cpu">CPU</string>
   <string name="settings.render.gpu">GPU</string>
   <string name="settings.render.card">Scheda grafica</string>
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">Questa scheda non può eseguire WebGPU: le pagine verranno disegnate sul processore, che è più lento.</string>
-  <string name="settings.render.restart">I lavori usano questa scheda dal prossimo; la finestra, dal prossimo avvio di PaperDaemon.</string>
+  <string name="settings.render.restart">La finestra si riapre ora con questa modifica.</string>
 </resources>

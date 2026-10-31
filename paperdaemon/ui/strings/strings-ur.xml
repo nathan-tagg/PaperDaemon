@@ -61,8 +61,12 @@
   <string name="issue.setup_go">سیٹ اپ جاری رکھیں</string>
   <string name="issue.tablet">PaperDaemon آپ کے reMarkable تک نہیں پہنچ پا رہا۔</string>
   <string name="issue.mirror">آئینہ اپ ڈیٹ نہیں ہو سکا: {why}</string>
-  <string name="issue.render_cpu">صفحات گرافکس کارڈ کے بغیر بنائے جا رہے ہیں، جو سست ہے: {why}</string>
+  <string name="issue.render_cpu">صفحات پروسیسر پر بنائے جا رہے ہیں، جو سست ہے: {why}</string>
   <string name="issue.render_ok">ٹھیک ہے</string>
+  <string name="render.why.lost">گرافکس کارڈ نے جواب دینا بند کر دیا۔</string>
+  <string name="render.why.refused">گرافکس کارڈ PaperDaemon کے بنانے کے مراحل میں سے ایک نہیں چلا سکا۔</string>
+  <string name="render.why.none">یہ گرافکس کارڈ WebGPU نہیں چلا سکتا۔</string>
+  <string name="render.why.card">ونڈو ابھی تک اسی کارڈ پر ہے جس پر وہ شروع ہوئی تھی۔ چنا گیا کارڈ استعمال کرنے کے لیے PaperDaemon دوبارہ شروع کریں۔</string>
   <string name="editor.large_title">یہ صفحہ بہت بڑا ہوتا جا رہا ہے</string>
   <string name="editor.large_body">آپ کے ٹیبلٹ کو یہ صفحہ لوڈ کرنے میں دشواری ہوگی، اور پیج ایڈیٹر آپ کے گرافکس کارڈ کی میموری طے شدہ سے زیادہ استعمال کرے گا۔ صرف تب آگے بڑھیں جب آپ کو یقین ہو کہ یہ ٹھیک ہے۔ اگر آپ اسی گرافکس کارڈ پر مقامی AI سرور چلاتے ہیں تو جان لیں کہ یہ صفحہ اس سرور کے حصے کی میموری لیتا ہے۔</string>
   <string name="editor.large_ok">سمجھ گیا</string>
@@ -704,11 +708,11 @@
   <string name="slot.loras_folder">LoRA فولڈر</string>
   <string name="slot.loras_folder.help">اس لائن اپ کا LoRA فولڈر کھولیں۔ اس میں موجود ہر LoRA اس لائن اپ کی بنائی ہر تصویر پر لگتا ہے، جیسا اس کا امیج ہارنیس کہتا ہے۔</string>
   <string name="settings.render">رینڈرر</string>
-  <string name="settings.render.help">GPU (طے شدہ): صفحات فہرست میں چنے گئے گرافکس کارڈ پر بنائے جاتے ہیں۔ یہ تیز ہے، اور کام چلتے وقت کارڈ کی کچھ میموری (بہت گھنے صفحے پر تقریباً 160 MB) لیتا ہے جو کام ختم ہونے پر واپس ہو جاتی ہے۔ CPU: کام جن صفحات کو پڑھتے ہیں انہیں اس کے بجائے پروسیسر پر بناتے ہیں، کارڈ کی ساری میموری آپ کے AI سرورز کے لیے چھوڑتے ہوئے، اور ہر تصویر میں زیادہ وقت لگتا ہے، خاص طور پر زیادہ سیاہی والے صفحات پر۔ تصویریں دونوں صورتوں میں ایک جیسی رہتی ہیں، اور یہ ہر لائن اپ پر لاگو ہے۔ صفحہ ایڈیٹر چنے گئے کارڈ پر بناتا ہے۔</string>
+  <string name="settings.render.help">GPU (طے شدہ): صفحات فہرست میں چنے گئے گرافکس کارڈ پر بنائے جاتے ہیں، اور PaperDaemon کسی اور کارڈ پر نہیں بناتا۔ یہ تیز ہے، اور کام چلتے وقت کارڈ کی کچھ میموری (بہت گھنے صفحے پر تقریباً 160 MB) لیتا ہے جو کام ختم ہونے پر واپس ہو جاتی ہے۔ CPU: PaperDaemon سب کچھ پروسیسر پر بناتا ہے، صفحہ ایڈیٹر بھی، اور کسی گرافکس کارڈ کو نہیں چھوتا۔ ہر تصویر میں زیادہ وقت لگتا ہے، خاص طور پر زیادہ سیاہی والے صفحات پر۔ کام جو تصویریں بناتے ہیں وہ دونوں صورتوں میں ایک جیسی رہتی ہیں، اور یہ ہر لائن اپ پر لاگو ہے۔</string>
   <string name="settings.render.cpu">CPU</string>
   <string name="settings.render.gpu">GPU</string>
   <string name="settings.render.card">گرافکس کارڈ</string>
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">یہ کارڈ WebGPU نہیں چلا سکتا: صفحات پروسیسر پر بنائے جائیں گے، جو سست ہے۔</string>
-  <string name="settings.render.restart">کام اگلے کام سے یہ کارڈ استعمال کریں گے؛ ونڈو، PaperDaemon کے اگلی بار شروع ہونے سے۔</string>
+  <string name="settings.render.restart">اس تبدیلی کے ساتھ ونڈو ابھی دوبارہ کھل رہی ہے۔</string>
 </resources>

@@ -61,8 +61,12 @@
   <string name="issue.setup_go">继续设置</string>
   <string name="issue.tablet">PaperDaemon 无法连接到您的 reMarkable。</string>
   <string name="issue.mirror">无法更新镜像：{why}</string>
-  <string name="issue.render_cpu">页面正在不使用显卡绘制，速度较慢：{why}</string>
+  <string name="issue.render_cpu">页面正在处理器上绘制，速度较慢：{why}</string>
   <string name="issue.render_ok">好</string>
+  <string name="render.why.lost">显卡停止了响应。</string>
+  <string name="render.why.refused">显卡无法运行 PaperDaemon 的某个绘制步骤。</string>
+  <string name="render.why.none">这块显卡无法运行 WebGPU。</string>
+  <string name="render.why.card">窗口仍在启动时的显卡上。重新启动 PaperDaemon 即可使用你选择的显卡。</string>
   <string name="editor.large_title">此页面正变得非常大</string>
   <string name="editor.large_body">你的平板将难以加载此页面，页面编辑器也会占用比预期更多的显卡内存。只有在确定没问题时才继续。如果你在同一张显卡上运行本地 AI 服务器，请注意此页面会占用该服务器本可使用的内存。</string>
   <string name="editor.large_ok">我知道了</string>
@@ -704,11 +708,11 @@
   <string name="slot.loras_folder">LoRA 文件夹</string>
   <string name="slot.loras_folder.help">打开此阵容的 LoRA 文件夹。其中的每个 LoRA 都会按此阵容的图像适配器所述，应用到它生成的每张图片。</string>
   <string name="settings.render">渲染器</string>
-  <string name="settings.render.help">GPU（默认）：在列表中选定的显卡上绘制页面。这很快，任务运行时会占用一些显存（非常密的页面约 160 MB），任务结束后归还。CPU：任务改在处理器上绘制所读取的页面，把全部显存留给你的 AI 服务器，每张图片耗时更长，墨迹多的页面尤甚。两种方式图片相同，且对所有阵容都一样。页面编辑器在选定的显卡上绘制。</string>
+  <string name="settings.render.help">GPU（默认）：在列表中选定的显卡上绘制页面，PaperDaemon 不会在其他任何显卡上绘制。这很快，任务运行时会占用一些显存（非常密的页面约 160 MB），任务结束后归还。CPU：PaperDaemon 在处理器上绘制一切，包括页面编辑器，不会动用任何显卡。每张图片耗时更长，墨迹多的页面尤甚。任务绘制的图片两种方式都相同，且对所有阵容都一样。</string>
   <string name="settings.render.cpu">CPU</string>
   <string name="settings.render.gpu">GPU</string>
   <string name="settings.render.card">显卡</string>
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">这块显卡无法运行 WebGPU：页面将在处理器上绘制，速度更慢。</string>
-  <string name="settings.render.restart">任务从下一个起使用这块显卡；窗口从 PaperDaemon 下次启动时起。</string>
+  <string name="settings.render.restart">窗口正在以此更改重新打开。</string>
 </resources>

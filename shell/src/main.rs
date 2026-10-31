@@ -107,6 +107,14 @@ fn start_engine(app: AppHandle) -> Result<Engine, String> {
             let line = line.trim();
             if line == "PAPERDAEMON_SHELL check-updates" {
                 check_for_updates(app.clone());
+            } else if let Some(rest) = line.strip_prefix("PAPERDAEMON_SHELL webview ") {
+                // the Renderer or its card changed: the window started again with the web view's new arguments
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(rest) {
+                    let args: Vec<String> = v.as_array().map(|a| {
+                        a.iter().filter_map(|x| x.as_str().map(String::from)).collect()
+                    }).unwrap_or_default();
+                    restart_window(app.clone(), args);
+                }
             } else if let Some(text) = line.strip_prefix("PAPERDAEMON_SHELL status ") {
                 // the tray's tooltip: what PaperDaemon is doing right now
                 if let Some(tray) = app.tray_by_id("tray") {
@@ -128,11 +136,15 @@ fn start_engine(app: AppHandle) -> Result<Engine, String> {
 
 /// One request to the engine's API, from this machine. Returns the status code.
 fn api_post(port: u16, token: &str, path: &str) -> Option<u16> {
+    api_post_json(port, token, path, "{}")
+}
+
+fn api_post_json(port: u16, token: &str, path: &str, body: &str) -> Option<u16> {
     let mut s = TcpStream::connect(("127.0.0.1", port)).ok()?;
     let req = format!(
         "POST /api/v1{} HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer {}\r\n\
-         Content-Type: application/json\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{{}}",
-        path, token
+         Content-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+        path, token, body.len(), body
     );
     s.write_all(req.as_bytes()).ok()?;
     let mut answer = String::new();
@@ -147,18 +159,26 @@ fn show_window(app: &AppHandle) {
         let _ = w.set_focus();
         return;
     }
+    let _ = build_window(app, "", None);
+}
+
+/// The window, made: the engine's page (at `pane`, when one is named) in a web view started with the arguments the
+/// engine named, where `place` puts it (else at its usual size). Ok once the web view is up.
+fn build_window(app: &AppHandle, pane: &str, place: Option<(tauri::PhysicalPosition<i32>, tauri::PhysicalSize<u32>)>)
+    -> Result<(), String> {
     let shell = app.state::<Shell>();
     let target = shell.engine.lock().unwrap().as_ref().map(|e| (e.port, e.token.clone(), e.webview.clone()));
-    let Some((port, token, webview)) = target else { return };
-    let url = format!("http://127.0.0.1:{}/#pair={}", port, token);
-    let Ok(url) = url.parse() else { return };
+    let Some((port, token, webview)) = target else { return Err("no engine".into()) };
+    let go = if pane.is_empty() { String::new() } else { format!("&pane={}", pane) };
+    let url = format!("http://127.0.0.1:{}/#pair={}{}", port, token, go);
+    let url = url.parse().map_err(|_| "bad address".to_string())?;
     let mut builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::External(url));
     if !webview.is_empty() {
         // wry's own arguments (no mini menu, no SmartScreen) are given again: set, they are replaced
         builder = builder.additional_browser_args(&format!(
             "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection {}", webview));
     }
-    let _ = builder
+    let w = builder
         .title("PaperDaemon")
         .inner_size(1160.0, 780.0)
         .min_inner_size(900.0, 620.0)
@@ -166,7 +186,52 @@ fn show_window(app: &AppHandle) {
         .background_color(tauri::window::Color(0x1E, 0x21, 0x20, 0xFF))
         // drops go to the page (Decompose takes files and pictures dragged from a browser), not to the shell
         .disable_drag_drop_handler()
-        .build();
+        .build()
+        .map_err(|e| e.to_string())?;
+    if let Some((pos, size)) = place {
+        let _ = w.set_size(size);
+        let _ = w.set_position(pos);
+    }
+    Ok(())
+}
+
+/// THE WINDOW ON A NEW CARD (the Renderer or its card changed): its web view started again with the arguments the
+/// engine names now -- the card chosen, or no card at all for the processor -- where it was, back at Settings. A web
+/// view's arguments are fixed while its browser process lives, so the window is taken down first, and made again once
+/// that process has gone (tried a few times a second, at most fifty times). The engine is told which arguments the
+/// window has, and until then its editor draws on no card.
+fn restart_window(app: AppHandle, args: Vec<String>) {
+    std::thread::spawn(move || {
+        let shell = app.state::<Shell>();
+        let target = {
+            let mut guard = shell.engine.lock().unwrap();
+            guard.as_mut().map(|e| { e.webview = args.join(" "); (e.port, e.token.clone()) })
+        };
+        let Some((port, token)) = target else { return };
+        let told = serde_json::json!({ "args": args }).to_string();
+        let Some(old) = app.get_webview_window("main") else {
+            // no window open: the next one starts with these
+            let _ = api_post_json(port, &token, "/render/window", &told);
+            return;
+        };
+        let place = match (old.outer_position(), old.inner_size()) {
+            (Ok(p), Ok(s)) => Some((p, s)),
+            _ => None,
+        };
+        let _ = old.destroy();
+        for _ in 0..50 {
+            std::thread::sleep(std::time::Duration::from_millis(200));
+            if let Some(w) = app.get_webview_window("main") {
+                let _ = w.destroy();                 // (the old one not gone yet, or one whose web view did not start)
+                continue;
+            }
+            if build_window(&app, "settings", place).is_ok() {
+                let _ = api_post_json(port, &token, "/render/window", &told);
+                return;
+            }
+        }
+        update_log("the window could not be started again on the new graphics card");
+    });
 }
 
 fn toggle_pause(app: &AppHandle) {

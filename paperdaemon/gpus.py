@@ -16,6 +16,8 @@ import sys
 import uuid
 
 D3D11_ARGS = ["--enable-unsafe-webgpu", "--use-webgpu-adapter=d3d11", "--force-webgpu-compat"]
+CPU_ARGS = ["--disable-gpu"]
+OFF_SCREEN_ARGS = ["--disable-gpu-compositing"]
 
 
 def _guid(s):
@@ -39,8 +41,9 @@ def _method(obj, index, *argtypes):                  # a COM interface's method 
 
 
 def cards():
-    """[{"name", "vendor", "device", "memory" (bytes of its own), "luid": [high, low], "d3d12", "d3d11"}, ...]: every
-    card that is hardware (not Windows' software one), in DXGI's order (the first drives the main display)."""
+    """[{"name", "vendor", "device", "memory" (bytes of its own), "luid": [high, low], "d3d12", "d3d11", "display"}, ...]:
+    every card that is hardware (not Windows' software one), in DXGI's order (the first drives the main display);
+    display: a screen is connected to it."""
     if sys.platform != "win32":
         return []
     try:
@@ -85,9 +88,13 @@ def cards():
                 got = ctypes.c_int(0)
                 has11 = bool(d3d11) and d3d11.D3D11CreateDevice(adapter, 0, None, 0, levels, 2, 7, None,
                                                                 ctypes.byref(got), None) >= 0 and got.value >= 0xB000
+                output = ctypes.c_void_p()                            # IDXGIAdapter::EnumOutputs: a screen on it?
+                shows = _method(adapter, 7, ctypes.c_uint, ctypes.c_void_p)(adapter, 0, ctypes.byref(output)) >= 0
+                if shows:
+                    _method(output, 2)(output)
                 out.append({"name": d.Description, "vendor": d.VendorId, "device": d.DeviceId,
                             "memory": int(d.DedicatedVideoMemory), "luid": [int(d.LuidHigh), int(d.LuidLow)],
-                            "d3d12": has12, "d3d11": has11})
+                            "d3d12": has12, "d3d11": has11, "display": shows})
             finally:
                 _method(adapter, 2)(adapter)                          # Release
     finally:
@@ -121,10 +128,16 @@ def chosen(cs=None, want=""):
     return None
 
 
-def window_args(cs=None, want=""):
+def window_args(cs=None, want="", processor=False):
     """The arguments the window's web view starts with, as a list: the card to use when there is more than one, and
     WebGPU's Direct3D 11 backend when that card has no Direct3D 12. PAPERDAEMON_WEBGPU_D3D11 asks for the Direct3D 11
-    backend whatever the card (checking that path on a machine that has Direct3D 12)."""
+    backend whatever the card (checking that path on a machine that has Direct3D 12). With the Renderer on the
+    processor, the web view's graphics card is switched off: it draws and composes on the processor and holds nothing
+    on any card. On a card no screen is connected to, the web view composes the window on the processor: composed on
+    the card, the window is shown through the card the screen is on, and that card is taken too (measured: 16 to 25 MB
+    there); the page editor's WebGPU still runs on the card chosen, and nothing of PaperDaemon's goes on the other."""
+    if processor:
+        return list(CPU_ARGS)
     cs = cards() if cs is None else cs
     c = chosen(cs, want)
     args = []
@@ -132,4 +145,13 @@ def window_args(cs=None, want=""):
         args.append("--use-adapter-luid=%d,%d" % (c["luid"][0], c["luid"][1]))
     if (c and not c["d3d12"]) or os.environ.get("PAPERDAEMON_WEBGPU_D3D11"):
         args += D3D11_ARGS
+    if c and len(cs) > 1 and not c.get("display", True) and any(o.get("display") for o in cs if o is not c):
+        args += OFF_SCREEN_ARGS
     return args
+
+
+def window_for(s):
+    """window_args for settings s: the Renderer (render.processor) and its card (render.card)"""
+    from . import settings
+    return window_args(want=settings._get_path(s, "render.card") or "",
+                       processor=bool(settings._get_path(s, "render.processor")))

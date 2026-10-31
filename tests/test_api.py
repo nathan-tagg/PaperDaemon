@@ -349,3 +349,48 @@ def test_decomps_are_kept_on_disk_listed_a_page_at_a_time_and_deleted(tmp_path, 
     assert c.delete("/api/v1/decomps/" + ids[1]).json() == {"deleted": ids[1]}
     assert c.get("/api/v1/decomps").json()["total"] == 2
     assert c.get("/api/v1/decomps/../etc/preview.png").status_code in (400, 404)
+
+
+def test_a_change_of_renderer_starts_the_window_again_on_that_card(monkeypatch):
+    from paperdaemon import gpus
+    two = [{"name": "small", "vendor": 4098, "device": 2, "memory": 512 << 20, "luid": [0, 95712], "d3d12": True, "d3d11": True},
+           {"name": "big", "vendor": 4098, "device": 1, "memory": 24 << 30, "luid": [0, 82318], "d3d12": True, "d3d11": True}]
+    monkeypatch.setattr(gpus, "cards", lambda: gpus.named([dict(c) for c in two]))
+    told = []
+    monkeypatch.setattr(server, "tell_shell", told.append)
+    c = client()
+    server._window["args"] = gpus.window_for(settings.load())             # the window as the shell started it
+    try:
+        assert c.get("/api/v1/render/window").json() == {"cpu": False, "current": True}
+        s = c.get("/api/v1/settings").json()["settings"]
+        s["render"]["card"] = "1002:0002:0"                                 # the small card
+        assert c.put("/api/v1/settings", json=s).status_code == 200
+        assert told[-1] == "webview " + json.dumps(["--use-adapter-luid=0,95712"])
+        assert c.get("/api/v1/render/window").json()["current"] is False   # the editor draws on no card meanwhile
+        c.post("/api/v1/render/window", json={"args": ["--use-adapter-luid=0,95712"]})
+        assert c.get("/api/v1/render/window").json() == {"cpu": False, "current": True}
+        s["render"]["processor"] = True                                     # the processor: no card at all
+        c.put("/api/v1/settings", json=s)
+        assert told[-1] == "webview " + json.dumps(gpus.CPU_ARGS)
+        assert c.get("/api/v1/render/window").json() == {"cpu": True, "current": False}
+    finally:
+        server._window["args"] = None
+        s = settings.load()
+        s["render"] = {"processor": False, "card": ""}
+        settings.save(s)
+
+
+def test_the_editor_says_why_it_draws_on_the_processor_in_the_window_s_words(capsys):
+    c = client()
+    server._render_down["editor"] = None
+    raw = "Dispatch workgroup count X (65536) exceeds max compute workgroups per dimension (65535)."
+    c.post("/api/v1/render/fallback", json={"code": "lost", "why": raw})
+    c.post("/api/v1/render/fallback", json={"code": "card", "why": "later"})      # the first one this session is kept
+    st = c.get("/api/v1/status").json()
+    assert st["render"]["editor"] == "lost" and raw not in json.dumps(st)   # what the card said: the log, not the screen
+    assert raw in capsys.readouterr().err
+    c.post("/api/v1/render/fallback", json={"code": "<b>made up</b>", "why": "x"})
+    server._render_down["editor"] = None
+    c.post("/api/v1/render/fallback", json={"code": "<b>made up</b>", "why": "x"})
+    assert c.get("/api/v1/status").json()["render"]["editor"] == "refused"
+    server._render_down["editor"] = None

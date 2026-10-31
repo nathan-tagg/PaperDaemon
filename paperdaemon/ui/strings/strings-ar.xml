@@ -61,8 +61,12 @@
   <string name="issue.setup_go">متابعة الإعداد</string>
   <string name="issue.tablet">لا يستطيع PaperDaemon الوصول إلى جهاز reMarkable.</string>
   <string name="issue.mirror">تعذّر تحديث المرآة: {why}</string>
-  <string name="issue.render_cpu">تُرسم الصفحات دون بطاقة الرسومات، وهذا أبطأ: {why}</string>
+  <string name="issue.render_cpu">تُرسم الصفحات على المعالج، وهذا أبطأ: {why}</string>
   <string name="issue.render_ok">حسنًا</string>
+  <string name="render.why.lost">توقفت بطاقة الرسومات عن الاستجابة.</string>
+  <string name="render.why.refused">تعذّر على بطاقة الرسومات تنفيذ إحدى خطوات الرسم في PaperDaemon.</string>
+  <string name="render.why.none">لا تستطيع بطاقة الرسومات هذه تشغيل WebGPU.</string>
+  <string name="render.why.card">ما زالت النافذة على البطاقة التي بدأت بها. أعد تشغيل PaperDaemon لاستخدام البطاقة التي اخترتها.</string>
   <string name="editor.large_title">أصبحت هذه الصفحة كبيرة جدًا</string>
   <string name="editor.large_body">سيصعب على جهازك اللوحي تحميل هذه الصفحة، وسيستخدم محرر الصفحات من ذاكرة بطاقة الرسومات أكثر مما ينبغي. تابع فقط إن كنت متأكدًا أن هذا مقبول. إن كنت تشغّل خادم ذكاء اصطناعي محليًا على البطاقة نفسها، فاعلم أن هذه الصفحة تأخذ ذاكرة كان سيستخدمها ذلك الخادم.</string>
   <string name="editor.large_ok">فهمت</string>
@@ -725,11 +729,11 @@
   <string name="slot.loras_folder">مجلد LoRA</string>
   <string name="slot.loras_folder.help">افتح مجلد LoRA لهذه التشكيلة. كل LoRA فيه يُطبّق على كل صورة تصنعها هذه التشكيلة، كما يقول محوّل الصور الخاص بها.</string>
   <string name="settings.render">محرك الرسم</string>
-  <string name="settings.render.help">GPU (الافتراضي): تُرسم الصفحات على بطاقة الرسومات المختارة في القائمة. هذا سريع، وأثناء تشغيل المهمة يستخدم جزءًا من ذاكرة البطاقة (نحو 160 ميغابايت في صفحة كثيفة جدًا) يُعاد عند انتهائها. CPU: ترسم المهام الصفحات التي تقرؤها على المعالج بدلًا من ذلك، تاركةً كل ذاكرة البطاقة لخوادم الذكاء الاصطناعي، وتستغرق كل صورة وقتًا أطول، خاصة في الصفحات الكثيرة الحبر. الصور هي نفسها في الحالتين، وكل التشكيلات سواء. محرر الصفحات يرسم على البطاقة المختارة.</string>
+  <string name="settings.render.help">GPU (الافتراضي): تُرسم الصفحات على بطاقة الرسومات المختارة في القائمة، ولا يرسم PaperDaemon على أي بطاقة أخرى. هذا سريع، وأثناء تشغيل المهمة يستخدم جزءًا من ذاكرة البطاقة (نحو 160 ميغابايت في صفحة كثيفة جدًا) يُعاد عند انتهائها. CPU: يرسم PaperDaemon كل شيء على المعالج، بما في ذلك محرر الصفحات، ولا يمسّ أي بطاقة رسومات. وتستغرق كل صورة وقتًا أطول، خاصة في الصفحات الكثيرة الحبر. الصور التي ترسمها المهام هي نفسها في الحالتين، وكل التشكيلات سواء.</string>
   <string name="settings.render.cpu">CPU</string>
   <string name="settings.render.gpu">GPU</string>
   <string name="settings.render.card">بطاقة الرسومات</string>
   <string name="settings.render.memory">{gb} غيغابايت</string>
   <string name="settings.render.no_webgpu">لا تستطيع هذه البطاقة تشغيل WebGPU: ستُرسم الصفحات على المعالج، وهو أبطأ.</string>
-  <string name="settings.render.restart">تستخدم المهام هذه البطاقة بدءًا من المهمة التالية، والنافذة بدءًا من التشغيل التالي لـ PaperDaemon.</string>
+  <string name="settings.render.restart">يُعاد فتح النافذة الآن بهذا التغيير.</string>
 </resources>

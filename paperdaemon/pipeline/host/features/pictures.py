@@ -260,8 +260,8 @@ def _picture_asset(png, box):
     wu, hu = pw * s, ph * s
     x0 = float(box["x0"]) + (float(box["w"]) - wu) / 2.0
     y0 = float(box["y0"]) + (float(box["h"]) - hu) / 2.0
-    aw, ah = int(round(wu * 1.25)), int(round(hu * 1.25))       # ~1.1 device px per asset px
-    if pw > aw:
+    aw, ah = int(round(wu * 2.0)), int(round(hu * 2.0))         # two asset px a page unit: 2x the tablet's, as a picture
+    if pw > aw:                                                  # sent to it is (never enlarged past what it is)
         im = im.resize((aw, ah), _Im.LANCZOS)
     apath = os.path.join(H.QUEUE, "_host_img_%s.png" % uuid.uuid4().hex[:12])
     im.save(apath, "PNG", optimize=True)

@@ -61,8 +61,12 @@
   <string name="issue.setup_go">Continuar a configuração</string>
   <string name="issue.tablet">O PaperDaemon não consegue alcançar o seu reMarkable.</string>
   <string name="issue.mirror">Não foi possível atualizar o Espelho: {why}</string>
-  <string name="issue.render_cpu">As páginas estão sendo desenhadas sem a placa de vídeo, o que é mais lento: {why}</string>
+  <string name="issue.render_cpu">As páginas estão sendo desenhadas no processador, o que é mais lento: {why}</string>
   <string name="issue.render_ok">OK</string>
+  <string name="render.why.lost">a placa gráfica deixou de responder.</string>
+  <string name="render.why.refused">a placa gráfica não conseguiu executar um dos passos de desenho do PaperDaemon.</string>
+  <string name="render.why.none">esta placa gráfica não consegue executar WebGPU.</string>
+  <string name="render.why.card">a janela ainda está na placa com que foi aberta. Reinicie o PaperDaemon para usar a placa que escolheu.</string>
   <string name="editor.large_title">Esta página está ficando muito grande</string>
   <string name="editor.large_body">Seu tablet terá dificuldade para carregar esta página, e o editor de páginas usará mais memória da placa de vídeo do que o previsto. Continue só se tiver certeza de que está tudo bem. Se você roda um servidor de IA local na mesma placa de vídeo, saiba que esta página tira memória desse servidor.</string>
   <string name="editor.large_ok">Entendi</string>
@@ -704,11 +708,11 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="slot.loras_folder">Pasta de LoRA</string>
   <string name="slot.loras_folder.help">Abre a pasta de LoRA desta formação. Cada LoRA nela é aplicada a cada imagem que esta formação faz, como diz o seu harness de imagem.</string>
   <string name="settings.render">Renderizador</string>
-  <string name="settings.render.help">GPU (predefinição): as páginas são desenhadas na placa gráfica escolhida na lista. É rápido e, enquanto um trabalho corre, usa alguma memória da placa (cerca de 160 MB numa página muito densa), devolvida no fim. CPU: os trabalhos desenham as páginas que leem no processador, deixando toda a memória da placa aos seus servidores de IA, e cada imagem demora mais, sobretudo em páginas com muita tinta. As imagens são iguais de qualquer forma, e vale para todas as formações. O editor de páginas desenha na placa escolhida.</string>
+  <string name="settings.render.help">GPU (predefinição): as páginas são desenhadas na placa gráfica escolhida na lista, e o PaperDaemon não desenha em nenhuma outra placa. É rápido e, enquanto um trabalho corre, usa alguma memória da placa (cerca de 160 MB numa página muito densa), devolvida no fim. CPU: o PaperDaemon desenha tudo no processador, incluindo o editor de páginas, e não toca em nenhuma placa gráfica. Cada imagem demora mais, sobretudo em páginas com muita tinta. As imagens que os trabalhos desenham são iguais de qualquer forma, e vale para todas as formações.</string>
   <string name="settings.render.cpu">CPU</string>
   <string name="settings.render.gpu">GPU</string>
   <string name="settings.render.card">Placa gráfica</string>
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">Esta placa não consegue executar WebGPU: as páginas serão desenhadas no processador, que é mais lento.</string>
-  <string name="settings.render.restart">Os trabalhos usam esta placa a partir do próximo; a janela, a partir do próximo arranque do PaperDaemon.</string>
+  <string name="settings.render.restart">A janela volta a abrir agora com esta alteração.</string>
 </resources>

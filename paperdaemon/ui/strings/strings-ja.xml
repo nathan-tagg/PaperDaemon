@@ -61,8 +61,12 @@
   <string name="issue.setup_go">セットアップを続ける</string>
   <string name="issue.tablet">PaperDaemon が reMarkable に接続できません。</string>
   <string name="issue.mirror">ミラーを更新できませんでした: {why}</string>
-  <string name="issue.render_cpu">ページはグラフィックカードを使わずに描画されています（遅くなります）：{why}</string>
+  <string name="issue.render_cpu">ページはプロセッサで描画されています（遅くなります）：{why}</string>
   <string name="issue.render_ok">OK</string>
+  <string name="render.why.lost">グラフィックカードが応答しなくなりました。</string>
+  <string name="render.why.refused">グラフィックカードが PaperDaemon の描画手順の一つを実行できませんでした。</string>
+  <string name="render.why.none">このグラフィックカードでは WebGPU を実行できません。</string>
+  <string name="render.why.card">ウィンドウはまだ起動時のカードを使っています。選んだカードを使うには PaperDaemon を再起動してください。</string>
   <string name="editor.large_title">このページはとても大きくなっています</string>
   <string name="editor.large_body">タブレットはこのページの読み込みに苦労します。また、ページエディターは想定よりも多くのグラフィックカードのメモリを使います。問題ないと確信できる場合にだけ続けてください。同じグラフィックカードでローカルのAIサーバーを動かしている場合、このページはそのサーバーが使うはずのメモリを奪うことを理解しておいてください。</string>
   <string name="editor.large_ok">理解しました</string>
@@ -704,11 +708,11 @@
   <string name="slot.loras_folder">LoRA フォルダー</string>
   <string name="slot.loras_folder.help">このラインナップの LoRA フォルダーを開きます。中の LoRA はすべて、このラインナップが作るすべての画像に、画像ハーネスの指定どおりに適用されます。</string>
   <string name="settings.render">レンダラー</string>
-  <string name="settings.render.help">GPU（既定）：一覧で選んだグラフィックカードでページを描画します。高速で、ジョブの実行中はカードのメモリを少し使い（非常に密なページで約 160 MB）、ジョブが終わると返します。CPU：ジョブは読むページを代わりにプロセッサで描画し、カードのメモリはすべて AI サーバーに残しますが、各画像に時間がかかり、インクの多いページほど長くなります。どちらでも画像は同じで、すべてのラインナップに共通です。ページエディターは選んだカードで描画します。</string>
+  <string name="settings.render.help">GPU（既定）：一覧で選んだグラフィックカードでページを描画し、PaperDaemon はほかのカードでは描画しません。高速で、ジョブの実行中はカードのメモリを少し使い（非常に密なページで約 160 MB）、ジョブが終わると返します。CPU：PaperDaemon はページエディターも含めてすべてをプロセッサで描画し、どのグラフィックカードにも触れません。各画像に時間がかかり、インクの多いページほど長くなります。ジョブが描く画像はどちらでも同じで、すべてのラインナップに共通です。</string>
   <string name="settings.render.cpu">CPU</string>
   <string name="settings.render.gpu">GPU</string>
   <string name="settings.render.card">グラフィックカード</string>
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">このカードでは WebGPU を実行できません。ページはプロセッサで描画され、遅くなります。</string>
-  <string name="settings.render.restart">ジョブは次回からこのカードを使います。ウィンドウは PaperDaemon の次回起動時からです。</string>
+  <string name="settings.render.restart">この変更でウィンドウを今開き直します。</string>
 </resources>

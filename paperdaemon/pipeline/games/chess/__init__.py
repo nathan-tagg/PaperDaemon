@@ -169,7 +169,8 @@ class Rng(object):
 
 # ------------------------------------------------------------------------------ assets
 def piece_png(color, kind):
-    return _pieces.png_path(color, kind, SQ)
+    from paperdaemon.pipeline.page.images import PICTURE_K
+    return _pieces.png_path(color, kind, SQ * PICTURE_K)          # (sent to the tablet: twice its resolution)
 
 
 def board_png(flipped=False):
@@ -966,27 +967,29 @@ def _static(state):
 
 
 def layer_png(state, out):
-    """Draw the layer: the board, the opponent's pieces on their squares, the captured rows."""
+    """Draw the layer: the board, the opponent's pieces on their squares, the captured rows -- laid out in page
+    units, drawn K pixels a unit (a picture sent to the tablet: twice its resolution)."""
     from PIL import Image
+    from paperdaemon.pipeline.page.images import PICTURE_K as K
     bb = tuple(float(v) for v in state["board"]["box"])
     m = margin_of(state)
     L = layer_box(bb, m)
-    im = Image.new("RGBA", (int(round(L[2] - L[0])), int(round(L[3] - L[1]))), (255, 255, 255, 0))
+    im = Image.new("RGBA", (int(round((L[2] - L[0]) * K)), int(round((L[3] - L[1]) * K))), (255, 255, 255, 0))
 
     def paste(png, box):
-        w, h = int(round(box[2] - box[0])), int(round(box[3] - box[1]))
+        w, h = int(round((box[2] - box[0]) * K)), int(round((box[3] - box[1]) * K))
         with (Image.open(png) if isinstance(png, str) else png.copy()) as src:
             pic = src.convert("RGBA")
             if pic.size != (w, h):
                 pic = pic.resize((w, h), Image.LANCZOS)
-        im.alpha_composite(pic, (int(round(box[0] - L[0])), int(round(box[1] - L[1]))))
+        im.alpha_composite(pic, (int(round((box[0] - L[0]) * K)), int(round((box[1] - L[1]) * K))))
     if m == LEGACY_MARGIN:
         paste(board_png(state["flipped"]), bb)
     elif m == OUTSIDE:
-        paste(board_image(state["flipped"], int(round(bb[2] - bb[0]))), bb)
-        _labels(im, bb, L, state["flipped"])
+        paste(board_image(state["flipped"], int(round((bb[2] - bb[0]) * K))), bb)
+        _labels(im, bb, L, state["flipped"], K)
     else:
-        paste(inside_board_image(state["flipped"], int(round(bb[2] - bb[0]))), bb)
+        paste(inside_board_image(state["flipped"], int(round((bb[2] - bb[0]) * K))), bb)
     for pid, p in sorted(state["pieces"].items()):
         if p["captured"]:
             paste(piece_png(p["color"], p["kind"]),
@@ -997,20 +1000,20 @@ def layer_png(state, out):
     return out
 
 
-def _labels(im, bb, L, flipped):
+def _labels(im, bb, L, flipped, K=1):
     """The rank numbers to the left of the squares and the file letters below them, bold, in the board's
-    green, each centered on its rank or file."""
+    green, each centered on its rank or file (the layer K pixels a page unit)."""
     from PIL import ImageDraw
     d = ImageDraw.Draw(im)
     sq = (bb[2] - bb[0]) / 8.0
-    font = paths.pil_font("reMarkableSans-Bold", int(round(LABEL_H * 0.62)))
+    font = paths.pil_font("reMarkableSans-Bold", int(round(LABEL_H * 0.62 * K)))
     for i in range(8):
         _, r = _file_rank(0, i, flipped)
         f, _ = _file_rank(i, 7, flipped)
         for t, cx, cy in ((str(r + 1), bb[0] - LABEL_W / 2.0, bb[1] + (i + 0.5) * sq),
                           ("abcdefgh"[f], bb[0] + (i + 0.5) * sq, bb[3] + LABEL_H / 2.0)):
             l, tp, rt, bt = d.textbbox((0, 0), t, font=font)
-            d.text((cx - L[0] - (l + rt) / 2.0, cy - L[1] - (tp + bt) / 2.0), t, font=font, fill=GREEN + (255,))
+            d.text(((cx - L[0]) * K - (l + rt) / 2.0, (cy - L[1]) * K - (tp + bt) / 2.0), t, font=font, fill=GREEN + (255,))
 
 
 def _put_layer(doc, page_no, state, page_id=None):

@@ -311,12 +311,63 @@ def post_large_warned(doc: str, page: int):
     return {"warned": True}
 
 
+_FALLBACK = ("lost", "refused", "none", "card")       # the window's words for each: render.why.<code>
+
+
 @app.post(API + "/render/fallback")
 def post_render_fallback(body: dict = Body(default={})):
-    """The page editor draws without the graphics card: why (the first reason this session is kept)."""
+    """The page editor draws without the graphics card: why, as one of the codes the window words for the user (the
+    first this session is kept). What the card itself said goes to the engine's log, never to the screen."""
+    code = body.get("code") if body.get("code") in _FALLBACK else "refused"
+    detail = str(body.get("why") or "")[:500]
+    if detail:
+        print("The page editor draws on the processor (%s): %s" % (code, detail), file=sys.stderr, flush=True)
     if not _render_down["editor"]:
-        _render_down["editor"] = str(body.get("why") or "the graphics card could not be used")[:200]
+        _render_down["editor"] = code
     return {"ok": True}
+
+
+# THE WINDOW'S CARD: the arguments its web view was started with (the shell's, announced; the development window's), so
+# the editor can tell whether it is on the card Settings chose. A change of Renderer or card starts the window again
+# with the new ones (_renderer_changed: the shell is told, and answers here once the new window is up); until then the
+# editor draws on no card.
+_window = {"args": None}
+
+
+@app.get(API + "/render/window")
+def get_render_window():
+    """Whether the Renderer is the processor (cpu: the editor draws on the processor, as chosen), and whether the
+    window's web view is on the card chosen (current: started with the arguments the Renderer asks for now; a window
+    no shell started counts as current)."""
+    from . import gpus
+    s = settings.load()
+    return {"cpu": bool(settings._get_path(s, "render.processor")),
+            "current": _window["args"] is None or _window["args"] == gpus.window_for(s)}
+
+
+@app.post(API + "/render/window")
+def post_render_window(body: dict = Body(default={})):
+    """The shell started the window again, with these arguments."""
+    args = body.get("args")
+    if isinstance(args, list) and all(isinstance(a, str) for a in args):
+        _window["args"] = args
+    return {"ok": True}
+
+
+def _renderer_changed(s):
+    """The Renderer or its card changed: the engine's card let go (its next picture is drawn where Settings says now,
+    and a card that failed is tried again), and the window started again by the shell on the new card -- with no
+    card at all for the processor."""
+    try:
+        from .pipeline.page import gpu
+        gpu.renderer_changed()
+    except Exception:
+        pass
+    _render_down["editor"] = None
+    from . import gpus
+    args = gpus.window_for(s)
+    if _window["args"] is not None and args != _window["args"]:
+        tell_shell("webview " + json.dumps(args))
 
 
 # ---------------------------------------------------------------- the false mirror
@@ -498,9 +549,12 @@ def get_settings():
 @app.put(API + "/settings")
 def put_settings(body: dict = Body(...)):
     try:
+        before = settings.load()
         saved = settings.save(body)
         loop.settings_saved()                        # a running daemon and host take the change up when idle
         fm_refresh()
+        if any(settings._get_path(before, k) != settings._get_path(saved, k) for k in ("render.processor", "render.card")):
+            _renderer_changed(saved)
         return {"settings": saved, "secrets": _secret_flags()}
     except ValueError as ex:
         return _bad(str(ex))

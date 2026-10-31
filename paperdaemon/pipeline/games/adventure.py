@@ -685,8 +685,8 @@ def sheet_png(state, out):
     """PAGE 1: the character sheet, drawn at the page's own size (1620 x 2160)."""
     from PIL import Image, ImageDraw
     h = state["hero"]
-    im = Image.new("RGB", (PAGE_W, PAGE_H), "white")
-    d = ImageDraw.Draw(im)
+    from paperdaemon.pipeline.draw import scaled as SD
+    im, d = SD.canvas(PAGE_W, PAGE_H)                 # (laid out in design pixels; sent at twice the tablet's resolution)
     M, W = 80, PAGE_W - 160
     big, bold, reg, med, small = (_font("reMarkableSans-Bold.ttf", 60), _font("reMarkableSans-Bold.ttf", 34),
                                   _font("reMarkableSans-Regular.ttf", 30), _font("reMarkableSans-Medium.ttf", 30),
@@ -797,8 +797,8 @@ def turn_png(state, scene, out, roll_line="", n=None, col_px=None):
     what is around, a few loose options, and at its foot where to answer, from `col_px` (the typed-text column's
     left edge, design pixels). `n`: the turn's number (the next one). On the page it is cut at WRITE_TOP."""
     from PIL import Image, ImageDraw
-    im = Image.new("RGB", (PAGE_W, PAGE_H), "white")
-    d = ImageDraw.Draw(im)
+    from paperdaemon.pipeline.draw import scaled as SD
+    im, d = SD.canvas(PAGE_W, PAGE_H)                 # (laid out in design pixels; sent at twice the tablet's resolution)
     M, W = 80, PAGE_W - 160
     # A STORY TOLD IN FULL (a character's tale is three to six sentences) must fit above the box: the largest
     # type that holds it all
@@ -836,7 +836,7 @@ def turn_png(state, scene, out, roll_line="", n=None, col_px=None):
                 break                                    # clear of the instruction at the foot
             d.text((M, y), l, font=small, fill=GRAY)
             y += 32
-    IA.foot(im, WRITE_TOP, "What do you do? Type or write it below", M if col_px is None else col_px, _font("reMarkableSans-Medium.ttf", 30), IA.LABEL_INK, RULE)
+    IA.foot(d, WRITE_TOP, "What do you do? Type or write it below", M if col_px is None else col_px, _font("reMarkableSans-Medium.ttf", 30), IA.LABEL_INK, RULE)
     im.save(out)
     return out
 
@@ -1163,8 +1163,8 @@ def log_png(state, out):
     """PAGE 3: the adventure log, the newest entry at the bottom; what does not fit leaves the page (the state
     keeps every entry)."""
     from PIL import Image, ImageDraw
-    im = Image.new("RGB", (PAGE_W, PAGE_H), "white")
-    d = ImageDraw.Draw(im)
+    from paperdaemon.pipeline.draw import scaled as SD
+    im, d = SD.canvas(PAGE_W, PAGE_H)                 # (laid out in design pixels; sent at twice the tablet's resolution)
     M, W, LH = 80, PAGE_W - 160, 40
     reg, med, small = (_font("reMarkableSans-Regular.ttf", 30), _font("reMarkableSans-Medium.ttf", 30),
                        _font("reMarkableSans-Regular.ttf", 24))
@@ -1216,7 +1216,7 @@ def _redraw_log(doc, state, workdir):
             with Image.open(png) as im:
                 im = im.convert("RGB")
                 s = im.width / float(BOOK_W)
-                _button(im, tuple(int(v * s) for v in JOURNAL_BTN), "Journal: p. %d" % _page_no(doc, jp))
+                _button(im, tuple(int(v * s) for v in JOURNAL_BTN), "Journal: p. %d" % _page_no(doc, jp), IM_K())
                 im.save(png)
         _put_full(doc, pno, pid, png, "adventure-log", state)
     finally:
@@ -1322,9 +1322,11 @@ def _journal_pages(state):
     i_lore = i_quests + len(q_pages)
     pages, links = [], {}
 
-    def page(title, back=True):
-        im = Image.new("RGB", (W, H), "white")
-        d = ImageDraw.Draw(im)
+    from paperdaemon.pipeline.draw import scaled as SD
+    K = IM_K()
+
+    def page(title, back=True):                           # (laid out in the book's pixels, drawn K a pixel)
+        im, d = SD.canvas(W, H, k=K)
         d.text((M, 58 + DY), title, font=F["title"], fill=INK)
         d.line((M, 138 + DY, W - M, 138 + DY), fill=RULE, width=3)
         idx = len(pages)
@@ -1369,7 +1371,7 @@ def _journal_pages(state):
         for k, p in enumerate(chunk):
             r, c = divmod(k, 3)
             x0, y0 = M + c * tile + 20, 175 + DY + r * (side + 110)
-            im.paste(_portrait_img(state, p, side), (x0, y0))
+            SD.paste(im, _portrait_img(state, p, side * K), (x0, y0), (side, side), k=K)
             d.rectangle((x0, y0, x0 + side, y0 + side), outline=RULE, width=2)
             tw = d.textlength(p["name"], font=F["head"])
             d.text((x0 + (side - tw) / 2, y0 + side + 10), p["name"], font=F["head"], fill=INK)
@@ -1382,7 +1384,7 @@ def _journal_pages(state):
     for k, p in enumerate(people):
         im, d, idx = page(p["name"])
         ps = 560
-        im.paste(_portrait_img(state, p, ps), ((W - ps) // 2, 165 + DY))
+        SD.paste(im, _portrait_img(state, p, ps * K), ((W - ps) // 2, 165 + DY), (ps, ps), k=K)
         d.rectangle(((W - ps) // 2, 165 + DY, (W + ps) // 2, 165 + DY + ps), outline=RULE, width=2)
         kn = p.get("known") or {"fields": [], "facts": []}
         f = set(kn.get("fields") or [])
@@ -1460,18 +1462,25 @@ def is_book(state):
     return state.get("format") == "book"
 
 
-def _bk(png):
+def IM_K():
+    from paperdaemon.pipeline.page.images import PICTURE_K
+    return PICTURE_K
+
+
+def _bk(png):                                           # (a book page: the book's pixels, PICTURE_K a pixel)
     from PIL import Image
     with Image.open(png) as im:
-        return im.convert("RGB").resize((BOOK_W, BOOK_H), Image.LANCZOS)
+        return im.convert("RGB").resize((BOOK_W * IM_K(), BOOK_H * IM_K()), Image.LANCZOS)
 
 
-def _button(im, box, text):
+def _button(im, box, text, k=None):
+    """A button at `box` (the picture's pixels), its face and lines k times the book's (PICTURE_K)."""
     from PIL import ImageDraw
+    k = IM_K() if k is None else k
     d = ImageDraw.Draw(im)
-    d.rounded_rectangle(box, 14, fill="white", outline=INK, width=3)
-    f = _font("reMarkableSans-Medium.ttf", 32)
-    d.text((box[0] + (box[2] - box[0] - d.textlength(text, font=f)) / 2, box[1] + 12), text, font=f, fill=INK)
+    d.rounded_rectangle(box, 14 * k, fill="white", outline=INK, width=3 * k)
+    f = _font("reMarkableSans-Medium.ttf", 32 * k)
+    d.text((box[0] + (box[2] - box[0] - d.textlength(text, font=f)) / 2, box[1] + 12 * k), text, font=f, fill=INK)
 
 
 def _book_pages(state, scene, roll_line, workdir, n=None):
@@ -1491,10 +1500,10 @@ def _book_pages(state, scene, roll_line, workdir, n=None):
     jr, jr_links = _journal_pages(state)
     links = {i + 3: [(box, t + 3) for box, t in ls] for i, ls in jr_links.items()}
     journal_btn = JOURNAL_BTN
-    _button(out[2], journal_btn, "Journal")
+    _button(out[2], tuple(v * IM_K() for v in journal_btn), "Journal")   # (the links: the book's pixels)
     links[2] = [(journal_btn, 3)]
     story_btn = (BOOK_W - 330, 60, BOOK_W - 70, 122)
-    _button(jr[0], story_btn, "The story")
+    _button(jr[0], tuple(v * IM_K() for v in story_btn), "The story")
     links.setdefault(3, []).append((story_btn, 1))
     return out + jr, links
 
@@ -1634,14 +1643,14 @@ def is_inline(state):
 
 def _label(im, box, text):
     """A page number beside a box that was a link in the book: inside a big box at its bottom right; to the right
-    of a small one (a button), or under it when the page has no room there."""
-    from PIL import ImageDraw
-    d = ImageDraw.Draw(im)
+    of a small one (a button), or under it when the page has no room there. `box`: the book's pixels."""
+    from paperdaemon.pipeline.draw import scaled as SD
+    d = SD.Draw(im, im.width / float(BOOK_W))
     f = _font("reMarkableSans-Medium.ttf", 26)
     w = d.textlength(text, font=f)
     if box[3] - box[1] >= 120:
         x0, y0 = box[2] - w - 22, box[3] - 42
-    elif box[2] + w + 34 <= im.width - 20:
+    elif box[2] + w + 34 <= d.width - 20:
         x0, y0 = box[2] + 12, (box[1] + box[3]) / 2.0 - 18
     else:
         x0, y0 = box[2] - w - 16, box[3] + 8

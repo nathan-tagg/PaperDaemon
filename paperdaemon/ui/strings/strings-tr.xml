@@ -61,8 +61,12 @@
   <string name="issue.setup_go">Kuruluma devam et</string>
   <string name="issue.tablet">PaperDaemon, reMarkable'ınıza ulaşamıyor.</string>
   <string name="issue.mirror">Ayna güncellenemedi: {why}</string>
-  <string name="issue.render_cpu">Sayfalar ekran kartı olmadan çiziliyor, bu daha yavaş: {why}</string>
+  <string name="issue.render_cpu">Sayfalar işlemcide çiziliyor, bu daha yavaş: {why}</string>
   <string name="issue.render_ok">Tamam</string>
+  <string name="render.why.lost">ekran kartı yanıt vermeyi bıraktı.</string>
+  <string name="render.why.refused">ekran kartı PaperDaemon'un çizim adımlarından birini çalıştıramadı.</string>
+  <string name="render.why.none">bu ekran kartı WebGPU çalıştıramaz.</string>
+  <string name="render.why.card">pencere hâlâ açıldığı kartta. Seçtiğiniz kartı kullanmak için PaperDaemon'u yeniden başlatın.</string>
   <string name="editor.large_title">Bu sayfa çok büyüyor</string>
   <string name="editor.large_body">Tabletiniz bu sayfayı yüklemekte zorlanacak ve sayfa düzenleyici ekran kartı belleğini öngörülenden fazla kullanacak. Yalnızca bunun sorun olmadığından eminseniz devam edin. Aynı ekran kartında yerel bir yapay zekâ sunucusu çalıştırıyorsanız, bu sayfanın o sunucunun belleğinden aldığını bilin.</string>
   <string name="editor.large_ok">Anladım</string>
@@ -704,11 +708,11 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="slot.loras_folder">LoRA klasörü</string>
   <string name="slot.loras_folder.help">Bu dizilimin LoRA klasörünü açar. İçindeki her LoRA, bu dizilimin yaptığı her resme, görüntü koşumunun dediği gibi uygulanır.</string>
   <string name="settings.render">Oluşturucu</string>
-  <string name="settings.render.help">GPU (varsayılan): sayfalar listede seçilen ekran kartında çizilir. Bu hızlıdır ve bir iş sürerken kartın belleğinin bir kısmını kullanır (çok yoğun bir sayfada yaklaşık 160 MB), iş bitince geri verir. CPU: işler okudukları sayfaları bunun yerine işlemcide çizer, kartın tüm belleğini yapay zekâ sunucularınıza bırakır ve her resim daha uzun sürer, en çok bol mürekkepli sayfalarda. Resimler her iki durumda da aynıdır ve tüm dizilimler için geçerlidir. Sayfa düzenleyici seçilen kartta çizer.</string>
+  <string name="settings.render.help">GPU (varsayılan): sayfalar listede seçilen ekran kartında çizilir ve PaperDaemon başka hiçbir kartta çizmez. Bu hızlıdır ve bir iş sürerken kartın belleğinin bir kısmını kullanır (çok yoğun bir sayfada yaklaşık 160 MB), iş bitince geri verir. CPU: PaperDaemon sayfa düzenleyici dahil her şeyi işlemcide çizer ve hiçbir ekran kartına dokunmaz. Her resim daha uzun sürer, en çok bol mürekkepli sayfalarda. İşlerin çizdiği resimler her iki durumda da aynıdır ve tüm dizilimler için geçerlidir.</string>
   <string name="settings.render.cpu">CPU</string>
   <string name="settings.render.gpu">GPU</string>
   <string name="settings.render.card">Ekran kartı</string>
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">Bu kart WebGPU çalıştıramaz: sayfalar işlemcide çizilecek, bu daha yavaştır.</string>
-  <string name="settings.render.restart">İşler bu kartı bir sonrakinden, pencere ise PaperDaemon'un bir sonraki açılışından itibaren kullanır.</string>
+  <string name="settings.render.restart">Pencere bu değişiklikle şimdi yeniden açılıyor.</string>
 </resources>

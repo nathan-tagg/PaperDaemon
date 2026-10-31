@@ -61,8 +61,12 @@
   <string name="issue.setup_go">সেটআপ চালিয়ে যান</string>
   <string name="issue.tablet">PaperDaemon আপনার reMarkable-এ পৌঁছাতে পারছে না।</string>
   <string name="issue.mirror">মিরর আপডেট করা যায়নি: {why}</string>
-  <string name="issue.render_cpu">পাতাগুলো গ্রাফিক্স কার্ড ছাড়া আঁকা হচ্ছে, যা ধীর: {why}</string>
+  <string name="issue.render_cpu">পাতাগুলো প্রসেসরে আঁকা হচ্ছে, যা ধীর: {why}</string>
   <string name="issue.render_ok">ঠিক আছে</string>
+  <string name="render.why.lost">গ্রাফিক্স কার্ড সাড়া দেওয়া বন্ধ করেছে।</string>
+  <string name="render.why.refused">গ্রাফিক্স কার্ড PaperDaemon-এর আঁকার একটি ধাপ চালাতে পারেনি।</string>
+  <string name="render.why.none">এই গ্রাফিক্স কার্ড WebGPU চালাতে পারে না।</string>
+  <string name="render.why.card">উইন্ডোটি এখনও যে কার্ডে চালু হয়েছিল সেটিতেই আছে। বেছে নেওয়া কার্ড ব্যবহার করতে PaperDaemon আবার চালু করুন।</string>
   <string name="editor.large_title">এই পাতাটি খুব বড় হয়ে যাচ্ছে</string>
   <string name="editor.large_body">আপনার ট্যাবলেট এই পাতা লোড করতে হিমশিম খাবে, আর পেজ এডিটর আপনার গ্রাফিক্স কার্ডের মেমরি স্বাভাবিকের চেয়ে বেশি ব্যবহার করবে। এটা ঠিক আছে বলে নিশ্চিত হলেই এগোন। একই গ্রাফিক্স কার্ডে লোকাল AI সার্ভার চালালে জেনে রাখুন, এই পাতা সেই সার্ভারের মেমরি থেকে নেয়।</string>
   <string name="editor.large_ok">বুঝেছি</string>
@@ -704,11 +708,11 @@
   <string name="slot.loras_folder">LoRA ফোল্ডার</string>
   <string name="slot.loras_folder.help">এই লাইনআপের LoRA ফোল্ডার খুলুন। এর প্রতিটি LoRA এই লাইনআপের তৈরি প্রতিটি ছবিতে যায়, এর ইমেজ হারনেস যেভাবে বলে।</string>
   <string name="settings.render">রেন্ডারার</string>
-  <string name="settings.render.help">GPU (ডিফল্ট): তালিকায় বেছে নেওয়া গ্রাফিক্স কার্ডে পৃষ্ঠা আঁকা হয়। এটি দ্রুত, আর কাজ চলার সময় কার্ডের কিছু মেমরি (খুব ঘন পৃষ্ঠায় প্রায় 160 MB) নেয়, কাজ শেষে ফেরত দেয়। CPU: কাজগুলো যে পৃষ্ঠা পড়ে তা এর বদলে প্রসেসরে আঁকে, কার্ডের সব মেমরি আপনার AI সার্ভারের জন্য রেখে, আর প্রতিটি ছবিতে বেশি সময় লাগে, বিশেষ করে বেশি কালির পৃষ্ঠায়। ছবি দুই ক্ষেত্রেই একই, আর সব লাইনআপে একই নিয়ম। পৃষ্ঠা সম্পাদক বেছে নেওয়া কার্ডে আঁকে।</string>
+  <string name="settings.render.help">GPU (ডিফল্ট): তালিকায় বেছে নেওয়া গ্রাফিক্স কার্ডে পৃষ্ঠা আঁকা হয়, আর PaperDaemon অন্য কোনো কার্ডে আঁকে না। এটি দ্রুত, আর কাজ চলার সময় কার্ডের কিছু মেমরি (খুব ঘন পৃষ্ঠায় প্রায় 160 MB) নেয়, কাজ শেষে ফেরত দেয়। CPU: PaperDaemon সবকিছু প্রসেসরে আঁকে, পৃষ্ঠা সম্পাদকও, আর কোনো গ্রাফিক্স কার্ড ছোঁয় না। প্রতিটি ছবিতে বেশি সময় লাগে, বিশেষ করে বেশি কালির পৃষ্ঠায়। কাজগুলো যে ছবি আঁকে তা দুই ক্ষেত্রেই একই, আর সব লাইনআপে একই নিয়ম।</string>
   <string name="settings.render.cpu">CPU</string>
   <string name="settings.render.gpu">GPU</string>
   <string name="settings.render.card">গ্রাফিক্স কার্ড</string>
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">এই কার্ড WebGPU চালাতে পারে না: পৃষ্ঠা প্রসেসরে আঁকা হবে, যা ধীর।</string>
-  <string name="settings.render.restart">কাজগুলো পরের কাজ থেকে এই কার্ড ব্যবহার করবে; উইন্ডো, PaperDaemon পরের বার চালু হলে।</string>
+  <string name="settings.render.restart">এই পরিবর্তন নিয়ে উইন্ডোটি এখন আবার খুলছে।</string>
 </resources>

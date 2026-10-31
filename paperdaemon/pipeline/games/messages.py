@@ -149,11 +149,12 @@ def layout(state, first):
 
 def page_png(state, first, out, col_px=None):
     """The chat page's picture: who is in it, the thread from message `first`, and at its foot where to answer, from
-    `col_px` (the typed-text column's left edge, design pixels). The picture is cut at BOX_TOP when it is placed."""
+    `col_px` (the typed-text column's left edge, design pixels). The picture is cut at BOX_TOP when it is placed. Laid
+    out in design pixels, drawn at twice the tablet's resolution (draw.scaled)."""
     from paperdaemon.pipeline.games import characters as RC
-    from PIL import Image, ImageDraw
-    im = Image.new("RGB", (PAGE_W, PAGE_H), "white")
-    d = ImageDraw.Draw(im)
+    from paperdaemon.pipeline.draw import scaled as SD
+    from PIL import Image
+    im, d = SD.canvas(PAGE_W, PAGE_H)
     big, reg, small, name_f = (_font("reMarkableSans-Bold.ttf", 40), _font("reMarkableSans-Regular.ttf", 30),
                                _font("reMarkableSans-Regular.ttf", 22), _font("reMarkableSans-Medium.ttf", 22))
     # HEADER, as a group chat's: the first few members' faces overlapping (for one with alters, whoever they pass as
@@ -169,10 +170,9 @@ def page_png(state, first, out, col_px=None):
     x, step = M, 60                                             # 84-pixel faces, each over the one before by 24
     for cid in shown:
         fr = TB.front(state, cid)
-        with Image.open(RC.face_png(cid, "neutral", (), fr["shows"] if fr else None)) as f:
-            pic = f.convert("RGBA").resize((84, 84), Image.LANCZOS)
         d.ellipse((x - 4, HEAD_TOP - 4, x + 88, HEAD_TOP + 88), fill="white")
-        im.paste(pic, (x, HEAD_TOP), pic)
+        with Image.open(RC.face_png(cid, "neutral", (), fr["shows"] if fr else None)) as f:
+            SD.paste(im, f.convert("RGBA"), (x, HEAD_TOP), (84, 84), mask=True)
         x += step
     if len(members) > len(shown):                               # the rest, counted
         d.ellipse((x - 4, HEAD_TOP - 4, x + 88, HEAD_TOP + 88), fill="white")
@@ -206,23 +206,21 @@ def page_png(state, first, out, col_px=None):
             p = RC.get(m.get("look") or m["from"])
             with Image.open(RC.face_png(m["from"], m.get("shows") or "neutral", tuple(m.get("marks") or ()),
                                         m.get("look"))) as f:
-                pic = f.convert("RGBA").resize((AVATAR, AVATAR), Image.LANCZOS)
-            im.paste(pic, (M, y + 22), pic)
+                SD.paste(im, f.convert("RGBA"), (M, y + 22), (AVATAR, AVATAR), mask=True)
             d.text((M + AVATAR + AVATAR_GAP, y), 'Scene' if m.get('scene_event') else p["short"], font=name_f, fill=GRAY)
             bx, by = M + AVATAR + AVATAR_GAP, y + 30
             d.rounded_rectangle((bx, by, bx + bw, by + bh), 26, fill=THEIRS, outline=RULE, width=2)
         ty = by + 13
         if m.get("image") and img_h:
             with Image.open(m["image_path"]) as src:
-                pic = src.convert("RGB").resize((520, img_h), Image.LANCZOS)
-            im.paste(pic, (bx + 20, ty + 4))
+                SD.paste(im, src.convert("RGB"), (bx + 20, ty + 4), (520, img_h))
             ty += img_h + 16
         for l in lines:
             d.text((bx + 22, ty), l, font=reg, fill=INK)
             ty += 40
         y += _bubble_h(d, m, reg, 1000, img_h) + 24
     from paperdaemon.pipeline.games import inputarea as IA
-    IA.foot(im, BOX_TOP, "Message: type or write it below", M if col_px is None else col_px, _font("reMarkableSans-Medium.ttf", 30), IA.LABEL_INK, RULE)
+    IA.foot(d, BOX_TOP, "Message: type or write it below", M if col_px is None else col_px, _font("reMarkableSans-Medium.ttf", 30), IA.LABEL_INK, RULE)
     im.save(out)
     return out
 

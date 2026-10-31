@@ -538,8 +538,17 @@ span.lname { cursor: default; }
   // of how strokes become pixels. Without WebGPU (or with #cpu) GL stays null and the page is drawn on the processor. The
   // card is asked for as the page loads (gpuReady); the first draw waits for it.
   let GL = null, cardWait = true;                             // (cardWait: the card not answered yet -- nothing is drawn
-  const gpuReady = (async () => {                             // on the processor meanwhile, rebuild)
+  let cpuChosen = false, cardStale = false;                   // on the processor meanwhile, rebuild)
+  const gpuReady = (async () => {
     if (/(^|[#&])cpu\b/.test(location.hash) || !navigator.gpu) return null;
+    // THE CARD CHOSEN: the window's web view is started for the card Settings chose, or with no card for the processor.
+    // The Renderer on the processor: no card asked for. A window not started again since the choice changed: the page
+    // drawn on the processor until it is (the shell starts it again at once). No answer (no engine, a test page): the card
+    await 0;                                                  // (the rest of the script first: token)
+    const rw = await fetch("/api/v1/render/window", { headers: { Authorization: "Bearer " + token() } })
+      .then(r => r.ok ? r.json() : null).catch(() => null);
+    if (rw && rw.cpu) { cpuChosen = true; return null; }
+    if (rw && rw.current === false) { cardStale = true; return null; }
     const S = (window.PD_SHADERS || {}).WGSL;
     if (!S) return null;
     const ask = level => navigator.gpu.requestAdapter({ featureLevel: level, powerPreference: "high-performance" });
@@ -561,13 +570,14 @@ span.lname { cursor: default; }
     const CORE = "core-features-and-limits";
     if (!device.features.has(CORE) && (adapter.features.has(CORE) || adapter.featureLevel === "compatibility")) { device.destroy(); return null; }
     const g = await makeGL(device, adapter, TS, S);
-    device.lost.then(info => { if (info.reason !== "destroyed") gpuDown(info.message || "the graphics card was lost"); });
+    device.lost.then(info => { if (info.reason !== "destroyed") gpuDown(info.message || "the graphics card was lost", "lost"); });
     return g;
   })().then(g => {
     GL = g; cardWait = false;
-    if (g) { g.onErase(cardCells, swipeTick, cardWhole, cardAgain); g.onFlip(rd => erasing && !gpuFailed ? foldSlot(erasing, rd) : null);
+    if (g) { g.onErase(cardCells, swipeTick, cardWhole, cardAgain); g.onPlan(rd => erasing && !gpuFailed ? foldSlot(erasing, rd) : null, ps => { if (erasing) for (const q of ps) erasing.made.delete(q); });
             g.onRefused(() => { if (!gpuFailed) gpuDown("the graphics card refused the eraser's passes"); }); }   // (heard once the card erases: eraseOn)
-    if (!g && !/(^|[#&])cpu\b/.test(location.hash)) setTimeout(() => gpuDown("WebGPU is not available"), 0);
+    if (!g && !cpuChosen && !/(^|[#&])cpu\b/.test(location.hash))
+      setTimeout(() => cardStale ? gpuDown("the window is not on the card chosen", "card") : gpuDown("WebGPU is not available", "none"), 0);
     return g;
   }, e => { cardWait = false; setTimeout(() => gpuDown(e), 0); return null; });
   async function makeGL(device, adapter, TS, S) {
@@ -575,8 +585,11 @@ span.lname { cursor: default; }
     // is drawn on the processor: a refused pipeline draws nothing, silently (popped at the end, before it is used)
     device.pushErrorScope("validation");
     const RGBA = "rgba8unorm", DEPTH = "depth16unorm", U = GPUBufferUsage, T = GPUTextureUsage;
-    const shader = async code => {
-      const m = device.createShaderModule({ code });
+    // a line of n workgroups, in a second dimension past the card's 65,535 (each such pass reads its index as
+    // x + y * 65,535 workgroups: shaders.js)
+    const DW = (p, n) => p.dispatchWorkgroups(Math.min(n, 65535), Math.ceil(n / 65535));
+    const shader = async code => {                          // (the editor's records: the one-word points, WORD)
+      const m = device.createShaderModule({ code: code.replace("const WORD: bool = false;", "const WORD: bool = true;") });
       const ci = await m.getCompilationInfo();
       const bad = ci.messages.filter(x => x.type === "error");
       if (bad.length) throw new Error("a shader did not compile: " + bad.map(x => x.lineNum + ": " + x.message).join("; "));
@@ -633,8 +646,15 @@ span.lname { cursor: default; }
       hl: rp({ layout: listLayout, vertex: { module: mS, entryPoint: "vsHlL" }, primitive: { topology: "triangle-list" },
         fragment: { module: mS, entryPoint: "fsHl", targets: [{ format: RGBA, blend: blendMin }] }, ...DSZ("less", false) }),
       own: rp({ layout: listLayout, vertex: { module: mS, entryPoint: "vsOwnL" }, primitive: { topology: "triangle-list" },
+        fragment: { module: mS, entryPoint: "fsSeg", targets: [{ format: RGBA, blend: blendAlpha }] }, ...DSZ("less", true) }),
+      // the same three while no stroke is being cut (vsPenL0 with fsPen0, vsHlL0, vsOwnL0: without the cut paths)
+      penU: rp({ layout: listLayout, vertex: { module: mS, entryPoint: "vsPenL0" }, primitive: { topology: "triangle-strip" },
+        fragment: { module: mS, entryPoint: "fsPen0", targets: [{ format: RGBA }] }, ...DSZ("less", true) }),
+      hlU: rp({ layout: listLayout, vertex: { module: mS, entryPoint: "vsHlL0" }, primitive: { topology: "triangle-list" },
+        fragment: { module: mS, entryPoint: "fsHl0", targets: [{ format: RGBA, blend: blendMin }] }, ...DSZ("less", false) }),
+      ownU: rp({ layout: listLayout, vertex: { module: mS, entryPoint: "vsOwnL0" }, primitive: { topology: "triangle-strip" },
         fragment: { module: mS, entryPoint: "fsSeg", targets: [{ format: RGBA, blend: blendAlpha }] }, ...DSZ("less", true) }) };
-    let cpSpanCount = cp("spanCount"), cpSpanScan = cp("spanScan"), cpClassArgs = cp("classArgs"), cpExpand = cp("expand");
+    let cpSpanCount = cp("spanCount"), cpSpanScan = cp("spanScan"), cpClassArgs = cp("classArgs"), cpExpand = cp("expand"), cpSplit = cp("splitArgs");
     // THE MASK'S DRAWS (an erase's frame, drawn again where it changed the page and nowhere else): the mask (STROKES'
     // vsMask: depth only, the farthest), what is under the ink only where it marked (depth tested, not written), and the
     // screen's pixels over its box (AREA's vsBox); reachBox culls by the box
@@ -652,31 +672,37 @@ span.lname { cursor: default; }
         fragment: { module: mC, entryPoint: "fsCopy", targets: [{ format: RGBA }] }, ...DSZ("less", false) });
       PL.box = rp({ layout: device.createPipelineLayout({ bindGroupLayouts: [LAB] }), vertex: { module: mA, entryPoint: "vsBox" },
         primitive: { topology: "triangle-strip" }, fragment: { module: mA, entryPoint: "fsAreaT", targets: [{ format: RGBA }] } });
+      for (const [k, e] of [["boxP", "fsAreaP"], ["boxP3", "fsAreaP3"]])   // (the packed tables')
+        PL[k] = rp({ layout: device.createPipelineLayout({ bindGroupLayouts: [LAB] }), vertex: { module: mA, entryPoint: "vsBox" },
+          primitive: { topology: "triangle-strip" }, fragment: { module: mA, entryPoint: e, targets: [{ format: RGBA }] } });
     }
     let cpReachBox = cp("reachBox"), cpListBoxes = cp("listBoxes"), cpListArgs = cp("listArgs");
     // the erase's passes (ERASE), each with only the buffers it uses (EB: their bindings; stitch the most, seven storage
     // buffers), each tried with buffers of its own first: one the card refuses, the erase on the processor, the rest as it is
     const EP = {}, EB = { find: [1, 4, 5, 6], hitArgs: [4, 8, 9, 11], reach: [1, 2, 3, 4, 7, 9, 10], touchArgs: [4, 9, 11], alloc: [0, 2, 3, 4, 9],
                           stitch: [0, 1, 2, 3, 4, 7, 9, 10], mark: [0, 2, 3, 4, 9], spans: [0, 2, 3, 4, 9], unslot: [0, 3, 4, 9],
-                          flipPick: [0, 3, 4, 9, 10], flipArgs: [4, 9, 11], piecesF: [0, 2, 3, 4, 9, 10], flip: [0, 2, 3, 4, 9, 10, 12, 14],
-                          flipBox: [0, 2, 4, 9, 10, 15], flipEnd: [9, 16, 17],
-                          maskHits: [0, 2, 3, 4, 7, 9, 10, 13], maskAnew: [0, 2, 3, 4, 9, 13] };
+                          planPick: [0, 4, 9, 12], pieces: [0, 2, 3, 4, 9], packScan: [0, 4, 9, 10, 12], packCopy: [0, 2, 4, 9, 10, 12], resid: [1, 2],
+                          maskHits: [0, 2, 3, 4, 7, 9, 10, 13], maskAnew: [0, 2, 3, 4, 9, 13], unmark: [2] };
     // (not waited for: eraseReady, below -- the page is drawn without them)
     if (mE) for (const e in EB) EP[e] = device.createComputePipelineAsync({ layout: "auto", compute: { module: mE, entryPoint: e } }).catch(() => null);
     // a selection's moves (MOVE), not waited for either: until they are there, a selection moves on the processor
-    let cpGrab = null, cpMove = null, cpBack = null;
-    if (mM) Promise.all(["grab", "carry", "back"].map(e => device.createComputePipelineAsync({ layout: "auto", compute: { module: mM, entryPoint: e } })))
-      .then(([g, m, b]) => { cpGrab = g; cpMove = m; cpBack = b; }, () => {});
+    let cpGrab = null, cpMove = null, cpBack = null, cpAside = null;
+    if (mM) Promise.all(["grab", "carry", "back", "aside"].map(e => device.createComputePipelineAsync({ layout: "auto", compute: { module: mM, entryPoint: e } })))
+      .then(([g, m, b, a]) => { cpGrab = g; cpMove = m; cpBack = b; cpAside = a; }, () => {});
     let pArea = rp({ layout: device.createPipelineLayout({ bindGroupLayouts: [LA] }), vertex: { module: mA, entryPoint: "vsFull" },
       fragment: { module: mA, entryPoint: "fsAreaT", targets: [{ format: RGBA }] } });
+    let pAreaP = rp({ layout: device.createPipelineLayout({ bindGroupLayouts: [LA] }), vertex: { module: mA, entryPoint: "vsFull" },
+      fragment: { module: mA, entryPoint: "fsAreaP", targets: [{ format: RGBA }] } });   // (the packed tables')
+    let pAreaP3 = rp({ layout: device.createPipelineLayout({ bindGroupLayouts: [LA] }), vertex: { module: mA, entryPoint: "vsFull" },
+      fragment: { module: mA, entryPoint: "fsAreaP3", targets: [{ format: RGBA }] } });
     // ALL OF THEM THERE, compiled side by side meanwhile: one the card refused fails the renderer (the page drawn on the
     // processor), as it did when each was made in turn
     const bad = (await Promise.allSettled(asked)).find(r => r.status === "rejected");
     if (bad) throw bad.reason;
     const got = async o => { for (const k in o) if (o[k] && typeof o[k].then === "function") o[k] = await o[k]; };
     await got(PL);
-    [cpBox, cpReach, cpBlocks, cpTop, cpPlace, cpSpanCount, cpSpanScan, cpClassArgs, cpExpand, cpReachBox, cpListBoxes, cpListArgs, pArea] =
-      await Promise.all([cpBox, cpReach, cpBlocks, cpTop, cpPlace, cpSpanCount, cpSpanScan, cpClassArgs, cpExpand, cpReachBox, cpListBoxes, cpListArgs, pArea]);
+    [cpBox, cpReach, cpBlocks, cpTop, cpPlace, cpSpanCount, cpSpanScan, cpClassArgs, cpExpand, cpSplit, cpReachBox, cpListBoxes, cpListArgs, pArea, pAreaP, pAreaP3] =
+      await Promise.all([cpBox, cpReach, cpBlocks, cpTop, cpPlace, cpSpanCount, cpSpanScan, cpClassArgs, cpExpand, cpSplit, cpReachBox, cpListBoxes, cpListArgs, pArea, pAreaP, pAreaP3]);
     let ERASE_OK = false;                                     // (the erase's passes there, and taken by the card: eraseReady)
     const viewBuf = device.createBuffer({ size: 48, usage: U.UNIFORM | U.COPY_DST });
     const areaU = device.createBuffer({ size: 16, usage: U.UNIFORM | U.COPY_DST });
@@ -730,7 +756,8 @@ span.lname { cursor: default; }
     const PT = 16, GR = 8, SEG = 1, DOT = 2, BEVEL = 4, OTHER = 8;
     // ONE LINE'S PART, in page units: its points' records (and a grain stroke's grain); kept with the line.
     // THE FEEDING: written twice, here and in pipeline/page/gpu.py (_feed), which feeds the same shaders (ui/shaders.js)
-    // for the engine. A change to one MUST be made to the other.
+    // for the engine. A change to one MUST be made to the other. (The engine's records go up as they are; the editor's
+    // are made blocks of one-word points as they go up: blockEnc)
     const parts = new WeakMap();
     function partOf(L) {
       if (lv && lv.L === L) return lv.p;                     // (the stroke being drawn: its part grows on the card, liveAdd)
@@ -898,6 +925,65 @@ span.lname { cursor: default; }
     // are made larger, copied on the card, when the page outgrows them
     const BLK = 16;
     const heap = { rec: null, gr: null, boxes: null, cap: 0, gcap: 0, free: [], gfree: [], bg: null };
+    // THE ONE-WORD POINTS (WORD in ui/shaders.js): the records on the card a block of BLK in twenty words -- its header,
+    // then a word a point on one grid (x and y in 1/32 units from the block's corner, the width over its narrowest in
+    // 1/16). A block whose points do not fit one corner keeps them ASIDE: two words a point, in two blocks' room of its
+    // own (asideAt: where), held with its block's place (b.side, b.sb) -- decoded, the same numbers either way
+    const RB = 80, recBytes = n => n / BLK * RB;              // (a block's bytes; n records' bytes, n a whole number of blocks)
+    const OX = -2048, OY = -1024, OYS = -2048;
+    const gq = v => Math.floor(Math.fround(v * 32 + 0.5)), wq = v => Math.floor(Math.fround(v * 16 + 0.5));   // (rounded as the card rounds)
+    const asideAt = new Map();
+    // A BLOCK'S WORDS: the engine's records of f (four words each) r + k0 .. r + k1 -- the first its stroke's number s0,
+    // those of st (bits) starting a stroke, its last going on into the next block or not -- into w at wo -> true; false:
+    // they do not fit one corner (nothing written: asideEnc)
+    function blockEnc(f, r, k0, k1, st, goes, s0, w, wo) {
+      let lx = 2147483647, ly = 2147483647, lw = 2147483647, hx = -2147483647, hy = -2147483647, hw = -2147483647;
+      for (let k = k0; k <= k1; k++) {
+        const o = 4 * (r + k), x = gq(f[o]), y = gq(f[o + 1]), z = wq(f[o + 2]);
+        if (x < lx) lx = x; if (x > hx) hx = x; if (y < ly) ly = y; if (y > hy) hy = y; if (z < lw) lw = z; if (z > hw) hw = z;
+      }
+      const cx = Math.floor(lx / 32), cy = Math.floor(ly / 32), nw = Math.floor(Math.max(lw, 0) / 16);
+      if (cx < OX || cx - OX > 4095 || cy < OY || cy - OY > 8191 || nw > 127 || hx - cx * 32 > 4095 || hy - cy * 32 > 4095 || hw - nw * 16 > 255) return false;
+      w[wo] = (cx - OX) | (cy - OY) << 12 | nw << 25;
+      w[wo + 1] = (s0 & 0x3fffff) | k0 << 22 | k1 << 26 | (goes ? 1 << 30 : 0);
+      w[wo + 2] = st; w[wo + 3] = 0;
+      for (let k = 0; k < 16; k++) {
+        let v = 0;
+        if (k >= k0 && k <= k1) { const o = 4 * (r + k); v = (gq(f[o]) - cx * 32) | (gq(f[o + 1]) - cy * 32) << 12 | (wq(f[o + 2]) - nw * 16) << 24; }
+        w[wo + 4 + k] = v;
+      }
+      return true;
+    }
+    // the same block keeping its points aside at record `at` (two blocks' room): its header into w at wo, its points
+    // into sw at so (that room's forty words)
+    function asideEnc(f, r, k0, k1, st, goes, s0, w, wo, at, sw, so) {
+      w[wo] = 0; w[wo + 1] = (s0 & 0x3fffff) | k0 << 22 | k1 << 26 | (goes ? 1 << 30 : 0) | 1 << 31; w[wo + 2] = st; w[wo + 3] = at;
+      w.fill(0, wo + 4, wo + 20); sw.fill(0, so, so + 40);
+      for (let k = k0; k <= k1; k++) { const o = 4 * (r + k); sideEnc(f[o], f[o + 1], f[o + 2], sw, so + (k < 8 ? 4 + 2 * k : 24 + 2 * (k - 8))); }
+    }
+    function sideEnc(x, y, w, sw, q) {                         // a point's two words aside (MOVE's sideWrite)
+      sw[q] = gq(x); sw[q + 1] = Math.min(Math.max(gq(y) - OYS * 32, 0), 0x7ffff) | Math.min(Math.max(wq(w), 0), 8191) << 19;
+    }
+    function asideTake(b, j) {                                // block j (of place b) given room to keep its points aside -> where
+      const at = heapTake(2 * BLK, false);
+      (b.side || (b.side = [])).push([at, 2 * BLK]); (b.sb || (b.sb = [])).push(j); asideAt.set(j, at);
+      return at;
+    }
+    // records at..at+n-1 (u8: the engine's, n of them) written where their blocks keep them aside (a drag's fixes)
+    function asidePut(at, u8, n) {
+      const f = new Float32Array(u8.buffer, u8.byteOffset, n * 4);
+      for (let i = 0; i < n;) {
+        const R = at + i, j = R >> 4, D = asideAt.get(j), ka = R & 15, kb = Math.min(15, ka + n - i - 1);
+        if (D === undefined) throw new Error("a moved block not kept aside");
+        for (const [a, b] of [[ka, Math.min(kb, 7)], [Math.max(ka, 8), kb]]) {
+          if (a > b) continue;
+          const w = new Uint32Array(2 * (b - a + 1));
+          for (let k = a; k <= b; k++) { const o = 4 * (i + k - ka); sideEnc(f[o], f[o + 1], f[o + 2], w, 2 * (k - a)); }
+          device.queue.writeBuffer(heap.rec, (D / BLK * 20 + (a < 8 ? 4 + 2 * a : 24 + 2 * (a - 8))) * 4, w);
+        }
+        i += kb - ka + 1;
+      }
+    }
     let boxSpans = [], cullGen = 0;                           // blocks gone up since boxed; bumped when a buffer is made anew
     function take(list, n) {                                  // the first place of n there -> where, or -1
       for (let i = 0; i < list.length; i++) {
@@ -916,18 +1002,18 @@ span.lname { cursor: default; }
     function heapGrow(nRec, nGr) {                            // room for nRec more records and nGr more grain records
       const enc = device.createCommandEncoder(), old = [];
       if (nRec || !heap.rec) {
-        const cap = Math.ceil(Math.max(heap.cap * 2, heap.cap + nRec, 1 << 16) / BLK) * BLK;
-        const rec = device.createBuffer({ size: cap * PT, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
-        const boxes = device.createBuffer({ size: cap / BLK * 16, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
+        const cap = Math.ceil(Math.max(heap.cap + heap.cap / 8, heap.cap + nRec, 1 << 16) / BLK) * BLK;   // (an eighth more, at least)
+        const rec = device.createBuffer({ size: recBytes(cap), usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
+        const boxes = device.createBuffer({ size: cap / BLK * 8, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });   // (a block's box: eight bytes)
         if (heap.rec) {
-          enc.copyBufferToBuffer(heap.rec, 0, rec, 0, heap.cap * PT); enc.copyBufferToBuffer(heap.boxes, 0, boxes, 0, heap.cap / BLK * 16);
+          enc.copyBufferToBuffer(heap.rec, 0, rec, 0, recBytes(heap.cap)); enc.copyBufferToBuffer(heap.boxes, 0, boxes, 0, heap.cap / BLK * 8);
           old.push(heap.rec, heap.boxes);
         }
         give(heap.free, heap.cap, cap - heap.cap);
         heap.rec = rec; heap.boxes = boxes; heap.cap = cap;
       }
       if (nGr || !heap.gr) {
-        const cap = Math.ceil(Math.max(heap.gcap * 2, heap.gcap + nGr, 1 << 14) / BLK) * BLK;
+        const cap = Math.ceil(Math.max(heap.gcap + heap.gcap / 8, heap.gcap + nGr, 1 << 14) / BLK) * BLK;
         const gr = device.createBuffer({ size: cap * GR, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
         if (heap.gr) { enc.copyBufferToBuffer(heap.gr, 0, gr, 0, heap.gcap * GR); old.push(heap.gr); }
         give(heap.gfree, heap.gcap, cap - heap.gcap);
@@ -944,9 +1030,13 @@ span.lname { cursor: default; }
     function boxesCleared() {
       if (!boxClears.length) return;
       const enc = device.createCommandEncoder();
-      for (const [b, n] of boxClears) enc.clearBuffer(heap.boxes, b * 16, n * 16);
+      for (const [b, n] of boxClears) enc.clearBuffer(heap.boxes, b * 8, n * 8);
       device.queue.submit([enc.finish()]);
       boxClears = [];
+    }
+    function blocksUsed() {                                   // the blocks up to the last a place holds (the cull's: no further)
+      const l = heap.free[heap.free.length - 1];
+      return (l && l[0] + l[1] === heap.cap ? l[0] : heap.cap) / BLK;
     }
     function heapTake(n, grain) {                             // a place for n records (grain: grain records) -> where
       let at = take(grain ? heap.gfree : heap.free, n);
@@ -969,9 +1059,13 @@ span.lname { cursor: default; }
     const fBits = x => { stF[0] = x; return stU[0]; };
     const kindCode = p => p.kind === RF_HIGHLIGHTER ? 1 : p.grain ? 2 : p.kind === RF_SHADER ? 3 : 0;
     // (its color word's top byte: its wash's alpha, 0..255 -- 255 for all but a shader's)
-    function stNew(base, n, kind, hw, color, gs, len, lid, p, b, alpha) {   // a placement's number, its facts written -> the number
-      const sid = st.free.length ? st.free.pop() : st.top++;
-      if (sid >= st.cap) stGrow();
+    function stTake(m) {                                      // m numbers for parts placed together: those let go last (in the order
+      const k = Math.min(m, st.free.length), out = st.free.splice(st.free.length - k, k);   // they were), then new ones -- in a
+      while (out.length < m) out.push(st.top++);              // row where they can be: a block's strokes' are
+      return out;
+    }
+    function stNew(sid, base, n, kind, hw, color, gs, len, lid, p, b, alpha) {   // a placement's number (stTake's), its facts written
+      while (sid >= st.cap) stGrow();
       const o = 8 * sid, m = st.m;
       m[o] = base; m[o + 1] = n; m[o + 2] = (kind | (lid & 0x7fffff) << 8) >>> 0; m[o + 3] = fBits(hw);
       m[o + 4] = ((color & 0xffffff) | Math.round((alpha === undefined ? 1 : alpha) * 255) << 24) >>> 0; m[o + 5] = gs; m[o + 6] = NONE; m[o + 7] = fBits(len);
@@ -1024,34 +1118,107 @@ span.lname { cursor: default; }
       for (let k = 0; k < n; k++) { const o = (at + k) * PT; u8[o + 13] = sid & 255; u8[o + 14] = (sid >>> 8) & 255; u8[o + 15] = sid >>> 16; }
     }
     const colorIn = u8 => u8[13] | u8[14] << 8 | u8[15] << 16;   // a part's color, from its first record
+    // (the records as the engine's, here, and which are a stroke's (1), start it (2), a highlighter's (4): made blocks)
+    let scratchRk = new Uint8Array(1 << 14), scratchW = new Uint32Array(1 << 16), scratchSide = new Uint32Array(1 << 10);
     function place(ps) {                                      // the parts' records put up in a place of their own, each its number
-      let nP = 2, nG = 1;                                     // a record each side of the points; one after the grain
-      for (const p of ps) { nP += p.n; if (p.gr) nG += p.n; }
-      const nB = Math.ceil(nP / BLK) * BLK, nGB = Math.ceil(nG / BLK) * BLK;    // whole blocks
+      const sids = stTake(ps.length), offs = new Array(ps.length);
+      let pN = 1, nG = 1;                                     // a record before the points; one after the grain
+      // A PART BEGINS THE NEXT BLOCK when its number does not follow the last's (a block's strokes are numbered in a row),
+      // or when its first points would not share one corner with the points already in the block (the end of one stroke and
+      // the start of another far from it: kept aside, a block cost three times its words and a fetch apart for each point)
+      // -- a block is kept aside only for a stroke whose own points lie far apart. lo/hi: the block's points so far, on the grid
+      const lo = [0, 0, 0], hi = [0, 0, 0];
+      let any = false;
+      const fits = (ax, ay, aw, bx, by, bw) => { const cx = Math.floor(ax / 32), cy = Math.floor(ay / 32), nw = Math.floor(Math.max(aw, 0) / 16);
+        return !(cx < OX || cx - OX > 4095 || cy < OY || cy - OY > 8191 || nw > 127 || bx - cx * 32 > 4095 || by - cy * 32 > 4095 || bw - nw * 16 > 255); };
+      for (let i = 0; i < ps.length; i++) {
+        const p = ps[i], f = new Float32Array(p.rec.buffer, p.rec.byteOffset, p.n * 4);
+        let brk = i > 0 && sids[i] !== sids[i - 1] + 1;
+        if (!brk && any && (pN & 15)) {                       // (its points that would land in this block, with those in it)
+          let ax = lo[0], ay = lo[1], aw = lo[2], bx = hi[0], by = hi[1], bw = hi[2];
+          for (let k = 0, m = Math.min(p.n, BLK - (pN & 15)); k < m; k++) {
+            const x = gq(f[4 * k]), y = gq(f[4 * k + 1]), w = wq(f[4 * k + 2]);
+            if (x < ax) ax = x; if (x > bx) bx = x; if (y < ay) ay = y; if (y > by) by = y; if (w < aw) aw = w; if (w > bw) bw = w;
+          }
+          brk = !fits(ax, ay, aw, bx, by, bw);
+        }
+        if (brk && (pN & 15)) pN = Math.ceil(pN / BLK) * BLK;
+        if ((pN & 15) === 0) any = false;
+        offs[i] = pN;
+        const first = Math.max(0, ((pN + p.n - 1) & ~15) - pN);   // (its first point in the block its last lies in)
+        if (first > 0) any = false;
+        for (let k = first; k < p.n; k++) {
+          const x = gq(f[4 * k]), y = gq(f[4 * k + 1]), w = wq(f[4 * k + 2]);
+          if (!any) { lo[0] = hi[0] = x; lo[1] = hi[1] = y; lo[2] = hi[2] = w; any = true; continue; }
+          if (x < lo[0]) lo[0] = x; if (x > hi[0]) hi[0] = x; if (y < lo[1]) lo[1] = y; if (y > hi[1]) hi[1] = y; if (w < lo[2]) lo[2] = w; if (w > hi[2]) hi[2] = w;
+        }
+        pN += p.n; if (p.gr) nG += p.n;
+      }
+      const nP = pN + 1, nB = Math.ceil(nP / BLK) * BLK, nGB = Math.ceil(nG / BLK) * BLK, nb = nB / BLK;    // whole blocks
       if (scratchRec.length < nB * PT) scratchRec = new Uint8Array(Math.max(nB * PT, 2 * scratchRec.length));
+      if (scratchRk.length < nB) scratchRk = new Uint8Array(Math.max(nB, 2 * scratchRk.length));
+      if (scratchW.length < nb * 20) scratchW = new Uint32Array(Math.max(nb * 20, 2 * scratchW.length));
       if (nG > 1 && scratchGr.length < nG * 2) scratchGr = new Float32Array(Math.max(nG * 2, 2 * scratchGr.length));
-      const rec = scratchRec.subarray(0, nB * PT), gr = nG > 1 ? scratchGr.subarray(0, nG * 2) : null;
-      rec.fill(0, 0, PT); rec.fill(0, (nP - 1) * PT);         // the records each side, and the last block's end: nothing to draw
+      const rec = scratchRec.subarray(0, nB * PT), rk = scratchRk.subarray(0, nB), gr = nG > 1 ? scratchGr.subarray(0, nG * 2) : null;
+      const f = new Float32Array(rec.buffer, rec.byteOffset, nB * 4), u = new Uint32Array(rec.buffer, rec.byteOffset, nB * 4);
+      rk.fill(0);
       if (gr) gr.fill(0, (nG - 1) * 2);
-      const at0 = heapTake(nB, false), gat0 = gr ? heapTake(nGB, true) : -1;
-      const out = { heap: true, at0, n: nB, gat0, gn: nGB, refs: ps.length };
-      let pN = 1, gN = 0;
-      for (const p of ps) {
-        rec.set(p.rec, pN * PT); p.at = at0 + pN; p.gat = p.gr ? gat0 + gN : -1;
+      for (let i = 0; i < ps.length; i++) {
+        const p = ps[i];
+        rec.set(p.rec, offs[i] * PT); sidInto(rec, offs[i], p.n, sids[i]);
+        const hl = p.kind === RF_HIGHLIGHTER ? 4 : 0;
+        rk.fill(1 | hl, offs[i], offs[i] + p.n); rk[offs[i]] |= 2;
+      }
+      // its blocks, each from its records (a block none of whose records are a stroke's: all words 0, nothing drawn)
+      const W = scratchW.subarray(0, nb * 20), aside = [];
+      for (let j = 0; j < nb; j++) {
+        const r = BLK * j, wo = 20 * j;
+        let k0 = -1, k1 = -1, st = 0;
+        for (let k = 0; k < BLK; k++) { const v = rk[r + k]; if (v) { if (k0 < 0) k0 = k; k1 = k; if (v & 2) st |= 1 << k; if (v & 4) st |= 1 << 16; } }
+        if (k0 < 0) { W.fill(0, wo, wo + 20); continue; }
+        const goes = r + k1 + 1 < nB && (rk[r + k1 + 1] & 3) === 1, s0 = u[4 * (r + k0) + 3] >>> 8;
+        if (!blockEnc(f, r, k0, k1, st, goes, s0, W, wo)) aside.push(j, k0, k1, st, goes, s0);
+      }
+      const nA = aside.length / 6, at0 = heapTake(nB + 2 * BLK * nA, false), gat0 = gr ? heapTake(nGB, true) : -1;
+      const out = { heap: true, at0, n: nB + 2 * BLK * nA, gat0, gn: nGB, refs: ps.length, sb: [] };
+      if (nA) {                                               // (those kept aside: in the place's own room after its blocks)
+        if (scratchSide.length < nA * 40) scratchSide = new Uint32Array(Math.max(nA * 40, 2 * scratchSide.length));
+        const SW = scratchSide.subarray(0, nA * 40);
+        for (let a = 0; a < nA; a++) {
+          const [j, k0, k1, st, goes, s0] = aside.slice(6 * a, 6 * a + 6), sat = at0 + nB + 2 * BLK * a;
+          asideEnc(f, BLK * j, k0, k1, st, goes, s0, W, 20 * j, sat, SW, 40 * a);
+          out.sb.push(at0 / BLK + j); asideAt.set(at0 / BLK + j, sat);
+        }
+        device.queue.writeBuffer(heap.rec, recBytes(at0 + nB), SW.buffer, SW.byteOffset, SW.byteLength);
+      }
+      let gN = 0;
+      for (let i = 0; i < ps.length; i++) {
+        const p = ps[i];
+        p.at = at0 + offs[i]; p.gat = p.gr ? gat0 + gN : -1;
         if (p.gr) gr.set(p.gr, gN * 2);
         const len = p.sg !== undefined ? (segLast = p.sg, p.len) : lenOf(p.rec, 0, p.n);   // (made worked it out already)
-        const id = stNew(at0 + pN, p.n, kindCode(p), halfWidth(p.line), colorIn(p.rec), p.gr ? gat0 + gN : NONE, len, p.lid, p, out, p.alpha);
-        sidInto(rec, pN, p.n, id); hold(p, id, out);
-        pN += p.n; if (p.gr) gN += p.n;
+        stNew(sids[i], p.at, p.n, kindCode(p), halfWidth(p.line), colorIn(p.rec), p.gr ? gat0 + gN : NONE, len, p.lid, p, out, p.alpha);
+        hold(p, sids[i], out);
+        if (p.gr) gN += p.n;
       }
-      device.queue.writeBuffer(heap.rec, at0 * PT, rec.buffer, rec.byteOffset, rec.byteLength);
+      device.queue.writeBuffer(heap.rec, recBytes(at0), W.buffer, W.byteOffset, W.byteLength);
       if (gr) device.queue.writeBuffer(heap.gr, gat0 * GR, gr.buffer, gr.byteOffset, gr.byteLength);
       boxSpans.push([at0 / BLK, nB / BLK]);
       return out;
     }
+    function placeAll(fresh) {                                // parts put up 512 at a time, the room for all of them made first
+      let nR = 0, nG = 0;
+      for (const p of fresh) { nR += p.n; if (p.gr) nG += p.n; }
+      nR += 3 * BLK * Math.ceil(fresh.length / 512);         // (each place's ends, and its last block's rest)
+      const freeR = heap.rec ? largest(heap.free) : 0, freeG = heap.gr ? largest(heap.gfree) : 0;
+      if (nR > freeR || nG > freeG) heapGrow(nR > freeR ? nR : 0, nG > freeG ? nG : 0);
+      for (let k = 0; k < fresh.length; k += 512) place(fresh.slice(k, k + 512));
+    }
     function unref(b) {                                       // one holder of a place fewer: given back with the last
       if (!b || !b.heap || b.gone || --b.refs > 0) return;
       if (b.at0 >= 0) recGive(b.at0, b.n); if (b.gat0 >= 0) give(heap.gfree, b.gat0, b.gn);
+      if (b.side) for (const [at, n] of b.side) recGive(at, n);   // (its blocks' room aside, and their entries)
+      if (b.sb) for (const j of b.sb) asideAt.delete(j);
       b.gone = true;
     }
     function relayer(p) {                                     // a stroke now on another layer: its number says which
@@ -1110,7 +1277,7 @@ span.lname { cursor: default; }
       if (ob.cap < n || !ob.r) {
         const cap = Math.max(4096, pow2(n));
         const a = device.createBuffer({ size: cap * 4, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC }), b = device.createBuffer({ size: cap * 4, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
-        if (ob.r) { const enc = device.createCommandEncoder(); enc.copyBufferToBuffer(ob.r, 0, a, 0, ob.cap * 4); device.queue.submit([enc.finish()]); }   // (all of it: the card's edits make it longer than is known here)
+        if (ob.r && ob.n) { const enc = device.createCommandEncoder(); enc.copyBufferToBuffer(ob.r, 0, a, 0, ob.n * 4); device.queue.submit([enc.finish()]); }
         for (const x of [ob.r, ob.w, ob.sc, ob.sb, ob.ok, ob.cl]) if (x) x.destroy();
         ob.r = a; ob.w = b; ob.cap = cap; ob.dirty = true;
         ob.sc = device.createBuffer({ size: (cap + 4) * 4, usage: U.STORAGE });
@@ -1123,7 +1290,6 @@ span.lname { cursor: default; }
         ob.edCap = Math.max(4096, st.cap); ob.ed = device.createBuffer({ size: ob.edCap * 8, usage: U.STORAGE });
       }
       if (!ob.lh) { ob.lh = device.createBuffer({ size: 64, usage: U.STORAGE | U.COPY_SRC | U.COPY_DST }); ob.u = device.createBuffer({ size: 32, usage: U.UNIFORM | U.COPY_DST }); }
-      if (!ob.args) ob.args = device.createBuffer({ size: 48, usage: U.STORAGE | U.INDIRECT });   // (the order's passes' dispatches for the card's own edit: flip)
       if (!ob.eb) { ob.ebCap = 4096; ob.eb = device.createBuffer({ size: ob.ebCap * 4, usage: U.STORAGE | U.COPY_DST }); }
       listRoom(ob.cap, ncDraw());
     }
@@ -1136,9 +1302,9 @@ span.lname { cursor: default; }
     }
     function ordU(n, headN, nA, m, ncCap) { device.queue.writeBuffer(ob.u, 0, new Uint32Array([n, headN, ncCap, st.at, sk.at, nA, m, 0])); }
     function ordScan(pass, P, G, wg) {                        // the prefix sum of osc[0..lh[7]) (wg: workgroups for its most)
-      pass.setPipeline(P.oScanLocal); pass.setBindGroup(0, G); pass.dispatchWorkgroups(wg);
+      pass.setPipeline(P.oScanLocal); pass.setBindGroup(0, G); DW(pass, wg);
       pass.setPipeline(P.oScanTop); pass.dispatchWorkgroups(1);
-      pass.setPipeline(P.oScanAdd); pass.dispatchWorkgroups(wg);
+      pass.setPipeline(P.oScanAdd); DW(pass, wg);
     }
     // AN EDIT OF THE ORDER: at [[a part in the order, kept?, [parts put after it]], ...], head (parts put before all) ->
     // done? (else nothing changed: the order is made anew at the next page). The new strokes put up first (in one place);
@@ -1160,7 +1326,7 @@ span.lname { cursor: default; }
       }
       for (const q of head) if (!want(q, -1)) return false;
       if (!ins && !outs) return true;
-      for (let k = 0; k < fresh.length; k += 512) place(fresh.slice(k, k + 512));
+      placeAll(fresh);
       const nA = at.length, words = 3 * nA + ins, e = new Uint32Array(Math.max(4, words));
       let o = 3 * nA + head.length;
       head.forEach((q, j) => { e[3 * nA + j] = q.sid; });
@@ -1175,13 +1341,13 @@ span.lname { cursor: default; }
       device.queue.writeBuffer(ob.eb, 0, e); device.queue.writeBuffer(ob.lh, 36, new Uint32Array([nA, head.length]));
       ordU(ob.n, head.length, nA, m, ncDraw());
       const P = ob.pipes, G = ordGroup(), enc = device.createCommandEncoder(), pass = enc.beginComputePass();
-      const wA = Math.max(1, Math.ceil(nA / 128)), wN = Math.max(1, Math.ceil((er.live ? ob.cap : Math.max(ob.n, m)) / 128));   // (a swipe's: the order's room -- the card's flips make it longer than is known here)
+      const wA = Math.max(1, Math.ceil(nA / 128)), wN = Math.max(1, Math.ceil(Math.max(ob.n, m) / 128));
       pass.setBindGroup(0, G);
-      pass.setPipeline(P.ordMark); pass.dispatchWorkgroups(wA);
-      pass.setPipeline(P.ordCount); pass.dispatchWorkgroups(wN);
+      pass.setPipeline(P.ordMark); DW(pass, wA);
+      pass.setPipeline(P.ordCount); DW(pass, wN);
       ordScan(pass, P, G, wN);
-      pass.setPipeline(P.ordPut); pass.dispatchWorkgroups(wN);
-      pass.setPipeline(P.ordClear); pass.dispatchWorkgroups(wA);
+      pass.setPipeline(P.ordPut); DW(pass, wN);
+      pass.setPipeline(P.ordClear); DW(pass, wA);
       pass.end();
       device.queue.submit([enc.finish()]);
       [ob.r, ob.w] = [ob.w, ob.r]; ob.n = m; ob.dirty = true;
@@ -1208,7 +1374,7 @@ span.lname { cursor: default; }
         q.on = true; ps.push(q);
         if (q.sid === undefined) fresh.push(q);
       }
-      for (let k = 0; k < fresh.length; k += 512) place(fresh.slice(k, k + 512));
+      placeAll(fresh);
       const a = new Uint32Array(Math.max(1, ps.length));
       let lvl = 0, prev = 0, any = false;
       for (let i = 0; i < ps.length; i++) {
@@ -1230,17 +1396,17 @@ span.lname { cursor: default; }
       const nc = ncDraw(), seq = ob.seq++;
       stFlush();
       ordU(ob.n, 0, 0, ob.n, nc);
-      const P = ordPipes(), G = ordGroup(), pass = enc.beginComputePass(), w = Math.max(1, Math.ceil((er.live ? ob.cap : ob.n) / 128));
+      const P = ordPipes(), G = ordGroup(), pass = enc.beginComputePass(), w = Math.max(1, Math.ceil(ob.n / 128));
       pass.setBindGroup(0, G);
-      for (const e of ["ordKey"]) { pass.setPipeline(P[e]); pass.dispatchWorkgroups(w); }
+      for (const e of ["ordKey"]) { pass.setPipeline(P[e]); DW(pass, w); }
       ordScan(pass, P, G, w);
-      for (const e of ["ordSplit", "ordTrans"]) { pass.setPipeline(P[e]); pass.dispatchWorkgroups(w); }
+      for (const e of ["ordSplit", "ordTrans"]) { pass.setPipeline(P[e]); DW(pass, w); }
       ordScan(pass, P, G, w);
-      for (const e of ["ordClass", "ordStart"]) { pass.setPipeline(P[e]); pass.dispatchWorkgroups(w); }
+      for (const e of ["ordClass", "ordStart"]) { pass.setPipeline(P[e]); DW(pass, w); }
       ordScan(pass, P, G, w);
-      pass.setPipeline(P.ordSpan); pass.dispatchWorkgroups(w);
-      pass.setPipeline(P.ordCtabClear); pass.dispatchWorkgroups(Math.max(1, Math.ceil(nc / 64)));
-      pass.setPipeline(P.ordCtab); pass.dispatchWorkgroups(w);
+      pass.setPipeline(P.ordSpan); DW(pass, w);
+      pass.setPipeline(P.ordCtabClear); DW(pass, Math.max(1, Math.ceil(nc / 64)));
+      pass.setPipeline(P.ordCtab); DW(pass, w);
       pass.end();
       ob.dirty = false;
       if (!ob.pend.length) return;
@@ -1269,7 +1435,7 @@ span.lname { cursor: default; }
       const nB = Math.ceil((capRec + 2) / BLK) * BLK, at0 = heapTake(nB, false);
       const gnB = grain ? Math.ceil((capRec + 1) / BLK) * BLK : 0, gat0 = grain ? heapTake(gnB, true) : -1;
       const enc = device.createCommandEncoder();
-      enc.clearBuffer(heap.rec, at0 * PT, nB * PT);
+      enc.clearBuffer(heap.rec, recBytes(at0), recBytes(nB));   // (a block all 0: nothing drawn)
       if (grain) enc.clearBuffer(heap.gr, gat0 * GR, gnB * GR);
       device.queue.submit([enc.finish()]);
       boxSpans.push([at0 / BLK, nB / BLK]);
@@ -1284,7 +1450,7 @@ span.lname { cursor: default; }
                           rec: new Uint8Array(0), n: 0, idx: null, bb: [Infinity, Infinity, -Infinity, -Infinity] });
       p.lid = lid; p.at = b.at0 + 1; p.gat = pen ? b.gat0 : -1;
       const c3 = P0.rgba, color = c3[0] | c3[1] << 8 | c3[2] << 16;
-      const sid = stNew(b.at0 + 1, cap, kindCode(p), 0, color, pen ? b.gat0 : NONE, 0, lid, p, b, p.alpha);
+      const sid = stNew(stTake(1)[0], b.at0 + 1, cap, kindCode(p), 0, color, pen ? b.gat0 : NONE, 0, lid, p, b, p.alpha);
       hold(p, sid, b);
       lv = { L, p, b, sid, cap, fam, kind, pen, color, rgba: c3, scaleW: WSCALE[fam] || WSCALE_DEFAULT, least: fam === "PENCIL" || fam === "MECHANICAL" ? 2 : 1,
              rec: new Uint8Array(cap * PT), gr: pen ? new Float32Array(cap * 2) : null, n: 0, np: 0, kept: [], u: 0, wmax: 0, pmax: 0, len: 0,
@@ -1339,9 +1505,15 @@ span.lname { cursor: default; }
     function liveMove() {                                     // its place full: moved, on the card, to one twice as large
       const b0 = lv.b, cap = lv.cap * 2, b = liveRoom(cap, lv.pen), p = lv.p;
       const enc = device.createCommandEncoder();              // (within one buffer: through one of its own, as the card asks)
-      const tmp = device.createBuffer({ size: b0.n * PT + (lv.pen ? b0.gn * GR : 0), usage: U.COPY_SRC | U.COPY_DST });
-      enc.copyBufferToBuffer(heap.rec, b0.at0 * PT, tmp, 0, b0.n * PT); enc.copyBufferToBuffer(tmp, 0, heap.rec, b.at0 * PT, b0.n * PT);
-      if (lv.pen) { enc.copyBufferToBuffer(heap.gr, b0.gat0 * GR, tmp, b0.n * PT, b0.gn * GR); enc.copyBufferToBuffer(tmp, b0.n * PT, heap.gr, b.gat0 * GR, b0.gn * GR); }
+      const nR = recBytes(b0.n), tmp = device.createBuffer({ size: nR + (lv.pen ? b0.gn * GR : 0), usage: U.COPY_SRC | U.COPY_DST });
+      enc.copyBufferToBuffer(heap.rec, recBytes(b0.at0), tmp, 0, nR); enc.copyBufferToBuffer(tmp, 0, heap.rec, recBytes(b.at0), nR);
+      if (lv.pen) { enc.copyBufferToBuffer(heap.gr, b0.gat0 * GR, tmp, nR, b0.gn * GR); enc.copyBufferToBuffer(tmp, nR, heap.gr, b.gat0 * GR, b0.gn * GR); }
+      if (b0.sb) {                                            // (its blocks kept aside keep their room: the new place's now)
+        const d = (b.at0 - b0.at0) / BLK, moved = b0.sb.map(j => [j + d, asideAt.get(j)]);
+        for (const j of b0.sb) asideAt.delete(j);
+        for (const [j, a] of moved) asideAt.set(j, a);
+        b.sb = moved.map(m => m[0]); b.side = b0.side; b0.sb = b0.side = null;
+      }
       device.queue.submit([enc.finish()]); tmp.destroy();
       const rec = new Uint8Array(cap * PT); rec.set(lv.rec); lv.rec = rec;
       if (lv.pen) { const gr = new Float32Array(cap * 2); gr.set(lv.gr); lv.gr = gr; }
@@ -1359,10 +1531,8 @@ span.lname { cursor: default; }
       if (!lv || lv.L !== L || lost) return false;
       if (L.points.length === lv.np) return true;
       const r0 = liveMake(), n = lv.n, b = lv.b, first = b.at0 + 1;
-      // its records r0..n-1 up (each with the stroke's number where its color is, as place puts them), and their grain
-      const up = lv.rec.slice(r0 * PT, n * PT);
-      sidInto(up, 0, n - r0, lv.sid);
-      device.queue.writeBuffer(heap.rec, (first + r0) * PT, up);
+      // its blocks holding records r0..n-1 made again (the one before: its last now goes on), and their grain
+      liveBlocks(r0, n);
       if (lv.pen) device.queue.writeBuffer(heap.gr, (b.gat0 + r0) * GR, lv.gr.subarray(2 * r0, 2 * n));
       const b0 = Math.floor((first + r0) / BLK); boxSpans.push([b0, Math.floor((first + n) / BLK) - b0 + 1]);
       const hw = Math.max(lv.pmax, L.width) * penScale(L.pen) / 2;
@@ -1371,6 +1541,19 @@ span.lname { cursor: default; }
       const recs = [];
       for (let k = Math.max(0, r0 - 1); k < n; k++) recs.push(first + k);   // (and the segment before: a highlighter's turn)
       return eRedraw(recs);
+    }
+    function liveBlocks(r0, n) {                              // the stroke's blocks holding its records r0..n-1, up
+      const b = lv.b, first = b.at0 + 1, f = new Float32Array(lv.rec.buffer), j0 = (first + r0) >> 4, j1 = (first + n - 1) >> 4;
+      const w = new Uint32Array(20 * (j1 - j0 + 1));
+      for (let j = j0; j <= j1; j++) {
+        const R = BLK * j, k0 = Math.max(0, first - R), k1 = Math.min(BLK - 1, first + n - 1 - R), wo = 20 * (j - j0);
+        const st = (first >= R && first < R + BLK ? 1 << (first - R) : 0) | (lv.kind === RF_HIGHLIGHTER ? 1 << 16 : 0), goes = R + k1 + 1 < first + n;
+        if (!asideAt.has(j) && blockEnc(f, R - first, k0, k1, st, goes, lv.sid, w, wo)) continue;
+        const sat = asideAt.has(j) ? asideAt.get(j) : asideTake(b, j), sw = new Uint32Array(40);   // (once aside, aside: more points never fit)
+        asideEnc(f, R - first, k0, k1, st, goes, lv.sid, w, wo, sat, sw, 0);
+        device.queue.writeBuffer(heap.rec, recBytes(sat), sw);
+      }
+      device.queue.writeBuffer(heap.rec, j0 * RB, w);
     }
     function liveEnd(L) {                                     // let go: its part the line's, as partOf would make it; its room past its last given back
       if (!lv || lv.L !== L) return;
@@ -1391,17 +1574,17 @@ span.lname { cursor: default; }
     // a frame (eRead). A stroke the card cuts has a SLOT, its room taken from the swipe's pools -- the erase state (es), a
     // place in the page's records and one in the grain records, an entry in the table of strokes being cut (ev) --
     // reserved here, grown before they run out (as the card says how far they are used), and grown when it says one ran
-    // out (that step sent again). A slot the swipe has left behind is made its pieces ON THE CARD as the swipe goes (flip:
-    // each a stroke of its own, numbered from room given here, in the order where its stroke was), and what it made comes
-    // back with the frame's answer and is taken here (eFlips) -- the strokes saved are the card's numbers, as shown; once
-    // the swipe is let go, whatever is left is made so at once (flipAll)
+    // out (that step sent again). A slot the swipe has left alone is logged by the card and made its pieces here as the
+    // swipe goes (the plan: ePlan, ePlans) -- its stroke stays the card's, cut and drawn in its place, until the swipe is let
+    // go; then the card writes the pieces once and they are put in the order (foldAll, foldStep) -- the strokes saved are
+    // the card's numbers, as shown
     const BITS = 0;                                           // (no cells' map: the mask, mk)
     const mk = { buf: null, cap: 0, who: null };              // the mask: what a frame changed, drawn again there and only there
     const er = { buf: null, cap: 0, ctl: null, tCap: 0, cCap: 0, slCap: 0, stCap: 0, offT: 0, offC: 0, offB: 0, offSL: 0, offST: 0, mk: null, mCap: 0,
                  ent: null, hitCap: 0, args: null, F: null, fin: null, fcap: 0, G: null, gk: [], rbs: [], steps: [], pools: [], frame: 0,
                  R: 0, live: false, asks: 0, last: null, onCells: null, onRead: null, onWhole: null, onAgain: null, made: 0, folded: 0, cut: 0, fresh: 0,
-                 again: 0, out: 0, overs: 0, recN: 1 << 16, grbN: 1 << 14, synced: false,
-                 logCap: 1 << 13, flipAll: false, n0: 0, sidK: 0, sidRanges: [], sidUsed: new Set(), sidFreed: new Set(), onFlip: null, onRefused: null, lost: 0, kindOff: 0 };
+                 again: 0, out: 0, overs: 0, recN: 1 << 18, grbN: 1 << 16, synced: false,   // (slots: about a MB each)
+                 logCap: 1 << 13, plans: new Map(), planDone: false, planAll: false, fold: null, folding: false, onPlan: null, onUnplan: null, onRefused: null, lost: 0 };
     const ev = { at: 0, cap: 0 };                             // the table of strokes being cut (in the grain records, 8 words each)
     const pow2 = n => 1 << Math.ceil(Math.log2(Math.max(1, n)));
     const gcd = (a, b) => { while (b) { const t = a % b; a = b; b = t; } return a; };   // (AREA's g)
@@ -1466,11 +1649,9 @@ span.lname { cursor: default; }
     }
     function eBegin() {                                       // a swipe's first step: its pools (as large as the last one's
       er.live = true; er.pools = []; er.last = null; er.synced = false; er.outNow = 0;   // last), its counters
-      const r = poolTake(false, Math.min(er.recN, 1 << 20)), g = poolTake(true, Math.min(er.grbN, 1 << 18));   // (larger ones as it needs them)
+      const r = poolTake(false, Math.min(er.recN, 1 << 22)), g = poolTake(true, Math.min(er.grbN, 1 << 20));   // (larger ones as it needs them)
       device.queue.writeBuffer(er.ctl, 16, new Uint32Array([0, er.cap, r.at, r.at + r.n, g.at, g.at + g.n, 0, ev.cap, 0, 0]));
-      device.queue.writeBuffer(er.ctl, 112, new Uint32Array([0]));   // (no slot done yet)
-      er.n0 = ob.n; er.sidK = 0; er.sidRanges = [];
-      sidsMore();
+      er.plans = new Map(); er.planDone = false; er.planAll = false; er.fold = null; er.folding = false;
     }
     function eStep(path, mode, R, lid) {                      // a step of the swipe (x0, y0, ...) for the card's next pass, as
       const n = path.length / 2, segs = new Float32Array(Math.max(1, n - 1) * 4);   // segments (a point: one of no length)
@@ -1480,8 +1661,7 @@ span.lname { cursor: default; }
       er.R = R;
     }
     function eGroups() {                                      // each pass's group, made again when a buffer was
-      if (!ob.eb || !ob.lh || !ob.args) ordRoom(ob.n);
-      const res = [er.buf, er.fin, heap.rec, heap.gr, er.F, heap.boxes, cb.flags, cb.clist, cb.scan, er.ctl, er.ent, er.args, er.pack, mk.buf, ob.eb, heap.boxes, ob.lh, ob.args];
+      const res = [er.buf, er.fin, heap.rec, heap.gr, er.F, heap.boxes, cb.flags, cb.clist, cb.scan, er.ctl, er.ent, er.args, er.pack, mk.buf];
       if (er.G && res.every((b, i) => b === er.gk[i])) return er.G;
       er.gk = res; er.G = {};
       for (const e in EB) er.G[e] = device.createBindGroup({ layout: EP[e].getBindGroupLayout(0), entries: EB[e].map(i => ({ binding: i, resource: { buffer: res[i] } })) });
@@ -1503,7 +1683,7 @@ span.lname { cursor: default; }
       device.queue.writeBuffer(er.ctl, 4, new Uint32Array([0, 0]));   // nothing run out yet
       device.queue.writeBuffer(mk.buf, 0, MK0); mk.who = null; // the frame's mask, empty
       steps.forEach((s, i) => eRun(s, i === 0));
-      eFlip(false);                                           // (what the swipe has left behind made strokes, on the card)
+      ePlan(false);                                           // (what the swipe has left alone logged, for its pieces to be made here)
       const drawn = draw ? eDraw() : false;
       eRead(steps);
       return drawn;
@@ -1567,7 +1747,7 @@ span.lname { cursor: default; }
       if (A.length) device.queue.writeBuffer(mk.buf, 64, Uint32Array.from(A));
       let enc = device.createCommandEncoder();
       const p = enc.beginComputePass();
-      if (A.length) { p.setPipeline(cpListBoxes); p.setBindGroup(0, mkGroups().boxes); p.dispatchWorkgroups(Math.ceil(A.length / 64)); }
+      if (A.length) { p.setPipeline(cpListBoxes); p.setBindGroup(0, mkGroups().boxes); DW(p, Math.ceil(A.length / 64)); }
       p.setPipeline(cpListArgs); p.setBindGroup(0, mkGroups().args); p.dispatchWorkgroups(1); p.end();
       zNeed();
       const r = enc.beginRenderPass({ colorAttachments: [{ view: texView, loadOp: "load", storeOp: "store" }],
@@ -1584,7 +1764,7 @@ span.lname { cursor: default; }
       if (B.length) {
         device.queue.writeBuffer(mk.buf, 64, Uint32Array.from(B));
         enc = device.createCommandEncoder();
-        const q = enc.beginComputePass(); q.setPipeline(cpListBoxes); q.setBindGroup(0, mkGroups().boxes); q.dispatchWorkgroups(Math.ceil(B.length / 64)); q.end();
+        const q = enc.beginComputePass(); q.setPipeline(cpListBoxes); q.setBindGroup(0, mkGroups().boxes); DW(q, Math.ceil(B.length / 64)); q.end();
         device.queue.submit([enc.finish()]);
       }
       return eDraw(true);
@@ -1608,7 +1788,7 @@ span.lname { cursor: default; }
       const head = MK0.slice(); head[0] = n;
       device.queue.writeBuffer(mk.buf, 0, head);
       let enc = device.createCommandEncoder(), p = enc.beginComputePass();
-      p.setPipeline(cpListBoxes); p.setBindGroup(0, mkGroups().boxes); p.dispatchWorkgroups(Math.ceil(n / 64));
+      p.setPipeline(cpListBoxes); p.setBindGroup(0, mkGroups().boxes); DW(p, Math.ceil(n / 64));
       p.setPipeline(cpListArgs); p.setBindGroup(0, mkGroups().args); p.dispatchWorkgroups(1); p.end();
       if (box) boxMarks(enc);
       zNeed();
@@ -1621,7 +1801,7 @@ span.lname { cursor: default; }
       change(enc);                                            // (its passes in enc, or its writes to the queue: after the mark)
       device.queue.writeBuffer(mk.buf, 0, new Uint32Array([n]));   // (the second mark: the box so far kept)
       p = enc.beginComputePass();
-      p.setPipeline(cpListBoxes); p.setBindGroup(0, mkGroups().boxes); p.dispatchWorkgroups(Math.ceil(n / 64)); p.end();
+      p.setPipeline(cpListBoxes); p.setBindGroup(0, mkGroups().boxes); DW(p, Math.ceil(n / 64)); p.end();
       device.queue.submit([enc.finish()]);
       for (const s of blocks) boxSpans.push(s);               // (their blocks boxed again, before the draw culls by them)
       return eDraw(true, box);
@@ -1651,7 +1831,7 @@ span.lname { cursor: default; }
       if (!mv.G || !res.every((b, i) => b === mv.GF[i])) {
         mv.GF = res;
         const B = (pl, bs) => device.createBindGroup({ layout: pl.getBindGroupLayout(0), entries: bs.map(i => ({ binding: i, resource: { buffer: res[i] } })) });
-        mv.G = { grab: B(cpGrab, [0, 1, 2, 3]), move: B(cpMove, [0, 1, 2, 3, 4]), back: B(cpBack, [0, 1, 2, 3]) };
+        mv.G = { grab: B(cpGrab, [0, 1, 2, 3]), move: B(cpMove, [0, 1, 2, 3, 4]), back: B(cpBack, [0, 1, 2, 3]), aside: B(cpAside, [0, 1, 3]) };
       }
       return mv.G;
     }
@@ -1664,7 +1844,7 @@ span.lname { cursor: default; }
       device.queue.writeBuffer(mk.buf, 64, mv.A); mk.who = mv;
     }
     function moveBegin(lines) {                               // the selection taken up on the card -> so? (else: on the processor)
-      if (!cpMove || mv.lines || !holds || !last || lost || !underTex || !PL || er.live || lv) return false;
+      if (!cpMove || !cpAside || mv.lines || !holds || !last || lost || !underTex || !PL || er.live || lv) return false;
       const { W, H, w, h } = last;
       if (texW !== W || texH !== H || screenW !== w || screenH !== h) return false;
       const A = recsOf(lines);
@@ -1676,8 +1856,23 @@ span.lname { cursor: default; }
       mv.wid = device.createBuffer({ size: Math.max(16, n * 4), usage: U.STORAGE | U.COPY_DST });
       mv.u = device.createBuffer({ size: 48, usage: U.UNIFORM | U.COPY_DST });
       mv.s = NaN; mv.useW = false; mv.G = null;
-      mvList();
+      // its blocks not yet kept aside made so, on the card (MOVE's aside): each given its room, held with its place
+      const ask = [], seen = new Set();
+      for (const L of lines) {
+        const p = parts.get(L), b = p.pl.place;
+        for (let j = p.at >> 4; j <= (p.at + p.n - 1) >> 4; j++) if (!asideAt.has(j) && !seen.has(j)) { seen.add(j); ask.push(j, asideTake(b, j)); }
+      }
       const a = new ArrayBuffer(48), u = new Uint32Array(a);
+      if (ask.length) {
+        const nA = ask.length / 2;
+        if (!mk.buf || ask.length > mk.cap) mkMake(Math.max(1 << 16, pow2(ask.length)));
+        device.queue.writeBuffer(mk.buf, 64, Uint32Array.from(ask)); mk.who = null;
+        u[6] = nA; device.queue.writeBuffer(mv.u, 0, a);
+        const e = device.createCommandEncoder(), ps = e.beginComputePass();
+        ps.setPipeline(cpAside); ps.setBindGroup(0, mvGroups().aside); ps.dispatchWorkgroups(Math.min(nA, 65535), Math.ceil(nA / 65535)); ps.end();
+        device.queue.submit([e.finish()]);
+      }
+      mvList();
       u[6] = n; u[7] = mv.wide;
       device.queue.writeBuffer(mv.u, 0, a);
       const enc = device.createCommandEncoder();
@@ -1765,15 +1960,15 @@ span.lname { cursor: default; }
     // worked out again from the moved points) its records go up in that place and are drawn again there (remarked); where
     // it has fewer or more (a repeat the move made or undid) it is drawn anew -> those: [taken, made] (the editor swaps them)
     function moveAdopt(pairs, recs) {
-      const anew = [], fix = [], fixes = [];
+      const anew = [], fix = [], fixes = [], rf = new Float32Array(recs.buffer, recs.byteOffset, recs.length);
       let o = 0;
       for (const [L, N] of pairs) {
         const p = parts.get(L), n = p ? p.n : 0, at = p && p.on && p.sid !== undefined ? p.at : undefined;
         const q = partOf(N);
         if (at === undefined || q.n !== n || q.sid !== undefined) { anew.push([L, N]); o += n; mvStats.anew++; continue; }
-        const a = new Uint32Array(q.rec.buffer, q.rec.byteOffset, n * 4);
+        const a = new Float32Array(q.rec.buffer, q.rec.byteOffset, n * 4);   // (the same points on the grid: the flags are its strokes')
         let same = true;
-        for (let i = 0; i < n * 4 && same; i++) same = (i & 3) === 3 ? (a[i] & 0xff) === (recs[4 * o + i] & 0xff) : a[i] === recs[4 * o + i];
+        for (let i = 0; i < n && same; i++) { const s = 4 * i, c = 4 * (o + i); same = gq(a[s]) === gq(rf[c]) && gq(a[s + 1]) === gq(rf[c + 1]) && wq(a[s + 2]) === wq(rf[c + 2]); }
         o += n;
         const sid = p.sid;
         handOver(p, q);                                       // (the same number, the same place in the page's order)
@@ -1782,14 +1977,14 @@ span.lname { cursor: default; }
         stSet(sid, 3, fBits(hw)); stSet(sid, 7, fBits(len));
         if (hw > st.hwMax) st.hwMax = hw;
         if (segLast > st.sgMax) st.sgMax = segLast;
-        if (!same) { const u8 = q.rec.slice(); sidInto(u8, 0, n, sid); fixes.push([at, u8]); for (let k = 0; k < n; k++) fix.push(at + k); mvStats.fixed++; } else mvStats.adopted++;
+        if (!same) { fixes.push([at, q.rec.slice(0, n * PT), n]); for (let k = 0; k < n; k++) fix.push(at + k); mvStats.fixed++; } else mvStats.adopted++;
       }
       moveDone();
       if (fix.length) {
         const A = Uint32Array.from(fix);
         if (!mk.buf || A.length > mk.cap) mkMake(Math.max(1 << 16, pow2(A.length)));
         device.queue.writeBuffer(mk.buf, 64, A); mk.who = null;
-        const write = () => { for (const [at, u8] of fixes) device.queue.writeBuffer(heap.rec, at * PT, u8); };
+        const write = () => { for (const [at, u8, n] of fixes) asidePut(at, u8, n); };   // (where their blocks keep them aside: moveBegin)
         if (!(holds && last && remarked(A.length, write, blocksOf(fix)))) { write(); for (const s of blocksOf(fix)) boxSpans.push(s); anew.whole = true; }
       }
       return anew;
@@ -1805,7 +2000,7 @@ span.lname { cursor: default; }
           { binding: 4, resource: { buffer: areaT.u } }, { binding: 5, resource: { buffer: areaT.b } }] });
       }
       const pa = enc.beginRenderPass({ colorAttachments: [{ view: screenView, loadOp: "load", storeOp: "store" }] });
-      pa.setPipeline(PL.box); pa.setBindGroup(0, gBox); pa.draw(4); pa.end();
+      pa.setPipeline(areaT.mode === 3 ? PL.boxP3 : areaT.mode ? PL.boxP : PL.box); pa.setBindGroup(0, gBox); pa.draw(4); pa.end();
     }
     // RECORDS THE PROCESSOR LISTS DRAWN AGAIN, as a frame's mask is (the stroke being drawn: its new segments; a fold's pieces
     // made fresh) -- their box worked out on the card (listBoxes) -> drawn?
@@ -1817,7 +2012,7 @@ span.lname { cursor: default; }
       device.queue.writeBuffer(mk.buf, 0, head); device.queue.writeBuffer(mk.buf, 64, Uint32Array.from(recs)); mk.who = null;
       const enc = device.createCommandEncoder();
       listsReady(enc);
-      const p = enc.beginComputePass(); p.setPipeline(cpListBoxes); p.setBindGroup(0, mkGroups().boxes); p.dispatchWorkgroups(Math.ceil(recs.length / 64)); p.end();
+      const p = enc.beginComputePass(); p.setPipeline(cpListBoxes); p.setBindGroup(0, mkGroups().boxes); DW(p, Math.ceil(recs.length / 64)); p.end();
       device.queue.submit([enc.finish()]);
       return eDraw();
     }
@@ -1834,7 +2029,7 @@ span.lname { cursor: default; }
       return gMkG;
     }
     function eRun(s, first) {
-      const frame = ++er.frame, nb = heap.cap / BLK, segs = s.segs;
+      const frame = ++er.frame, nb = blocksUsed(), segs = s.segs;
       let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
       for (let i = 0; i < segs.length; i += 2) { const x = segs[i], y = segs[i + 1]; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
       if (er.fcap < segs.byteLength) { if (er.fin) er.fin.destroy(); er.fcap = Math.max(4096, pow2(segs.byteLength)); er.fin = device.createBuffer({ size: er.fcap, usage: U.STORAGE | U.COPY_DST }); }
@@ -1851,7 +2046,7 @@ span.lname { cursor: default; }
       device.queue.writeBuffer(cb.u, 0, cu);
       const G = eGroups(), C = cullGroups(), enc = device.createCommandEncoder();
       const p = enc.beginComputePass(), all = Math.ceil(nb / 128);
-      const run = (pl, g, n) => { p.setPipeline(pl); p.setBindGroup(0, g); p.dispatchWorkgroups(n); };
+      const run = (pl, g, n) => { p.setPipeline(pl); p.setBindGroup(0, g); DW(p, n); };
       const ind = (pl, g, at) => { p.setPipeline(pl); p.setBindGroup(0, g); p.dispatchWorkgroupsIndirect(er.args, at); };
       if (sp.total) run(cpBox, C.box, Math.ceil(sp.total / 64));
       run(EP.find, G.find, all); run(cpBlocks, C.blocks, all); run(cpTop, C.top, 1); run(cpPlace, C.place, all);
@@ -1862,7 +2057,7 @@ span.lname { cursor: default; }
       p.end();
       device.queue.submit([enc.finish()]);
     }
-    function eRead(steps) {                                   // what the frame's steps did, asked of the card (and its flips' log)
+    function eRead(steps, last) {                             // what the frame's steps did, asked of the card (and the plan's log)
       const H = 32, cw = er.cCap, lw = er.live && er.pack ? Math.min(er.logCap, er.pack.size / 4) : 0, size = (H + cw + lw) * 4;
       let rb = er.rbs.pop();
       while (rb && rb.size !== size) { rb.destroy(); rb = er.rbs.pop(); }
@@ -1876,21 +2071,21 @@ span.lname { cursor: default; }
         const all = new Uint32Array(rb.getMappedRange()), v = all.slice(0, H + Math.min(all[1], cw));
         const nf = lw ? all[19] : 0, log = nf ? all.slice(H + cw, H + cw + Math.min(all[20], lw)) : null;
         rb.unmap(); er.rbs.push(rb); er.asks--;
-        eAnswer(v, steps, log);
+        eAnswer(v, steps, log, last);
         if (er.onRead) er.onRead();
       }, () => { er.asks--; rb.destroy(); if (er.onRead) er.onRead(); });
     }
     // THE CARD'S ANSWER: the cells to draw again; how far the pools are used (each grown at half: the next frames find room),
     // and what ran out (grown, the frame's steps sent again; the cells' list: the page drawn whole)
-    // (and the slots it made strokes: taken here, eFlips; out of numbers for them, more given; its log full, more room)
-    function eAnswer(v, steps, log) {
-      const out = v[2], L = er.last = { touched: v[0], esTop: v[4], recTop: v[6], grbTop: v[8], evTop: v[10], slots: v[12], pack: v[13], hits: v[15], sids: v[16], done: v[28] };
+    // (and the slots it logged: made their pieces here, ePlans; let go, its log full, more room, and asked again)
+    function eAnswer(v, steps, log, last) {
+      const out = v[2], L = er.last = { touched: v[0], esTop: v[4], recTop: v[6], grbTop: v[8], evTop: v[10], slots: v[12], pack: v[13], hits: v[15] };
       if (v.length > 32 && er.onCells) er.onCells(v.subarray(32));
       if (out & 64) er.overs++;                               // (its mask ran out of room: its box was drawn instead, vsMask)
       if (!er.live) return;
-      if (log) eFlips(log, v[19]);
-      if (out & 256) sidsMore();
-      if (out & 512 && er.flipAll) er.logCap = Math.min(1 << 20, 2 * er.logCap);   // (as it goes, a log's worth a frame: the rest the next ones)
+      if (log) ePlans(log, v[19]);
+      if (out & 512 && er.planAll) er.logCap = Math.min(1 << 20, 2 * er.logCap);   // (as it goes, a log's worth a frame: the rest the next ones)
+      if (last && !(out & 512)) er.planDone = true;   // (let go: every slot logged as it is)
       if (L.hits > er.hitCap / 2) entMake(pow2(2 * L.hits));
       if (L.touched > er.tCap / 2 || L.slots > er.slCap / 2) ctlMake(Math.max(er.tCap, pow2(2 * L.touched)), Math.max(er.slCap, pow2(2 * L.slots)), er.stCap);
       if (L.esTop > er.cap / 2) { esGrow(2 * L.esTop); device.queue.writeBuffer(er.ctl, 20, new Uint32Array([er.cap])); }
@@ -1910,153 +2105,185 @@ span.lname { cursor: default; }
         else if (er.onWhole) er.onWhole();
       }
     }
-    // FLIP, AS THE SWIPE GOES (ERASE's flip): the slots it has left behind made strokes on the card -- every slot, once it is
-    // let go (all) -- and the order's edit as the card made it (ordCard); what it made comes back with the frame's answer
-    function eFlip(all) {
-      if (!EP.flip || !er.live || lost) return;
-      ordPipes(); ordRoom(er.n0 + er.sidK); ebRoom();
-      if (er.hitCap * 48 < 5 * er.slCap) entMake(pow2(Math.ceil(5 * er.slCap / 48)));   // (the frame's flips, listed in the entries' room)
+    // THE PLAN, AS THE SWIPE GOES (ERASE's planPick): the slots it has left alone logged for the processor -- every slot not
+    // logged as it is, once it is let go (all) -- read back with the frame's answer (eRead)
+    function ePlan(all) {
+      if (!EP.planPick || !er.live || lost) return;
       if (er.pack.size < er.logCap * 4) packMake(er.logCap * 4);
-      stFlush();
-      device.queue.writeBuffer(er.ctl, 76, new Uint32Array([0, 0, 0, 0, er.logCap]));   // (none flipped yet; the log's room)
-      device.queue.writeBuffer(er.ctl, 104, new Uint32Array([ob.cap, ncDraw()]));
+      device.queue.writeBuffer(er.ctl, 76, new Uint32Array([0, 0, 0, 0, er.logCap]));   // (none logged yet; the log's room)
+      if (all) device.queue.writeBuffer(er.ctl, 4, new Uint32Array([0, 0]));   // (let go, no step this frame: nothing run out yet)
       device.queue.writeBuffer(er.F, 32, new Uint32Array([er.frame]));
       device.queue.writeBuffer(er.F, 56, new Uint32Array([er.slCap, er.stCap, er.offT, er.offC, er.offB, er.offSL, er.offST, ev.at, st.at, er.hitCap, mk.cap, all ? 1 : 0]));
-      ordU(ob.n, 0, 0, ob.n, ncDraw());
       const G = eGroups(), enc = device.createCommandEncoder(), p = enc.beginComputePass(), wg = Math.ceil(er.slCap / 64);
-      p.setPipeline(EP.flipPick); p.setBindGroup(0, G.flipPick); p.dispatchWorkgroups(Math.min(wg, 65535), Math.ceil(wg / 65535));
-      p.setPipeline(EP.flipArgs); p.setBindGroup(0, G.flipArgs); p.dispatchWorkgroups(1);
-      for (const e of ["piecesF", "flip", "flipBox"]) { p.setPipeline(EP[e]); p.setBindGroup(0, G[e]); p.dispatchWorkgroupsIndirect(er.args, 36); }
-      p.setPipeline(EP.flipEnd); p.setBindGroup(0, G.flipEnd); p.dispatchWorkgroups(1);
+      p.setPipeline(EP.planPick); p.setBindGroup(0, G.planPick); p.dispatchWorkgroups(Math.min(wg, 65535), Math.ceil(wg / 65535));
       p.end();
-      ordCard(enc);
       device.queue.submit([enc.finish()]);
     }
-    // THE ORDER'S EDIT AS THE CARD MADE IT (flip): its passes dispatched by what the card wrote (ob.args: none when it made
-    // none) -- the edit, the order written back where it is read (ordBack: its buffers stay as they are here), and what the
-    // draws need made from it
-    let obP = null, obG = null, obGk = [];
-    function ordCard(enc) {
-      const P = ordPipes(), G = ordGroup(), pass = enc.beginComputePass(), at = (e, o) => { pass.setPipeline(P[e]); pass.dispatchWorkgroupsIndirect(ob.args, o); };
-      const scan = () => { at("oScanLocal", 0); at("oScanTop", 36); at("oScanAdd", 0); };
-      if (!obP) obP = device.createComputePipeline({ layout: "auto", compute: { module: mU, entryPoint: "ordBack" } });
-      const res = [ob.r, ob.w, ob.lh];
-      if (!obG || !res.every((b, i) => b === obGk[i])) {
-        obGk = res;
-        obG = device.createBindGroup({ layout: obP.getBindGroupLayout(0), entries: [{ binding: 17, resource: { buffer: ob.r } }, { binding: 22, resource: { buffer: ob.w } },
-          { binding: 27, resource: { buffer: ob.lh } }] });
-      }
-      pass.setBindGroup(0, G);
-      at("ordMark", 12); at("ordCount", 0); scan(); at("ordPut", 0); at("ordClear", 12);
-      pass.setPipeline(obP); pass.setBindGroup(0, obG); pass.dispatchWorkgroupsIndirect(ob.args, 0);
-      pass.setBindGroup(0, G);
-      at("ordKey", 0); scan(); at("ordSplit", 0); at("ordTrans", 0); scan(); at("ordClass", 0); at("ordStart", 0); scan();
-      at("ordSpan", 0); at("ordCtabClear", 24); at("ordCtab", 0);
-      pass.end();
-    }
-    // NUMBERS FOR THE CARD'S PIECES (flip): every row the table has room for past its last (the table grown first when that
-    // is few), the last ones it was given all taken; the order and its edits with room for as many pieces
-    function sidsMore() {
-      const R = er.sidRanges;
-      if (R.length) { const r = R[R.length - 1]; r[2] = r[1] - r[0]; }
-      if (st.cap - st.top < Math.max(4096, st.top)) stGrow();
-      const base = st.top, K = st.cap - st.top;
-      st.top = st.cap; R.push([base, st.cap, 0]); er.sidK += K;
-      device.queue.writeBuffer(er.ctl, 64, new Uint32Array([0, K, base]));
-      ordRoom(er.n0 + er.sidK); ebRoom();
-    }
-    function ebRoom() {                                        // the order's edits with room for the card's: an anchor a slot, a place a number
-      const need = 3 * er.slCap + er.sidK;
-      if (ob.ebCap < need) { if (ob.eb) ob.eb.destroy(); ob.ebCap = pow2(need); ob.eb = device.createBuffer({ size: ob.ebCap * 4, usage: U.STORAGE | U.COPY_DST }); }
-      device.queue.writeBuffer(er.ctl, 96, new Uint32Array([er.slCap, er.sidK]));
-    }
-    // WHAT THE CARD MADE STROKES (its flips' log, with the frame's answer): each stroke's pieces taken here as the card made
-    // them -- the editor's lines for them (onFlip: the swipe's pieces, from the card's stretches), their parts as partOf makes
-    // them, each with the number, the place and the row the card gave it (cardPlace) -- and the stroke out of the page. One
-    // made here otherwise than the card made it (a highlighter's turns, worked out in 64 bits here): put up fresh in its
-    // place, and drawn again
-    function eFlips(log, n) {
-      const f = new Float32Array(log.buffer, log.byteOffset, log.length), recs = [];
+    // THE SLOTS LOGGED: each stroke's pieces made here from the card's stretches, at the version logged -- its lines (onPlan:
+    // the swipe's pieces), their parts as partOf makes them, a number each and their places held (a highlighter's parts once
+    // the card has written their records: foldStep). A slot logged again (cut again since) is made anew
+    function ePlans(log, n) {
+      const f = new Float32Array(log.buffer, log.byteOffset, log.length);
       for (let e = 0, o = 0; e < n && o + 8 <= log.length; e++) {
-        const nA = log[o + 1], kind = log[o + 2], m = log[o + 6], size = 8 + 18 * nA + (kind === 1 ? 4 * m : 0);
+        const nA = log[o + 1], size = 8 + 10 * nA;
         if (o + size > log.length) break;
         const A = [];
         for (let q = 0, a = o + 8; q < nA; q++, a += 10)
-          A.push({ j0: log[a], t0: f[a + 1], hx: f[a + 2], hy: f[a + 3], j1: log[a + 4], t1: f[a + 5], tx: f[a + 6], ty: f[a + 7], at: log[a + 8], cnt: log[a + 9] });
-        flipTake(log[o], log[o + 3], A, log.subarray(o + 8 + 10 * nA, o + 8 + 18 * nA), kind === 1 ? new Uint8Array(log.buffer, log.byteOffset + (o + 8 + 18 * nA) * 4, m * PT) : null, recs);
+          A.push({ j0: log[a], t0: f[a + 1], hx: f[a + 2], hy: f[a + 3], j1: log[a + 4], t1: f[a + 5], tx: f[a + 6], ty: f[a + 7] });
+        planSlot(log[o], log[o + 2], log[o + 3], log[o + 4], log[o + 5], A, log[o + 7]);
         o += size;
       }
-      if (recs.length && !eRedraw(recs) && er.onWhole) er.onWhole();
     }
-    function flipTake(sid, s0, A, rows, rec, recs) {
-      const pp = st.part[sid], got = pp && er.onFlip ? er.onFlip({ L: pp.line, s: { idx: pp.idx }, cuts: 1, A }) : null, news = got && got[1];
+    function planSlot(sid, kind, version, area, g, A, mapAt) {
+      planDrop(sid);
+      const pp = st.part[sid], got = pp && er.onPlan ? er.onPlan({ L: pp.line, s: { idx: pp.idx }, cuts: 1, A }) : null, news = got && got[1];
+      if (!news || news.length !== A.length) { er.lost++; return; }
+      const plan = { pp, version, area, g, news, qs: null, mapAt };
+      if (kind !== 1) {                                         // (a highlighter's: once the card has written its records)
+        const ro = regionOf(area, false), gro = regionOf(g, true);
+        plan.qs = news.map(N => {
+          const c = pieceOf.get(N), n = (c.head ? 1 : 0) + (c.i1 - c.i0 + 1) + (c.tail ? 1 : 0);
+          if (n < 2 || N.points.length !== n || pp.idx) return null;   // (made fresh, put up anew: foldStep)
+          const q = made(N, lazyPiece(N, c, pp, n));
+          q.lid = pp.lid;
+          return planHold(q, ro, q.grain ? gro : null);
+        });
+      }
+      er.plans.set(sid, plan);
       er.made++;
-      if (!news || news.length !== A.length) { er.lost++; if (er.onWhole) er.onWhole(); return; }
-      const fresh = [];
-      news.forEach((N, k) => {
-        const sk = s0 + k, r = rows.subarray(8 * k, 8 * k + 8), q = pieceAs(N, A[k], pp, rec);
-        er.sidUsed.add(sk);
-        if (q) { cardPlace(q, sk, r, pp); return; }
-        const qc = { sid: sk, on: true, line: N };              // (what the card made of it: in the order until the fresh one takes its place)
-        st.m.set(r, 8 * sk); st.part[sk] = qc;
-        fresh.push(qc);
-      });
-      offPage(pp); stSet(sid, 6, NONE);                        // (as the card took it out)
-      ob.n += A.length - 1; er.cut++; er.folded++;
-      for (const qc of fresh) {
-        er.fresh++;
-        let ok = false;
-        try { ok = ordEdit([[qc, false, [partOf(qc.line)]]], []); } catch (e) { ok = false; }
-        if (ok) { stFree(qc.sid); er.sidFreed.add(qc.sid); for (let j = 0; j < pp.n; j++) recs.push(pp.at + j); }
-        else { ob.tick = -1; if (er.onWhole) er.onWhole(); }  // (the order made anew, and the page drawn whole)
-      }
     }
-    function pieceAs(N, a, pp, rec) {                          // N's part as the card made it (its stretch a), or null: made otherwise here
-      if (pp.kind !== RF_HIGHLIGHTER) {                        // (its records where the card wrote them: not made here until asked)
-        const c = pieceOf.get(N), n = (c.head ? 1 : 0) + (c.i1 - c.i0 + 1) + (c.tail ? 1 : 0);
-        return n >= 2 && n === a.cnt && N.points.length === n && !pp.idx ? made(N, lazyPiece(N, c, pp, n)) : null;
-      }
-      const n = a.cnt, P = N.points, r = rec.slice(a.at * PT, (a.at + n) * PT);   // a highlighter's: its records as the card wrote them
-      for (let q = 0; q < n; q++) { r[q * PT + 13] = pp.rec[13]; r[q * PT + 14] = pp.rec[14]; r[q * PT + 15] = pp.rec[15]; }   // (its color)
-      const ix = [0];                                          // (taken when a fresh part keeps the same points and makes the same turns)
-      for (let i = 1; i < P.length; i++) { const j = ix[ix.length - 1]; if (Math.abs(P.x(i) - P.x(j)) > 1e-6 || Math.abs(P.y(i) - P.y(j)) > 1e-6) ix.push(i); }
-      if (ix.length !== n) return null;
-      if (n > 2) for (const k of [1, n - 2]) if (r[k * PT + 12] !== turnAt(P.at(ix[k - 1]), P.at(ix[k]), P.at(ix[k + 1]))) return null;
-      return made(N, { pts: P, n0: P.length, kind: pp.kind, grain: false, alpha: pp.alpha, seed: 0, gr: null, rec: r, n, idx: n !== P.length ? Int32Array.from(ix) : null, bb: pp.bb.slice(), from: null });
-    }
-    function cardPlace(q, sid, r, pp) {                         // part q where the card put it: its number, its place (held), its row
-      st.m.set(r, 8 * sid);
-      q.at = r[0]; q.gat = r[5] !== NONE ? r[5] : -1; q.lid = pp.lid;
-      if ((r[2] & 255) !== kindCode(q)) er.kindOff++;
-      const ro = regionOf(q.at, false), go = q.gat >= 0 ? regionOf(q.gat, true) : null;
+    function planHold(q, ro, go) {                              // a planned piece's number, and its places held
+      const sid = st.free.length ? st.free.pop() : st.top++;
+      if (sid >= st.cap) stGrow();
       if (ro) ro.refs++; if (go) go.refs++;
-      hold(q, sid, ro, go);
-      q.on = true; st.part[sid] = q; st.buf[sid] = ro;
+      hold(q, sid, ro, go); st.buf[sid] = ro;
+      return q;
     }
-    // THE SWIPE DONE (its slots all made strokes on the card, or let go as they were): its pools let go, each region once no
-    // piece is in it; the numbers it was given and did not use the table's again
+    function unplan(q) {                                        // a planned piece's number and places given back (never in the order)
+      const pl = q && q.pl;
+      if (!pl) return;
+      placed.unregister(pl); pl.gone = true;
+      st.buf[pl.sid] = null; st.part[pl.sid] = null; st.free.push(pl.sid);
+      unref(pl.place); if (pl.gplace) unref(pl.gplace);
+      q.pl = null; q.sid = undefined;
+    }
+    function planDrop(sid) {                                    // a slot's pieces as last made here let go (cut again since)
+      const plan = er.plans.get(sid);
+      if (!plan) return;
+      er.plans.delete(sid);
+      if (plan.qs) for (const q of plan.qs) unplan(q);
+      if (er.onUnplan) er.onUnplan(plan.news);
+    }
+    // THE SWIPE LET GO, ALL OF IT PLANNED: the pieces written on the card, once (pieces), and packed for the processor (PACK:
+    // each slot's pieces' places and counts, a highlighter's records) -- read back, and put in the order a few thousand at a
+    // time (foldStep)
+    function foldAll() {
+      const L = er.last, nS = Math.min(L ? L.slots : 0, er.slCap), words = (L ? L.pack : 0) + 1;
+      if (er.hitCap * 48 < nS) entMake(pow2(Math.ceil(nS / 48)));   // (where each slot's pack starts: in the entries' room)
+      if (er.pack.size < words * 4) packMake(pow2(words * 4));
+      er.folding = true;
+      const G = eGroups(), enc = device.createCommandEncoder(), p = enc.beginComputePass();
+      p.setPipeline(EP.pieces); p.setBindGroup(0, G.pieces); p.dispatchWorkgroups(Math.max(1, Math.min(nS, 65535)), Math.ceil(nS / 65535) || 1);
+      p.setPipeline(EP.packScan); p.setBindGroup(0, G.packScan); p.dispatchWorkgroups(1);
+      p.setPipeline(EP.packCopy); p.setBindGroup(0, G.packCopy); p.dispatchWorkgroups(Math.max(1, Math.min(nS, 65535)), Math.ceil(nS / 65535) || 1);
+      p.end();
+      const rb = device.createBuffer({ size: words * 4, usage: U.MAP_READ | U.COPY_DST });
+      enc.copyBufferToBuffer(er.pack, 0, rb, 0, words * 4);
+      device.queue.submit([enc.finish()]);
+      er.asks++;
+      rb.mapAsync(GPUMapMode.READ).then(() => {
+        const P = new Uint32Array(rb.getMappedRange().slice(0));
+        rb.unmap(); rb.destroy(); er.asks--;
+        er.fold = { P, o: 1, end: Math.min(P[0], P.length) };
+        if (er.onRead) er.onRead();
+      }, () => { er.asks--; rb.destroy(); er.fold = { P: new Uint32Array(1), o: 1, end: 0 }; er.lost++; if (er.onWhole) er.onWhole(); if (er.onRead) er.onRead(); });
+    }
+    // A FEW THOUSAND PIECES PUT IN THE ORDER: each slot's pieces given their places where the card wrote them (their rows),
+    // their records their numbers and the slot's map cleared (resid), then the order's edit -- each stroke replaced by its
+    // pieces. A piece the card made otherwise than it was made here (a highlighter's turns) is put up fresh in its place and
+    // drawn again; a slot not made here (its log lost) leaves the order to be made anew -> all of them in the order?
+    const FOLD_PIECES = 512;
+    function foldStep() {
+      const F = er.fold;
+      if (!F) { if (!er.folding) foldAll(); return false; }
+      const P = F.P, ids = [], at = [], recs = [], spans = [];
+      let pieces = 0;
+      while (F.o + 4 <= F.end && pieces < FOLD_PIECES) {
+        const o = F.o, sid = P[o], nA = P[o + 1], version = P[o + 2], m = P[o + 3];
+        F.o += 4 + 2 * nA + 4 * m; pieces += nA;
+        const plan = er.plans.get(sid), pp = st.part[sid];
+        if (!plan || plan.version !== version || !pp) { if (plan) planDrop(sid); er.lost++; ob.tick = -1; continue; }
+        er.plans.delete(sid);
+        const area = plan.area, qs = [], rec = m ? new Uint8Array(P.buffer, P.byteOffset + (o + 4 + 2 * nA) * 4, m * PT) : null;
+        let fresh = false;
+        for (let k = 0; k < nA; k++) {
+          const start = P[o + 4 + 2 * k], cnt = P[o + 5 + 2 * k], N = plan.news[k];
+          let q = plan.qs ? plan.qs[k] : rec ? hlPart(N, pp, rec, start, cnt, area) : null;
+          if (q && q.n !== cnt) { unplan(q); q = null; }
+          if (!q) { q = made(N, pieceFrom(N, pieceOf.get(N)) || freshPart(N)); fresh = true; qs.push(q); continue; }
+          rowPut(q, pp, area + start, cnt, plan.g + start);
+          ids.push(area + start, cnt, q.sid); spans.push(area + start, cnt);
+          qs.push(q);
+        }
+        ids.push(plan.mapAt, pp.n, NONE);                       // (its map, a word a record: no longer read)
+        if (fresh) { er.fresh++; for (let j = 0; j < pp.n; j++) recs.push(pp.at + j); }
+        at.push([pp, false, qs]); er.cut++; er.folded++;
+      }
+      if (ids.length) resid(ids);
+      if (at.length && !ordEdit(at, [])) { ob.tick = -1; if (er.onWhole) er.onWhole(); }   // (the order made anew, and drawn whole)
+      else for (let i = 0; i < spans.length; i += 2) { const b0 = Math.floor(spans[i] / BLK); boxSpans.push([b0, Math.ceil((spans[i] + spans[i + 1]) / BLK) - b0]); }
+      if (recs.length && !eRedraw(recs) && er.onWhole) er.onWhole();
+      if (F.o + 4 <= F.end) return false;
+      er.fold = null;
+      return true;
+    }
+    function hlPart(N, pp, rec, start, cnt, area) {             // a highlighter's piece as the card wrote it, or null: made otherwise here
+      const P = N.points, r = rec.slice(start * PT, (start + cnt) * PT);
+      for (let q = 0; q < cnt; q++) { r[q * PT + 13] = pp.rec[13]; r[q * PT + 14] = pp.rec[14]; r[q * PT + 15] = pp.rec[15]; }   // (its color)
+      const ix = [0];                                          // (taken when a fresh part keeps the same points: its turns are worked out where it is drawn)
+      for (let i = 1; i < P.length; i++) { const j = ix[ix.length - 1]; if (Math.abs(P.x(i) - P.x(j)) > 1e-6 || Math.abs(P.y(i) - P.y(j)) > 1e-6) ix.push(i); }
+      if (ix.length !== cnt) return null;
+      const q = made(N, { pts: P, n0: P.length, kind: pp.kind, grain: false, alpha: pp.alpha, seed: 0, gr: null, rec: r, n: cnt, idx: cnt !== P.length ? Int32Array.from(ix) : null, bb: pp.bb.slice(), from: null });
+      q.lid = pp.lid;
+      return planHold(q, regionOf(area, false), null);
+    }
+    function rowPut(q, pp, base, n, gat) {                      // a planned piece's row: where the card wrote its records
+      const o = 8 * q.sid, m = st.m, po = 8 * pp.sid;
+      q.at = base; q.gat = q.grain ? gat : -1;
+      m[o] = base; m[o + 1] = n; m[o + 2] = (kindCode(q) | (q.lid & 0x7fffff) << 8) >>> 0; m[o + 3] = m[po + 3];
+      m[o + 4] = m[po + 4]; m[o + 5] = q.grain ? gat : NONE; m[o + 6] = NONE; m[o + 7] = fBits(q.len);
+      stDirty(q.sid);
+    }
+    function resid(ids) {                                     // pieces' records given their numbers, on the card (resid)
+      const n = ids.length / 3, list = new Uint32Array(1 + ids.length);
+      list[0] = n; list.set(ids, 1);
+      if (er.fcap < list.byteLength) { if (er.fin) er.fin.destroy(); er.fcap = Math.max(4096, pow2(list.byteLength)); er.fin = device.createBuffer({ size: er.fcap, usage: U.STORAGE | U.COPY_DST }); }
+      device.queue.writeBuffer(er.fin, 0, list);
+      const G = eGroups(), enc = device.createCommandEncoder(), p = enc.beginComputePass();
+      p.setPipeline(EP.resid); p.setBindGroup(0, G.resid); p.dispatchWorkgroups(Math.min(n, 65535), Math.ceil(n / 65535));
+      p.end();
+      device.queue.submit([enc.finish()]);
+    }
+    // THE SWIPE DONE (its slots' pieces all in the order, or never cut): its pools let go, each region once no piece is in it
     function foldEnd() {
       if (!er.live) return;
       const L = er.last;
       if (L) for (const grain of [false, true]) {             // (the next swipe's pools: as large as this one used, and a quarter)
         let used = 0;
         for (const r of er.pools) if (r.grain === grain) used += r === poolNow(grain) ? Math.max(0, Math.min(grain ? L.grbTop : L.recTop, r.at + r.n) - r.at) : r.n;
-        const n = Math.max(grain ? 1 << 14 : 1 << 16, Math.ceil(used * 1.25 / BLK) * BLK);
+        const n = Math.max(grain ? 1 << 16 : 1 << 18, Math.ceil(used * 1.25 / BLK) * BLK);
         if (grain) er.grbN = n; else er.recN = n;
       }
+      for (const sid of [...er.plans.keys()]) planDrop(sid);  // (none left: each slot cut was put in the order)
       for (const r of er.pools) unref(r.obj);
       if (EP.unslot && er.slCap) {                             // (no stroke of it drawn as one being cut from now on: its entries cleared on the card)
         const G = eGroups(), enc = device.createCommandEncoder(), p = enc.beginComputePass(), wg = Math.ceil(er.slCap / 64);
-        p.setPipeline(EP.unslot); p.setBindGroup(0, G.unslot); p.dispatchWorkgroups(Math.min(wg, 65535), Math.ceil(wg / 65535)); p.end();
+        p.setPipeline(EP.unslot); p.setBindGroup(0, G.unslot); p.dispatchWorkgroups(Math.min(wg, 65535), Math.ceil(wg / 65535));
+        if (EP.unmark) { const wb = Math.ceil(heap.cap / BLK / 64); p.setPipeline(EP.unmark); p.setBindGroup(0, G.unmark); p.dispatchWorkgroups(Math.min(wb, 65535), Math.ceil(wb / 65535)); }
+        p.end();
         device.queue.submit([enc.finish()]);
       }
-      const R = er.sidRanges, last = R[R.length - 1];          // (its numbers: those taken and not used, and those never taken, given back)
-      if (last) last[2] = Math.min(L ? L.sids : 0, last[1] - last[0]);
-      for (const [b, , t] of R) for (let k = b; k < b + t; k++) if (!er.sidUsed.has(k) && !er.sidFreed.has(k)) st.free.push(k);
-      if (last && st.top === last[1]) st.top = last[0] + last[2];
-      else if (last) for (let k = last[0] + last[2]; k < last[1]; k++) st.free.push(k);
-      er.sidRanges = []; er.sidUsed.clear(); er.sidFreed.clear();
-      er.pools = []; er.live = false; er.last = null; er.synced = true; er.logCap = 1 << 13; er.flipAll = false;
+      er.pools = []; er.live = false; er.last = null; er.synced = true; er.logCap = 1 << 13; er.planAll = false; er.fold = null; er.folding = false;
       if (er.cap > 1 << 20) { er.buf.destroy(); er.buf = null; esGrow(1 << 20); }   // (the swipe's own buffers back to their
       if (er.pack.size > 1 << 20) packMake(1 << 16);                                // size between swipes: four MB at the most)
       if (er.hitCap > 1 << 14) entMake(1 << 14);
@@ -2133,13 +2360,21 @@ span.lname { cursor: default; }
     function areaTables(W, w, h) {
       if (W === areaT.W && w === areaT.w && h === areaT.h) return;
       const g = gcd(W, w), ax = n => { let m = 0; for (let x = 0; x < n; x++) m = Math.max(m, Math.floor(((x + 1) * W - 1) / w) - Math.floor(x * W / w) + 1); return m; };
-      const sc = ax(w) + 2, sr = ax(h) + 2, rowAt = w * sc, words = rowAt + h * sr;
+      const most = Math.max(ax(w), ax(h));                   // (fsAreaP3: three texels each way at the most, fsAreaP six, both packed; else fsAreaT)
+      const mode = W >= 1 << 24 || most > 6 ? 0 : most > 1 && most <= 3 ? 3 : 6, packed = mode > 0;
+      const sc = packed ? 4 : ax(w) + 2, sr = packed ? 4 : ax(h) + 2, rowAt = w * sc, words = rowAt + h * sr;
       const t = new Uint32Array(words);
       const fill = (n, stride, at) => {
         for (let x = 0; x < n; x++) {
           const i0 = Math.floor(x * W / w), i1 = Math.floor(((x + 1) * W - 1) / w), o = at + x * stride;
+          const wt = i => (Math.min((x + 1) * W, (i + 1) * w) - Math.max(x * W, i * w)) / g;
+          if (packed) {                                       // (a vec4: its first texel and count, its weights two to a word)
+            t[o] = (i0 | ((i1 - i0 + 1) << 24)) >>> 0;
+            for (let i = i0; i <= i1; i++) t[o + 1 + ((i - i0) >> 1)] |= wt(i) << (16 * ((i - i0) & 1));
+            continue;
+          }
           t[o] = i0; t[o + 1] = i1 - i0 + 1;
-          for (let i = i0; i <= i1; i++) t[o + 2 + i - i0] = (Math.min((x + 1) * W, (i + 1) * w) - Math.max(x * W, i * w)) / g;
+          for (let i = i0; i <= i1; i++) t[o + 2 + i - i0] = wt(i);
         }
       };
       fill(w, sc, 0); fill(h, sr, rowAt);
@@ -2149,8 +2384,8 @@ span.lname { cursor: default; }
         gArea = null; gBoxFor = [];
       }
       device.queue.writeBuffer(areaT.b, 0, t);
-      device.queue.writeBuffer(areaT.u, 0, new Uint32Array([sc, sr, rowAt, (W / g) * (W / g)]));
-      areaT.W = W; areaT.w = w; areaT.h = h;
+      device.queue.writeBuffer(areaT.u, 0, new Uint32Array([sc, sr, packed ? w : rowAt, (W / g) * (W / g)]));   // (packed: rowAt in vec4s)
+      areaT.W = W; areaT.w = w; areaT.h = h; areaT.mode = mode;
     }
     // THE SCREEN'S CANVAS SHOWS THE SCREEN'S TEXTURE: copied to it once a task, after whatever was drawn in it (a canvas
     // shows what it was last given; an area drawn is drawn into the kept texture, never the canvas's own)
@@ -2214,7 +2449,7 @@ span.lname { cursor: default; }
     // many strokes it holds -- nothing a stroke, or a run of them, from the processor. The page's SPANS, its classes and its
     // keys are made from its order on the card (ordDerive); each draw of an area: its blocks culled, the classes' lists
     // made and their draws written, on the card, and as many draws issued as there can be classes (ncDraw)
-    const lb = { sp: null, spCap: 0, soff: null, ctab: null, ctCap: 0, largs: null, lst: null, lstCap: 0, q: null, lv: null, lvAt: -1, wide: 0, G: null, gk: [], gD: null };
+    const lb = { parts: 1, sp: null, spCap: 0, soff: null, ctab: null, ctCap: 0, largs: null, lst: null, lstCap: 0, q: null, lv: null, lvAt: -1, wide: 0, G: null, gk: [], gD: null };
     let gRB = null, gRBFor = [];                             // (the mask's box reached: reachBox's group)
     function listRoom(ns, nc) {                               // the lists' buffers: ns spans (a stroke each at the most), nc classes, every block
       if (!lb.q) {
@@ -2228,10 +2463,11 @@ span.lname { cursor: default; }
         lb.soff = device.createBuffer({ size: (lb.spCap + 1) * 4, usage: U.STORAGE });
       }
       if (!lb.ctab || lb.ctCap < nc) {
-        for (const b of [lb.ctab, lb.largs]) if (b) b.destroy();
+        for (const b of [lb.ctab, lb.largs, lb.lcnt]) if (b) b.destroy();
         lb.ctCap = Math.max(64, pow2(nc)); ob.dirty = true;
         lb.ctab = device.createBuffer({ size: lb.ctCap * 16, usage: U.STORAGE });
-        lb.largs = device.createBuffer({ size: (lb.ctCap + 1) * 32, usage: U.STORAGE | U.INDIRECT });
+        lb.largs = device.createBuffer({ size: (2 * lb.ctCap + 1) * 32, usage: U.STORAGE | U.INDIRECT });   // (an erase's frame: a class's marked blocks' draws after the classes')
+        lb.lcnt = device.createBuffer({ size: lb.ctCap * 8, usage: U.STORAGE });
       }
       const need = heap.cap / BLK + lb.spCap + 64;            // (every block, and each span's own share of one at its ends)
       if (!lb.lst || lb.lstCap < need) {
@@ -2241,14 +2477,15 @@ span.lname { cursor: default; }
       }
     }
     function listGroups() {                                   // the list passes' groups, and the draws', made again when a buffer was
-      const res = [lb.q, lb.sp, lb.soff, lb.lst, lb.ctab, lb.largs, cb.scan, cb.clist, ob.lh, lb.lv];
+      const res = [lb.q, lb.sp, lb.soff, lb.lst, lb.ctab, lb.largs, cb.scan, cb.clist, ob.lh, lb.lv, lb.lcnt, heap.rec];
       if (!lb.G || !res.every((b, i) => b === lb.gk[i])) {
         const B = (pl, e) => device.createBindGroup({ layout: pl.getBindGroupLayout(0), entries: e.map(([i, b]) => ({ binding: i, resource: { buffer: b } })) });
         lb.gk = res;
         lb.G = { count: B(cpSpanCount, [[11, lb.sp], [12, lb.soff], [4, cb.scan], [27, ob.lh]]),
                  scan: B(cpSpanScan, [[12, lb.soff], [15, lb.largs], [27, ob.lh]]),
-                 args: B(cpClassArgs, [[10, lb.q], [12, lb.soff], [14, lb.ctab], [15, lb.largs], [27, ob.lh]]),
-                 expand: B(cpExpand, [[11, lb.sp], [12, lb.soff], [13, lb.lst], [4, cb.scan], [6, cb.clist], [27, ob.lh]]) };
+                 args: B(cpClassArgs, [[10, lb.q], [12, lb.soff], [14, lb.ctab], [15, lb.largs], [17, lb.lcnt], [27, ob.lh]]),
+                 expand: B(cpExpand, [[1, heap.rec], [10, lb.q], [11, lb.sp], [12, lb.soff], [13, lb.lst], [14, lb.ctab], [4, cb.scan], [6, cb.clist], [17, lb.lcnt], [27, ob.lh]]),
+                 split: B(cpSplit, [[10, lb.q], [12, lb.soff], [14, lb.ctab], [15, lb.largs], [17, lb.lcnt], [27, ob.lh]]) };
         lb.gD = device.createBindGroup({ layout: L3, entries: [{ binding: 2, resource: { buffer: lb.lst } }, { binding: 3, resource: { buffer: lb.sp } },
           { binding: 4, resource: { buffer: lb.lv } }] });
       }
@@ -2272,13 +2509,13 @@ span.lname { cursor: default; }
       listGroups();
     }
     function listRun(enc, area, k) {                          // an area's lists, on the card: its blocks, the spans', the classes' draws
-      const m = 3 / k, n = heap.cap / BLK, sp = boxSpansNow(), u = new ArrayBuffer(32), f = new Float32Array(u), w = new Uint32Array(u);
+      const m = 3 / k, n = blocksUsed(), sp = boxSpansNow(), u = new ArrayBuffer(32), f = new Float32Array(u), w = new Uint32Array(u);
       if (area) { f[0] = area[0] - m; f[1] = area[1] - m; f[2] = area[2] + m; f[3] = area[3] + m; }
       else f[0] = m;                                          // (no area: the mask's box, out by m -- reachBox)
       w[4] = n; w[5] = 0; w[6] = sp.total; w[7] = sp.count;
       device.queue.writeBuffer(cb.u, 0, u);
       const g = cullGroups(), G = listGroups(), p = enc.beginComputePass();
-      if (sp.total) { p.setPipeline(cpBox); p.setBindGroup(0, g.box); p.dispatchWorkgroups(Math.ceil(sp.total / 64)); }
+      if (sp.total) { p.setPipeline(cpBox); p.setBindGroup(0, g.box); DW(p, Math.ceil(sp.total / 64)); }
       if (area) { p.setPipeline(cpReach); p.setBindGroup(0, g.reach); }
       else {
         const res = [cb.u, heap.boxes, cb.flags, mk.buf];
@@ -2289,16 +2526,18 @@ span.lname { cursor: default; }
         }
         p.setPipeline(cpReachBox); p.setBindGroup(0, gRB);
       }
-      p.dispatchWorkgroups(Math.ceil(n / 128));
-      p.setPipeline(cpBlocks); p.setBindGroup(0, g.blocks); p.dispatchWorkgroups(Math.ceil(n / 128));
+      DW(p, Math.ceil(n / 128));
+      p.setPipeline(cpBlocks); p.setBindGroup(0, g.blocks); DW(p, Math.ceil(n / 128));
       p.setPipeline(cpTop); p.setBindGroup(0, g.top); p.dispatchWorkgroups(1);
-      p.setPipeline(cpPlace); p.setBindGroup(0, g.place); p.dispatchWorkgroups(Math.ceil(n / 128));
+      p.setPipeline(cpPlace); p.setBindGroup(0, g.place); DW(p, Math.ceil(n / 128));
       if (ob.n) {                                             // (its spans: as many as its strokes at the most; its classes: ncDraw)
-        device.queue.writeBuffer(lb.q, 24, new Uint32Array([er.live ? 4 : 1]));   // (a record's parts: four while the card cuts strokes -- its pieces -- else its one)
-        p.setPipeline(cpSpanCount); p.setBindGroup(0, G.count); p.dispatchWorkgroups(Math.ceil((er.live ? ob.cap : ob.n) / 64));
+        lb.parts = er.live ? 4 : 1;                          // (a record's parts: four while the card cuts strokes -- its pieces -- else its one)
+        device.queue.writeBuffer(lb.q, 24, new Uint32Array([lb.parts]));
+        p.setPipeline(cpSpanCount); p.setBindGroup(0, G.count); DW(p, Math.ceil(ob.n / 64));
         p.setPipeline(cpSpanScan); p.setBindGroup(0, G.scan); p.dispatchWorkgroups(1);
-        p.setPipeline(cpClassArgs); p.setBindGroup(0, G.args); p.dispatchWorkgroups(Math.ceil(ncDraw() / 64));
+        p.setPipeline(cpClassArgs); p.setBindGroup(0, G.args); DW(p, Math.ceil(ncDraw() / 64));
         p.setPipeline(cpExpand); p.setBindGroup(0, G.expand); p.dispatchWorkgroupsIndirect(lb.largs, 0);
+        if (lb.parts === 4) { p.setPipeline(cpSplit); p.setBindGroup(0, G.split); DW(p, Math.ceil(ncDraw() / 64)); }   // (an erase's frame: a class's two draws)
       }
       p.end();
     }
@@ -2309,9 +2548,14 @@ span.lname { cursor: default; }
       let pipe = null;
       const nc = ncDraw();
       for (let c = 0; c < nc; c++) {                          // (class 0 the pens, then each level's highlighters and its grain and wash)
-        const kind = c === 0 ? 0 : c & 1 ? 1 : 2, want = kind === 1 ? PL.hl : kind === 2 ? PL.own : PL.pen;
+        const kind = c === 0 ? 0 : c & 1 ? 1 : 2, cut = lb.parts === 4;   // (no stroke being cut: the shaders without the cut paths;
+        const want = kind === 2 ? (cut ? PL.own : PL.ownU) : kind === 1 ? PL.hlU : PL.penU;   // a pen's or highlighter's class, its blocks no cut marked)
         if (pipe !== want) p.setPipeline(pipe = want);
         if (kind === 1) p.drawIndexedIndirect(lb.largs, (c + 1) * 32); else p.drawIndirect(lb.largs, (c + 1) * 32);
+        if (cut && kind < 2) {                                // (and its marked blocks, by the full shaders: splitArgs)
+          p.setPipeline(pipe = kind === 1 ? PL.hl : PL.pen);
+          if (kind === 1) p.drawIndexedIndirect(lb.largs, (nc + 1 + c) * 32); else p.drawIndirect(lb.largs, (nc + 1 + c) * 32);
+        }
       }
       draws.classes = (draws.classes || 0) + nc;
     }
@@ -2443,7 +2687,7 @@ span.lname { cursor: default; }
       p.end();
       screen(w, h, W);
       const pa = enc.beginRenderPass({ colorAttachments: [{ view: screenView, loadOp: "clear", clearValue: [0, 0, 0, 1], storeOp: "store" }] });
-      pa.setPipeline(pArea); pa.setBindGroup(0, gArea); pa.draw(3); pa.end();
+      pa.setPipeline(areaT.mode === 3 ? pAreaP3 : areaT.mode ? pAreaP : pArea); pa.setBindGroup(0, gArea); pa.draw(3); pa.end();
       device.queue.submit([enc.finish()]);
       show();
       holds = true; last = { k, ox, oy, sq, W, H, w, h, ix: anc.ix, iy: anc.iy };
@@ -2456,6 +2700,7 @@ span.lname { cursor: default; }
     // draw decides it (anchorOf: the offset's rest kept, only its whole pixels moved) -- and the screen made anew from it.
     // Across, or at another scale, the page is drawn whole. -> done? (else: draw it whole)
     let shiftTex = null;
+    const BAND = 256;                                         // (the scroll's band: rows a copy moves at once)
     function scroll(k, ox, oy, sq, w, h, strip, tick) {      // (tick: the editor's count of its ink's changes -- the order's, or no scroll)
       if (!holds || !last || lost || !underTex || er.live || lv || mv.lines || ob.tick !== tick) return false;
       const W = texW, H = texH;
@@ -2467,15 +2712,19 @@ span.lname { cursor: default; }
       const r0 = dy > 0 ? 0 : H - n;                          // the rows it brings in
       const band = n ? strip(r0, n) : null;
       if (n && (!band || band.width !== underW || band.height !== n)) return false;
-      if (n) {                                                // the rows that stay, moved (through a copy: a texture is
-        if (!shiftTex || shiftTex.width !== W || shiftTex.height !== H) {    // not copied onto itself where it overlaps)
+      if (n) {                                                // the rows that stay, moved a band at a time (a texture is not
+        const B = Math.max(BAND, n);                          // copied onto itself where it overlaps): from the far end first
+        if (!shiftTex || shiftTex.width !== W || shiftTex.height < B) {
           if (shiftTex) shiftTex.destroy();
-          shiftTex = device.createTexture({ size: [W, H], format: RGBA, usage: T.COPY_SRC | T.COPY_DST });
+          shiftTex = device.createTexture({ size: [W, B], format: RGBA, usage: T.COPY_SRC | T.COPY_DST });
         }
-        const from = dy > 0 ? 0 : n, to = dy > 0 ? n : 0, keep = H - n, enc = device.createCommandEncoder();
+        const keep = H - n, enc = device.createCommandEncoder();
         for (const t of [tex, underTex]) {
-          enc.copyTextureToTexture({ texture: t, origin: { x: 0, y: from } }, { texture: shiftTex }, [W, keep]);
-          enc.copyTextureToTexture({ texture: shiftTex }, { texture: t, origin: { x: 0, y: to } }, [W, keep]);
+          for (let done = 0; done < keep; done += B) {      // (down: the bottom band first; up: the top one)
+            const m = Math.min(B, keep - done), from = dy > 0 ? keep - done - m : n + done, to = dy > 0 ? from + n : from - n;
+            enc.copyTextureToTexture({ texture: t, origin: { x: 0, y: from } }, { texture: shiftTex }, [W, m]);
+            enc.copyTextureToTexture({ texture: shiftTex }, { texture: t, origin: { x: 0, y: to } }, [W, m]);
+          }
         }
         device.queue.submit([enc.finish()]);
         under(band, r0);
@@ -2492,7 +2741,7 @@ span.lname { cursor: default; }
       }
       screen(w, h, W);
       const pa = enc.beginRenderPass({ colorAttachments: [{ view: screenView, loadOp: "clear", clearValue: [0, 0, 0, 1], storeOp: "store" }] });
-      pa.setPipeline(pArea); pa.setBindGroup(0, gArea); pa.draw(3); pa.end();
+      pa.setPipeline(areaT.mode === 3 ? pAreaP3 : areaT.mode ? pAreaP : pArea); pa.setBindGroup(0, gArea); pa.draw(3); pa.end();
       device.queue.submit([enc.finish()]);
       show();
       last = { k, ox, oy, sq, W, H, w, h, ix, iy };
@@ -2559,7 +2808,7 @@ span.lname { cursor: default; }
         p.end();
         const pa = enc.beginRenderPass({ colorAttachments: [{ view: screenView, loadOp: "load", storeOp: "store" }] });
         pa.setScissorRect(sx0, sy0, sx1 - sx0 + 1, sy1 - sy0 + 1);
-        pa.setPipeline(pArea); pa.setBindGroup(0, gArea); pa.draw(3); pa.end();
+        pa.setPipeline(areaT.mode === 3 ? pAreaP3 : areaT.mode ? pAreaP : pArea); pa.setBindGroup(0, gArea); pa.draw(3); pa.end();
         device.queue.submit([enc.finish()]);
       }
       show();
@@ -2597,7 +2846,7 @@ span.lname { cursor: default; }
         await got(EP);
         if (Object.values(EP).some(p => !p)) { setTimeout(() => er.onRefused && er.onRefused()); return; }
         device.pushErrorScope("validation");
-        const tries = Array.from({ length: 18 }, (_, i) => device.createBuffer({ size: i === 4 ? 112 : 256, usage: i === 4 ? U.UNIFORM : U.STORAGE }));
+        const tries = Array.from({ length: 14 }, (_, i) => device.createBuffer({ size: i === 4 ? 112 : 256, usage: i === 4 ? U.UNIFORM : U.STORAGE }));
         for (const e in EB) device.createBindGroup({ layout: EP[e].getBindGroupLayout(0), entries: EB[e].map(i => ({ binding: i, resource: { buffer: tries[i] } })) });
         const no = await device.popErrorScope();
         for (const b of tries) b.destroy();
@@ -2620,12 +2869,12 @@ span.lname { cursor: default; }
     const synced = (from, to) => { if (ob.tick !== from) return false; ob.tick = to; return true; };   // (a change the order already has)
     return { frameBegin, frameEnd, frameMs, page, region, regions, edit, synced, under, inkWhole,
              get eraseOn() { return ERASE_OK; }, get erasePending() { return erasePending; }, swap, eStep, ePass, eFrame: () => ePass(true), eRedraw, liveBegin, liveAdd, liveEnd, foldEnd, slotsBusy: () => er.asks > 0 || er.steps.length > 0, cardLive: () => er.live,
-             flipAll: () => { if (er.live && !lost) { er.flipAll = true; eFlip(true); eRead([]); } }, flipsLeft: () => er.live && !!er.last && er.last.done < er.last.slots,
-             onFlip: fn => { er.onFlip = fn; }, onRefused: fn => { er.onRefused = fn; },
+             planned: () => !er.live || er.planDone, planAll: () => { if (er.live && !lost) { er.planAll = true; ePlan(true); eRead([], true); } },
+             foldStep: () => !er.live || foldStep(), foldMore: () => !!er.fold, onPlan: (fn, un) => { er.onPlan = fn; er.onUnplan = un; }, onRefused: fn => { er.onRefused = fn; },
              hwMax: () => st.hwMax, sgMax: () => st.sgMax, onErase: (cells, read, whole, again) => { er.onCells = cells; er.onRead = read; er.onWhole = whole; er.onAgain = again; },
-             eraseStats: () => ({ slots: er.last ? er.last.slots - er.last.done : 0, made: er.made, folded: er.folded, cut: er.cut, fresh: er.fresh, again: er.again, out: er.out, overs: er.overs, lost: er.lost, kindOff: er.kindOff,
-               mb: { es: er.cap * 4 / 1048576, ent: er.hitCap * 192 / 1048576, ctl: er.ctl ? er.ctl.size / 1048576 : 0, recPools: er.recN * PT / 1048576,
-                     grbPools: er.grbN * GR / 1048576, heapRec: heap.cap * PT / 1048576, heapBoxes: heap.cap / BLK * 16 / 1048576, heapGrain: heap.gcap * GR / 1048576 },
+             eraseStats: () => ({ slots: er.plans.size, made: er.made, folded: er.folded, cut: er.cut, fresh: er.fresh, again: er.again, out: er.out, overs: er.overs, lost: er.lost,
+               mb: { es: er.cap * 4 / 1048576, ent: er.hitCap * 192 / 1048576, ctl: er.ctl ? er.ctl.size / 1048576 : 0, recPools: recBytes(er.recN) / 1048576,
+                     grbPools: er.grbN * GR / 1048576, heapRec: recBytes(heap.cap) / 1048576, heapBoxes: heap.cap / BLK * 8 / 1048576, heapGrain: heap.gcap * GR / 1048576 },
                last: er.last }),
              readScreen, fill, fillSweep, get fills() { return !!mF; }, scroll, lastView, moveBegin, moveTo, moveEnd, moveCancel, moveAdopt, movePoints, get moving() { return !!mv.lines; }, moveStats: () => ({ ...mvStats }),
              holds: (W, H) => holds && texW === W && texH === H, canvas: cv,
@@ -2744,15 +2993,16 @@ span.lname { cursor: default; }
   const dlg = document.getElementById("dlg"), zoomBtn = document.getElementById("zoom");
   let vpW = 0, vpH = 0, dpr = 1, base = null, shown = null, live = null, textLayout = null;
   let liveOnCard = false, liveBox = null, liveFrame = 0;     // the stroke being drawn on the card (liveStart)
-  // THE WORKING CANVAS IS THE VIEWPORT'S RESOLUTION, never coarser than the tablet (one pixel a page unit): at 1x a
-  // notebook's 1620 across, zoomed in the viewport's own pixels once they are finer (never twice the viewport: that held
-  // four times the pixels, and drew them); then shrunk to the screen (downsample(), AREA's fsArea: each screen pixel the
-  // average of the working pixels under it). WW x WH is its size, SS its pixels a screen pixel. At most 4000 across
-  // (AREA's fsArea's sum).
+  // THE WORKING CANVAS IS THE VIEWPORT'S RESOLUTION, never coarser than the tablet (one pixel a page unit) and never finer
+  // than DENSITY pixels a page unit (zoomed in past it, the view is drawn at DENSITY and magnified -- coarser,
+  // not costlier): at 1x a notebook's 1620 across, the viewport's own pixels between; then shrunk (or magnified) to the
+  // screen (downsample(), AREA's fsArea: each screen pixel the average of the working pixels under it). WW x WH is its size,
+  // SS its pixels a screen pixel. At most 4000 across (AREA's fsArea's sum).
+  const DENSITY = 2;
   let WW = 0, WH = 0, SS = 1;
   function workSize() {
     const tablet = Math.ceil(cv.width / (dpr * scale()));     // the page units across the view: one pixel each
-    WW = Math.min(Math.max(cv.width, 4000), Math.max(cv.width, tablet));
+    WW = Math.min(Math.max(cv.width, 4000), Math.max(tablet, Math.min(cv.width, DENSITY * tablet)));
     SS = WW / cv.width;
     WH = WW === cv.width ? cv.height : Math.ceil(cv.height * SS);
   }
@@ -2890,14 +3140,16 @@ span.lname { cursor: default; }
   // the card, the page is the card's own canvas, under the editor's (cardShows): the editor's then holds only what goes
   // over the page (the caret, the eraser's ring, a selection's frame), on clear ground
   let gpuFailed = false, gpuTold = false, cardShows = false;
-  function gpuDown(why) {                                     // drawn without the card from now on; the daemon page told, once
+  // code: why, as the window words it for the user (render.why.<code>: lost, refused, none, card); what the card said
+  // goes to the engine's log
+  function gpuDown(why, code) {                               // drawn without the card from now on; the daemon page told, once
     gpuFailed = true;
     if (cardShows) { cardShows = false; cpuStale = true; rebuildSoon(); }   // the card's canvas may go blank: the page drawn here
     console.warn("The page editor draws without the graphics card:", why);
     if (gpuTold || location.protocol === "file:") return;
     gpuTold = true;
     fetch("/api/v1/render/fallback", { method: "POST", headers: { Authorization: "Bearer " + token(), "Content-Type": "application/json" },
-      body: JSON.stringify({ why: String(why && why.message || why).slice(0, 200) }) }).catch(() => {});
+      body: JSON.stringify({ code: code || "refused", why: String(why && why.message || why).slice(0, 500) }) }).catch(() => {});
   }
   function drawInk(c) {                                       // (on the processor: the card draws the page itself, GL.page)
     const lines = [];
@@ -3146,7 +3398,7 @@ span.lname { cursor: default; }
       const fresh = key !== underWas;
       if (!erasing && GL.listStats().strokes !== shownCount()) inkTick++;   // (the card's order holds as many strokes as the page shows, or it is made anew)
       if (!GL.page(fresh ? underCanvas(sq) : null, inkTick, inkList, s * u, (vpW / 2 - view.cx * s) * u, -view.top * s * u, sq, cv.width, cv.height)) { underWas = ""; return false; }
-      underWas = key;
+      underWas = key; drawnTick = inkTick;
       if (fresh) ucStale = false;
     } catch (e) { gpuDown(e); return false; }
     cardCanvas(); cardShows = true;
@@ -3232,6 +3484,7 @@ span.lname { cursor: default; }
   const sansTop = key => { const i = key.indexOf("\u0000"), a = JSON.parse(key.slice(0, i)); a[7] = 0; return JSON.stringify(a) + key.slice(i); };
   function scrollOnCard() {
     if (!GL || gpuFailed || !cardShows || live || erasing || thumbHold || pickDrag || dropping || !underWas) return false;
+    if (inkTick !== drawnTick) return false;                // (the ink changed since the picture was drawn whole: drawn whole again)
     const was = GL.lastView ? GL.lastView() : null, s = scale(), u = dpr * SS, k = s * u;
     if (!was || was[0] !== k) return false;
     const d = -view.top * k - was[2], dn = Math.round(d);
@@ -3245,10 +3498,10 @@ span.lname { cursor: default; }
         if (ub.width !== WW || ub.height !== n) { ub.width = WW; ub.height = n; }
         underDraw(ubg, sq, r0, n); freeSoon();
         return ub;
-      }, inkList());
+      }, inkTick);                                            // (the ink's count: the order's, or the page is drawn whole)
     } catch (e) { gpuDown(e); return false; }
     if (!ok) return false;
-    underWas = key; base = null; shown = null; cpuStale = true;
+    underWas = key; base = null; shown = null; cpuStale = true; drawnTick = inkTick;
     return true;
   }
   function rebuild() {
@@ -3491,7 +3744,7 @@ span.lname { cursor: default; }
   // THE INK'S CHANGES, counted apart from the text's: each layer's own count (the eraser's index of a layer holds while it
   // does), and the page's (what is worked out from all the strokes, as the page's foot, holds while it does)
   const inkVer = new WeakMap();
-  let inkTick = 0;
+  let inkTick = 0, drawnTick = -1;                           // (drawnTick: the ink's count as the page was last drawn whole, or scrolled)
   const verOf = Ly => inkVer.get(Ly) || 0;
   function inkChanged(Ly) {                                   // a layer's strokes changed (none named: any of them)
     inkTick++;
@@ -4072,8 +4325,8 @@ span.lname { cursor: default; }
   // once: the cells along the path, as far out as a cut there can change ink -- the eraser's reach, and half again (a crumb
   // shorter than half the eraser goes with the cut), and twice the widest half width there (the stroke's own reach, and its
   // ink's): the card draws a cut segment's part as the segment draws (STROKES), so a cut changes nothing farther. A stroke
-  // the card has done cutting it makes its pieces itself as the swipe goes (flip), and they are taken here as the swipe's
-  // pieces (foldSlot) -- a piece made otherwise here (a highlighter's turns) put up fresh and drawn again
+  // the card has done cutting is logged as the swipe goes, and its pieces made here (foldSlot); once the swipe is let go
+  // they take its place in the order -- a piece made otherwise here (a highlighter's turns) put up fresh and drawn again
   function cardErase() { return !!(GL && !gpuFailed && (erasing ? erasing.card : GL.eraseOn || GL.erasePending)); }
   function eraseOnCard(S) {                                   // a step: its path, and nothing more (the card works out what changed)
     const E = erasing, R = eraserR(), mode = E.mode || eraseMode;
@@ -4098,16 +4351,24 @@ span.lname { cursor: default; }
     if (!erasing) return;
     if (erasing.settle) settleSwipe(); else eraseSoon();
   }
-  // THE SWIPE LET GO, ON THE CARD: once its path is all cut and the card has answered, whatever it has not made strokes yet
-  // is, at once (GL.flipAll -- most were as the swipe went), and the swipe is done once that answer is taken (GL.foldEnd)
+  // THE SWIPE LET GO, ON THE CARD: once its path is all cut and the card has answered, every slot not yet made its pieces
+  // here as it is is logged and made so (GL.planAll -- most were as the swipe went), the card writes all the pieces, they
+  // are put in the order a few thousand a frame (GL.foldStep), and then the swipe is done (GL.foldEnd)
+  const foldChan = new MessageChannel();                    // (the next step of a let-go: a task of its own, at once)
+  let foldNext = null;
+  foldChan.port1.onmessage = () => { const E = foldNext; foldNext = null; if (E && erasing === E && !gpuFailed) foldLast(E); };
   function foldLast(E) {
     if (GL.slotsBusy()) return;
-    try { if (GL.flipsLeft()) GL.flipAll(); else GL.foldEnd(); } catch (e) { gpuDown(e); }
+    try {
+      if (!GL.planned()) GL.planAll();
+      else if (GL.foldStep()) GL.foldEnd();
+      else if (GL.foldMore() && !foldNext) { foldNext = E; foldChan.port2.postMessage(0); }
+    } catch (e) { gpuDown(e); }
   }
   // A STROKE THE CARD CUT made its pieces, from the card's numbers: each kept stretch (record places j + t, a highlighter's
   // records mapped to its points) a line of the stroke's points it keeps, and a new point at each cut -- a copy of the
   // point beyond it, where the card put it -- so what is saved is what was shown
-  function foldSlot(E, rd) {                                  // -> [rd, its pieces' lines] (the card's flip, taken: GL's onFlip)
+  function foldSlot(E, rd) {                                  // -> [rd, its pieces' lines] (a slot the card logged: GL's onPlan)
     const L = rd.L;
     if (!rd.s) return null;                                   // (its slot gone: nothing of it to make)
     if (!rd.cuts) return [rd, null];                          // near the eraser, never cut: as it was
@@ -4123,7 +4384,7 @@ span.lname { cursor: default; }
       ps.push(N);
     }
     E.dead.add(L); if (E.grid) { E.grid.gone.add(L); E.grid.goneN++; }
-    if (ps.length) E.pieces.set(L, ps);
+    if (ps.length) E.pieces.set(L, ps); else E.pieces.delete(L);   // (planned before and erased whole since: none)
     for (const q of ps) { E.made.add(q); if (E.grid) gridPiece(q, pieceOf.get(q), E.grid); }
     E.dirty = true;
     return [rd, ps];
@@ -4189,7 +4450,7 @@ span.lname { cursor: default; }
         ps.push(N);
       }
       E.dead.add(L); E.grid.gone.add(L); E.grid.goneN++;
-      if (ps.length) E.pieces.set(L, ps);
+      if (ps.length) E.pieces.set(L, ps); else E.pieces.delete(L);   // (planned before and erased whole since: none)
       for (const q of ps) { E.made.add(q); gridPiece(q, pieceOf.get(q), E.grid); }
       E.cuts.delete(L); E.when.delete(L); E.frameCut.delete(L);
       pairs.push([L, ps, A]);

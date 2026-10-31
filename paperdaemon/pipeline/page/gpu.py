@@ -28,6 +28,7 @@ import math
 import os
 import queue
 import re
+import sys
 import threading
 
 import numpy as np
@@ -43,16 +44,13 @@ _start = threading.Lock()
 
 
 def failure():
-    """Why the card is not drawing (a sentence), or None. Asked once a session by whoever tells the user (taken())."""
+    """Why the card is not drawing, as the window words it for the user (render.why.<code>: "none", no card here runs
+    WebGPU; "refused", the card refused a picture), or None. What the card itself said is in the engine's log."""
     return _state["failed"]
 
 
-def taken():
-    """The failure, the first time it is asked for in this session; None after (and when there is none)."""
-    if _state["failed"] and not _state["told"]:
-        _state["told"] = True
-        return _state["failed"]
-    return None
+class NoCard(OSError):
+    """No graphics card here runs WebGPU."""
 
 
 # ---------------------------------------------------------------- the feeding (partOf in ui/editor.html, mirrored)
@@ -253,7 +251,7 @@ class _Card:
         from paperdaemon import gpus, settings
         card = gpus.chosen(gpus.cards(), settings._get_path(settings.load(), "render.card") or "")
         if card is None:
-            raise OSError("no graphics card here runs WebGPU")
+            raise NoCard("no graphics card here runs WebGPU")
         feat = ffi.new("WGPUInstanceFeatureName[1]", [lib.WGPUInstanceFeatureName_TimedWaitAny])
         self.instance = lib.wgpuCreateInstance(ffi.new("WGPUInstanceDescriptor *", {"requiredFeatureCount": 1, "requiredFeatures": feat}))
         if self.instance == ffi.NULL:
@@ -723,8 +721,9 @@ def _worker(jobs):
                 px, flat, ss = job
                 done["out"] = card.draw(px, flat, ss)
         except Exception as ex:
-            _state["failed"] = "The graphics card could not draw pages (%s); the processor is drawing them instead." % (
-                str(ex).splitlines()[0][:200] if str(ex) else type(ex).__name__)
+            _state["failed"] = "none" if isinstance(ex, NoCard) else "refused"
+            print("The graphics card could not draw pages; the processor draws them: %s" % (
+                str(ex).splitlines()[0][:300] if str(ex) else type(ex).__name__), file=sys.stderr, flush=True)
             done["out"] = None
             try:
                 if card is not None:
@@ -756,19 +755,37 @@ def processor(on):
     _state["cpu"] = bool(on)
 
 
+def _processor_chosen():
+    """Settings' Renderer is the processor -- read for every picture, not only a job's: a picture drawn outside a job
+    (the Mirror's page pictures, a decompose) never goes on a card either."""
+    try:
+        from paperdaemon import settings
+        return bool(settings._get_path(settings.load(), "render.processor"))
+    except Exception:
+        return False
+
+
 def paint(px, flat, ss=1):
     """A page's strokes (paint.Flat) drawn over px (RGB uint8, H x W x 3) on the card -> the new pixels, or None when the
     card is not drawing (the caller draws with render.c)."""
-    if _state["off"] or _state["failed"] or _state["cpu"]:
+    if _state["off"] or _state["failed"] or _state["cpu"] or _processor_chosen():
         return None
     return _ask((px, flat, int(ss)))
 
 
 def warm():
     """A job is starting: the card's context made now, alongside it, so its first picture does not wait for it."""
-    if _state["off"] or _state["failed"] or _state["cpu"]:
+    if _state["off"] or _state["failed"] or _state["cpu"] or _processor_chosen():
         return
     _ask("warm", wait=False)
+
+
+def renderer_changed():
+    """Settings' Renderer or card changed: the card let go now, and a card that failed tried again at the next picture
+    (on the card chosen now, or not at all for the processor)."""
+    _state["failed"] = None
+    _state["told"] = False
+    release()
 
 
 def release():

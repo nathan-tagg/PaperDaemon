@@ -107,22 +107,52 @@ Direct3D 12), in ms; the test page has 30,536 strokes (a decomposition with hand
   5.5 s over the erase's passes, and a swipe begun before they were ready lost the device. Once they were ready,
   480 pieces came out otherwise than the processor makes them and the page was 2,394 pixels off a whole redraw.
   Next: those, and then the erase on the card there too, as D1 has it.
-- **D7. The viewport's resolution.** The working canvas is the viewport's size, or the tablet's resolution of
-  what is shown where that is finer; never twice the viewport. Zoomed in 2x, the integrated Radeon drew it in
-  14.92 ms where today's working canvas (twice the viewport each way) took 21.43, and holds a quarter of the
-  pixels.
+- **D7. The viewport's resolution, at most two pixels a unit.** The working canvas has as many pixels a page
+  unit as the viewport shows, never fewer than one (the tablet's resolution) and never more than two (one
+  constant, `DENSITY`: a density setting would be this number). Zoomed in past 2x, the page is drawn at two
+  pixels a unit and magnified to the screen -- coarser, not costlier. A viewport 5,000 pixels across at 1x still
+  draws 2x the tablet's pixels; zoomed in 4x on a tablet-wide window it draws half the tablet's width. Zoomed in
+  2x, the integrated Radeon drew the viewport's resolution in 14.92 ms where the earlier working canvas (twice the
+  viewport each way) took 21.43.
 - **D8. On the screen.** The WebGPU canvas is the one shown; what is drawn over the page (the eraser's ring,
   the selection, the caret, the clear stroke) is drawn on a canvas laid over it. The page is no longer copied
   from the card's canvas to a 2D canvas and again to the screen.
 - **D9. The card chosen.** The Renderer setting names a card by what it is (vendor, device, description), not
   by the LUID Windows gives it for a session. The engine finds it among the machine's cards (DXGI) at the start
-  of each job; the window passes it to WebView2 when it starts (`--use-adapter-luid`), so a change of card
-  reaches the window the next time PaperDaemon starts. A card counts as having WebGPU when Direct3D 12 or
-  Direct3D 11 (feature level 11_0) can be opened on it.
+  of each job; the window passes it to WebView2 when it starts (`--use-adapter-luid`). The chosen card is the
+  only card PaperDaemon uses, or none: no card is ever occupied that was not chosen (a user may give every byte of
+  another card to a local model). A card without a screen draws off screen (`--disable-gpu-compositing`, else
+  the browser composites on the card the display hangs from); the processor chosen is `--disable-gpu`. A change
+  of card or processor restarts the window at once, on the Settings pane. A card counts as having WebGPU when
+  Direct3D 12 or Direct3D 11 (feature level 11_0) can be opened on it. When the card cannot be used, the notice
+  says why in plain words (lost, refused, none, the card) and the detail goes to the log.
 - **D10. Tried and dropped.** Tile-based drawing on compute (each pixel resolved once from a sorted list of the
   shapes over its tile) was 1 pixel off and far slower: 11.97 ms a page on the discrete Radeon, 626.7 ms on the
   integrated Radeon; the card's rasterizer wins for strokes. Giving pens and highlighters a depth of their own
   to skip a stroke's repeats was exact but slower (the depth traffic cost more than it saved).
+- **D11. A point a word.** The editor's records on the card are one 32-bit word a point: its place within its
+  block's corner to a 32nd of a tablet pixel (12 bits each way) and its width to a 16th above the block's narrowest
+  (8 bits), sixteen points a block behind a header of four words (the corner and narrowest width; the first
+  point's stroke and the block's first and last points; where each stroke begins, a highlighter's points, a cut's
+  mark; where points kept aside lie). A block whose points do not share a corner keeps them aside, two words a point.
+  The engine keeps its 16-byte records: its pages are unchanged, byte for byte. Reading a point costs the vertex
+  shader its decode: on the integrated Radeon a 30,000-stroke page redraws in 17.96 ms against 14.61 ms for 16-byte
+  records with the same shaders, for 8.3 MB of records against 18.7 MB. A block's box is two words: its sides in
+  whole page units, rounded outward (a box can only grow, so no block an area or the eraser reaches is missed).
+- **D12. Shaders that carry only what they draw.** While no stroke is being cut, the listed draws use shaders
+  without the cut paths (rarely taken code still costs every vertex its registers), ask for every record a vertex
+  reads before any test, and test once whether any of a highlighter corner's three points is kept aside. In an
+  erase's frames each pen and highlighter class is listed in two: the blocks no cut has marked, drawn by those
+  shaders, then the marked, by the full ones; the marks are cleared when the swipe is done. WGSL's `&&` and `||` are
+  branches: the tests on every vertex and pixel use `&` and `|`. A highlighter's turn uses the directions its shape
+  works out, so each is worked out once. An erase's pieces are written a thread a point, four blocks at a time (a
+  block's corner the workgroup's least of its points), not a thread walking a block: 20.8 ms to 13.4 for the bench
+  swipe's 22,000 cut strokes on the integrated Radeon.
+- **D13. The screen's shrink.** The exact shrink from the working canvas to the screen reads a column's tables
+  and a row's as one vec4 each and sums a row of texels in floats (whole numbers under 2^24, so exact), its nine
+  reads unrolled where a pixel covers three texels each way at the most: 1.64 ms of each frame to 1.05 on the
+  integrated Radeon, the same bytes. Reading each tile's texels once into a compute workgroup's memory was slower
+  (1.44 ms) and was dropped.
 
 ## Risks
 

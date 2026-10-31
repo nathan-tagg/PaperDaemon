@@ -61,8 +61,12 @@
   <string name="issue.setup_go">Poursuivre la configuration</string>
   <string name="issue.tablet">PaperDaemon n'arrive pas à joindre votre reMarkable.</string>
   <string name="issue.mirror">Impossible de mettre à jour le Miroir : {why}</string>
-  <string name="issue.render_cpu">Les pages sont dessinées sans la carte graphique, ce qui est plus lent : {why}</string>
+  <string name="issue.render_cpu">Les pages sont dessinées sur le processeur, ce qui est plus lent : {why}</string>
   <string name="issue.render_ok">OK</string>
+  <string name="render.why.lost">la carte graphique ne répond plus.</string>
+  <string name="render.why.refused">la carte graphique n'a pas pu exécuter l'une des étapes de dessin de PaperDaemon.</string>
+  <string name="render.why.none">cette carte graphique ne peut pas exécuter WebGPU.</string>
+  <string name="render.why.card">la fenêtre est toujours sur la carte avec laquelle elle a démarré. Redémarrez PaperDaemon pour utiliser la carte choisie.</string>
   <string name="editor.large_title">Cette page devient très volumineuse</string>
   <string name="editor.large_body">Votre tablette aura du mal à charger cette page, et l'éditeur de page utilisera plus de mémoire de votre carte graphique que prévu. Ne continuez que si vous êtes sûr que cela convient. Si vous faites tourner un serveur d'IA local sur la même carte graphique, sachez que cette page prend de la mémoire qui lui serait sinon disponible.</string>
   <string name="editor.large_ok">J'ai compris</string>
@@ -704,11 +708,11 @@ Ensuite, guide-moi pour installer SearXNG si besoin, écris le fichier .bat avec
   <string name="slot.loras_folder">Dossier LoRA</string>
   <string name="slot.loras_folder.help">Ouvre le dossier LoRA de cette composition. Chaque LoRA qu'il contient s'applique à chaque image qu'elle produit, comme l'indique son harnais d'image.</string>
   <string name="settings.render">Moteur de rendu</string>
-  <string name="settings.render.help">GPU (par défaut) : les pages sont dessinées sur la carte graphique choisie dans la liste. C'est rapide et, pendant une tâche, cela utilise un peu de mémoire de la carte (environ 160 Mo sur une page très dense), rendue à la fin. CPU : les tâches dessinent les pages qu'elles lisent sur le processeur, laissant toute la mémoire de la carte à vos serveurs d'IA, et chaque image prend plus de temps, surtout sur les pages très encrées. Les images sont identiques dans les deux cas, et cela vaut pour toutes les compositions. L'éditeur de page dessine sur la carte choisie.</string>
+  <string name="settings.render.help">GPU (par défaut) : les pages sont dessinées sur la carte graphique choisie dans la liste, et PaperDaemon ne dessine sur aucune autre carte. C'est rapide et, pendant une tâche, cela utilise un peu de mémoire de la carte (environ 160 Mo sur une page très dense), rendue à la fin. CPU : PaperDaemon dessine tout sur le processeur, l'éditeur de page compris, et ne touche à aucune carte graphique. Chaque image prend plus de temps, surtout sur les pages très encrées. Les images que dessinent les tâches sont identiques dans les deux cas, et cela vaut pour toutes les compositions.</string>
   <string name="settings.render.cpu">CPU</string>
   <string name="settings.render.gpu">GPU</string>
   <string name="settings.render.card">Carte graphique</string>
   <string name="settings.render.memory">{gb} Go</string>
   <string name="settings.render.no_webgpu">Cette carte ne peut pas exécuter WebGPU : les pages seront dessinées sur le processeur, ce qui est plus lent.</string>
-  <string name="settings.render.restart">Les tâches utilisent cette carte dès la prochaine ; la fenêtre, au prochain démarrage de PaperDaemon.</string>
+  <string name="settings.render.restart">La fenêtre se rouvre maintenant avec ce changement.</string>
 </resources>

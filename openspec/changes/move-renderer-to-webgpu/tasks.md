@@ -26,3 +26,17 @@
 - [x] 4.0 The window started for its card: the engine finds the cards (`gpus.py`) and announces the web view's arguments; WebGPU's Direct3D 11 backend switched on where the card has no Direct3D 12 (D1)
 - [x] 4.1 The machine's cards (DXGI: name, memory, Direct3D 12, Direct3D 11) and the default (D9)
 - [x] 4.2 Settings: Renderer GPU / CPU, the card list, the "!"; the engine and the window use the card chosen
+- [x] 4.3 The chosen card the only one used, or none: off screen on a card without a display, `--disable-gpu` for the processor; the window restarted on a change; the notice in plain words (D9)
+
+## 5. 0.2.1
+
+- [x] 5.1 Large passes spread over rows of workgroups (no dispatch past 65,535 on a card)
+- [x] 5.2 The working canvas at most two pixels a page unit, magnified past it (D7)
+- [x] 5.3 Lifting the eraser: the pieces put in the order 512 at a time, a task each
+- [x] 5.4 Scrolling slides the page on the card (the editor passed the wrong count, so every step drew the page whole); a band 256 rows tall moves it
+- [x] 5.5 The records grow by an eighth; each frame's cull goes over the blocks in use
+- [x] 5.6 Pictures sent to the tablet at twice its resolution (`images.PICTURE_K`, `draw/scaled.py`)
+- [ ] 5.7 Check: the exactness suites on both cards, Direct3D 12 and 11
+- [x] 5.8 The editor's records a word a point (D11); the engine's pages unchanged, byte for byte
+- [x] 5.9 Shaders that carry only what they draw; an erase's lists in two, the marks cleared after it (D12)
+- [x] 5.10 The screen's shrink: its tables in one go, rows summed in floats (D13)

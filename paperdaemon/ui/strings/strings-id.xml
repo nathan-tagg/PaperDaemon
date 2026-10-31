@@ -61,8 +61,12 @@
   <string name="issue.setup_go">Lanjutkan penyiapan</string>
   <string name="issue.tablet">PaperDaemon tidak dapat menjangkau reMarkable Anda.</string>
   <string name="issue.mirror">Cermin tidak dapat diperbarui: {why}</string>
-  <string name="issue.render_cpu">Halaman digambar tanpa kartu grafis, yang lebih lambat: {why}</string>
+  <string name="issue.render_cpu">Halaman digambar di prosesor, yang lebih lambat: {why}</string>
   <string name="issue.render_ok">OK</string>
+  <string name="render.why.lost">kartu grafis berhenti merespons.</string>
+  <string name="render.why.refused">kartu grafis tidak dapat menjalankan salah satu langkah menggambar PaperDaemon.</string>
+  <string name="render.why.none">kartu grafis ini tidak dapat menjalankan WebGPU.</string>
+  <string name="render.why.card">jendela masih memakai kartu yang dipakainya saat dibuka. Mulai ulang PaperDaemon untuk memakai kartu yang Anda pilih.</string>
   <string name="editor.large_title">Halaman ini menjadi sangat besar</string>
   <string name="editor.large_body">Tablet Anda akan kesulitan memuat halaman ini, dan editor halaman akan memakai memori kartu grafis lebih banyak dari semestinya. Lanjutkan hanya jika Anda yakin ini tidak masalah. Jika Anda menjalankan server AI lokal di kartu grafis yang sama, ketahuilah bahwa halaman ini mengambil memori yang seharusnya dipakai server itu.</string>
   <string name="editor.large_ok">Saya mengerti</string>
@@ -704,11 +708,11 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="slot.loras_folder">Folder LoRA</string>
   <string name="slot.loras_folder.help">Buka folder LoRA susunan ini. Setiap LoRA di dalamnya ikut pada setiap gambar yang dibuat susunan ini, seperti kata harness gambarnya.</string>
   <string name="settings.render">Perender</string>
-  <string name="settings.render.help">GPU (bawaan): halaman digambar di kartu grafis yang dipilih di daftar. Ini cepat, dan selama tugas berjalan memakai sebagian memori kartu (sekitar 160 MB pada halaman yang sangat padat), yang dikembalikan saat tugas selesai. CPU: tugas menggambar halaman yang dibacanya di prosesor, menyisakan seluruh memori kartu untuk server AI Anda, dan tiap gambar butuh waktu lebih lama, terutama pada halaman dengan banyak tinta. Gambarnya sama saja, dan berlaku untuk semua susunan. Editor halaman menggambar di kartu yang dipilih.</string>
+  <string name="settings.render.help">GPU (bawaan): halaman digambar di kartu grafis yang dipilih di daftar, dan PaperDaemon tidak menggambar di kartu lain mana pun. Ini cepat, dan selama tugas berjalan memakai sebagian memori kartu (sekitar 160 MB pada halaman yang sangat padat), yang dikembalikan saat tugas selesai. CPU: PaperDaemon menggambar semuanya di prosesor, termasuk editor halaman, dan tidak menyentuh kartu grafis mana pun. Tiap gambar butuh waktu lebih lama, terutama pada halaman dengan banyak tinta. Gambar yang dibuat tugas sama saja, dan berlaku untuk semua susunan.</string>
   <string name="settings.render.cpu">CPU</string>
   <string name="settings.render.gpu">GPU</string>
   <string name="settings.render.card">Kartu grafis</string>
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">Kartu ini tidak dapat menjalankan WebGPU: halaman akan digambar di prosesor, yang lebih lambat.</string>
-  <string name="settings.render.restart">Tugas memakai kartu ini mulai tugas berikutnya; jendela, mulai PaperDaemon dijalankan lagi.</string>
+  <string name="settings.render.restart">Jendela dibuka ulang sekarang dengan perubahan ini.</string>
 </resources>

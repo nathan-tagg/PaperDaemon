@@ -30,13 +30,21 @@ make the pieces written to the file from it, so that letting the swipe go leaves
   what is saved when the swipe ends is what was shown
 
 ### Requirement: The viewport's resolution
-The working canvas SHALL be the viewport's resolution, or the tablet's resolution of what is shown where that is
-finer; it SHALL never be coarser than the tablet's, and never finer than both. Zooming in SHALL NOT make the card
-hold more of the page than the view shows.
+The working canvas SHALL have as many pixels a page unit as the viewport shows, never fewer than one (the
+tablet's resolution) and never more than two. Zoomed in past two, the page SHALL be drawn at two pixels a unit and
+magnified to the screen. Zooming in SHALL NOT make the card hold more of the page than the view shows.
 
 #### Scenario: Zoomed in
 - **WHEN** the user zooms a page in to twice its size
 - **THEN** the page is drawn at the viewport's resolution and the card holds no more of it than at the size before
+
+#### Scenario: Zoomed in past two
+- **WHEN** the user zooms a tablet-wide window in to four times the page's size
+- **THEN** the page is drawn at two pixels a unit, half the tablet's width across, and magnified to the screen
+
+#### Scenario: A wide window
+- **WHEN** a window 5,000 pixels across shows a whole page
+- **THEN** the page is drawn at twice the tablet's resolution, not the window's
 
 ### Requirement: Graphics memory
 With a page of up to 250,000 strokes open, the editor SHALL hold no more than 200 MB of the graphics card's
