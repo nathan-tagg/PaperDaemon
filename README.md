@@ -57,8 +57,8 @@ with FLUX.2 Klein ([tools/readme_shots.py](tools/readme_shots.py)).
 
 <p align="center"><img src="docs/images/tablet-talk.png" width="440" alt="Typed questions about Mars, each answered in ink below it"></p>
 
-<p align="center"><i>"Draw a house with a tree and the sun."</i></p>
-<p align="center"><img src="docs/images/tablet-draw.png" width="440" alt="A house, a tree and the sun, drawn in pen strokes"></p>
+<p align="center"><i>"Sketch a house with a tree and the sun."</i></p>
+<p align="center"><img src="docs/images/tablet-draw.png" width="440" alt="A sketch of a house, a tree and the sun, in pen strokes"></p>
 
 <p align="center"><i>"Make a children's coloring page of a friendly dragon."</i></p>
 <p align="center"><img src="docs/images/tablet-coloring.png" width="440" alt="A coloring page of a friendly dragon"></p>

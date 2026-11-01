@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.6
+
+- A sketch is drawn on one grid. An icon drawn with a figure (a sun beside a house) is fitted with it, so it lands where it was put beside the other parts; it used to be placed on the page apart from the figure, and moved to the middle of the drawing when that fell outside (a sun on the house's window). A sketch never generates a picture: a picture that must look real is generated as its own step.
+
 ## 0.2.5
 
 - Changing the graphics card, or between GPU and CPU, no longer closes and reopens the window. Jobs use the new choice at once, and the page editor from the next page you open: that page opens on the new card, in the same window, in about a second. Settings says so.

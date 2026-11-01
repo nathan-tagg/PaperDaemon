@@ -189,9 +189,10 @@ PART_SCHEMA = {
     # it: "r" before "cx" would have dropped cx -- see the step schema in TOOLS)
     "items": {"type": "object", "description":
               "kind, then its numbers: line x1 y1 x2 y2; rect x1 y1 x2 y2 (corners); circle cx cy r; "
-              "ellipse cx cy rx ry; arc cx cy r start end (degrees); polyline points [[x, y], ...].",
+              "ellipse cx cy rx ry; arc cx cy r start end (degrees); polyline points [[x, y], ...]; "
+              "icon name cx cy r (a shape or icon by name, as element takes it).",
               "properties": {"kind": {"type": "string", "enum": ["line", "circle", "ellipse", "arc",
-                                                                   "polyline", "rect"]}},
+                                                                   "polyline", "rect", "icon"]}},
               "required": ["kind"], "additionalProperties": True},
 }
 
@@ -512,6 +513,8 @@ from paperdaemon.pipeline.host.features.draw import (  # noqa: E402
     _part_paths,
     _fit_paths,
     t_draw_figure,
+    _redraw_figure,
+    _draw_figure,
     t_edit_figure)
 from paperdaemon.pipeline.host.features.chart import (  # noqa: E402
     t_chart,
@@ -541,8 +544,7 @@ from paperdaemon.pipeline.host.features.pictures import (  # noqa: E402
     _picture_asset,
     _paste_into,
     _coloring_page,
-    _run_images,
-    t_image)
+    _run_images)
 from paperdaemon.pipeline.host.features.web import (  # noqa: E402
     _wiki_summary,
     t_web_search,
@@ -684,9 +686,9 @@ The host fills in the forecast, holidays and sunrise and sunset. The user's date
 on-this-day facts go in as three to six haiku cards (5-7-5, each line under 31 characters,
 discoveries and firsts, no disasters) -- their facts come with the step.
 
-DRAWINGS: element(name, cx, cy, r) for one small icon; draw_figure(parts) for a simple shape you
-can state exactly; image(prompt) for anything that must look like something. Stay inside your box;
-after a drawing, fix one thing with edit_figure(changes) or say ok.
+DRAWINGS: a sketch is draw_figure(parts), every part of it in one call, icons among its parts;
+element(name, cx, cy, r) for one small icon alone. Stay inside your box; after a drawing, fix one
+thing with edit_figure(changes) or say ok.
 
 COORDINATES: page units, x with 0 at the page's center, y from 0 at its top down. Each page states its own size
 (tablets differ).
@@ -993,7 +995,7 @@ def converse(doc_id, page, name, keys=(), extra=None, conflict=None):
                 ST.finish(steps, cur, False, str((res2 or {}).get("error") or "no usable call")[:160])
                 log("  step %d (%s) FAILED: %s" % (cur["id"], cur["do"], cur.get("note")))
                 continue
-            if cur["do"] == "draw" and DRAW_LOOKS > 0 and fn2 in ("draw_figure", "element", "image"):
+            if cur["do"] == "draw" and DRAW_LOOKS > 0 and fn2 in ("draw_figure", "element"):
                 _look_round(msgs, doc_id, page)
         # 3. A REQUEST COMES OFF ONLY ONCE THE WORK THAT ANSWERS IT LANDED (validity rule 10): what was not
         # carried out stays on the page, which still says what was asked

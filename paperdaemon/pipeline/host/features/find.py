@@ -194,7 +194,11 @@ def _look_round(msgs, doc, page):
                                           "edit_figure(changes) for a part, undo_last(n) to take the "
                                           "last thing back, or draw_figure again. If it reads as the "
                                           "thing, reply with the single word ok and no call."))
-        fn, args, res = H._turn(msgs, FIX_TOOLS, tries=1, choice="auto", accept_prose=True)
+        JOB.looking = True
+        try:
+            fn, args, res = H._turn(msgs, FIX_TOOLS, tries=1, choice="auto", accept_prose=True)
+        finally:
+            JOB.looking = False
         if fn is None:
             break
 

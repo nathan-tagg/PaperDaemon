@@ -61,7 +61,7 @@ FEATURES = (
        tools=("web_search",)),
     _f("pictures", "pictures placed on the page and new pages for them"),
     _f("image", "pictures made by the image model", requires=Requires(image=("generate",), features=("pictures",)),
-       steps=("image",), tools=("image",), decisions=("image.steps", "step.replaces")),
+       steps=("image",), decisions=("image.steps", "step.replaces")),
     _f("coloring", "coloring pages", requires=Requires(image=("generate",), features=("pictures",)),
        optional=Requires(workflows=("childrensColoringBook",)), steps=("coloring",)),
     _f("picture_edit", "changing a picture already on the page", requires=Requires(image=("edit_reference",),

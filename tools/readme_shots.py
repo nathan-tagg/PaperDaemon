@@ -100,7 +100,7 @@ DEMOS = [
                [("answer", {"answers": RP.NEW, "lines": ["Yes: it crosses the sky twice a day, rising in the west,",
                                                           "about a third the width of our full Moon."],
                             "rulings": RP.RULE("question", "keep")})])]},
-    {"id": "draw", "name": "Drawing", "request": "Draw a house with a tree and the sun.",
+    {"id": "draw", "name": "Drawing", "request": "Sketch a house with a tree and the sun.",
      "replies": [_plan({"do": "draw", "what": "a house with a tree and the sun"}, rule="keep"),
                  ("draw_figure", {"parts": _HOUSE})]},
     {"id": "coloring", "name": "Coloring", "request": "Make a children's coloring page of a friendly dragon.",

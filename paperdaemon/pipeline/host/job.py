@@ -113,6 +113,7 @@ class Job:
     erased_pictures: dict = field(default_factory=dict)
     figure: Any = None
     last_figure: Any = None
+    looking: bool = False             # the drawing is shown back for a fix (draw.py: its own box, its own grid)
     last_render: Any = None
     written: list = field(default_factory=list)
     extends_to: float = 0

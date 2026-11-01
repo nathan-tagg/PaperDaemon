@@ -1197,7 +1197,7 @@
   "type": "function",
   "function": {
    "name": "draw_figure",
-   "description": "DRAW something yourself by listing the parts it is made of: lines, circles, ellipses, arcs, rectangles, polylines. One call for the whole figure, inside your box. A house is a box and a triangle; a bicycle is two circles and a frame. Coordinates are page coordinates: x from the page's center (0), y from its top (larger y is further DOWN), within the page's size as the page states it.",
+   "description": "DRAW something yourself by listing the parts it is made of: lines, circles, ellipses, arcs, rectangles, polylines, and icons by name (a sun, a star) as parts like the others. One call for the whole figure, every part of it, inside your box. A house is a box and a triangle; a bicycle is two circles and a frame. Coordinates are page coordinates: x from the page's center (0), y from its top (larger y is further DOWN), within the page's size as the page states it.",
    "parameters": {
     "type": "object",
     "properties": {
@@ -1206,7 +1206,7 @@
       "description": "The parts of the figure, in any order.",
       "items": {
        "type": "object",
-       "description": "kind, then its numbers: line x1 y1 x2 y2; rect x1 y1 x2 y2 (corners); circle cx cy r; ellipse cx cy rx ry; arc cx cy r start end (degrees); polyline points [[x, y], ...].",
+       "description": "kind, then its numbers: line x1 y1 x2 y2; rect x1 y1 x2 y2 (corners); circle cx cy r; ellipse cx cy rx ry; arc cx cy r start end (degrees); polyline points [[x, y], ...]; icon name cx cy r (a shape or icon by name, as element takes it).",
        "properties": {
         "kind": {
          "type": "string",
@@ -1216,7 +1216,8 @@
           "ellipse",
           "arc",
           "polyline",
-          "rect"
+          "rect",
+          "icon"
          ]
         }
        },
@@ -1250,30 +1251,6 @@
     },
     "required": [
      "changes"
-    ]
-   }
-  }
- },
- {
-  "type": "function",
-  "function": {
-   "name": "image",
-   "description": "MAKE A PICTURE from your description, on this machine, into your box. Say what is in it, how it is lit and what style it is in; a bare noun gives a bare picture. SLOW (about a minute: the card is handed to the picture model and back), so describe it well and ask once.",
-   "parameters": {
-    "type": "object",
-    "properties": {
-     "prompt": {
-      "type": "string"
-     },
-     "place": {
-      "type": "string"
-     },
-     "seed": {
-      "type": "integer"
-     }
-    },
-    "required": [
-     "prompt"
     ]
    }
   }

@@ -59,8 +59,9 @@ PROTOCOLS = {
                          ("answer", "ask", "write_line", "write_paragraph")),
     "chart": JobProtocol(True, ("chart", "history", "web_search", "need_step"), ("chart",), exact=True),
     "calendar": JobProtocol(True, ("chart", "history", "need_step"), ("chart",), exact=True),
-    "draw": JobProtocol(True, ("draw_figure", "element", "image", "need_step") + LOOK_TOOLS,
-                        ("element", "draw_figure", "edit_figure", "image")),
+    # a sketch is drawn from shapes: a picture that must look real is an image step of the plan, never made here
+    "draw": JobProtocol(True, ("draw_figure", "element", "need_step") + LOOK_TOOLS,
+                        ("element", "draw_figure", "edit_figure")),
     "image": _HOST, "coloring": _HOST, "web_picture": _HOST,
     "highlight": _HOST, "circle": _HOST, "underline": _HOST, "strike": _HOST,
     "chess": _HOST, "adventure": _HOST, "messages": _HOST, "posts": _HOST, "tag": _HOST,
@@ -68,10 +69,8 @@ PROTOCOLS = {
     "conflict": JobProtocol(True),
 }
 
-# what closes a step when the model makes the call, for the kinds that close on a call (the image tool closes an
-# image step a model turn asked for)
+# what closes a step when the model makes the call, for the kinds that close on a call
 CLOSES = {k: p.closes for k, p in PROTOCOLS.items() if p.closes}
-CLOSES["image"] = ("image",)
 
 
 def kind_of(step):

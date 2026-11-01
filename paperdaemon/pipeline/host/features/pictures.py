@@ -411,58 +411,7 @@ def _run_images(batch):
             ST.finish(steps, q, False, "would not trace: %s" % str(ex)[:100])
 
 
-def t_image(prompt, place=None, seed=None):
-    """Generate a picture on this machine and trace it into a planned box.
-
-    A PICTURE CAN BE SLOW. On a lineup whose two models cannot share the graphics card, making a picture means
-    swapping them and back; that is why the tool's description tells the model to ask once rather than
-    iterate. The conversation survives it: the host keeps the message list and re-sends it, so a server
-    restart costs the cache, not the job.
-
-    Which picture model is used is the lineup's, never the model's choice; the model describes what it wants
-    to see.
-    """
-    plan = JOB.plan or {}
-    boxes = plan.get("places") or {}
-    if not boxes:
-        return {"error": "call plan() first and give the picture a place of its own, "
-                         "e.g. {\"id\": \"picture\", \"kind\": \"image\", \"size\": \"large\"}."}
-    if place is None:
-        place = H._cur_place()
-    if place not in boxes:
-        return {"error": "there is no place called %r in your plan. You planned: %s."
-                         % (place, ", ".join(sorted(boxes)))}
-    box = boxes[place]
-    if box["kind"] != "image":
-        return {"error": "the place %r is a %s, not an image. Plan it as kind='image'."
-                         % (place, box["kind"])}
-    prompt = (prompt or "").strip()
-    if len(prompt) < 12:
-        return {"error": "describe the picture properly -- what is in it, how it is lit, what "
-                         "style. %r is not enough to render." % prompt[:40]}
-
-    t0 = time.time()
-    try:
-        png = H._picture_model(lambda: H._generate_png(prompt, H._side_for(box), seed))
-    except Exception as ex:
-        return {"error": "could not make the picture: %s: %s" % (type(ex).__name__, str(ex)[:140])}
-    try:
-        n = H._trace_into(png, box, place, "image")
-    except Exception as ex:
-        return {"error": "the picture would not trace: %s: %s" % (type(ex).__name__, str(ex)[:120])}
-    return dict({"ok": True, "strokes": n, "box": box,
-                 "seconds": round(time.time() - t0, 1),
-                 "note": "The picture is in the draft, not on the page. render() and LOOK at it. "
-                         "If it is wrong, say so in done() rather than generating another -- each "
-                         "one costs a minute of handing the card back and forth."},
-                **H._did())
-
 
 # the tools this module serves, as the host offers them (the host's TOOLS keeps this order)
-TOOLS = [
- ("image", "MAKE A PICTURE from your description, on this machine, into your box. Say what is in it, "
-  "how it is lit and what style it is in; a bare noun gives a bare picture. SLOW (about a minute: the "
-  "card is handed to the picture model and back), so describe it well and ask once.",
-  {"prompt": "string", "place": {"type": "string", "optional": True},
-   "seed": {"type": "integer", "optional": True}}, t_image),
-]
+# (none: a picture the model asks for is an image step of its plan, made by the host; a sketch never makes one)
+TOOLS = []

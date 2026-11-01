@@ -40,6 +40,17 @@ def t_element(name, cx, cy, r):
     # away. An emoji resolves here too -- the icon is what the emoji means, drawn in the tablet's
     # own line vocabulary, instead of the lettering font turning it into a dash.
     name = E.resolve_emoji(name) or name
+    # AN ICON DRAWN WITH A FIGURE IS PART OF IT. In the reply that drew the figure, or while the figure is shown
+    # back for a fix, the numbers are on the figure's own grid, and the host fits the figure into its box as a
+    # whole: placed on the page apart from it, a sun meant for the sky landed on the house's window. It joins the
+    # figure's parts, and the figure is drawn again, fitted with it.
+    fig = JOB.figure
+    if fig and fig.get("op") == len(JOB.ops) and (fig.get("turn") == JOB.turns or JOB.looking):
+        res = H._redraw_figure([dict(p) for p in fig["parts"]] + [{"kind": "icon", "name": name, "cx": cx,
+                                                                   "cy": cy, "r": r}])
+        if res.get("ok"):
+            res["note"] = "the %s is a part of the figure (its last), fitted with it" % name
+        return res
     # THE HOST KEEPS THE ELEMENT IN ITS BOX. Same reasoning as _fit_paths for a figure: the model
     # chooses WHAT and roughly how big; where -580 is on the page is not its strength. A center
     # outside the step's box becomes the box's center, and a radius wider than the box is clipped.
@@ -79,6 +90,20 @@ def _part_paths(part):
     """One drawing primitive -> polyline points. Python owns the curves."""
     k = (part.get("kind") or "").lower()
     g = lambda n, d=0.0: float(part.get(n, d) or 0.0)
+    if k == "icon":
+        # a library shape or icon by name, on the figure's own grid like every other part
+        name = str(part.get("name") or "").strip()
+        name = E.resolve_emoji(name) or name
+        cx, cy, r = g("cx"), g("cy"), g("r") or 20.0
+        hits = E.find(name) if name else []
+        if hits:
+            fn = (hits[0][1] if isinstance(hits[0], tuple) else hits[0])["fn"]
+            polys = fn(**_element_args(fn, cx, cy, r))
+            return [list(p) for p in (polys if isinstance(polys[0], list) else [polys])]
+        paths = E._icon_paths(name, cx, cy, r) if name else None
+        if not paths:
+            raise ValueError("no icon named %r" % name)
+        return [list(p) for p in paths]
     if k == "line":
         return [[(g("x1"), g("y1")), (g("x2"), g("y2"))]]
     if k == "rect":
@@ -138,6 +163,23 @@ def t_draw_figure(parts):
 
     It is ONE call for the whole figure: many calls in one turn, with no feedback between them, drift.
     """
+    # shown back for a fix, a figure is drawn again in ITS box: the step it was drawn for has closed, and the
+    # step the host is on may have a box of its own
+    return H._draw_figure(parts, (JOB.figure or {}).get("place") if JOB.looking else H._cur_place())
+
+
+def _redraw_figure(parts):
+    """The figure drawn last, drawn again from `parts` in its own box (a fix, or an icon joining it)."""
+    fig = JOB.figure
+    del JOB.draw.strokes[fig["at"]:]
+    JOB.ops.pop()
+    if JOB.marks:
+        JOB.marks.pop()
+    JOB.last_figure = None
+    return H._draw_figure(parts, fig.get("place"))
+
+
+def _draw_figure(parts, place):
     if not isinstance(parts, list) or not parts:
         return dict({"error": "parts must be a non-empty list of "
                               "{kind, ...} objects"}, **H._did())
@@ -160,7 +202,7 @@ def t_draw_figure(parts):
     JOB.last_figure = key
     H._mark()
     JOB.figure = {"parts": [dict(p) for p in parts if isinstance(p, dict)],
-                     "at": len(JOB.draw.strokes), "op": None}
+                     "at": len(JOB.draw.strokes), "op": None, "place": place, "turn": JOB.turns}
     drawn, bad, paths_all = 0, [], []
     for i, part in enumerate(parts):
         if not isinstance(part, dict):
@@ -178,7 +220,7 @@ def t_draw_figure(parts):
     # THE HOST FITS THE FIGURE TO ITS BOX. The numbers the model sends are taken as a sketch on its own grid:
     # the whole figure is scaled (aspect kept) and centered into the box the plan gave this step, so its
     # coordinates need only be consistent with each other. Without a box the page's safe area is the box.
-    box = ((JOB.plan or {}).get("places") or {}).get(H._cur_place())
+    box = ((JOB.plan or {}).get("places") or {}).get(place)
     fitted = H._fit_paths(paths_all, box)
     if fitted is not None:
         paths_all = fitted
@@ -250,12 +292,7 @@ def t_edit_figure(changes):
                               "you mean to start over."}, **H._did())
 
     # rewind just this figure, then lay the amended one down
-    del JOB.draw.strokes[fig["at"]:]
-    JOB.ops.pop()
-    if JOB.marks:
-        JOB.marks.pop()
-    JOB.last_figure = None
-    res = H.t_draw_figure(parts)
+    res = H._redraw_figure(parts)
     if res.get("ok"):
         res["applied"] = applied
         res["problems"] = (res.get("problems") or []) + bad[:4] or None
@@ -271,10 +308,11 @@ TOOLS = [
              + ", ".join(E.icon_names()),
   {"name": "string", "cx": "number", "cy": "number", "r": "number"}, t_element),
  ("draw_figure", "DRAW something yourself by listing the parts it is made of: lines, circles, "
-  "ellipses, arcs, rectangles, polylines. One call for the whole figure, inside your box. A house "
-  "is a box and a triangle; a bicycle is two circles and a frame. Coordinates are page coordinates: "
-  "x from the page's center (0), y from its top (larger y is further DOWN), within the page's size "
-  "as the page states it.", {"parts": H.PART_SCHEMA}, t_draw_figure),
+  "ellipses, arcs, rectangles, polylines, and icons by name (a sun, a star) as parts like the others. "
+  "One call for the whole figure, every part of it, inside your box. A house is a box and a triangle; "
+  "a bicycle is two circles and a frame. Coordinates are page coordinates: x from the page's center "
+  "(0), y from its top (larger y is further DOWN), within the page's size as the page states it.",
+  {"parts": H.PART_SCHEMA}, t_draw_figure),
  ("edit_figure", "Change SOME parts of the figure you drew, leaving the rest alone -- e.g. "
   "[{\"index\":3,\"cy\":720},{\"index\":7,\"delete\":true}]. Part numbers come back from "
   "draw_figure.", {"changes": {"type": "array", "items": {"type": "object"}}}, t_edit_figure),

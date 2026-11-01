@@ -22,3 +22,17 @@ from what the user asks; the host matches no words.
 #### Scenario: A sketch
 - **WHEN** a page asks for a sketch of a house
 - **THEN** it is drawn as lines from simple shapes, with no picture generated
+
+### Requirement: A sketch is drawn on one grid
+A sketch SHALL be drawn from shapes and icons the model states, never from a generated picture: a picture that must
+look real is an image step of the plan. The host SHALL fit the whole sketch into its box at once, its icons among its
+parts; an icon drawn in the same reply as the figure, or while the figure is shown back for a fix, SHALL join the
+figure and be fitted with it, and a figure drawn again SHALL stay in its own box.
+
+#### Scenario: The sun beside the house
+- **WHEN** the model draws a house as a figure and, in the same reply, a sun icon up and to the right of it
+- **THEN** the sun lands up and to the right of the house, both inside the sketch's box
+
+#### Scenario: A sketch makes no picture
+- **WHEN** a sketch step is worked
+- **THEN** the model is offered shapes and icons only, and no picture is generated for it

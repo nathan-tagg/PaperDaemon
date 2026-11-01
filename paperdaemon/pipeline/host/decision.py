@@ -875,8 +875,8 @@ def step_message(cur):
             "chart": "chart(spec) with the data; the host places it",
             "calendar": "chart(spec): {\"type\": \"calendar\", \"year\": .., \"month\": ..} or "
                         "{\"type\": \"week\"}, its cards from the on-this-day facts above",
-            "draw": "draw_figure(parts) for something you can say exactly, element(name, cx, cy, r) "
-                    "for one small shape, or image(prompt) for something that has to look real -- "
+            "draw": "draw_figure(parts) with every part of the sketch in one call, icons among its parts "
+                    "(kind icon, name, cx, cy, r), or element(name, cx, cy, r) for one small shape alone -- "
                     "inside the box"}.get(cur["do"], "the tool for it")
     L.append("Call %s. Only this step; the host moves you on." % want)
     return "\n".join(L)
