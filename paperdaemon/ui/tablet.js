@@ -50,8 +50,8 @@
     }
 
     function cover(img) {
-      return PD.loadImage(img, base + "/library/" + img.dataset.id + "/cover.png",
-                          { tries: 4, giveUp: () => img.closest(".doc-card").classList.add("nocover") });
+      return PD.loadThumb(img, base + "/library/" + img.dataset.id + "/cover.png",
+                          { tries: 4, giveUp: () => { const c = img.closest(".doc-card"); if (c) c.classList.add("nocover"); } });
     }
 
     function paint() {
@@ -79,6 +79,7 @@
       seen = new IntersectionObserver(es => es.forEach(x => { if (x.isIntersecting) { seen.unobserve(x.target); cover(x.target); } }), { rootMargin: "400px" });
       box.querySelectorAll("img[data-id]").forEach(img => seen.observe(img));
       paintProgress();                                 // the covers were drawn anew: the job's bar goes back on its own
+      paintSync();                                     // ... and a sync's
     }
 
     // ---- the viewer, as the tablet has it: one page at a time, a grid of all the pages, the chapters
@@ -122,19 +123,18 @@
       input.select();
     }
 
-    // OPENED, THEN DRAWN ANEW: a page's picture in the grid, and a document's cover, are kept until the page (or the
-    // document) is opened; opening it forgets them (and so does leaving the page, for what was written on it while
-    // open), and the next look draws them again (thumbs.py)
-    const opened = (doc, page) => PD.safe(api("POST", "/library/" + encodeURIComponent(doc) + "/opened" + (page ? "?page=" + page : "")));
+    // THE PAGE OPEN is the page the document opens at next, and the one its cover shows when the tablet's setting says
+    // the page last open: told to the engine as it opens (kept in PaperDaemon's own files, not the document's)
+    const opened = (doc, page) => PD.safe(api("POST", "/library/" + encodeURIComponent(doc) + "/opened?page=" + page));
     function seenPage() {
       const now = S.view === "page" && S.doc ? S.doc.id + "|" + S.page : null;
       if (now === S.seen) return;
-      if (S.seen) { const [d, n] = S.seen.split("|"); opened(d, Number(n)); }
-      if (now) opened(S.doc.id, S.page);
+      if (now) S.told = opened(S.doc.id, S.page);
       S.seen = now;
     }
     async function paintBody() {
       const dlg = $("#" + VIEWER); if (!dlg || !S.doc) return;
+      paintMakeUp({ show: false });                          // (a page left: its selection's icons with it)
       seenPage();
       const body = $(".viewer-page", dlg), n = pageCount();
       body.scrollTop = 0;
@@ -146,7 +146,7 @@
         const d = S.doc.id, io = new IntersectionObserver(es => es.forEach(x => {
           if (!x.isIntersecting) return;
           io.unobserve(x.target);
-          PD.loadImage(x.target, base + "/library/" + d + "/thumb/" + x.target.dataset.thumb + ".png",
+          PD.loadThumb(x.target, base + "/library/" + d + "/thumb/" + x.target.dataset.thumb + ".png",
                        { stale: () => !S.doc || S.doc.id !== d || S.view !== "pages" });
         }), { root: body, rootMargin: "600px" });
         body.querySelectorAll("img[data-thumb]").forEach(img => io.observe(img));
@@ -164,8 +164,10 @@
       // with its tools in either library: the False Mirror's saved as it goes, the Mirror's (the tablet's own pages)
       // written in place when saved (Ctrl+S, the document closed, the page left with changes) and sent to the tablet
       body.className = "viewer-page editing";
+      // (a Mirror page only to look at unless Edit the Mirror is on in Settings)
+      const look = !fm && !PD.getK(PD.settings || {}, "mirror.edit");
       body.innerHTML = '<iframe class="page-editor" allow="clipboard-read; clipboard-write" title="' + esc(PD.t("viewer.page", { n: S.page })) + '" src="/ui/editor.html#doc=' +
-        encodeURIComponent(S.doc.id) + "&page=" + S.page + "&base=" + encodeURIComponent(base) + '"></iframe>';
+        encodeURIComponent(S.doc.id) + "&page=" + S.page + "&base=" + encodeURIComponent(base) + (look ? "&view=1" : "") + '"></iframe>';
       const efr = $("iframe.page-editor", body);
       efr.addEventListener("load", () => efr.focus());        // the keys go to the page from the start, no click first
     }
@@ -266,9 +268,11 @@
       }
       if (d.pd === "view-key") {
         if (d.altKey && (d.key === "ArrowLeft" || d.key === "ArrowRight")) { walk(d.key === "ArrowLeft" ? -1 : 1); return; }
-        go(S.page + (d.key === "ArrowRight" || d.key === "PageDown" ? 1 : -1));
+        go(S.page + (d.key === "ArrowRight" ? 1 : -1));
         return;
       }
+      if (d.pd === "editor-sync") { syncBar(d); return; }   // a Mirror sync started, or ended
+      if (d.pd === "editor-makeup") { paintMakeUp(d); return; }   // what a settled selection is made of, or none
       if (d.pd === "editor-save") {                         // the ? by the name: a spinner while a save is slow, ! when one failed
         const q = $("#" + VIEWER + " .keys-q"); if (!q) return;
         q.classList.toggle("saving", d.state === "saving"); q.classList.toggle("failed", d.state === "error");
@@ -336,6 +340,78 @@
         else if (old) old.remove();
       }
     }
+    // THE MIRROR'S SYNC (a document's edits going up to the tablet: Ctrl+S, the document closed), as the engine reports
+    // it (GET /library/<doc>/sync): a thin bar under the viewer's bar while the document is open, along the top of its
+    // cover once it is closed. It fills by the push's requests to the cloud and is gone a moment after it is through;
+    // a sync that failed leaves no bar (its reason is by the document's name)
+    function syncBar(d) {
+      if (d.state === "start") {
+        if (!S.doc) return;
+        clearInterval(S.syncPoll);
+        const s = S.sync = { doc: S.doc.id, frac: 0, busy: true, t0: Date.now() };
+        paintSync();
+        S.syncPoll = setInterval(async () => {
+          if (S.sync !== s) { clearInterval(S.syncPoll); return; }
+          if (Date.now() - s.t0 > 120000) { syncOver(s, false); return; }
+          const [p] = await PD.safe(api("GET", "/library/" + encodeURIComponent(s.doc) + "/sync"));
+          if (S.sync !== s || !p) return;
+          if (p.state === "sending" && p.steps) { s.busy = false; s.frac = Math.max(s.frac, p.done / p.steps); s.seen = true; paintSync(); }
+          else if (s.seen && p.state !== "sending") syncOver(s, p.state === "sent");   // (its editor gone before it said)
+        }, 250);
+      } else if (S.sync) syncOver(S.sync, !!d.ok);
+    }
+    function syncOver(s, ok) {
+      if (S.sync !== s) return;
+      clearInterval(S.syncPoll);
+      if (!ok) { S.sync = null; paintSync(); return; }
+      s.busy = false; s.frac = 1; paintSync();
+      setTimeout(() => { if (S.sync === s) { S.sync = null; paintSync(); } }, 700);
+    }
+    function paintSync() {
+      const s = S.sync, dlg = $("#" + VIEWER);
+      const open = !!(s && dlg && dlg.open && S.doc && S.doc.id === s.doc);
+      const places = [];
+      const vb = dlg && $(".viewer-bar", dlg);
+      if (vb) places.push([vb, open]);
+      if (R) R.querySelectorAll(".doc-card .cover").forEach(c => places.push([c, !!s && !open && c.closest(".doc-card").dataset.open === s.doc]));
+      for (const [at, want] of places) {
+        let bar = at.querySelector(":scope > .sync-bar");
+        if (!want) { if (bar) bar.remove(); continue; }
+        if (!bar) {
+          at.insertAdjacentHTML("beforeend", '<span class="sync-bar" role="progressbar" aria-label="' + esc(PD.t("keys.sync")) + '"><i></i></span>');
+          bar = at.querySelector(":scope > .sync-bar");
+        }
+        bar.classList.toggle("busy", s.busy);
+        const w = (s.busy ? 30 : Math.max(4, 100 * s.frac)) + "%", i = bar.querySelector("i");
+        if (i.style.width !== w) i.style.width = w;
+      }
+    }
+    // THE SELECTION'S MAKE-UP, as the page editor tells it: brush icons (or color swatches) with their counts, to the
+    // right of the selection, drawn here over the viewer so they reach past the editor's frame; a press keeps only those
+    // strokes selected (the editor does it)
+    function paintMakeUp(d) {
+      const dlg = $("#" + VIEWER), fr = editorFrame();
+      let box = dlg && dlg.querySelector(":scope > .sel-makeup");
+      if (!d.show || !dlg || !dlg.open || !fr) { if (box) { box.classList.remove("on"); box.hidden = true; } return; }
+      if (!box) {
+        dlg.insertAdjacentHTML("beforeend", '<div class="sel-makeup" hidden></div>');
+        box = dlg.querySelector(":scope > .sel-makeup");
+        box.addEventListener("pointerdown", e => e.preventDefault());   // (the keys stay the page's)
+        box.addEventListener("click", e => {
+          const b = e.target.closest("[data-row]"), f = editorFrame();
+          if (b && f && f.contentWindow) f.contentWindow.postMessage({ pd: "editor-makeup-pick", row: Number(b.dataset.row) }, location.origin);
+        });
+      }
+      if (box.dataset.key !== String(d.key)) {               // a new selection: its icons, slid in anew
+        box.dataset.key = String(d.key);
+        box.innerHTML = d.rows.map(r => '<button type="button" tabindex="-1" data-row="' + r.row + '" title="' + esc(r.title) +
+          '"><span class="mi">' + r.icon + '</span><span class="mn">' + esc(r.label) + "</span></button>").join("");
+        box.classList.remove("on"); box.hidden = true;
+      }
+      const at = fr.getBoundingClientRect();
+      box.style.left = Math.round(at.left + d.x) + "px"; box.style.top = Math.round(at.top + d.y) + "px";
+      if (box.hidden) { box.hidden = false; requestAnimationFrame(() => { if (!box.hidden) box.classList.add("on"); }); }
+    }
     async function loadProgress() {
       const [p] = await PD.safe(api("GET", "/progress"));
       S.progress = p && p.doc ? p : null;
@@ -391,7 +467,6 @@
     function openDoc(x) {                                     // at the page it was last open on, as the tablet opens it
       S.doc = byId(x); S.page = Math.min(Math.max(1, (S.doc && S.doc.at_page) || 1), pageCount());
       S.tags = null; S.chapters = null; S.hist = [S.page]; S.hpos = 0; S.pp = [];
-      if (S.doc) opened(S.doc.id, 0);                       // its cover drawn anew at the next look
       S.view = PD.firstTab === "pages" || PD.firstTab === "chapters" ? PD.firstTab : "page"; PD.firstTab = "";
       if (S.pmove && S.pmove.out) { S.pmove.out = false; S.pmove.at = 0; S.view = "pages"; unpick(); }   // where they go: its pages
       let dlg = $("#" + VIEWER);
@@ -465,9 +540,7 @@
           if (e.altKey && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
             e.preventDefault(); walk(e.key === "ArrowLeft" ? -1 : 1); return;
           }
-          if (S.view !== "page" || e.target.closest("input")) return;
-          if (e.key === "ArrowRight" || e.key === "PageDown") go(S.page + 1);
-          if (e.key === "ArrowLeft" || e.key === "PageUp") go(S.page - 1);
+          // (on a page the keys go on to the editor, which turns the page, moves what is selected, or scrolls)
         });
         // back from the editor: the covers and the page pictures show what was drawn
         // CLOSING A FALSE-MIRROR DOCUMENT SYNCS it, as on the tablet: the page editor saves and tells the daemon to look
@@ -485,12 +558,13 @@
         dlg.addEventListener("close", () => {
           S.pp = []; if (S.pmove && !S.pmove.out) S.pmove = null;   // closing lets the chosen pages go (but not pages moving out)
           paintPagePick();
-          if (S.seen) { const [d, n] = S.seen.split("|"); opened(d, Number(n)); S.seen = null; }   // what was written while open
-          if (S.doc) opened(S.doc.id, 0);
+          S.seen = null;
+          paintMakeUp({ show: false });
           if (!fm) {                                         // THE MIRROR: the page written if changed, then the document sent to the tablet
             const fr = editorFrame();
             if (fr && fr.contentWindow) fr.contentWindow.postMessage({ pd: "editor-commit" }, location.origin);
             else if (S.doc) PD.safe(api("POST", "/library/" + S.doc.id + "/push"));
+            Promise.resolve(S.told).then(load);              // its card: the page it opens at next, its cover
             return;
           }
           const fr = editorFrame();

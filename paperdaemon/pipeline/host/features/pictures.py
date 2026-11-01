@@ -238,6 +238,7 @@ def _trace_into(png, box, place, what, **kw):
             os.remove(png)
         except OSError:
             pass
+    JOB.picture_starts.append((id(JOB.draw), len(JOB.draw.strokes)))     # a page's overflow never cuts it in two
     for st in strokes:
         JOB.draw.strokes.append(st)
     JOB.ops.append("%s in %r, %d strokes" % (what, place, len(strokes)))

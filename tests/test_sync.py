@@ -136,6 +136,23 @@ def test_a_changed_page_goes_up_alone(cloud):
     assert sync.push_doc("doc2", dry_run=False).get("skipped")
 
 
+def test_a_push_of_an_edit_tells_how_far_it_has_come(cloud, monkeypatch):
+    notebook(cloud.mirror, "doc3", ("p1", "p2"))
+    sync.push_new_doc("doc3", dry_run=False)
+    assert sync.push_progress("doc3")["state"] == "idle"
+    (cloud.mirror / "doc3" / "p1.rm").write_bytes(b"strokes of p1, edited in the window")
+    seen, real = [], sync._pushing
+    monkeypatch.setattr(sync, "_pushing", lambda **k: (real(**k), seen.append(sync.push_progress("doc3"))))
+    assert sync.push_edited("doc3", ["p1"])["root_put"] == 200
+    steps = seen[-1]["steps"]
+    # the root, the library's index and the document's read, each file sent (the page, the document's metadata and
+    # content stamped by touch, its index, the library's index), the root moved
+    assert steps == 3 + 5 + 1 and seen[-1] == {"state": "sent", "done": steps, "steps": steps}
+    done = [s["done"] for s in seen if s["state"] == "sending"]
+    assert done == sorted(done) and done[0] == 0 and done[-1] == steps
+    assert sync.push_progress("another")["state"] == "idle"
+
+
 def test_the_state_forgets_files_gone_from_the_mirror(cloud):
     notebook(cloud.mirror, "doc4")
     sync._save_state({"root": "r", "generation": 1, "docs": {"doc4": "x", "gone": "y"},

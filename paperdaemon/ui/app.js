@@ -192,6 +192,12 @@
     const [st, err] = await PD.safe(PD.api("GET", "/status"));
     if (err) { if (err.status === 401) return showPairing(); return showFatal(err); }
     PD.status = st;
+    // THE RISKS FIRST: until they are acknowledged (RISKS.md), the window shows nothing else, setup included
+    const [prefs] = await PD.safe(PD.loadSettings());
+    if (PD.getK(prefs || {}, "risks.acknowledged") !== true) {
+      plainPage("<h1>PaperDaemon</h1>");
+      await PD.acknowledgeRisks();
+    }
     const at = ((PD.firstPane || "").match(/^setup([1-4])$/) || [])[1];       // a link straight to a setup step
     if (at) return PD.setup.start(Number(at));
     if (st.first_run && !skipped()) return PD.setup.start();

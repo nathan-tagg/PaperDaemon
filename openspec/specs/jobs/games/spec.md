@@ -7,6 +7,14 @@ Chess is the first.
 
 ## Requirements
 
+### Requirement: The user plays the side they ask for
+The chess step's `color` SHALL name the side the USER plays: white, black or either, and the step catalog
+the model is given SHALL say so.
+
+#### Scenario: Black asked for
+- **WHEN** the request says "Let's play chess. I'll be black."
+- **THEN** the step's color is black, the board is drawn from Black's side, and the opponent opens
+
 ### Requirement: Moves a request already makes are played first
 When a request to play chess already makes moves ("I'm white. e4"), the model SHALL pass them in the game
 step as a list of moves, in order from the start, as the user wrote them. The engine SHALL read each one

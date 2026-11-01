@@ -1,50 +1,103 @@
+> [!WARNING]
+> I can't guarantee PaperDaemon will never damage one of your notebooks. PaperDaemon checks each page in the cloud
+> before writing it, and never writes over newer work from the tablet. PaperDaemon keeps copies of the pages it changes
+> on your PC. It was tested thoroughly on a reMarkable Paper Pro running software 3.29.1.0 - tablet software updates
+> may break PaperDaemon, proceed at your own risk. If you find any issues with PaperDaemon, or functionality that you
+> believe could be better, I encourage you to fork your own branch and make any changes you think are worth while.
+
 # PaperDaemon
 
-A reMarkable assistant for Windows. Tag a page on your tablet and PaperDaemon answers it: a question gets an
-answer written on the page, a request for a chart, a calendar, a picture or a coloring page gets one, and you
-can play chess or a story game against characters drawn on the page. It runs on your own computer, with the
-models you choose.
+An assistant for the reMarkable tablet that runs on your Windows PC, with the AI models you choose. Write a request
+on a page, tag the page, and PaperDaemon does the work on that page. Every page shown here was made by PaperDaemon
+running Qwen 3.8 27B, with pictures by FLUX.2 Klein.
 
-**[Download the installer](../../releases/latest)** (Windows,
-`PaperDaemon_<version>_x64-setup.exe` under Assets)
+**[Download for Windows](../../releases/latest)** (`PaperDaemon_<version>_x64-setup.exe`, under Assets)
 
-1. **Set up.** The first start walks you through it: connect your reMarkable, let PaperDaemon copy your library,
-   and choose the model it thinks with (an API key, or a model you run yourself), plus an image model if you
-   like. Give the lineup a tag, such as `Daemon`.
+![The page editor, with a decomposed painting selected](docs/images/editor.png)
 
-   ![Connecting your reMarkable](docs/images/setup-connect.png)
+## Decompose
 
-   ![Choosing the model](docs/images/setup-lineup.png)
+Any picture, redrawn as pen strokes and sent to a notebook page. On the tablet every stroke is ink: erase it, draw
+over it, select it and move it.
 
-2. **Tag a page on your tablet.** Write or type what you want on a page, then tag the page or the whole
-   notebook with your tag. PaperDaemon sees it and does the work on the page.
+![The Decompose screen](docs/images/decompose-screen.png)
 
-   ![Notebooks tagged Daemon](docs/images/tablet.png)
+## Mirror
 
-   A handwritten question, answered:
+![The library](docs/images/library.png)
 
-   ![A handwritten question, answered](docs/images/page-answer.png)
+![The pen menu](docs/images/editor-pens.png)
 
-   This week, with the forecast and your plans:
+## Daemon
 
-   ![A week calendar](docs/images/page-week.png)
+![The Daemon screen, with a notebook's notes](docs/images/daemon.png)
 
-   The week's top posts from a subreddit:
+## Lineup
 
-   ![Posts from a subreddit](docs/images/page-posts.png)
+![The Lineup: the text model on this PC, its harness and its start script](docs/images/lineup.png)
 
-   A game of chess against a character:
+![The Lineup: the image model and its start script](docs/images/lineup-image.png)
 
-   ![Chess against a character](docs/images/page-chess.png)
+![The Lineup: web search on this PC and its start script](docs/images/lineup-network.png)
 
-   A chart from real numbers:
+## Settings
 
-   ![A chart](docs/images/page-chart.png)
+![Settings](docs/images/settings.png)
 
-3. **Send a picture to your tablet.** Drop an image on the Decompose screen. PaperDaemon redraws it in pen strokes,
-   ready to send to a page of your notebook.
+## On the page
 
-   ![A picture redrawn in pen strokes](docs/images/decompose.png)
+Each request was typed on a test notebook and worked by PaperDaemon running Qwen 3.8 27B, the pictures generated
+with FLUX.2 Klein ([tools/readme_shots.py](tools/readme_shots.py)); the paintings were found on the web.
+
+<p align="center"><i>"This month, with the holidays."</i></p>
+<p align="center"><img src="docs/images/tablet-month.png" width="440" alt="A month calendar with the weather and the holidays"></p>
+
+<p align="center"><i>"Plan my week, with the weather."</i></p>
+<p align="center"><img src="docs/images/tablet-week.png" width="440" alt="A week planner with the forecast"></p>
+
+<p align="center"><img src="docs/images/tablet-talk.png" width="440" alt="Typed questions about Mars, each answered in ink below it"></p>
+
+<p align="center"><i>"Draw a house with a tree and the sun."</i></p>
+<p align="center"><img src="docs/images/tablet-draw.png" width="440" alt="A house, a tree and the sun, drawn in pen strokes"></p>
+
+<p align="center"><i>"Make a children's coloring page of a friendly dragon."</i></p>
+<p align="center"><img src="docs/images/tablet-coloring.png" width="440" alt="A coloring page of a friendly dragon"></p>
+
+<p align="center"><i>"Draw a koi pond, seen from above."</i></p>
+<p align="center"><img src="docs/images/tablet-koi.png" width="440" alt="A koi pond seen from above, generated and drawn in pen strokes"></p>
+
+<p align="center"><i>"Draw a forest path in autumn."</i></p>
+<p align="center"><img src="docs/images/tablet-autumn.png" width="440" alt="A forest path in autumn, generated and drawn in pen strokes"></p>
+
+<p align="center"><i>"The latest posts from r/comfyPlaces."</i></p>
+<p align="center"><img src="docs/images/tablet-posts.png" width="440" alt="The newest posts from r/comfyPlaces, clipped onto the page"></p>
+
+<p align="center"><i>"Let's play chess, Rocco. I'll be black."</i></p>
+<p align="center"><img src="docs/images/tablet-chess.png" width="440" alt="A chess board from Black's side, after White's first move"></p>
+
+<p align="center"><i>"Paste an image of the Mona Lisa."</i></p>
+<p align="center"><img src="docs/images/tablet-mona.png" width="440" alt="The Mona Lisa, found on the web and drawn in pen strokes"></p>
+
+<p align="center"><i>"Decompose a gallery of Van Gogh's paintings."</i></p>
+<p align="center"><img src="docs/images/tablet-gallery.png" width="440" alt="Six paintings by Van Gogh, found on the web and drawn in pen strokes"></p>
+
+## FAQ
+
+**Does it change anything on my tablet?** No. Nothing is installed on the tablet. PaperDaemon reads and writes your
+documents through reMarkable's cloud, the way the reMarkable desktop app does.
+
+**Does the tablet need to be plugged in, or on the same network?** No. It only needs to sync with reMarkable's cloud.
+
+**Is it official?** No. It signs in with the login of the reMarkable desktop app on your PC: borrowed, so the two share
+it and only one runs at a time, or taken, which signs the app out. The login is kept in Windows Credential Manager.
+
+**Where do my pages go?** To the models you choose: running on your own PC, or a service you give an API key. Only
+your PC can reach PaperDaemon unless you add other addresses, and every request needs its pairing token.
+
+**What does it build on?** The only reMarkable library it uses is [rmscene](https://github.com/ricklupton/rmscene).
+Everything it ships is listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+**Do I need a tablet to try it?** No. You can install it and look around.
 
 ## License
 

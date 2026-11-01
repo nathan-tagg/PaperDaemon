@@ -715,4 +715,16 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">This card cannot run WebGPU: pages will be drawn on the processor, which is slower.</string>
   <string name="settings.render.restart">The window reopens now with this change.</string>
+  <string name="keys.nudge">Nudge</string>
+  <string name="keys.nudge_d">Moves what is selected a pixel; held, it keeps moving.</string>
+  <string name="keys.k_pgup">PgUp</string>
+  <string name="keys.k_pgdn">PgDn</string>
+  <string name="settings.mirror_edit">Edit the Mirror</string>
+  <string name="settings.mirror_edit.on">Edit the tablet's pages in the Mirror</string>
+  <string name="settings.mirror_edit.help">Off, the Mirror's pages open to look at. On, they open with the page editor's tools, and what is changed goes to the tablet. PaperDaemon cannot promise an edit never damages a notebook, above all after an update of the tablet's software.</string>
+  <string name="risks.title">Before you use PaperDaemon</string>
+  <string name="risks.intro">To use PaperDaemon, please read its risks and acknowledge them.</string>
+  <string name="risks.read">Read the risks on GitHub</string>
+  <string name="risks.third_party">PaperDaemon is a third-party application, not made or endorsed by reMarkable, meant to make an unmodified reMarkable tablet more useful. I am not responsible for what anyone does with PaperDaemon, or for any loss or damage it causes.</string>
+  <string name="risks.action">I acknowledge the risks</string>
 </resources>

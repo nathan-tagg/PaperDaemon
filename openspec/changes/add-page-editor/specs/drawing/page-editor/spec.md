@@ -294,6 +294,20 @@ press, Esc or the wheel, and held and moved it ends when let go. The press that 
 - **WHEN** the user scrolls down on an empty page
 - **THEN** the view moves down until its top is at the page's foot
 
+### Requirement: The arrow and page keys
+With no text being typed, the arrow keys SHALL move what is selected (strokes or a picture) one pixel of the screen a
+press, and on for as long as a held key repeats; it SHALL be let go a moment after the last press, the whole run one
+step to undo. With nothing selected Left and Right SHALL turn the page, Up and Down scroll a little, and Page Up and
+Page Down SHALL scroll most of a screen, a selection or not.
+
+#### Scenario: Nudging a selection
+- **WHEN** the user selects some strokes and holds the Right arrow
+- **THEN** the strokes move right a pixel at a time until the key is let go, and one undo puts them back
+
+#### Scenario: Nothing selected
+- **WHEN** nothing is selected and the user presses Right, then Page Down
+- **THEN** the next page opens, and Page Down scrolls it most of a screen
+
 ### Requirement: Shapes by number
 With a pen in hand and no text being typed, the keys 1 to 6 SHALL choose what a click makes: 1 the pen's own strokes, 2
 a circle, 3 a triangle, 4 a square, 5 a rectangle, 6 an arrow, the pointer showing the shape. A drag SHALL set one
@@ -344,6 +358,22 @@ loop drawn freehand) again; Esc lets the shape go. With Select or Capture in han
 #### Scenario: Turning a selection
 - **WHEN** the user selects a flat stroke and turns the frame's handle a quarter, with Alt
 - **THEN** the stroke stands upright
+
+### Requirement: A selection shows what it is made of
+Once a selection of strokes has settled (selected, or moved and let go), a column of icons SHALL slide in to the right of
+it, never a box or a menu: its strokes by brush, each brush's icon with how many strokes beside it, most first. In the
+viewer the window draws them over the viewer, so they MAY reach past the editor's frame. A selection of one brush SHALL
+show the colors that brush's menu offers instead, each stroke's color counted with the nearest of them (by hue; a gray,
+or a color too dark or pale to have one, by lightness). A click on an icon SHALL keep only those strokes selected. The
+icons SHALL be gone while the selection is drawn, dragged or moved by the keys.
+
+#### Scenario: Narrowing to one brush, then one color
+- **WHEN** the user selects strokes of several brushes, clicks the highlighter's icon, then its blue one
+- **THEN** only the highlighter strokes stay selected, its colors shown, and then only the blue ones
+
+#### Scenario: Past the editor's frame
+- **WHEN** the user selects strokes reaching the right edge of a page open in the viewer
+- **THEN** the icons stand to the right of the selection, over the viewer's edge if that is where there is room
 
 ### Requirement: The clipboard
 Ctrl+C and Ctrl+X SHALL put selected strokes on the system clipboard both as strokes PaperDaemon reads back and as a

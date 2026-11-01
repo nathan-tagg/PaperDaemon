@@ -715,4 +715,16 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">Card này không chạy được WebGPU: các trang sẽ được vẽ bằng bộ xử lý, chậm hơn.</string>
   <string name="settings.render.restart">Cửa sổ đang mở lại với thay đổi này.</string>
+  <string name="keys.nudge">Xê dịch</string>
+  <string name="keys.nudge_d">Dịch phần đã chọn một điểm ảnh; giữ phím thì dịch tiếp.</string>
+  <string name="keys.k_pgup">PgUp</string>
+  <string name="keys.k_pgdn">PgDn</string>
+  <string name="settings.mirror_edit">Sửa Bản sao</string>
+  <string name="settings.mirror_edit.on">Sửa các trang của máy tính bảng trong Bản sao</string>
+  <string name="settings.mirror_edit.help">Khi tắt, các trang của Bản sao chỉ mở để xem. Khi bật, chúng mở cùng công cụ của trình sửa trang, và các thay đổi được gửi lên máy tính bảng. PaperDaemon không thể hứa rằng một lần sửa sẽ không bao giờ làm hỏng sổ tay, nhất là sau khi phần mềm máy tính bảng được cập nhật.</string>
+  <string name="risks.title">Trước khi bạn dùng PaperDaemon</string>
+  <string name="risks.intro">Để dùng PaperDaemon, vui lòng đọc các rủi ro và xác nhận rằng bạn chấp nhận chúng.</string>
+  <string name="risks.read">Đọc các rủi ro trên GitHub</string>
+  <string name="risks.third_party">PaperDaemon là ứng dụng của bên thứ ba, không do reMarkable tạo ra hay xác nhận, nhằm giúp chiếc máy tính bảng reMarkable chưa chỉnh sửa trở nên hữu ích hơn. Tôi không chịu trách nhiệm về việc bất kỳ ai làm gì với PaperDaemon, hay về bất kỳ mất mát hoặc thiệt hại nào mà nó gây ra.</string>
+  <string name="risks.action">Tôi chấp nhận các rủi ro</string>
 </resources>

@@ -715,4 +715,16 @@
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">यह कार्ड WebGPU नहीं चला सकता: पेज प्रोसेसर पर बनाए जाएँगे, जो धीमा है।</string>
   <string name="settings.render.restart">इस बदलाव के साथ विंडो अभी फिर से खुल रही है।</string>
+  <string name="keys.nudge">थोड़ा खिसकाएँ</string>
+  <string name="keys.nudge_d">चुने हुए को एक पिक्सेल खिसकाता है; दबाए रखने पर खिसकाता रहता है।</string>
+  <string name="keys.k_pgup">PgUp</string>
+  <string name="keys.k_pgdn">PgDn</string>
+  <string name="settings.mirror_edit">मिरर संपादित करें</string>
+  <string name="settings.mirror_edit.on">मिरर में टैबलेट के पेज संपादित करें</string>
+  <string name="settings.mirror_edit.help">बंद होने पर मिरर के पेज केवल देखने के लिए खुलते हैं। चालू होने पर वे पेज एडिटर के टूल के साथ खुलते हैं, और बदलाव टैबलेट पर जाते हैं। PaperDaemon यह वादा नहीं कर सकता कि कोई संपादन कभी किसी नोटबुक को नुकसान नहीं पहुँचाएगा, खासकर टैबलेट के सॉफ़्टवेयर अपडेट के बाद।</string>
+  <string name="risks.title">PaperDaemon का उपयोग करने से पहले</string>
+  <string name="risks.intro">PaperDaemon का उपयोग करने के लिए, कृपया इसके जोखिम पढ़ें और पुष्टि करें कि आप उन्हें स्वीकार करते हैं।</string>
+  <string name="risks.read">GitHub पर जोखिम पढ़ें</string>
+  <string name="risks.third_party">PaperDaemon एक तृतीय-पक्ष एप्लिकेशन है, जिसे reMarkable ने न बनाया है न समर्थन दिया है, और इसका उद्देश्य बिना बदलाव वाले reMarkable टैबलेट को और उपयोगी बनाना है। PaperDaemon के साथ कोई भी जो करता है, या इससे होने वाली किसी भी हानि या क्षति के लिए मैं ज़िम्मेदार नहीं हूँ।</string>
+  <string name="risks.action">मुझे जोखिम स्वीकार हैं</string>
 </resources>

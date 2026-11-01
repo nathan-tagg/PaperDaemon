@@ -392,6 +392,10 @@ def test_the_editor_reads_and_saves_a_mirror_page_through_the_engine(monkeypatch
         scene = r.json()
         assert r.headers["etag"] == scene["stamp"] and scene["layers"][0]["lines"][0]["id"]
         scene["layers"][0]["lines"].pop(0)
+        # Edit the Mirror, in Settings, off until the user turns it on: nothing written
+        r = c.put(url, json=scene)
+        assert r.status_code == 403 and r.json()["reason"] == "off", r.text
+        monkeypatch.setattr(server, "_mirror_edit", lambda: True)
         r = c.put(url, json=scene)
         assert r.status_code == 200 and r.json()["erased"] == 1 and r.json()["changed"], r.text
         assert c.put(url, json=scene).json()["reason"] == "stale"

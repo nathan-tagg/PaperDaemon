@@ -245,7 +245,8 @@ def status():
         mirror = {"complete": sync.mirrored()}
     except Exception:
         mirror = {"complete": False}
-    return {"version": __version__, "tablet": tablet, "pull": _pull, "mirror": mirror, "secrets": _secret_flags(),
+    return {"version": __version__, "repo": paths.repo(), "tablet": tablet, "pull": _pull, "mirror": mirror,
+            "secrets": _secret_flags(),
             "loop": loop.status(), "lineup": settings.active(s)["name"], "first_run": _first_run(),
             "can_start": settings.startable(s),
             "false_mirror": {"exists": paths.false_mirror_exists(), "up": bool(_fm.get("port"))},
@@ -871,7 +872,7 @@ def get_library():
     (1-based); `cover_page` the page its cover shows, by the tablet's own setting (the first page, or the last one
     open)."""
     from .remarkable import library
-    out = []
+    out, here = [], _opened()
     for u, m in library.items().items():
         t = m.get("type")
         if t not in ("CollectionType", "DocumentType"):
@@ -886,7 +887,7 @@ def get_library():
         if t == "DocumentType":
             kind = c.get("fileType") or "notebook"
             pages = len(_live(c))
-            at = _at_page(m, pages, c)
+            at = _at_page(m, pages, c, here.get(u))
             cover = at if c.get("coverPageNumber") == -1 else 1      # -1: the tablet shows the last page open
         out.append({"id": u, "name": m.get("visibleName") or u, "parent": m.get("parent") or "",
                     "type": "folder" if t == "CollectionType" else "document", "kind": kind, "pages": pages,
@@ -899,10 +900,22 @@ def get_library():
     return out
 
 
-def _at_page(meta, pages, content=None):
-    """The page a document was last open on, 1-based: the page the document itself records as last open (its
-    `cPages.lastOpened`, a page id, which stays right when pages are added before it), else the metadata's
-    `lastOpenedPage` (counted from 0, and stale in about one notebook of five)."""
+def _at_page(meta, pages, content=None, here=None):
+    """The page a document was last open on, 1-based: the page last open HERE (`here`, kept by post_library_opened)
+    while the document still says what it said then (the tablet has not opened another page of it since); else the
+    document's own (_their_page)."""
+    theirs = _their_page(meta, pages, content)
+    if here and content and here.get("theirs") == theirs:
+        live = [p.get("id") for p in _live(content)]
+        if here.get("page") in live:
+            return live.index(here["page"]) + 1
+    return theirs
+
+
+def _their_page(meta, pages, content=None):
+    """The page the document itself records as last open, 1-based: its `cPages.lastOpened` (a page id, which stays
+    right when pages are added before it), else the metadata's `lastOpenedPage` (counted from 0, and stale in about
+    one notebook of five)."""
     if content:
         pid = ((content.get("cPages") or {}).get("lastOpened") or {}).get("value")
         live = [p.get("id") for p in _live(content)]
@@ -913,6 +926,27 @@ def _at_page(meta, pages, content=None):
     except (TypeError, ValueError):
         k = 0
     return max(1, min(pages or 1, k + 1))
+
+
+# THE PAGE LAST OPEN HERE, per document, in PaperDaemon's own files (one per library: the Mirror's, the False
+# Mirror's), never in the document's: the tablet keeps its own, and nothing of this goes to it
+_opened_lock = threading.Lock()
+
+
+def _opened_path():
+    import hashlib
+    from .remarkable import library
+    return os.path.join(paths.sub("opened"), hashlib.sha1(os.path.abspath(library.M).encode()).hexdigest()[:12] + ".json")
+
+
+def _opened():
+    """{doc: {"page": the page id last open here, "theirs": the page the document itself said was last open then}}"""
+    try:
+        with open(_opened_path(), encoding="utf-8") as f:
+            got = json.load(f)
+        return got if isinstance(got, dict) else {}
+    except (OSError, ValueError):
+        return {}
 
 
 def _live(c):
@@ -963,15 +997,17 @@ def _cover_page(doc):
         with open(os.path.join(library.M, doc + ".content"), encoding="utf-8") as f:
             c = json.load(f)
         if c.get("coverPageNumber") == -1:
-            page = _at_page(library.items().get(doc) or {}, len(_live(c)), c)
+            page = _at_page(library._meta(doc) or {}, len(_live(c)), c, _opened().get(doc))
     except (OSError, ValueError):
         pass
     return page
 
 
 def _kept_or_missing(doc, page, size):
-    """A grid picture or a cover from the page picture cache, or 404 {"missing": true, "page", "size"}: the window
-    draws it on the graphics card and hands it back (PUT .../thumb/{page}?size=), drawn nowhere else (thumbs.py)."""
+    """A grid picture or a cover as it was KEPT (thumbs.py), at once, X-PD-Fresh 1 when it was drawn from the page as it
+    is now and 0 when the page has changed since: the window then draws it again, quietly, on the graphics card, and
+    hands it back (PUT .../thumb/{X-PD-Page}?size={X-PD-Size}&from={X-PD-Stamp}). 404 {"missing": true, "page", "size",
+    "stamp"} when none was ever drawn."""
     from .remarkable import library
     from . import thumbs
     if not re.fullmatch(r"[0-9a-fA-F-]{36}", doc):
@@ -979,12 +1015,15 @@ def _kept_or_missing(doc, page, size):
     if not library.items().get(doc):
         return JSONResponse({"error": "not in the Mirror"}, status_code=404)
     try:
-        out = thumbs.cached(doc, page, size)
+        k = thumbs.kept(doc, page, size)
     except Exception as ex:
         return JSONResponse({"error": "no such page: %s" % str(ex)[:160]}, status_code=404)
-    if out:
-        return FileResponse(out, media_type="image/webp", headers={"Cache-Control": "no-store"})
-    return JSONResponse({"error": "not drawn yet", "missing": True, "page": page, "size": size}, status_code=404)
+    if k["path"]:
+        return FileResponse(k["path"], media_type="image/webp", headers={
+            "Cache-Control": "no-store", "X-PD-Fresh": "1" if k["fresh"] else "0", "X-PD-Page": str(page),
+            "X-PD-Size": str(size), "X-PD-Stamp": k["stamp"]})
+    return JSONResponse({"error": "not drawn yet", "missing": True, "page": page, "size": size, "stamp": k["stamp"]},
+                        status_code=404)
 
 
 @app.get(API + "/library/{doc}/chapters")
@@ -1067,7 +1106,8 @@ def get_library_thumb(doc: str, page: int):
 
 @app.put(API + "/library/{doc}/thumb/{page}")
 async def put_library_thumb(doc: str, page: int, request: Request):
-    """A grid picture or a cover the window drew (?size= the width it was asked for), kept in the page picture cache."""
+    """A grid picture or a cover the window drew (?size= the width it was asked for; ?from= the page's stamp it was
+    asked with), kept (thumbs.py)."""
     from . import thumbs
     if not _doc_ok(doc) or page < 1:
         return _bad("not a page")
@@ -1081,7 +1121,7 @@ async def put_library_thumb(doc: str, page: int, request: Request):
     if not data or len(data) > 8_000_000:
         return _bad("a picture of up to 8 MB")
     try:
-        await run_in_threadpool(thumbs.put, doc, page, size, data)
+        await run_in_threadpool(thumbs.put, doc, page, size, data, request.query_params.get("from") or None)
     except Exception as ex:
         return _bad("not kept: %s" % str(ex)[:200])
     return {"kept": True}
@@ -1089,16 +1129,28 @@ async def put_library_thumb(doc: str, page: int, request: Request):
 
 @app.post(API + "/library/{doc}/opened")
 def post_library_opened(doc: str, page: int = 0):
-    """A document, or one of its pages (?page=), was opened: its picture (its cover, or that page's) is forgotten, and
-    the next look at it draws it anew (thumbs.py)."""
-    from . import thumbs
+    """Page `page` (1-based) of a document is open in the viewer: the page the document opens at next, and the one its
+    cover shows when the tablet's setting says the page last open, until the tablet opens another page of it
+    (_at_page). Kept in PaperDaemon's own files: nothing goes to the tablet. -> {"at": the page}"""
+    from .remarkable import library
     if not _doc_ok(doc):
         return _bad("not a document id")
+    if page < 1:
+        return {"at": 0}
     try:
-        n = thumbs.forget(doc, page if page > 0 else _cover_page(doc))
-    except Exception:
-        n = 0
-    return {"forgotten": n}
+        with open(os.path.join(library.M, doc + ".content"), encoding="utf-8") as f:
+            c = json.load(f)
+    except (OSError, ValueError):
+        return _bad("not in the library", 404)
+    live = _live(c)
+    if page > len(live):
+        return _bad("there is no page %d" % page)
+    theirs = _their_page(library._meta(doc) or {}, len(live), c)
+    with _opened_lock:
+        got = _opened()
+        got[doc] = {"page": live[page - 1].get("id"), "theirs": theirs}
+        paths.write_json_atomic(_opened_path(), got)
+    return {"at": page}
 
 
 @app.get(API + "/library/{doc}/page/{page}/source.png")
@@ -1859,6 +1911,8 @@ async def put_mirror_scene(doc: str, page: int, request: Request):
     from .remarkable import inplace, fastrm
     if not _doc_ok(doc):
         return _bad("not a document id")
+    if not _mirror_edit():
+        return _mirror_edit_off()
     data = await request.body()
     try:
         if (request.headers.get("content-type") or "").startswith("application/octet-stream"):
@@ -1893,10 +1947,21 @@ async def post_mirror_picture(doc: str, page: int, request: Request):
     from .remarkable import inplace
     if not _doc_ok(doc):
         return _bad("not a document id")
+    if not _mirror_edit():
+        return _mirror_edit_off()
     data = await request.body()
     if not data or len(data) > 40_000_000:
         return _bad("a picture of up to 40 MB")
     return await run_in_threadpool(_local, lambda: inplace.add_picture(doc, page, data))
+
+
+def _mirror_edit():
+    """Edit the Mirror, in Settings (off until the user turns it on): the Mirror's pages are written only while it is on."""
+    return bool((settings.load().get("mirror") or {}).get("edit"))
+
+
+def _mirror_edit_off():
+    return JSONResponse({"error": "editing the Mirror is off in Settings", "reason": "off"}, status_code=403)
 
 
 @app.post(API + "/library/{doc}/push")
@@ -1916,6 +1981,16 @@ def post_library_push(doc: str):
             return JSONResponse({"error": "the document could not be sent to the tablet: %s" % str(ex)[:200],
                                  "reason": "offline"}, status_code=503)
     return _local(go)
+
+
+@app.get(API + "/library/{doc}/sync")
+def get_library_doc_sync(doc: str):
+    """How the document's edits going up to the tablet are coming along, for the viewer's bar (sync.push_progress):
+    {state: sending | sent | failed | idle, done, steps} (steps 0 until the push knows what it sends)."""
+    from .remarkable import sync
+    if not _doc_ok(doc):
+        return _bad("not a document id")
+    return sync.push_progress(doc)
 
 
 @app.post(API + "/library/sync")

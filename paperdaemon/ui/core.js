@@ -316,7 +316,7 @@
   PD.html = (el, html) => { if (el && el.__html !== html) { el.innerHTML = html; el.__html = html; } };
 
   // ANYWHERE in the app, a picture that fails to load is hidden: a broken image is never shown (a web picture dropped
-  // into Decompose whose site refuses it, say). Pictures from the engine go through PD.loadImage, which tries again.
+  // into Decompose whose site refuses it, say). Pictures from the engine go through PD.loadImage or PD.loadThumb, which try again.
   document.addEventListener("error", e => {
     const t = e.target;
     if (t && t.tagName === "IMG" && t.getAttribute("src")) t.style.visibility = "hidden";
@@ -330,11 +330,14 @@
       the picture has arrived and decoded; a failed fetch or decode is tried again, waiting longer each time, for as
       long as the img is on screen and `stale()` is false. After `tries` failures `giveUp(holder)` is called (when given)
       and the spinner stays otherwise. -> a promise of true once shown. */
-  // THE PAGE PICTURES THE ENGINE DOES NOT HAVE (a grid picture, a cover: answered 404 {missing, page, size}) are drawn
-  // here, on the graphics card, by the page editor's own renderer: one at a time (one page's worth of the card's memory
-  // in use, never a grid's), each in a frame of its own that is gone when it is done, and handed to the engine to keep.
+  // THE PAGE PICTURES (a grid's page, a cover) ARE KEPT by the engine, through updates (thumbs.py). One whose page has
+  // changed since it was drawn (written on, here or on the tablet), or one never drawn, is drawn here, QUIETLY: on the
+  // graphics card, by the page editor's own renderer, one at a time (one page's worth of the card's memory in use,
+  // never a grid's), never while a page is open to edit (that page has the card), each in a frame of its own that is
+  // gone when it is done, and handed to the engine to keep with the stamp of the page it was asked for.
   let thumbChain = Promise.resolve();
   const thumbJobs = new Map();                              // what is being drawn -> its promise (asked twice, drawn once)
+  const editing = () => !!document.querySelector("dialog[open] iframe.page-editor");
   function thumbOne(base, doc, page, size) {
     return new Promise(done => {
       const fr = document.createElement("iframe");
@@ -352,14 +355,17 @@
       document.body.append(fr);
     });
   }
-  PD.drawThumb = (base, doc, page, size) => {
+  PD.drawThumb = (base, doc, page, size, stamp = "", stale = () => false) => {
     const key = [base, doc, page, size].join("|");
     if (thumbJobs.has(key)) return thumbJobs.get(key);
     const job = thumbChain.then(async () => {
+      while (editing()) await new Promise(r => setTimeout(r, 500));
+      if (stale()) return false;                            // no longer on screen: not drawn
       const got = await thumbOne(base, doc, page, size);
       if (!got.ok || !got.blob) return false;
       try {
-        const r = await fetch("/api/v1" + base + "/library/" + encodeURIComponent(doc) + "/thumb/" + page + "?size=" + size,
+        const r = await fetch("/api/v1" + base + "/library/" + encodeURIComponent(doc) + "/thumb/" + page + "?size=" + size +
+                              (stamp ? "&from=" + encodeURIComponent(stamp) : ""),
           { method: "PUT", body: got.blob, headers: { Authorization: "Bearer " + PD.pairing.token, "Content-Type": "image/webp" } });
         return r.ok;
       } catch (e) { return false; }
@@ -369,22 +375,58 @@
     return job;
   };
 
+  /** A KEPT PAGE PICTURE (a grid's page, a cover) into `img`, never a spinner: the one last shown for `path` at once,
+      the one the engine kept as soon as it is in, and one out of date or never drawn drawn again quietly
+      (PD.drawThumb) and put in its place -- each decoded before it is put in, so a picture never blinks. `giveUp()`
+      (when given) when nothing could be shown: the engine unreachable `tries` times, or a picture that could not be
+      drawn. -> a promise of true once a picture shows. */
+  const thumbShown = new Map();                             // path -> the picture last shown for it (a blob: URL), newest last
+  PD.loadThumb = async (img, path, { stale = () => false, tries = 6, giveUp = null } = {}) => {
+    const at = /^(.*)\/library\/([^/]+)\//.exec(path);
+    let shown = false, drawn = false;
+    if (thumbShown.has(path)) { img.src = thumbShown.get(path); shown = true; }
+    for (let k = 0; ; k++) {
+      if (!img.isConnected || stale()) return shown;
+      let again = null;
+      try {
+        const r = await fetch("/api/v1" + path, { headers: { Authorization: "Bearer " + PD.pairing.token } });
+        if (r.ok) {
+          const url = URL.createObjectURL(await r.blob()), pic = new Image();
+          pic.src = url;
+          const ok = await pic.decode().then(() => true, () => false);
+          if (!ok || !img.isConnected || stale()) { URL.revokeObjectURL(url); if (ok) return shown; throw new Error("not a picture"); }
+          img.src = url; shown = true;
+          const was = thumbShown.get(path);
+          thumbShown.delete(path); thumbShown.set(path, url);
+          if (was && was !== url) URL.revokeObjectURL(was);
+          if (thumbShown.size > 600) { const [p0, u0] = thumbShown.entries().next().value; thumbShown.delete(p0); URL.revokeObjectURL(u0); }
+          if (r.headers.get("X-PD-Fresh") !== "0") return true;
+          again = { page: Number(r.headers.get("X-PD-Page")), size: Number(r.headers.get("X-PD-Size")), stamp: r.headers.get("X-PD-Stamp") || "" };
+        } else if (r.status === 404) {
+          const j = await r.json().catch(() => ({}));
+          if (!j.missing) { if (!shown && giveUp) giveUp(); return shown; }      // no such page
+          again = { page: j.page, size: j.size, stamp: j.stamp || "" };
+        }
+      } catch (e) { /* the engine is busy or restarting: tried again */ }
+      if (again) {                                          // drawn again, once a look; then asked for again
+        if (!drawn && at) {
+          drawn = true;
+          if (await PD.drawThumb(at[1], decodeURIComponent(at[2]), again.page, again.size, again.stamp, () => !img.isConnected || stale())) { k--; continue; }
+        }
+        if (!shown && giveUp && img.isConnected && !stale()) giveUp();
+        return shown;
+      }
+      if (k + 1 >= tries) { if (!shown && giveUp) giveUp(); return shown; }
+      await new Promise(res => setTimeout(res, Math.min(15000, 500 * 2 ** k)));
+    }
+  };
+
   PD.loadImage = async (img, path, { holder = img.parentElement, stale = () => false, tries = 8, giveUp = null } = {}) => {
     if (holder) holder.classList.add("img-wait");
-    let drew = false;
     for (let k = 0; ; k++) {
       if (!img.isConnected || stale()) return false;
       try {
         const r = await fetch("/api/v1" + path, { headers: { Authorization: "Bearer " + PD.pairing.token } });
-        if (r.status === 404 && !drew) {                    // not drawn yet: drawn here, then asked for again
-          const j = await r.json().catch(() => ({}));
-          const at = /^(.*)\/library\/([^/]+)\//.exec(path);
-          if (j.missing && at) {
-            drew = true;
-            if (!img.isConnected || stale()) return false;
-            if (await PD.drawThumb(at[1], decodeURIComponent(at[2]), j.page, j.size)) { k--; continue; }
-          }
-        }
         if (r.ok) {
           const url = URL.createObjectURL(await r.blob());
           if (!img.isConnected || stale()) { URL.revokeObjectURL(url); return false; }
@@ -533,6 +575,42 @@
       '<button type="button" class="btn ' + (danger ? "danger" : "primary") + '" data-v="ok">' + esc(action) + "</button></div>");
     dlg.addEventListener("click", e => { const b = e.target.closest("button[data-v]"); if (b) dlg.close(b.dataset.v); });
     dlg.addEventListener("close", () => { resolve(dlg.returnValue === "ok"); dlg.remove(); });
+    document.body.append(dlg);
+    dlg.showModal();
+  });
+
+  // ---- THE RISKS, acknowledged before anything else the first time the window opens (settings: risks.acknowledged)
+
+  /** Asks for the risks to be acknowledged; resolves once they are, and saved. The risks' page is RISKS.md in the
+      repository PaperDaemon comes from (the engine's status says which); without one known, there is no link. */
+  PD.acknowledgeRisks = () => new Promise(resolve => {
+    const repo = (PD.status || {}).repo, url = repo ? "https://github.com/" + repo + "/blob/main/RISKS.md" : "";
+    const dlg = sheet(PD.t("risks.title"), "<p>" + esc(PD.t("risks.intro")) + "</p>" +
+      (url ? '<p><a href="' + esc(url) + '" data-risks>' + esc(PD.t("risks.read")) + "</a></p>" : "") +
+      "<p>" + esc(PD.t("risks.third_party")) + "</p>" +
+      '<p class="msg err" role="alert" hidden></p>' +
+      '<div class="actions"><button type="button" class="btn primary" data-v="ok" autofocus>' + esc(PD.t("risks.action")) + "</button></div>");
+    // Esc does not take it away: the browser may close a dialog the user never pressed anything in whatever the
+    // page says, so a close without the acknowledgment opens it again
+    let acknowledged = false;
+    dlg.addEventListener("cancel", e => e.preventDefault());
+    dlg.addEventListener("close", () => { if (!acknowledged) dlg.showModal(); });
+    dlg.addEventListener("click", async e => {
+      if (e.target.closest("a[data-risks]")) {                       // the page, in the user's browser
+        e.preventDefault();
+        PD.safe(PD.api("POST", "/open-link", { url }));
+        return;
+      }
+      const b = e.target.closest("button[data-v]");
+      if (!b || b.disabled) return;
+      b.disabled = true;
+      const [, err] = await PD.safe(PD.saveSettings(s => { PD.setK(s, "risks.acknowledged", true); }));
+      if (err) { const m = $(".msg", dlg); m.textContent = PD.errText(err); m.hidden = false; b.disabled = false; return; }
+      acknowledged = true;
+      dlg.close();
+      dlg.remove();
+      resolve();
+    });
     document.body.append(dlg);
     dlg.showModal();
   });

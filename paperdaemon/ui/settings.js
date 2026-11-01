@@ -343,6 +343,7 @@
     const s = S.s || {};
     $("#st-lang", R).value = PD.languageLabel(PD.getK(s, "prefs.language") || "en");
     $("#st-net", R).checked = PD.getK(s, "network.allowed") !== false;
+    $("#st-medit", R).checked = PD.getK(s, "mirror.edit") === true;
     paintRenderer();
     $("#st-retries", R).value = String(PD.getK(s, "daemon.retries") || 0);
     $("#st-notes", R).checked = PD.getK(s, "daemon.page_notes") === true;
@@ -365,6 +366,9 @@
         "</section>" +
         '<section class="section" aria-labelledby="st-h-set"><h2 id="st-h-set">' + esc(t("settings.label")) + "</h2>" +
         row(t("settings.remarkable"), "", '<div id="st-login"></div>') +
+        row(t("settings.mirror_edit"), t("settings.mirror_edit.help"),
+          '<label class="check-label"><input type="checkbox" id="st-medit"> ' + esc(t("settings.mirror_edit.on")) +
+          '</label><p class="hint" id="st-medit-msg" role="status"></p>') +
         row(t("settings.network"), t("settings.network.help"),
           '<label class="check-label"><input type="checkbox" id="st-net"> ' + esc(t("settings.network.allow")) +
           '</label><p class="hint" id="st-net-msg" role="status"></p>') +
@@ -400,6 +404,9 @@
       PD.on(R, "click", "[data-act=fm-create]", (e, el) => createFalseMirror(el));
       PD.on(R, "click", "[data-act=fm-delete]", (e, el) => deleteFalseMirror(el));
       $("#st-net", R).addEventListener("change", e => save("network.allowed", e.target.checked, $("#st-net-msg", R)));
+      $("#st-medit", R).addEventListener("change", async e => {
+        if (!await save("mirror.edit", e.target.checked, $("#st-medit-msg", R))) e.target.checked = !e.target.checked;
+      });
       // GPU and CPU: one of the two ticked, always (ticking one unticks the other; unticking one ticks the other)
       $("#st-gpu", R).addEventListener("change", e => setRenderer(!e.target.checked));
       $("#st-cpu", R).addEventListener("change", e => setRenderer(e.target.checked));

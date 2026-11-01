@@ -871,15 +871,35 @@ def _local_files(doc_uuid):
     return local
 
 
-def _upload(t, blobs):
+def _upload(t, blobs, sent=None):
     for data, fn, addr in blobs:
         st_, body, _ = put_blob(t, data, fn, addr)
         if st_ not in (200, 201, 202):
             raise RuntimeError("upload %s failed: %s %s" % (fn, st_, body[:120]))
+        if sent:
+            sent()
+
+
+# THE PUSH UNDER WAY of a document the user edited (push_edited), for the window's bar (push_progress): the document,
+# the push's requests to the cloud done and how many it makes (0 until it knows what it sends), and how it ended
+_PUSHING = {"doc": "", "state": "idle", "done": 0, "steps": 0, "at": 0.0}
+
+
+def _pushing(**k):
+    _PUSHING.update(k, at=time.time())
+
+
+def push_progress(doc):
+    """How the push of `doc` is going -> {state: sending | sent | failed | idle, done, steps}: "idle" when none of it is
+    under way or just over (a minute since)."""
+    p = dict(_PUSHING)
+    if p["doc"] != doc or (p["state"] != "sending" and time.time() - p["at"] > 60):
+        return {"state": "idle", "done": 0, "steps": 0}
+    return {k: p[k] for k in ("state", "done", "steps")}
 
 
 @_one_at_a_time
-def push_doc(doc_uuid, dry_run=True, replace=None, only=False):
+def push_doc(doc_uuid, dry_run=True, replace=None, only=False, progress=None):
     """Push every locally changed file of one existing document in a single root move.
 
     Diffs against the LIVE document index, not the cached state (the tablet may have pushed since),
@@ -891,15 +911,19 @@ def push_doc(doc_uuid, dry_run=True, replace=None, only=False):
     while the host works on the page). The copy is recorded as the cloud's, so the next pull leaves the mirror's
     page alone, and the next push of the mirror's page takes the copy's place. `only`: those files and nothing else
     of the document -- a note going up mid-job never carries the job's own work with it (push_pending is the one way
-    a job's work reaches the tablet, so it can still be taken back).
+    a job's work reaches the tablet, so it can still be taken back). `progress(done, steps)` hears each request to the
+    cloud as it is done (steps 0 until the push knows what it sends).
     """
     replace = replace or {}
+    tell = progress or (lambda done, steps: None)
 
     def _read(name, path):
         return replace[name] if name in replace else open(path, "rb").read()
     t = user_token()
     root, gen = get_root(t)
+    tell(1, 0)
     tree = get_blob(t, root, "root.docSchema").decode()
+    tell(2, 0)
     troot, tdocs = tree.splitlines()[0], tree.splitlines()[1:]
     lines = [l for l in tdocs if l.split(":")[2] == doc_uuid]
     if not lines:
@@ -908,6 +932,7 @@ def push_doc(doc_uuid, dry_run=True, replace=None, only=False):
     dhash, dflags, _, dcount, dsize = dline.split(":")
     di = get_blob(t, dhash, doc_uuid + ".docSchema").decode()
     dhead, dfiles = di.splitlines()[0], di.splitlines()[1:]
+    tell(3, 0)
 
     local = _local_files(doc_uuid)
     if only:
@@ -975,8 +1000,15 @@ def push_doc(doc_uuid, dry_run=True, replace=None, only=False):
 
     blobs.append((ndi.encode(), doc_uuid + ".docSchema", ndhash))
     blobs.append((ntree.encode(), "root.docSchema", nrhash))
-    _upload(t, blobs)
+    steps, done = 3 + len(blobs) + 1, [3]
+    tell(3, steps)
+
+    def sent():
+        done[0] += 1
+        tell(done[0], steps)
+    _upload(t, blobs, sent)
     code, body = put_root(t, nrhash, gen, broadcast=True)
+    tell(steps, steps)
     plan["root_put"] = code
     if code == 200:
         stt = _state()
@@ -1120,11 +1152,17 @@ def push_edited(doc_uuid, page_ids=None, tries=4):
         return {"skipped": "the cloud already matches the mirror"}
     touch(doc_uuid, page_ids)
     r = {}
-    for i in range(tries):
-        r = push_doc(doc_uuid, dry_run=False) or {}
-        if r.get("root_put") == 200 or "root_put" not in r:
-            break
-        time.sleep(1 + i)                       # the root moved under the push (the tablet synced): again
+    _pushing(doc=doc_uuid, state="sending", done=0, steps=0)
+    try:
+        for i in range(tries):
+            r = push_doc(doc_uuid, dry_run=False, progress=lambda done, steps: _pushing(done=done, steps=steps)) or {}
+            if r.get("root_put") == 200 or "root_put" not in r:
+                break
+            time.sleep(1 + i)                       # the root moved under the push (the tablet synced): again
+    except Exception:
+        _pushing(state="failed")
+        raise
+    _pushing(state="failed" if r.get("error") or r.get("root_put") not in (None, 200) else "sent")
     return r
 
 

@@ -1,12 +1,24 @@
 ## ADDED Requirements
 
 ### Requirement: The Mirror's pages can be edited
-A page of the tablet's Mirror SHALL open in the page editor with its tools, as a False Mirror page does, and the
-user's changes SHALL reach the tablet by PaperDaemon's sync.
+While Edit the Mirror is on in Settings (off until the user turns it on), a page of the tablet's Mirror SHALL open in
+the page editor with its tools, as a False Mirror page does, and the user's changes SHALL reach the tablet by
+PaperDaemon's sync. Off, the engine SHALL write none of the Mirror's pages. The setting SHALL say that PaperDaemon
+cannot promise an edit never damages a notebook, above all after an update of the tablet's software.
 
 #### Scenario: A stroke drawn on a Mirror page
 - **WHEN** the user draws a stroke on a Mirror page and leaves it
 - **THEN** after the next sync the tablet shows the stroke where the editor showed it
+
+### Requirement: A sync shows how far it has come
+While a Mirror document's edits go up to the tablet (Ctrl+S, or the document closed), a thin bar SHALL show how far
+the sync has come: under the viewer's bar while the document is open, along the top of its cover once it is closed.
+It SHALL fill by the sync's requests to the cloud and be gone a moment after the sync is through; a sync that failed
+SHALL leave no bar, its reason shown by the document's name.
+
+#### Scenario: Closing an edited notebook
+- **WHEN** the user closes a Mirror notebook they wrote on
+- **THEN** a bar runs along the top of its cover until the edit has reached the cloud, then goes
 
 ### Requirement: A tablet page is written in place
 Writing a tablet page SHALL keep every part of it the user did not change exactly as the tablet wrote it: its ids,

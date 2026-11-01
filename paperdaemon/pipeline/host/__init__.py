@@ -664,7 +664,8 @@ plus the fields below where they apply; any step may have size, near, side and a
 size: small | medium | large | full. near: "stack" (below everything; the default), "left" then
 "right" (two things side by side, "next to it"), "mark:N" or "line:N" with side below|above|left|right|on, a
 corner ("top-right"), "center", or "arrow" (the tip of an arrow into empty paper). A stacked image is the
-page's full width and as tall as its picture, under the words; size small makes it half as wide.
+page's full width and as tall as its picture, under the words; size small makes it half as wide. Pictures meant
+to be seen together (a gallery, a set, a comparison) go two to a row: near "left", then "right".
 <<PICTURES>>
 
 CHANGING SOMETHING REPLACES IT. A change to a chart, calendar or picture you made is one step with

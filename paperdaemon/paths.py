@@ -349,6 +349,35 @@ def stockfish():
                 if name.lower().startswith("stockfish") and name.lower().endswith(".exe"):
                     return os.path.join(folder, name)
     return shutil.which("stockfish")
+_REPO = []
+
+
+def repo():
+    """The GitHub repository PaperDaemon comes from, "owner/name", for links to its pages: a release build writes it
+    beside the engine (repo.txt); a source checkout has it as git's origin. None when neither says."""
+    if _REPO:
+        return _REPO[0]
+    import re
+    import subprocess
+    got = None
+    if getattr(sys, "frozen", False):
+        try:
+            with open(os.path.join(os.path.dirname(sys.executable), "repo.txt"), encoding="utf-8") as f:
+                got = f.read().strip()
+        except OSError:
+            got = None
+    else:
+        try:
+            url = subprocess.run(["git", "config", "--get", "remote.origin.url"], capture_output=True, text=True,
+                                 timeout=10, cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).stdout
+            m = re.search(r"github\.com[:/]([\w.-]+/[\w.-]+?)(?:\.git)?/?\s*$", url)
+            got = m.group(1) if m else None
+        except (OSError, subprocess.SubprocessError):
+            got = None
+    _REPO.append(got if got and re.fullmatch(r"[\w.-]+/[\w.-]+", got) else None)
+    return _REPO[0]
+
+
 def geo_dir():
     """Cache for geocoding, weather and history lookups."""
     return os.path.join(data_dir(), "geo")

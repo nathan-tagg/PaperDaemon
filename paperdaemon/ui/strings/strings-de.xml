@@ -715,4 +715,16 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">Diese Karte kann kein WebGPU ausführen: Seiten werden auf dem Prozessor gezeichnet, was langsamer ist.</string>
   <string name="settings.render.restart">Das Fenster öffnet sich jetzt mit dieser Änderung neu.</string>
+  <string name="keys.nudge">Pixelweise verschieben</string>
+  <string name="keys.nudge_d">Verschiebt die Auswahl um ein Pixel; gedrückt gehalten, immer weiter.</string>
+  <string name="keys.k_pgup">Bild↑</string>
+  <string name="keys.k_pgdn">Bild↓</string>
+  <string name="settings.mirror_edit">Spiegel bearbeiten</string>
+  <string name="settings.mirror_edit.on">Die Seiten des Tablets im Spiegel bearbeiten</string>
+  <string name="settings.mirror_edit.help">Aus: Die Seiten des Spiegels öffnen sich nur zum Ansehen. An: Sie öffnen sich mit den Werkzeugen des Seiteneditors, und Änderungen gehen an das Tablet. PaperDaemon kann nicht versprechen, dass eine Bearbeitung nie ein Notizbuch beschädigt, vor allem nach einem Update der Tablet-Software.</string>
+  <string name="risks.title">Bevor du PaperDaemon verwendest</string>
+  <string name="risks.intro">Um PaperDaemon zu verwenden, lies bitte seine Risiken und bestätige, dass du sie akzeptierst.</string>
+  <string name="risks.read">Die Risiken auf GitHub lesen</string>
+  <string name="risks.third_party">PaperDaemon ist eine Drittanbieter-Anwendung, weder von reMarkable entwickelt noch empfohlen, die ein unverändertes reMarkable-Tablet nützlicher machen soll. Ich bin nicht verantwortlich für das, was jemand mit PaperDaemon tut, oder für Verluste oder Schäden, die es verursacht.</string>
+  <string name="risks.action">Ich akzeptiere die Risiken</string>
 </resources>

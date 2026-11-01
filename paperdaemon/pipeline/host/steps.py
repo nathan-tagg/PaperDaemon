@@ -85,7 +85,7 @@ STEP_BRIEF = [
     (('tag',),
      "  tag          a tag on this page, named as the user named it, with quote: the user's words that ask\n               for it -- ONLY when this notebook's system prompt or this page tells you to tag it"),
     (('chess',),
-     '  chess        a chess game played on THIS page, which it takes whole (nothing else goes on it): color (white,\n               black or either), strength (a rating the user named), opponent (a resident the user\n               named), moves (the moves the request already makes, in order, as written: ["e4"])'),
+     '  chess        a chess game played on THIS page, which it takes whole (nothing else goes on it): color (the\n               side the USER plays: white, black or either), strength (a rating the user named), opponent (a\n               resident the user named), moves (the moves the request already makes, in order, as written:\n               ["e4"])'),
     (('adventure',),
      '  adventure    an ink adventure (what = the adventure and the hero asked for): its scene takes THIS\n               page whole (nothing else goes on it), its sheet and log right after'),
     (('messages',),

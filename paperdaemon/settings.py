@@ -75,6 +75,12 @@ SCHEMA = [
     {"path": "false_mirror.faces", "type": "choice", "default": "tablet", "choices": ["tablet", "own"],
      "label": "False Mirror faces",
      "help": "The faces typed text and books are set in, in the False Mirror: the tablet's (from the reMarkable desktop app, with an account signed in) or PaperDaemon's own."},
+    # EDITING THE MIRROR (the tablet's own pages, written in place: add-editable-mirror): off until the user turns it on
+    {"path": "mirror.edit", "type": "bool", "default": False, "label": "Edit the Mirror",
+     "help": "Off, the Mirror's pages open to look at. On, they open with the page editor's tools, and what is changed goes to the tablet. PaperDaemon cannot promise an edit never damages a notebook, above all after an update of the tablet's software."},
+    # THE RISKS, acknowledged in the window the first time it opens (RISKS.md); until they are, it shows nothing else
+    {"path": "risks.acknowledged", "type": "bool", "default": False, "label": "Risks acknowledged",
+     "help": "Whether the risks of using PaperDaemon (RISKS.md) were read and acknowledged. Until they are, the window asks for that before anything else."},
     {"path": "false_mirror.convert", "type": "bool", "default": False, "label": "Convert books with the tablet",
      "help": "Books imported into the False Mirror are converted by the tablet: each is sent, for a moment, to the root of the tablet's library."},
     {"path": "location.name", "type": "text", "default": "", "label": "Location",

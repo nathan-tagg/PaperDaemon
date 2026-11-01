@@ -715,4 +715,16 @@
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">このカードでは WebGPU を実行できません。ページはプロセッサで描画され、遅くなります。</string>
   <string name="settings.render.restart">この変更でウィンドウを今開き直します。</string>
+  <string name="keys.nudge">少しずつ動かす</string>
+  <string name="keys.nudge_d">選択したものを1ピクセル動かします。押し続けると動き続けます。</string>
+  <string name="keys.k_pgup">PgUp</string>
+  <string name="keys.k_pgdn">PgDn</string>
+  <string name="settings.mirror_edit">ミラーを編集</string>
+  <string name="settings.mirror_edit.on">タブレットのページをミラーで編集する</string>
+  <string name="settings.mirror_edit.help">オフのとき、ミラーのページは閲覧専用で開きます。オンのときはページエディターのツール付きで開き、変更はタブレットに送られます。特にタブレットのソフトウェア更新の後は、編集でノートが損なわれないとはPaperDaemonは約束できません。</string>
+  <string name="risks.title">PaperDaemon をお使いになる前に</string>
+  <string name="risks.intro">PaperDaemon を使うには、リスクをお読みのうえ、同意してください。</string>
+  <string name="risks.read">GitHub でリスクを読む</string>
+  <string name="risks.third_party">PaperDaemon はサードパーティ製のアプリケーションで、reMarkable が作成・承認したものではありません。改造されていない reMarkable タブレットをより便利にするためのものです。PaperDaemon を誰がどのように使っても、またそれによって生じたいかなる損失や損害についても、私は責任を負いません。</string>
+  <string name="risks.action">リスクに同意します</string>
 </resources>

@@ -82,7 +82,8 @@ harness.md" written for that kind. "+ Add a harness" SHALL open the folder of th
 Before every commit the host SHALL run the harness's `validate()`. The default SHALL check that nothing staged
 lies outside the safe area, and that the page holds no more strokes than its limit (250,000). Over the limit the
 host SHALL fix the page rather than refuse it: written text continues on a new page right after this one, and a
-picture is decomposed again with a lower region budget. A harness MAY add checks and SHALL NOT remove these.
+picture is decomposed again with a lower region budget; a picture that still does not fit SHALL continue on the
+new page whole, never cut in two. A harness MAY add checks and SHALL NOT remove these.
 
 #### Scenario: A long answer
 - **WHEN** a job's answer would take the page past the stroke limit

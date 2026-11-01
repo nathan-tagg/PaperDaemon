@@ -736,4 +736,16 @@
   <string name="settings.render.memory">{gb} غيغابايت</string>
   <string name="settings.render.no_webgpu">لا تستطيع هذه البطاقة تشغيل WebGPU: ستُرسم الصفحات على المعالج، وهو أبطأ.</string>
   <string name="settings.render.restart">يُعاد فتح النافذة الآن بهذا التغيير.</string>
+  <string name="keys.nudge">تحريك دقيق</string>
+  <string name="keys.nudge_d">يحرّك المحدد بكسلًا واحدًا؛ وإبقاء المفتاح مضغوطًا يواصل التحريك.</string>
+  <string name="keys.k_pgup">PgUp</string>
+  <string name="keys.k_pgdn">PgDn</string>
+  <string name="settings.mirror_edit">تحرير المرآة</string>
+  <string name="settings.mirror_edit.on">تحرير صفحات الجهاز اللوحي في المرآة</string>
+  <string name="settings.mirror_edit.help">عند الإيقاف تُفتح صفحات المرآة للعرض فقط. وعند التشغيل تُفتح مع أدوات محرر الصفحات، وتذهب التغييرات إلى الجهاز اللوحي. لا يستطيع PaperDaemon أن يضمن ألا يُتلف التحرير دفترًا أبدًا، خاصة بعد تحديث برنامج الجهاز اللوحي.</string>
+  <string name="risks.title">قبل أن تستخدم PaperDaemon</string>
+  <string name="risks.intro">لاستخدام PaperDaemon، يُرجى قراءة مخاطره وتأكيد قبولك لها.</string>
+  <string name="risks.read">اقرأ المخاطر على GitHub</string>
+  <string name="risks.third_party">PaperDaemon تطبيق تابع لجهة خارجية، لم تصنعه reMarkable ولم تعتمده، والغرض منه جعل جهاز reMarkable اللوحي غير المعدَّل أكثر فائدة. لست مسؤولًا عمّا يفعله أي شخص باستخدام PaperDaemon، ولا عن أي خسارة أو ضرر يسببه.</string>
+  <string name="risks.action">أقبل المخاطر</string>
 </resources>

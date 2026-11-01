@@ -1,17 +1,17 @@
-"""The page picture cache: the pages grid's pictures and the documents' covers, kept so a book of a thousand pages
-opens with its pages grid at once, the way the reMarkable desktop app keeps its thumbnails.
+"""The page pictures: the pages grid's pictures and the documents' covers, KEPT, so the library and a book of a
+thousand pages show at once, the way the reMarkable desktop app keeps its thumbnails -- through updates of PaperDaemon
+too.
 
-THE WINDOW DRAWS THEM, on the graphics card: a picture the cache does not have is answered "missing" (with the page and
-the size wanted), and the window draws that page with the page editor's own renderer, one picture at a time, and hands
-it back (put). Nothing is drawn ahead and nothing is drawn here for the grid or the covers: a picture is made only
-when it is missing and asked for.
+Each picture lives in <data>/cache/thumbs/<doc>/ with what it was drawn from beside it (its STAMP: the page's id, its
+template, the page of the document's PDF or EPUB it shows and that file, the faces a book PaperDaemon lays out is set
+in, and the page's INK, its file's size and time). A look at a picture gets the kept one at once, always; one whose page
+has changed since (a page written on, here or on the tablet) is answered as out of date, and the window draws it again,
+quietly, and hands it back (put) with the stamp it drew from. One never drawn is answered "missing" (with the page, the
+size and the stamp wanted). Nothing is drawn ahead, and nothing here: the window draws them, on the graphics card, with
+the page editor's own renderer, one at a time.
 
-A picture is kept under a key made of what the page IS -- its page id, its template, the page of the document's PDF
-or EPUB it shows and that file's size and time -- and NOT its ink: writing on a page leaves its picture as it was until
-the page (or, for its cover, the document) is opened again, which forgets it (forget), and the next look draws it
-anew. The pictures live in <data>/cache/pages/<renderer stamp>/: a new build starts the cache afresh.
-
-draw() is the engine's own drawing of a page (render.py), for the full-size page pictures it still serves.
+draw() is the engine's own drawing of a page (render.py), for the full-size page pictures it still serves; those live
+in <data>/cache/pages/<renderer stamp>/, and a new build starts them afresh.
 
 The FILLER is one background thread: it works out every book's chapters (remarkable/chapters.cached) once the Mirror
 is built, and again when an update from the tablet lands. It draws no pictures.
@@ -28,6 +28,7 @@ from . import paths
 
 THUMB, COVER, PAGE = 360, 480, 2160    # the pages grid's picture (its width), a cover's (its width) and the page view's
 _STAMP = []
+_KEPT = []                             # the kept pictures' folder, once the old ones are moved in
 _state = {"thread": None, "again": False, "drawn": 0, "left": 0, "running": False}
 _lock = threading.Lock()
 
@@ -54,7 +55,9 @@ def renderer_stamp():
 
 
 def folder():
-    """This renderer's cache folder; pages drawn by an older one are removed the first time it is asked for."""
+    """This renderer's folder for the engine's own drawings (draw); pages drawn by an older one are removed the first
+    time it is asked for (the window's pictures kept before they were kept through updates moved out of them first)."""
+    kept_folder()
     base = paths.cache_dir("pages")
     out = os.path.join(base, renderer_stamp())
     if not os.path.isdir(out):
@@ -83,15 +86,11 @@ def _live(doc):
         return live_pages(json.load(f))
 
 
-def page_key(doc, page, live=None):
-    """What page `page` (1-based) of `doc` is, as a short string -> None when there is no such page."""
+def _what(doc, p):
+    """What the page entry `p` of `doc` is, but its ink: its id, the page of the PDF or EPUB it shows, its template, that
+    file's size and time, and the faces of a book PaperDaemon lays out."""
     from .remarkable import library
-    live = live if live is not None else _live(doc)
-    if not 0 < page <= len(live):
-        return None
-    p = live[page - 1]
     pid = p.get("id") or ""
-    # not the ink file: a page written on keeps its picture until it is opened again (forget)
     parts = [pid, str((p.get("redir") or {}).get("value", "")), str((p.get("template") or {}).get("value", ""))]
     for ext in (".pdf", ".epub"):
         src = os.path.join(library.M, doc + ext)
@@ -100,63 +99,154 @@ def page_key(doc, page, live=None):
     if os.path.exists(os.path.join(library.M, doc + ".epub")) and not os.path.exists(os.path.join(library.M, doc + ".pdf")):
         from .remarkable import books                    # a book PaperDaemon lays out: drawn again when its faces change
         parts.append("faces:" + books.mode())
+    return parts
+
+
+def _sha(parts):
     return hashlib.sha1("|".join(parts).encode()).hexdigest()[:16]
 
 
+def _ink(doc, p):
+    """The page's ink file's size and time ("-" while it has none: a page never written on)."""
+    from .remarkable import library
+    return _stat(os.path.join(library.M, doc, (p.get("id") or "") + ".rm"))
+
+
+def page_stamp(doc, page, live=None):
+    """What page `page` (1-based) of `doc` is drawn from, as a short string -- what it is (_what) and its ink: a picture
+    drawn from another stamp is out of date. -> None when there is no such page."""
+    live = live if live is not None else _live(doc)
+    if not 0 < page <= len(live):
+        return None
+    p = live[page - 1]
+    return _sha(_what(doc, p) + [_ink(doc, p)])
+
+
 def path_for(doc, page, size, top=False, live=None):
-    key = page_key(doc, page, live)
+    """Where the engine's own drawing of page `page` at `size` is (draw): named by its stamp, ink and all."""
+    key = page_stamp(doc, page, live)
     if key is None:
         return None
     return os.path.join(folder(), doc, "%s-%d%s.webp" % (key, size, "-top" if top else ""))
 
 
-def cached(doc, page, size, top=True):
-    """The kept picture of page `page` at `size` (the grid's or a cover's: the top of the page in a 3:4 card) -> its
-    path, or None when it is missing (the window draws it: put)."""
-    out = path_for(doc, page, size, top)
-    return out if out and os.path.isfile(out) else None
+# ---------------------------------------------------------------- the kept pictures
+
+def kept_folder():
+    """Where the window's pictures are kept, through updates: <data>/cache/thumbs."""
+    if _KEPT:
+        return _KEPT[0]
+    with _lock:
+        if not _KEPT:
+            out = paths.cache_dir("thumbs")
+            try:
+                _move_in(out)
+            except Exception:
+                pass                                        # (none moved in: they are drawn again, quietly)
+            _KEPT.append(out)
+    return _KEPT[0]
 
 
-def put(doc, page, size, data, top=True):
-    """The window's drawing of page `page` at `size`, as image bytes (WebP or PNG), kept -> its path. Refused when it is
-    not a picture of that width."""
+def _pic(base, doc, pid, size):
+    """A kept picture's file: the grid's for page id `pid`, or the document's one cover (`size` COVER, whichever page it
+    shows). Its stamp is beside it, in <the same name>.from."""
+    return os.path.join(base, doc, ("cover-%d.webp" % size) if size == COVER else ("%s-%d.webp" % (pid, size)))
+
+
+def _keep(pic, data, stamp):
+    """`data` (WebP bytes) kept as `pic`, drawn from `stamp`: the picture first, then its stamp (a look between the two
+    finds it out of date, never a stamp ahead of its picture)."""
+    paths.write_atomic(pic, data)
+    paths.write_atomic(pic[:-5] + ".from", stamp)
+
+
+def _move_in(out):
+    """ONCE: the pictures kept before they were kept through updates (in a build's own folder, <data>/cache/pages/
+    <renderer stamp>/, named by what their page is without its ink) moved in -- a page's as drawn from the page as it
+    is now when the page was last written before the picture was made, else (and every cover) as out of date, shown
+    and drawn again quietly at the next look."""
+    mark = os.path.join(out, "moved-in")
+    if os.path.exists(mark):
+        return
+    base = paths.cache_dir("pages")
+    olds = [os.path.join(base, s) for s in os.listdir(base)]
+    olds = sorted((o for o in olds if os.path.isdir(o)), key=os.path.getmtime, reverse=True)   # the newest build's first
+    for old in olds:
+        for doc in os.listdir(old):
+            d = os.path.join(old, doc)
+            if not re.fullmatch(r"[0-9a-fA-F-]{36}", doc) or not os.path.isdir(d):
+                continue
+            try:
+                live = _live(doc)
+            except (OSError, ValueError):
+                continue
+            covers = []
+            for p in live:
+                was = _sha(_what(doc, p))
+                src = os.path.join(d, "%s-%d-top.webp" % (was, THUMB))
+                pic = _pic(out, doc, p.get("id") or "", THUMB)
+                if os.path.isfile(src) and not os.path.exists(pic):
+                    ink = os.path.join(_mirror(), doc, (p.get("id") or "") + ".rm")
+                    current = not os.path.exists(ink) or os.path.getmtime(ink) < os.path.getmtime(src)
+                    with open(src, "rb") as f:
+                        _keep(pic, f.read(), _sha(_what(doc, p) + [_ink(doc, p)]) if current else "moved")
+                src = os.path.join(d, "%s-%d-top.webp" % (was, COVER))
+                if os.path.isfile(src):
+                    covers.append(src)
+            pic = _pic(out, doc, "", COVER)
+            if covers and not os.path.exists(pic):
+                with open(max(covers, key=os.path.getmtime), "rb") as f:
+                    _keep(pic, f.read(), "moved")
+    paths.write_atomic(mark, "")
+
+
+def _mirror():
+    from .remarkable import library
+    return library.M
+
+
+def kept(doc, page, size, live=None):
+    """The kept picture of page `page` at `size` (the grid's; the document's cover when `size` is COVER, showing page
+    `page`; the top of the page in a 3:4 card) -> {"path": its file, None when none was ever drawn, "fresh": drawn from
+    the page as it is now, "stamp": the page's stamp now}. Raises when there is no such page."""
+    live = live if live is not None else _live(doc)
+    stamp = page_stamp(doc, page, live)
+    if stamp is None:
+        raise ValueError("there is no page %d" % page)
+    pic = _pic(kept_folder(), doc, live[page - 1].get("id") or "", size)
+    if not os.path.isfile(pic):
+        return {"path": None, "fresh": False, "stamp": stamp}
+    try:
+        with open(pic[:-5] + ".from", encoding="utf-8") as f:
+            was = f.read().strip()
+    except OSError:
+        was = ""
+    return {"path": pic, "fresh": was == stamp, "stamp": stamp}
+
+
+def put(doc, page, size, data, stamp=None):
+    """The window's drawing of page `page` at `size`, as image bytes (WebP or PNG), kept, drawn from `stamp` (the
+    page's stamp it was asked with; the page's now when not given) -> its path. Refused when it is not a picture of that
+    width."""
     import io
     from PIL import Image
-    out = path_for(doc, page, size, top)
-    if out is None:
+    live = _live(doc)
+    now = page_stamp(doc, page, live)
+    if now is None:
         raise ValueError("there is no page %d" % page)
+    stamp = stamp if stamp and re.fullmatch(r"[0-9a-f]{16}", stamp) else now
+    out = _pic(kept_folder(), doc, live[page - 1].get("id") or "", size)
     with Image.open(io.BytesIO(data)) as im:
         im.load()
         if im.size[0] != size or not 0 < im.size[1] <= 4 * size:
             raise ValueError("a picture %d wide was wanted, not %dx%d" % (size, im.size[0], im.size[1]))
         rgb = im.convert("RGB")
-    os.makedirs(os.path.dirname(out), exist_ok=True)
-    part = out + ".%d.part" % threading.get_ident()
-    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
-        with open(part, "wb") as f:
-            f.write(data)
-    else:
-        rgb.save(part, format="WEBP", quality=90, method=4)
-    os.replace(part, out)
+    if not (data[:4] == b"RIFF" and data[8:12] == b"WEBP"):
+        b = io.BytesIO()
+        rgb.save(b, format="WEBP", quality=90, method=4)
+        data = b.getvalue()
+    _keep(out, data, stamp)
     return out
-
-
-def forget(doc, page):
-    """Page `page`'s kept pictures, every size, gone: the page (or its document) was opened, and the next look at its
-    picture draws it anew."""
-    key = page_key(doc, page)
-    d = os.path.join(folder(), doc)
-    if key is None or not os.path.isdir(d):
-        return 0
-    n = 0
-    for f in os.listdir(d):
-        if f.startswith(key + "-"):
-            try:
-                os.remove(os.path.join(d, f))
-                n += 1
-            except OSError:
-                pass
-    return n
 
 
 def draw(doc, page, size, top=False, live=None):

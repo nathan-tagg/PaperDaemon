@@ -715,4 +715,16 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">Dette kortet kan ikke kjøre WebGPU: sidene tegnes på prosessoren, som er tregere.</string>
   <string name="settings.render.restart">Vinduet åpnes på nytt nå med denne endringen.</string>
+  <string name="keys.nudge">Flytt litt</string>
+  <string name="keys.nudge_d">Flytter det som er valgt én piksel; holdes tasten nede, fortsetter det.</string>
+  <string name="keys.k_pgup">PgUp</string>
+  <string name="keys.k_pgdn">PgDn</string>
+  <string name="settings.mirror_edit">Rediger Speilet</string>
+  <string name="settings.mirror_edit.on">Rediger nettbrettets sider i Speilet</string>
+  <string name="settings.mirror_edit.help">Av: Speilets sider åpnes bare for visning. På: De åpnes med sideredigererens verktøy, og endringer går til nettbrettet. PaperDaemon kan ikke love at en redigering aldri skader en notatbok, særlig etter en oppdatering av nettbrettets programvare.</string>
+  <string name="risks.title">Før du bruker PaperDaemon</string>
+  <string name="risks.intro">For å bruke PaperDaemon må du lese risikoene og bekrefte at du godtar dem.</string>
+  <string name="risks.read">Les risikoene på GitHub</string>
+  <string name="risks.third_party">PaperDaemon er et tredjepartsprogram, verken laget eller godkjent av reMarkable, ment for å gjøre et umodifisert reMarkable-nettbrett mer nyttig. Jeg er ikke ansvarlig for hva noen gjør med PaperDaemon, eller for tap eller skade det forårsaker.</string>
+  <string name="risks.action">Jeg godtar risikoene</string>
 </resources>

@@ -386,8 +386,11 @@ def _validate_draft(doc, page):
     The harness's own validate() then adds what it refuses (it can add, never remove)."""
     from paperdaemon.pipeline import page as _P
     x0, y0, x1, y1 = _P.safe_area(H._frame())
-    keep, out = [], 0
-    for st in JOB.draw.strokes:
+    begins = {i for d, i in (JOB.picture_starts or []) if d == id(JOB.draw)}
+    keep, out, starts = [], 0, []
+    for i, st in enumerate(JOB.draw.strokes):
+        if i in begins:
+            starts.append(len(keep))                  # where a picture begins among the strokes that stay
         if all(x0 <= p[0] <= x1 and y0 <= p[1] for p in st[0]):
             keep.append(st)
         else:
@@ -405,6 +408,11 @@ def _validate_draft(doc, page):
     if len(JOB.draw.strokes) <= room:
         return []
     cut = max(0, room)
+    # A PICTURE IS NEVER CUT IN TWO: the cut moves back to the first stroke of the picture it falls in, and that
+    # picture continues on the new page whole (unless it is the draft's first: one picture bigger than a page)
+    began = max([s for s in starts if s <= cut], default=0)
+    if 0 < began < cut:
+        cut = began
     over = JOB.draw.strokes[cut:]
     JOB.draw.strokes = JOB.draw.strokes[:cut]
     H.log("  validate: the page would pass %d strokes; %d continue on a new page" % (H.PAGE_STROKE_LIMIT, len(over)))

@@ -715,4 +715,16 @@
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">এই কার্ড WebGPU চালাতে পারে না: পৃষ্ঠা প্রসেসরে আঁকা হবে, যা ধীর।</string>
   <string name="settings.render.restart">এই পরিবর্তন নিয়ে উইন্ডোটি এখন আবার খুলছে।</string>
+  <string name="keys.nudge">একটু সরান</string>
+  <string name="keys.nudge_d">নির্বাচিত অংশ এক পিক্সেল সরায়; চেপে ধরে রাখলে সরাতেই থাকে।</string>
+  <string name="keys.k_pgup">PgUp</string>
+  <string name="keys.k_pgdn">PgDn</string>
+  <string name="settings.mirror_edit">মিরর সম্পাদনা</string>
+  <string name="settings.mirror_edit.on">মিররে ট্যাবলেটের পৃষ্ঠা সম্পাদনা করুন</string>
+  <string name="settings.mirror_edit.help">বন্ধ থাকলে মিররের পৃষ্ঠাগুলো শুধু দেখার জন্য খোলে। চালু থাকলে সেগুলো পৃষ্ঠা সম্পাদকের সরঞ্জাম নিয়ে খোলে, আর পরিবর্তনগুলো ট্যাবলেটে যায়। কোনো সম্পাদনা কখনো কোনো নোটবুকের ক্ষতি করবে না, PaperDaemon এমন প্রতিশ্রুতি দিতে পারে না, বিশেষ করে ট্যাবলেটের সফটওয়্যার আপডেটের পরে।</string>
+  <string name="risks.title">PaperDaemon ব্যবহারের আগে</string>
+  <string name="risks.intro">PaperDaemon ব্যবহার করতে, অনুগ্রহ করে এর ঝুঁকিগুলো পড়ুন এবং নিশ্চিত করুন যে আপনি সেগুলো মেনে নিচ্ছেন।</string>
+  <string name="risks.read">GitHub-এ ঝুঁকিগুলো পড়ুন</string>
+  <string name="risks.third_party">PaperDaemon একটি তৃতীয় পক্ষের অ্যাপ্লিকেশন, যা reMarkable তৈরি বা অনুমোদন করেনি; এর উদ্দেশ্য অপরিবর্তিত reMarkable ট্যাবলেটকে আরও কাজের করে তোলা। PaperDaemon দিয়ে কেউ যা-ই করুক, বা এর ফলে কোনো ক্ষতি বা লোকসান হলে, তার জন্য আমি দায়ী নই।</string>
+  <string name="risks.action">আমি ঝুঁকিগুলো মেনে নিচ্ছি</string>
 </resources>

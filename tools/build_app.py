@@ -237,6 +237,9 @@ def main():
     shutil.copytree(ENGINE_BUILD, os.path.join(APP, "engine"))
     add_stockfish(os.path.join(APP, "engine"))
     add_licenses(os.path.join(APP, "engine"))
+    if args.repo:                       # where the window sends the user for the risks (paths.repo)
+        with open(os.path.join(APP, "engine", "repo.txt"), "w", encoding="utf-8", newline="\n") as f:
+            f.write(args.repo + "\n")
     if args.skip_shell:
         print("built %s (no shell)" % APP)
         return

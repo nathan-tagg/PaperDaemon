@@ -127,7 +127,7 @@ def problems(kind, args, offered=None):
             if do == "calendar" and not ST.calendar_what(q.get("what")):
                 out.append("step %d (calendar): what is the month as YYYY-MM, or week." % i)
             if do == "chess" and q.get("color") not in (None, "white", "black", "either"):
-                out.append("step %d (chess): color is white, black or either." % i)
+                out.append("step %d (chess): color is the side the user plays: white, black or either." % i)
             if do == "posts" and not str(q.get("source") or "").strip():
                 out.append("step %d (posts): source is where the posts come from (r/<sub>, reddit, hn, bsky, "
                            "4chan/<board>, mastodon/<server>, x/<link>)." % i)

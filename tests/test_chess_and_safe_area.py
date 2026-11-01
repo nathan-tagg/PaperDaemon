@@ -193,7 +193,8 @@ def test_a_talk_strip_never_shows_the_narrator(tmp_path):
         print(json.dumps({"lines": st["talk"]["lines"], "box": st["talk"]["box"]}))
     """)
     lines = d["lines"]
-    assert [l[2] for l in lines] == ["Well, well, look who it is!", "Right on the nose, pal!"]   # the narrator never
+    # the narrator never shows in the strip, and a character shows once a turn: their words in one line
+    assert [l[2] for l in lines] == ["Well, well, look who it is! Right on the nose, pal!"]
 
 
 def test_writing_on_a_game_page_comes_off_only_once_it_was_read(tmp_path):

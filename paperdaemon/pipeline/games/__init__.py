@@ -217,6 +217,26 @@ def place_talk(doc, page_no, state, lines, page_id=None, workdir=None):
     from paperdaemon.pipeline.games import chess as CH
     from paperdaemon.pipeline.page import images as IM
     from PIL import Image
+    # ONE CHARACTER, ONE FACE A TURN: everything a character says in a turn goes in one line, where they first spoke,
+    # with the face (and any marks of a tell) they show last; words already said are not said again. A greeting and
+    # then a face on the opening move drew the same character twice
+    merged, at = [], {}
+    for line in lines or []:
+        line = list(line)
+        if line[0] == "narrator" or len(line) < 3:
+            merged.append(line)
+            continue
+        if line[0] not in at:
+            at[line[0]] = len(merged)
+            merged.append(line)
+            continue
+        first = merged[at[line[0]]]
+        words = str(line[2] or "").strip()
+        if words and words.lower() not in str(first[2] or "").lower():
+            first[2] = (str(first[2] or "").strip() + " " + words).strip()
+        first[1] = line[1] or first[1]
+        first[3:] = line[3:]
+    lines = [tuple(m) for m in merged]
     old = state.get("talk") or {}
     if old.get("box"):
         try:
@@ -588,7 +608,8 @@ def character_setup(cid, elo=None, user_color="w"):
 
 
 def choose_setup(what, ask_text=None, color=None, strength=None, opponent=None):
-    """The opponent and settings for a chess step -> dict, from its fields: `color` (white, black or either),
+    """The opponent and settings for a chess step -> dict, from its fields: `color` (the side the PLAYER plays:
+    white, black or either),
     `strength` (a rating the player named), `opponent` (a resident's id or name, matched to the roster exactly).
     With no opponent named, the model picks one from the roster by what the player asked for; without a model, the
     resident whose chess is closest to the strength, else to 1200."""

@@ -715,4 +715,16 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">Kartu ini tidak dapat menjalankan WebGPU: halaman akan digambar di prosesor, yang lebih lambat.</string>
   <string name="settings.render.restart">Jendela dibuka ulang sekarang dengan perubahan ini.</string>
+  <string name="keys.nudge">Geser sedikit</string>
+  <string name="keys.nudge_d">Menggeser yang dipilih satu piksel; jika ditahan, terus bergeser.</string>
+  <string name="keys.k_pgup">PgUp</string>
+  <string name="keys.k_pgdn">PgDn</string>
+  <string name="settings.mirror_edit">Edit Cermin</string>
+  <string name="settings.mirror_edit.on">Edit halaman tablet di Cermin</string>
+  <string name="settings.mirror_edit.help">Jika mati, halaman Cermin hanya dibuka untuk dilihat. Jika hidup, halaman dibuka dengan alat editor halaman, dan perubahannya dikirim ke tablet. PaperDaemon tidak dapat menjamin suntingan tidak akan pernah merusak buku catatan, terutama setelah perangkat lunak tablet diperbarui.</string>
+  <string name="risks.title">Sebelum Anda memakai PaperDaemon</string>
+  <string name="risks.intro">Untuk memakai PaperDaemon, harap baca risikonya dan nyatakan bahwa Anda menerimanya.</string>
+  <string name="risks.read">Baca risikonya di GitHub</string>
+  <string name="risks.third_party">PaperDaemon adalah aplikasi pihak ketiga, tidak dibuat atau didukung oleh reMarkable, yang dimaksudkan untuk membuat tablet reMarkable yang tidak dimodifikasi lebih berguna. Saya tidak bertanggung jawab atas apa pun yang dilakukan orang dengan PaperDaemon, atau atas kehilangan atau kerusakan apa pun yang ditimbulkannya.</string>
+  <string name="risks.action">Saya menerima risikonya</string>
 </resources>

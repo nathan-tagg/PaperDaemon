@@ -95,6 +95,18 @@ canvas { display: block; }
 .cell[aria-pressed="true"] { background: var(--ink); color: var(--paper-sunk); }
 .cell svg { width: 26px; height: 26px; display: block; }
 .sw { width: 18px; height: 18px; border-radius: 50%; box-sizing: border-box; }
+/* the selection's make-up, the editor alone (in the viewer the window draws it): icons to the right of the selection */
+.makeup { position: absolute; z-index: 4; display: flex; flex-direction: column; gap: 6px; pointer-events: none;
+  opacity: 0; transform: translateX(12px); transition: opacity 0.18s ease-out, transform 0.22s ease-out; }
+.makeup.on { opacity: 1; transform: none; }
+.makeup button { display: flex; align-items: center; gap: 6px; padding: 0; border: 0; background: none; color: var(--ink); font: inherit;
+  font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; cursor: pointer; pointer-events: auto; }
+.makeup .mi { width: 36px; height: 36px; display: grid; place-items: center; background: var(--paper); border: 1px solid var(--edge);
+  border-radius: 6px; box-shadow: 0 2px 8px var(--shade); }
+.makeup button:hover .mi { background: var(--field); border-color: var(--ink-2); }
+.makeup .mi > svg { width: 24px; height: 24px; }
+.makeup .mi > .sw { width: 18px; height: 18px; }
+.makeup .mn { padding: 2px 6px; background: var(--paper); border-radius: 4px; }
 .sw.ring { border: 1.5px solid currentColor; }
 .sw.split { overflow: hidden; display: grid; grid-template-rows: 1fr 1fr; }
 .sw.split i { display: block; }
@@ -225,8 +237,8 @@ span.lname { cursor: default; }
   // looks; a page's links are followed (placeLinks), and the keys that turn pages go to the viewer
   const VIEW = /(^|[#&])view=1(&|$)/.test(location.hash);
   if (VIEW) {
-    const TURN = ["ArrowLeft", "ArrowRight", "PageUp", "PageDown"];
-    const LOOK = ["ArrowUp", "ArrowDown", "Home", "End", "Escape", "Tab"];
+    const TURN = ["ArrowLeft", "ArrowRight"];
+    const LOOK = ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", "Escape", "Tab"];
     window.addEventListener("keydown", e => {
       if (TURN.includes(e.key) && !e.ctrlKey && !e.metaKey) {
         e.preventDefault(); e.stopImmediatePropagation();
@@ -1890,9 +1902,10 @@ span.lname { cursor: default; }
       }
       return same ? null : out;
     }
-    // the frame's matrix m [a b c d e f] (x' = a x + b y + e, y' = c x + d y + f) at size s; back: as taken up -> drawn? (else
-    // the page is to be drawn whole: the records are where the frame puts them)
-    function moveTo(m, s, back) {
+    // the frame's matrix m [a b c d e f] (x' = a x + b y + e, y' = c x + d y + f) at size s; back: as taken up; whole: the
+    // page to be drawn whole by the caller (a selection over most of the view) -> drawn? (else the page is to be drawn
+    // whole: the records are where the frame puts them)
+    function moveTo(m, s, back, whole) {
       if (!mv.lines || lost) return false;
       if (!back && s !== mv.s) {                              // (a new size, or the first frame: the widths it gives)
         const w = moveWidths(s);
@@ -1906,7 +1919,7 @@ span.lname { cursor: default; }
         device.queue.writeBuffer(mv.u, 0, a);
       }
       const { W, H, w, h } = last;
-      if (!holds || texW !== W || texH !== H || screenW !== w || screenH !== h) {
+      if (whole || !holds || texW !== W || texH !== H || screenW !== w || screenH !== h) {
         const enc = device.createCommandEncoder();
         mvRun(enc, back ? cpBack : cpMove, back ? mvGroups().back : mvGroups().move);
         device.queue.submit([enc.finish()]);
@@ -3528,6 +3541,7 @@ span.lname { cursor: default; }
   const rebuildSoon = () => { cancelAnimationFrame(rebuildFrame); rebuildFrame = requestAnimationFrame(rebuild); };
   function paint() {
     paintScroll();
+    paintMakeUp();
     if (live && !liveOnCard) return;                          // the stroke being drawn paints its own patches (off the card)
     if (cardShows) ctx.clearRect(0, 0, cv.width, cv.height);  // the page is the card's canvas, under this one
     else {
@@ -5462,7 +5476,7 @@ span.lname { cursor: default; }
   vp.addEventListener("pointerdown", e => {
     if (auto) { e.preventDefault(); stopAuto(); return; }     // any press ends the autoscroll, and does nothing else
     if (e.button === 1) { e.preventDefault(); startAuto(e); return; }
-    if ((e.button !== 0 && e.button !== 2) || e.target === zoomBtn || e.target.closest(".vscroll")) return;
+    if ((e.button !== 0 && e.button !== 2) || e.target === zoomBtn || e.target.closest(".vscroll") || e.target.closest(".makeup")) return;
     if (popFor) { popFor = null; paintPop(); }
     closeMenu();
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();   // keys belong to the page now
@@ -5669,6 +5683,7 @@ span.lname { cursor: default; }
       if (shapeAt && e.type === "pointerup" && (second || Math.hypot(bx - ax, by - ay) > 4)) shapeEnd(e, ...toPage(bx, by));
       return;
     }
+    if (pickDrag && !pickDrag.keys) pick.frame = dragFrame(pickDrag, ...toPage(...local(e)), e.altKey);   // (where it truly was)
     if (pickUp()) return;
     if (zone) {                                               // a zone's shape is for one erase, as a pen's is for one shape
       const z = zone; zone = null; zoneDone(z);
@@ -6212,6 +6227,7 @@ span.lname { cursor: default; }
   // under the pointer: strokes as strokes, selected; an image as a picture; Ctrl+Shift+V an image as strokes, decomposed
   // at its own size.
   let pickMode = "select", pick = null, pickDrag = null, pickLoop = null, lastAt = null;
+  let makeUpBox = null, makeUp = null, makeUpTold = "", makeUpKeys = 0;   // (the selection's make-up: paintMakeUp)
   const hiddenPics = new Set();
   // the turning handle's pointer: a circling arrow, as the old Office suites showed it
   const TURN_CURSOR = 'url("data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">' +
@@ -6278,6 +6294,7 @@ span.lname { cursor: default; }
   // made. Let go, they are made strokes where they were let go (land): from the points the card drew them with (GL.moveEnd,
   // movePoints), so what is saved is what was shown, each in its place on the card (GL.moveAdopt) -- one undo step
   let moveFrame = 0, dropping = false, movedNow = null;
+  const MOVE_WHOLE = 0.35;                                    // (coverOf: past this share of the view, the page drawn whole)
   const shownAs = L => (movedNow && movedNow.get(L)) || L;   // a stroke as the page shows it now
   function matrixOf(f0, f1) {                                 // mapper's, as a matrix [a b c d e f]: x' = a x + b y + e, y' = c x + d y + f
     const s = f1.w / f0.w, t = f1.a - f0.a, a = s * Math.cos(t), b = -s * Math.sin(t), c = s * Math.sin(t), d = a;
@@ -6299,14 +6316,25 @@ span.lname { cursor: default; }
     if (!pick.card) { movedNow = new Map(); pick.box = boxOfAll(pick.lines); }
   }
   function moveSoon() { if (!moveFrame) moveFrame = requestAnimationFrame(() => { moveFrame = 0; moveDraw(); }); }
+  // the share of the view the selection covers where it was taken up and where it is now (their frames' box, in sight)
+  function coverOf(f0, f1) {
+    const C = corners(f0).concat(corners(f1)).map(q => toScreen(...q)), X = C.map(c => c[0]), Y = C.map(c => c[1]);
+    const w = Math.min(vpW, Math.max(...X)) - Math.max(0, Math.min(...X)), h = Math.min(vpH, Math.max(...Y)) - Math.max(0, Math.min(...Y));
+    return w > 0 && h > 0 ? w * h / (vpW * vpH) : 0;
+  }
   function moveDraw() {                                       // the selection drawn where its frame now is
     if (!pick || pick.kind !== "strokes" || !pick.f0) return;
     const f0 = pick.f0, f1 = pick.frame;
     if (pick.card && !gpuFailed) {
+      // OVER MOST OF THE VIEW the page is drawn whole each frame, its records where the frame puts them: drawing again
+      // only where it was and where it is (the erase's marked draw) costs more than all of it once that is most of it
+      const whole = coverOf(f0, f1) > MOVE_WHOLE;
       let ok = false;
-      try { ok = GL.moveTo(matrixOf(f0, f1), f1.w / f0.w); } catch (e) { gpuDown(e); }
+      try { ok = GL.moveTo(matrixOf(f0, f1), f1.w / f0.w, false, whole); } catch (e) { gpuDown(e); }
       if (!gpuFailed) {                                       // (not drawn so: the page drawn whole, the records where the frame put them)
-        if (ok) { base = null; shown = null; cpuStale = true; paint(); } else rebuild();
+        if (ok) { base = null; shown = null; cpuStale = true; paint(); }
+        else if (whole && rebuildOnCard()) paint();
+        else rebuild();
         return;
       }
     }
@@ -6365,6 +6393,7 @@ span.lname { cursor: default; }
     } else rebuild();
     saveSoon();
     dropping = false;
+    paintMakeUp();                                            // (settled: the selection's make-up back beside it)
     if (swipeWaits.length) { const w = swipeWaits.splice(0); queueMicrotask(() => { for (const f of w) f(); }); }
   }
   function pickDown(e, x, y) {
@@ -6396,18 +6425,10 @@ span.lname { cursor: default; }
       paint(); return true;
     }
     if (pickDrag && e.pointerId === pointer) {
-      const d = pickDrag, f0 = d.f0, f = { ...f0 };
-      if (d.op === "move") { f.cx = f0.cx + x - d.start[0]; f.cy = f0.cy + y - d.start[1]; }
-      else if (d.op === "turn") {
-        let a = f0.a + Math.atan2(y - f0.cy, x - f0.cx) - Math.atan2(d.start[1] - f0.cy, d.start[0] - f0.cx);
-        if (e.altKey) a = Math.round(a / SNAP) * SNAP;              // Alt: snap to angle, as everywhere
-        f.a = a;
-      } else {                                                // a corner: about the corner across, the frame keeping its shape
-        const C = corners(f0), opp = C[(d.k + 2) % 4], diag = [C[d.k][0] - opp[0], C[d.k][1] - opp[1]];
-        const s = Math.max(0.02, ((x - opp[0]) * diag[0] + (y - opp[1]) * diag[1]) / (diag[0] * diag[0] + diag[1] * diag[1]));
-        f.w = f0.w * s; f.h = f0.h * s; f.cx = opp[0] + diag[0] * s / 2; f.cy = opp[1] + diag[1] * s / 2;
-      }
-      pick.frame = f;
+      // DRAWN WHERE THE POINTER IS ABOUT TO BE: the browser's guess at its next place (getPredictedEvents), so what is
+      // carried keeps up with the pointer the screen draws on its own; let go, it lands where the pointer truly was (finish)
+      const ahead = e.getPredictedEvents ? e.getPredictedEvents() : [], q = ahead.length ? ahead[ahead.length - 1] : e;
+      pick.frame = dragFrame(pickDrag, ...toPage(...local(q)), e.altKey);
       if (pick.kind === "strokes") moveSoon(); else paint();
       return true;
     }
@@ -6417,6 +6438,20 @@ span.lname { cursor: default; }
         : (pickMode === "capture" && pictureAt(x, y) >= 0 ? "pointer" : "");
     }
     return false;
+  }
+  function dragFrame(d, x, y, alt) {                        // the frame a drag of the selection makes with the pointer at x, y
+    const f0 = d.f0, f = { ...f0 };
+    if (d.op === "move") { f.cx = f0.cx + x - d.start[0]; f.cy = f0.cy + y - d.start[1]; }
+    else if (d.op === "turn") {
+      let a = f0.a + Math.atan2(y - f0.cy, x - f0.cx) - Math.atan2(d.start[1] - f0.cy, d.start[0] - f0.cx);
+      if (alt) a = Math.round(a / SNAP) * SNAP;                // Alt: snap to angle, as everywhere
+      f.a = a;
+    } else {                                                  // a corner: about the corner across, the frame keeping its shape
+      const C = corners(f0), opp = C[(d.k + 2) % 4], diag = [C[d.k][0] - opp[0], C[d.k][1] - opp[1]];
+      const s = Math.max(0.02, ((x - opp[0]) * diag[0] + (y - opp[1]) * diag[1]) / (diag[0] * diag[0] + diag[1] * diag[1]));
+      f.w = f0.w * s; f.h = f0.h * s; f.cx = opp[0] + diag[0] * s / 2; f.cy = opp[1] + diag[1] * s / 2;
+    }
+    return f;
   }
   function pickUp() {
     if (pickLoop) {
@@ -6503,6 +6538,106 @@ span.lname { cursor: default; }
     for (const [a, b] of C) { ctx.fillRect(a - 4.5, b - 4.5, 9, 9); ctx.strokeRect(a - 4.5, b - 4.5, 9, 9); }
     ctx.beginPath(); ctx.arc(H.turn[0], H.turn[1], 5.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     ctx.restore();
+  }
+
+  // THE SELECTION'S MAKE-UP, beside a stroke selection once it has settled (slid in from the right; gone while it is drawn,
+  // dragged or moved by the keys): its strokes by brush, each brush's icon and how many, most first; with one brush, by
+  // the colors that brush's menu offers, each stroke's color counted with the nearest of them (a decomposed picture's
+  // colors are any at all): a color by its hue, a gray (or a color too dark or pale to have one) by its lightness among
+  // the menu's grays. A click on a row keeps only those strokes selected.
+  const BRUSH = Object.fromEntries(PENS.map(q => [q.pen.replace(/_\d$/, ""), q.id]));
+  const brushOf = L => BRUSH[String(L.pen || "").replace(/_\d$/, "")] || "other";
+  const hsv = ([r, g, b]) => {
+    const mx = Math.max(r, g, b), d = mx - Math.min(r, g, b);
+    const h = !d ? 0 : mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return [h * 60, mx ? d / mx : 0, mx / 255];
+  };
+  function colorAt(L, id) {                                   // -> the index in the brush's menu of the color nearest L's
+    const cs = colorsOf(id);
+    if (!L.colorRgba) { const i = cs.findIndex(c => c[1] === L.color && !c[2]); if (i >= 0) return i; }
+    const [h, sat, v] = hsv((L.colorRgba || (id === "highlighter" ? HL_ENUM : ENUM)[L.color] || [0, 0, 0]).slice(0, 3));
+    const gray = sat < 0.25 || v < 0.3;
+    let best = 0, far = Infinity;
+    for (const pass of [true, false]) {                       // (a menu with no gray, or no color: the nearest of all)
+      cs.forEach((c, i) => {
+        const [h2, s2, v2] = hsv(c[3]);
+        if (pass && gray !== (s2 < 0.15)) return;
+        const dh = Math.min(Math.abs(h - h2), 360 - Math.abs(h - h2)) / 180;
+        const d = gray ? Math.abs(v - v2) + (pass ? 0 : s2) : dh + (pass ? 0 : Math.abs(v - v2));
+        if (d < far) { far = d; best = i; }
+      });
+      if (far < Infinity) break;
+    }
+    return best;
+  }
+  function makeUpOf(lines) {
+    const by = new Map();
+    for (const L of lines) { const k = brushOf(L); by.set(k, (by.get(k) || 0) + 1); }
+    if (by.size > 1) return [...by].sort((a, b) => b[1] - a[1]).map(([id, n]) =>
+      ({ n, icon: ICON[id] || "", title: PEN[id] ? PEN[id].name : "", keep: L => brushOf(L) === id }));
+    const id = by.keys().next().value, cs = colorsOf(id), at = new Map(), n = new Map();
+    for (const L of lines) { const i = colorAt(L, id); at.set(L, i); n.set(i, (n.get(i) || 0) + 1); }
+    return [...n].sort((a, b) => b[1] - a[1]).map(([i, k]) => ({ n: k, icon: swatch(cs[i]), title: cs[i][0], keep: L => at.get(L) === i }));
+  }
+  const strokesText = n => EMBED && window.parent.PD.count ? window.parent.PD.count("count.stroke", n) : n.toLocaleString() + (n === 1 ? " stroke" : " strokes");
+  // IN THE VIEWER THE WINDOW DRAWS THE ICONS (tablet.js), over the viewer, so they reach past the editor's frame: told
+  // what they are and where (this frame's pixels), and handed back the one pressed
+  function tellMakeUp(on) {
+    let msg = { pd: "editor-makeup", show: false };
+    if (on) {
+      const C = corners(pick.frame).map(q => toScreen(...q)), r = vp.getBoundingClientRect();
+      msg = { pd: "editor-makeup", show: true, key: makeUp.key, x: Math.round(r.left + Math.max(...C.map(c => c[0])) + 18),
+              y: Math.round(r.top + Math.min(...C.map(c => c[1]))),
+              rows: makeUp.rows.map((w, i) => ({ row: i, icon: w.icon, label: strokesText(w.n), title: w.title })) };
+    }
+    const k = on ? [msg.key, msg.x, msg.y].join(",") : "off";
+    if (k === makeUpTold) return;
+    makeUpTold = k;
+    window.parent.postMessage(msg, location.origin);
+  }
+  window.addEventListener("message", e => {
+    if (e.source !== window.parent || !e.data || e.data.pd !== "editor-makeup-pick") return;
+    const row = makeUp && makeUp.rows[Number(e.data.row)];
+    if (row && pick && pick.kind === "strokes" && !pickDrag && !dropping) selectStrokes(pick.lines.filter(row.keep), pick.layer);
+  });
+  function paintMakeUp() {
+    const settled = pick && pick.kind === "strokes" && pick.lines.length && !pickDrag && !dropping && !pickLoop && !live && !VIEW && !THUMB_W;
+    if (EMBED) {
+      if (settled && (!makeUp || makeUp.lines !== pick.lines)) makeUp = { lines: pick.lines, rows: makeUpOf(pick.lines), key: ++makeUpKeys };
+      tellMakeUp(!!settled);
+      return;
+    }
+    if (!settled) {
+      if (makeUpBox && !makeUpBox.hidden) { makeUpBox.classList.remove("on"); makeUpBox.hidden = true; }
+      return;
+    }
+    if (!makeUpBox) {
+      makeUpBox = document.createElement("div");
+      makeUpBox.className = "makeup"; makeUpBox.hidden = true;
+      makeUpBox.addEventListener("pointerdown", e => e.preventDefault());   // (the keys stay the page's)
+      makeUpBox.addEventListener("click", e => {
+        const b = e.target.closest("[data-row]"), row = b && makeUp && makeUp.rows[Number(b.dataset.row)];
+        if (row && pick && pick.kind === "strokes" && !pickDrag && !dropping) selectStrokes(pick.lines.filter(row.keep), pick.layer);
+      });
+      vp.append(makeUpBox);
+    }
+    if (!makeUp || makeUp.lines !== pick.lines) {
+      makeUp = { lines: pick.lines, rows: makeUpOf(pick.lines), w: 0, h: 0 };
+      makeUpBox.innerHTML = makeUp.rows.map((r, i) => '<button type="button" tabindex="-1" data-row="' + i + '" title="' + esc(r.title) + '"><span class="mi">' + r.icon +
+                                                     '</span><span class="mn">' + esc(strokesText(r.n)) + "</span></button>").join("");
+      makeUpBox.classList.remove("on"); makeUpBox.hidden = true;
+    }
+    if (makeUpBox.hidden) {
+      makeUpBox.hidden = false; makeUp.w = makeUpBox.offsetWidth; makeUp.h = makeUpBox.offsetHeight;
+      requestAnimationFrame(() => { if (!makeUpBox.hidden) makeUpBox.classList.add("on"); });
+    }
+    // TO THE RIGHT OF THE SELECTION, past its handles, its top by the frame's top (the editor alone: kept in its window)
+    const C = corners(pick.frame).map(q => toScreen(...q)), gap = 18;
+    const x1 = Math.max(...C.map(c => c[0])), y0 = Math.min(...C.map(c => c[1]));
+    const left = Math.max(4, Math.min(vpW - makeUp.w - 4, x1 + gap));
+    const top = Math.max(4, Math.min(vpH - makeUp.h - 4, y0)), L = Math.round(left) + "px", T = Math.round(top) + "px";
+    if (makeUpBox.style.left !== L) makeUpBox.style.left = L;
+    if (makeUpBox.style.top !== T) makeUpBox.style.top = T;
   }
 
   // ---------------------------------------------------------------- the clipboard
@@ -6760,6 +6895,46 @@ span.lname { cursor: default; }
       points: st.pts.map(([x, y], i) => [cx + (x - ox) * k, cy + (y - oy) * k, 0, 0, Math.max(1, Math.round((st.widths[i] || st.widths[0] || 8) * k)), 190]) }));
     addStrokes(lines, true);
   }
+  // THE ARROWS AND THE PAGE KEYS, no text being typed: with strokes or a picture selected the arrows move it a pixel of the
+  // screen a press, and on as often as a held key repeats; it is let go a moment after the last press, the whole run one
+  // step to undo. With nothing selected Left and Right turn the page, Up and Down scroll a little; Page Up and Page Down
+  // scroll most of a screen, selection or not. Any other key, or a press, lets the run go first.
+  let nudgeEnd = 0;
+  const NUDGE_LET_GO = 700, SCROLL_STEP = 60;                // (past the keyboard's wait before a held key repeats)
+  function nudgeOver() { clearTimeout(nudgeEnd); nudgeEnd = 0; if (pickDrag && pickDrag.keys) pickUp(); }
+  window.addEventListener("keydown", e => {
+    const k = e.key, arrow = k === "ArrowLeft" || k === "ArrowRight" || k === "ArrowUp" || k === "ArrowDown";
+    if (pickDrag && pickDrag.keys && !(arrow && !e.ctrlKey && !e.metaKey && !e.altKey) && !["Shift", "Control", "Alt", "Meta"].includes(k)) {
+      nudgeOver();
+      if (dropping) { hold(e); swipeWaits.push(release); return; }   // (taken once the selection has landed)
+    }
+    if ((!arrow && k !== "PageUp" && k !== "PageDown") || e.ctrlKey || e.metaKey || e.altKey || editing() || live || THUMB_W) return;
+    if (arrow && pick) {
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (pickLoop || dropping || (pickDrag && !pickDrag.keys)) return;   // (a loop or a drag under way: the pointer's)
+      if (!pickDrag) {
+        pickDrag = { op: "move", keys: true, start: [0, 0], f0: { ...pick.frame } };
+        if (pick.kind === "strokes") moveStart(); else { hiddenPics.add(page.images[pick.index]); rebuild(); }
+      }
+      const px = 1 / scale(), f = pick.frame;
+      pick.frame = { ...f, cx: f.cx + (k === "ArrowLeft" ? -px : k === "ArrowRight" ? px : 0), cy: f.cy + (k === "ArrowUp" ? -px : k === "ArrowDown" ? px : 0) };
+      if (pick.kind === "strokes") moveSoon(); else paint();
+      clearTimeout(nudgeEnd); nudgeEnd = setTimeout(nudgeOver, NUDGE_LET_GO);
+      return;
+    }
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (k === "ArrowLeft" || k === "ArrowRight") {
+      if (window.parent !== window) window.parent.postMessage({ pd: "view-key", key: k, altKey: false }, location.origin);
+      return;
+    }
+    const by = k === "ArrowUp" ? -SCROLL_STEP : k === "ArrowDown" ? SCROLL_STEP : (k === "PageUp" ? -1 : 1) * Math.max(SCROLL_STEP, vpH * 0.85);
+    view.top += by / scale(); clampView(); showScroll(); rebuildSoon();
+  }, true);
+  window.addEventListener("pointerdown", e => {
+    if (!pickDrag || !pickDrag.keys) return;
+    nudgeOver();
+    if (dropping) { hold(e); swipeWaits.push(release); }
+  }, true);
   window.addEventListener("keydown", e => {                  // what is selected: Delete or Backspace removes it, Esc lets it go
     if (!pick || editing() || live) return;
     if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); e.stopImmediatePropagation(); deletePick(); }
@@ -7214,16 +7389,20 @@ span.lname { cursor: default; }
   // or the viewer closing the document). Until then the daemon sees the page as at the last sync.
   // A MIRROR PAGE: written, then the document sent to the tablet by PaperDaemon's own sync (its pages written when they were
   // left go with it); not written, not sent, and the reason shows
+  // (the viewer is told when a Mirror sync starts and how it ended: it draws the sync's bar, from the engine's steps)
+  const syncTold = (state, ok) => { if (EMBED) window.parent.postMessage({ pd: "editor-sync", state, ok: !!ok }, location.origin); };
   async function syncNow() {
     if (MIRROR) {
-      if (!await saveMirror(false)) return;
+      syncTold("start");
+      if (!await saveMirror(false)) { syncTold("end", false); return; }
       try {
         const r = await fetch("/api/v1/library/" + encodeURIComponent(DOC) + "/push", { method: "POST", keepalive: true,
                                                                                     headers: { Authorization: "Bearer " + token() } });
-        if (!r.ok) { saveState("error", await r.json().then(j => j.error, () => "") || String(r.status)); return; }
+        if (!r.ok) { syncTold("end", false); saveState("error", await r.json().then(j => j.error, () => "") || String(r.status)); return; }
+        syncTold("end", true);
         saved.textContent = "Synced";
         setTimeout(() => { if (saved.textContent === "Synced") saved.textContent = ""; }, 1500);
-      } catch (e) { saveState("error", "the page was saved, but the engine did not answer to send it to the tablet"); }
+      } catch (e) { syncTold("end", false); saveState("error", "the page was saved, but the engine did not answer to send it to the tablet"); }
       return;
     }
     await saveNow();

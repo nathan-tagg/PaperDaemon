@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.4
+
+- Chess: the side you ask to play is the side you get. The model was told only "color" and read it as its own side.
+- A page that passes its stroke limit moves whole pictures to the next page: a picture is no longer split between two pages.
+- Pictures asked for together, like a gallery, are laid out two to a row.
+- A game character's line is shown once a turn, never twice over.
+- The first time it opens, PaperDaemon asks you to read its risks (RISKS.md, on GitHub) and acknowledge them, before anything else.
+- Covers and page pictures are kept through updates and show at once, with no spinner. Only a picture whose page has changed since (written on here or on the tablet), or one never drawn, is drawn again: quietly, in the background, never while a page is open to edit, the old one shown until the new one takes its place. Updates used to throw every picture away, and each was then drawn one at a time while a spinner turned.
+- The page a notebook opens at, and its card's "Page 5 of 9", follow what you read in PaperDaemon, in both mirrors, until the tablet opens another page of it. It is kept in PaperDaemon's own files; nothing of it goes to the tablet.
+- Edit the Mirror, in Settings, off until you turn it on. Off, the Mirror's pages open to look at and PaperDaemon writes none of them; on, they open with the editor's tools as before. PaperDaemon cannot promise an edit never damages a notebook, above all after the tablet's software updates.
+- A Mirror sync shows how far it has come: a thin bar under the viewer's bar while the document is open, along the top of its cover once it is closed.
+- The arrow keys move what is selected a pixel of the screen a press, and on while held; the run is one step to undo. With nothing selected, Left and Right turn the page, Up and Down scroll a little, and Page Up and Page Down most of a screen.
+- A settled selection shows what it is made of in icons to its right, reaching past the editor's frame where they need to: each brush's icon with its count of strokes. Click a brush to keep only its strokes; a selection of one brush shows the colors of its menu instead (a decomposed picture's colors counted with the nearest), and a click keeps only that color.
+- A dragged selection is drawn where the pointer is about to be, so it keeps up with the pointer better, and lands exactly where it was let go. A selection over most of the view is moved by drawing the page whole each frame, which costs less there: on the integrated card, all of an ordinary page 5.4 ms a frame to 3.6, all of a 30,000-stroke page 43.7 to 35.1.
+
 ## 0.2.3
 
 - With a graphics card chosen that no screen is connected to (an integrated card beside a discrete one), the page editor showed blank pages and empty boxes: the window was composed on the processor, and the editor's drawing never reached the screen. The window is composed on the screen's card again; the editor still draws on the card chosen.
@@ -181,7 +196,8 @@ Measured on the tablet's own pixels (its screen share of a calibration notebook,
 - A job with a picture no longer crashes after the picture lands ("float32 is not JSON serializable"). The picture's box was measured from its traced strokes, whose numbers are numpy's, and went back to the model as JSON.
 - New notebook: every template's icon is the same size and color (rM Methods' icons were bigger and gray), and the list scrolls without a scrollbar, fading out where there are more. The tags field is gone for now. The page editor's template picker draws the same icons.
 - The selection bars say "Tag", and the tag dialog is titled by the notebook's name.
-- Daemon notes: the devil stands clear of the signature, and a line leaves exactly the signature's room. The traced signature is optional content (`content\signaturem_sig_daemon.json`); without it the name is lettered.
+- Daemon notes: the devil stands clear of the signature, and a line leaves exactly the signature's room. The traced signature is optional content (`content\signature
+m_sig_daemon.json`); without it the name is lettered.
 
 ## 0.1.65
 

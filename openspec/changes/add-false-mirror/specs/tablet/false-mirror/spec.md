@@ -75,12 +75,17 @@ covers' and the page's tags) without changing them.
 - **THEN** nothing is selected and no menu appears
 
 ### Requirement: Editing is found in both mirrors
-The page editor's controls SHALL show on the false mirror's pages and on the tablet's mirror's pages; a tablet
-page is written as `add-editable-mirror` describes.
+The page editor's controls SHALL show on the false mirror's pages, and on the tablet's mirror's pages while Edit the
+Mirror is on in Settings (off until the user turns it on; off, a tablet page opens to look at); a tablet page is
+written as `add-editable-mirror` describes.
 
 #### Scenario: A tablet page
-- **WHEN** the user opens a page of the tablet's mirror
+- **WHEN** the user, with Edit the Mirror on, opens a page of the tablet's mirror
 - **THEN** it opens with the pens, eraser, text and layers controls, as a false mirror page does
+
+#### Scenario: Editing the Mirror left off
+- **WHEN** the user opens a page of the tablet's mirror with Edit the Mirror off, as it starts
+- **THEN** the page opens to look at, with no tools, and nothing of it can be written
 
 ### Requirement: The rail names the mirrors
 The rail SHALL name the tablet's library Mirror and, once one exists, show False Mirror directly below
@@ -116,7 +121,9 @@ menu at the top right of its screen.
 The viewer SHALL hold a port the Paper Pro's screen's shape (3:4), as large as the window allows by its height or its
 width, within the window at every UI zoom, and SHALL be no taller than the port with its title and bar, and as wide as
 its bar needs (the window allowing), so the bar never scrolls. A document SHALL open at the page it was last open on,
-the page its cover names ("Page 2 of 2"), as the tablet opens it.
+the page its cover names ("Page 2 of 2"), as the tablet opens it: the page last open in PaperDaemon, until the tablet
+opens another page of it. The page last open in PaperDaemon SHALL be kept in PaperDaemon's own files, never sent to
+the tablet, and the document's card SHALL name it once the viewer closes, in both mirrors.
 
 #### Scenario: A tall window
 - **WHEN** the window is taller than it is wide
@@ -125,6 +132,25 @@ the page its cover names ("Page 2 of 2"), as the tablet opens it.
 #### Scenario: Opening a notebook last left on its second page
 - **WHEN** the user opens a notebook whose cover says Page 2 of 2
 - **THEN** the viewer opens on page 2
+
+#### Scenario: Reading on in PaperDaemon
+- **WHEN** the user turns to page 5 of a notebook in the Mirror and closes the viewer
+- **THEN** its card says Page 5, and it opens on page 5 next time, until the tablet opens another page of it
+
+### Requirement: Page pictures are kept
+The covers and the page grid's pictures SHALL be kept in PaperDaemon's own files, through updates of PaperDaemon, each
+with what its page was when it was drawn (its id, template, the PDF or book page under it, and its ink). A look at one
+SHALL show the one kept at once, never a spinner. Only a picture whose page has changed since (written on, here or on
+the tablet), or one never drawn, SHALL be drawn again: quietly, in the background, one at a time, never while a page is
+open to edit, the old one shown until the new one replaces it.
+
+#### Scenario: Starting PaperDaemon after an update
+- **WHEN** the user opens the Mirror after PaperDaemon updated
+- **THEN** every cover shows at once, as it was kept, and none is drawn again
+
+#### Scenario: A page written on
+- **WHEN** a notebook's page is written on, on the tablet or in PaperDaemon, and its cover or grid picture is next shown
+- **THEN** the old picture shows at once and is replaced, without a spinner, once the new one is drawn
 
 ### Requirement: Start waits for a lineup that could take a page
 Start and Pause SHALL sit in the rail's foot, left of the version, on every screen (the Daemon screen holds none). Start SHALL show as Paused and be disabled while no lineup could take a page (none has a tag, or its

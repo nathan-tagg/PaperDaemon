@@ -46,13 +46,14 @@
   };
   // the keys, each combination a list: a word the window says in its own language, or a symbol as printed on a key
   const WORD = { ctrl: "keys.k_ctrl", shift: "keys.k_shift", alt: "keys.k_alt", esc: "keys.k_esc", backspace: "keys.k_backspace",
-                 click: "keys.k_click", loop: "keys.k_loop", delete: "keys.k_delete", wheel: "keys.k_wheel", middle: "keys.k_middle", right: "keys.k_right", drag: "keys.k_drag", type: "keys.k_type" };
+                 click: "keys.k_click", loop: "keys.k_loop", delete: "keys.k_delete", wheel: "keys.k_wheel", middle: "keys.k_middle", right: "keys.k_right", drag: "keys.k_drag", type: "keys.k_type",
+                 pgup: "keys.k_pgup", pgdn: "keys.k_pgdn" };
   const keyOf = k => WORD[k] ? PD.t(WORD[k]) : k;
   const combo = c => '<span class="kc">' + c.map(k => "<kbd>" + esc(keyOf(k)) + "</kbd>").join('<span class="kplus">+</span>') + "</span>";
   // [icon, combinations, action, line]; `editor` sections only where the page editor is open
   const SHEET = [
     { title: "keys.s_move", items: [
-      ["scroll", [["wheel"]], "keys.scroll", "keys.scroll_d"],
+      ["scroll", [["wheel"], ["↑", "↓"], ["pgup", "pgdn"]], "keys.scroll", "keys.scroll_d"],
       ["zoom", [["ctrl", "wheel"]], "keys.zoom", "keys.zoom_d"],
       ["across", [["shift", "wheel"]], "keys.across", "keys.across_d"],
       ["auto", [["middle"]], "keys.auto", "keys.auto_d"]] },
@@ -83,6 +84,7 @@
       ["select", [["loop"], ["2–5"]], "keys.select", "keys.select_d"],
       ["capture", [["loop"], ["click"]], "keys.capture", "keys.capture_d"],
       ["delete", [["delete"], ["backspace"]], "keys.delete", "keys.delete_d"],
+      ["across", [["←", "→", "↑", "↓"]], "keys.nudge", "keys.nudge_d"],
       ["copy", [["ctrl", "C"], ["ctrl", "X"]], "keys.copy", "keys.copy_d"],
       ["paste", [["ctrl", "V"]], "keys.paste", "keys.paste_d"],
       ["pasteStrokes", [["ctrl", "shift", "V"]], "keys.paste_strokes", "keys.paste_strokes_d"],

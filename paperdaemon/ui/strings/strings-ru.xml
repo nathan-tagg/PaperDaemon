@@ -729,4 +729,16 @@
   <string name="settings.render.memory">{gb} ГБ</string>
   <string name="settings.render.no_webgpu">Эта карта не поддерживает WebGPU: страницы будут рисоваться на процессоре, а это медленнее.</string>
   <string name="settings.render.restart">Окно сейчас откроется заново с этим изменением.</string>
+  <string name="keys.nudge">Сдвиг</string>
+  <string name="keys.nudge_d">Сдвигает выделенное на пиксель; если удерживать клавишу, двигает дальше.</string>
+  <string name="keys.k_pgup">PgUp</string>
+  <string name="keys.k_pgdn">PgDn</string>
+  <string name="settings.mirror_edit">Редактировать Зеркало</string>
+  <string name="settings.mirror_edit.on">Редактировать страницы планшета в Зеркале</string>
+  <string name="settings.mirror_edit.help">Выключено: страницы Зеркала открываются только для просмотра. Включено: они открываются с инструментами редактора страниц, и изменения уходят на планшет. PaperDaemon не может обещать, что правка никогда не повредит блокнот, особенно после обновления программного обеспечения планшета.</string>
+  <string name="risks.title">Прежде чем пользоваться PaperDaemon</string>
+  <string name="risks.intro">Чтобы пользоваться PaperDaemon, прочитайте о его рисках и подтвердите, что принимаете их.</string>
+  <string name="risks.read">Прочитать о рисках на GitHub</string>
+  <string name="risks.third_party">PaperDaemon — стороннее приложение, не созданное и не одобренное reMarkable; оно нужно для того, чтобы сделать немодифицированный планшет reMarkable полезнее. Я не несу ответственности за то, что кто-либо делает с PaperDaemon, и за любые потери или ущерб, которые оно причиняет.</string>
+  <string name="risks.action">Я принимаю риски</string>
 </resources>

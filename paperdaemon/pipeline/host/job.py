@@ -103,6 +103,7 @@ class Job:
     painter_on: Any = None
     # the draft: what the job draws and erases before it commits
     draw: Any = None
+    picture_starts: list = field(default_factory=list)   # (the draft's id, where a picture's strokes begin in it)
     ops: list = field(default_factory=list)
     marks: list = field(default_factory=list)
     hide: dict = field(default_factory=dict)

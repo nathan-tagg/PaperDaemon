@@ -715,4 +715,16 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">Bu kart WebGPU çalıştıramaz: sayfalar işlemcide çizilecek, bu daha yavaştır.</string>
   <string name="settings.render.restart">Pencere bu değişiklikle şimdi yeniden açılıyor.</string>
+  <string name="keys.nudge">Piksel piksel taşı</string>
+  <string name="keys.nudge_d">Seçileni bir piksel taşır; basılı tutulursa taşımaya devam eder.</string>
+  <string name="keys.k_pgup">PgUp</string>
+  <string name="keys.k_pgdn">PgDn</string>
+  <string name="settings.mirror_edit">Aynayı düzenle</string>
+  <string name="settings.mirror_edit.on">Tabletin sayfalarını Aynada düzenle</string>
+  <string name="settings.mirror_edit.help">Kapalıyken Aynadaki sayfalar yalnızca görüntülemek için açılır. Açıkken sayfa düzenleyicinin araçlarıyla açılır ve değişiklikler tablete gider. PaperDaemon, bir düzenlemenin bir defteri asla bozmayacağına söz veremez; özellikle tablet yazılımı güncellendikten sonra.</string>
+  <string name="risks.title">PaperDaemon'ı kullanmadan önce</string>
+  <string name="risks.intro">PaperDaemon'ı kullanmak için lütfen risklerini okuyun ve kabul ettiğinizi onaylayın.</string>
+  <string name="risks.read">Riskleri GitHub'da okuyun</string>
+  <string name="risks.third_party">PaperDaemon, reMarkable tarafından yapılmamış veya onaylanmamış, değiştirilmemiş bir reMarkable tabletini daha kullanışlı hâle getirmek için tasarlanmış üçüncü taraf bir uygulamadır. Herhangi birinin PaperDaemon ile yaptıklarından veya neden olduğu herhangi bir kayıp ya da zarardan sorumlu değilim.</string>
+  <string name="risks.action">Riskleri kabul ediyorum</string>
 </resources>

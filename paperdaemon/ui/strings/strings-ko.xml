@@ -715,4 +715,16 @@
   <string name="settings.render.memory">{gb}GB</string>
   <string name="settings.render.no_webgpu">이 카드는 WebGPU를 실행할 수 없습니다. 페이지는 프로세서로 그려지며 더 느립니다.</string>
   <string name="settings.render.restart">이 변경으로 창을 지금 다시 엽니다.</string>
+  <string name="keys.nudge">조금씩 옮기기</string>
+  <string name="keys.nudge_d">선택한 것을 1픽셀 옮깁니다. 누르고 있으면 계속 옮깁니다.</string>
+  <string name="keys.k_pgup">PgUp</string>
+  <string name="keys.k_pgdn">PgDn</string>
+  <string name="settings.mirror_edit">미러 편집</string>
+  <string name="settings.mirror_edit.on">미러에서 태블릿 페이지 편집</string>
+  <string name="settings.mirror_edit.help">끄면 미러의 페이지가 보기 전용으로 열립니다. 켜면 페이지 편집기 도구와 함께 열리고, 바꾼 내용은 태블릿으로 갑니다. 특히 태블릿 소프트웨어가 업데이트된 뒤에는 편집이 노트를 손상하지 않는다고 PaperDaemon이 보장할 수 없습니다.</string>
+  <string name="risks.title">PaperDaemon을 사용하기 전에</string>
+  <string name="risks.intro">PaperDaemon을 사용하려면 위험 사항을 읽고 동의해 주세요.</string>
+  <string name="risks.read">GitHub에서 위험 사항 읽기</string>
+  <string name="risks.third_party">PaperDaemon은 reMarkable이 만들거나 보증하지 않은 서드파티 애플리케이션으로, 개조하지 않은 reMarkable 태블릿을 더 유용하게 만들기 위한 것입니다. 누가 PaperDaemon으로 무엇을 하든, 그로 인한 어떤 손실이나 손해에 대해서도 저는 책임지지 않습니다.</string>
+  <string name="risks.action">위험에 동의합니다</string>
 </resources>

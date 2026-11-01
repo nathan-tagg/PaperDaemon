@@ -715,4 +715,16 @@
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">这块显卡无法运行 WebGPU：页面将在处理器上绘制，速度更慢。</string>
   <string name="settings.render.restart">窗口正在以此更改重新打开。</string>
+  <string name="keys.nudge">微移</string>
+  <string name="keys.nudge_d">将所选内容移动一个像素；按住则持续移动。</string>
+  <string name="keys.k_pgup">PgUp</string>
+  <string name="keys.k_pgdn">PgDn</string>
+  <string name="settings.mirror_edit">编辑镜像</string>
+  <string name="settings.mirror_edit.on">在镜像中编辑平板的页面</string>
+  <string name="settings.mirror_edit.help">关闭时，镜像中的页面只能查看。开启时，页面会带着页面编辑器的工具打开，所做的更改会发送到平板。PaperDaemon 无法保证编辑永远不会损坏笔记本，尤其是在平板软件更新之后。</string>
+  <string name="risks.title">使用 PaperDaemon 之前</string>
+  <string name="risks.intro">要使用 PaperDaemon，请阅读其风险并确认您接受。</string>
+  <string name="risks.read">在 GitHub 上阅读风险说明</string>
+  <string name="risks.third_party">PaperDaemon 是第三方应用程序，并非由 reMarkable 制作或认可，旨在让未经改装的 reMarkable 平板更加好用。对于任何人使用 PaperDaemon 所做的事，以及它造成的任何损失或损害，我概不负责。</string>
+  <string name="risks.action">我接受这些风险</string>
 </resources>
