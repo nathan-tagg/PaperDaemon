@@ -26,7 +26,7 @@
 - [x] 4.0 The window started for its card: the engine finds the cards (`gpus.py`) and announces the web view's arguments; WebGPU's Direct3D 11 backend switched on where the card has no Direct3D 12 (D1)
 - [x] 4.1 The machine's cards (DXGI: name, memory, Direct3D 12, Direct3D 11) and the default (D9)
 - [x] 4.2 Settings: Renderer GPU / CPU, the card list, the "!"; the engine and the window use the card chosen
-- [x] 4.3 The chosen card the only one used, or none: off screen on a card without a display, `--disable-gpu` for the processor; the window restarted on a change; the notice in plain words (D9)
+- [x] 4.3 The chosen card the only one used, or none: off screen on a card without a display, `--disable-gpu` for the processor; a change never closes the window: the next page opened opens in a fresh web view on the card chosen, in its place (Settings says so); the notice in plain words (D9)
 
 ## 5. 0.2.1
 

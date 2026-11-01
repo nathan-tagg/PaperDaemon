@@ -47,7 +47,7 @@ over it, select it and move it.
 ## On the page
 
 Each request was typed on a test notebook and worked by PaperDaemon running Qwen 3.8 27B, the pictures generated
-with FLUX.2 Klein ([tools/readme_shots.py](tools/readme_shots.py)); the paintings were found on the web.
+with FLUX.2 Klein ([tools/readme_shots.py](tools/readme_shots.py)).
 
 <p align="center"><i>"This month, with the holidays."</i></p>
 <p align="center"><img src="docs/images/tablet-month.png" width="440" alt="A month calendar with the weather and the holidays"></p>
@@ -69,17 +69,17 @@ with FLUX.2 Klein ([tools/readme_shots.py](tools/readme_shots.py)); the painting
 <p align="center"><i>"Draw a forest path in autumn."</i></p>
 <p align="center"><img src="docs/images/tablet-autumn.png" width="440" alt="A forest path in autumn, generated and drawn in pen strokes"></p>
 
-<p align="center"><i>"The latest posts from r/comfyPlaces."</i></p>
-<p align="center"><img src="docs/images/tablet-posts.png" width="440" alt="The newest posts from r/comfyPlaces, clipped onto the page"></p>
+<p align="center"><i>"The latest posts from r/CozyPlaces."</i></p>
+<p align="center"><img src="docs/images/tablet-posts.png" width="440" alt="The newest posts from r/CozyPlaces, clipped onto the page"></p>
 
 <p align="center"><i>"Let's play chess, Rocco. I'll be black."</i></p>
 <p align="center"><img src="docs/images/tablet-chess.png" width="440" alt="A chess board from Black's side, after White's first move"></p>
 
 <p align="center"><i>"Paste an image of the Mona Lisa."</i></p>
-<p align="center"><img src="docs/images/tablet-mona.png" width="440" alt="The Mona Lisa, found on the web and drawn in pen strokes"></p>
+<p align="center"><img src="docs/images/tablet-mona.png" width="440" alt="The Mona Lisa, pasted onto the page as a picture"></p>
 
 <p align="center"><i>"Decompose a gallery of Van Gogh's paintings."</i></p>
-<p align="center"><img src="docs/images/tablet-gallery.png" width="440" alt="Six paintings by Van Gogh, found on the web and drawn in pen strokes"></p>
+<p align="center"><img src="docs/images/tablet-gallery.png" width="440" alt="Six paintings by Van Gogh, drawn in pen strokes"></p>
 
 ## FAQ
 

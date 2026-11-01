@@ -66,7 +66,7 @@
   <string name="render.why.lost">the graphics card stopped responding.</string>
   <string name="render.why.refused">the graphics card could not run one of PaperDaemon's drawing steps.</string>
   <string name="render.why.none">this graphics card cannot run WebGPU.</string>
-  <string name="render.why.card">the window is still on the card it started with. Restart PaperDaemon to use the card you chose.</string>
+  <string name="render.why.card">the window started with another Renderer setting. Restart PaperDaemon to use the one you chose.</string>
   <string name="editor.large_title">This page is getting very large</string>
   <string name="editor.large_body">Your tablet will struggle to load this page, and the page editor will use more of your graphics card's memory than intended. Go on only if you are sure this is fine. If you run a local AI server on the same graphics card, understand that this page takes memory that server would otherwise have.</string>
   <string name="editor.large_ok">I understand</string>
@@ -714,7 +714,6 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="settings.render.card">Graphics card</string>
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">This card cannot run WebGPU: pages will be drawn on the processor, which is slower.</string>
-  <string name="settings.render.restart">The window reopens now with this change.</string>
   <string name="keys.nudge">Nudge</string>
   <string name="keys.nudge_d">Moves what is selected a pixel; held, it keeps moving.</string>
   <string name="keys.k_pgup">PgUp</string>
@@ -727,4 +726,12 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="risks.read">Read the risks on GitHub</string>
   <string name="risks.third_party">PaperDaemon is a third-party application, not made or endorsed by reMarkable, meant to make an unmodified reMarkable tablet more useful. I am not responsible for what anyone does with PaperDaemon, or for any loss or damage it causes.</string>
   <string name="risks.action">I acknowledge the risks</string>
+  <string name="settings.render.later">Jobs use this now, and the page editor from the next page you open.</string>
+  <string name="settings.render.later_cpu">Jobs use the processor now, and the page editor from the next page you open.</string>
+  <string name="viewer.settings_notebook">Notebook settings</string>
+  <string name="viewer.settings_document">Document settings</string>
+  <string name="viewer.settings_mirror_off">Turn on Edit the Mirror in Settings to change this.</string>
+  <string name="settings.mirror_edit.warn_q">Edit the tablet's pages?</string>
+  <string name="settings.mirror_edit.warn_body">Editing your files with PaperDaemon increases the risk of damaging them. It has been tested, but proceed with caution.</string>
+  <string name="settings.mirror_edit.warn_on">Turn on</string>
 </resources>

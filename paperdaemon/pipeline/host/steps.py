@@ -34,9 +34,9 @@ COMMON = ("do", "what", "answers", "size", "near", "side", "at", "replaces")
 FIELDS = {
     "erase": (), "search": (), "write": (), "draw": (), "chart": (),
     "calendar": (),                                          # what: YYYY-MM or week
-    "image": ("workflow", "source", "steps", "seed", "quote"),
+    "image": ("workflow", "source", "steps", "seed", "quote", "paste"),
     "coloring": ("steps", "seed", "quote"),
-    "web_picture": ("site",),
+    "web_picture": ("site", "paste"),
     "posts": ("source", "search", "sort", "period", "count", "pictures"),
     "highlight": ("target", "words"), "circle": ("target", "words"),
     "underline": ("target", "words"), "strike": ("target", "words"),
@@ -69,11 +69,11 @@ STEP_BRIEF = [
     (('calendar',),
      '  calendar     what = the month as YYYY-MM, or week (the seven days from today); it takes the page'),
     (('draw',),
-     '  draw         a simple figure or an icon'),
+     '  draw         a sketch: lines from simple shapes, a figure or an icon'),
     (('image',),
-     '  image        a picture generated from one sentence (subject, light, style), drawn onto the page\n               in strokes; steps and seed only when the user asked for them, with quote: their words'),
+     '  image        a picture generated from one sentence (subject, light, style), drawn onto the page\n               in strokes, or pasted as it is with paste: true; steps and seed only when the user asked\n               for them, with quote: their words'),
     (('web_picture',),
-     '  web_picture  a real picture that exists, found by image search; one per step, never for facts;\n               site: the domain to search, when the request names one'),
+     '  web_picture  a real picture that exists, found by image search, drawn in strokes or pasted as it is\n               (paste: true); one per step, never for facts; site: the domain to search, when the request\n               names one'),
     (('coloring',),
      '  coloring     a coloring page of what is named (say what it shows, not "a coloring page"):\n               generated like image, as black line art, and inserted as a picture that takes the page'),
     (('posts',),
@@ -177,6 +177,9 @@ def build(raw):
                 pass
         if s.get("pictures") is not None:
             step["pictures"] = bool(s["pictures"])
+        # PASTED: the picture itself goes on the page, not strokes drawn from it (only a plain true says so)
+        if s.get("paste") in (True, "true"):
+            step["paste"] = True
         # a chess game's MOVES ALREADY MADE in the request, in order from the start; the game checks each by the rules
         mv = s.get("moves")
         if isinstance(mv, str):

@@ -16,6 +16,18 @@
     if (!(e.target instanceof Element && e.target.closest('[draggable="true"]'))) e.preventDefault();
   });
 
+  // A WINDOW MADE ON A NEW CARD (the shell's fresh web view, its own profile: PD.moveWindow) takes what the window it
+  // replaces kept for itself, from its address (carry=): the language, the zoom and the like, so only the card changes
+  (() => {
+    const m = location.hash.match(/carry=([A-Za-z0-9_-]+)/);
+    if (!m) return;
+    try {
+      const got = JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g, "+").replace(/_/g, "/")))));
+      for (const [k, v] of Object.entries(got.local || {})) localStorage.setItem(k, v);
+      for (const [k, v] of Object.entries(got.session || {})) sessionStorage.setItem(k, v);
+    } catch (e) { /* the window's own defaults */ }
+  })();
+
   // ---- THE INTERFACE'S WORDS: every piece of text the window shows comes from ui/strings/strings-<language>.xml
   // through PD.t(name, values). English is the source; a string a translation lacks falls back to it. They are read
   // before any screen's script runs (the screens build some of their text as they load), from this same engine.
@@ -118,10 +130,33 @@
     const pane = (location.hash.match(/pane=([a-z0-9-]+)/) || location.hash.match(/^#\/?([a-z0-9-]+)$/) || [])[1] || "";
     PD.firstPane = pane;
     PD.firstOpen = (location.hash.match(/open=([0-9a-fA-F-]{36})/) || [])[1] || "";   // a link straight to a document
+    PD.firstAt = (location.hash.match(/at=([0-9a-fA-F-]{36})/) || [])[1] || "";       // ... in this folder
     PD.firstTab = (location.hash.match(/tab=([a-z]+)/) || [])[1] || "";               // ... or to a tab of a screen
+    PD.moved = Number((location.hash.match(/moved=(\d+)/) || [])[1] || 0);              // a window made on a new card
     if (m) history.replaceState(null, "", location.pathname + (pane ? "#" + pane : ""));
   })();
   PD.pairing = { get token() { return pair; }, set: keep };
+
+  // THE WINDOW ON THE CARD SETTINGS CHOSE: a document opened while the window is still on another card (PD.windowStale,
+  // set by Settings when the Renderer changes) opens in a fresh web view on the chosen card, made by the shell where this
+  // window is, with what this window keeps for itself; it takes this window's place once its page shows. The window is
+  // never closed and opened again. -> true while the move is under way; false where there is no shell to make it (the
+  // development window): the document opens here, on the card the window has
+  PD.windowStale = false;
+  PD.moveWindow = async (pane, at, doc) => {
+    if (PD.moving) return true;
+    const carry = { local: {}, session: {} };
+    try { for (const k of Object.keys(localStorage)) carry.local[k] = localStorage.getItem(k); } catch (e) { /* none */ }
+    try { for (const k of Object.keys(sessionStorage)) if (k !== "pair") carry.session[k] = sessionStorage.getItem(k); } catch (e) { /* none */ }
+    const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(carry)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const hash = "&pane=" + pane + (at ? "&at=" + at : "") + "&open=" + doc + (b64.length < 3000 ? "&carry=" + b64 : "");
+    const [r, e] = await PD.safe(PD.api("POST", "/render/window/move", { hash }));
+    if (e || !r) { PD.windowStale = false; return false; }
+    PD.moving = r.moving;
+    document.documentElement.classList.add("moving");    // (a moment while the page opens on the new card)
+    setTimeout(() => { PD.moving = 0; document.documentElement.classList.remove("moving"); }, 30000);
+    return true;
+  };
 
   // ---- the API
 
@@ -336,7 +371,7 @@
   // never a grid's), never while a page is open to edit (that page has the card), each in a frame of its own that is
   // gone when it is done, and handed to the engine to keep with the stamp of the page it was asked for.
   let thumbChain = Promise.resolve();
-  const thumbJobs = new Map();                              // what is being drawn -> its promise (asked twice, drawn once)
+  const thumbJobs = new Map();                              // what is being drawn -> {job, wants: who asked} (drawn once)
   const editing = () => !!document.querySelector("dialog[open] iframe.page-editor");
   function thumbOne(base, doc, page, size) {
     return new Promise(done => {
@@ -357,10 +392,15 @@
   }
   PD.drawThumb = (base, doc, page, size, stamp = "", stale = () => false) => {
     const key = [base, doc, page, size].join("|");
-    if (thumbJobs.has(key)) return thumbJobs.get(key);
+    // ASKED AGAIN, DRAWN ONCE, FOR WHOEVER IS STILL LOOKING: a library painted anew (as it is while the tablet syncs)
+    // asks again for every cover from new pictures, and the first asker's picture is gone by the time its turn comes.
+    // A job is skipped only when every picture that asked for it has gone, or no cover was ever drawn
+    const had = thumbJobs.get(key);
+    if (had) { had.wants.push(stale); return had.job; }
+    const wants = [stale];
     const job = thumbChain.then(async () => {
       while (editing()) await new Promise(r => setTimeout(r, 500));
-      if (stale()) return false;                            // no longer on screen: not drawn
+      if (wants.every(f => f())) return false;              // no longer on screen anywhere: not drawn
       const got = await thumbOne(base, doc, page, size);
       if (!got.ok || !got.blob) return false;
       try {
@@ -371,7 +411,7 @@
       } catch (e) { return false; }
     }).finally(() => thumbJobs.delete(key));
     thumbChain = job.catch(() => false);
-    thumbJobs.set(key, job);
+    thumbJobs.set(key, { job, wants });
     return job;
   };
 

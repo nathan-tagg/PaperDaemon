@@ -124,7 +124,15 @@ Direct3D 12), in ms; the test page has 30,536 strokes (a decomposition with hand
   another card to a local model), except the window's composing: on a card without a screen the browser still
   composes on the card the display hangs from (composed on the processor, `--disable-gpu-compositing`, the
   editor's WebGPU canvas never reached the screen: 0.2.1's blank editor); the processor chosen is `--disable-gpu`. A change
-  of card or processor restarts the window at once, on the Settings pane. A card counts as having WebGPU when
+  of card or processor never closes the window (0.2.4 closed it and opened it again on the Settings pane, and the user
+  saw the page jump): the engine draws as Settings says from its next picture, and the page editor from the next page
+  opened. One browser gives WebGPU only the card it started on (measured: neither powerPreference nor a window started
+  without `--use-adapter-luid` reaches the other card), so that page opens in a fresh web view the shell makes on the
+  card chosen -- hidden, where the window is and at its size, the document open in it, what the window keeps for itself
+  carried over, its profile in the other of two folders (web views with different arguments cannot share one) -- which
+  takes the window's place once its page shows, the old one let go: about a second, measured both ways between a
+  discrete card and the integrated one, and to and from the processor.
+  A card counts as having WebGPU when
   Direct3D 12 or Direct3D 11 (feature level 11_0) can be opened on it. When the card cannot be used, the notice
   says why in plain words (lost, refused, none, the card) and the detail goes to the log.
 - **D10. Tried and dropped.** Tile-based drawing on compute (each pixel resolved once from a sorted list of the

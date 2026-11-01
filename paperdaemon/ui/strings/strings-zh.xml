@@ -66,7 +66,7 @@
   <string name="render.why.lost">显卡停止了响应。</string>
   <string name="render.why.refused">显卡无法运行 PaperDaemon 的某个绘制步骤。</string>
   <string name="render.why.none">这块显卡无法运行 WebGPU。</string>
-  <string name="render.why.card">窗口仍在启动时的显卡上。重新启动 PaperDaemon 即可使用你选择的显卡。</string>
+  <string name="render.why.card">窗口是以另一种渲染器设置启动的。重新启动 PaperDaemon 即可使用你选择的设置。</string>
   <string name="editor.large_title">此页面正变得非常大</string>
   <string name="editor.large_body">你的平板将难以加载此页面，页面编辑器也会占用比预期更多的显卡内存。只有在确定没问题时才继续。如果你在同一张显卡上运行本地 AI 服务器，请注意此页面会占用该服务器本可使用的内存。</string>
   <string name="editor.large_ok">我知道了</string>
@@ -714,7 +714,6 @@
   <string name="settings.render.card">显卡</string>
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">这块显卡无法运行 WebGPU：页面将在处理器上绘制，速度更慢。</string>
-  <string name="settings.render.restart">窗口正在以此更改重新打开。</string>
   <string name="keys.nudge">微移</string>
   <string name="keys.nudge_d">将所选内容移动一个像素；按住则持续移动。</string>
   <string name="keys.k_pgup">PgUp</string>
@@ -727,4 +726,12 @@
   <string name="risks.read">在 GitHub 上阅读风险说明</string>
   <string name="risks.third_party">PaperDaemon 是第三方应用程序，并非由 reMarkable 制作或认可，旨在让未经改装的 reMarkable 平板更加好用。对于任何人使用 PaperDaemon 所做的事，以及它造成的任何损失或损害，我概不负责。</string>
   <string name="risks.action">我接受这些风险</string>
+  <string name="settings.render.later">任务现在就会使用此设置，页面编辑器则从你打开的下一页开始使用。</string>
+  <string name="settings.render.later_cpu">任务现在就会使用处理器，页面编辑器则从你打开的下一页开始使用。</string>
+  <string name="viewer.settings_notebook">笔记本设置</string>
+  <string name="viewer.settings_document">文档设置</string>
+  <string name="viewer.settings_mirror_off">要更改此项，请在设置中打开“编辑镜像”。</string>
+  <string name="settings.mirror_edit.warn_q">编辑平板的页面？</string>
+  <string name="settings.mirror_edit.warn_body">用 PaperDaemon 编辑你的文件会增加损坏它们的风险。它已经过测试，但请谨慎操作。</string>
+  <string name="settings.mirror_edit.warn_on">开启</string>
 </resources>

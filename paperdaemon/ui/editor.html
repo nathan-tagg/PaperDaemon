@@ -550,19 +550,20 @@ span.lname { cursor: default; }
   // of how strokes become pixels. Without WebGPU (or with #cpu) GL stays null and the page is drawn on the processor. The
   // card is asked for as the page loads (gpuReady); the first draw waits for it.
   let GL = null, cardWait = true;                             // (cardWait: the card not answered yet -- nothing is drawn
-  let cpuChosen = false, cardStale = false;                   // on the processor meanwhile, rebuild)
+  let cpuChosen = false, cardLater = false;                   // on the processor meanwhile, rebuild)
   const gpuReady = (async () => {
-    if (/(^|[#&])cpu\b/.test(location.hash) || !navigator.gpu) return null;
+    if (/(^|[#&])cpu\b/.test(location.hash)) return null;
     // THE CARD CHOSEN: the window's web view is started for the card Settings chose, or with no card for the processor.
-    // The Renderer on the processor: no card asked for. A window not started again since the choice changed: the page
-    // drawn on the processor until it is (the shell starts it again at once). No answer (no engine, a test page): the card
+    // The Renderer on the processor: no card asked for. Another card chosen since the window started: the card the window
+    // has until PaperDaemon next starts (the window is never closed and opened again under the user), and a window
+    // started on the processor none (cardLater: the reason said). No answer (no engine, a test page): the card
     await 0;                                                  // (the rest of the script first: token)
     const rw = await fetch("/api/v1/render/window", { headers: { Authorization: "Bearer " + token() } })
       .then(r => r.ok ? r.json() : null).catch(() => null);
     if (rw && rw.cpu) { cpuChosen = true; return null; }
-    if (rw && rw.current === false) { cardStale = true; return null; }
+    cardLater = !!rw && rw.current === false;
     const S = (window.PD_SHADERS || {}).WGSL;
-    if (!S) return null;
+    if (!S || !navigator.gpu) return null;
     const ask = level => navigator.gpu.requestAdapter({ featureLevel: level, powerPreference: "high-performance" });
     // (a core device only: compatibility mode -- D3D11 on Windows -- cannot erase on the card as the editor does; there the
     // page is drawn on the processor)
@@ -589,7 +590,7 @@ span.lname { cursor: default; }
     if (g) { g.onErase(cardCells, swipeTick, cardWhole, cardAgain); g.onPlan(rd => erasing && !gpuFailed ? foldSlot(erasing, rd) : null, ps => { if (erasing) for (const q of ps) erasing.made.delete(q); });
             g.onRefused(() => { if (!gpuFailed) gpuDown("the graphics card refused the eraser's passes"); }); }   // (heard once the card erases: eraseOn)
     if (!g && !cpuChosen && !/(^|[#&])cpu\b/.test(location.hash))
-      setTimeout(() => cardStale ? gpuDown("the window is not on the card chosen", "card") : gpuDown("WebGPU is not available", "none"), 0);
+      setTimeout(() => cardLater ? gpuDown("the window started with another Renderer setting", "card") : gpuDown("WebGPU is not available", "none"), 0);
     return g;
   }, e => { cardWait = false; setTimeout(() => gpuDown(e), 0); return null; });
   async function makeGL(device, adapter, TS, S) {
@@ -1860,7 +1861,9 @@ span.lname { cursor: default; }
       const { W, H, w, h } = last;
       if (texW !== W || texH !== H || screenW !== w || screenH !== h) return false;
       const A = recsOf(lines);
-      if (!A || !A.length || A.length > 65535 * 64) return false;   // (listBoxes: a thread a record, in one row of workgroups)
+      // (any number of records: every pass over them runs in rows of workgroups; the card's largest buffer bounds them)
+      const most = Math.min(device.limits.maxStorageBufferBindingSize, device.limits.maxBufferSize);
+      if (!A || !A.length || A.length * PT > most || (16 + A.length) * 4 > most) return false;
       const n = A.length, wg = Math.ceil(n / 64);
       mv.lines = lines.slice(); mv.A = Uint32Array.from(A); mv.n = n; mv.blocks = blocksOf(A);
       mv.x = Math.min(wg, 65535); mv.y = Math.ceil(wg / 65535); mv.wide = mv.x * 64;
@@ -6425,10 +6428,9 @@ span.lname { cursor: default; }
       paint(); return true;
     }
     if (pickDrag && e.pointerId === pointer) {
-      // DRAWN WHERE THE POINTER IS ABOUT TO BE: the browser's guess at its next place (getPredictedEvents), so what is
-      // carried keeps up with the pointer the screen draws on its own; let go, it lands where the pointer truly was (finish)
-      const ahead = e.getPredictedEvents ? e.getPredictedEvents() : [], q = ahead.length ? ahead[ahead.length - 1] : e;
-      pick.frame = dragFrame(pickDrag, ...toPage(...local(q)), e.altKey);
+      // DRAWN WHERE THE POINTER IS: a guess at where it will be next put the selection ahead while held and back where
+      // it truly was at let-go, a jump; what is drawn held is where it lands
+      pick.frame = dragFrame(pickDrag, x, y, e.altKey);
       if (pick.kind === "strokes") moveSoon(); else paint();
       return true;
     }

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.5
+
+- Changing the graphics card, or between GPU and CPU, no longer closes and reopens the window. Jobs use the new choice at once, and the page editor from the next page you open: that page opens on the new card, in the same window, in about a second. Settings says so.
+- Dragging a large selection on a heavy page no longer falls back to the processor: past about four million points it was moved there, a third of a second or more a frame (60 moves of most of a 150,000-stroke page took 27 seconds). It is moved on the graphics card now, whatever its size.
+- A dragged selection is drawn where the pointer is. 0.2.4 drew it where the browser guessed the pointer would be next, which ran it ahead and pulled it back: dragging was jumpy.
+- A notebook's settings, and a PDF's or a book's: the gear by its name in the viewer. Its cover shows the last page visited or the first page, as on the tablet. In the Mirror the setting is changed only with Edit the Mirror on, never over a change the tablet made first, and it is sent to the tablet.
+- A page opened again opens faster: the engine keeps the last pages it prepared for the editor, until the page changes, so turning back to a page skips reading it again (a second or more on a 150,000-stroke page).
+- A picture you ask to paste goes on the page as the picture itself, an image block like a coloring page, not pen strokes. A sketch is drawn from simple shapes; a picture generated, or found on the web, is still drawn in strokes you can erase and move. The model reads which from what you ask.
+- Turning on Edit the Mirror shows a warning first, each time: editing the tablet's files with PaperDaemon raises the risk of damaging them. Canceling leaves it off.
+- Covers show the page they should. A cover waiting to be drawn again was dropped when the library was painted anew (a sync landing, a notebook closed after reading it), so it kept its old page; and the False Mirror's covers were never drawn again once kept.
+
 ## 0.2.4
 
 - Chess: the side you ask to play is the side you get. The model was told only "color" and read it as its own side.

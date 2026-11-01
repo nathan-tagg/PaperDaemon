@@ -66,7 +66,7 @@
   <string name="render.why.lost">گرافکس کارڈ نے جواب دینا بند کر دیا۔</string>
   <string name="render.why.refused">گرافکس کارڈ PaperDaemon کے بنانے کے مراحل میں سے ایک نہیں چلا سکا۔</string>
   <string name="render.why.none">یہ گرافکس کارڈ WebGPU نہیں چلا سکتا۔</string>
-  <string name="render.why.card">ونڈو ابھی تک اسی کارڈ پر ہے جس پر وہ شروع ہوئی تھی۔ چنا گیا کارڈ استعمال کرنے کے لیے PaperDaemon دوبارہ شروع کریں۔</string>
+  <string name="render.why.card">ونڈو کسی اور رینڈرر سیٹنگ کے ساتھ شروع ہوئی تھی۔ اپنی چنی ہوئی سیٹنگ استعمال کرنے کے لیے PaperDaemon دوبارہ شروع کریں۔</string>
   <string name="editor.large_title">یہ صفحہ بہت بڑا ہوتا جا رہا ہے</string>
   <string name="editor.large_body">آپ کے ٹیبلٹ کو یہ صفحہ لوڈ کرنے میں دشواری ہوگی، اور پیج ایڈیٹر آپ کے گرافکس کارڈ کی میموری طے شدہ سے زیادہ استعمال کرے گا۔ صرف تب آگے بڑھیں جب آپ کو یقین ہو کہ یہ ٹھیک ہے۔ اگر آپ اسی گرافکس کارڈ پر مقامی AI سرور چلاتے ہیں تو جان لیں کہ یہ صفحہ اس سرور کے حصے کی میموری لیتا ہے۔</string>
   <string name="editor.large_ok">سمجھ گیا</string>
@@ -714,7 +714,6 @@
   <string name="settings.render.card">گرافکس کارڈ</string>
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">یہ کارڈ WebGPU نہیں چلا سکتا: صفحات پروسیسر پر بنائے جائیں گے، جو سست ہے۔</string>
-  <string name="settings.render.restart">اس تبدیلی کے ساتھ ونڈو ابھی دوبارہ کھل رہی ہے۔</string>
   <string name="keys.nudge">ذرا سرکائیں</string>
   <string name="keys.nudge_d">منتخب کو ایک پکسل سرکاتا ہے؛ دبائے رکھیں تو سرکاتا رہتا ہے۔</string>
   <string name="keys.k_pgup">PgUp</string>
@@ -727,4 +726,12 @@
   <string name="risks.read">GitHub پر خطرات پڑھیں</string>
   <string name="risks.third_party">PaperDaemon ایک تیسرے فریق کی ایپلیکیشن ہے، جسے reMarkable نے نہ بنایا ہے نہ اس کی توثیق کی ہے، اور اس کا مقصد بغیر ترمیم والے reMarkable ٹیبلیٹ کو زیادہ مفید بنانا ہے۔ PaperDaemon کے ساتھ کوئی جو بھی کرے، یا اس سے ہونے والے کسی بھی نقصان کا میں ذمہ دار نہیں ہوں۔</string>
   <string name="risks.action">مجھے خطرات قبول ہیں</string>
+  <string name="settings.render.later">کام اسے ابھی سے استعمال کرتے ہیں، اور صفحہ ایڈیٹر اگلے کھولے گئے صفحے سے۔</string>
+  <string name="settings.render.later_cpu">کام ابھی سے پروسیسر استعمال کرتے ہیں، اور صفحہ ایڈیٹر اگلے کھولے گئے صفحے سے۔</string>
+  <string name="viewer.settings_notebook">نوٹ بک کی ترتیبات</string>
+  <string name="viewer.settings_document">دستاویز کی ترتیبات</string>
+  <string name="viewer.settings_mirror_off">اسے بدلنے کے لیے ترتیبات میں آئینہ میں ترمیم آن کریں۔</string>
+  <string name="settings.mirror_edit.warn_q">ٹیبلیٹ کے صفحات میں ترمیم کریں؟</string>
+  <string name="settings.mirror_edit.warn_body">PaperDaemon سے اپنی فائلوں میں ترمیم کرنے سے انہیں نقصان پہنچنے کا خطرہ بڑھ جاتا ہے۔ اسے جانچا گیا ہے، لیکن احتیاط سے آگے بڑھیں۔</string>
+  <string name="settings.mirror_edit.warn_on">آن کریں</string>
 </resources>

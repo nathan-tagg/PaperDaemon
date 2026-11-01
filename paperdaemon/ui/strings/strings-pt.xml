@@ -66,7 +66,7 @@
   <string name="render.why.lost">a placa gráfica deixou de responder.</string>
   <string name="render.why.refused">a placa gráfica não conseguiu executar um dos passos de desenho do PaperDaemon.</string>
   <string name="render.why.none">esta placa gráfica não consegue executar WebGPU.</string>
-  <string name="render.why.card">a janela ainda está na placa com que foi aberta. Reinicie o PaperDaemon para usar a placa que escolheu.</string>
+  <string name="render.why.card">a janela foi aberta com outra definição do Renderizador. Reinicie o PaperDaemon para usar a que escolheu.</string>
   <string name="editor.large_title">Esta página está ficando muito grande</string>
   <string name="editor.large_body">Seu tablet terá dificuldade para carregar esta página, e o editor de páginas usará mais memória da placa de vídeo do que o previsto. Continue só se tiver certeza de que está tudo bem. Se você roda um servidor de IA local na mesma placa de vídeo, saiba que esta página tira memória desse servidor.</string>
   <string name="editor.large_ok">Entendi</string>
@@ -714,7 +714,6 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="settings.render.card">Placa gráfica</string>
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">Esta placa não consegue executar WebGPU: as páginas serão desenhadas no processador, que é mais lento.</string>
-  <string name="settings.render.restart">A janela volta a abrir agora com esta alteração.</string>
   <string name="keys.nudge">Deslocar</string>
   <string name="keys.nudge_d">Move o que está selecionado um pixel; com a tecla pressionada, continua.</string>
   <string name="keys.k_pgup">PgUp</string>
@@ -727,4 +726,12 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="risks.read">Ler os riscos no GitHub</string>
   <string name="risks.third_party">O PaperDaemon é um aplicativo de terceiros, não criado nem endossado pela reMarkable, feito para tornar mais útil um tablet reMarkable sem modificações. Não sou responsável pelo que qualquer pessoa faça com o PaperDaemon, nem por qualquer perda ou dano que ele cause.</string>
   <string name="risks.action">Aceito os riscos</string>
+  <string name="settings.render.later">Os trabalhos já usam isto, e o editor de páginas a partir da próxima página que abrir.</string>
+  <string name="settings.render.later_cpu">Os trabalhos já usam o processador, e o editor de páginas a partir da próxima página que abrir.</string>
+  <string name="viewer.settings_notebook">Configurações do caderno</string>
+  <string name="viewer.settings_document">Configurações do documento</string>
+  <string name="viewer.settings_mirror_off">Ative Editar o Espelho em Configurações para mudar isto.</string>
+  <string name="settings.mirror_edit.warn_q">Editar as páginas do tablet?</string>
+  <string name="settings.mirror_edit.warn_body">Editar seus arquivos com o PaperDaemon aumenta o risco de danificá-los. Isso foi testado, mas prossiga com cautela.</string>
+  <string name="settings.mirror_edit.warn_on">Ativar</string>
 </resources>

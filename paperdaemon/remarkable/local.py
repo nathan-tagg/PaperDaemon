@@ -477,6 +477,20 @@ def set_tags(u, tags):
     _touch(u)
 
 
+def set_cover(doc, first):
+    """A document's cover, as the tablet's own setting: its first page (`first`; coverPageNumber 0) or the page last
+    visited (-1). -> whether it changed."""
+    _guard()
+    c = _content(doc)
+    want = 0 if first else -1
+    if c.get("coverPageNumber") == want:
+        return False
+    c["coverPageNumber"] = want
+    _save_content(doc, c)
+    _touch(doc)
+    return True
+
+
 def set_page_tags(doc, page_no, tags):
     _guard()
     pid = page_id(doc, page_no)

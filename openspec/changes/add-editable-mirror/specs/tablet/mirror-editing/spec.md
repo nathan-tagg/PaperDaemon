@@ -4,11 +4,17 @@
 While Edit the Mirror is on in Settings (off until the user turns it on), a page of the tablet's Mirror SHALL open in
 the page editor with its tools, as a False Mirror page does, and the user's changes SHALL reach the tablet by
 PaperDaemon's sync. Off, the engine SHALL write none of the Mirror's pages. The setting SHALL say that PaperDaemon
-cannot promise an edit never damages a notebook, above all after an update of the tablet's software.
+cannot promise an edit never damages a notebook, above all after an update of the tablet's software. Each time the
+user turns it on, a warning SHALL come first: editing the tablet's files with PaperDaemon raises the risk of damaging
+them; it has been tested, but proceed with caution. Nothing remembers the answer; canceling leaves the setting off.
 
 #### Scenario: A stroke drawn on a Mirror page
 - **WHEN** the user draws a stroke on a Mirror page and leaves it
 - **THEN** after the next sync the tablet shows the stroke where the editor showed it
+
+#### Scenario: Turning editing on
+- **WHEN** the user ticks Edit the Mirror, whether or not they turned it on before
+- **THEN** the warning shows, and the setting is on only if they choose to turn it on there
 
 ### Requirement: A sync shows how far it has come
 While a Mirror document's edits go up to the tablet (Ctrl+S, or the document closed), a thin bar SHALL show how far

@@ -66,7 +66,7 @@
   <string name="render.why.lost">ग्राफ़िक्स कार्ड ने जवाब देना बंद कर दिया।</string>
   <string name="render.why.refused">ग्राफ़िक्स कार्ड PaperDaemon का एक ड्रॉइंग चरण नहीं चला सका।</string>
   <string name="render.why.none">यह ग्राफ़िक्स कार्ड WebGPU नहीं चला सकता।</string>
-  <string name="render.why.card">विंडो अब भी उसी कार्ड पर है जिस पर वह शुरू हुई थी। चुना गया कार्ड इस्तेमाल करने के लिए PaperDaemon फिर से शुरू करें।</string>
+  <string name="render.why.card">विंडो किसी दूसरी रेंडरर सेटिंग के साथ शुरू हुई थी। आपकी चुनी हुई सेटिंग इस्तेमाल करने के लिए PaperDaemon फिर से शुरू करें।</string>
   <string name="editor.large_title">यह पेज बहुत बड़ा होता जा रहा है</string>
   <string name="editor.large_body">आपके टैबलेट को यह पेज लोड करने में दिक्कत होगी, और पेज एडिटर आपके ग्राफ़िक्स कार्ड की मेमोरी तय से ज़्यादा इस्तेमाल करेगा। तभी आगे बढ़ें जब आपको भरोसा हो कि यह ठीक है। अगर आप उसी ग्राफ़िक्स कार्ड पर लोकल AI सर्वर चलाते हैं, तो जान लें कि यह पेज उस सर्वर के हिस्से की मेमोरी लेता है।</string>
   <string name="editor.large_ok">समझ गया</string>
@@ -714,7 +714,6 @@
   <string name="settings.render.card">ग्राफ़िक्स कार्ड</string>
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">यह कार्ड WebGPU नहीं चला सकता: पेज प्रोसेसर पर बनाए जाएँगे, जो धीमा है।</string>
-  <string name="settings.render.restart">इस बदलाव के साथ विंडो अभी फिर से खुल रही है।</string>
   <string name="keys.nudge">थोड़ा खिसकाएँ</string>
   <string name="keys.nudge_d">चुने हुए को एक पिक्सेल खिसकाता है; दबाए रखने पर खिसकाता रहता है।</string>
   <string name="keys.k_pgup">PgUp</string>
@@ -727,4 +726,12 @@
   <string name="risks.read">GitHub पर जोखिम पढ़ें</string>
   <string name="risks.third_party">PaperDaemon एक तृतीय-पक्ष एप्लिकेशन है, जिसे reMarkable ने न बनाया है न समर्थन दिया है, और इसका उद्देश्य बिना बदलाव वाले reMarkable टैबलेट को और उपयोगी बनाना है। PaperDaemon के साथ कोई भी जो करता है, या इससे होने वाली किसी भी हानि या क्षति के लिए मैं ज़िम्मेदार नहीं हूँ।</string>
   <string name="risks.action">मुझे जोखिम स्वीकार हैं</string>
+  <string name="settings.render.later">काम इसे अभी से इस्तेमाल करते हैं, और पेज एडिटर अगले खोले गए पेज से।</string>
+  <string name="settings.render.later_cpu">काम अभी से प्रोसेसर इस्तेमाल करते हैं, और पेज एडिटर अगले खोले गए पेज से।</string>
+  <string name="viewer.settings_notebook">नोटबुक सेटिंग</string>
+  <string name="viewer.settings_document">दस्तावेज़ सेटिंग</string>
+  <string name="viewer.settings_mirror_off">इसे बदलने के लिए सेटिंग में मिरर संपादित करें चालू करें।</string>
+  <string name="settings.mirror_edit.warn_q">टैबलेट के पेज संपादित करें?</string>
+  <string name="settings.mirror_edit.warn_body">PaperDaemon से अपनी फ़ाइलें संपादित करने पर उनके ख़राब होने का जोखिम बढ़ जाता है। इसका परीक्षण किया गया है, लेकिन सावधानी से आगे बढ़ें।</string>
+  <string name="settings.mirror_edit.warn_on">चालू करें</string>
 </resources>

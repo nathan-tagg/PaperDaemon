@@ -423,6 +423,120 @@ def test_the_editor_reads_and_saves_a_mirror_page_through_the_engine(monkeypatch
             ledger.save(led)
 
 
+def test_a_pages_binary_form_is_kept_until_its_files_change(monkeypatch):
+    """The editor's binary form of a page, kept by the page's files as they are: asked again, not read again; the page
+    written, read anew (both routes: the page to read, and the Mirror's to edit)."""
+    import shutil
+    from fastapi.testclient import TestClient
+    from paperdaemon import server
+    from paperdaemon.remarkable import inplace, local
+    src = os.path.join(CASES, "ink-question", "mirror")
+    made = []
+    for f in os.listdir(src):
+        p, dest = os.path.join(src, f), os.path.join(local.M, f)
+        (shutil.copytree if os.path.isdir(p) else shutil.copyfile)(p, dest)
+        made.append(dest)
+    doc = next(f[:-8] for f in os.listdir(src) if f.endswith(".content"))
+    reads = []
+    real_scene, real_page = local.scene_of, inplace.read_page
+    monkeypatch.setattr(local, "scene_of", lambda *a, **k: (reads.append("scene"), real_scene(*a, **k))[1])
+    monkeypatch.setattr(inplace, "read_page", lambda *a, **k: (reads.append("mirror"), real_page(*a, **k))[1])
+    try:
+        c = TestClient(server.app)
+        c.headers["Authorization"] = "Bearer " + server.pairing_token()
+        for route, read in (("scene", "scene"), ("mirror-scene", "mirror")):
+            url = "/api/v1/library/%s/page/1/%s?form=bin" % (doc, route)
+            a, b = c.get(url), c.get(url)
+            assert a.status_code == b.status_code == 200 and a.content == b.content and a.headers["etag"] == b.headers["etag"]
+            assert reads.count(read) == 1, (route, reads)                   # read once, the second time kept
+            reads.clear()
+        path = os.path.join(local.M, doc, local.page_id(doc, 1) + ".rm")
+        data = open(path, "rb").read()
+        with open(path, "wb") as f:                                           # the page written: its files are not as they were
+            f.write(data + b"\0")
+        os.utime(path, ns=(os.stat(path).st_atime_ns, os.stat(path).st_mtime_ns + 10 ** 9))
+        with open(path, "wb") as f:
+            f.write(data)
+        c.get("/api/v1/library/%s/page/1/scene?form=bin" % doc)
+        assert reads == ["scene"]                                           # its files changed: read anew
+    finally:
+        for p in made:
+            shutil.rmtree(p, ignore_errors=True) if os.path.isdir(p) else os.remove(p)
+
+
+def test_a_push_stamps_the_pages_written_and_none_when_only_the_documents_settings_changed():
+    """touch, before a push: the pages named (every page when none are named) stamped so the tablet fetches them again;
+    an empty list stamps none -- a cover changed moves only the document's modified time."""
+    got = _run("""
+        from paperdaemon.remarkable import sync
+        doc = fixture("ink-question")
+        cp, mp = os.path.join(M, doc + ".content"), os.path.join(M, doc + ".metadata")
+        def stamps():
+            c = json.load(open(cp, encoding="utf-8"))
+            return [p.get("modifed") for p in c["cPages"]["pages"]], json.load(open(mp, encoding="utf-8")).get("lastModified")
+        p0, _m0 = stamps()
+        sync.touch(doc, [], when=1000)
+        p1, m1 = stamps()
+        sync.touch(doc, None, when=2000)
+        p2, m2 = stamps()
+        out(none=[p1 == p0, m1], every=[all(x == "2000000" for x in p2), m2])
+    """)
+    assert got == {"none": [True, "1000000"], "every": [True, "2000000"]}
+
+
+def test_a_mirror_documents_cover_is_set_in_place_and_sent_through_the_engine(monkeypatch):
+    """The cover setting of a Mirror document: refused with Edit the Mirror off, written into its .content (every other
+    key as it was) after a backup and sent to the tablet, not written over a tablet change, and shown in the library."""
+    import shutil
+    from fastapi.testclient import TestClient
+    from paperdaemon import paths, server
+    from paperdaemon.remarkable import inplace, local, sync
+    src = os.path.join(CASES, "ink-question", "mirror")
+    made = []
+    for f in os.listdir(src):
+        p, dest = os.path.join(src, f), os.path.join(local.M, f)
+        (shutil.copytree if os.path.isdir(p) else shutil.copyfile)(p, dest)
+        made.append(dest)
+    doc = next(f[:-8] for f in os.listdir(src) if f.endswith(".content"))
+    content = os.path.join(local.M, doc + ".content")
+    try:
+        cloud = {"newer": False, "asked": []}
+
+        def check(name):
+            cloud["asked"].append(name)
+            if cloud["newer"]:
+                raise inplace.TabletNewer("the tablet changed this page")
+        monkeypatch.setattr(inplace, "check_cloud", check)
+        pushed = []
+        monkeypatch.setattr(sync, "push_edited", lambda d, pages=None: pushed.append((d, pages)) or {"root_put": 200})
+        monkeypatch.setattr(sync, "changed_files", lambda d=None: [(doc + ".content", "x", "y")])
+        was = json.load(open(content, encoding="utf-8"))
+        first = "last" if was.get("coverPageNumber") != -1 else "first"     # whichever it is not now
+        c = TestClient(server.app)
+        c.headers["Authorization"] = "Bearer " + server.pairing_token()
+        url = "/api/v1/library/%s/cover" % doc
+        r = c.put(url, json={"cover": first})
+        assert r.status_code == 403 and r.json()["reason"] == "off", r.text
+        monkeypatch.setattr(server, "_mirror_edit", lambda: True)
+        r = c.put(url, json={"cover": first})
+        assert r.status_code == 200 and r.json() == {"cover": first, "changed": True, "push": {"root_put": 200}}, r.text
+        now = json.load(open(content, encoding="utf-8"))
+        assert now["coverPageNumber"] == (0 if first == "first" else -1)
+        assert {k: v for k, v in now.items() if k != "coverPageNumber"} == {k: v for k, v in was.items() if k != "coverPageNumber"}
+        assert cloud["asked"] == [doc + ".content"] and pushed == [(doc, [])]           # no page stamped
+        assert os.path.isfile(os.path.join(paths.data_dir(), "mirror-backups", doc, doc + ".content"))
+        assert next(x for x in c.get("/api/v1/library").json() if x["id"] == doc)["cover"] == first
+        assert c.put(url, json={"cover": first}).json() == {"cover": first, "changed": False}   # as it is: nothing sent
+        cloud["newer"] = True
+        back = "first" if first == "last" else "last"
+        r = c.put(url, json={"cover": back})
+        assert r.status_code == 409 and r.json()["reason"] == "tablet" and "cover" in r.json()["error"], r.text
+        assert json.load(open(content, encoding="utf-8")) == now and len(pushed) == 1
+    finally:
+        for p in made:
+            shutil.rmtree(p, ignore_errors=True) if os.path.isdir(p) else os.remove(p)
+
+
 def test_a_page_the_pipeline_wrote_with_the_daemons_layer_a_picture_and_a_new_layer():
     """A page written by the pipeline's own writers (strokes, typed text, a picture), with a layer of the daemon's: the
     daemon's layer and the picture stay as they are whatever the save says of them, a picture changed is refused, a new

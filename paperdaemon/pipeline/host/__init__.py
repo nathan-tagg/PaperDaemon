@@ -339,7 +339,7 @@ def _drain_host_steps(limit=8, kinds=None):
                 ST.finish(steps, cur, ok, note)
             elif cur["do"] == "web_picture":
                 cur["draw_from"] = len(JOB.draw.strokes)
-                r = t_fetch(cur["what"], place=cur.get("place"), site=cur.get("site"))
+                r = t_fetch(cur["what"], place=cur.get("place"), site=cur.get("site"), paste=bool(cur.get("paste")))
                 cur["draw_to"] = len(JOB.draw.strokes)
                 ST.finish(steps, cur, not r.get("error"), r.get("error") or "")
             elif cur["do"] == "posts" and not _listable_posts(cur.get("source")):
@@ -539,6 +539,7 @@ from paperdaemon.pipeline.host.features.pictures import (  # noqa: E402
     _ink_only,
     _trace_into,
     _picture_asset,
+    _paste_into,
     _coloring_page,
     _run_images,
     t_image)

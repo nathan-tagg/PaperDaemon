@@ -667,6 +667,13 @@ html, .viewer-page, .script-help-body, .terminal, textarea, .chapter-list { scro
 .keys-q.failed { color: var(--mark); border-color: currentColor; }
 @keyframes keys-spin { to { transform: rotate(1turn); } }
 .keys-q:hover, .keys-q:focus-visible { color: var(--ink); border-color: var(--ink-2); }
+/* a page opening in a fresh web view on the card Settings chose (core.js PD.moveWindow): a moment's wait */
+html.moving, html.moving * { cursor: progress !important; }
+/* the document's settings, beside the ? (tablet.js docSettings) */
+.doc-set { width: 15px; height: 15px; flex: none; align-self: center; display: inline-grid; place-items: center; padding: 0; border: 0;
+  background: transparent; color: var(--ink-2); cursor: pointer; }
+.doc-set svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; }
+.doc-set:hover, .doc-set:focus-visible { color: var(--ink); }
 dialog.keys-sheet { width: min(calc(640px / var(--pd-zoom, 1)), calc(90vw / var(--pd-zoom, 1))); max-width: none; max-height: none; box-sizing: border-box; padding: 0;
   border: 1px solid var(--edge); background: var(--paper); color: var(--ink); }
 dialog.keys-sheet[open] { display: grid; grid-template-rows: auto minmax(0, 1fr); }

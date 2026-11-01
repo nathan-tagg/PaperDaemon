@@ -93,6 +93,7 @@ start, handed to the host through its environment, and good for /host only)
   /host/llm/<token>/...    the text slot, reached through the engine: /health, and every /v1 route (the
                            host sends no headers of its own, so the token is part of the address)
 """
+import collections
 import json
 import re
 import os
@@ -329,10 +330,12 @@ def post_render_fallback(body: dict = Body(default={})):
 
 
 # THE WINDOW'S CARD: the arguments its web view was started with (the shell's, announced; the development window's), so
-# the editor can tell whether it is on the card Settings chose. A change of Renderer or card starts the window again
-# with the new ones (_renderer_changed: the shell is told, and answers here once the new window is up); until then the
-# editor draws on no card.
-_window = {"args": None}
+# the editor and Settings can tell whether it is on the card Settings chose. A change of Renderer or card never closes the
+# window: the next document opened in it opens in a fresh web view on the new card, which takes the window's place once
+# its page shows (/render/window/move, /render/window/ready, the shell's webview-move); until then the editor draws on the
+# card the window has -- on the processor if the window started there, or if the processor is chosen. (Where no shell
+# made the window, the development window, it keeps its card until PaperDaemon next starts.)
+_window = {"args": None, "moving": None}
 
 
 @app.get(API + "/render/window")
@@ -346,19 +349,40 @@ def get_render_window():
             "current": _window["args"] is None or _window["args"] == gpus.window_for(s)}
 
 
-@app.post(API + "/render/window")
-def post_render_window(body: dict = Body(default={})):
-    """The shell started the window again, with these arguments."""
-    args = body.get("args")
-    if isinstance(args, list) and all(isinstance(a, str) for a in args):
-        _window["args"] = args
-    return {"ok": True}
+@app.post(API + "/render/window/move")
+def post_render_window_move(body: dict = Body(default={})):
+    """A document opened while the window is on another card than Settings names: the shell makes a fresh web view on
+    the card chosen, where the window is, with `hash` (what it opens at: the screen, the folder, the document, what the
+    window keeps for itself) -> {moving: its number}. 409 where no shell made the window (the document opens here)."""
+    from . import gpus
+    if not _engine.get("announced"):
+        return JSONResponse({"error": "no shell to make the window again", "reason": "no-shell"}, status_code=409)
+    hash_ = str(body.get("hash") or "")
+    if not re.fullmatch(r"[A-Za-z0-9&=_.%-]{0,4096}", hash_):
+        return _bad("not a window's address")
+    args = gpus.window_for(settings.load())
+    _window["moving"] = {"n": (_window["moving"] or {}).get("n", 0) + 1, "args": args}
+    n = _window["moving"]["n"]
+    tell_shell("webview-move " + json.dumps({"args": args, "hash": hash_ + "&moved=%d" % n}))
+    return {"moving": n}
+
+
+@app.post(API + "/render/window/ready")
+def post_render_window_ready(body: dict = Body(default={})):
+    """The fresh web view's page shows (its number, `moved`): the shell lets it take the window's place. -> {ready}"""
+    m = _window["moving"]
+    if not m or body.get("moved") != m["n"]:
+        return {"ready": False}
+    _window["args"], _window["moving"] = m["args"], None
+    tell_shell("webview-ready")
+    return {"ready": True}
 
 
 def _renderer_changed(s):
     """The Renderer or its card changed: the engine's card let go (its next picture is drawn where Settings says now,
-    and a card that failed is tried again), and the window started again by the shell on the new card -- with no
-    card at all for the processor."""
+    and a card that failed is tried again), and the shell told the web view's new arguments (a window it makes from now
+    on starts with them). THE WINDOW IS LEFT AS IT IS, never closed and opened again under the user: the next document
+    opened in it moves it to the new card (/render/window/move)."""
     try:
         from .pipeline.page import gpu
         gpu.renderer_changed()
@@ -366,9 +390,7 @@ def _renderer_changed(s):
         pass
     _render_down["editor"] = None
     from . import gpus
-    args = gpus.window_for(s)
-    if _window["args"] is not None and args != _window["args"]:
-        tell_shell("webview " + json.dumps(args))
+    tell_shell("webview-next " + json.dumps(gpus.window_for(s)))
 
 
 # ---------------------------------------------------------------- the false mirror
@@ -448,22 +470,33 @@ async def fm_proxy(rest: str, request: Request):
         if request.headers.get(h):
             req.add_header(h, request.headers[h])
 
+    # WHAT THE ANSWER SAYS OF ITSELF comes back with it: a page's version (ETag), and a kept picture's X-PD-* (whether it
+    # is drawn from the page as it is now, and from which page and stamp: without them every cover read as current and
+    # none was ever drawn again)
+    def said(h):
+        out = {k: v for k, v in h.items() if k.lower().startswith("x-pd-")}
+        if h.get("cache-control"):
+            out["Cache-Control"] = h.get("cache-control")
+        if h.get("etag"):
+            out.update({"ETag": h.get("etag"), "Cache-Control": "no-store"})
+        return out
+
     def go():
         try:
             with urllib.request.urlopen(req, timeout=600) as r:
-                return r.status, r.read(), r.headers.get("content-type") or "application/octet-stream", r.headers.get("etag")
+                return r.status, r.read(), r.headers.get("content-type") or "application/octet-stream", said(r.headers)
         except urllib.error.HTTPError as ex:
-            return ex.code, ex.read(), ex.headers.get("content-type") or "application/json", ex.headers.get("etag")
+            return ex.code, ex.read(), ex.headers.get("content-type") or "application/json", said(ex.headers)
     try:
-        code, data, ctype, etag = await run_in_threadpool(go)
+        code, data, ctype, heads = await run_in_threadpool(go)
     except OSError as ex:
         return JSONResponse({"error": "the false mirror's engine did not answer: %s" % str(ex)[:160]}, status_code=502)
     # the job abandoned is the false mirror's host's: that host is the one to stop (its engine runs no loop)
     if rest == "queue/abandon" and request.method == "POST" and code == 200:
         await run_in_threadpool(lambda: loop.restart_host(who="fm-host"))
     if code == 304:
-        return Response(status_code=304, headers={"ETag": etag} if etag else None)
-    return Response(content=data, status_code=code, media_type=ctype, headers={"ETag": etag, "Cache-Control": "no-store"} if etag else None)
+        return Response(status_code=304, headers={"ETag": heads["ETag"]} if heads.get("ETag") else None)
+    return Response(content=data, status_code=code, media_type=ctype, headers=heads or None)
 
 
 @app.post(API + "/false-mirror")
@@ -867,17 +900,17 @@ def get_places(q: str = ""):
 @app.get(API + "/library")
 def get_library():
     """Everything in the Mirror the way the tablet shows it: folders and documents, each with its parent ("" for My
-    files) -> [{id, name, parent, type: folder|document, kind, pages, tags, modified, opened, at_page, cover_page}],
-    folders first by name, then the documents last touched first (opened or written in, whichever is later). `at_page` is the page it was last open on
-    (1-based); `cover_page` the page its cover shows, by the tablet's own setting (the first page, or the last one
-    open)."""
+    files) -> [{id, name, parent, type: folder|document, kind, pages, tags, modified, opened, at_page, cover_page,
+    cover}], folders first by name, then the documents last touched first (opened or written in, whichever is later).
+    `at_page` is the page it was last open on (1-based); `cover_page` the page its cover shows, by the tablet's own
+    setting, `cover` ("first": the first page; "last": the page last open; "" for a folder)."""
     from .remarkable import library
     out, here = [], _opened()
     for u, m in library.items().items():
         t = m.get("type")
         if t not in ("CollectionType", "DocumentType"):
             continue
-        pages, kind, tags, at, cover = 0, "", [], 1, 1
+        pages, kind, tags, at, cover, setting = 0, "", [], 1, 1, ""
         try:
             with open(os.path.join(library.M, u + ".content"), encoding="utf-8") as f:
                 c = json.load(f)
@@ -889,10 +922,12 @@ def get_library():
             pages = len(_live(c))
             at = _at_page(m, pages, c, here.get(u))
             cover = at if c.get("coverPageNumber") == -1 else 1      # -1: the tablet shows the last page open
+            setting = "last" if c.get("coverPageNumber") == -1 else "first"
         out.append({"id": u, "name": m.get("visibleName") or u, "parent": m.get("parent") or "",
                     "type": "folder" if t == "CollectionType" else "document", "kind": kind, "pages": pages,
                     "tags": tags, "modified": int(str(m.get("lastModified") or 0) or 0),
-                    "opened": int(str(m.get("lastOpened") or 0) or 0), "at_page": at, "cover_page": cover})
+                    "opened": int(str(m.get("lastOpened") or 0) or 0), "at_page": at, "cover_page": cover,
+                    "cover": setting})
     # documents last TOUCHED first: opened or written in, whichever is later (writing in a notebook moves its
     # modified time; its opened time is not always sent up with it)
     out.sort(key=lambda d: (d["type"] != "folder",
@@ -1757,12 +1792,77 @@ def put_library_tags(u: str, body: dict = Body(default={})):
     return _local(lambda: (local.set_tags(u, body.get("tags") or []), {"tags": body.get("tags") or []})[1])
 
 
+@app.put(API + "/library/{doc}/cover")
+def put_library_cover(doc: str, body: dict = Body(default={})):
+    """A document's cover, as the tablet's own setting: {"cover": "first"} (its first page) or "last" (the page last
+    visited). The False Mirror's is written at once; the Mirror's in place, with a page's safety (Edit the Mirror on, the
+    tablet not newer, a backup first), then sent to the tablet. -> {cover, changed[, push]}."""
+    from .remarkable import inplace, local
+    if not _doc_ok(doc):
+        return _bad("not a document id")
+    cover = body.get("cover")
+    if cover not in ("first", "last"):
+        return _bad("the cover is the first page (first) or the page last visited (last)")
+    if paths.local_only():
+        return _local(lambda: {"cover": cover, "changed": local.set_cover(doc, cover == "first")})
+    if not _mirror_edit():
+        return _mirror_edit_off()
+
+    def go():
+        try:
+            got = {"cover": cover, "changed": inplace.set_cover(doc, cover == "first")}
+            if got["changed"]:
+                got["push"] = inplace.push(doc)
+            return got
+        except inplace.Refused as ex:
+            return _refused(ex)
+    return _local(go)
+
+
 @app.put(API + "/library/{doc}/page/{page}/tags")
 def put_library_page_tags(doc: str, page: int, body: dict = Body(default={})):
     from .remarkable import local
     if not _doc_ok(doc):
         return _bad("not a document id")
     return _local(lambda: (local.set_page_tags(doc, page, body.get("tags") or []), {"tags": body.get("tags") or []})[1])
+
+
+# A PAGE'S BINARY FORM KEPT by what it was made from (its files as they are: local.page_version): a page opened again --
+# turned back to, its notebook opened again, its cover drawn -- goes at once instead of being read again (1.15 s for a
+# 150,000-stroke page). The pages last asked for, up to 192 MB; a page's older form goes when its newer one is made.
+_scenes = {"kept": collections.OrderedDict(), "size": 0}
+_scenes_lock = threading.Lock()
+_SCENES_MAX = 192 << 20
+
+
+def _scene_kept(kind, doc, page, make):
+    """The page's binary form (or, for the Mirror's, it and its stamp) as kept for its files as they are now, else made
+    by make() and kept; an answer make() gives instead (a refusal) goes back as it is."""
+    from .remarkable import local
+    try:
+        v = local.page_version(doc, page)
+    except Exception:
+        v = ""
+    key = (kind, doc, page, v)
+    with _scenes_lock:
+        got = _scenes["kept"].get(key) if v else None
+        if got is not None:
+            _scenes["kept"].move_to_end(key)
+            return got
+    got = make()
+    data = got[0] if isinstance(got, tuple) else got
+    if v and isinstance(data, (bytes, bytearray)) and len(data) <= _SCENES_MAX:
+        with _scenes_lock:
+            kept = _scenes["kept"]
+            for k in [k for k in kept if k[:3] == key[:3]]:
+                old = kept.pop(k)
+                _scenes["size"] -= len(old[0] if isinstance(old, tuple) else old)
+            kept[key] = got
+            _scenes["size"] += len(data)
+            while _scenes["size"] > _SCENES_MAX and kept:
+                old = kept.popitem(last=False)[1]
+                _scenes["size"] -= len(old[0] if isinstance(old, tuple) else old)
+    return got
 
 
 @app.get(API + "/library/{doc}/page/{page}/scene")
@@ -1782,10 +1882,14 @@ def get_library_scene(doc: str, page: int, request: Request):
         return Response(status_code=304, headers={"ETag": version})
     if request.query_params.get("form") == "bin":   # the editor's binary form (fastrm's note): the points as the file has them
         from .remarkable import fastrm
-        got = _local(lambda: local.scene_of(doc, page, arrays=True))
-        if not isinstance(got, dict):
-            return got
-        return Response(fastrm.scene_bytes(got), media_type="application/octet-stream",
+
+        def make():
+            got = _local(lambda: local.scene_of(doc, page, arrays=True))
+            return fastrm.scene_bytes(got) if isinstance(got, dict) else got
+        data = _scene_kept("scene", doc, page, make)
+        if not isinstance(data, (bytes, bytearray)):
+            return data
+        return Response(data, media_type="application/octet-stream",
                         headers={"ETag": version, "Cache-Control": "no-store"} if version else {"Cache-Control": "no-store"})
     got = _local(local.scene_of, doc, page)
     if isinstance(got, dict) and version:
@@ -1893,14 +1997,19 @@ def get_mirror_scene(doc: str, page: int, request: Request):
                 return Response(status_code=304, headers={"ETag": have})
         except Exception:
             pass
-    arrays = request.query_params.get("form") == "bin"
-    got = _local(lambda: inplace.read_page(doc, page, arrays=arrays))
+    if request.query_params.get("form") == "bin":
+
+        def make():
+            got = _local(lambda: inplace.read_page(doc, page, arrays=True))
+            return (fastrm.scene_bytes(got), got["stamp"]) if isinstance(got, dict) else got
+        made = _scene_kept("mirror", doc, page, make)
+        if not isinstance(made, tuple):
+            return made
+        return Response(made[0], media_type="application/octet-stream", headers={"ETag": made[1], "Cache-Control": "no-store"})
+    got = _local(lambda: inplace.read_page(doc, page))
     if not isinstance(got, dict):
         return got
-    headers = {"ETag": got["stamp"], "Cache-Control": "no-store"}
-    if arrays:
-        return Response(fastrm.scene_bytes(got), media_type="application/octet-stream", headers=headers)
-    return JSONResponse(got, headers=headers)
+    return JSONResponse(got, headers={"ETag": got["stamp"], "Cache-Control": "no-store"})
 
 
 @app.put(API + "/library/{doc}/page/{page}/mirror-scene")

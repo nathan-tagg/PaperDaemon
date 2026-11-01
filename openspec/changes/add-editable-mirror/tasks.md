@@ -20,3 +20,4 @@
   pushes on Ctrl+S and close; what cannot be written in place is off there: the template, the page's own layers
   deleted or moved, typed text moved to another column)
 - [ ] 3.2 Check on the real tablet with the maintainer (D4)
+- [x] 3.3 A warning each time Edit the Mirror is turned on; canceling leaves it off (`ui/settings.js`)

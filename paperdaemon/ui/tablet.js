@@ -17,6 +17,8 @@
     chapters: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="2.5" cy="3.5" r="1.2"/><circle cx="2.5" cy="8" r="1.2"/><circle cx="2.5" cy="12.5" r="1.2"/><path d="M6 3.5h8.5M6 8h8.5M6 12.5h8.5"/></svg>',
     tag: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 2h5.8l6.4 6.5-5.7 5.7L2 7.8z"/><circle cx="5" cy="5" r="1"/></svg>',
     add: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v11M2.5 8h11"/></svg>',
+    settings: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.1"/><circle cx="8" cy="8" r="4.6"/>' +
+      '<path d="M8 1.2v2.2M8 12.6v2.2M1.2 8h2.2M12.6 8h2.2M3.2 3.2l1.5 1.5M11.3 11.3l1.5 1.5M3.2 12.8l1.5-1.5M11.3 4.7l1.5-1.5"/></svg>',
     newpage: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 1.5h6l3 3v10h-9z"/><path d="M9.5 1.5v3h3"/><path d="M8 7.5v5M5.5 10h5"/></svg>',
     prev: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg>',
     next: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg>',
@@ -91,6 +93,8 @@
       paintPagePick();                    // the pages' bar only over the grid with pages chosen: never left behind
       const n = pageCount();
       $(".viewer-title", dlg).textContent = S.doc.name;
+      const set = $(".doc-set", dlg), setName = PD.t(S.doc.kind === "notebook" ? "viewer.settings_notebook" : "viewer.settings_document");
+      set.title = setName; set.setAttribute("aria-label", setName);
       // THE BAR, LAID OUT AS THE TABLET'S TOOLBAR. A page: on the left the page editor's tools in the false mirror (pen,
       // pen, text, eraser, layers; the editor sends them; selection and capture will go between eraser and layers), then on the right
       // the tag, the page grid and the page arrows. The grid: on the right the chapters, the grid and Go to page. The
@@ -465,6 +469,8 @@
     }
 
     function openDoc(x) {                                     // at the page it was last open on, as the tablet opens it
+      // (the window on another card than Settings chose: the document opens in a fresh one on that card, PD.moveWindow)
+      if (PD.windowStale && !PD.moved) { PD.moveWindow(id, S.at, x).then(moving => { if (!moving) openDoc(x); }); return; }
       S.doc = byId(x); S.page = Math.min(Math.max(1, (S.doc && S.doc.at_page) || 1), pageCount());
       S.tags = null; S.chapters = null; S.hist = [S.page]; S.hpos = 0; S.pp = [];
       S.view = PD.firstTab === "pages" || PD.firstTab === "chapters" ? PD.firstTab : "page"; PD.firstTab = "";
@@ -474,7 +480,8 @@
         dlg = document.createElement("dialog");
         dlg.id = VIEWER; dlg.className = "viewer";
         dlg.innerHTML = '<div class="viewer-head"><span class="viewer-name"><span class="viewer-title"></span><button type="button" class="keys-q" data-v="keys" title="' +
-          esc(PD.t("keys.open")) + '" aria-label="' + esc(PD.t("keys.open")) + '">?</button></span><button type="button" class="link-btn" data-v="close">' + esc(PD.t("common.close")) + "</button></div>" +
+          esc(PD.t("keys.open")) + '" aria-label="' + esc(PD.t("keys.open")) + '">?</button><button type="button" class="doc-set" data-v="docset">' + ICON.settings +
+          '</button></span><button type="button" class="link-btn" data-v="close">' + esc(PD.t("common.close")) + "</button></div>" +
           '<div class="viewer-bar"><span class="viewer-tools"></span><span class="viewer-tags"></span><span class="viewer-nav"></span>' +
           '<div class="select-bar page-pick" role="toolbar" hidden></div></div>' +
           '<div class="viewer-page" tabindex="-1" autofocus></div>';
@@ -504,6 +511,7 @@
           else if (v === "prev" || v === "next") go(S.page + (v === "next" ? 1 : -1));
           else if (v === "tagpop") { S.tagPop = !S.tagPop; paintBar(); paintTagPop(); }
           else if (v === "keys") PD.openShortcuts(!!editorFrame());
+          else if (v === "docset") docSettings();
           else if (v === "tagadd") addTypedTag();
           else if (v === "newpage") {
             const [got] = await PD.safe(api("POST", "/library/" + S.doc.id + "/pages", { after: S.page }));
@@ -717,8 +725,27 @@
       S.err = e ? PD.errText(e) : ""; S.list = list || [];
       if (S.at && !byId(S.at)) S.at = "";
       if ((S.picked || []).length) { S.picked = S.picked.filter(byId); if (!S.picked.length) unpick(); }
-      if (!same) paint();
-      if (!fm && PD.firstOpen && byId(PD.firstOpen)) { const x = PD.firstOpen; PD.firstOpen = ""; openDoc(x); }
+      // (a window made on a new card opens in the folder the window it replaces was showing)
+      const into = PD.firstAt && byId(PD.firstAt) && PD.firstPane === id;
+      if (into) { S.at = PD.firstAt; PD.firstAt = ""; }
+      if (!same || into) paint();
+      if (PD.firstOpen && byId(PD.firstOpen) && (!PD.firstPane || PD.firstPane === id)) {
+        const x = PD.firstOpen; PD.firstOpen = ""; openDoc(x);
+        if (PD.moved) readyWhenShown();
+      } else if (PD.moved && PD.firstPane === id) readyWhenShown();
+    }
+    // A WINDOW MADE ON A NEW CARD says so once its document shows (its page drawn, or fifteen seconds gone by): the shell
+    // then puts it in the place of the window it replaces, and lets that one go
+    function readyWhenShown() {
+      const moved = PD.moved;
+      PD.moved = 0;
+      let n = 0;
+      const look = () => {
+        const f = editorFrame(), l = f && f.contentDocument && f.contentDocument.getElementById("loading");
+        if ((l && l.hidden) || ++n > 300) PD.safe(PD.api("POST", "/render/window/ready", { moved }));
+        else setTimeout(look, 50);
+      };
+      look();
     }
 
     // ---- the false mirror's own: making, importing, and the menu of what is selected
@@ -740,6 +767,28 @@
       dlg.showModal();
       const first = dlg.querySelector("input"); if (first) first.focus();
       return dlg;
+    }
+
+    // A DOCUMENT'S SETTINGS (the gear by its name): its cover, the tablet's own setting -- the page last visited or the
+    // first page. The False Mirror's is written at once; the Mirror's in place and sent to the tablet, only while Edit
+    // the Mirror is on (off: shown, with where to change it). Saved, the library is read again: the cover is drawn anew
+    // for its page once the viewer closes
+    function docSettings() {
+      const d = S.doc; if (!d) return;
+      const can = fm || !!PD.getK(PD.settings || {}, "mirror.edit"), now = d.cover === "first" ? "first" : "last";
+      const radio = (v, l) => '<label class="check-label"><input type="radio" name="doc-cover" value="' + v + '"' + (v === now ? " checked" : "") +
+        (can ? "" : " disabled") + "> " + esc(l) + "</label>";
+      const dlg = ask(PD.t(d.kind === "notebook" ? "viewer.settings_notebook" : "viewer.settings_document"),
+        '<fieldset class="field-row nb-cover"><legend>' + esc(PD.t("fm.cover")) + "</legend>" + radio("last", PD.t("fm.cover.last")) +
+        radio("first", PD.t("fm.cover.first")) + "</fieldset>" + (can ? "" : '<p class="hint">' + esc(PD.t("viewer.settings_mirror_off")) + "</p>"),
+        PD.t("fm.save"), async box => {
+          const v = (box.querySelector("[name=doc-cover]:checked") || {}).value || now;
+          if (v === now) return;
+          await api("PUT", "/library/" + encodeURIComponent(d.id) + "/cover", { cover: v });
+          d.cover = v;
+          load();
+        });
+      if (!can) { dlg.querySelector("[data-v=ok]").hidden = true; dlg.querySelector("[data-v=cancel]").textContent = PD.t("common.close"); }
     }
 
     // THE NAME, EMPTY: what it is called when left so ("Notebook") is its placeholder, gone the moment the user types

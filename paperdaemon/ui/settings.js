@@ -331,11 +331,18 @@
     $("#st-card-box", R).hidden = cpu || !C.cards.length;
     $("#st-card-bang", R).hidden = !now || now.d3d12 || now.d3d11;
   }
-  // (either change starts the window again -- on the card chosen, or with no card for the processor: the engine has
-  // the shell do it, and the window comes back here)
+  // NEITHER CHANGE CLOSES THE WINDOW: jobs draw as Settings says at once, and the next page opened opens in a fresh web
+  // view on the card chosen (or on none, for the processor) that takes the window's place (PD.moveWindow); the hint says
+  // so when the window is on another card than the one chosen
+  async function rendererSaved(msg) {
+    const [rw] = await PD.safe(PD.api("GET", "/render/window"));
+    PD.windowStale = !!rw && rw.current === false;
+    if (!PD.windowStale) return;
+    msg.textContent = t(rw.cpu ? "settings.render.later_cpu" : "settings.render.later"); msg.className = "hint";
+  }
   async function setRenderer(cpu) {
     const msg = $("#st-cpu-msg", R);
-    if (await save("render.processor", cpu, msg)) { msg.textContent = t("settings.render.restart"); msg.className = "hint"; }
+    if (await save("render.processor", cpu, msg)) await rendererSaved(msg);
     paintRenderer();
   }
 
@@ -405,6 +412,9 @@
       PD.on(R, "click", "[data-act=fm-delete]", (e, el) => deleteFalseMirror(el));
       $("#st-net", R).addEventListener("change", e => save("network.allowed", e.target.checked, $("#st-net-msg", R)));
       $("#st-medit", R).addEventListener("change", async e => {
+        // a warning EACH TIME it is turned on: nothing remembers the answer
+        if (e.target.checked && !await PD.confirm({ title: t("settings.mirror_edit.warn_q"), body: [esc(t("settings.mirror_edit.warn_body"))],
+                                                    action: t("settings.mirror_edit.warn_on"), danger: true })) { e.target.checked = false; return; }
         if (!await save("mirror.edit", e.target.checked, $("#st-medit-msg", R))) e.target.checked = !e.target.checked;
       });
       // GPU and CPU: one of the two ticked, always (ticking one unticks the other; unticking one ticks the other)
@@ -412,7 +422,7 @@
       $("#st-cpu", R).addEventListener("change", e => setRenderer(e.target.checked));
       $("#st-card", R).addEventListener("change", async e => {
         const msg = $("#st-cpu-msg", R);
-        if (await save("render.card", e.target.value, msg)) { msg.textContent = t("settings.render.restart"); msg.className = "hint"; }
+        if (await save("render.card", e.target.value, msg)) await rendererSaved(msg);
         paintRenderer();
       });
       $("#st-retries", R).addEventListener("change", e => {

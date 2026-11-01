@@ -156,7 +156,7 @@ def main(argv=None):
         from . import gpus
         server._engine["announced"] = True
         webview = gpus.window_for(s)
-        server._window["args"] = webview             # (the shell starts the window with these; a change starts it again)
+        server._window["args"] = webview             # (the shell starts the window with these; a change waits for the next start)
         print("PAPERDAEMON_READY " + json.dumps({"port": port, "token": token, "webview": webview}), flush=True)
         server.tell_shell("status Idle")
     if args.headless:

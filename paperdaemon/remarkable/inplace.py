@@ -868,6 +868,33 @@ def write_in_place(doc, page_no, scene, stamp):
     return dict(done, changed=True, stamp=stamp_of(new), version=local.page_version(doc, page_no))
 
 
+def set_cover(doc, first):
+    """A document's cover, as the tablet's own setting: its first page (`first`; coverPageNumber 0) or the page last
+    visited (-1), written into its .content in place (every other key as it is) with a page's safety: not when the tablet
+    changed the file since PaperDaemon pulled it, and the document backed up first. push() sends it up. -> whether it
+    changed. Raises a Refused, or local.NotHere in the False Mirror."""
+    _mirror_only()
+    name = doc + ".content"
+    path = os.path.join(local.M, name)
+    with local._writing:
+        with open(path, encoding="utf-8") as f:
+            c = json.load(f)
+        want = 0 if first else -1
+        if c.get("coverPageNumber") == want:
+            return False
+        try:
+            check_cloud(name)
+        except TabletNewer:
+            raise TabletNewer("the tablet changed this document since PaperDaemon read it, so its cover was not changed")
+        except CloudUnreachable as ex:
+            raise CloudUnreachable(str(ex).replace("so the page was not saved", "so its cover was not changed"))
+        backup(doc)
+        c["coverPageNumber"] = want
+        paths.write_json_atomic(path, c)
+    _record_written(doc)
+    return True
+
+
 def push(doc):
     """The document's edits up to the tablet by PaperDaemon's own sync, now (the editor's Ctrl+S, or the document
     closed). A job at work on the notebook is left its push: the edit goes up with the job's work. -> what the push
@@ -879,7 +906,8 @@ def push(doc):
                if e.get("doc_id") == doc and e.get("status") == "working"]
     if working:
         return {"skipped": "a job is working on this notebook; the edit goes up with its work", "owed": True}
+    # the pages written, stamped so the tablet fetches them again -- none when only the document's settings changed
     pages = sorted({n.split("/", 1)[1][:-3] for n, _k, _h in sync.changed_files(doc) if "/" in n and n.endswith(".rm")})
-    r = sync.push_edited(doc, pages or None)
+    r = sync.push_edited(doc, pages)
     _record_written(doc)
     return r

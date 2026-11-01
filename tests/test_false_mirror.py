@@ -150,6 +150,11 @@ def test_the_false_mirror_through_the_engine():
         assert c.put("/api/v1/fm/library/" + folder + "/tags", json={"tags": ["ask"]}).status_code == 200
         lib = {x["name"]: x for x in c.get("/api/v1/fm/library").json()}
         assert lib["Recipes"]["tags"] == ["ask"] and lib["Soup"]["parent"] == folder and lib["Soup"]["pages"] == 2
+        # the cover, as the tablet's own setting: the page last visited, then the first page, written at once
+        assert lib["Soup"]["cover"] == "last"
+        assert c.put("/api/v1/fm/library/" + doc + "/cover", json={"cover": "first"}).json() == {"cover": "first", "changed": True}
+        assert {x["name"]: x for x in c.get("/api/v1/fm/library").json()}["Soup"]["cover"] == "first"
+        assert c.put("/api/v1/fm/library/" + doc + "/cover", json={"cover": "middle"}).status_code == 400
         pdf = c.get("/api/v1/fm/library/" + doc + "/export.pdf")
         assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
         imported = c.post("/api/v1/fm/library/import?name=Copy&parent=" + folder, content=pdf.content).json()["id"]
@@ -299,6 +304,21 @@ def test_a_new_notebook_takes_the_tablets_options():
         print(json.dumps([look(a), look(b)]))
     """)
     assert got == [[-1, "Blank"], [0, "P Grid medium"]]
+
+
+def test_a_documents_cover_setting_is_written_as_the_tablet_stores_it():
+    got = _run("""
+        import json
+        from paperdaemon.remarkable import local
+        a = local.new_notebook("Plain")
+        was = local._content(a)
+        got = [local.set_cover(a, True), local.set_cover(a, True), local._content(a)["coverPageNumber"],
+               local.set_cover(a, False), local._content(a)["coverPageNumber"]]
+        now = local._content(a)
+        got.append(sorted(k for k in set(was) | set(now) if was.get(k) != now.get(k)))   # nothing else of it touched
+        print(json.dumps(got))
+    """)
+    assert got == [True, False, 0, True, -1, []]
 
 
 def test_pages_chosen_are_deleted_duplicated_moved_and_tagged_as_the_tablet_does():

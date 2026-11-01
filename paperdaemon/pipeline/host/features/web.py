@@ -126,9 +126,9 @@ def _fetch_png(what, site=None, tries=6):
     raise RuntimeError("no usable picture found for %r (%d candidates, %d tried)" % (what[:60], len(cands), tried))
 
 
-def t_fetch(what, place=None, site=None):
-    """A picture from the web into a planned box, traced into strokes -- a host step, no model turn. (A picture
-    posted on a social site is a posts step: it goes on as the post, never traced.)"""
+def t_fetch(what, place=None, site=None, paste=False):
+    """A picture from the web into a planned box, traced into strokes, or pasted as itself (paste) -- a host step,
+    no model turn. (A picture posted on a social site is a posts step: it goes on as the post, never traced.)"""
     boxes = (JOB.plan or {}).get("places") or {}
     if place is None:
         place = H._cur_place()
@@ -140,6 +140,15 @@ def t_fetch(what, place=None, site=None):
         png, hit = H._fetch_png(what, site)
     except Exception as ex:
         return {"error": "could not fetch a picture: %s: %s" % (type(ex).__name__, str(ex)[:140])}
+    if paste:
+        try:
+            H._paste_into(png, box, place, "web picture", title=hit.get("title") or what)
+        except Exception as ex:
+            return {"error": "the picture would not paste: %s: %s" % (type(ex).__name__, str(ex)[:120])}
+        H.log("  fetched %r (%s) -> pasted as a picture in %.0fs" % ((hit.get("title") or "")[:50], hit.get("engine"),
+                                                                    time.time() - t0))
+        return dict({"ok": True, "pasted": True, "box": box, "title": (hit.get("title") or "")[:80],
+                     "seconds": round(time.time() - t0, 1)}, **H._did())
     try:
         n = H._trace_into(png, box, place, "web picture")
     except Exception as ex:

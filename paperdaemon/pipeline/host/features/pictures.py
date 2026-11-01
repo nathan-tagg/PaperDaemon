@@ -269,6 +269,23 @@ def _picture_asset(png, box):
     return apath, (x0, y0, x0 + wu, y0 + hu)
 
 
+# A PICTURE PASTED IS THE PICTURE ITSELF. Asked to paste one (a step's paste: true), the user gets the picture on the
+# page as the app's own image block, as a coloring page goes on, not strokes drawn from it.
+def _paste_into(png, box, place, what, title=""):
+    """A picture put on the page as itself, fitted to `box`; the PNG is removed after."""
+    try:
+        apath, pbox = H._picture_asset(png, box)
+    finally:
+        try:
+            os.remove(png)
+        except OSError:
+            pass
+    JOB.images.append({"place": place, "png": apath, "box": pbox, "type": "image", "title": str(title)[:40],
+                       "spec": None, "replaces": []})
+    H._mark()
+    JOB.ops.append("%s pasted as a picture in %r" % (what, place))
+
+
 def _coloring_page(q, png, box):
     """One coloring page on a NEW page of the notebook -> (0, page number), inserted there as a
     picture. The first coloring page of a job goes on the job's own page; every one after it gets
@@ -382,6 +399,9 @@ def _run_images(batch):
                 H._mark()
                 JOB.ops.append("coloring page %r as a picture in %r (%s)" % (str(q["what"])[:30], q.get("place"),
                                                                               H._render_note(q)))
+                n = None
+            elif q.get("paste"):
+                H._paste_into(png, box, q.get("place"), "image (%s)" % H._render_note(q), title=q["what"])
                 n = None
             else:
                 n = H._trace_into(png, box, q.get("place"), "image (%s)" % H._render_note(q))

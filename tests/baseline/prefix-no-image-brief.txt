@@ -46,11 +46,13 @@ plus the fields below where they apply; any step may have size, near, side and a
   chart        numbers, dates, plans, lists of things -- bar, line, pie, table, timeline, gantt,
                kanban, checklist, map and ~55 more; the kinds and their fields come with the step
   calendar     what = the month as YYYY-MM, or week (the seven days from today); it takes the page
-  draw         a simple figure or an icon
+  draw         a sketch: lines from simple shapes, a figure or an icon
   image        a picture generated from one sentence (subject, light, style), drawn onto the page
-               in strokes; steps and seed only when the user asked for them, with quote: their words
-  web_picture  a real picture that exists, found by image search; one per step, never for facts;
-               site: the domain to search, when the request names one
+               in strokes, or pasted as it is with paste: true; steps and seed only when the user asked
+               for them, with quote: their words
+  web_picture  a real picture that exists, found by image search, drawn in strokes or pasted as it is
+               (paste: true); one per step, never for facts; site: the domain to search, when the request
+               names one
   coloring     a coloring page of what is named (say what it shows, not "a coloring page"):
                generated like image, as black line art, and inserted as a picture that takes the page
   posts        social posts clipped onto the page as cards: source ('reddit', 'r/<sub>', '4chan/<board>',

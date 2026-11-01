@@ -351,7 +351,7 @@ def test_decomps_are_kept_on_disk_listed_a_page_at_a_time_and_deleted(tmp_path, 
     assert c.get("/api/v1/decomps/../etc/preview.png").status_code in (400, 404)
 
 
-def test_a_change_of_renderer_starts_the_window_again_on_that_card(monkeypatch):
+def test_a_change_of_renderer_never_closes_the_window_and_the_next_page_opens_on_the_new_card(monkeypatch):
     from paperdaemon import gpus
     two = [{"name": "small", "vendor": 4098, "device": 2, "memory": 512 << 20, "luid": [0, 95712], "d3d12": True, "d3d11": True},
            {"name": "big", "vendor": 4098, "device": 1, "memory": 24 << 30, "luid": [0, 82318], "d3d12": True, "d3d11": True}]
@@ -365,16 +365,34 @@ def test_a_change_of_renderer_starts_the_window_again_on_that_card(monkeypatch):
         s = c.get("/api/v1/settings").json()["settings"]
         s["render"]["card"] = "1002:0002:0"                                 # the small card
         assert c.put("/api/v1/settings", json=s).status_code == 200
-        assert told[-1] == "webview " + json.dumps(["--use-adapter-luid=0,95712"])
-        assert c.get("/api/v1/render/window").json()["current"] is False   # the editor draws on no card meanwhile
-        c.post("/api/v1/render/window", json={"args": ["--use-adapter-luid=0,95712"]})
+        # the window left as it is: the shell only told what a web view made from now on starts with
+        assert told == ["webview-next " + json.dumps(["--use-adapter-luid=0,95712"])]
+        assert c.get("/api/v1/render/window").json() == {"cpu": False, "current": False}
+        # THE NEXT PAGE OPENED: no shell (the development window), opened where it is
+        assert c.post("/api/v1/render/window/move", json={"hash": "&pane=tablet"}).status_code == 409
+        monkeypatch.setitem(server._engine, "announced", True)
+        assert c.post("/api/v1/render/window/move", json={"hash": "&pane=tablet&open=<b>"}).status_code == 400
+        import uuid
+        doc = str(uuid.uuid4())                                             # (a document's id, made up)
+        r = c.post("/api/v1/render/window/move", json={"hash": "&pane=tablet&open=" + doc})
+        n = r.json()["moving"]
+        assert told[-1] == "webview-move " + json.dumps({"args": ["--use-adapter-luid=0,95712"],
+                                                          "hash": "&pane=tablet&open=%s&moved=%d" % (doc, n)})
+        assert c.post("/api/v1/render/window/ready", json={"moved": n + 1}).json() == {"ready": False}   # (not that one)
+        assert c.get("/api/v1/render/window").json()["current"] is False
+        assert c.post("/api/v1/render/window/ready", json={"moved": n}).json() == {"ready": True}
+        assert told[-1] == "webview-ready"                                  # the fresh one takes the window's place
         assert c.get("/api/v1/render/window").json() == {"cpu": False, "current": True}
-        s["render"]["processor"] = True                                     # the processor: no card at all
+        s["render"]["processor"] = True                                     # the processor: the next page opens on none
         c.put("/api/v1/settings", json=s)
-        assert told[-1] == "webview " + json.dumps(gpus.CPU_ARGS)
+        assert told[-1] == "webview-next " + json.dumps(gpus.CPU_ARGS)
         assert c.get("/api/v1/render/window").json() == {"cpu": True, "current": False}
+        s["render"] = {"processor": False, "card": "1002:0002:0"}           # back as the window is: nothing waits
+        c.put("/api/v1/settings", json=s)
+        assert c.get("/api/v1/render/window").json() == {"cpu": False, "current": True}
+        assert not [w for w in told if w.startswith("webview ")]           # (0.2.4's restart is gone)
     finally:
-        server._window["args"] = None
+        server._window.update(args=None, moving=None)
         s = settings.load()
         s["render"] = {"processor": False, "card": ""}
         settings.save(s)

@@ -66,7 +66,7 @@
   <string name="render.why.lost">card đồ họa đã ngừng phản hồi.</string>
   <string name="render.why.refused">card đồ họa không chạy được một bước vẽ của PaperDaemon.</string>
   <string name="render.why.none">card đồ họa này không chạy được WebGPU.</string>
-  <string name="render.why.card">cửa sổ vẫn đang dùng card nó khởi động cùng. Hãy khởi động lại PaperDaemon để dùng card bạn đã chọn.</string>
+  <string name="render.why.card">cửa sổ đã khởi động với một thiết lập Trình kết xuất khác. Hãy khởi động lại PaperDaemon để dùng thiết lập bạn đã chọn.</string>
   <string name="editor.large_title">Trang này đang trở nên rất lớn</string>
   <string name="editor.large_body">Máy tính bảng của bạn sẽ khó tải trang này, và trình chỉnh sửa trang sẽ dùng nhiều bộ nhớ card đồ họa hơn dự định. Chỉ tiếp tục nếu bạn chắc rằng điều này ổn. Nếu bạn chạy máy chủ AI cục bộ trên cùng card đồ họa, hãy hiểu rằng trang này lấy bộ nhớ mà máy chủ đó lẽ ra được dùng.</string>
   <string name="editor.large_ok">Tôi hiểu</string>
@@ -714,7 +714,6 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="settings.render.card">Card đồ họa</string>
   <string name="settings.render.memory">{gb} GB</string>
   <string name="settings.render.no_webgpu">Card này không chạy được WebGPU: các trang sẽ được vẽ bằng bộ xử lý, chậm hơn.</string>
-  <string name="settings.render.restart">Cửa sổ đang mở lại với thay đổi này.</string>
   <string name="keys.nudge">Xê dịch</string>
   <string name="keys.nudge_d">Dịch phần đã chọn một điểm ảnh; giữ phím thì dịch tiếp.</string>
   <string name="keys.k_pgup">PgUp</string>
@@ -727,4 +726,12 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="risks.read">Đọc các rủi ro trên GitHub</string>
   <string name="risks.third_party">PaperDaemon là ứng dụng của bên thứ ba, không do reMarkable tạo ra hay xác nhận, nhằm giúp chiếc máy tính bảng reMarkable chưa chỉnh sửa trở nên hữu ích hơn. Tôi không chịu trách nhiệm về việc bất kỳ ai làm gì với PaperDaemon, hay về bất kỳ mất mát hoặc thiệt hại nào mà nó gây ra.</string>
   <string name="risks.action">Tôi chấp nhận các rủi ro</string>
+  <string name="settings.render.later">Các tác vụ dùng thiết lập này ngay bây giờ, còn trình chỉnh sửa trang thì từ trang tiếp theo bạn mở.</string>
+  <string name="settings.render.later_cpu">Các tác vụ dùng bộ xử lý ngay bây giờ, còn trình chỉnh sửa trang thì từ trang tiếp theo bạn mở.</string>
+  <string name="viewer.settings_notebook">Cài đặt sổ tay</string>
+  <string name="viewer.settings_document">Cài đặt tài liệu</string>
+  <string name="viewer.settings_mirror_off">Bật Sửa Bản sao trong Cài đặt để thay đổi mục này.</string>
+  <string name="settings.mirror_edit.warn_q">Sửa các trang của máy tính bảng?</string>
+  <string name="settings.mirror_edit.warn_body">Sửa tệp của bạn bằng PaperDaemon làm tăng nguy cơ làm hỏng chúng. Tính năng này đã được kiểm thử, nhưng hãy thận trọng.</string>
+  <string name="settings.mirror_edit.warn_on">Bật</string>
 </resources>

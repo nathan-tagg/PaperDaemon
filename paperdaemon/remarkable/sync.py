@@ -1172,7 +1172,8 @@ def touch(doc_uuid, page_ids=None, when=None):
     Pushing a new .rm updates the content but leaves <doc>.metadata's lastModified and the page's
     `modifed` in <doc>.content at what the TABLET last set. The tablet then sees timestamps equal to
     its own copy and never re-renders the page. Call this BEFORE push_doc, with the pages touched, so
-    .metadata and .content go up in the same root move as the pages.
+    .metadata and .content go up in the same root move as the pages. `page_ids` None: every page; an empty list: none
+    (the document's own settings changed, its cover say: only its modified time moves, and no page is fetched again).
     """
     ms = int((when or time.time()) * 1000)
     changed = []
@@ -1190,7 +1191,7 @@ def touch(doc_uuid, page_ids=None, when=None):
     if os.path.exists(cp):
         c = json.load(open(cp, encoding="utf-8"))
         pages = c.get("cPages", {}).get("pages", [])
-        want = set(page_ids or [p.get("id") for p in pages])
+        want = set(page_ids) if page_ids is not None else {p.get("id") for p in pages}
         hit = 0
         for p in pages:
             if p.get("id") in want and not page_deleted(p):

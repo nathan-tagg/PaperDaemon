@@ -66,7 +66,7 @@
   <string name="render.why.lost">توقفت بطاقة الرسومات عن الاستجابة.</string>
   <string name="render.why.refused">تعذّر على بطاقة الرسومات تنفيذ إحدى خطوات الرسم في PaperDaemon.</string>
   <string name="render.why.none">لا تستطيع بطاقة الرسومات هذه تشغيل WebGPU.</string>
-  <string name="render.why.card">ما زالت النافذة على البطاقة التي بدأت بها. أعد تشغيل PaperDaemon لاستخدام البطاقة التي اخترتها.</string>
+  <string name="render.why.card">بدأت النافذة بإعداد آخر لمحرك الرسم. أعد تشغيل PaperDaemon لاستخدام الإعداد الذي اخترته.</string>
   <string name="editor.large_title">أصبحت هذه الصفحة كبيرة جدًا</string>
   <string name="editor.large_body">سيصعب على جهازك اللوحي تحميل هذه الصفحة، وسيستخدم محرر الصفحات من ذاكرة بطاقة الرسومات أكثر مما ينبغي. تابع فقط إن كنت متأكدًا أن هذا مقبول. إن كنت تشغّل خادم ذكاء اصطناعي محليًا على البطاقة نفسها، فاعلم أن هذه الصفحة تأخذ ذاكرة كان سيستخدمها ذلك الخادم.</string>
   <string name="editor.large_ok">فهمت</string>
@@ -735,7 +735,6 @@
   <string name="settings.render.card">بطاقة الرسومات</string>
   <string name="settings.render.memory">{gb} غيغابايت</string>
   <string name="settings.render.no_webgpu">لا تستطيع هذه البطاقة تشغيل WebGPU: ستُرسم الصفحات على المعالج، وهو أبطأ.</string>
-  <string name="settings.render.restart">يُعاد فتح النافذة الآن بهذا التغيير.</string>
   <string name="keys.nudge">تحريك دقيق</string>
   <string name="keys.nudge_d">يحرّك المحدد بكسلًا واحدًا؛ وإبقاء المفتاح مضغوطًا يواصل التحريك.</string>
   <string name="keys.k_pgup">PgUp</string>
@@ -748,4 +747,12 @@
   <string name="risks.read">اقرأ المخاطر على GitHub</string>
   <string name="risks.third_party">PaperDaemon تطبيق تابع لجهة خارجية، لم تصنعه reMarkable ولم تعتمده، والغرض منه جعل جهاز reMarkable اللوحي غير المعدَّل أكثر فائدة. لست مسؤولًا عمّا يفعله أي شخص باستخدام PaperDaemon، ولا عن أي خسارة أو ضرر يسببه.</string>
   <string name="risks.action">أقبل المخاطر</string>
+  <string name="settings.render.later">تستخدم المهام هذا الآن، ويستخدمه محرر الصفحات من الصفحة التالية التي تفتحها.</string>
+  <string name="settings.render.later_cpu">تستخدم المهام المعالج الآن، ويستخدمه محرر الصفحات من الصفحة التالية التي تفتحها.</string>
+  <string name="viewer.settings_notebook">إعدادات الدفتر</string>
+  <string name="viewer.settings_document">إعدادات المستند</string>
+  <string name="viewer.settings_mirror_off">شغّل تحرير المرآة في الإعدادات لتغيير هذا.</string>
+  <string name="settings.mirror_edit.warn_q">تحرير صفحات الجهاز اللوحي؟</string>
+  <string name="settings.mirror_edit.warn_body">تحرير ملفاتك باستخدام PaperDaemon يزيد خطر إتلافها. لقد اختُبر، لكن تابع بحذر.</string>
+  <string name="settings.mirror_edit.warn_on">تشغيل</string>
 </resources>

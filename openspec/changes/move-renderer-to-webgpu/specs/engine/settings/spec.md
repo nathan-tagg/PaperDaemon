@@ -6,8 +6,13 @@ time. With GPU ticked, a list SHALL name the machine's graphics cards and the on
 start on the card with Direct3D 12 that has the most memory of its own. A card in the list that cannot run WebGPU
 at all SHALL show a "!" beside the list, whose hover says that card cannot run WebGPU and pages will be drawn on
 the processor, which is slower. A card that runs WebGPU only in its compatibility mode (Direct3D 11) SHALL show
-nothing. With CPU ticked, the engine SHALL draw its pages on the processor. The card chosen SHALL be used by the
-engine from its next job and by the window from the next time PaperDaemon starts.
+nothing. With CPU ticked, the engine SHALL draw its pages on the processor. The card chosen (or the processor) SHALL be
+used by the engine from its next job and by the page editor from the next page opened, which SHALL open on it in the
+same window: a change SHALL never close the window or open it again.
+
+#### Scenario: Another card chosen
+- **WHEN** the user picks the other card in Settings and then opens a notebook
+- **THEN** the notebook opens drawn on that card, in the window where it was and at its size, which was never closed
 
 #### Scenario: Two cards
 - **WHEN** the user opens Settings on a machine with a discrete card and an integrated one, both with Direct3D 12

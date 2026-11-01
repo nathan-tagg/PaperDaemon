@@ -66,7 +66,7 @@
   <string name="render.why.lost">la carte graphique ne répond plus.</string>
   <string name="render.why.refused">la carte graphique n'a pas pu exécuter l'une des étapes de dessin de PaperDaemon.</string>
   <string name="render.why.none">cette carte graphique ne peut pas exécuter WebGPU.</string>
-  <string name="render.why.card">la fenêtre est toujours sur la carte avec laquelle elle a démarré. Redémarrez PaperDaemon pour utiliser la carte choisie.</string>
+  <string name="render.why.card">la fenêtre a démarré avec un autre réglage du moteur de rendu. Redémarrez PaperDaemon pour utiliser celui que vous avez choisi.</string>
   <string name="editor.large_title">Cette page devient très volumineuse</string>
   <string name="editor.large_body">Votre tablette aura du mal à charger cette page, et l'éditeur de page utilisera plus de mémoire de votre carte graphique que prévu. Ne continuez que si vous êtes sûr que cela convient. Si vous faites tourner un serveur d'IA local sur la même carte graphique, sachez que cette page prend de la mémoire qui lui serait sinon disponible.</string>
   <string name="editor.large_ok">J'ai compris</string>
@@ -714,7 +714,6 @@ Ensuite, guide-moi pour installer SearXNG si besoin, écris le fichier .bat avec
   <string name="settings.render.card">Carte graphique</string>
   <string name="settings.render.memory">{gb} Go</string>
   <string name="settings.render.no_webgpu">Cette carte ne peut pas exécuter WebGPU : les pages seront dessinées sur le processeur, ce qui est plus lent.</string>
-  <string name="settings.render.restart">La fenêtre se rouvre maintenant avec ce changement.</string>
   <string name="keys.nudge">Décaler</string>
   <string name="keys.nudge_d">Décale la sélection d'un pixel ; touche maintenue, elle continue.</string>
   <string name="keys.k_pgup">Pg préc</string>
@@ -727,4 +726,12 @@ Ensuite, guide-moi pour installer SearXNG si besoin, écris le fichier .bat avec
   <string name="risks.read">Lire les risques sur GitHub</string>
   <string name="risks.third_party">PaperDaemon est une application tierce, ni créée ni approuvée par reMarkable, conçue pour rendre plus utile une tablette reMarkable non modifiée. Je ne suis pas responsable de ce que quiconque fait avec PaperDaemon, ni d'aucune perte ou d'aucun dommage qu'il cause.</string>
   <string name="risks.action">J'accepte les risques</string>
+  <string name="settings.render.later">Les tâches l'utilisent dès maintenant, et l'éditeur de page dès la prochaine page que vous ouvrez.</string>
+  <string name="settings.render.later_cpu">Les tâches utilisent le processeur dès maintenant, et l'éditeur de page dès la prochaine page que vous ouvrez.</string>
+  <string name="viewer.settings_notebook">Réglages du carnet</string>
+  <string name="viewer.settings_document">Réglages du document</string>
+  <string name="viewer.settings_mirror_off">Activez Modifier le Miroir dans les Réglages pour changer cela.</string>
+  <string name="settings.mirror_edit.warn_q">Modifier les pages de la tablette ?</string>
+  <string name="settings.mirror_edit.warn_body">Modifier vos fichiers avec PaperDaemon augmente le risque de les endommager. Cela a été testé, mais procédez avec prudence.</string>
+  <string name="settings.mirror_edit.warn_on">Activer</string>
 </resources>

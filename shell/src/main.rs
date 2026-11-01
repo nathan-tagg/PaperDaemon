@@ -8,6 +8,12 @@
 //! with the arguments the engine named for the graphics card it chose (the card to use, and WebGPU's Direct3D 11
 //! backend on a card without Direct3D 12: paperdaemon/gpus.py).
 //!
+//! A change of the graphics card (or of the Renderer) never closes the window. The engine names the web view's new
+//! arguments (`PAPERDAEMON_SHELL webview-next`); the next document opened in a window still on the old card asks for a
+//! fresh web view (`webview-move`), made hidden where the window is with the document open in it, and it takes the
+//! window's place once its page shows (`webview-ready`). PAPERDAEMON_WEBVIEW_DEBUG_PORT gives each web view a debugging
+//! port from that one on (tests).
+//!
 //! The engine executable is `engine\PaperDaemon.exe` next to the shell, or whatever
 //! `PAPERDAEMON_ENGINE` names (a development checkout points it at `.venv\Scripts\paperdaemon.exe`).
 //!
@@ -46,6 +52,17 @@ struct Engine {
 struct Shell {
     engine: Mutex<Option<Engine>>,
     pause_item: Mutex<Option<MenuItem<Wry>>>,
+    win: Mutex<Win>,
+}
+
+/// WHICH WINDOW IS PAPERDAEMON'S: its label (each web view made for a new card has its own), how many have been made,
+/// which of the two profile folders its web view keeps (the default one, or the other), and one being made, not yet
+/// shown.
+struct Win {
+    label: String,
+    made: u32,
+    alt: bool,
+    moving: Option<String>,
 }
 
 fn engine_path() -> PathBuf {
@@ -107,14 +124,20 @@ fn start_engine(app: AppHandle) -> Result<Engine, String> {
             let line = line.trim();
             if line == "PAPERDAEMON_SHELL check-updates" {
                 check_for_updates(app.clone());
-            } else if let Some(rest) = line.strip_prefix("PAPERDAEMON_SHELL webview ") {
-                // the Renderer or its card changed: the window started again with the web view's new arguments
+            } else if let Some(rest) = line.strip_prefix("PAPERDAEMON_SHELL webview-next ") {
+                // the Renderer or its card changed: a web view made from now on starts with these (the window stays)
                 if let Ok(v) = serde_json::from_str::<serde_json::Value>(rest) {
-                    let args: Vec<String> = v.as_array().map(|a| {
-                        a.iter().filter_map(|x| x.as_str().map(String::from)).collect()
-                    }).unwrap_or_default();
-                    restart_window(app.clone(), args);
+                    if let Some(e) = app.state::<Shell>().engine.lock().unwrap().as_mut() {
+                        e.webview = strings(&v).join(" ");
+                    }
                 }
+            } else if let Some(rest) = line.strip_prefix("PAPERDAEMON_SHELL webview-move ") {
+                // a document opened on the old card: a fresh web view on the new one, the document open in it
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(rest) {
+                    move_window(app.clone(), strings(&v["args"]), v["hash"].as_str().unwrap_or("").to_string());
+                }
+            } else if line == "PAPERDAEMON_SHELL webview-ready" {
+                take_place(&app);
             } else if let Some(text) = line.strip_prefix("PAPERDAEMON_SHELL status ") {
                 // the tray's tooltip: what PaperDaemon is doing right now
                 if let Some(tray) = app.tray_by_id("tray") {
@@ -132,6 +155,10 @@ fn start_engine(app: AppHandle) -> Result<Engine, String> {
         #[cfg(windows)]
         _job: job,
     })
+}
+
+fn strings(v: &serde_json::Value) -> Vec<String> {
+    v.as_array().map(|a| a.iter().filter_map(|x| x.as_str().map(String::from)).collect()).unwrap_or_default()
 }
 
 /// One request to the engine's API, from this machine. Returns the status code.
@@ -152,33 +179,51 @@ fn api_post_json(port: u16, token: &str, path: &str, body: &str) -> Option<u16> 
     answer.split_whitespace().nth(1)?.parse().ok()
 }
 
+fn main_window(app: &AppHandle) -> Option<tauri::WebviewWindow> {
+    let label = app.state::<Shell>().win.lock().unwrap().label.clone();
+    app.get_webview_window(&label)
+}
+
 fn show_window(app: &AppHandle) {
-    if let Some(w) = app.get_webview_window("main") {
+    if let Some(w) = main_window(app) {
         let _ = w.unminimize();
         let _ = w.show();
         let _ = w.set_focus();
         return;
     }
-    let _ = build_window(app, "", None);
+    let shell = app.state::<Shell>();
+    let (label, alt, made) = {
+        let w = shell.win.lock().unwrap();
+        (w.label.clone(), w.alt, w.made)
+    };
+    let _ = build_window(app, &label, "", alt, made, true);
 }
 
-/// The window, made: the engine's page (at `pane`, when one is named) in a web view started with the arguments the
-/// engine named, where `place` puts it (else at its usual size). Ok once the web view is up.
-fn build_window(app: &AppHandle, pane: &str, place: Option<(tauri::PhysicalPosition<i32>, tauri::PhysicalSize<u32>)>)
-    -> Result<(), String> {
+/// A window, made: the engine's page (`hash` after the pairing: what it opens at) in a web view started with the
+/// arguments the engine named for the graphics card, fixed while the web view's browser process lives; its profile in
+/// the other folder when `alt` (two web views with different arguments cannot share one). Ok once the web view is up.
+fn build_window(app: &AppHandle, label: &str, hash: &str, alt: bool, made: u32, visible: bool)
+    -> Result<tauri::WebviewWindow, String> {
     let shell = app.state::<Shell>();
     let target = shell.engine.lock().unwrap().as_ref().map(|e| (e.port, e.token.clone(), e.webview.clone()));
-    let Some((port, token, webview)) = target else { return Err("no engine".into()) };
-    let go = if pane.is_empty() { String::new() } else { format!("&pane={}", pane) };
-    let url = format!("http://127.0.0.1:{}/#pair={}{}", port, token, go);
+    let Some((port, token, mut webview)) = target else { return Err("no engine".into()) };
+    let url = format!("http://127.0.0.1:{}/#pair={}{}", port, token, hash);
     let url = url.parse().map_err(|_| "bad address".to_string())?;
-    let mut builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::External(url));
+    let mut builder = WebviewWindowBuilder::new(app, label, WebviewUrl::External(url));
+    if let Some(p) = std::env::var("PAPERDAEMON_WEBVIEW_DEBUG_PORT").ok().and_then(|p| p.parse::<u32>().ok()) {
+        webview = format!("{} --remote-debugging-port={}", webview, p + made).trim().to_string();
+    }
     if !webview.is_empty() {
         // wry's own arguments (no mini menu, no SmartScreen) are given again: set, they are replaced
         builder = builder.additional_browser_args(&format!(
             "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection {}", webview));
     }
-    let w = builder
+    if alt {
+        if let Ok(dir) = app.path().app_local_data_dir() {
+            builder = builder.data_directory(dir.join("webview-alt"));
+        }
+    }
+    builder
         .title("PaperDaemon")
         .inner_size(1160.0, 780.0)
         .min_inner_size(900.0, 620.0)
@@ -186,52 +231,74 @@ fn build_window(app: &AppHandle, pane: &str, place: Option<(tauri::PhysicalPosit
         .background_color(tauri::window::Color(0x1E, 0x21, 0x20, 0xFF))
         // drops go to the page (Decompose takes files and pictures dragged from a browser), not to the shell
         .disable_drag_drop_handler()
+        .visible(visible)
         .build()
-        .map_err(|e| e.to_string())?;
-    if let Some((pos, size)) = place {
-        let _ = w.set_size(size);
-        let _ = w.set_position(pos);
-    }
-    Ok(())
+        .map_err(|e| e.to_string())
 }
 
-/// THE WINDOW ON A NEW CARD (the Renderer or its card changed): its web view started again with the arguments the
-/// engine names now -- the card chosen, or no card at all for the processor -- where it was, back at Settings. A web
-/// view's arguments are fixed while its browser process lives, so the window is taken down first, and made again once
-/// that process has gone (tried a few times a second, at most fifty times). The engine is told which arguments the
-/// window has, and until then its editor draws on no card.
-fn restart_window(app: AppHandle, args: Vec<String>) {
+/// THE WINDOW ON A NEW CARD, at the next document opened: a fresh web view (the arguments `args`, the document open
+/// in it: `hash`), made hidden where the window is and at its size, its profile in the folder the window's does not use.
+/// It takes the window's place when its page says it shows (take_place); one that never says so, after twenty seconds.
+/// No window open: the next one is made on the new card (show_window).
+fn move_window(app: AppHandle, args: Vec<String>, hash: String) {
     std::thread::spawn(move || {
         let shell = app.state::<Shell>();
-        let target = {
-            let mut guard = shell.engine.lock().unwrap();
-            guard.as_mut().map(|e| { e.webview = args.join(" "); (e.port, e.token.clone()) })
+        if let Some(e) = shell.engine.lock().unwrap().as_mut() {
+            e.webview = args.join(" ");
+        }
+        let (old_label, label, alt, made, stale) = {
+            let mut w = shell.win.lock().unwrap();
+            let stale = w.moving.take();                   // (one still being made: this one instead)
+            w.made += 1;
+            let label = format!("main{}", w.made);
+            w.moving = Some(label.clone());
+            (w.label.clone(), label, !w.alt, w.made, stale)
         };
-        let Some((port, token)) = target else { return };
-        let told = serde_json::json!({ "args": args }).to_string();
-        let Some(old) = app.get_webview_window("main") else {
-            // no window open: the next one starts with these
-            let _ = api_post_json(port, &token, "/render/window", &told);
-            return;
-        };
-        let place = match (old.outer_position(), old.inner_size()) {
-            (Ok(p), Ok(s)) => Some((p, s)),
-            _ => None,
-        };
-        let _ = old.destroy();
-        for _ in 0..50 {
-            std::thread::sleep(std::time::Duration::from_millis(200));
-            if let Some(w) = app.get_webview_window("main") {
-                let _ = w.destroy();                 // (the old one not gone yet, or one whose web view did not start)
-                continue;
-            }
-            if build_window(&app, "settings", place).is_ok() {
-                let _ = api_post_json(port, &token, "/render/window", &told);
-                return;
+        if let Some(l) = stale {
+            if let Some(x) = app.get_webview_window(&l) {
+                let _ = x.destroy();
             }
         }
-        update_log("the window could not be started again on the new graphics card");
+        let Some(old) = app.get_webview_window(&old_label) else {
+            shell.win.lock().unwrap().moving = None;
+            return;
+        };
+        let w = match build_window(&app, &label, &hash, alt, made, false) {
+            Ok(w) => w,
+            Err(e) => {
+                shell.win.lock().unwrap().moving = None;
+                return update_log(&format!("the window could not be made on the new graphics card: {}", e));
+            }
+        };
+        if old.is_maximized().unwrap_or(false) {
+            let _ = w.maximize();
+        } else if let (Ok(p), Ok(s)) = (old.outer_position(), old.inner_size()) {
+            let _ = w.set_size(s);
+            let _ = w.set_position(p);
+        }
+        std::thread::sleep(std::time::Duration::from_secs(20));
+        if shell.win.lock().unwrap().moving.as_deref() == Some(label.as_str()) {
+            take_place(&app);
+        }
     });
+}
+
+/// The web view made on the new card takes the window's place: shown, in front, and the old one let go.
+fn take_place(app: &AppHandle) {
+    let shell = app.state::<Shell>();
+    let (old, new) = {
+        let mut w = shell.win.lock().unwrap();
+        let Some(label) = w.moving.take() else { return };
+        w.alt = !w.alt;
+        (std::mem::replace(&mut w.label, label.clone()), label)
+    };
+    if let Some(n) = app.get_webview_window(&new) {
+        let _ = n.show();
+        let _ = n.set_focus();
+    }
+    if let Some(o) = app.get_webview_window(&old) {
+        let _ = o.destroy();
+    }
 }
 
 fn toggle_pause(app: &AppHandle) {
@@ -386,6 +453,7 @@ fn main() {
         .manage(Shell {
             engine: Mutex::new(None),
             pause_item: Mutex::new(None),
+            win: Mutex::new(Win { label: "main".into(), made: 0, alt: false, moving: None }),
         })
         .setup(|app| {
             let engine = start_engine(app.handle().clone())?;

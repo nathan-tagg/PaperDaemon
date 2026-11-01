@@ -70,7 +70,7 @@
   <string name="render.why.lost">видеокарта перестала отвечать.</string>
   <string name="render.why.refused">видеокарта не смогла выполнить один из шагов рисования PaperDaemon.</string>
   <string name="render.why.none">эта видеокарта не поддерживает WebGPU.</string>
-  <string name="render.why.card">окно всё ещё работает на карте, с которой запустилось. Перезапустите PaperDaemon, чтобы использовать выбранную карту.</string>
+  <string name="render.why.card">окно запущено с другой настройкой отрисовки. Перезапустите PaperDaemon, чтобы использовать выбранную.</string>
   <string name="editor.large_title">Эта страница становится очень большой</string>
   <string name="editor.large_body">Планшету будет трудно загрузить эту страницу, а редактор страниц займёт больше памяти видеокарты, чем задумано. Продолжайте, только если уверены, что это нормально. Если на той же видеокарте работает локальный ИИ-сервер, учтите, что эта страница забирает у него память.</string>
   <string name="editor.large_ok">Понятно</string>
@@ -728,7 +728,6 @@
   <string name="settings.render.card">Видеокарта</string>
   <string name="settings.render.memory">{gb} ГБ</string>
   <string name="settings.render.no_webgpu">Эта карта не поддерживает WebGPU: страницы будут рисоваться на процессоре, а это медленнее.</string>
-  <string name="settings.render.restart">Окно сейчас откроется заново с этим изменением.</string>
   <string name="keys.nudge">Сдвиг</string>
   <string name="keys.nudge_d">Сдвигает выделенное на пиксель; если удерживать клавишу, двигает дальше.</string>
   <string name="keys.k_pgup">PgUp</string>
@@ -741,4 +740,12 @@
   <string name="risks.read">Прочитать о рисках на GitHub</string>
   <string name="risks.third_party">PaperDaemon — стороннее приложение, не созданное и не одобренное reMarkable; оно нужно для того, чтобы сделать немодифицированный планшет reMarkable полезнее. Я не несу ответственности за то, что кто-либо делает с PaperDaemon, и за любые потери или ущерб, которые оно причиняет.</string>
   <string name="risks.action">Я принимаю риски</string>
+  <string name="settings.render.later">Задания используют это уже сейчас, а редактор страниц — со следующей открытой страницы.</string>
+  <string name="settings.render.later_cpu">Задания уже сейчас используют процессор, а редактор страниц — со следующей открытой страницы.</string>
+  <string name="viewer.settings_notebook">Настройки блокнота</string>
+  <string name="viewer.settings_document">Настройки документа</string>
+  <string name="viewer.settings_mirror_off">Чтобы изменить это, включите «Редактировать Зеркало» в Настройках.</string>
+  <string name="settings.mirror_edit.warn_q">Редактировать страницы планшета?</string>
+  <string name="settings.mirror_edit.warn_body">Редактирование ваших файлов в PaperDaemon повышает риск их повреждения. Это проверено, но действуйте осторожно.</string>
+  <string name="settings.mirror_edit.warn_on">Включить</string>
 </resources>

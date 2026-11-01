@@ -2,8 +2,8 @@
 
 THE PAGES: each a test notebook's page with a request typed on it, worked by the real host and drawn in a Paper Pro's
 frame: a month and a week with their weather, a conversation, a drawing, a coloring page, pictures generated and
-decomposed into pen strokes, the newest posts of a subreddit (fetched from Reddit), a game of chess (Stockfish), and
-paintings found on the web and decomposed. With --live LINEUP the models are the user's own lineup (from their
+decomposed into pen strokes, the newest posts of a subreddit (fetched from Reddit), a game of chess (Stockfish), a
+painting found on the web and pasted as a picture, and paintings found on the web and decomposed. With --live LINEUP the models are the user's own lineup (from their
 settings: the README's pages were made with Qwen 3.8 27B and FLUX.2 Klein), run by the throwaway engine on this
 tool's ports; without it the model's replies are scripted (tools/replay.py) and the generated pictures are ones
 FLUX.2 Klein made for the decomposer's torture test. A web search is answered by Wikimedia Commons' own search, so the
@@ -111,13 +111,13 @@ DEMOS = [
     {"id": "autumn", "name": "Autumn", "request": "Draw a forest path in autumn.", "picture": "autumn-path.jpg",
      "replies": [_plan({"do": "image", "what": KLEIN["autumn-path.jpg"]}, rule="keep"),
                  ("image", {"prompt": KLEIN["autumn-path.jpg"]})]},
-    {"id": "posts", "name": "Cozy places", "request": "The latest posts from r/comfyPlaces.",
-     "replies": [_plan({"do": "posts", "what": "the latest posts from r/comfyPlaces", "source": "r/comfyPlaces",
+    {"id": "posts", "name": "Cozy places", "request": "The latest posts from r/CozyPlaces.",
+     "replies": [_plan({"do": "posts", "what": "the latest posts from r/CozyPlaces", "source": "r/CozyPlaces",
                         "sort": "new", "count": 4, "pictures": True}, rule="keep")]},
     {"id": "chess", "name": "Chess", "request": "Let's play chess, Rocco. I'll be black.", "erase": True,
      "replies": [_plan({"do": "chess", "what": "a game of chess; the user plays black", "color": "black"})]},
     {"id": "mona", "name": "Mona Lisa", "request": "Paste an image of the Mona Lisa.",
-     "replies": [_plan({"do": "web_picture", "what": "Mona Lisa by Leonardo da Vinci"}, rule="keep")]},
+     "replies": [_plan({"do": "web_picture", "what": "Mona Lisa by Leonardo da Vinci", "paste": True}, rule="keep")]},
     {"id": "gallery", "name": "Van Gogh", "request": "Decompose a gallery of Van Gogh's paintings.",
      "replies": [_plan(*[{"do": "web_picture", "what": w, "near": side} for w, side in (     # two rows of two
          ("The Starry Night by Vincent van Gogh", "left"), ("Sunflowers by Vincent van Gogh", "right"),
