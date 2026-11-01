@@ -66,7 +66,6 @@
   <string name="render.why.lost">fe beidiodd y cerdyn graffeg ag ymateb.</string>
   <string name="render.why.refused">ni allai'r cerdyn graffeg redeg un o gamau tynnu PaperDaemon.</string>
   <string name="render.why.none">ni all y cerdyn graffeg hwn redeg WebGPU.</string>
-  <string name="render.why.card">dechreuodd y ffenestr gyda gosodiad Rendrwr arall. Ailgychwynnwch PaperDaemon i ddefnyddio'r un a ddewisoch.</string>
   <string name="editor.large_title">Mae'r dudalen hon yn mynd yn fawr iawn</string>
   <string name="editor.large_body">Bydd eich llechen yn cael trafferth llwytho'r dudalen hon, a bydd y golygydd tudalennau'n defnyddio mwy o gof eich cerdyn graffeg na'r bwriad. Ewch ymlaen dim ond os ydych yn siŵr bod hyn yn iawn. Os ydych yn rhedeg gweinydd AI lleol ar yr un cerdyn graffeg, deallwch fod y dudalen hon yn cymryd cof y byddai'r gweinydd hwnnw fel arall yn ei gael.</string>
   <string name="editor.large_ok">Rwy'n deall</string>
@@ -726,11 +725,6 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="risks.read">Darllen y risgiau ar GitHub</string>
   <string name="risks.third_party">Mae PaperDaemon yn rhaglen trydydd parti, heb ei gwneud na'i chymeradwyo gan reMarkable, sydd i fod i wneud llechen reMarkable heb ei haddasu yn fwy defnyddiol. Nid wyf yn gyfrifol am yr hyn y mae unrhyw un yn ei wneud gyda PaperDaemon, nac am unrhyw golled neu ddifrod y mae'n ei achosi.</string>
   <string name="risks.action">Rwy'n derbyn y risgiau</string>
-  <string name="settings.render.later">Mae swyddi'n defnyddio hyn nawr, a golygydd y dudalen o'r dudalen nesaf a agorwch.</string>
-  <string name="settings.render.later_cpu">Mae swyddi'n defnyddio'r prosesydd nawr, a golygydd y dudalen o'r dudalen nesaf a agorwch.</string>
-  <string name="viewer.settings_notebook">Gosodiadau'r llyfr nodiadau</string>
-  <string name="viewer.settings_document">Gosodiadau'r ddogfen</string>
-  <string name="viewer.settings_mirror_off">Trowch Golygu'r Drych ymlaen yn y Gosodiadau i newid hyn.</string>
   <string name="settings.mirror_edit.warn_q">Golygu tudalennau'r llechen?</string>
   <string name="settings.mirror_edit.warn_body">Mae golygu dy ffeiliau gyda PaperDaemon yn cynyddu'r risg o'u difrodi. Mae wedi'i brofi, ond bydd yn ofalus.</string>
   <string name="settings.mirror_edit.warn_on">Troi ymlaen</string>

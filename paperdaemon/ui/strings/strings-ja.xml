@@ -66,7 +66,6 @@
   <string name="render.why.lost">グラフィックカードが応答しなくなりました。</string>
   <string name="render.why.refused">グラフィックカードが PaperDaemon の描画手順の一つを実行できませんでした。</string>
   <string name="render.why.none">このグラフィックカードでは WebGPU を実行できません。</string>
-  <string name="render.why.card">ウィンドウは別のレンダラー設定で起動しています。選んだ設定を使うには PaperDaemon を再起動してください。</string>
   <string name="editor.large_title">このページはとても大きくなっています</string>
   <string name="editor.large_body">タブレットはこのページの読み込みに苦労します。また、ページエディターは想定よりも多くのグラフィックカードのメモリを使います。問題ないと確信できる場合にだけ続けてください。同じグラフィックカードでローカルのAIサーバーを動かしている場合、このページはそのサーバーが使うはずのメモリを奪うことを理解しておいてください。</string>
   <string name="editor.large_ok">理解しました</string>
@@ -726,11 +725,6 @@
   <string name="risks.read">GitHub でリスクを読む</string>
   <string name="risks.third_party">PaperDaemon はサードパーティ製のアプリケーションで、reMarkable が作成・承認したものではありません。改造されていない reMarkable タブレットをより便利にするためのものです。PaperDaemon を誰がどのように使っても、またそれによって生じたいかなる損失や損害についても、私は責任を負いません。</string>
   <string name="risks.action">リスクに同意します</string>
-  <string name="settings.render.later">ジョブにはすぐに反映され、ページエディターには次に開くページから反映されます。</string>
-  <string name="settings.render.later_cpu">ジョブはすぐにプロセッサを使い、ページエディターは次に開くページから使います。</string>
-  <string name="viewer.settings_notebook">ノートブックの設定</string>
-  <string name="viewer.settings_document">ドキュメントの設定</string>
-  <string name="viewer.settings_mirror_off">これを変更するには、設定で「ミラーを編集」をオンにしてください。</string>
   <string name="settings.mirror_edit.warn_q">タブレットのページを編集しますか？</string>
   <string name="settings.mirror_edit.warn_body">PaperDaemon でファイルを編集すると、ファイルを損傷するリスクが高まります。テスト済みですが、慎重に進めてください。</string>
   <string name="settings.mirror_edit.warn_on">オンにする</string>

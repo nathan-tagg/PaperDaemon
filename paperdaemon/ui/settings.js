@@ -332,17 +332,14 @@
     $("#st-card-bang", R).hidden = !now || now.d3d12 || now.d3d11;
   }
   // NEITHER CHANGE CLOSES THE WINDOW: jobs draw as Settings says at once, and the next page opened opens in a fresh web
-  // view on the card chosen (or on none, for the processor) that takes the window's place (PD.moveWindow); the hint says
-  // so when the window is on another card than the one chosen
-  async function rendererSaved(msg) {
+  // view on the card chosen (or on none, for the processor) that takes the window's place (PD.moveWindow)
+  async function rendererSaved() {
     const [rw] = await PD.safe(PD.api("GET", "/render/window"));
     PD.windowStale = !!rw && rw.current === false;
-    if (!PD.windowStale) return;
-    msg.textContent = t(rw.cpu ? "settings.render.later_cpu" : "settings.render.later"); msg.className = "hint";
   }
   async function setRenderer(cpu) {
     const msg = $("#st-cpu-msg", R);
-    if (await save("render.processor", cpu, msg)) await rendererSaved(msg);
+    if (await save("render.processor", cpu, msg)) await rendererSaved();
     paintRenderer();
   }
 
@@ -422,7 +419,7 @@
       $("#st-cpu", R).addEventListener("change", e => setRenderer(e.target.checked));
       $("#st-card", R).addEventListener("change", async e => {
         const msg = $("#st-cpu-msg", R);
-        if (await save("render.card", e.target.value, msg)) await rendererSaved(msg);
+        if (await save("render.card", e.target.value, msg)) await rendererSaved();
         paintRenderer();
       });
       $("#st-retries", R).addEventListener("change", e => {

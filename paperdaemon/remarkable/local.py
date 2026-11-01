@@ -477,6 +477,28 @@ def set_tags(u, tags):
     _touch(u)
 
 
+def clean_name(name):
+    """A name as the tablet shows one: its spaces run together, at most 255 characters; none raises a ValueError."""
+    name = " ".join(str(name or "").split())[:255]
+    if not name:
+        raise ValueError("a name is needed")
+    return name
+
+
+def rename(u, name):
+    """A document's or a folder's name, as the tablet shows it (its .metadata's visibleName). -> whether it changed."""
+    _guard()
+    name = clean_name(name)
+    p = os.path.join(M, u + ".metadata")
+    m = _read(p)
+    if m.get("visibleName") == name:
+        return False
+    m["visibleName"] = name
+    m["lastModified"] = str(_now())
+    paths.write_json_atomic(p, m)
+    return True
+
+
 def set_cover(doc, first):
     """A document's cover, as the tablet's own setting: its first page (`first`; coverPageNumber 0) or the page last
     visited (-1). -> whether it changed."""

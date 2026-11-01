@@ -321,6 +321,26 @@ def test_a_documents_cover_setting_is_written_as_the_tablet_stores_it():
     assert got == [True, False, 0, True, -1, []]
 
 
+def test_a_documents_name_is_written_as_the_tablet_shows_it():
+    got = _run("""
+        import json, os
+        from paperdaemon.remarkable import local
+        a = local.new_notebook("Plain")
+        md = lambda: json.load(open(os.path.join(local.M, a + ".metadata"), encoding="utf-8"))
+        was = md()
+        got = [local.rename(a, "  Field   notes "), md()["visibleName"], local.rename(a, "Field notes")]
+        try:
+            local.rename(a, "   ")
+            got.append("an empty name taken")
+        except ValueError:
+            got.append("refused")
+        now = md()
+        got.append(sorted(k for k in set(was) | set(now) if was.get(k) != now.get(k)))   # its name and when, nothing else
+        print(json.dumps(got))
+    """)
+    assert got == [True, "Field notes", False, "refused", ["lastModified", "visibleName"]]
+
+
 def test_pages_chosen_are_deleted_duplicated_moved_and_tagged_as_the_tablet_does():
     got = _run("""
         import json, os

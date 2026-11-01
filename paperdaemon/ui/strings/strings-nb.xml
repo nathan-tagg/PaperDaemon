@@ -66,7 +66,6 @@
   <string name="render.why.lost">skjermkortet sluttet å svare.</string>
   <string name="render.why.refused">skjermkortet klarte ikke å kjøre et av PaperDaemons tegnetrinn.</string>
   <string name="render.why.none">dette skjermkortet kan ikke kjøre WebGPU.</string>
-  <string name="render.why.card">vinduet startet med en annen Renderer-innstilling. Start PaperDaemon på nytt for å bruke den du valgte.</string>
   <string name="editor.large_title">Denne siden blir svært stor</string>
   <string name="editor.large_body">Nettbrettet vil slite med å laste denne siden, og sideredigeringen vil bruke mer av grafikkortets minne enn tenkt. Fortsett bare hvis du er sikker på at det er greit. Kjører du en lokal KI-server på samme grafikkort, tar denne siden minne som den serveren ellers ville hatt.</string>
   <string name="editor.large_ok">Jeg forstår</string>
@@ -726,11 +725,6 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="risks.read">Les risikoene på GitHub</string>
   <string name="risks.third_party">PaperDaemon er et tredjepartsprogram, verken laget eller godkjent av reMarkable, ment for å gjøre et umodifisert reMarkable-nettbrett mer nyttig. Jeg er ikke ansvarlig for hva noen gjør med PaperDaemon, eller for tap eller skade det forårsaker.</string>
   <string name="risks.action">Jeg godtar risikoene</string>
-  <string name="settings.render.later">Jobber bruker dette nå, og sideredigereren fra neste side du åpner.</string>
-  <string name="settings.render.later_cpu">Jobber bruker prosessoren nå, og sideredigereren fra neste side du åpner.</string>
-  <string name="viewer.settings_notebook">Innstillinger for notatboken</string>
-  <string name="viewer.settings_document">Innstillinger for dokumentet</string>
-  <string name="viewer.settings_mirror_off">Slå på Rediger Speilet i Innstillinger for å endre dette.</string>
   <string name="settings.mirror_edit.warn_q">Redigere nettbrettets sider?</string>
   <string name="settings.mirror_edit.warn_body">Å redigere filene dine med PaperDaemon øker risikoen for å skade dem. Det er testet, men vær forsiktig.</string>
   <string name="settings.mirror_edit.warn_on">Slå på</string>

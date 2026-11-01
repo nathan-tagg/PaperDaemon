@@ -895,6 +895,33 @@ def set_cover(doc, first):
     return True
 
 
+def rename(doc, name):
+    """A document's name, as the tablet shows it (its .metadata's visibleName), written in place (every other key as it
+    is) with a page's safety: not when the tablet changed the file since PaperDaemon pulled it, and the document backed
+    up first. push() sends it up. -> whether it changed. Raises a Refused, or local.NotHere in the False Mirror."""
+    _mirror_only()
+    name = local.clean_name(name)
+    fname = doc + ".metadata"
+    path = os.path.join(local.M, fname)
+    with local._writing:
+        with open(path, encoding="utf-8") as f:
+            m = json.load(f)
+        if m.get("visibleName") == name:
+            return False
+        try:
+            check_cloud(fname)
+        except TabletNewer:
+            raise TabletNewer("the tablet changed this document since PaperDaemon read it, so it was not renamed")
+        except CloudUnreachable as ex:
+            raise CloudUnreachable(str(ex).replace("so the page was not saved", "so it was not renamed"))
+        backup(doc)
+        m["visibleName"] = name
+        m["lastModified"] = str(local._now())
+        paths.write_json_atomic(path, m)
+    _record_written(doc)
+    return True
+
+
 def push(doc):
     """The document's edits up to the tablet by PaperDaemon's own sync, now (the editor's Ctrl+S, or the document
     closed). A job at work on the notebook is left its push: the edit goes up with the job's work. -> what the push

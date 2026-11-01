@@ -537,6 +537,57 @@ def test_a_mirror_documents_cover_is_set_in_place_and_sent_through_the_engine(mo
             shutil.rmtree(p, ignore_errors=True) if os.path.isdir(p) else os.remove(p)
 
 
+def test_a_mirror_documents_name_is_set_in_place_and_sent_through_the_engine(monkeypatch):
+    """The name of a Mirror document: refused with Edit the Mirror off, written into its .metadata (every other key but
+    when it changed as it was) after a backup and sent to the tablet, never written over a tablet change."""
+    import shutil
+    from fastapi.testclient import TestClient
+    from paperdaemon import paths, server
+    from paperdaemon.remarkable import inplace, local, sync
+    src = os.path.join(CASES, "ink-question", "mirror")
+    made = []
+    for f in os.listdir(src):
+        p, dest = os.path.join(src, f), os.path.join(local.M, f)
+        (shutil.copytree if os.path.isdir(p) else shutil.copyfile)(p, dest)
+        made.append(dest)
+    doc = next(f[:-8] for f in os.listdir(src) if f.endswith(".content"))
+    meta = os.path.join(local.M, doc + ".metadata")
+    try:
+        cloud = {"newer": False, "asked": []}
+
+        def check(name):
+            cloud["asked"].append(name)
+            if cloud["newer"]:
+                raise inplace.TabletNewer("the tablet changed this page")
+        monkeypatch.setattr(inplace, "check_cloud", check)
+        pushed = []
+        monkeypatch.setattr(sync, "push_edited", lambda d, pages=None: pushed.append((d, pages)) or {"root_put": 200})
+        monkeypatch.setattr(sync, "changed_files", lambda d=None: [(doc + ".metadata", "x", "y")])
+        was = json.load(open(meta, encoding="utf-8"))
+        c = TestClient(server.app)
+        c.headers["Authorization"] = "Bearer " + server.pairing_token()
+        url = "/api/v1/library/%s/name" % doc
+        r = c.put(url, json={"name": "Field notes"})
+        assert r.status_code == 403 and r.json()["reason"] == "off", r.text
+        monkeypatch.setattr(server, "_mirror_edit", lambda: True)
+        assert c.put(url, json={"name": "  "}).status_code == 400
+        r = c.put(url, json={"name": "Field notes"})
+        assert r.status_code == 200 and r.json() == {"name": "Field notes", "changed": True, "push": {"root_put": 200}}, r.text
+        now = json.load(open(meta, encoding="utf-8"))
+        assert now["visibleName"] == "Field notes"
+        assert {k: v for k, v in now.items() if k not in ("visibleName", "lastModified")} ==             {k: v for k, v in was.items() if k not in ("visibleName", "lastModified")}
+        assert cloud["asked"] == [doc + ".metadata"] and pushed == [(doc, [])]           # no page stamped
+        assert os.path.isfile(os.path.join(paths.data_dir(), "mirror-backups", doc, doc + ".metadata"))
+        assert c.put(url, json={"name": "Field notes"}).json() == {"name": "Field notes", "changed": False}
+        cloud["newer"] = True
+        r = c.put(url, json={"name": "Other"})
+        assert r.status_code == 409 and r.json()["reason"] == "tablet" and "renamed" in r.json()["error"], r.text
+        assert json.load(open(meta, encoding="utf-8")) == now and len(pushed) == 1
+    finally:
+        for p in made:
+            shutil.rmtree(p, ignore_errors=True) if os.path.isdir(p) else os.remove(p)
+
+
 def test_a_page_the_pipeline_wrote_with_the_daemons_layer_a_picture_and_a_new_layer():
     """A page written by the pipeline's own writers (strokes, typed text, a picture), with a layer of the daemon's: the
     daemon's layer and the picture stay as they are whatever the save says of them, a picture changed is refused, a new

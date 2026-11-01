@@ -93,8 +93,6 @@
       paintPagePick();                    // the pages' bar only over the grid with pages chosen: never left behind
       const n = pageCount();
       $(".viewer-title", dlg).textContent = S.doc.name;
-      const set = $(".doc-set", dlg), setName = PD.t(S.doc.kind === "notebook" ? "viewer.settings_notebook" : "viewer.settings_document");
-      set.title = setName; set.setAttribute("aria-label", setName);
       // THE BAR, LAID OUT AS THE TABLET'S TOOLBAR. A page: on the left the page editor's tools in the false mirror (pen,
       // pen, text, eraser, layers; the editor sends them; selection and capture will go between eraser and layers), then on the right
       // the tag, the page grid and the page arrows. The grid: on the right the chapters, the grid and Go to page. The
@@ -479,9 +477,8 @@
       if (!dlg) {
         dlg = document.createElement("dialog");
         dlg.id = VIEWER; dlg.className = "viewer";
-        dlg.innerHTML = '<div class="viewer-head"><span class="viewer-name"><span class="viewer-title"></span><button type="button" class="keys-q" data-v="keys" title="' +
-          esc(PD.t("keys.open")) + '" aria-label="' + esc(PD.t("keys.open")) + '">?</button><button type="button" class="doc-set" data-v="docset">' + ICON.settings +
-          '</button></span><button type="button" class="link-btn" data-v="close">' + esc(PD.t("common.close")) + "</button></div>" +
+        dlg.innerHTML = '<div class="viewer-head"><span class="viewer-name"><button type="button" class="viewer-title" data-v="docsheet"></button><button type="button" class="keys-q" data-v="keys" title="' +
+          esc(PD.t("keys.open")) + '" aria-label="' + esc(PD.t("keys.open")) + '">?</button></span><button type="button" class="link-btn" data-v="close">' + esc(PD.t("common.close")) + "</button></div>" +
           '<div class="viewer-bar"><span class="viewer-tools"></span><span class="viewer-tags"></span><span class="viewer-nav"></span>' +
           '<div class="select-bar page-pick" role="toolbar" hidden></div></div>' +
           '<div class="viewer-page" tabindex="-1" autofocus></div>';
@@ -511,7 +508,7 @@
           else if (v === "prev" || v === "next") go(S.page + (v === "next" ? 1 : -1));
           else if (v === "tagpop") { S.tagPop = !S.tagPop; paintBar(); paintTagPop(); }
           else if (v === "keys") PD.openShortcuts(!!editorFrame());
-          else if (v === "docset") docSettings();
+          else if (v === "docsheet") docSheet();
           else if (v === "tagadd") addTypedTag();
           else if (v === "newpage") {
             const [got] = await PD.safe(api("POST", "/library/" + S.doc.id + "/pages", { after: S.page }));
@@ -769,26 +766,51 @@
       return dlg;
     }
 
-    // A DOCUMENT'S SETTINGS (the gear by its name): its cover, the tablet's own setting -- the page last visited or the
-    // first page. The False Mirror's is written at once; the Mirror's in place and sent to the tablet, only while Edit
-    // the Mirror is on (off: shown, with where to change it). Saved, the library is read again: the cover is drawn anew
-    // for its page once the viewer closes
-    function docSettings() {
+    // A DOCUMENT'S SHEET (its title clicked in the viewer): its name, its tags, its cover (the tablet's own setting: the
+    // page last visited or the first page) and Export, the whole document. The False Mirror's are written at once; the
+    // Mirror's name and cover in place and sent to the tablet, only while Edit the Mirror is on (off: shown, not to be
+    // changed), its tags shown. Saved, the library is read again: the cover is drawn anew once the viewer closes
+    function docSheet() {
       const d = S.doc; if (!d) return;
-      const can = fm || !!PD.getK(PD.settings || {}, "mirror.edit"), now = d.cover === "first" ? "first" : "last";
-      const radio = (v, l) => '<label class="check-label"><input type="radio" name="doc-cover" value="' + v + '"' + (v === now ? " checked" : "") +
-        (can ? "" : " disabled") + "> " + esc(l) + "</label>";
-      const dlg = ask(PD.t(d.kind === "notebook" ? "viewer.settings_notebook" : "viewer.settings_document"),
-        '<fieldset class="field-row nb-cover"><legend>' + esc(PD.t("fm.cover")) + "</legend>" + radio("last", PD.t("fm.cover.last")) +
-        radio("first", PD.t("fm.cover.first")) + "</fieldset>" + (can ? "" : '<p class="hint">' + esc(PD.t("viewer.settings_mirror_off")) + "</p>"),
+      const can = fm || !!PD.getK(PD.settings || {}, "mirror.edit"), now = d.cover === "first" ? "first" : "last", off = can ? "" : " disabled";
+      const radio = (v, l) => '<label class="check-label"><input type="radio" name="doc-cover" value="' + v + '"' + (v === now ? " checked" : "") + off + "> " + esc(l) + "</label>";
+      const chip = t => '<span class="chip" data-tag="' + esc(t) + '">' + esc(t) + (fm ? '<button type="button" class="chip-x" aria-label="' + esc(PD.t("fm.untag", { tag: t })) + '">×</button>' : "") + "</span>";
+      const tags0 = (d.tags || []).slice();
+      const dlg = ask(d.name,
+        '<label class="field-row"><span>' + esc(PD.t("fm.name")) + '</span><input class="field w-l" type="text" data-doc-name spellcheck="false" value="' + esc(d.name) + '"' + off + "></label>" +
+        '<div class="field-row doc-tags"><span>' + esc(PD.t("fm.tag")) + '</span><div class="tag-edit" data-tags>' + tags0.map(chip).join("") + "</div>" +
+        (fm ? '<input class="field w-l" type="text" data-new-tag spellcheck="false" placeholder="' + esc(PD.t("fm.tag_add")) + '">' : "") + "</div>" +
+        '<fieldset class="field-row nb-cover"><legend>' + esc(PD.t("fm.cover")) + "</legend>" + radio("last", PD.t("fm.cover.last")) + radio("first", PD.t("fm.cover.first")) + "</fieldset>" +
+        '<div class="field-row"><button type="button" class="btn" data-doc-export>' + esc(PD.t("fm.export")) + '</button><span class="hint" data-doc-said role="status"></span></div>',
         PD.t("fm.save"), async box => {
+          const id = encodeURIComponent(d.id), name = box.querySelector("[data-doc-name]").value.trim();
+          if (can && name && name !== d.name) { await api("PUT", "/library/" + id + "/name", { name }); d.name = name; }
+          if (fm) {
+            const tags = [...box.querySelectorAll("[data-tag]")].map(c => c.dataset.tag), field = box.querySelector("[data-new-tag]");
+            const extra = field && field.value.trim() ? knownSpelling(field.value.trim()) : "";
+            if (extra && !hasTag(tags, extra)) tags.push(extra);
+            if (tags.join("\n") !== tags0.join("\n")) { await api("PUT", "/library/" + id + "/tags", { tags }); d.tags = tags; }
+          }
           const v = (box.querySelector("[name=doc-cover]:checked") || {}).value || now;
-          if (v === now) return;
-          await api("PUT", "/library/" + encodeURIComponent(d.id) + "/cover", { cover: v });
-          d.cover = v;
-          load();
+          if (can && v !== now) { await api("PUT", "/library/" + id + "/cover", { cover: v }); d.cover = v; }
+          paintBar(); load();
         });
-      if (!can) { dlg.querySelector("[data-v=ok]").hidden = true; dlg.querySelector("[data-v=cancel]").textContent = PD.t("common.close"); }
+      dlg.addEventListener("click", async e => {
+        const x = e.target.closest(".chip-x"); if (x) { x.closest("[data-tag]").remove(); return; }
+        if (!e.target.closest("[data-doc-export]")) return;
+        const said = dlg.querySelector("[data-doc-said]");
+        said.textContent = PD.t("fm.exporting");
+        const [got, err] = await PD.safe(PD.api("POST", "/false-mirror/export", { doc: d.id, name: d.name }));
+        said.textContent = err ? PD.errText(err) : PD.t("fm.exported", { name: got.name });
+      });
+      const add = dlg.querySelector("[data-new-tag]");
+      if (add) add.addEventListener("keydown", e => {
+        if (e.key !== "Enter" || !e.target.value.trim()) return;
+        e.preventDefault(); e.stopPropagation();
+        const t = knownSpelling(e.target.value.trim()); e.target.value = "";
+        if (hasTag([...dlg.querySelectorAll("[data-tag]")].map(c => c.dataset.tag), t)) return;
+        dlg.querySelector("[data-tags]").insertAdjacentHTML("beforeend", chip(t));
+      });
     }
 
     // THE NAME, EMPTY: what it is called when left so ("Notebook") is its placeholder, gone the moment the user types
@@ -889,6 +911,25 @@
     // MOVING, AS THE TABLET MOVES: Move turns the bar into where to (no sheet over the screen); the folders open as ever,
     // and in a folder the items are not all in already the bar offers Move here. Esc lets it go. S.lmove: moving.
     const canMoveHere = its => its.some(it => it.parent !== S.at) && !path(S.at).some(f => its.some(it => it.id === f.id));
+    // THE COVER OF THOSE PICKED (documents): the page last visited or the first, theirs if they share one; in the Mirror
+    // only while Edit the Mirror is on
+    function coverPick(its) {
+      const cs = its.map(it => it.cover === "first" ? "first" : "last"), same = cs.every(c => c === cs[0]) ? cs[0] : "";
+      const can = fm || !!PD.getK(PD.settings || {}, "mirror.edit");
+      const opt = (v, l) => '<option value="' + v + '"' + (same === v ? " selected" : "") + ">" + esc(l) + "</option>";
+      return '<span class="select"><select class="field" data-pick-cover aria-label="' + esc(PD.t("fm.cover")) + '"' + (can ? "" : " disabled") + ">" +
+        (same ? "" : '<option value="" selected disabled>' + esc(PD.t("fm.cover")) + "</option>") + opt("last", PD.t("fm.cover.last")) + opt("first", PD.t("fm.cover.first")) + "</select></span>";
+    }
+    async function pickCover(v) {
+      const its = picked().filter(it => it.type === "document"), msg = $("#" + id + "-menu .pick-name", R);
+      for (const it of its) {
+        if ((it.cover === "first" ? "first" : "last") === v) continue;
+        const [, e] = await PD.safe(api("PUT", "/library/" + encodeURIComponent(it.id) + "/cover", { cover: v }));
+        if (e) { msg.textContent = PD.errText(e); msg.classList.add("attn"); return; }
+      }
+      const keep = its.map(it => it.id);
+      await load(); S.picked = keep.filter(byId); paint(); paintPickMenu();
+    }
     function paintPickMenu() {
       const m = $("#" + id + "-menu", R);
       if (S.pmove && S.pmove.out) {                                // pages on their way out of a notebook: open the one they go to
@@ -905,7 +946,7 @@
         ? '<span class="pick-name" role="status">' + esc(PD.t(its.length === 1 ? "fm.lmove_one" : "fm.lmove_n", { name: its[0].name, n: its.length })) + '</span><span class="pick-acts">' +
           (canMoveHere(its) ? btn("movehere", PD.t("fm.move_here")) : "") + "</span>"
         : '<span class="pick-name" role="status">' + esc(what) + '</span><span class="pick-acts">' +
-          (docs ? btn("export", PD.t("fm.export")) + btn("duplicate", PD.t("fm.duplicate")) : "") + btn("move", PD.t("fm.move")) + btn("tags", PD.t("fm.tag")) +
+          (docs ? coverPick(its) + btn("export", PD.t("fm.export")) + btn("duplicate", PD.t("fm.duplicate")) : "") + btn("move", PD.t("fm.move")) + btn("tags", PD.t("fm.tag")) +
           btn("delete", PD.t("common.delete"), "danger") + "</span>";
       m.hidden = false;
       m.parentElement.classList.add("choosing");
@@ -1063,6 +1104,7 @@
         PD.on(root, "click", "[data-act=new-folder]", () => { closeMenu(); newFolder(); });
         PD.on(root, "click", "[data-act=import]", () => { closeMenu(); importFile(); });
         PD.on(root, "click", "[data-pick-act]", (e, el) => pickAct(el.dataset.pickAct));
+        PD.on(root, "change", "[data-pick-cover]", (e, el) => { if (el.value) pickCover(el.value); });
         // FILES DROPPED ON THE SCREEN are imported into the folder open
         const drop = $("#" + id + "-drop", root);
         let over = 0;

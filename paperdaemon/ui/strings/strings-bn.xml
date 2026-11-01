@@ -66,7 +66,6 @@
   <string name="render.why.lost">গ্রাফিক্স কার্ড সাড়া দেওয়া বন্ধ করেছে।</string>
   <string name="render.why.refused">গ্রাফিক্স কার্ড PaperDaemon-এর আঁকার একটি ধাপ চালাতে পারেনি।</string>
   <string name="render.why.none">এই গ্রাফিক্স কার্ড WebGPU চালাতে পারে না।</string>
-  <string name="render.why.card">উইন্ডোটি অন্য একটি রেন্ডারার সেটিং নিয়ে চালু হয়েছিল। বেছে নেওয়া সেটিং ব্যবহার করতে PaperDaemon আবার চালু করুন।</string>
   <string name="editor.large_title">এই পাতাটি খুব বড় হয়ে যাচ্ছে</string>
   <string name="editor.large_body">আপনার ট্যাবলেট এই পাতা লোড করতে হিমশিম খাবে, আর পেজ এডিটর আপনার গ্রাফিক্স কার্ডের মেমরি স্বাভাবিকের চেয়ে বেশি ব্যবহার করবে। এটা ঠিক আছে বলে নিশ্চিত হলেই এগোন। একই গ্রাফিক্স কার্ডে লোকাল AI সার্ভার চালালে জেনে রাখুন, এই পাতা সেই সার্ভারের মেমরি থেকে নেয়।</string>
   <string name="editor.large_ok">বুঝেছি</string>
@@ -726,11 +725,6 @@
   <string name="risks.read">GitHub-এ ঝুঁকিগুলো পড়ুন</string>
   <string name="risks.third_party">PaperDaemon একটি তৃতীয় পক্ষের অ্যাপ্লিকেশন, যা reMarkable তৈরি বা অনুমোদন করেনি; এর উদ্দেশ্য অপরিবর্তিত reMarkable ট্যাবলেটকে আরও কাজের করে তোলা। PaperDaemon দিয়ে কেউ যা-ই করুক, বা এর ফলে কোনো ক্ষতি বা লোকসান হলে, তার জন্য আমি দায়ী নই।</string>
   <string name="risks.action">আমি ঝুঁকিগুলো মেনে নিচ্ছি</string>
-  <string name="settings.render.later">কাজগুলো এখন থেকেই এটি ব্যবহার করে, আর পৃষ্ঠা সম্পাদক পরের যে পৃষ্ঠা খুলবেন সেটি থেকে।</string>
-  <string name="settings.render.later_cpu">কাজগুলো এখন থেকেই প্রসেসর ব্যবহার করে, আর পৃষ্ঠা সম্পাদক পরের যে পৃষ্ঠা খুলবেন সেটি থেকে।</string>
-  <string name="viewer.settings_notebook">নোটবুক সেটিংস</string>
-  <string name="viewer.settings_document">নথির সেটিংস</string>
-  <string name="viewer.settings_mirror_off">এটি বদলাতে সেটিংসে মিরর সম্পাদনা চালু করুন।</string>
   <string name="settings.mirror_edit.warn_q">ট্যাবলেটের পৃষ্ঠা সম্পাদনা করবেন?</string>
   <string name="settings.mirror_edit.warn_body">PaperDaemon দিয়ে আপনার ফাইল সম্পাদনা করলে সেগুলোর ক্ষতি হওয়ার ঝুঁকি বাড়ে। এটি পরীক্ষা করা হয়েছে, তবে সাবধানে এগোন।</string>
   <string name="settings.mirror_edit.warn_on">চালু করুন</string>

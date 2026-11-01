@@ -66,7 +66,6 @@
   <string name="render.why.lost">kartu grafis berhenti merespons.</string>
   <string name="render.why.refused">kartu grafis tidak dapat menjalankan salah satu langkah menggambar PaperDaemon.</string>
   <string name="render.why.none">kartu grafis ini tidak dapat menjalankan WebGPU.</string>
-  <string name="render.why.card">jendela dibuka dengan pengaturan Perender yang lain. Mulai ulang PaperDaemon untuk memakai yang Anda pilih.</string>
   <string name="editor.large_title">Halaman ini menjadi sangat besar</string>
   <string name="editor.large_body">Tablet Anda akan kesulitan memuat halaman ini, dan editor halaman akan memakai memori kartu grafis lebih banyak dari semestinya. Lanjutkan hanya jika Anda yakin ini tidak masalah. Jika Anda menjalankan server AI lokal di kartu grafis yang sama, ketahuilah bahwa halaman ini mengambil memori yang seharusnya dipakai server itu.</string>
   <string name="editor.large_ok">Saya mengerti</string>
@@ -726,11 +725,6 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="risks.read">Baca risikonya di GitHub</string>
   <string name="risks.third_party">PaperDaemon adalah aplikasi pihak ketiga, tidak dibuat atau didukung oleh reMarkable, yang dimaksudkan untuk membuat tablet reMarkable yang tidak dimodifikasi lebih berguna. Saya tidak bertanggung jawab atas apa pun yang dilakukan orang dengan PaperDaemon, atau atas kehilangan atau kerusakan apa pun yang ditimbulkannya.</string>
   <string name="risks.action">Saya menerima risikonya</string>
-  <string name="settings.render.later">Tugas memakai ini sekarang, dan editor halaman mulai halaman berikutnya yang Anda buka.</string>
-  <string name="settings.render.later_cpu">Tugas memakai prosesor sekarang, dan editor halaman mulai halaman berikutnya yang Anda buka.</string>
-  <string name="viewer.settings_notebook">Pengaturan buku catatan</string>
-  <string name="viewer.settings_document">Pengaturan dokumen</string>
-  <string name="viewer.settings_mirror_off">Aktifkan Edit Cermin di Pengaturan untuk mengubah ini.</string>
   <string name="settings.mirror_edit.warn_q">Edit halaman tablet?</string>
   <string name="settings.mirror_edit.warn_body">Mengedit file Anda dengan PaperDaemon meningkatkan risiko kerusakannya. Fitur ini sudah diuji, tetapi lanjutkan dengan hati-hati.</string>
   <string name="settings.mirror_edit.warn_on">Nyalakan</string>

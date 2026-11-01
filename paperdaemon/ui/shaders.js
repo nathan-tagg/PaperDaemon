@@ -858,8 +858,8 @@ var<workgroup> ws: array<u32, 128>;
 @compute @workgroup_size(64) fn boxOf(@builtin(global_invocation_id) gi: vec3<u32>) {
   let id = vec3<u32>(gi.x + gi.y * 4194240u, 0u, 0u);   // (past 65,535 workgroups: DW)
   if (id.x >= A.first) { return; }
-  var j = 0u;
-  for (var q = 1u; q < A.count; q++) { if (spans[q].y <= id.x) { j = q; } }
+  var j = 0u; var e = A.count;                               // the range holding it: spans[j].y <= id.x < spans[j + 1].y (a
+  while (e - j > 1u) { let m = (j + e) / 2u; if (spans[m].y <= id.x) { j = m; } else { e = m; } }   // binary search: a drag's ranges run to thousands)
   let b = spans[j].x + (id.x - spans[j].y);
   var lo = vec2<f32>(3.0e38); var hi = vec2<f32>(-3.0e38); var w = 0.0;
   for (var k = 0u; k < 16u; k++) {

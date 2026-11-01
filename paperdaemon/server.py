@@ -1792,6 +1792,34 @@ def put_library_tags(u: str, body: dict = Body(default={})):
     return _local(lambda: (local.set_tags(u, body.get("tags") or []), {"tags": body.get("tags") or []})[1])
 
 
+@app.put(API + "/library/{u}/name")
+def put_library_name(u: str, body: dict = Body(default={})):
+    """An item's name, as the tablet shows it: {"name": ...}. The False Mirror's is written at once; the Mirror's in place,
+    with a page's safety (Edit the Mirror on, the tablet not newer, a backup first), then sent to the tablet.
+    -> {name, changed[, push]}."""
+    from .remarkable import inplace, local
+    if not _doc_ok(u):
+        return _bad("not an id")
+    try:
+        name = local.clean_name(body.get("name"))
+    except ValueError as ex:
+        return _bad(str(ex))
+    if paths.local_only():
+        return _local(lambda: {"name": name, "changed": local.rename(u, name)})
+    if not _mirror_edit():
+        return _mirror_edit_off()
+
+    def go():
+        try:
+            got = {"name": name, "changed": inplace.rename(u, name)}
+            if got["changed"]:
+                got["push"] = inplace.push(u)
+            return got
+        except inplace.Refused as ex:
+            return _refused(ex)
+    return _local(go)
+
+
 @app.put(API + "/library/{doc}/cover")
 def put_library_cover(doc: str, body: dict = Body(default={})):
     """A document's cover, as the tablet's own setting: {"cover": "first"} (its first page) or "last" (the page last

@@ -13,7 +13,7 @@ on the tablet.
 - The False Mirror writes the setting into the document's own files at once.
 - The Mirror writes it as the tablet stores it (the document's `coverPageNumber`), in place, with a page's safety: only
   while Edit the Mirror is on, never over a tablet change PaperDaemon has not pulled, the document backed up first.
-  It is then sent to the tablet. With Edit the Mirror off, the setting is shown and says how to change it.
+  It is then sent to the tablet. With Edit the Mirror off, the setting is shown, its choices disabled.
 - The cover is drawn again for the page it now shows.
 
 ## Impact

@@ -66,7 +66,6 @@
   <string name="render.why.lost">ekran kartı yanıt vermeyi bıraktı.</string>
   <string name="render.why.refused">ekran kartı PaperDaemon'un çizim adımlarından birini çalıştıramadı.</string>
   <string name="render.why.none">bu ekran kartı WebGPU çalıştıramaz.</string>
-  <string name="render.why.card">pencere başka bir Oluşturucu ayarıyla açıldı. Seçtiğiniz ayarı kullanmak için PaperDaemon'u yeniden başlatın.</string>
   <string name="editor.large_title">Bu sayfa çok büyüyor</string>
   <string name="editor.large_body">Tabletiniz bu sayfayı yüklemekte zorlanacak ve sayfa düzenleyici ekran kartı belleğini öngörülenden fazla kullanacak. Yalnızca bunun sorun olmadığından eminseniz devam edin. Aynı ekran kartında yerel bir yapay zekâ sunucusu çalıştırıyorsanız, bu sayfanın o sunucunun belleğinden aldığını bilin.</string>
   <string name="editor.large_ok">Anladım</string>
@@ -726,11 +725,6 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="risks.read">Riskleri GitHub'da okuyun</string>
   <string name="risks.third_party">PaperDaemon, reMarkable tarafından yapılmamış veya onaylanmamış, değiştirilmemiş bir reMarkable tabletini daha kullanışlı hâle getirmek için tasarlanmış üçüncü taraf bir uygulamadır. Herhangi birinin PaperDaemon ile yaptıklarından veya neden olduğu herhangi bir kayıp ya da zarardan sorumlu değilim.</string>
   <string name="risks.action">Riskleri kabul ediyorum</string>
-  <string name="settings.render.later">İşler bunu şimdi kullanır; sayfa düzenleyici ise açtığınız bir sonraki sayfadan itibaren.</string>
-  <string name="settings.render.later_cpu">İşler şimdi işlemciyi kullanır; sayfa düzenleyici ise açtığınız bir sonraki sayfadan itibaren.</string>
-  <string name="viewer.settings_notebook">Defter ayarları</string>
-  <string name="viewer.settings_document">Belge ayarları</string>
-  <string name="viewer.settings_mirror_off">Bunu değiştirmek için Ayarlar'da Aynayı düzenle'yi açın.</string>
   <string name="settings.mirror_edit.warn_q">Tabletin sayfaları düzenlensin mi?</string>
   <string name="settings.mirror_edit.warn_body">Dosyalarını PaperDaemon ile düzenlemek onlara zarar verme riskini artırır. Test edildi, ama dikkatli ilerle.</string>
   <string name="settings.mirror_edit.warn_on">Aç</string>
