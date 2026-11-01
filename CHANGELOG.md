@@ -3,7 +3,8 @@
 ## 0.2.6
 
 - A notebook's title in the viewer opens its sheet: rename it, tag it, choose its cover (last page visited or first page) and export it. The gear by the title is gone. In the library, the bar for the documents picked (long or right click) has their cover as a dropdown. In the Mirror, renaming and the cover need Edit the Mirror on, and go to the tablet.
-- Ctrl+Z pressed while a moved selection is still landing is no longer thrown away: the undo runs as soon as it lands (most of a second for 90,000 strokes on an integrated card).
+- Letting go of a large selection no longer freezes the page. Its strokes are made from what the graphics card already holds, a few at a time while the page keeps answering, and its save goes out in pieces. Undo and redo move the strokes back and forth on the card. On an integrated card, with 86,000 strokes of a 150,000-stroke page moved, the longest the page stopped answering was 35 ms letting go (830 ms before), 38 ms for the undo and 30 ms for the redo (240 to 330 ms before).
+- Ctrl+Z pressed while a moved selection is still landing is no longer thrown away: the undo runs as soon as it lands.
 - Undo after moving a selection no longer leaves pieces of it where it was moved. Strokes whose points changed in the move (often highlighters) came back drawn where the drag had left them, and stayed until the page was opened again.
 - Removed the note under Renderer in Settings, and the one under a Mirror document's cover setting.
 - A sketch is drawn on one grid. An icon drawn with a figure (a sun beside a house) is fitted with it, so it lands where it was put beside the other parts; it used to be placed on the page apart from the figure, and moved to the middle of the drawing when that fell outside (a sun on the house's window). A sketch never generates a picture: a picture that must look real is generated as its own step.

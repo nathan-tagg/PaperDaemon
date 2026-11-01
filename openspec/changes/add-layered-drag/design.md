@@ -43,6 +43,26 @@ once whatever their order (a pen covers, whatever was drawn before it), but ther
 highlighters, whose darkening depends on which pen is latest under them. **The split by order is not built; the
 choice of what replaces it is the maintainer's.**
 
+## The drop and its undo (measured)
+
+The same card and page, the maintainer's demo decomposition: its 86,254 highlighters selected, moved and let go, then
+undone and done again. The longest the page's thread was busy at once (the browser's long tasks; none longer than 50 ms
+afterwards), and the wait until it shows the result, in ms:
+
+| | before: longest | after: longest | after: shown |
+|---|---|---|---|
+| let go | 832 | 35 | 430 |
+| undo | 236-325 | 38 | 145 |
+| redo | (not measured) | 30 | 92 |
+| the save after the drop | (one message) | none over 50 | |
+
+Before, the strokes the drop made were each made again point by point (2.9 million points), then compared with what the
+card held, and the undo put every one of the old strokes up again. After: each part is made from the records the card
+read back, as a fresh part of that stroke would be (a highlighter's turns aside: they are worked out where it is drawn),
+and takes its stroke's place; the undo writes each stroke's records back in that place from its part's own copy. The
+put's first touch of each of tens of thousands of parts was most of what was left (48 ms of 50); they are handed over as
+they are made instead.
+
 ## Decisions
 
 - **D1. Split by the page's order.** Taken up, the selection's first and last places in the page's order (`lo`,

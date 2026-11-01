@@ -269,10 +269,10 @@
     return { ok: true };
   }
   // A SAVE: the page's layers (each its JSON up to its strokes, its strokes' uids in order) and the rest of the scene's JSON;
-  // the strokes not known here asked for first (need: where each is, its layer and its place; they come as "parts"). Put
-  // together as the editor's own sceneBytes would, written, and known as the file now. A Mirror page's strokes with
-  // their ids and groups; a write the engine changed the page with (new strokes: ids to read back) is read again at the
-  // next look, as is a write refused as stale
+  // the strokes not known here asked for first (need: where each is, its layer and its place; they come as "parts", some
+  // of them first as "more"). Put together as the editor's own sceneBytes would, written, and known as the file now. A
+  // Mirror page's strokes with their ids and groups; a write the engine changed the page with (new strokes: ids to read
+  // back) is read again at the next look, as is a write refused as stale
   function assemble(m) {
     let total = 0;
     const heads = m.layers.map(L => {
@@ -333,6 +333,7 @@
         else if (m.op === "took") out = took(m);
         else if (m.op === "skip") { pend.delete(m.look); out = { ok: true }; }
         else if (m.op === "save") { const need = needs(m); if (need.length) { pendSave = m; out = { need }; } else out = await save(m); }
+        else if (m.op === "more") { if (!pendSave) out = { failed: "no save waits" }; else { take(m); out = { ok: true }; } }   // (some of them; "parts" the last)
         else if (m.op === "parts") { const q = pendSave; pendSave = null; if (!q) out = { failed: "no save waits" }; else { take(m); out = await save(q); } }
         else out = { failed: "no such op: " + m.op };
       } catch (err) { out = { failed: String(err && err.message || err) }; }

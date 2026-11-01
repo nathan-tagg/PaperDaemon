@@ -15,7 +15,20 @@
   selected, its highlighters kept, moved, undone: 24,228 pixels left, a whole redraw drawing them again). A stroke drawn
   anew on landing (its points' count changed) kept its old part, whose records on the card were the moved ones; an undo
   brought it back with them. Its records are put back once it is swapped out (moveRestore): 0 pixels
-- [ ] 1.6 That undo takes 1.4 s on the 150,000-stroke page on the integrated card
+- [x] 1.6 That undo takes 1.4 s on the 150,000-stroke page on the integrated card: 236-325 ms once the bench's own
+  waits were out of it, and letting go of the selection 832 ms, each one wait on the processor (design: The drop and its
+  undo)
+- [x] 1.7 Let go, the strokes the drop makes are made from the records the card holds (each one's part as a fresh one of
+  it would be, not made again point by point), a few milliseconds a turn of the event loop, and handed their strokes'
+  places in the page's records and order as they are made; then put in at once. Nothing drawn reads whose a place is,
+  and what would is held until the drop has landed
+- [x] 1.8 Undone and done again, the moved strokes are moved back and forth on the card (each one's records written in
+  its place from its part's own copy), made ready a turn at a time as the drop is; nothing is put up again. A page's save
+  sends the worker its new strokes a few thousand at a time
+- [x] 1.9 Proved on the maintainer's heaviest page (a copy, deleted after): moved, resized and turned, highlighters alone
+  and every kind together, large and small: each part against a fresh one (0 of 149,807 differ), the screen against a
+  whole redraw after the drop, the undo and the redo, the undo against the page before and the page made up fresh
+  against the drop: 0 pixels each; Ctrl+Z pressed while the drop lands undoes it, 0 pixels
 
 ## 2. Layers
 

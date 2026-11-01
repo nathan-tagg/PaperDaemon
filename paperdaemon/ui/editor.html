@@ -982,21 +982,6 @@ span.lname { cursor: default; }
       (b.side || (b.side = [])).push([at, 2 * BLK]); (b.sb || (b.sb = [])).push(j); asideAt.set(j, at);
       return at;
     }
-    // records at..at+n-1 (u8: the engine's, n of them) written where their blocks keep them aside (a drag's fixes)
-    function asidePut(at, u8, n) {
-      const f = new Float32Array(u8.buffer, u8.byteOffset, n * 4);
-      for (let i = 0; i < n;) {
-        const R = at + i, j = R >> 4, D = asideAt.get(j), ka = R & 15, kb = Math.min(15, ka + n - i - 1);
-        if (D === undefined) throw new Error("a moved block not kept aside");
-        for (const [a, b] of [[ka, Math.min(kb, 7)], [Math.max(ka, 8), kb]]) {
-          if (a > b) continue;
-          const w = new Uint32Array(2 * (b - a + 1));
-          for (let k = a; k <= b; k++) { const o = 4 * (i + k - ka); sideEnc(f[o], f[o + 1], f[o + 2], w, 2 * (k - a)); }
-          device.queue.writeBuffer(heap.rec, (D / BLK * 20 + (a < 8 ? 4 + 2 * a : 24 + 2 * (a - 8))) * 4, w);
-        }
-        i += kb - ka + 1;
-      }
-    }
     let boxSpans = [], cullGen = 0;                           // blocks gone up since boxed; bumped when a buffer is made anew
     function take(list, n) {                                  // the first place of n there -> where, or -1
       for (let i = 0; i < list.length; i++) {
@@ -1106,9 +1091,8 @@ span.lname { cursor: default; }
     function stFree(sid) { stSet(sid, 2, 0); stSet(sid, 6, NONE); st.part[sid] = null; st.buf[sid] = null; st.free.push(sid); }
     function stAlive(sid, on) { const w = st.m[8 * sid + 2], v = on ? (w | 0x80000000) >>> 0 : w & 0x7fffffff; if (v !== w) stSet(sid, 2, v); }
     function stFlush() {                                      // the rows changed here put up (runs of them), before the card reads
-      const d = st.dirty;
-      if (!d.length) return;
-      d.sort((a, b) => a - b);
+      if (!st.dirty.length) return;
+      const d = Uint32Array.from(st.dirty).sort();            // (in order: a drop's 90,000 rows sorted as numbers, not as a list)
       const gap = !er.live || er.synced ? 64 : 1;             // (the rows between written too, once none the card wrote is unknown here)
       for (let i = 0; i < d.length;) {
         let j = i + 1;
@@ -1220,6 +1204,10 @@ span.lname { cursor: default; }
       return out;
     }
     function placeAll(fresh) {                                // parts put up 512 at a time, the room for all of them made first
+      placeRoom(fresh);
+      for (let k = 0; k < fresh.length; k += 512) place(fresh.slice(k, k + 512));
+    }
+    function placeRoom(fresh) {
       let nR = 0, nG = 0;
       for (const p of fresh) { nR += p.n; if (p.gr) nG += p.n; }
       nR += 3 * BLK * Math.ceil(fresh.length / 512);         // (each place's ends, and its last block's rest)
@@ -1230,7 +1218,6 @@ span.lname { cursor: default; }
       if (want > st.cap) stGrow(want);
       const freeR = heap.rec ? largest(heap.free) : 0, freeG = heap.gr ? largest(heap.gfree) : 0;
       if (nR > freeR || nG > freeG) heapGrow(nR > freeR ? nR : 0, nG > freeG ? nG : 0);
-      for (let k = 0; k < fresh.length; k += 512) place(fresh.slice(k, k + 512));
     }
     function unref(b) {                                       // one holder of a place fewer: given back with the last
       if (!b || !b.heap || b.gone || --b.refs > 0) return;
@@ -1243,11 +1230,13 @@ span.lname { cursor: default; }
       if (p.sid !== undefined) stSet(p.sid, 2, ((st.m[8 * p.sid + 2] & 0x800000ff) | (p.lid & 0x7fffff) << 8) >>> 0);
     }
     // A PLACEMENT HELD WHILE ITS STROKE IS: a part's number and place (pl), let go once the collector says its stroke is gone
-    // (from the page and every undo step). A stroke on the page is held by its number's row here (st.part) as well
-    const placed = new FinalizationRegistry(pl => { if (!pl.gone) letGo(pl); });
+    // (from the page and every undo step). A stroke on the page is held by its number's row here (st.part) as well. One
+    // handed from stroke to stroke (a selection moved, undone, done again: handOver) is held while any of them is -- each
+    // registered once (refs: how many), not taken off and put on again at each hand-over
+    const placed = new FinalizationRegistry(pl => { if (--pl.refs <= 0 && !pl.gone) letGo(pl); });
     function hold(p, sid, place, gplace) {
-      const pl = { sid, place, gplace: gplace || null, gone: false };
-      p.pl = pl; p.sid = sid;
+      const pl = { sid, place, gplace: gplace || null, gone: false, refs: 1, side: false };
+      p.pl = pl; p.sid = sid; p.reg = pl;
       placed.register(p.line, pl, pl);
       return pl;
     }
@@ -1256,12 +1245,17 @@ span.lname { cursor: default; }
       if (pl.sid >= 0 && !st.part[pl.sid]) stFree(pl.sid);
       unref(pl.place); if (pl.gplace) unref(pl.gplace);
     }
-    function handOver(p, q) {                                 // p's placement q's (the same records, moved: a selection's)
+    // p's placement q's (the same records, moved: a selection's), in two: q given its number and places, held by it too
+    // (handPre: nothing drawn changes, so an undo makes it ready meanwhile: handPrep), then q the one on the page (handNow)
+    function handOver(p, q) { handPre(p, q); handNow(p, q); }
+    function handPre(p, q) {
       const pl = p.pl;
-      placed.unregister(pl); placed.register(q.line, pl, pl);
-      q.pl = pl; q.sid = p.sid; q.at = p.at; q.gat = p.gat; q.lid = p.lid; q.on = p.on;
-      p.pl = null; p.sid = undefined; p.on = false;
-      st.part[q.sid] = q.on ? q : null; st.buf[q.sid] = pl.place;
+      if (q.reg !== pl) { q.reg = pl; pl.refs++; placed.register(q.line, pl, pl); }
+      q.pl = pl; q.sid = p.sid; q.at = p.at; q.gat = p.gat; q.lid = p.lid;
+    }
+    function handNow(p, q) {
+      q.on = p.on; p.pl = null; p.sid = undefined; p.on = false;
+      st.part[q.sid] = q.on ? q : null; st.buf[q.sid] = q.pl.place;
     }
     const onPage = p => { p.on = true; stAlive(p.sid, true); st.part[p.sid] = p; };
     const offPage = p => { p.on = false; stAlive(p.sid, false); st.part[p.sid] = null; };
@@ -1762,7 +1756,7 @@ span.lname { cursor: default; }
       viewPut(W, H, k, ox, oy);
       const head = MK0.slice(); head[0] = A.length;           // the first mark: what goes, its depth kept for the second
       device.queue.writeBuffer(mk.buf, 0, head); mk.who = null;
-      if (A.length) device.queue.writeBuffer(mk.buf, 64, Uint32Array.from(A));
+      if (A.length) device.queue.writeBuffer(mk.buf, 64, A);
       let enc = device.createCommandEncoder();
       const p = enc.beginComputePass();
       if (A.length) { p.setPipeline(cpListBoxes); p.setBindGroup(0, mkGroups().boxes); DW(p, Math.ceil(A.length / 64)); }
@@ -1780,7 +1774,7 @@ span.lname { cursor: default; }
       if (!B) return false;
       device.queue.writeBuffer(mk.buf, 0, new Uint32Array([B.length]));   // the second: what comes (the box so far kept)
       if (B.length) {
-        device.queue.writeBuffer(mk.buf, 64, Uint32Array.from(B));
+        device.queue.writeBuffer(mk.buf, 64, B);
         enc = device.createCommandEncoder();
         const q = enc.beginComputePass(); q.setPipeline(cpListBoxes); q.setBindGroup(0, mkGroups().boxes); DW(q, Math.ceil(B.length / 64)); q.end();
         device.queue.submit([enc.finish()]);
@@ -1788,41 +1782,16 @@ span.lname { cursor: default; }
       return eDraw(true);
     }
     function recsOf(lines) {                                  // the records the card draws these strokes from (null: one is
-      const out = [];                                         // not in the page's order)
-      for (const L of lines) {
+      let n = 0;                                              // not in the page's order), in a typed array made once: an undo
+      for (const L of lines) {                                // of 90,000 moved strokes lists millions
         const p = parts.get(L);
         if (!p || !p.on || p.sid === undefined) return null;
-        for (let i = 0; i < p.n; i++) out.push(p.at + i);
+        n += p.n;
       }
+      const out = new Uint32Array(n);
+      let o = 0;
+      for (const L of lines) { const p = parts.get(L); for (let i = 0; i < p.n; i++) out[o++] = p.at + i; }
       return out;
-    }
-    // RECORDS DRAWN AGAIN WHERE THEY LAY AND WHERE THEY LIE ONCE change() has changed them: the mask (whose list holds them,
-    // n of them) marked first, change's passes run (enc: the same encoder, after the mark), the mask marked again, and the
-    // page made anew under the two marks (eDraw), as an undo's swap is -> drawn? (else: draw it all)
-    // (box: each mark its records' box, one shape: boxMarks)
-    function remarked(n, change, blocks, box) {
-      const { k, ox, oy, W, H, w, h } = last;
-      viewPut(W, H, k, ox, oy);
-      const head = MK0.slice(); head[0] = n;
-      device.queue.writeBuffer(mk.buf, 0, head);
-      let enc = device.createCommandEncoder(), p = enc.beginComputePass();
-      p.setPipeline(cpListBoxes); p.setBindGroup(0, mkGroups().boxes); DW(p, Math.ceil(n / 64));
-      p.setPipeline(cpListArgs); p.setBindGroup(0, mkGroups().args); p.dispatchWorkgroups(1); p.end();
-      if (box) boxMarks(enc);
-      zNeed();
-      const r = enc.beginRenderPass({ colorAttachments: [{ view: texView, loadOp: "load", storeOp: "store" }],
-        depthStencilAttachment: { view: zView, depthClearValue: 0, depthLoadOp: "clear", depthStoreOp: "store" } });
-      r.setPipeline(PL.mask); r.setBindGroup(0, g0); r.setBindGroup(1, heap.bg); r.setBindGroup(2, maskNow()); r.drawIndirect(mk.buf, 32);
-      r.end();
-      device.queue.submit([enc.finish()]);
-      enc = device.createCommandEncoder();
-      change(enc);                                            // (its passes in enc, or its writes to the queue: after the mark)
-      device.queue.writeBuffer(mk.buf, 0, new Uint32Array([n]));   // (the second mark: the box so far kept)
-      p = enc.beginComputePass();
-      p.setPipeline(cpListBoxes); p.setBindGroup(0, mkGroups().boxes); DW(p, Math.ceil(n / 64)); p.end();
-      device.queue.submit([enc.finish()]);
-      for (const s of blocks) boxSpans.push(s);               // (their blocks boxed again, before the draw culls by them)
-      return eDraw(true, box);
     }
     function blocksOf(A) {                                    // the blocks records lie in, as runs [first, how many]
       const out = [];
@@ -1840,9 +1809,9 @@ span.lname { cursor: default; }
     // frame's matrix takes them, on the card, and draws the page again only where they were and where they are now
     // (remarked) -- no picture of them is made, and nothing of the page is drawn again anywhere else. Each record's width
     // is the one a stroke of the moved points will have at the frame's size (widthsAt), its flags as they were. Let go,
-    // the moved records are read back (moveEnd), the editor's strokes made from them (movePoints), and those take the
-    // moved strokes' places (moveAdopt)
-    const mv = { lines: null, A: null, n: 0, x: 0, y: 0, wide: 0, org: null, wid: null, u: null, blocks: null, s: NaN, useW: false, G: null, GF: [],
+    // the moved records are read back (moveEnd), and the strokes the drop makes, each with its part made from them, take
+    // the moved strokes' places (landBegin, landPut)
+    const mv = { lines: null, A: null, n: 0, x: 0, y: 0, wide: 0, org: null, wid: null, u: null, blocks: null, s: NaN, useW: false, wArr: null, G: null, GF: [],
                  pb: null, w0: 0, wS: 0, last: null };
     // THE MOVE'S BOX, worked out here and not by a pass over its records: the selection's points' box as taken up (pb) and
     // its widest width (w0; at the frame's size, wS), each frame's matrix applied to the box's corners and the box out by
@@ -1866,7 +1835,7 @@ span.lname { cursor: default; }
       u[5] = 1; u[8] = 4; u[9] = 1;                           // (its box drawn, as boxMarks has it)
       device.queue.writeBuffer(mk.buf, 0, u);
     }
-    const mvStats = { taken: 0, frames: 0, adopted: 0, fixed: 0, anew: 0 };
+    const mvStats = { taken: 0, frames: 0, adopted: 0, anew: 0, handed: 0, swapped: 0 };
     function mvGroups() {                                     // the move's passes' groups, made again when a buffer was
       const res = [mv.u, heap.rec, mv.org, mk.buf, mv.wid];
       if (!mv.G || !res.every((b, i) => b === mv.GF[i])) {
@@ -1901,7 +1870,7 @@ span.lname { cursor: default; }
       const most = Math.min(device.limits.maxStorageBufferBindingSize, device.limits.maxBufferSize);
       if (!A || !A.length || A.length * PT > most || (16 + A.length) * 4 > most) return false;
       const n = A.length, wg = Math.ceil(n / 64);
-      mv.lines = lines.slice(); mv.A = Uint32Array.from(A); mv.n = n; mv.blocks = blocksOf(A);
+      mv.lines = lines.slice(); mv.A = A; mv.n = n; mv.blocks = blocksOf(A);
       {                                                       // (its box and widest width as taken up: markMoveBox)
         let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, w0 = 0;
         for (const L of lines) {
@@ -1961,7 +1930,7 @@ span.lname { cursor: default; }
       if (!back && s !== mv.s) {                              // (a new size, or the first frame: the widths it gives)
         const w = moveWidths(s);
         if (w) device.queue.writeBuffer(mv.wid, 0, w);
-        mv.useW = !!w; mv.s = s;
+        mv.useW = !!w; mv.wArr = w; mv.s = s;
       }
       mvList();
       if (!back) {
@@ -2003,7 +1972,7 @@ span.lname { cursor: default; }
     }
     function moveDone() {
       for (const b of [mv.org, mv.wid, mv.u]) if (b) b.destroy();
-      mv.lines = null; mv.A = null; mv.org = mv.wid = mv.u = null; mv.G = null; mv.pb = mv.last = null;
+      mv.lines = null; mv.A = null; mv.org = mv.wid = mv.u = null; mv.G = null; mv.pb = mv.last = null; mv.wArr = null;
     }
     function moveCancel() {                                   // the selection put back as it was taken up -> drawn?
       if (!mv.lines) return true;
@@ -2011,68 +1980,279 @@ span.lname { cursor: default; }
       try { ok = !lost && moveTo(null, mv.s, true); } finally { moveDone(); }
       return ok;
     }
-    function movePoints(recs) {                               // each stroke's points where the card moved them: [x, y, ...] a stroke
-      const f = new Float32Array(recs.buffer, recs.byteOffset, recs.length), out = [];
-      let o = 0;
-      for (const L of mv.lines) {                             // (a repeat a highlighter's records leave out: where the point
-        const p = parts.get(L), n0 = L.points.n, ix = p.idx, xy = new Float64Array(2 * n0);   // kept before it went)
-        let k = -1;
-        for (let i = 0; i < n0; i++) {
-          if (!ix) k = i; else while (k + 1 < p.n && ix[k + 1] <= i) k++;
-          xy[2 * i] = f[4 * (o + k)]; xy[2 * i + 1] = f[4 * (o + k) + 1];
+    // THE MOVED STROKES MADE WHERE THEY WERE LET GO, a slice at a time (landBegin; step until the time it is given, then
+    // landPut): each the stroke the drop makes (the editor's `line`, from the records read back) and its part, made from the
+    // records the card holds (landPart), not gone over point by point again -- and handed its stroke's place in the page's
+    // records and order, number and all, as it is made: nothing drawn reads whose a place is, and nothing that would is
+    // let happen while it lands (the editor holds it), so the put touches none of them again (the put's first touch of
+    // each part was most of its time: 70,000 of them, 48 ms of 50). Put in, nothing goes up but a grain stroke's
+    // grain (its length along made again), nothing is drawn. One whose points' count the move changed (a highlighter's two
+    // points it put in one place) is made fresh, put up meanwhile, and drawn anew in its place (the editor's swap)
+    function landBegin(recs, line) {
+      const F = new Float32Array(recs.buffer, recs.byteOffset, recs.length), W = mv.wArr && new Uint32Array(mv.wArr.buffer, mv.wArr.byteOffset, mv.wArr.length);
+      const ld = { made: [], fresh: [], anew: [], stale: [], ps: [], qs: [], grs: [], j: 0, o: 0, pk: -1 };
+      ld.step = until => {                                    // -> more to make?
+        const ls = mv.lines;
+        for (let pts = 0; ld.j < ls.length;) {
+          const L = ls[ld.j], p = parts.get(L), N = line(L, F, ld.o, p.idx, p.n), q = p.on && p.sid !== undefined ? landPart(p, N, recs, F, W, ld.o) : null;
+          ld.made.push(N);
+          if (q && q.n === p.n) {                             // its place handed over (the same number, the same place in the order)
+            handOver(p, q); stTwin(q);
+            q.pl.side = true;                                 // (its blocks keep their points aside: moveBegin; moveHand)
+            if (q.gr && q.gat >= 0) ld.grs.push(q);           // (its grain: up as it is put in, as drawn from then on)
+            ld.ps.push(p); ld.qs.push(q); mvStats.adopted++;
+          } else {                                            // drawn anew (put up meanwhile: place)
+            ld.anew.push([L, N]); mvStats.anew++;
+            if (q) ld.fresh.push(q);
+            if (p.on && p.sid !== undefined && p.rec) ld.stale.push(p);   // (its records on the card the moved ones: moveRestore)
+          }
+          ld.o += p.n; ld.j++;
+          if ((pts += p.n) >= 4096) { pts = 0; if (performance.now() > until) break; }
         }
-        o += p.n; out.push(xy);
+        return ld.j < ls.length;
+      };
+      ld.place = until => {                                   // those to be drawn anew put up, 512 at a time -> more?
+        if (ld.pk < 0) { placeRoom(ld.fresh); ld.pk = 0; }
+        while (ld.pk < ld.fresh.length) { place(ld.fresh.slice(ld.pk, ld.pk + 512)); ld.pk += 512; if (performance.now() > until) break; }
+        return ld.pk < ld.fresh.length;
+      };
+      return ld;
+    }
+    // A MOVED STROKE'S PART, as a fresh part of the stroke the drop made (N) has it, from the records read back (recs, four
+    // words each, its own from record o; F the same as floats): its points where the card moved them, each one's width the
+    // one the move gave it (W: at the frame's size; else as it was), its color and flags its stroke's (a highlighter's turns
+    // are worked out where it is drawn) -- those records kept as its own; its length along worked out again, and a grain
+    // stroke's grain and seed -> the part (null: its points' count is not as it was: made fresh)
+    function landPart(p, N, recs, F, W, o) {
+      const n = p.n, P = N.points;
+      if (P.length !== p.n0 || (p.rec.byteOffset & 3)) return null;
+      const pw = new Uint32Array(p.rec.buffer, p.rec.byteOffset, 4 * n), g0 = p.grain ? p.gr : null, gr = g0 ? new Float32Array(2 * n) : null;
+      for (let k = 0, a = 4 * o; k < n; k++, a += 4) { recs[a + 2] = W ? W[o + k] : pw[4 * k + 2]; recs[a + 3] = pw[4 * k + 3]; }
+      if (p.kind === RF_HIGHLIGHTER)                          // (two kept points the move put in one place: a fresh part drops one)
+        for (let a = 4 * o + 4; a < 4 * (o + n); a += 4) if (!(Math.abs(F[a] - F[a - 4]) > 1e-6 || Math.abs(F[a + 1] - F[a - 3]) > 1e-6)) return squeezed(p, N, recs, F, o);
+      let len = 0, sg = 0;
+      if (gr) gr[0] = g0[0];
+      for (let k = 1, a = 4 * o + 4; k < n; k++, a += 4) {   // (lenOf's sum; a grain's length along is the same)
+        const d = Math.hypot(F[a] - F[a - 4], F[a + 1] - F[a - 3]);
+        len += d; if (d > sg) sg = d;
+        if (gr) { gr[2 * k] = g0[2 * k]; gr[2 * k + 1] = len; }
+      }
+      const q = made(N, { pts: P, n0: P.length, kind: p.kind, grain: p.grain, alpha: p.alpha, seed: gr ? seedOf(F[4 * o], F[4 * o + 1]) >>> 0 : 0, gr,
+                          rec: new Uint8Array(recs.buffer, recs.byteOffset + o * PT, n * PT), n, idx: p.idx, len, sg });
+      return q;
+    }
+    // A HIGHLIGHTER TWO OF WHOSE KEPT POINTS THE MOVE PUT IN ONE PLACE: its part as a fresh one makes it -- a record in the
+    // place of the one kept before it dropped -- from the records read back (landPart's) -> the part (not placed: it is put
+    // up in a place of its own, and drawn anew)
+    function squeezed(p, N, recs, F, o) {
+      const n = p.n, ix = p.idx, keep = [0];
+      for (let k = 1; k < n; k++) {
+        const a = 4 * (o + k), b = 4 * (o + keep[keep.length - 1]);
+        if (Math.abs(F[a] - F[b]) > 1e-6 || Math.abs(F[a + 1] - F[b + 1]) > 1e-6) keep.push(k);
+      }
+      const m = keep.length, rec = new Uint8Array(m * PT), w = new Uint32Array(rec.buffer), idx = new Int32Array(m);
+      let len = 0, sg = 0;
+      for (let t = 0; t < m; t++) {
+        const a = 4 * (o + keep[t]);
+        w[4 * t] = recs[a]; w[4 * t + 1] = recs[a + 1]; w[4 * t + 2] = recs[a + 2]; w[4 * t + 3] = recs[a + 3];
+        idx[t] = ix ? ix[keep[t]] : keep[t];
+        if (t) { const b = 4 * (o + keep[t - 1]), d = Math.hypot(F[a] - F[b], F[a + 1] - F[b + 1]); len += d; if (d > sg) sg = d; }
+      }
+      return made(N, { pts: N.points, n0: N.points.length, kind: p.kind, grain: false, alpha: p.alpha, seed: 0, gr: null, rec, n: m,
+                       idx: m !== N.points.length ? idx : null, len, sg });
+    }
+    // -> { anew: those to be drawn anew, [taken, made]; ps, qs: the parts that handed their places over, and those that
+    // took them (the drop's undo and redo: moveHand) }
+    function landPut(ld) {
+      const t0 = performance.now();
+      for (const p of ld.stale) movedStale.push(p);
+      grainPut(ld.grs);
+      moveDone();
+      mvStats.put = { grain: performance.now() - t0 };
+      return { anew: ld.anew, ps: ld.ps, qs: ld.qs };
+    }
+    function stTwin(q) {                                      // a part handed a place: its half width and its length in its row
+      const len = q.sg !== undefined ? (segLast = q.sg, q.len) : lenOf(q.rec, 0, q.n), hw = halfWidth(q.line), o = 8 * q.sid, bh = fBits(hw), bl = fBits(len);
+      if (st.m[o + 3] !== bh) stSet(q.sid, 3, bh);
+      if (st.m[o + 7] !== bl) stSet(q.sid, 7, bl);
+      if (hw > st.hwMax) st.hwMax = hw;
+      if (segLast > st.sgMax) st.sgMax = segLast;
+    }
+    function grainPut(ps) {                                   // parts' grain up where their places keep it (a run of them a write)
+      ps.sort((a, b) => a.gat - b.gat);
+      for (let i = 0; i < ps.length;) {
+        let j = i + 1, m = ps[i].gr.length;
+        while (j < ps.length && ps[j].gat === ps[j - 1].gat + ps[j - 1].gr.length / 2) { m += ps[j].gr.length; j++; }
+        let g = ps[i].gr;
+        if (j - i > 1) { g = new Float32Array(m); for (let k = i, o = 0; k < j; k++) { g.set(ps[k].gr, o); o += ps[k].gr.length; } }
+        device.queue.writeBuffer(heap.gr, ps[i].gat * GR, g);
+        i = j;
+      }
+    }
+    // A DROP UNDONE OR DONE AGAIN (the drop's pairs of parts, landPut's: gp going, cp coming, each the other's twin -- the
+    // same records but for where they lie): each coming part takes the going one's place, number and all, and its records
+    // are written there (MOVE's back, from its own copy): nothing put up but those, the page's order as it was. Those drawn
+    // anew when the drop landed (gone, came: their strokes) are swapped in the order. Made ready a slice at a time
+    // (handPrep: the records each writes, and where, put up on the card meanwhile, out of the page's way), then put in at
+    // once (moveHand), drawn where they were and where they are, as an undo's swap is -> drawn? (else: the editor's swap,
+    // or the page drawn whole)
+    function handPrep(gp, cp, gone, came) {                   // -> made ready a slice at a time (step), or null: not so
+      if (lost || !cpBack || mv.lines) return null;
+      let nh = 0, nC = 0;
+      for (let i = 0; i < gp.length; i++) {                   // (each going part in the order, its place's blocks aside; each coming one placed nowhere)
+        const g = gp[i];
+        if (!g.on || g.sid === undefined || !g.pl || !g.pl.side || cp[i].sid !== undefined) return null;
+        nh += g.n;
+      }
+      for (let i = 0; i < gone.length; i++) {
+        const g = parts.get(gone[i]), c = parts.get(came[i]);
+        if (!g || !g.on || g.sid === undefined || !c || c.sid === undefined || c.on) return null;
+        nC += c.n;
+      }
+      const AG = recsOf(gone);
+      if (!AG) return null;
+      // A: the records written (the twins'), then those swapped out -- the first mark's list; O: what each twin writes
+      const A = new Uint32Array(nh + AG.length), O = new Uint8Array(Math.max(16, nh * PT));
+      A.set(AG, nh);
+      const hp = { gp, cp, gone, came, nh, nC, AG, A, i: 0, o: 0, sent: 0, org: null, lst: null, ready: false };
+      hp.step = until => {                                    // -> more to make ready?
+        if (!hp.org) {
+          hp.org = device.createBuffer({ size: O.byteLength, usage: U.STORAGE | U.COPY_DST });
+          hp.lst = device.createBuffer({ size: Math.max(16, A.byteLength), usage: U.COPY_SRC | U.COPY_DST });
+        }
+        while (hp.i < gp.length) {
+          const g = gp[hp.i], c = cp[hp.i], o = hp.o;
+          for (let t = 0; t < g.n; t++) A[o + t] = g.at + t;
+          O.set(c.rec.subarray(0, g.n * PT), o * PT);
+          handPre(g, c); stTwin(c);                           // (its place made ready to take: moveHand's handNow)
+          hp.o += g.n; hp.i++;
+          if ((hp.i & 255) === 0 && performance.now() > until) break;
+        }
+        if (hp.o > hp.sent) { device.queue.writeBuffer(hp.org, hp.sent * PT, O, hp.sent * PT, (hp.o - hp.sent) * PT); hp.sent = hp.o; }
+        if (hp.i < gp.length) return true;
+        device.queue.writeBuffer(hp.lst, 0, A);
+        hp.ready = true;
+        return false;
+      };
+      hp.drop = () => { for (const b of [hp.org, hp.lst]) if (b) b.destroy(); hp.org = hp.lst = null; };
+      hp.unpre = () => {                                      // (not put in after all: those made ready to take their places, not)
+        if (hp.handed) return;
+        for (let i = 0; i < hp.i; i++) { const g = gp[i], c = cp[i]; if (!c.on && c.sid === g.sid) { c.pl = null; c.sid = undefined; stTwin(g); } }
+      };
+      return hp;
+    }
+    function moveHand(hp, from, to) {
+      if (!hp.ready || !holds || !last || lost || !underTex || !PL || er.live || lv || mv.lines || ob.tick !== from) return false;
+      const { k, ox, oy, W, H, w, h } = last;
+      if (texW !== W || texH !== H || screenW !== w || screenH !== h) return false;
+      const { gp, cp, gone, came, nh, nC, AG, A } = hp, T = [performance.now()];
+      const n = Math.max(A.length, nh + nC);
+      if (!mk.buf || n > mk.cap) mkMake(Math.max(1 << 16, pow2(n)));
+      viewPut(W, H, k, ox, oy);
+      const head = MK0.slice(); head[0] = A.length;           // the first mark: where they lie, its depth kept for the second
+      device.queue.writeBuffer(mk.buf, 0, head); mk.who = null;
+      let enc = device.createCommandEncoder();
+      if (A.length) enc.copyBufferToBuffer(hp.lst, 0, mk.buf, 64, A.byteLength);   // (its list put up meanwhile: handPrep)
+      let p = enc.beginComputePass();
+      if (A.length) { p.setPipeline(cpListBoxes); p.setBindGroup(0, mkGroups().boxes); DW(p, Math.ceil(A.length / 64)); }
+      p.setPipeline(cpListArgs); p.setBindGroup(0, mkGroups().args); p.dispatchWorkgroups(1); p.end();
+      zNeed();
+      const r = enc.beginRenderPass({ colorAttachments: [{ view: texView, loadOp: "load", storeOp: "store" }],
+        depthStencilAttachment: { view: zView, depthClearValue: 0, depthLoadOp: "clear", depthStoreOp: "store" } });
+      r.setPipeline(PL.mask); r.setBindGroup(0, g0); r.setBindGroup(1, heap.bg); r.setBindGroup(2, maskNow()); r.drawIndirect(mk.buf, 32);
+      r.end();
+      const bk = nh ? backRun(enc, hp.org, nh) : [];         // the twins' records written where theirs lie (the list's first nh)
+      device.queue.submit([enc.finish()]);
+      for (const b of bk) b.destroy();                        // (given back once the pass is done)
+      T.push(performance.now());
+      const grs = [];
+      for (let i = 0; i < gp.length; i++) { const c = cp[i]; handNow(gp[i], c); if (c.gr && c.gat >= 0) grs.push(c); }
+      hp.handed = true;
+      grainPut(grs);
+      T.push(performance.now());
+      if (gone.length && !ordEdit(gone.map((G, i) => [parts.get(G), false, [parts.get(came[i])]]), [])) return false;
+      T.push(performance.now());
+      ob.tick = to;
+      mvStats.handed += gp.length; mvStats.swapped += gone.length;
+      const BC = recsOf(came);                                // (in the order now)
+      if (!BC) return false;
+      let B = A;                                              // the second mark: what lies there now (the box so far kept)
+      if (BC.length !== AG.length) { B = new Uint32Array(nh + BC.length); B.set(A.subarray(0, nh)); }
+      B.set(BC, nh);
+      device.queue.writeBuffer(mk.buf, 0, new Uint32Array([B.length]));
+      if (B.length) {
+        if (B === A) { if (BC.length) device.queue.writeBuffer(mk.buf, 64 + 4 * nh, BC); }   // (the twins' records listed already)
+        else device.queue.writeBuffer(mk.buf, 64, B);
+        enc = device.createCommandEncoder(); p = enc.beginComputePass();
+        p.setPipeline(cpListBoxes); p.setBindGroup(0, mkGroups().boxes); DW(p, Math.ceil(B.length / 64)); p.end();
+        device.queue.submit([enc.finish()]);
+      }
+      if (nh) for (const b of blocksOf(B.subarray(0, nh))) boxSpans.push(b);   // (the twins' blocks boxed again, before the draw)
+      T.push(performance.now());
+      const drawn = eDraw(true);
+      T.push(performance.now());
+      mvStats.hand = { mark: T[1] - T[0], hand: T[2] - T[1], order: T[3] - T[2], mark2: T[4] - T[3], draw: T[5] - T[4] };
+      return drawn;
+    }
+    // (each stroke's part against the part a fresh look at its points makes -- a highlighter's flags aside: worked out where
+    // it is drawn -- for a look from outside: how many differ, and the first difference)
+    function partsCheck(lines) {
+      const out = { parts: 0, differ: 0, first: null };
+      for (const L of lines) {
+        const p = parts.get(L);
+        if (!p || p.from || p.pts !== L.points || p.n0 !== L.points.length) continue;
+        out.parts++;
+        const why = partDiff(p, freshPart(L));
+        if (why && !out.differ++) out.first = why;
       }
       return out;
     }
-    // THE MOVED STROKES TAKE THEIR PLACES: pairs [the stroke taken up, the stroke made from the records read back (recs, in
-    // the mask's order)], in the selection's order. Where the stroke's part (partOf, as the page is drawn from) has the
-    // records the card moved -- all but its number -- it takes the moved stroke's place, number and all: nothing goes up
-    // but a grain stroke's grain (its length along made again), nothing is drawn. Where they differ (a highlighter's turn
-    // worked out again from the moved points) its records go up in that place and are drawn again there (remarked); where
-    // it has fewer or more (a repeat the move made or undid) it is drawn anew -> those: [taken, made] (the editor swaps them)
-    function moveAdopt(pairs, recs) {
-      const anew = [], fix = [], fixes = [], rf = new Float32Array(recs.buffer, recs.byteOffset, recs.length);
-      let o = 0;
-      for (const [L, N] of pairs) {
-        const p = parts.get(L), n = p ? p.n : 0, at = p && p.on && p.sid !== undefined ? p.at : undefined;
-        const q = partOf(N);
-        if (at === undefined || q.n !== n || q.sid !== undefined) {
-          anew.push([L, N]); o += n; mvStats.anew++;
-          if (at !== undefined && p.rec) movedStale.push(p);   // (its records on the card the moved ones: moveRestore)
-          continue;
-        }
-        const a = new Float32Array(q.rec.buffer, q.rec.byteOffset, n * 4);   // (the same points on the grid: the flags are its strokes')
-        let same = true;
-        for (let i = 0; i < n && same; i++) { const s = 4 * i, c = 4 * (o + i); same = gq(a[s]) === gq(rf[c]) && gq(a[s + 1]) === gq(rf[c + 1]) && wq(a[s + 2]) === wq(rf[c + 2]); }
-        o += n;
-        const sid = p.sid;
-        handOver(p, q);                                       // (the same number, the same place in the page's order)
-        if (q.gr && q.gat >= 0) device.queue.writeBuffer(heap.gr, q.gat * GR, q.gr);
-        const len = q.sg !== undefined ? (segLast = q.sg, q.len) : lenOf(q.rec, 0, n), hw = halfWidth(N);
-        stSet(sid, 3, fBits(hw)); stSet(sid, 7, fBits(len));
-        if (hw > st.hwMax) st.hwMax = hw;
-        if (segLast > st.sgMax) st.sgMax = segLast;
-        if (!same) { fixes.push([at, q.rec.slice(0, n * PT), n]); for (let k = 0; k < n; k++) fix.push(at + k); mvStats.fixed++; } else mvStats.adopted++;
-      }
-      moveDone();
-      if (fix.length) {
-        const A = Uint32Array.from(fix);
-        if (!mk.buf || A.length > mk.cap) mkMake(Math.max(1 << 16, pow2(A.length)));
-        device.queue.writeBuffer(mk.buf, 64, A); mk.who = null;
-        const write = () => { for (const [at, u8, n] of fixes) asidePut(at, u8, n); };   // (where their blocks keep them aside: moveBegin)
-        if (!(holds && last && remarked(A.length, write, blocksOf(fix)))) { write(); for (const s of blocksOf(fix)) boxSpans.push(s); anew.whole = true; }
-      }
-      return anew;
+    function partDiff(p, f) {
+      for (const k of ["n", "n0", "kind", "grain", "alpha", "seed"]) if (p[k] !== f[k]) return k;
+      if (!p.idx !== !f.idx || (p.idx && p.idx.some((v, i) => v !== f.idx[i]))) return "idx";
+      if (!p.gr !== !f.gr || (p.gr && p.gr.some((v, i) => v !== f.gr[i]))) return "gr";
+      const a = new Uint32Array(p.rec.buffer, p.rec.byteOffset, 4 * p.n), b = new Uint32Array(f.rec.buffer, f.rec.byteOffset, 4 * f.n);
+      const m3 = p.kind === RF_HIGHLIGHTER ? 0xffffff00 : 0xffffffff;
+      for (let i = 0; i < 4 * p.n; i++) if ((i & 3) === 3 ? ((a[i] ^ b[i]) & m3) !== 0 : a[i] !== b[i]) return "record " + (i >> 2) + " word " + (i & 3);
+      if (p.len !== lenOf(f.rec, 0, f.n) || p.sg !== segLast) return "len";
+      return null;
     }
-    // A STROKE DRAWN ANEW WHERE IT WAS MOVED (moveAdopt) keeps its old part, whose records the move left on the card where
+    // A STROKE DRAWN ANEW WHERE IT WAS MOVED (landPut) keeps its old part, whose records the move left on the card where
     // the drag put them, while the part's own copy is where the stroke was. Once the stroke has left the page's order for
     // the one drawn anew (the editor's swap), its records are put back where its copy says: an undo brings the stroke back
     // with that part (partOf: its points unchanged), and it was drawn where the drag had left it -- pieces of the moved
     // strokes left behind, a whole redraw drawing them again, until the page was opened anew
     let movedStale = [];
     function moveRestore() {
-      for (const p of movedStale.splice(0)) if (p.at !== undefined && p.rec && p.n) asidePut(p.at, p.rec, p.n);
+      const ps = movedStale.splice(0).filter(p => p.at !== undefined && p.rec && p.n);
+      if (!ps.length) return;
+      let n = 0;
+      for (const p of ps) n += p.n;
+      const A = new Uint32Array(n), O = new Uint8Array(n * PT);
+      for (let i = 0, o = 0; i < ps.length; i++) {
+        const p = ps[i];
+        for (let t = 0; t < p.n; t++) A[o + t] = p.at + t;
+        O.set(p.rec.subarray(0, p.n * PT), o * PT); o += p.n;
+        boxSpans.push([p.at >> 4, ((p.at + p.n - 1) >> 4) - (p.at >> 4) + 1]);   // (its blocks boxed again: they were boxed where it was moved)
+      }
+      if (!mk.buf || n > mk.cap) mkMake(Math.max(1 << 16, pow2(n)));
+      device.queue.writeBuffer(mk.buf, 64, A); mk.who = null;
+      const enc = device.createCommandEncoder(), bk = backRun(enc, O, n);
+      device.queue.submit([enc.finish()]);
+      for (const b of bk) b.destroy();
+    }
+    // RECORDS WRITTEN WHERE THEIR BLOCKS KEEP THEM ASIDE, on the card: MOVE's back over the mask's first n records, from O
+    // (their records, four words each), in enc -> the buffers it made (given back once enc's work is submitted)
+    function backRun(enc, O, n) {                             // (O: on the card already, or to be put up)
+      const up = !(O instanceof GPUBuffer), u = device.createBuffer({ size: 48, usage: U.UNIFORM | U.COPY_DST });
+      const org = up ? device.createBuffer({ size: O.byteLength, usage: U.STORAGE | U.COPY_DST }) : O;
+      const wg = Math.ceil(n / 64), X = Math.min(wg, 65535), uw = new Uint32Array(12);
+      uw[6] = n; uw[7] = X * 64;
+      if (up) device.queue.writeBuffer(org, 0, O);
+      device.queue.writeBuffer(u, 0, uw);
+      const bg = device.createBindGroup({ layout: cpBack.getBindGroupLayout(0), entries: [u, heap.rec, org, mk.buf].map((b, i) => ({ binding: i, resource: { buffer: b } })) });
+      const p = enc.beginComputePass(); p.setPipeline(cpBack); p.setBindGroup(0, bg); p.dispatchWorkgroups(X, Math.ceil(wg / 65535)); p.end();
+      return up ? [org, u] : [u];
     }
     let boxU = null, gBox = null, gBoxFor = [];
     function boxScreen(enc, k, ox, oy) {                      // the screen's pixels over the mask's box, made anew
@@ -2972,7 +3152,7 @@ span.lname { cursor: default; }
                last: er.last }),
              readScreen, fill, fillSweep, get fills() { return !!mF; }, scroll, lastView, moveBegin, moveWhy, moveTo, moveEnd, moveCancel, moveRestore,
              memUse: () => ({ gcap: heap.gcap, gfree: heap.gfree.reduce((t, f) => t + f[1], 0), st: st.cap * 4, sk: sk.cap, ev: ev.cap * 4,
-                              rcap: heap.cap, rfree: heap.free.reduce((t, f) => t + f[1], 0) }), moveAdopt, movePoints, get moving() { return !!mv.lines; }, moveStats: () => ({ ...mvStats }),
+                              rcap: heap.cap, rfree: heap.free.reduce((t, f) => t + f[1], 0) }), landBegin, landPut, handPrep, moveHand, partsCheck, get moving() { return !!mv.lines; }, moveStats: () => ({ ...mvStats }),
              holds: (W, H) => holds && texW === W && texH === H, canvas: cv,
              listStats: () => ({ strokes: ob.n, classes: ncDraw(), known: ob.ncKnown }), get tick() { return ob.tick; }, ranOut: () => (er.outNow & 191) !== 0,
              name: "WebGPU " + (info.description || info.architecture || info.vendor || "") + (info.backend ? " (" + info.backend + ")" : "") +
@@ -3851,18 +4031,18 @@ span.lname { cursor: default; }
     gridSoon();
   }
   const inkOf = (a, back) => {                                // (back: an undo's)
-    if (a.type === "lines") { footMove(back ? a.added : a.removed, back ? a.removed : a.added); inkChanged(a.layer); }
+    if (a.type === "lines") { footMove(back ? a.added : a.removed, back ? a.removed : a.added, back ? a.footA : a.footR, back ? a.footR : a.footA); inkChanged(a.layer); }
     else if (a.type === "layers") inkChanged();
   };
   function record(a) { done.push(a); undone.length = 0; changes++; inkOf(a); largeCheck(); }
   // a change to a layer's strokes as one undo step, the eraser's index kept ready when it was (had: so, before the change):
   // what went is skipped, what came is put in. Made again, a whole page's index was the next swipe's wait
-  function recordInk(a, had) {
+  function recordInk(a, had, runs) {                          // (runs: the stretches of those added, made already)
     record(a);
     if (!had || !gridKept) return;
     const g = gridKept.g;
     for (const r of a.removed) { g.gone.add(r.line); g.goneN++; }
-    for (const x of a.added) gridAdd(x.line, g);
+    for (const x of a.added) gridAdd(x.line, g, runs && runs.get(x.line));
     gridKept.lines = a.layer.lines; gridKept.ver = verOf(a.layer);
   }
   // A PAGE PAST 250,000 STROKES: warned once for that page, ever (the engine keeps which pages have been)
@@ -3910,15 +4090,54 @@ span.lname { cursor: default; }
     activeLayer = at;
   }
   // A KEY PRESSED WHILE A DROP LANDS waits for it (the swipe's waiting list, run once it has landed): it was thrown away,
-  // and a large selection takes most of a second to land on an integrated card
-  function undo() { if (pickDrag) return; if (dropping) { swipeWaits.push(undo); return; } if (!settleSwipe()) { swipeWaits.push(undo); return; } const a = done.pop(); if (a) { const from = inkTick; apply(a, false); undone.push(a); changes++; inkOf(a, true); redrawChange(a, false, from); } }
-  function redo() { if (pickDrag) return; if (dropping) { swipeWaits.push(redo); return; } if (!settleSwipe()) { swipeWaits.push(redo); return; } const a = undone.pop(); if (a) { const from = inkTick; apply(a, true); done.push(a); changes++; inkOf(a); redrawChange(a, true, from); } }
+  // and a large selection lands over several frames
+  function undo() { if (pickDrag) return; if (dropping) { swipeWaits.push(undo); return; } if (!settleSwipe()) { swipeWaits.push(undo); return; } const a = done.pop(); if (a) applyStep(a, false); }
+  function redo() { if (pickDrag) return; if (dropping) { swipeWaits.push(redo); return; } if (!settleSwipe()) { swipeWaits.push(redo); return; } const a = undone.pop(); if (a) applyStep(a, true); }
+  function applyStep(a, forward) {                            // a step undone (forward: false) or done again
+    if (a.hand && handSoon(a, forward)) return;
+    const from = inkTick;
+    apply(a, forward); (forward ? done : undone).push(a); changes++; inkOf(a, !forward); redrawChange(a, forward, from);
+  }
   // AN UNDO'S OR A REDO'S STROKES drawn again where they changed the page and only there, on the card (GL.swap: what went
   // and what came, marked, and the page made anew under the marks); a change of layers, pictures or text, or a change the
   // card cannot draw so, draws the page again
   function redrawChange(a, forward, from) {
     if (a.type === "lines") { if (inkSwap((forward ? a.removed : a.added).map(e => e.line), forward ? a.added : a.removed, a.layer, from)) saveSoon(); }
     else rebuild();
+  }
+  // A DROP UNDONE OR DONE AGAIN, ON THE CARD: its strokes moved back (or again) where they lie, each in its place in the
+  // page's records and order (GL.moveHand) -- made ready a slice at a time (GL.handPrep), what would change the page
+  // meanwhile held, as a drop's landing is (dropping); then put in at once -> begun? (else: as any other step)
+  let handTimes = null;                                       // (how the last went, for a look from outside)
+  window.pdHandTimes = () => handTimes;
+  function handSoon(a, forward) {
+    const h = a.hand;
+    if (h.gl !== GL || !(GL && !gpuFailed && cardShows && !live && !erasing && underKey() === underWas)) return false;
+    let hp = null;
+    try { hp = GL.handPrep(forward ? h.ps : h.qs, forward ? h.qs : h.ps, forward ? h.L : h.N, forward ? h.N : h.L); } catch (e) { gpuDown(e); }
+    if (!hp) return false;
+    dropping = true;
+    (async () => {
+      const T0 = performance.now(), once = hp.A.length < HAND_AT_ONCE, turn = () => once ? null : nextTurn();
+      let longest = 0, slices = 0;
+      for (let more = true; more && !gpuFailed;) {
+        await turn();
+        const t = performance.now();
+        try { more = hp.step(once ? Infinity : t + LAND_MS); } catch (e) { gpuDown(e); more = false; }
+        slices++; longest = Math.max(longest, performance.now() - t);
+      }
+      await turn();
+      const t1 = performance.now(), from = inkTick;
+      apply(a, forward); (forward ? done : undone).push(a); changes++; inkOf(a, !forward);
+      let ok = false;
+      if (!gpuFailed) try { ok = GL.moveHand(hp, from, inkTick); } catch (e) { gpuDown(e); }
+      try { if (!ok && !gpuFailed) hp.unpre(); hp.drop(); } catch (e) { /* (the card gone) */ }
+      if (ok) { footSeen = footOf(); base = null; shown = null; cpuStale = true; draws.swap = (draws.swap || 0) + 1; paint(); saveSoon(); }
+      else redrawChange(a, forward, from);
+      handTimes = { slices, longest, prep: t1 - T0, put: performance.now() - t1 };
+      landed();
+    })();
+    return true;
   }
   // STROKES TAKEN OFF THE PAGE AND PUT ON IT (the page's lines already as they are to be; came: [{ line, at }] where each
   // now lies on layer Ly), drawn where they change the page and only there -> drawn so? (else the page was drawn again)
@@ -4088,11 +4307,18 @@ span.lname { cursor: default; }
       for (let gy = Math.floor(y0 / CELL); gy <= Math.floor(y1 / CELL); gy++) { const c = g.cells.get(cellKey(gx, gy)); if (c) { if (c.hw > h) h = c.hw; if (c.sg > sg) sg = c.sg; } }
     return [h, sg];
   }
-  function gridAdd(L, g) {
-    const P = L.points, n = P.length;
-    if (!n) return;
-    const h = halfWidth(L), es = [];
+  function gridAdd(L, g, es) {                                // (es: its stretches, made already)
+    es = es || gridRuns(L);
+    if (!es) return;
+    const h = halfWidth(L);
     if (h > g.reach) g.reach = h;
+    for (const e of es) gridPut(g, e);
+    lineRuns.set(L, es);
+  }
+  function gridRuns(L) {                                      // a line's stretches (null: it has no points)
+    const P = L.points, n = P.length;
+    if (!n) return null;
+    const h = halfWidth(L), es = [];
     for (let i0 = 0; ; i0 += RUN) {
       const i1 = Math.min(n - 1, i0 + RUN);
       let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, w = 0, sg = 0;
@@ -4101,11 +4327,10 @@ span.lname { cursor: default; }
         if (qx < x0) x0 = qx; if (qx > x1) x1 = qx; if (qy < y0) y0 = qy; if (qy > y1) y1 = qy; if (qw > w) w = qw;
         if (i > i0) { const d = Math.hypot(qx - P.x(i - 1), qy - P.y(i - 1)); if (d > sg) sg = d; }
       }
-      const e = { L, i0, i1, x0: x0 - h, y0: y0 - h, x1: x1 + h, y1: y1 + h, w, h, sg };
-      es.push(e); gridPut(g, e);
+      es.push({ L, i0, i1, x0: x0 - h, y0: y0 - h, x1: x1 + h, y1: y1 + h, w, h, sg });
       if (i1 >= n - 1) break;
     }
-    lineRuns.set(L, es);
+    return es;
   }
   // A PIECE'S STRETCHES, from its stroke's: those over the points it keeps (their boxes are the stroke's, no smaller),
   // and the segments to its new ends, each a box of its own; its half width from them. Made over again from its
@@ -6108,11 +6333,14 @@ span.lname { cursor: default; }
   // (the lowest ink kept as strokes come and go -- footMove, from each change's own strokes -- and the strokes walked again
   // only when one at it went, or they changed some other way: inkChanged with no layer named)
   let inkFoot = null;                                         // { y: the lowest ink, n: the strokes whose box reaches it }
-  function footMove(gone, came) {                             // ([{ line }, ...] each)
-    if (!inkFoot) return;
-    for (const e of gone) if (boxOf(e.line)[3] >= inkFoot.y && --inkFoot.n <= 0) { inkFoot = null; return; }
-    for (const e of came) { const y = boxOf(e.line)[3]; if (y > inkFoot.y) { inkFoot.y = y; inkFoot.n = 1; } else if (y === inkFoot.y) inkFoot.n++; }
+  function footMove(gone, came, fg, fc) {                     // ([{ line }, ...] each; fg, fc: theirs, [the lowest ink, how many
+    if (!inkFoot) return;                                     // reach it], when worked out already: a drop's)
+    if (fg) { if (fg[0] > inkFoot.y || (fg[0] === inkFoot.y && (inkFoot.n -= fg[1]) <= 0)) { inkFoot = null; return; } }
+    else for (const e of gone) if (boxOf(e.line)[3] >= inkFoot.y && --inkFoot.n <= 0) { inkFoot = null; return; }
+    if (fc) { if (fc[0] > inkFoot.y) { inkFoot.y = fc[0]; inkFoot.n = fc[1]; } else if (fc[0] === inkFoot.y) inkFoot.n += fc[1]; }
+    else for (const e of came) { const y = boxOf(e.line)[3]; if (y > inkFoot.y) { inkFoot.y = y; inkFoot.n = 1; } else if (y === inkFoot.y) inkFoot.n++; }
   }
+  const footAdd = (f, y) => { if (y > f[0]) { f[0] = y; f[1] = 1; } else if (y === f[0]) f[1]++; };
   function footOf() {
     if (!inkFoot) {
       let y = -Infinity, n = 0;
@@ -6388,8 +6616,8 @@ span.lname { cursor: default; }
   // does, what lies under them still is under them), and each frame of a drag draws them where the frame now is, and the
   // page again only where they were and where they are -- on the card, their records moved there (GL.moveTo); else here,
   // each stroke as the frame makes it drawn in its place (movedNow: inkList, drawInk, rebuildBand). No picture of them is
-  // made. Let go, they are made strokes where they were let go (land): from the points the card drew them with (GL.moveEnd,
-  // movePoints), so what is saved is what was shown, each in its place on the card (GL.moveAdopt) -- one undo step
+  // made. Let go, they are made strokes where they were let go: on the card from the points it drew them with (GL.moveEnd,
+  // landCard), so what is saved is what was shown, each in its place on the card -- one undo step
   let moveFrame = 0, dropping = false, movedNow = null;
   const MOVE_WHOLE = 0.35;                                    // (coverOf: past this share of the view, the page drawn whole)
   const shownAs = L => (movedNow && movedNow.get(L)) || L;   // a stroke as the page shows it now
@@ -6397,15 +6625,30 @@ span.lname { cursor: default; }
     const s = f1.w / f0.w, t = f1.a - f0.a, a = s * Math.cos(t), b = -s * Math.sin(t), c = s * Math.sin(t), d = a;
     return [a, b, c, d, f1.cx - (a * f0.cx + b * f0.cy), f1.cy - (c * f0.cx + d * f0.cy)];
   }
-  // L as a drop with the frame at f1 makes it: its points where the card moved them (xy), else where mapper puts them, each
-  // resized with the frame (id: the stroke's own number, else the page's next)
-  function movedLine(L, f0, f1, xy, id) {
-    const s = f1.w / f0.w, m = mapper(f0, f1), Q = L.points, pts = Pts.room(Q.n);
-    for (let j = 0; j < Q.n; j++) {
-      const [nx, ny] = xy ? [xy[2 * j], xy[2 * j + 1]] : m([Q.x(j), Q.y(j)]);
-      pts.push(nx, ny, Q.speed(j), Q.direction(j), resized(Q.width(j), s), Q.pressure(j));
+  // L as a drop with the frame at f1 makes it on the processor: its points where mapper puts them, each resized with the
+  // frame (id: the stroke's own number, else the page's next)
+  function movedLine(L, f0, f1, id) {                         // (its points copied whole, then each placed and resized: no
+    const s = f1.w / f0.w, Q = L.points, n = Q.n, a = Q.a.slice(0, 6 * n), m = mapper(f0, f1);   // object a point)
+    for (let o = 0; o < 6 * n; o += 6) { const q = m([a[o], a[o + 1]]); a[o] = q[0]; a[o + 1] = q[1]; a[o + 4] = resized(a[o + 4], s); }
+    return Object.assign({}, L, { itemId: id || [2, page.nextId++], width: resized(L.width, s), points: new Pts(a, n) });
+  }
+  // L as a drop on the card makes it: its points where the card moved its records (F: the records read back, as floats, its
+  // own from record o; ix: which points have one -- a highlighter's repeat where the point kept before it went), each
+  // resized with the frame (s), in the drop's one array of points (pool, from `at`; not an array a stroke); its box (boxOf)
+  // worked out as they go
+  function cardLine(L, s, F, o, ix, n, pool, at) {
+    const Q = L.points, n0 = Q.n, a = pool.subarray(at, at + 6 * n0);
+    a.set(Q.a.subarray(0, 6 * n0));
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, wm = 0;
+    for (let i = 0, k = -1, q = 0; i < n0; i++, q += 6) {
+      if (!ix) k = i; else while (k + 1 < n && ix[k + 1] <= i) k++;
+      const x = F[4 * (o + k)], y = F[4 * (o + k) + 1], w = resized(a[q + 4], s);
+      a[q] = x; a[q + 1] = y; a[q + 4] = w;
+      if (x < x0) x0 = x; if (y < y0) y0 = y; if (x > x1) x1 = x; if (y > y1) y1 = y; if (w > wm) wm = w;
     }
-    return Object.assign({}, L, { itemId: id || [2, page.nextId++], width: resized(L.width, s), points: pts });
+    const N = Object.assign({}, L, { itemId: [2, page.nextId++], width: resized(L.width, s), points: new Pts(a, n0) });
+    boxes.set(N, [x0, y0, x1, y1, wm]);
+    return N;
   }
   function moveStart() {                                      // the selection taken up, to move, turn or resize
     pick.card = false; pick.f0 = { ...pick.frame }; movedNow = null;
@@ -6437,7 +6680,7 @@ span.lname { cursor: default; }
     }
     if (pick.card) { pick.card = false; movedNow = new Map(); pick.box = boxOfAll(pick.lines); }   // (the card gone: on, here)
     const was = pick.box;
-    for (const L of pick.lines) movedNow.set(L, movedLine(L, f0, f1, null, L.itemId));
+    for (const L of pick.lines) movedNow.set(L, movedLine(L, f0, f1, L.itemId));
     const now = pick.box = boxOfAll([...movedNow.values()]);
     if (GL && !gpuFailed) rebuild();                          // (the card shows the page: drawn whole there, the strokes moved)
     else rebuildBand(Math.min(was[1], now[1]), Math.max(was[3], now[3]));
@@ -6455,45 +6698,126 @@ span.lname { cursor: default; }
     moveDraw();                                               // (the last frame drawn: what is made is what is shown)
     if (pick.card && !gpuFailed) {
       dropping = true;
-      GL.moveEnd().then(recs => land(recs), e => { gpuDown(e); land(null); });
+      GL.moveEnd().then(recs => { if (recs && GL && !gpuFailed) landCard(recs); else land(); }, e => { gpuDown(e); land(); });
       return;
     }
-    land(null);
+    land();
   }
   function placesOf(lines, want) {                            // -> Map: each of want where it lies in lines (one look along them)
     const W = new Set(want), at = new Map();
     for (let i = 0; i < lines.length && at.size < W.size; i++) if (W.has(lines[i])) at.set(lines[i], i);
     return at;
   }
-  function land(recs) {                                       // the selection's strokes made where it was let go: one undo step
-    const f0 = pick.f0, f1 = pick.frame, Ly = pick.layer, at = placesOf(Ly.lines, pick.lines), had = gridOk(Ly), from = inkTick;
-    const removed = [], added = [], pairs = [], xys = recs && GL && !gpuFailed ? GL.movePoints(recs) : null;
-    pick.lines = pick.lines.map((L, j) => {
-      const M = movedNow && movedNow.get(L), N = xys ? movedLine(L, f0, f1, xys[j]) : M ? Object.assign(M, { itemId: [2, page.nextId++] }) : movedLine(L, f0, f1);
+  function land() {                                           // the selection's strokes made where it was let go, on the
+    const f0 = pick.f0, f1 = pick.frame, Ly = pick.layer, at = placesOf(Ly.lines, pick.lines), had = gridOk(Ly);   // processor: one undo step
+    const removed = [], added = [];
+    pick.lines = pick.lines.map(L => {
+      const M = movedNow && movedNow.get(L), N = M ? Object.assign(M, { itemId: [2, page.nextId++] }) : movedLine(L, f0, f1);
       const i = at.get(L);
       if (i !== undefined) { Ly.lines[i] = N; removed.push({ line: L, at: i }); added.push({ line: N, at: i }); }
-      pairs.push([L, N]);
       return N;
     });
     movedNow = null; pick.f0 = null; pick.card = false;
     recordInk({ type: "lines", layer: Ly, removed, added }, had); lastType = null;
-    let anew = null;
-    if (xys) try { anew = GL.moveAdopt(pairs, recs); } catch (e) { gpuDown(e); }
+    rebuild(); saveSoon();
+    landed();
+  }
+  function landed() {                                         // settled: the selection's make-up back beside it, what waited run
+    dropping = false;
+    paintMakeUp();
+    if (swipeWaits.length) { const w = swipeWaits.splice(0); queueMicrotask(() => { for (const f of w) f(); }); }
+  }
+  // LET GO ON THE CARD (the moved records read back: GL.moveEnd): the strokes the drop makes are made a slice at a time
+  // (GL.landBegin: each from the records the card moved, its part from what the card holds, its box and its stretches for
+  // the eraser's index), LAND_MS a turn of the event loop, the page answering in between -- what would change it is held
+  // until it has landed (settleSwipe); then put in all at once (landPut): one undo step, nothing drawn again. Undone, they
+  // are moved back on the card (handSoon)
+  const LAND_MS = 6;
+  const nextTurn = window.scheduler && scheduler.yield ? () => scheduler.yield() : () => new Promise(r => setTimeout(r, 0));
+  // (a drop of fewer points than this, and an undo or a redo of fewer records, done in one go: a few milliseconds, and a
+  // turn of the event loop between its slices is a frame or more of waiting for nothing)
+  const LAND_AT_ONCE = 50000, HAND_AT_ONCE = 300000;
+  let landTimes = null;                                       // (how the last landing went, for a look from outside)
+  window.pdLandTimes = () => landTimes;
+  window.pdPartsCheck = () => GL ? GL.partsCheck(page.layers.flatMap(Ly => Ly.lines)) : null;
+  async function landCard(recs) {
+    const T0 = performance.now(), s = pick.frame.w / pick.f0.w, Ly = pick.layer, runs = gridOk(Ly) ? new Map() : null;
+    let total = 0;
+    for (const L of pick.lines) total += L.points.n;
+    const pool = new Float64Array(6 * total), places = placesOf(Ly.lines, pick.lines);
+    let at = 0, ld = null, slices = 0, longest = 0;
+    const footR = [-Infinity, 0], footA = [-Infinity, 0];   // (the lowest ink of those taken and of those made: footMove)
+    const line = (L, F, o, ix, n) => {
+      const N = cardLine(L, s, F, o, ix, n, pool, at);
+      at += 6 * L.points.n; footAdd(footR, boxOf(L)[3]); footAdd(footA, boxes.get(N)[3]); halfWidth(N);
+      if (runs) runs.set(N, gridRuns(N));
+      return N;
+    };
+    try { ld = GL.landBegin(recs, line); } catch (e) { gpuDown(e); }
+    longest = performance.now() - T0;
+    const once = total < LAND_AT_ONCE, turn = () => once ? null : nextTurn();
+    while (ld && !gpuFailed) {
+      await turn();
+      const t = performance.now();
+      let more = false;
+      try { more = ld.step(once ? Infinity : t + LAND_MS); } catch (e) { gpuDown(e); break; }
+      const d = performance.now() - t; slices++; if (d > longest) longest = d;
+      if (!more) break;
+    }
+    while (ld && !gpuFailed) {                                // (those to be drawn anew put up meanwhile)
+      await turn();
+      const t = performance.now();
+      let more = false;
+      try { more = ld.place(once ? Infinity : t + LAND_MS); } catch (e) { gpuDown(e); break; }
+      const d = performance.now() - t; slices++; if (d > longest) longest = d;
+      if (!more) break;
+    }
+    if (!ld || gpuFailed) { land(); return; }
+    await turn();
+    const rows = makeUpOf(ld.made);                           // (the selection's make-up: the same strokes but where they lie)
+    await turn();
+    const t1 = performance.now();
+    landPut(ld, runs, places, rows, footR, footA);
+    const t2 = performance.now();
+    landTimes = { slices, longest, put: t2 - t1, total: t2 - T0, ...putTimes, gl: GL && GL.moveStats().put };
+  }
+  function landPut(ld, runs, at, rows, footR, footA) {        // the strokes the drop made put in: one undo step
+    const Ly = pick.layer, had = gridOk(Ly), from = inkTick, removed = [], added = [], T = [performance.now()];
+    pick.lines = pick.lines.map((L, j) => {
+      const N = ld.made[j], i = at.get(L);
+      if (i !== undefined) { Ly.lines[i] = N; removed.push({ line: L, at: i }); added.push({ line: N, at: i }); }
+      return N;
+    });
+    movedNow = null; pick.f0 = null; pick.card = false; makeUpSoon = { lines: pick.lines, rows };
+    T.push(performance.now());
+    const all = removed.length === ld.made.length, step = { type: "lines", layer: Ly, removed, added };
+    if (all) { step.footR = footR; step.footA = footA; }
+    recordInk(step, had, runs); lastType = null;
+    T.push(performance.now());
+    let put = null;
+    try { put = GL.landPut(ld); } catch (e) { gpuDown(e); }
+    T.push(performance.now());
+    const anew = put && put.anew;
+    // (its undo and redo: the parts that handed their places over and those that took them, moved back and forth on the card)
+    if (put && all) step.hand = { gl: GL, ps: put.ps, qs: put.qs, L: anew.map(a => a[0]), N: anew.map(a => a[1]) };
     if (anew && !gpuFailed) {
       if (anew.length) {                                      // (those drawn anew where they lie: each in its place in the order)
         let ok = false;
         try { ok = GL.swap(anew.map(a => a[0]), anew.map(a => a[1]), { at: anew.map(([L, N]) => [L, false, [N]]), head: [] }, from, inkTick); } catch (e) { gpuDown(e); }
+        T.push(performance.now());
         try { GL.moveRestore(); } catch (e) { gpuDown(e); }   // (the strokes swapped out: their records put back where they were)
+        T.push(performance.now());
         if (ok) { base = null; shown = null; cpuStale = true; paint(); } else rebuild();
       }
-      else if (anew.whole || !GL.synced(from, inkTick)) rebuildSoon();
+      else if (!GL.synced(from, inkTick)) rebuildSoon();
       else paint();
     } else rebuild();
     saveSoon();
-    dropping = false;
-    paintMakeUp();                                            // (settled: the selection's make-up back beside it)
-    if (swipeWaits.length) { const w = swipeWaits.splice(0); queueMicrotask(() => { for (const f of w) f(); }); }
+    landed();
+    T.push(performance.now());
+    putTimes = { lines: T[1] - T[0], undoStep: T[2] - T[1], hand: T[3] - T[2], swap: T.length > 6 ? T[4] - T[3] : 0, restore: T.length > 6 ? T[5] - T[4] : 0, rest: T[T.length - 1] - T[T.length - 2] };
   }
+  let putTimes = null;
   function pickDown(e, x, y) {
     const [sx, sy] = local(e), hit = hitPick(sx, sy);
     pointer = e.pointerId; vp.setPointerCapture(e.pointerId);
@@ -6667,6 +6991,8 @@ span.lname { cursor: default; }
     }
     return best;
   }
+  let makeUpSoon = null;                                      // (a make-up worked out ahead: a drop's, as it landed)
+  const rowsOf = lines => { const r = makeUpSoon && makeUpSoon.lines === lines ? makeUpSoon.rows : makeUpOf(lines); makeUpSoon = null; return r; };
   function makeUpOf(lines) {
     const by = new Map();
     for (const L of lines) { const k = brushOf(L); by.set(k, (by.get(k) || 0) + 1); }
@@ -6700,7 +7026,7 @@ span.lname { cursor: default; }
   function paintMakeUp() {
     const settled = pick && pick.kind === "strokes" && pick.lines.length && !pickDrag && !dropping && !pickLoop && !live && !VIEW && !THUMB_W;
     if (EMBED) {
-      if (settled && (!makeUp || makeUp.lines !== pick.lines)) makeUp = { lines: pick.lines, rows: makeUpOf(pick.lines), key: ++makeUpKeys };
+      if (settled && (!makeUp || makeUp.lines !== pick.lines)) makeUp = { lines: pick.lines, rows: rowsOf(pick.lines), key: ++makeUpKeys };
       tellMakeUp(!!settled);
       return;
     }
@@ -6719,7 +7045,7 @@ span.lname { cursor: default; }
       vp.append(makeUpBox);
     }
     if (!makeUp || makeUp.lines !== pick.lines) {
-      makeUp = { lines: pick.lines, rows: makeUpOf(pick.lines), w: 0, h: 0 };
+      makeUp = { lines: pick.lines, rows: rowsOf(pick.lines), w: 0, h: 0 };
       makeUpBox.innerHTML = makeUp.rows.map((r, i) => '<button type="button" tabindex="-1" data-row="' + i + '" title="' + esc(r.title) + '"><span class="mi">' + r.icon +
                                                      '</span><span class="mn">' + esc(strokesText(r.n)) + "</span></button>").join("");
       makeUpBox.classList.remove("on"); makeUpBox.hidden = true;
@@ -7331,7 +7657,7 @@ span.lname { cursor: default; }
     if (!loaded || VIEW) return;                              // a page opened only to look at: never written from here
     // NOT IN THE MIDDLE OF A STROKE, A SWIPE OR A DRAG: the page is made into its file on this thread, and a save that
     // came due under the pen was felt there. It waits for the pen to lift (leaving the page, it does not wait)
-    if (!leaving && (erasing || live || zone || pointer !== null)) { saveSoon(); return; }
+    if (!leaving && (erasing || live || zone || pointer !== null || dropping)) { saveSoon(); return; }
     if (saving && !leaving) { saveAgain = true; return; }    // one save at a time: the next one after it
     if (changes === savedAt) return;                          // nothing changed since the last save
     const at = changes;
@@ -7363,6 +7689,7 @@ span.lname { cursor: default; }
   // own JSON, its text's, pictures' and facts' hashes (what the file then has), and the points of the strokes the worker
   // asks for (those it has not had) -- the file is put together and written there -> { ok, status, json } (failed: the
   // worker could not; the editor writes its own)
+  const SAVE_SOME = 6000;
   async function filerWrite(url) {
     const snap = page.layers.map(L => L.lines.slice()), uids = uidsOf(snap);
     const layers = page.layers.map((L, i) => ({ prefix: JSON.stringify({ label: L.label, visible: L.visible, daemon: !!L.daemon, ...(MIRROR && L.fileId ? { id: L.fileId } : {}) }).slice(0, -1),
@@ -7370,17 +7697,22 @@ span.lname { cursor: default; }
     let r = await filerAsk({ op: "save", url, token: token(), layers, tail: JSON.stringify(toScene(true, true)).slice(1),
                              text: PDFile.textHash(page.text), meta: PDFile.metaHash(page.paperSize, page.textVisible, page.templateVisible, page.template),
                              pics: PDFile.picturesHash(page.images) });
-    if (r.need) {                                             // (the strokes it has not had: their facts, their points in one array)
+    // THE STROKES IT HAS NOT HAD: their facts, their points in one array -- SAVE_SOME a message (the last "parts", the
+    // rest "more"), each made in a turn of its own: a drop of 90,000 strokes sent at once was a long wait on this thread
+    const need = r.need;
+    for (let k0 = 0; need && k0 < need.length; k0 += 2 * SAVE_SOME) {
+      const k1 = Math.min(need.length, k0 + 2 * SAVE_SOME);
       let total = 0;
-      for (let k = 0; k < r.need.length; k += 2) total += snap[r.need[k]][r.need[k + 1]].points.n;
+      for (let k = k0; k < k1; k += 2) total += snap[need[k]][need[k + 1]].points.n;
       const pts = new Float64Array(6 * total), strokes = [], nu = [];
       let o = 0;
-      for (let k = 0; k < r.need.length; k += 2) {
-        const ln = snap[r.need[k]][r.need[k + 1]], P = ln.points;
+      for (let k = k0; k < k1; k += 2) {
+        const ln = snap[need[k]][need[k + 1]], P = ln.points;
         strokes.push({ pen: ln.pen, penCode: ln.penCode, color: ln.color, colorRgba: ln.colorRgba, thicknessScale: ln.thicknessScale, n: P.n, group: ln.fileGroup || null });
         pts.set(P.a.subarray(0, 6 * P.n), o); o += 6 * P.n; nu.push(ln.itemId[1]);
       }
-      r = await filerAsk({ op: "parts", strokes, pts, uids: nu }, [pts.buffer]);
+      r = await filerAsk({ op: k1 < need.length ? "more" : "parts", strokes, pts, uids: nu }, [pts.buffer]);
+      if (k1 < need.length && !r.ok) return r;
     }
     return r;
   }
