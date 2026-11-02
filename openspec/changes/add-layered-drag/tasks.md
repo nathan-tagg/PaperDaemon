@@ -53,3 +53,12 @@
 
 - [ ] 4.1 Every frame against a whole draw, 0 pixels different, in the cases of D7
 - [ ] 4.2 Each stage's time on the integrated card, before and after
+
+## 5. Held as a picture until let go of
+
+- [x] 5.1 Let go after a drag, the selection stays the picture (its strokes parked); dragged again, on from there: its
+  first frame 4-6 ms on the heavy page (was 1,001 ms for 32,992 strokes)
+- [x] 5.2 Anything else done to the page lands it first, at the editor's front door (keepsHeld): Esc landed it 0 px
+  against a whole redraw and 0/149,807 parts against fresh; Ctrl+Z after it, the page as before all its drags (0 px);
+  the page left while held: landed on the processor at once and saved
+- [x] 5.3 Once the hand rests (150 ms), the page under it drawn whole once

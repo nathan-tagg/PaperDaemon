@@ -85,6 +85,13 @@ def false_mirror_engine(port):
     # before anything reads where the mirror is (the modules take it when they are first imported)
     os.environ.update(RM_MIRROR=lib, RM_CACHE=lib, RM_STATE=state, RM_LOCAL_ONLY="1")
     from . import server, thumbs
+    from .remarkable import local
+    try:
+        mended = local.mend_deleted_pages()               # (pages deleted before 0.2.8, listed again: deleted)
+        if mended:
+            print("[false mirror] %d deleted page(s) marked deleted again" % mended, flush=True)
+    except Exception as ex:
+        print("[false mirror] deleted pages not looked at: %s" % str(ex)[:200], flush=True)
     server.serve(port, ["127.0.0.1"])
     if not server.wait_up(port):
         print("the false mirror's engine could not start on port %d" % port)

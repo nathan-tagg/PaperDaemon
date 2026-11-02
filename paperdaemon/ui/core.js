@@ -370,10 +370,24 @@
   // graphics card, by the page editor's own renderer, one at a time (one page's worth of the card's memory in use,
   // never a grid's), never while a page is open to edit (that page has the card), each in a frame of its own that is
   // gone when it is done, and handed to the engine to keep with the stamp of the page it was asked for.
+  // THE CARD HELD BY THE WINDOW: an idle connection to the graphics card the pages are drawn on, kept while the window is
+  // open. The browser keeps the shaders it has compiled only while some document holds the card, and each page (and each
+  // page picture) is drawn in a frame of its own, the one before it gone first: with none held here, a page opened after
+  // one that was pressed on compiled every shader again (0.9 s on the integrated card, the card itself 67 ms; held, 4 ms
+  // and 9 ms). Not with the Renderer on the processor; asked for again if the card is lost
+  PD.holdCard = () => {
+    if (PD.heldCard || !navigator.gpu) return;
+    PD.heldCard = fetch("/api/v1/render/window", { headers: { Authorization: "Bearer " + PD.pairing.token } })
+      .then(r => r.ok ? r.json() : null).catch(() => null)
+      .then(rw => rw && rw.cpu ? null : navigator.gpu.requestAdapter({ powerPreference: "high-performance" }))
+      .then(a => a ? a.requestDevice() : null)
+      .then(d => { if (d) d.lost.then(() => { PD.heldCard = null; }); return d; }, () => null);
+  };
   let thumbChain = Promise.resolve();
   const thumbJobs = new Map();                              // what is being drawn -> {job, wants: who asked} (drawn once)
   const editing = () => !!document.querySelector("dialog[open] iframe.page-editor");
   function thumbOne(base, doc, page, size) {
+    PD.holdCard();
     return new Promise(done => {
       const fr = document.createElement("iframe");
       fr.setAttribute("aria-hidden", "true"); fr.tabIndex = -1;
@@ -459,6 +473,21 @@
       if (k + 1 >= tries) { if (!shown && giveUp) giveUp(); return shown; }
       await new Promise(res => setTimeout(res, Math.min(15000, 500 * 2 ** k)));
     }
+  };
+
+  /** PAGES NUMBERED ANEW (pages deleted): the pictures last shown for a document's pages, kept by their numbers
+      (`prefix` + n + ".png"), go with their pages to their new numbers (`newOf`: old -> new), those of pages gone
+      with them, so a grid drawn again shows each page's own picture at once. */
+  PD.thumbsRenumbered = (prefix, newOf) => {
+    const moved = [];
+    for (const [path, url] of thumbShown) {
+      const m = path.startsWith(prefix) && /^(\d+)\.png$/.exec(path.slice(prefix.length));
+      if (!m) continue;
+      thumbShown.delete(path);
+      const to = newOf.get(Number(m[1]));
+      if (to) moved.push([prefix + to + ".png", url]); else URL.revokeObjectURL(url);
+    }
+    for (const [p, u] of moved) thumbShown.set(p, u);
   };
 
   PD.loadImage = async (img, path, { holder = img.parentElement, stale = () => false, tries = 8, giveUp = null } = {}) => {

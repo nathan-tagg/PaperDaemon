@@ -387,6 +387,48 @@ def test_pages_chosen_are_deleted_duplicated_moved_and_tagged_as_the_tablet_does
     assert got["copy"] == ["A copy", True]
 
 
+def test_deleted_pages_are_gone_for_the_library_too_and_a_notebook_opens_beside_a_deleted_page():
+    """Pages deleted are deleted by the library's own count (sync.live_pages: a marker of 0 is a page the tablet brought
+    back), so the window never lists a page the editor cannot open; pages marked 0 by deletes before are marked again,
+    a page with its ink left as it is; and a notebook closed on a page since deleted opens on the nearest page left."""
+    got = _run("""
+        import json, os
+        from paperdaemon.remarkable import local, sync
+        from paperdaemon import server
+        a = local.new_notebook("A")
+        for _ in range(6):
+            local.new_page(a)
+        ids = lambda d: [p["id"] for p in local._live(local._content(d))]
+        p = ids(a)
+        local.delete_pages(a, [3, 4, 5])
+        c = local._content(a)
+        out = {"deleted": [len(ids(a)), len(sync.live_pages(c)), c["pageCount"],
+                           sorted(set((q["deleted"]["value"]) for q in c["cPages"]["pages"] if "deleted" in q))]}
+        # the page open (here) since deleted: the nearest page left -- p[3] (the old fourth) sat between p[1] and p[5]
+        out["near"] = [server._page_or_nearest(c, p[3]), server._page_or_nearest(c, p[2]), server._page_or_nearest(c, p[6])]
+        # a delete made before: its marker 0 and the page's ink gone; another page marked 0 with its ink kept
+        b = local.new_notebook("B")
+        for _ in range(3):
+            local.new_page(b)
+        pb = ids(b)
+        cb = local._content(b)
+        os.remove(local._page_files(b, pb[1])[0])                 # (its ink went with it, as a delete took it)
+        with open(local._page_files(b, pb[3])[0], "wb") as f:
+            f.write(b"ink")
+        for q in cb["cPages"]["pages"]:
+            if q["id"] in (pb[1], pb[3]):
+                q["deleted"] = {"timestamp": "1:2", "value": 0}
+        cb["pageCount"] = 2
+        local._save_content(b, cb)
+        out["mended"] = local.mend_deleted_pages()
+        out["after"] = [ids(b) == [pb[0], pb[2], pb[3]], local.mend_deleted_pages()]
+        print(json.dumps(out))
+    """)
+    assert got["deleted"] == [4, 4, 4, [1]]
+    assert got["near"] == [3, 2, 4]
+    assert got["mended"] == 1 and got["after"] == [True, 0]
+
+
 def test_the_editor_leaves_the_daemons_layer_to_him():
     """The editor shows the daemon's note and saves the page around it: his layer, his strokes and their ids stay his,
     so his next note replaces the last rather than piling on top of a copy he can no longer erase."""

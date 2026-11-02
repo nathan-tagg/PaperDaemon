@@ -3,8 +3,21 @@
 ### Requirement: A dragged selection is held as a picture
 When a selection is taken up on the graphics card, the editor SHALL draw it once as a picture and the page once without
 it, and each frame of a drag SHALL put the picture where the frame takes it -- moved, turned or resized -- drawing no
-stroke. While it moves, how it blends with the strokes under and over it MAY differ from the whole page drawn. Let go,
-the page SHALL show what drawing it whole shows, pixel for pixel.
+stroke. Let go after a drag, the selection SHALL stay that picture where it was let go until it is let go of: dragged,
+turned, resized or nudged again it SHALL go on from there with nothing taken up again. Anything else done to the page --
+the selection let go of or another made, another tool, any key but the arrows and the keys that scroll, a paste, the
+viewer's word, a zoom, the page saved by the user or left -- SHALL first land its strokes where the picture is, as one
+undo step for all its drags, and then run. While it is a picture, how it blends with the strokes under and over it, and
+its edges, MAY differ from the whole page drawn. Landed, the page SHALL show what drawing it whole shows, pixel for pixel.
+
+#### Scenario: Dragged again at once
+- **WHEN** the user drags a selection of 58,000 strokes, lets go, and presses on it again to drag it further
+- **THEN** its first frame follows within a frame, nothing taken up again
+
+#### Scenario: Let go of
+- **WHEN** the user presses Esc on a selection held as a picture, then Ctrl+Z
+- **THEN** its strokes land where the picture was, the page as the whole page drawn; the undo puts back the page as it was
+  before all its drags
 
 #### Scenario: A highlighter dragged across a pen written after it
 - **WHEN** the user drags a highlighter stroke across a blue pen stroke written after the highlighter and lets go

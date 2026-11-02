@@ -454,10 +454,22 @@ def read_blocks_points(data):
 def without_strokes(data):
     """A page's bytes with its stroke blocks left out (walked by their frames: each block its length, 4 bytes, then 3
     bytes of versions and its type), for a reader that needs the rest -- the typed text -- and not the strokes, which
-    are most of the file; the page as it is when the frames do not add up."""
+    are most of the file; the page as it is when the frames do not add up. The frames walked in C (rf_rm_blocks, one
+    pass) where the C reader is there and sure of the page: a page of 150,000 strokes in milliseconds."""
     from rmscene.tagged_block_common import HEADER_V6
     if not data.startswith(HEADER_V6):
         return data
+    try:
+        import ctypes
+        L = _lib()
+        cap = len(data) // 8 + 16
+        rows = np.empty((cap, _COLS), np.int64)
+        n = L.rf_rm_blocks(data, len(data), len(HEADER_V6), rows.ctypes.data_as(ctypes.POINTER(ctypes.c_int64)), cap)
+        if n >= 0:
+            others = rows[:n][rows[:n, 0] != LINE.BLOCK_TYPE]
+            return HEADER_V6 + b"".join(data[s - 8:e] for s, e in others[:, [1, 2]].tolist())
+    except (OSError, ImportError):
+        pass
     out, pos, end = [HEADER_V6], len(HEADER_V6), len(data)
     while pos < end:
         if pos + 8 > end:

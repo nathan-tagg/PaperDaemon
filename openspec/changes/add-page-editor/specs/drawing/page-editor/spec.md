@@ -264,8 +264,8 @@ Select all; on the paper Paste, Paste as strokes and Select all (the strokes of 
 
 ### Requirement: Typing with a pen in hand
 While text is being typed with a pen in hand, the pointer SHALL be the I-beam over the text, and a click there SHALL put
-the caret (a drag select); off the text the pen SHALL draw. A mouse click that does not move SHALL draw nothing; a pen's
-tap SHALL still make a dot.
+the caret (a drag select); off the text the pen SHALL draw. A click that does not move SHALL make a dot, a mouse's as a
+pen's tap does.
 
 #### Scenario: Clicking into the text
 - **WHEN** the user, typing with the fineliner in hand, clicks a word of the text
@@ -326,7 +326,9 @@ and an arrow run from the first click to its head at the second. Esc SHALL drop 
 A ? by the document's name in the viewer SHALL open, over the viewer, a sheet of every key and click the viewer and the
 page editor answer to: a list per kind (moving around, pages, and where the editor is open drawing, shapes, erasing and
 typing), each item's bullet the icon of what it does, then its keys in capitals, then the action and a line on it, in
-the window's language. Esc or Close SHALL close the sheet and leave the viewer open.
+the window's language. Esc or Close SHALL close the sheet and leave the viewer open. The ? SHALL be that and nothing
+else: no save's state SHALL show on it; a save that failed SHALL be said by the name in words of its own, its reason
+on hover.
 
 #### Scenario: Opening the sheet over a notebook page
 - **WHEN** the user presses ? by a False Mirror notebook's name

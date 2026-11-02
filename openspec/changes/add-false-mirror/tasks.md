@@ -31,3 +31,9 @@ to the page file), a page tag and a new page, delete.
 ## 4. Proof
 
 - [ ] 4.1 A real run: a tagged page made in the false mirror is answered by the real host and models, and nothing reaches the cloud
+
+## Pages deleted at once (2026-11-02)
+
+- [x] Deleted pages marked as the library reads them (value 1; 0 is a page the tablet brought back), one rule for a live
+  page in the engine, the pages marked 0 before mended as the False Mirror's engine starts; the grid without them at
+  once; a notebook closed on a page since deleted opens on the nearest page left

@@ -16,6 +16,9 @@ import re
 import threading
 import time
 import uuid
+import zlib
+
+import numpy as np
 
 from rmscene import read_blocks, write_blocks
 from rmscene import scene_items as si
@@ -25,6 +28,7 @@ from rmscene.tagged_block_common import CrdtId, LwwValue
 
 from .. import paths
 from . import library as F
+from .sync import page_deleted
 
 M = F.M
 
@@ -87,7 +91,9 @@ def _touch(u):
 def _live(c):
     if not c.get("cPages") and isinstance(c.get("pages"), list):  # an older document's layout: its page ids, in order
         return [{"id": p} for p in c["pages"] if isinstance(p, str)]
-    return sorted((p for p in (c.get("cPages") or {}).get("pages") or [] if "deleted" not in p),
+    # (a page is deleted when its marker's value says so, as the library and the tablet read it: a marker of 0 is a
+    # page the tablet brought back -- here counted as deleted, the window listed pages the editor could not open)
+    return sorted((p for p in (c.get("cPages") or {}).get("pages") or [] if not page_deleted(p)),
                   key=lambda p: p["idx"]["value"])
 
 
@@ -361,14 +367,47 @@ def delete_pages(doc, page_nos):
     if len(chosen) >= len(live):
         raise ValueError("a notebook keeps at least one page")
     ids = {p["id"] for p in chosen}
-    for p in c["cPages"]["pages"]:
-        if p["id"] in ids:
-            p["deleted"] = {"timestamp": "1:2", "value": 0}
+    _mark_deleted(c, ids)
     c["pageTags"] = [t for t in c.get("pageTags") or [] if t.get("pageId") not in ids]
     _pages_done(doc, c)
     for pid in ids:
         _drop_page_files(doc, pid)
     return len(ids)
+
+
+def _mark_deleted(c, ids):
+    """Pages `ids` marked deleted as the tablet marks them: value 1, stamped after everything the document holds."""
+    gone = F._later(c)
+    for p in c["cPages"]["pages"]:
+        if p["id"] in ids:
+            p["deleted"] = {"timestamp": gone, "value": 1}
+
+
+def mend_deleted_pages():
+    """PAGES DELETED HERE BEFORE 0.2.8 were marked {"timestamp": "1:2", "value": 0}: the marker the tablet keeps on a
+    page it brought back, which the library reads as live, so each came back in the window as a page that could not be
+    opened. In a notebook whose page count was written here (its pages counted without them), each such page whose ink
+    went with it is marked deleted again; a page with its ink is left as it is. -> how many were mended."""
+    _guard()
+    n = 0
+    for name in os.listdir(M):
+        if not name.endswith(".content"):
+            continue
+        doc = name[:-len(".content")]
+        try:
+            c = _content(doc)
+        except (OSError, ValueError):
+            continue
+        pages = (c.get("cPages") or {}).get("pages") or []
+        if (c.get("fileType") or "notebook") != "notebook" or c.get("pageCount") != sum(1 for p in pages if "deleted" not in p):
+            continue
+        ids = {p.get("id") for p in pages if isinstance(p.get("deleted"), dict) and not p["deleted"].get("value")
+               and not os.path.exists(_page_files(doc, str(p.get("id")))[0])}
+        if ids:
+            _mark_deleted(c, ids)
+            _save_content(doc, c)
+            n += len(ids)
+    return n
 
 
 def duplicate_pages(doc, page_nos):
@@ -423,9 +462,7 @@ def move_pages(doc, page_nos, to=None, at=None, where="after"):
         dc["cPages"]["pages"].append(entry)
         dc["pageTags"] = (dc.get("pageTags") or []) + [t for t in c.get("pageTags") or [] if t.get("pageId") == p["id"]]
     _pages_done(to, dc)
-    for p in c["cPages"]["pages"]:
-        if p["id"] in ids:
-            p["deleted"] = {"timestamp": "1:2", "value": 0}
+    _mark_deleted(c, ids)
     c["pageTags"] = [t for t in c.get("pageTags") or [] if t.get("pageId") not in ids]
     _pages_done(doc, c)
     for pid in ids:
@@ -571,14 +608,14 @@ def _rm(doc, page_no):
 
 def _rows(points, arrays):
     """A stroke's points as the editor takes them: the array itself (arrays), or rows [x, y, speed, direction, width,
-    pressure] -- from a fastrm array in one step, or from rmscene's si.Point list."""
-    import numpy as np
-    from paperdaemon.remarkable import fastrm
+    pressure] -- from a fastrm array in one step, or from rmscene's si.Point list. (Nothing imported for the arrays: a
+    stroke at a time, an import was a tenth of a second of a page of 150,000 strokes.)"""
     if isinstance(points, np.ndarray):
         if arrays:
             return points
         cols = [points[k].tolist() for k in ("x", "y", "speed", "direction", "width", "pressure")]
         return [list(t) for t in zip(*cols)]
+    from paperdaemon.remarkable import fastrm
     rows = [[p.x, p.y, p.speed, p.direction, p.width, p.pressure] for p in points]
     return fastrm.points_of(rows) if arrays else rows
 
@@ -597,16 +634,39 @@ def _moved(points, dx, dy):
 
 
 def page_version(doc, page_no):
-    """A short stamp of the page as its files are now (the page's .rm, and the notebook's .content, which holds its
-    template): the same stamp, the same page. The editor asks with it, and a page that has not changed is not read."""
-    out = []
-    for p in (_rm(doc, page_no), os.path.join(M, doc + ".content")):
-        try:
-            st = os.stat(p)
-            out.append("%x.%x" % (st.st_mtime_ns, st.st_size))
-        except OSError:
-            out.append("-")
-    return "-".join(out)
+    """A short stamp of the page as its files are now: its .rm, and what the notebook's .content says of THIS page
+    (which page it is, its template, the page of the book under it, the book's kind) -- the same stamp, the same page.
+    Not the whole .content: a page added, moved, deleted or tagged elsewhere in the notebook leaves this page's stamp,
+    and its form kept by the engine, as they were. The editor asks with it, and a page that has not changed is not read."""
+    path = _rm(doc, page_no)
+    try:
+        st = os.stat(path)
+        out = ["%x.%x" % (st.st_mtime_ns, st.st_size)]
+    except OSError:
+        out = ["-"]
+    try:
+        c = _content(doc)
+    except (OSError, ValueError):
+        return out[0] + "--"
+    live = _live(c)
+    p = live[page_no - 1] if 1 <= page_no <= len(live) else {}
+    said = json.dumps([c.get("fileType"), p.get("id"), p.get("template"), p.get("redir")], sort_keys=True)
+    return out[0] + "-%08x" % (zlib.crc32(said.encode("utf-8")) & 0xFFFFFFFF)
+
+
+def scene_head(doc, page_no):
+    """THE PAGE WITHOUT ITS STROKES, as the editor holds it (scene_of, each layer's lines empty): its frame, template,
+    typed text, the book's page under it and its pictures -- read without reading a stroke (their blocks skipped unread,
+    fastrm.without_strokes), so at once whatever the page's size. The editor shows it while its strokes come."""
+    path = _rm(doc, page_no)
+    if os.path.exists(path):
+        from paperdaemon.remarkable import fastrm
+        got = scene_of(doc, page_no, data=fastrm.without_strokes(open(path, "rb").read()))
+    else:
+        got = scene_of(doc, page_no)
+    for L in got.get("layers") or []:
+        L["lines"] = []
+    return got
 
 
 def scene_of(doc, page_no, arrays=False, data=None):

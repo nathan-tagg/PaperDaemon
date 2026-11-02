@@ -47,7 +47,9 @@ it has no Done: Esc lets the selection go. MOVE SHALL NOT open a sheet: the bar 
 opening as ever, and in a folder the items are not all in already the bar SHALL offer Move here; Esc lets it go.
 The page grid SHALL select pages the same way, its actions in the viewer's bar, as a
 bar that acts on all of them: Select all, Duplicate (each copy right after its page), Move, Tags and Delete (for good,
-after a confirm; a notebook keeps one page). Move SHALL turn the bar into where to: a page chosen in the grid, and the
+after a confirm, the pages leaving the grid at once and those after them numbered anew where they are; a notebook keeps
+one page; deleted, a page is gone for the library and the editor alike, and a notebook closed on a page since deleted
+opens on the nearest page left). Move SHALL turn the bar into where to: a page chosen in the grid, and the
 bar SHALL offer Move before and Move after it, each with its icon; Move out SHALL leave the notebook for the library,
 where the notebook opened shows its grid to choose in the same way. Esc in the grid SHALL step back one thing at a
 time: the page chosen, the move, the pages chosen, then out of the grid to the page; the viewer closes from the page.
@@ -68,7 +70,7 @@ covers' and the page's tags) without changing them.
 
 #### Scenario: Deleting two pages
 - **WHEN** the user right-clicks page 2 in the grid, clicks page 4, and chooses Delete and confirms
-- **THEN** pages 2 and 4 are gone, and the pages after them move up
+- **THEN** pages 2 and 4 leave the grid at once, the pages after them move up, and the notebook counts two pages fewer
 
 #### Scenario: The tablet's mirror
 - **WHEN** the user presses and holds a notebook in the Mirror tab

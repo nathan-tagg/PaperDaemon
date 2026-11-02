@@ -941,10 +941,28 @@ def _at_page(meta, pages, content=None, here=None):
     document's own (_their_page)."""
     theirs = _their_page(meta, pages, content)
     if here and content and here.get("theirs") == theirs:
-        live = [p.get("id") for p in _live(content)]
-        if here.get("page") in live:
-            return live.index(here["page"]) + 1
+        at = _page_or_nearest(content, here.get("page"))
+        if at:
+            return at
     return theirs
+
+
+def _page_or_nearest(content, pid):
+    """Page `pid`'s number now (1-based); a page since deleted: the nearest page left in the document's order -- on a
+    tie the one after it, which took its place -- so a document closed on a page later deleted opens beside where it
+    was. None when the document never had it."""
+    live = [p.get("id") for p in _live(content)]
+    if pid in live:
+        return live.index(pid) + 1
+    every = sorted(((content.get("cPages") or {}).get("pages")) or [], key=lambda p: str((p.get("idx") or {}).get("value") or ""))
+    ids = [p.get("id") for p in every]
+    if not pid or pid not in ids or not live:
+        return None
+    i, left = ids.index(pid), set(live)
+    before = next((j for j in range(i - 1, -1, -1) if ids[j] in left), None)
+    after = next((j for j in range(i + 1, len(ids)) if ids[j] in left), None)
+    j = after if before is None or (after is not None and after - i <= i - before) else before
+    return live.index(ids[j]) + 1
 
 
 def _their_page(meta, pages, content=None):
@@ -953,9 +971,9 @@ def _their_page(meta, pages, content=None):
     one notebook of five)."""
     if content:
         pid = ((content.get("cPages") or {}).get("lastOpened") or {}).get("value")
-        live = [p.get("id") for p in _live(content)]
-        if pid in live:
-            return live.index(pid) + 1
+        at = _page_or_nearest(content, pid)
+        if at:
+            return at
     try:
         k = int(meta.get("lastOpenedPage") or 0)
     except (TypeError, ValueError):
@@ -1861,6 +1879,37 @@ def put_library_page_tags(doc: str, page: int, body: dict = Body(default={})):
 _scenes = {"kept": collections.OrderedDict(), "size": 0}
 _scenes_lock = threading.Lock()
 _SCENES_MAX = 192 << 20
+_making = {}                                         # a page's form being made -> its Event: waited for, never made twice
+
+
+class _Writes:
+    """PAGES BEING WRITTEN (a save from the editor): a page read while it is being written waits for the write, so a
+    page left and opened again at once (its notebook closed and opened, turned back to) comes with what was just drawn
+    on it -- read before the write was done, it came as it was before, the last strokes coming in seconds later."""
+    def __init__(self):
+        self.lock, self.now = threading.Lock(), {}
+
+    def begin(self, key):
+        with self.lock:
+            n, done = self.now.get(key, (0, None))
+            self.now[key] = (n + 1, done or threading.Event())
+
+    def end(self, key):
+        with self.lock:
+            n, done = self.now.pop(key)
+            if n > 1:
+                self.now[key] = (n - 1, done)
+            else:
+                done.set()
+
+    def wait(self, key, most=300):
+        with self.lock:
+            got = self.now.get(key)
+        if got:
+            got[1].wait(most)
+
+
+_writes = _Writes()
 
 
 def _scene_kept(kind, doc, page, make):
@@ -1872,12 +1921,26 @@ def _scene_kept(kind, doc, page, make):
     except Exception:
         v = ""
     key = (kind, doc, page, v)
-    with _scenes_lock:
-        got = _scenes["kept"].get(key) if v else None
-        if got is not None:
-            _scenes["kept"].move_to_end(key)
-            return got
-    got = make()
+    while True:
+        with _scenes_lock:
+            got = _scenes["kept"].get(key) if v else None
+            if got is not None:
+                _scenes["kept"].move_to_end(key)
+                return got
+            busy = _making.get(key) if v else None
+            if busy is None:
+                if v:
+                    _making[key] = threading.Event()
+                break
+        busy.wait(300)                               # BEING MADE already (a save's, _scene_ahead): its answer, not a second reading
+    try:
+        got = make()
+    finally:
+        if v:
+            with _scenes_lock:
+                done = _making.pop(key, None)
+            if done is not None:
+                done.set()
     data = got[0] if isinstance(got, tuple) else got
     if v and isinstance(data, (bytes, bytearray)) and len(data) <= _SCENES_MAX:
         with _scenes_lock:
@@ -1893,6 +1956,27 @@ def _scene_kept(kind, doc, page, make):
     return got
 
 
+def _scene_ahead(kind, doc, page):
+    """A PAGE JUST SAVED, made into its form for its new stamp at once, off the request: opened again (its notebook
+    closed and opened, the page turned back to) it then goes at once instead of being read again (1.9 s for a page of
+    150,000 strokes); opened while it is being made, the opening waits for it (_scene_kept)."""
+    from .remarkable import local, inplace, fastrm
+
+    def make():
+        if kind == "mirror":
+            got = _local(lambda: inplace.read_page(doc, page, arrays=True))
+            return (fastrm.scene_bytes(got), got["stamp"]) if isinstance(got, dict) else got
+        got = _local(lambda: local.scene_of(doc, page, arrays=True))
+        return fastrm.scene_bytes(got) if isinstance(got, dict) else got
+
+    def run():
+        try:
+            _scene_kept(kind, doc, page, make)
+        except Exception:
+            pass
+    threading.Thread(target=run, name="scene-ahead", daemon=True).start()
+
+
 @app.get(API + "/library/{doc}/page/{page}/scene")
 def get_library_scene(doc: str, page: int, request: Request):
     """One page as the page editor holds it (remarkable/local.scene_of): the false mirror's pages only. Its version
@@ -1901,6 +1985,7 @@ def get_library_scene(doc: str, page: int, request: Request):
     from .remarkable import local
     if not _doc_ok(doc):
         return _bad("not a document id")
+    _writes.wait((doc, page))                        # (a write of it under way: the page as written)
     # either library's page, to read (the window draws its pictures with the editor); written in the False Mirror only
     try:
         version = local.page_version(doc, page)
@@ -1908,6 +1993,9 @@ def get_library_scene(doc: str, page: int, request: Request):
         version = ""
     if version and request.headers.get("if-none-match") == version:
         return Response(status_code=304, headers={"ETag": version})
+    if request.query_params.get("form") == "head":  # the page without its strokes, at once (local.scene_head): shown while they come
+        got = _local(lambda: local.scene_head(doc, page))
+        return JSONResponse(got, headers={"Cache-Control": "no-store"}) if isinstance(got, dict) else got
     if request.query_params.get("form") == "bin":   # the editor's binary form (fastrm's note): the points as the file has them
         from .remarkable import fastrm
 
@@ -1956,9 +2044,17 @@ async def post_library_picture(doc: str, page: int, request: Request):
 @app.put(API + "/library/{doc}/page/{page}/scene")
 async def put_library_scene(doc: str, page: int, request: Request):
     """The page from the editor: its scene as JSON, or in its binary form (application/octet-stream, fastrm's note)."""
-    from .remarkable import local, fastrm
     if not _doc_ok(doc):
         return _bad("not a document id")
+    _writes.begin((doc, page))
+    try:
+        return await _put_scene(doc, page, request)
+    finally:
+        _writes.end((doc, page))
+
+
+async def _put_scene(doc, page, request):
+    from .remarkable import local, fastrm
     data = await request.body()
     try:
         if (request.headers.get("content-type") or "").startswith("application/octet-stream"):
@@ -1972,6 +2068,8 @@ async def put_library_scene(doc: str, page: int, request: Request):
     got = await run_in_threadpool(_local, lambda: {"strokes": local.write_scene(doc, page, scene), "version": local.page_version(doc, page)})
     if isinstance(got, JSONResponse):                 # refused: the reason in the engine's output too, for a report
         print("[editor] page %s/%d not saved: %s" % (doc[:8], page, got.body.decode("utf-8", "replace")[:300]), flush=True)
+    else:
+        _scene_ahead("scene", doc, page)
     return got
 
 
@@ -2016,6 +2114,7 @@ def get_mirror_scene(doc: str, page: int, request: Request):
     from .remarkable import inplace, fastrm
     if not _doc_ok(doc):
         return _bad("not a document id")
+    _writes.wait((doc, page))                        # (a write of it under way: the page as written)
     # ASKED WITH THE STAMP IT HAS (If-None-Match), the editor's look every few seconds: 304 while the page's bytes are the
     # same, and the page is not read (its digest only, kept while the file's size and time hold)
     have = (request.headers.get("if-none-match") or "").strip('"')
@@ -2025,6 +2124,10 @@ def get_mirror_scene(doc: str, page: int, request: Request):
                 return Response(status_code=304, headers={"ETag": have})
         except Exception:
             pass
+    if request.query_params.get("form") == "head":  # the page without its strokes, at once (local.scene_head): shown while they come
+        from .remarkable import local
+        got = _local(lambda: local.scene_head(doc, page))
+        return JSONResponse(got, headers={"Cache-Control": "no-store"}) if isinstance(got, dict) else got
     if request.query_params.get("form") == "bin":
 
         def make():
@@ -2045,11 +2148,19 @@ async def put_mirror_scene(doc: str, page: int, request: Request):
     """A Mirror page saved from the editor, in place: its scene as JSON or in the binary form, with the stamp it was read
     with (?stamp=, the If-Match header, or the scene's own "stamp"). ?push=1 sends the document to the tablet after.
     -> {strokes, kept, erased, added, text, layers, untouched, changed, stamp, version[, push]}."""
-    from .remarkable import inplace, fastrm
     if not _doc_ok(doc):
         return _bad("not a document id")
     if not _mirror_edit():
         return _mirror_edit_off()
+    _writes.begin((doc, page))
+    try:
+        return await _put_mirror(doc, page, request)
+    finally:
+        _writes.end((doc, page))
+
+
+async def _put_mirror(doc, page, request):
+    from .remarkable import inplace, fastrm
     data = await request.body()
     try:
         if (request.headers.get("content-type") or "").startswith("application/octet-stream"):
@@ -2074,7 +2185,10 @@ async def put_mirror_scene(doc: str, page: int, request: Request):
         except RuntimeError as ex:                   # written nowhere: the page did not read back
             print("[editor] mirror page %s/%d not saved: %s" % (doc[:8], page, str(ex)[:300]), flush=True)
             return JSONResponse({"error": str(ex)[:300], "reason": "cannot"}, status_code=500)
-    return await run_in_threadpool(_local, go)
+    got = await run_in_threadpool(_local, go)
+    if isinstance(got, dict) and got.get("changed"):
+        _scene_ahead("mirror", doc, page)
+    return got
 
 
 @app.post(API + "/library/{doc}/page/{page}/mirror-picture")

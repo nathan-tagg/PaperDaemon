@@ -145,6 +145,7 @@
   <string name="viewer.next">Nächste Seite</string>
   <string name="keys.open">Tastenkürzel</string>
   <string name="viewer.notSaved">Nicht gespeichert: {why}</string>
+  <string name="viewer.notSavedShort">Nicht gespeichert</string>
   <string name="keys.title">Tastenkürzel und Befehle</string>
   <string name="keys.k_ctrl">Strg</string>
   <string name="keys.k_shift">Umschalt</string>

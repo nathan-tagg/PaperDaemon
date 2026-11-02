@@ -275,11 +275,10 @@
       }
       if (d.pd === "editor-sync") { syncBar(d); return; }   // a Mirror sync started, or ended
       if (d.pd === "editor-makeup") { paintMakeUp(d); return; }   // what a settled selection is made of, or none
-      if (d.pd === "editor-save") {                         // the ? by the name: a spinner while a save is slow, ! when one failed
-        const q = $("#" + VIEWER + " .keys-q"); if (!q) return;
-        q.classList.toggle("saving", d.state === "saving"); q.classList.toggle("failed", d.state === "error");
-        q.textContent = d.state === "error" ? "!" : d.state === "saving" ? "" : "?";
-        q.title = d.state === "error" ? PD.t("viewer.notSaved", { why: d.why }) : PD.t("keys.open");
+      if (d.pd === "editor-save") {                         // a save that failed, said by the name (its reason on hover); the ?
+        const f = $("#" + VIEWER + " .save-failed"); if (!f) return;   // beside it is the shortcuts' and nothing else
+        f.hidden = d.state !== "error";
+        if (d.state === "error") f.title = PD.t("viewer.notSaved", { why: d.why });
         return;
       }
       if (d.pd !== "editor-tools") return;
@@ -467,6 +466,7 @@
     }
 
     function openDoc(x) {                                     // at the page it was last open on, as the tablet opens it
+      PD.holdCard();                                          // (the shaders compiled stay compiled from page to page)
       // (the window on another card than Settings chose: the document opens in a fresh one on that card, PD.moveWindow)
       if (PD.windowStale && !PD.moved) { PD.moveWindow(id, S.at, x).then(moving => { if (!moving) openDoc(x); }); return; }
       S.doc = byId(x); S.page = Math.min(Math.max(1, (S.doc && S.doc.at_page) || 1), pageCount());
@@ -478,7 +478,8 @@
         dlg = document.createElement("dialog");
         dlg.id = VIEWER; dlg.className = "viewer";
         dlg.innerHTML = '<div class="viewer-head"><span class="viewer-name"><button type="button" class="viewer-title" data-v="docsheet"></button><button type="button" class="keys-q" data-v="keys" title="' +
-          esc(PD.t("keys.open")) + '" aria-label="' + esc(PD.t("keys.open")) + '">?</button></span><button type="button" class="link-btn" data-v="close">' + esc(PD.t("common.close")) + "</button></div>" +
+          esc(PD.t("keys.open")) + '" aria-label="' + esc(PD.t("keys.open")) + '">?</button><span class="save-failed" role="status" hidden>' +
+          esc(PD.t("viewer.notSavedShort")) + '</span></span><button type="button" class="link-btn" data-v="close">' + esc(PD.t("common.close")) + "</button></div>" +
           '<div class="viewer-bar"><span class="viewer-tools"></span><span class="viewer-tags"></span><span class="viewer-nav"></span>' +
           '<div class="select-bar page-pick" role="toolbar" hidden></div></div>' +
           '<div class="viewer-page" tabindex="-1" autofocus></div>';
@@ -660,6 +661,39 @@
         (nb ? btn("duplicate", PD.t("fm.duplicate")) + btn("move", PD.t("fm.move")) : "") + btn("tags", PD.t("fm.tag")) +
         btn("delete", PD.t("common.delete"), "danger") + "</span>";
     }
+    // PAGES DELETED, as they go: out of the grid, the pages left numbered anew where they are (their pictures with them),
+    // nothing chosen, and the page open the same page as before -- or, deleted, the nearest page left (on a tie the one
+    // after it, which takes its place); the pages' history the same way
+    function pagesGone(gone) {
+      const n0 = pageCount(), out = new Set(gone), newOf = new Map();
+      for (let n = 1, k = 0; n <= n0; n++) if (!out.has(n)) newOf.set(n, ++k);
+      if (!newOf.size) return;
+      const near = n => {
+        if (newOf.has(n)) return newOf.get(n);
+        let b = n - 1, a = n + 1;
+        while (b >= 1 && !newOf.has(b)) b--;
+        while (a <= n0 && !newOf.has(a)) a++;
+        return a <= n0 && (b < 1 || a - n <= n - b) ? newOf.get(a) : newOf.get(b);
+      };
+      S.page = near(S.page);
+      const hist = [];
+      let hpos = 0;
+      S.hist.forEach((n, i) => { const m = near(n); if (hist[hist.length - 1] !== m) hist.push(m); if (i === S.hpos) hpos = hist.length - 1; });
+      S.hist = hist; S.hpos = hpos;
+      S.doc.pages = newOf.size;
+      if (S.tags && S.tags.page_tags) S.tags.page_tags = [...newOf.keys()].map(n => S.tags.page_tags[n - 1] || []);
+      PD.thumbsRenumbered(base + "/library/" + S.doc.id + "/thumb/", newOf);
+      S.pp = [];
+      $("#" + VIEWER).querySelectorAll(".thumb[data-go]").forEach(t => {
+        const to = newOf.get(Number(t.dataset.go));
+        if (!to) { t.remove(); return; }
+        t.dataset.go = to; t.classList.toggle("here", to === S.page);
+        const m = t.querySelector(".meta"), img = t.querySelector("img[data-thumb]");
+        if (m) m.textContent = to;
+        if (img) img.dataset.thumb = to;
+      });
+      paintPagePick(); paintBar();
+    }
     // after a change: the notebook as it is now, the grid drawn anew, nothing chosen
     async function pagesChanged() {
       const x = S.doc.id;
@@ -698,7 +732,18 @@
       if (act === "delete") {
         if (!await PD.confirm({ title: PD.t("fm.delete_pages_q", { n: pages.length }),
                                 action: PD.t("common.delete"), danger: true })) return;
-        await run("delete");
+        // THE PAGES GO AT ONCE (pagesGone), then the engine is told: refused, the notebook as the engine has it again,
+        // the pages chosen again with the reason; done, the page open is the page it opens at next
+        pagesGone(pages);
+        const [, e] = await PD.safe(api("POST", "/library/" + doc + "/pages/delete", { pages }));
+        if (e) {
+          await pagesChanged();
+          S.pp = pages.filter(n => n <= pageCount()); paintPagePick();
+          const m = $("#" + VIEWER + " .page-pick .pick-name"); if (m) { m.textContent = PD.errText(e); m.classList.add("attn"); }
+          return;
+        }
+        if (S.doc && S.doc.id === doc) opened(doc, S.page);
+        PD.safe(api("GET", "/library/" + doc)).then(([d]) => { if (d && S.doc && S.doc.id === doc) { S.tags = d; paintBar(); } });
         return;
       }
       if (act === "tags") {

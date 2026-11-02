@@ -667,9 +667,9 @@ html, .viewer-page, .script-help-body, .terminal, textarea, .chapter-list { scro
 .viewer-name { display: inline-flex; align-items: baseline; gap: var(--s2); min-width: 0; }
 .keys-q { width: 14px; height: 14px; flex: none; align-self: center; display: inline-grid; place-items: center; padding: 0; border: 1px solid var(--edge);
   border-radius: 50%; background: transparent; color: var(--ink-2); font: 600 9px/1 var(--font-ui, inherit); cursor: pointer; }
-.keys-q.saving { border-color: var(--edge); border-top-color: var(--ink-2); animation: keys-spin .8s linear infinite; }
-.keys-q.failed { color: var(--mark); border-color: currentColor; }
-@keyframes keys-spin { to { transform: rotate(1turn); } }
+/* a save that failed, by the name (tablet.js editor-save): its reason on hover */
+.save-failed { flex: none; color: var(--mark); font-size: 12px; white-space: nowrap; cursor: help; }
+.save-failed[hidden] { display: none; }
 .keys-q:hover, .keys-q:focus-visible { color: var(--ink); border-color: var(--ink-2); }
 /* a page opening in a fresh web view on the card Settings chose (core.js PD.moveWindow): a moment's wait */
 html.moving, html.moving * { cursor: progress !important; }

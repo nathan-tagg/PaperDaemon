@@ -14,3 +14,19 @@
 - [x] 2.4 Proved: the page once in against a whole redraw 0 pixels, and against the old load's screen the same; its
   parts against the old maker's 0 of 149,807. Measured: shown after 0.23 s, all in after 1.15 s, 57 frames, the longest
   33 ms (the engine's answer warm; a page the engine has not read since it changed waits on it first, 1.9 s on that page)
+
+## 3. The page before its strokes
+
+- [x] 3.1 The engine's answer of a page without its strokes (form=head: local.scene_head), its stroke blocks skipped
+  unread in C (fastrm.without_strokes over rf_rm_blocks): the same as the page read whole less its strokes; 29 ms on the
+  heavy page, 220/220 pages the same bytes as the Python walk
+- [x] 3.2 The editor shows it once the card has answered, the strokes asked for after it; the cover clear, no spinner
+
+## 4. Opening without waiting on the page before
+
+- [x] 4.1 New page: the blank page made without reading the page it follows (library._without_content): 13.3 s -> 72 ms
+  after a 149,807-stroke page, 480/480 pages the same bytes
+- [x] 4.2 The window holds the graphics card (core.js PD.holdCard): after a press on a page the next page compiled every
+  shader again (0.9 s, the card 67 ms, integrated card); held, 4 ms and 8 ms
+- [x] 4.3 A page's stamp is what its own form is made from (its .rm and what the notebook says of it); a page saved is
+  made into its form at once, off the request; a page being written is read once written: opened again, 64 ms

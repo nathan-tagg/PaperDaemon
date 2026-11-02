@@ -131,9 +131,29 @@ STRUCTURAL = ("AuthorIdsBlock", "MigrationInfoBlock", "PageInfoBlock",
               "SceneGroupItemBlock")
 
 
+def _without_content(data, kinds=None):
+    """The page's bytes without its content blocks (strokes, typed text, glyphs, tombstones; or the block classes
+    `kinds`), left out by their frames' types and never read (each block: its length, 4 bytes, 3 of versions, then its
+    type): the few blocks a blank page is made of, from a page of any size in milliseconds. Frames that do not add up:
+    the bytes as they are."""
+    from rmscene.tagged_block_common import HEADER_V6
+    skip = {t.BLOCK_TYPE for t in (kinds or CONTENT_BLOCKS) if hasattr(t, "BLOCK_TYPE")}
+    if not data.startswith(HEADER_V6):
+        return data
+    out, pos, end = [data[:len(HEADER_V6)]], len(HEADER_V6), len(data)
+    while pos + 8 <= end:
+        nxt = pos + 8 + int.from_bytes(data[pos:pos + 4], "little")
+        if nxt > end:
+            return data
+        if data[pos + 7] not in skip:
+            out.append(data[pos:nxt])
+        pos = nxt
+    return b"".join(out) if pos == end else data
+
+
 def blank_page_bytes(src_rm):
-    """A structural-only page derived from an existing page of the same doc."""
-    allb = list(read_blocks(io.BytesIO(open(src_rm, "rb").read())))
+    """A structural-only page derived from an existing page of the same doc (its strokes never read: _without_content)."""
+    allb = list(read_blocks(io.BytesIO(_without_content(open(src_rm, "rb").read()))))
     blocks = [b for b in allb if not isinstance(b, CONTENT_BLOCKS)]
     names = [type(b).__name__ for b in blocks]
     unexpected = [n for n in names if n not in STRUCTURAL]

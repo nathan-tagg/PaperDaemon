@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.8
+
+- New page is instant after a heavy page. Making the blank page read every stroke of the page it follows, 13 seconds after a 150,000-stroke page; now it reads only the few blocks a blank page is made of (72 ms), the same file as before.
+- The page you open after drawing on another opens a second sooner on an integrated card. Each page's editor compiled the graphics card's shaders again after any press on the page before (0.9 s); the window now keeps the card, and they stay compiled (4 ms).
+- No more spinner over a page while it opens. The paper, template, typed text, pictures and the PDF's or book's page show as soon as the engine has said what the page is, which it does without reading the strokes (29 ms on a 150,000-stroke page); the strokes land as they come in. Clicks and keys still wait until they are in.
+- A notebook opened again after you drew on it no longer waits for its page to be read again: the engine prepares the page as it saves it (reading it again took 1.9 s on a 150,000-stroke page; now 64 ms), and a page changed elsewhere in the notebook (a page added, deleted or moved) no longer makes every other page read again. Opened while it is still being saved, the page waits for the save and comes with what you drew last.
+- A selection stays a picture until you let go of it. Let go after a drag, it stays where you dropped it as the picture; dragged again, it moves at once (4 ms to its first frame on a heavy page, a second before for a large selection). Anything else -- clicking away, Esc, another tool, a key, a zoom, saving, leaving the page -- puts its strokes down exactly first, one undo step for all its drags. While it is a picture its edges are a little softer than the strokes.
+- Deleting pages from the grid works. The pages leave the grid at once and the rest are numbered anew; before, nothing changed, the notebook kept counting the deleted pages, and opening one said "there is no page 3". Pages deleted before this are cleaned up when the False Mirror starts. A notebook closed on a page that was then deleted opens on the nearest page left. Moving pages out of a notebook had the same fault and is fixed with it.
+- A click with a pen makes a dot, with the mouse too.
+- The ? by a document's name is only the shortcuts' button. It no longer turned into a spinner while a save took a moment or into ! when one failed; a failed save now says Not saved by the name, the reason on hover.
+
 ## 0.2.7
 
 - Dragging a selection no longer draws the page again each frame. Picked up, the selection is drawn once as a picture, and the picture is moved, turned or resized, whatever the selection's size or the page's; let go, its strokes land exactly where it was let go. On an integrated card and a 150,000-stroke page, a frame of a drag takes the card 0.1 ms for 1,400 strokes and 0.4 ms for 32,000 (13 ms and 50 to 110 ms before); picking it up takes 8 ms and 94 ms, once. While it moves, how it blends with strokes under and over it is close, not exact; it is exact once let go.

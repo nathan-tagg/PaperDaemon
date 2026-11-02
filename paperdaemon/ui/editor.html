@@ -52,13 +52,10 @@ img, a, svg, canvas { -webkit-user-drag: none; }
 .embedded .pop { top: 2px; }
 .embedded #saved { display: none; }
 .viewport { position: relative; overflow: hidden; touch-action: none; cursor: crosshair; }
-/* UNTIL THE PAGE HAS LOADED a spinner covers it, and takes every press: nothing is drawn, typed or pasted onto a page
-   that is not there yet */
-.loading { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: rgba(30, 33, 32, 0.35); cursor: progress; }
+/* UNTIL THE PAGE'S STROKES COME a clear cover over it takes every press: nothing is drawn, typed or pasted onto a page
+   that is not all there yet. No spinner: the page shows as soon as the engine says what it is, its strokes landing */
+.loading { position: absolute; inset: 0; z-index: 5; cursor: progress; }
 .loading[hidden] { display: none; }
-.loading i { width: 34px; height: 34px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.25); border-top-color: #D0806A;
-  animation: pd-spin 0.9s linear infinite; }
-@keyframes pd-spin { to { transform: rotate(360deg); } }
 .viewport.typing { cursor: text; }
 .viewport.typing.docsel:not([data-erase]) { cursor: default; }
 .viewport.typing.docsel.ibeam:not([data-erase]) { cursor: text; }
@@ -164,7 +161,7 @@ span.lname { cursor: default; }
     <span id="saved"></span>
     <div class="pop" id="pop" hidden></div>
   </div>
-  <div class="body"><div class="viewport" id="vp"><canvas id="cv"></canvas><div class="loading" id="loading" role="status" aria-label="Loading the page"><i></i></div><button class="zoom" id="zoom" title="Back to 1x"></button><div class="vscroll" id="vscroll"><i></i></div></div></div>
+  <div class="body"><div class="viewport" id="vp"><canvas id="cv"></canvas><div class="loading" id="loading" role="status" aria-label="Loading the page"></div><button class="zoom" id="zoom" title="Back to 1x"></button><div class="vscroll" id="vscroll"><i></i></div></div></div>
 </div>
 <div class="cmenu" id="cmenu" role="menu" hidden></div>
 <script src="shaders.js"></script>
@@ -268,6 +265,7 @@ span.lname { cursor: default; }
   for (const t of ["keydown", "pointerdown", "paste", "cut", "copy", "drop", "message"]) window.addEventListener(t, e => {
     if (heldEvents.length) { hold(e); return; }
     if (inking && t === "message") return;                    // (the viewer's word: taken as it comes, a page turn above all)
+    if (pick && pick.held && !keepsHeld(t, e)) pickLand();    // (a selection held as a picture, let go of by anything else: landed first)
     if ((t !== "keydown" || !["Shift", "Control", "Alt", "Meta"].includes(e.key)) && !settleSwipe()) { hold(e); swipeWaits.push(release); }
   }, true);
   for (const t of ["keyup", "pointermove", "pointerup", "pointercancel", "mousedown", "mouseup", "click", "dblclick", "contextmenu", "wheel"])
@@ -3354,7 +3352,7 @@ span.lname { cursor: default; }
                last: er.last }),
              readScreen, fill, fillSweep, get fills() { return !!mF; }, scroll, lastView, moveBegin, moveWhy, moveTo, moveEnd, moveCancel, moveRestore,
              memUse: () => ({ gcap: heap.gcap, gfree: heap.gfree.reduce((t, f) => t + f[1], 0), st: st.cap * 4, sk: sk.cap, ev: ev.cap * 4,
-                              rcap: heap.cap, rfree: heap.free.reduce((t, f) => t + f[1], 0) }), landBegin, landPut, handPrep, moveHand, partsCheck, flyBegin, flyTo, flyEnd, inkMore, inkDone, get moving() { return !!mv.lines; }, moveStats: () => ({ ...mvStats }),
+                              rcap: heap.cap, rfree: heap.free.reduce((t, f) => t + f[1], 0) }), landBegin, landPut, handPrep, moveHand, partsCheck, flyBegin, flyTo, flyEnd, inkMore, inkDone, get moving() { return !!mv.lines; }, moveStats: () => ({ ...mvStats, flyScale: fly.on ? fly.ks : null, viewScale: last ? last.k : null }),
              holds: (W, H) => holds && texW === W && texH === H, canvas: cv,
              listStats: () => ({ strokes: ob.n, classes: ncDraw(), known: ob.ncKnown }), get tick() { return ob.tick; }, ranOut: () => (er.outNow & 191) !== 0,
              name: "WebGPU " + (info.description || info.architecture || info.vendor || "") + (info.backend ? " (" + info.backend + ")" : "") +
@@ -3643,6 +3641,7 @@ span.lname { cursor: default; }
   window.pdDraws = () => ({ ...draws });
   window.pdErase = () => GL && GL.eraseStats ? GL.eraseStats() : null;   // the erases the card made: slots, strokes cut
   window.pdMoves = () => GL && GL.moveStats ? GL.moveStats() : null;
+  window.pdPickHeld = () => !!(pick && pick.held);              // (a selection held as a picture since its last drag)
   window.pdMem = () => GL && GL.memUse ? GL.memUse() : null;   // (the card's record and grain stores: room, free, the tables' share)   // the selections it moved: taken up, frames, let go
   window.pdScreenPixels = async () => {                       // the screen as shown, its pixels, for a look from outside:
     if (!cardShows) return ctx.getImageData(0, 0, cv.width, cv.height);   // the page here, or the card's with what goes over it
@@ -5934,7 +5933,7 @@ span.lname { cursor: default; }
   const keyErase = e => !e.shiftKey ? null : e.ctrlKey ? (e.altKey ? "zone" : "stroke") : e.altKey ? null : "area";
   const held = { shiftKey: false, ctrlKey: false, altKey: false };
   let heldSince = 0, typedAt = 0, heldMoved = false, heldTimer = 0, zoneShape = 0, overText = false;
-  let pending = null, textDrag = false, shapeFrom = null, liveFrom = null, liveMoved = false, fillSweep = null;
+  let pending = null, textDrag = false, shapeFrom = null, fillSweep = null;
   const zoneShapeNow = () => zoneShape || (pickers[tool] && shapeKind >= 2 && shapeKind <= 5 ? shapeKind : 0);
   const zoneLoop = z => z.shape ? shapePoints(z.shape, z.pts[0], z.end || z.pts[0]) : z.pts.concat([z.pts[0]]);
   function updateCursor() {
@@ -6083,8 +6082,7 @@ span.lname { cursor: default; }
     else {
       if (!drawable(x, y)) return;                            // as on the tablet: no stroke starts in the gray
       contentLanded();                                        // the stroke wins: the text lets go as the pen goes down
-      motion = null; live = newLine(pickers[tool]); live.points.add(inkPoint(live, x, y, e));
-      liveFrom = e.pointerType === "mouse" ? local(e) : null; liveMoved = false;   // a mouse's click alone draws no dot
+      motion = null; live = newLine(pickers[tool]); live.points.add(inkPoint(live, x, y, e));   // (a click alone: a dot)
       liveOnCard = liveStart();                               // on the card, in its place among the page's strokes; else
       if (!liveOnCard) {                                      // on the editor's own copy of the page
         cpuCopy(); cardShows = false;
@@ -6093,7 +6091,7 @@ span.lname { cursor: default; }
     }
     pointer = e.pointerId; vp.setPointerCapture(e.pointerId);
     if (erasing) { if (eraseAlong([x, y])) eraseSoon(); else paint(); }
-    else if (liveOnCard) { if (!liveFrom) { liveGrew(0); liveSoon(); } }   // a pen's touch shows at once, a mouse's as it moves
+    else if (liveOnCard) { liveGrew(0); liveSoon(); }          // a touch shows at once, a pen's or a mouse's
     else { ctx.putImageData(shown, 0, 0); drawTail(live); }
   });
   vp.addEventListener("pointermove", e => {
@@ -6147,7 +6145,6 @@ span.lname { cursor: default; }
       else for (const ev of (e.getCoalescedEvents ? e.getCoalescedEvents() : [e])) zone.pts.push(toPage(...local(ev)));
       paint(); return;
     }
-    if (live && liveFrom && !liveMoved) { const [bx, by] = local(e); liveMoved = Math.hypot(bx - liveFrom[0], by - liveFrom[1]) > 2; }
     if (textDrag) {                                           // a drag selects
       const hit = hitText(...toPage(...local(e))), c = primary();
       if (hit && c) { if (!c.anchor) c.anchor = { ...c.caret }; c.caret = hit; use(c); paint(); }
@@ -6161,7 +6158,7 @@ span.lname { cursor: default; }
         live.points.add(inkPoint(live, x, y, ev));
         if (!liveOnCard) drawTail(live);
       }
-      if (liveOnCard && (liveMoved || !liveFrom)) { liveGrew(liveMoved && from <= 2 ? 0 : from); liveSoon(); }
+      if (liveOnCard) { liveGrew(from); liveSoon(); }
     } else if (erasing) {                                     // the eraser's path, kept to be swept: the next frame sweeps as
       const E = erasing, Q = E.todo;                          // much of it as it has room for (eraseWork)
       for (const ev of evs) {
@@ -6202,10 +6199,6 @@ span.lname { cursor: default; }
       const z = zone; zone = null; zoneDone(z);
       if (z.shape) { zoneShape = 0; if (shapeKind > 1) setShape(1); }
       updateCursor(); return;
-    }
-    if (live && liveFrom && !liveMoved) {                     // a mouse's click: no dot (on the card it was never drawn)
-      if (liveOnCard) { cancelAnimationFrame(liveFrame); liveFrame = 0; liveBox = null; try { GL.liveEnd(live); GL.edit([[live, false, []]], [], inkTick, inkTick); } catch (err) { /* drawn whole next */ } }
-      live = null; work = null; liveFrom = null; liveOnCard = false; paint(); return;
     }
     if (live) live.points.trim();                             // (its room to grow let go)
     if (live && liveOnCard) {                                 // ON THE CARD the page already shows it where it lies: it is
@@ -6653,6 +6646,7 @@ span.lname { cursor: default; }
     const over = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
     const [sx, sy] = over ? [e.clientX - r.left, e.clientY - r.top] : [vpW / 2, 0];
     const [px, py] = toPage(sx, sy);
+    if (pick && pick.held) pickLand();                        // (a picture held: landed, drawn exactly at the new size)
     view.zoom = Math.max(0.5, Math.min(5, view.zoom * Math.exp(-e.deltaY * 0.0015)));
     view.cx = px - (sx - vpW / 2) / scale(); view.top = py - sy / scale();
     clampView(); showZoom(); showScroll(); rebuildSoon();
@@ -6855,6 +6849,7 @@ span.lname { cursor: default; }
   // HELD AS A PICTURE on the card (GL.flyBegin): drawn once, each frame the picture put where the frame is (GL.flyTo); let
   // go, its strokes put there and drawn exactly (GL.flyEnd), then landed as ever
   function moveStart() {                                      // the selection taken up, to move, turn or resize
+    if (pick.held) { movedNow = null; return; }                // (held as a picture since its last drag: on from there, nothing taken up)
     pick.card = false; pick.fly = false; pick.f0 = { ...pick.frame }; movedNow = null;
     if (GL && !gpuFailed && cardShows && !live && !erasing && underKey() === underWas) try { pick.card = GL.moveBegin(pick.lines); } catch (e) { gpuDown(e); }
     if (pick.card && !gpuFailed) try { pick.fly = GL.flyBegin() && GL.flyTo([1, 0, 0, 1, 0, 0]); } catch (e) { gpuDown(e); }
@@ -6894,19 +6889,23 @@ span.lname { cursor: default; }
     cancelAnimationFrame(moveFrame); moveFrame = 0;
     const f0 = pick.f0, f1 = pick.frame;
     if (f0.cx === f1.cx && f0.cy === f1.cy && f0.w === f1.w && f0.a === f1.a) {   // nothing moved: as it was taken up
-      pick.f0 = null; pick.fly = false;
+      pick.f0 = null; pick.fly = false; pick.held = false;
       if (pick.card) { let ok = false; try { ok = GL.moveCancel(); } catch (e) { gpuDown(e); } if (ok) { base = null; shown = null; cpuStale = true; paint(); } else rebuild(); return; }
       const b = pick.box; movedNow = null;
       if (GL && !gpuFailed) rebuild(); else rebuildBand(b[1], b[3]);
       return;
     }
-    if (pick.fly && !gpuFailed) {                              // (a picture: the strokes put where it was let go, drawn there exactly)
-      const whole = coverOf(f0, f1) > MOVE_WHOLE;
-      let ok = false;
-      try { ok = GL.flyEnd(matrixOf(f0, f1), f1.w / f0.w, whole); } catch (e) { gpuDown(e); }
-      pick.fly = false;
-      if (!gpuFailed) { if (ok) { base = null; shown = null; cpuStale = true; paint(); } else if (whole && rebuildOnCard()) paint(); else rebuild(); }
-    } else moveDraw();                                        // (the last frame drawn: what is made is what is shown)
+    if (pick.fly && !gpuFailed) {                              // A PICTURE STAYS ONE, where it was let go, until the selection
+      moveDraw();                                             // is let go of (pickLand): dragged again, on from there at once
+      if (!gpuFailed && pick.fly) {
+        pick.held = true; landed();
+        // ONCE THE HAND RESTS the page under it drawn whole (the drag's frames put back only where the picture was): the
+        // picture over the page as a whole draw has it (unless dragged again by then)
+        clearTimeout(heldRest); heldRest = setTimeout(() => { if (pick && pick.held && !pickDrag) rebuild(); }, HELD_REST);
+        return;
+      }
+    }
+    if (!pick.fly) moveDraw();                                // (the last frame drawn: what is made is what is shown)
     if (pick.card && !gpuFailed) {
       dropping = true;
       GL.moveEnd().then(recs => { if (recs && GL && !gpuFailed) landCard(recs); else land(); }, e => { gpuDown(e); land(); });
@@ -6914,12 +6913,46 @@ span.lname { cursor: default; }
     }
     land();
   }
+  // A SELECTION HELD AS A PICTURE, LET GO OF: its strokes put where the picture is, drawn there exactly and landed as a drop
+  // is (one undo step for all its drags). now: at once, on the processor, the strokes only (the page being left: nothing
+  // waits for the card then, and the card goes with the page)
+  const HELD_REST = 150;
+  let heldRest = 0;
+  function pickLand(now) {
+    if (!pick || !pick.held) return;
+    pick.held = false;
+    const f0 = pick.f0, f1 = pick.frame;
+    if (now || gpuFailed || !GL) { pick.fly = false; pick.card = false; movedNow = null; land(now); return; }
+    const whole = coverOf(f0, f1) > MOVE_WHOLE;
+    let ok = false;
+    try { ok = GL.flyEnd(matrixOf(f0, f1), f1.w / f0.w, whole); } catch (e) { gpuDown(e); }
+    pick.fly = false;
+    if (!gpuFailed) { if (ok) { base = null; shown = null; cpuStale = true; paint(); } else if (whole && rebuildOnCard()) paint(); else rebuild(); }
+    if (pick.card && !gpuFailed) {
+      dropping = true;
+      GL.moveEnd().then(recs => { if (recs && GL && !gpuFailed) landCard(recs); else land(); }, e => { gpuDown(e); land(); });
+      return;
+    }
+    land();
+  }
+  // WHAT GOES ON WITH A SELECTION HELD AS A PICTURE: the select tool's press on it or its handles, the arrows' nudges and the
+  // keys that scroll, the modifiers alone; anything else lets it go first
+  function keepsHeld(t, e) {
+    if (t === "pointerdown") {
+      if (tool !== "pick" || e.button !== 0 || e.ctrlKey || e.metaKey || !vp.contains(e.target)) return false;
+      const [sx, sy] = local(e);
+      return !!hitPick(sx, sy);
+    }
+    if (t === "keydown") return !e.ctrlKey && !e.metaKey && !e.altKey &&
+      ["Shift", "Control", "Alt", "Meta", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "PageUp", "PageDown"].includes(e.key);
+    return false;
+  }
   function placesOf(lines, want) {                            // -> Map: each of want where it lies in lines (one look along them)
     const W = new Set(want), at = new Map();
     for (let i = 0; i < lines.length && at.size < W.size; i++) if (W.has(lines[i])) at.set(lines[i], i);
     return at;
   }
-  function land() {                                           // the selection's strokes made where it was let go, on the
+  function land(quiet) {                                      // the selection's strokes made where it was let go, on the
     const f0 = pick.f0, f1 = pick.frame, Ly = pick.layer, at = placesOf(Ly.lines, pick.lines), had = gridOk(Ly);   // processor: one undo step
     const removed = [], added = [];
     pick.lines = pick.lines.map(L => {
@@ -6930,7 +6963,7 @@ span.lname { cursor: default; }
     });
     movedNow = null; pick.f0 = null; pick.card = false;
     recordInk({ type: "lines", layer: Ly, removed, added }, had); lastType = null;
-    rebuild(); saveSoon();
+    if (!quiet) { rebuild(); saveSoon(); }
     landed();
   }
   function landed() {                                         // settled: the selection's make-up back beside it, what waited run
@@ -7715,7 +7748,7 @@ span.lname { cursor: default; }
   }
   // A LOOK: by the worker (not while the pen, a swipe or a drag is on the page: what it finds waits for the next look)
   async function look() {
-    if (!loaded || saving || live || erasing || pickDrag || dropping || !filerOk) return false;
+    if (!loaded || saving || live || erasing || pickDrag || dropping || (pick && pick.held) || !filerOk) return false;
     return lookFiler();
   }
 
@@ -7873,6 +7906,8 @@ span.lname { cursor: default; }
     else saved.textContent = state === "error" ? "Not saved: " + why : "";
   }
   async function saveNow(leaving) {
+    if (pick && pick.held && leaving) pickLand(true);         // (a picture held, the page left: put down first; else saved as it is
+                                                              // -- its move is not made until it is let go of, a key or the viewer's word first)
     if (MIRROR) return saveMirror(leaving);
     clearTimeout(saveTimer);
     if (leaving && !settleSwipe()) await new Promise(r => swipeWaits.push(r));   // a swipe still catching up: all of it, saved with the page
@@ -7963,6 +7998,7 @@ span.lname { cursor: default; }
   let stamp = "", fileHadText = false, mirrorWrite = null;
   async function saveMirror(leaving) {
     clearTimeout(saveTimer);
+    if (pick && pick.held && leaving) pickLand(true);         // (a picture held, the page left: put down first)
     if (!settleSwipe()) await new Promise(r => swipeWaits.push(r));   // a swipe still catching up: all of it, with the page
     if (!loaded) return true;
     // not under the pen (a write asked for then waits for it to lift; leaving the page, it does not wait)
@@ -8021,6 +8057,7 @@ span.lname { cursor: default; }
       if (!r.ok) return;
       const buf = await r.arrayBuffer(), sc = sceneFromBytes(buf);
       stamp = version = r.headers.get("ETag") || "";
+      if (pick && pick.held) { pick.held = false; pick.fly = false; try { GL.moveCancel(); } catch (e) { /* the page is made anew below */ } }
       pick = null; hiddenPics.clear(); setCursors([]);
       done.length = undone.length = 0;
       page.text = { column: "wide", x: -576, y: 234, width: 1152, paras: [] };
@@ -8239,9 +8276,25 @@ span.lname { cursor: default; }
     if (swipeWaits.length) { const w = swipeWaits.splice(0); queueMicrotask(() => { for (const f of w) f(); }); }
   }
   async function loadPage() {
+    let headShown = false;
     try {
-      // the card is asked for as the page loads, and the page read meanwhile: it is first drawn once the card has answered
-      const r = await fetch(SCENE + "?form=bin", { headers: { Authorization: "Bearer " + token() } });
+      // THE PAGE AT ONCE, ITS STROKES AS THEY COME: what the page is without its strokes (its paper, template, typed text, the
+      // PDF's or the book's page under it, its pictures -- read by the engine without reading a stroke) asked for beside the
+      // page, and shown as soon as it is in and the card has answered; the strokes land a frame's worth at a time once
+      // they are in (inkStart)
+      // (the head asked first, the page once it is in: read side by side, the engine's reading of the page held the head up)
+      const auth = { headers: { Authorization: "Bearer " + token() } };
+      const head = THUMB_W ? null : await fetch(SCENE + "?form=head", auth).then(r => r.ok ? r.json() : null, () => null);
+      const asked = fetch(SCENE + "?form=bin", auth);
+      if (!THUMB_W) {
+        if (head && head.paperSize) {
+          await gpuReady;
+          fromScene(head, true); headShown = true;
+          loadTemplate(); loadSource().then(loadLinks);
+          paintControls(); layout();
+        }
+      }
+      const r = await asked;
       if (!r.ok) throw new Error(r.status + " " + (await r.text()).slice(0, 120));
       const buf = await r.arrayBuffer(), sc = sceneFromBytes(buf);
       await gpuReady;
@@ -8258,7 +8311,7 @@ span.lname { cursor: default; }
         largeCheck(); loaded = true;
         savedAt = changes;                                    // as read: nothing to save until something changes
       }
-      loadTemplate(); loadSource().then(loadLinks);
+      if (!headShown) { loadTemplate(); loadSource().then(loadLinks); }   // (shown with the page's head already)
     } catch (e) {
       await gpuReady;                                         // (whatever happened, the card's answer first: nothing is drawn before it)
       if (THUMB_W) { window.parent.postMessage({ pd: "thumb-done", ok: false, why: e.message }, location.origin); return; }
