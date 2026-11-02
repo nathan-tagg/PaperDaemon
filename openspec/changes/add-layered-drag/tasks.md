@@ -62,3 +62,7 @@
   against a whole redraw and 0/149,807 parts against fresh; Ctrl+Z after it, the page as before all its drags (0 px);
   the page left while held: landed on the processor at once and saved
 - [x] 5.3 Once the hand rests (150 ms), the page under it drawn whole once
+- [x] 5.4 Undo and redo a drag at a time while held (heldStep); a modifier alone keeps it held and nothing lands it
+  mid-drag (an Alt press there landed it halfway: all 798 strokes of the selection off by up to 220 units, the drop
+  threw); move, turn, Alt-turn, resize, two drags, a drag then a turn, nudges, undo/redo: every stroke where the move
+  takes it (pdMoveCheck), 0 px against a whole redraw, the undo exact

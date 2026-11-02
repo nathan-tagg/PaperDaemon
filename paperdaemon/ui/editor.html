@@ -265,7 +265,8 @@ span.lname { cursor: default; }
   for (const t of ["keydown", "pointerdown", "paste", "cut", "copy", "drop", "message"]) window.addEventListener(t, e => {
     if (heldEvents.length) { hold(e); return; }
     if (inking && t === "message") return;                    // (the viewer's word: taken as it comes, a page turn above all)
-    if (pick && pick.held && !keepsHeld(t, e)) pickLand();    // (a selection held as a picture, let go of by anything else: landed first)
+    // (a selection held as a picture, let go of by anything else: landed first -- never in the middle of a drag of it)
+    if (pick && pick.held && !pickDrag && !keepsHeld(t, e)) pickLand();
     if ((t !== "keydown" || !["Shift", "Control", "Alt", "Meta"].includes(e.key)) && !settleSwipe()) { hold(e); swipeWaits.push(release); }
   }, true);
   for (const t of ["keyup", "pointermove", "pointerup", "pointercancel", "mousedown", "mouseup", "click", "dblclick", "contextmenu", "wheel"])
@@ -3642,6 +3643,35 @@ span.lname { cursor: default; }
   window.pdErase = () => GL && GL.eraseStats ? GL.eraseStats() : null;   // the erases the card made: slots, strokes cut
   window.pdMoves = () => GL && GL.moveStats ? GL.moveStats() : null;
   window.pdPickHeld = () => !!(pick && pick.held);              // (a selection held as a picture since its last drag)
+  // (A SELECTION'S MOVE CHECKED FROM OUTSIDE: pdMoveSnap keeps the layer's strokes and the selection's frame as taken up;
+  // pdMoveEnd the frame it is to land at; once landed, pdMoveCheck puts each of the layer's strokes against where the move
+  // takes it -- the selection's by movedLine, the rest as they were -> the strokes off, and how far the farthest is)
+  window.pdMoveSnap = () => {
+    if (!pick || pick.kind !== "strokes") return null;
+    window.__mv = { Ly: pick.layer, f0: { ...(pick.held ? pick.f0 : pick.frame) }, f1: null, sel: new Set(pick.lines), before: pick.layer.lines.slice() };
+    return window.__mv.before.length;
+  };
+  window.pdMoveEnd = () => { if (window.__mv && pick) window.__mv.f1 = { ...pick.frame }; return !!(window.__mv && window.__mv.f1); };
+  window.pdMoveCheck = (back) => {
+    const M = window.__mv; if (!M || (!M.f1 && !back)) return null;
+    const now = M.Ly.lines; if (now.length !== M.before.length) return { err: "counts " + M.before.length + " -> " + now.length };
+    let off = 0, farthest = 0, others = 0, firstOff = null;
+    for (let i = 0; i < now.length; i++) {
+      const L0 = M.before[i], L1 = now[i];
+      if (!M.sel.has(L0) || back) {                            // (not selected, or the move undone: as it was)
+        if (L1 === L0) continue;
+        const A = L0.points, B = L1.points; let d = A.n === B.n ? 0 : Infinity;
+        for (let k = 0; d < Infinity && k < A.n; k++) d = Math.max(d, Math.abs(A.a[6 * k] - B.a[6 * k]), Math.abs(A.a[6 * k + 1] - B.a[6 * k + 1]));
+        if (d > 0.01) { if (M.sel.has(L0)) { off++; farthest = Math.max(farthest, d); if (!firstOff) firstOff = { i, pen: L0.pen, n: A.n, d }; } else others++; }
+        continue;
+      }
+      const E = movedLine(L0, M.f0, M.f1, L0.itemId), A = E.points, B = L1.points;
+      let d = A.n === B.n ? 0 : Infinity;
+      for (let k = 0; d < Infinity && k < A.n; k++) d = Math.max(d, Math.abs(A.a[6 * k] - B.a[6 * k]), Math.abs(A.a[6 * k + 1] - B.a[6 * k + 1]));
+      if (d > 0.5) { off++; if (d > farthest) farthest = d; if (!firstOff) firstOff = { i, pen: L0.pen, n: A.n, n1: B.n, d }; }
+    }
+    return { strokes: now.length, selected: M.sel.size, off, farthest: Math.round(farthest * 10) / 10, othersChanged: others, firstOff };
+  };
   window.pdMem = () => GL && GL.memUse ? GL.memUse() : null;   // (the card's record and grain stores: room, free, the tables' share)   // the selections it moved: taken up, frames, let go
   window.pdScreenPixels = async () => {                       // the screen as shown, its pixels, for a look from outside:
     if (!cardShows) return ctx.getImageData(0, 0, cv.width, cv.height);   // the page here, or the card's with what goes over it
@@ -4292,8 +4322,8 @@ span.lname { cursor: default; }
   }
   // A KEY PRESSED WHILE A DROP LANDS waits for it (the swipe's waiting list, run once it has landed): it was thrown away,
   // and a large selection lands over several frames
-  function undo() { if (pickDrag) return; if (dropping) { swipeWaits.push(undo); return; } if (!settleSwipe()) { swipeWaits.push(undo); return; } const a = done.pop(); if (a) applyStep(a, false); }
-  function redo() { if (pickDrag) return; if (dropping) { swipeWaits.push(redo); return; } if (!settleSwipe()) { swipeWaits.push(redo); return; } const a = undone.pop(); if (a) applyStep(a, true); }
+  function undo() { if (pickDrag || heldStep(-1)) return; if (dropping) { swipeWaits.push(undo); return; } if (!settleSwipe()) { swipeWaits.push(undo); return; } const a = done.pop(); if (a) applyStep(a, false); }
+  function redo() { if (pickDrag || heldStep(1)) return; if (dropping) { swipeWaits.push(redo); return; } if (!settleSwipe()) { swipeWaits.push(redo); return; } const a = undone.pop(); if (a) applyStep(a, true); }
   function applyStep(a, forward) {                            // a step undone (forward: false) or done again
     if (a.hand && handSoon(a, forward)) return;
     const from = inkTick;
@@ -5258,9 +5288,18 @@ span.lname { cursor: default; }
   // from the first to the second, its head there. Each is one stroke of the pen in hand.
   let shapeKind = 1, shapeAt = null, shapeHover = null;
   const SHAPE_NAMES = { 2: "circle", 3: "triangle", 4: "square", 5: "rectangle", 6: "arrow" };
-  function setShape(k) {
-    shapeKind = k; shapeAt = shapeHover = null;
+  function setShape(k) {                                      // (MID SHAPE, ANOTHER SHAPE'S NUMBER: the shape under way becomes it,
+    shapeKind = k;                                            // from the same first corner to where the pointer is; 1 lets it go)
+    if (!(k > 1 && shapeAt)) shapeAt = shapeHover = null;
     if (k > 1) vp.dataset.shape = SHAPE_NAMES[k]; else delete vp.dataset.shape;
+    paint();
+  }
+  // A LOOP OR A ZONE UNDER WAY GIVEN ANOTHER SHAPE (n 2 to 5; 1 a loop drawn freehand): from where it began to where the
+  // pointer is now
+  function reshape(l, n) {
+    const now = l.shape ? l.end || l.pts[0] : l.pts[l.pts.length - 1];
+    if (n > 1) { l.shape = n; l.end = now; l.pts = [l.pts[0]]; }
+    else if (l.shape) { l.shape = 0; l.pts = [l.pts[0], now]; l.end = null; }
     paint();
   }
   function shapePoints(kind, [ax, ay], [bx, by]) {
@@ -5913,6 +5952,13 @@ span.lname { cursor: default; }
   // ================================================================ the pointer
   // WHILE A STROKE IS DRAWN THE KEYBOARD IS OFF: no key, paste or shortcut reaches the page until the pen lifts
   const penDown = e => {
+    const dz = zone && e.type === "keydown" && /^Digit([1-5])$/.exec(e.code);
+    if (dz) {                                                 // A ZONE UNDER WAY takes its shape's number (1 a loop), and no other key
+      const n = Number(dz[1]);
+      reshape(zone, n); zoneShape = n > 1 ? n : 0;
+      if (n === 1 && shapeKind > 1) setShape(1);
+      updateCursor(); e.preventDefault(); e.stopImmediatePropagation(); return;
+    }
     if (e.key === "Escape" && zoneShape && !zone) { zoneShape = 0; updateCursor(); e.preventDefault(); e.stopImmediatePropagation(); return; }
     if (e.key === "Escape" && shapeKind > 1 && !live) { setShape(1); e.preventDefault(); e.stopImmediatePropagation(); return; }
     if (e.key === "Escape" && poly && !live) { poly = null; paint(); e.preventDefault(); e.stopImmediatePropagation(); return; }   // Esc drops the corners set
@@ -6675,7 +6721,7 @@ span.lname { cursor: default; }
     if (!editing() && !ctrl && !e.altKey && pickers[tool] && /^[1-6]$/.test(e.key)) { e.preventDefault(); setShape(Number(e.key)); return; }
     // SELECT IN HAND: 1 to 5 its loop's shape (pickShape), and no key starts typing -- the keyboard stays the selection's
     if (tool === "pick" && !editing()) {
-      if (!ctrl && !e.altKey && /^[1-5]$/.test(e.key)) { e.preventDefault(); setShape(Number(e.key)); return; }
+      if (!ctrl && !e.altKey && /^[1-5]$/.test(e.key)) { e.preventDefault(); setShape(Number(e.key)); if (pickLoop) reshape(pickLoop, Number(e.key)); return; }
       if (!ctrl && !e.altKey && (e.key.length === 1 || e.key === "Enter")) { e.preventDefault(); return; }
     }
     if (!editing() && !ctrl && !e.altKey && (e.key.length === 1 || e.key === "Enter")) startTyping();
@@ -6889,7 +6935,7 @@ span.lname { cursor: default; }
     cancelAnimationFrame(moveFrame); moveFrame = 0;
     const f0 = pick.f0, f1 = pick.frame;
     if (f0.cx === f1.cx && f0.cy === f1.cy && f0.w === f1.w && f0.a === f1.a) {   // nothing moved: as it was taken up
-      pick.f0 = null; pick.fly = false; pick.held = false;
+      pick.f0 = null; pick.fly = false; pick.held = false; pick.steps = null;
       if (pick.card) { let ok = false; try { ok = GL.moveCancel(); } catch (e) { gpuDown(e); } if (ok) { base = null; shown = null; cpuStale = true; paint(); } else rebuild(); return; }
       const b = pick.box; movedNow = null;
       if (GL && !gpuFailed) rebuild(); else rebuildBand(b[1], b[3]);
@@ -6898,7 +6944,10 @@ span.lname { cursor: default; }
     if (pick.fly && !gpuFailed) {                              // A PICTURE STAYS ONE, where it was let go, until the selection
       moveDraw();                                             // is let go of (pickLand): dragged again, on from there at once
       if (!gpuFailed && pick.fly) {
-        pick.held = true; landed();
+        pick.held = true;
+        if (!pick.steps) { pick.steps = [{ ...pick.f0 }]; pick.at = 0; }   // (each drag let go a step: undone, the picture back)
+        if (!sameFrame(pick.steps[pick.at], pick.frame)) { pick.steps.length = pick.at + 1; pick.steps.push({ ...pick.frame }); pick.at++; }
+        landed();
         // ONCE THE HAND RESTS the page under it drawn whole (the drag's frames put back only where the picture was): the
         // picture over the page as a whole draw has it (unless dragged again by then)
         clearTimeout(heldRest); heldRest = setTimeout(() => { if (pick && pick.held && !pickDrag) rebuild(); }, HELD_REST);
@@ -6920,8 +6969,9 @@ span.lname { cursor: default; }
   let heldRest = 0;
   function pickLand(now) {
     if (!pick || !pick.held) return;
-    pick.held = false;
+    pick.held = false; pick.steps = null; clearTimeout(heldRest);
     const f0 = pick.f0, f1 = pick.frame;
+    if (sameFrame(f0, f1)) { pickPutBack(now); return; }   // (where it was taken up: nothing to land, no step)
     if (now || gpuFailed || !GL) { pick.fly = false; pick.card = false; movedNow = null; land(now); return; }
     const whole = coverOf(f0, f1) > MOVE_WHOLE;
     let ok = false;
@@ -6935,6 +6985,33 @@ span.lname { cursor: default; }
     }
     land();
   }
+  const sameFrame = (a, b) => a.cx === b.cx && a.cy === b.cy && a.w === b.w && a.h === b.h && a.a === b.a;
+  function pickPutBack(now) {                                 // a held picture let go of where it was taken up: its strokes as they were
+    pick.held = false; pick.steps = null; pick.fly = false; pick.f0 = null; movedNow = null;
+    if (!now && GL && !gpuFailed && pick.card) {
+      let ok = false;
+      try { ok = GL.moveCancel(); } catch (e) { gpuDown(e); }
+      if (ok) { base = null; shown = null; cpuStale = true; paint(); } else rebuild();
+    }
+    pick.card = false;
+    landed();
+  }
+  // UNDO AND REDO OF A SELECTION HELD AS A PICTURE, a drag at a time: the picture put back where the drag before left it
+  // (or on to where the next did), nothing landed; back where it was taken up, the next undo lets the hold go (nothing to
+  // land) and undoes what came before it -> done here?
+  function heldStep(by) {
+    if (!pick || !pick.held || pickDrag || !pick.steps) return false;
+    const to = pick.at + by;
+    if (to >= pick.steps.length) return true;                 // (nothing to redo past the last drag)
+    if (to < 0) { pickPutBack(false); return false; }
+    pick.at = to; pick.frame = { ...pick.steps[to] };
+    let ok = false;
+    try { ok = GL.flyTo(matrixOf(pick.f0, pick.frame)); } catch (e) { gpuDown(e); }
+    if (gpuFailed) return true;
+    if (ok) { base = null; shown = null; cpuStale = true; paint(); } else rebuild();
+    paintMakeUp();
+    return true;
+  }
   // WHAT GOES ON WITH A SELECTION HELD AS A PICTURE: the select tool's press on it or its handles, the arrows' nudges and the
   // keys that scroll, the modifiers alone; anything else lets it go first
   function keepsHeld(t, e) {
@@ -6943,9 +7020,12 @@ span.lname { cursor: default; }
       const [sx, sy] = local(e);
       return !!hitPick(sx, sy);
     }
-    if (t === "keydown") return !e.ctrlKey && !e.metaKey && !e.altKey &&
-      ["Shift", "Control", "Alt", "Meta", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "PageUp", "PageDown"].includes(e.key);
-    return false;
+    const k = t === "keydown" ? e : t === "message" && e.data && e.data.pd === "editor-key" ? e.data : null;   // (the viewer's key as this one)
+    if (!k) return false;
+    const ctrl = k.ctrlKey || k.metaKey, z = (k.key || "").toLowerCase();
+    return ["Shift", "Control", "Alt", "Meta"].includes(k.key) ||   // (a modifier alone: Alt's snap to an angle, held as it turns)
+      (!ctrl && !k.altKey && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "PageUp", "PageDown"].includes(k.key)) ||
+      (ctrl && !k.altKey && (z === "z" || z === "y"));          // (undo and redo: a drag at a time, heldStep)
   }
   function placesOf(lines, want) {                            // -> Map: each of want where it lies in lines (one look along them)
     const W = new Set(want), at = new Map();

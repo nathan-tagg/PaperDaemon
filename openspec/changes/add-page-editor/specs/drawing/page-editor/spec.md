@@ -316,7 +316,14 @@ next press the other where that press is let go (Alt snapping it to an angle fro
 the pointer between them; the shape SHALL be one stroke of the pen in hand, and the keys SHALL go back to 1 after it. A
 circle SHALL span the clicks as its diameter, a triangle be equilateral with its tip at the first click and the middle
 of the side across at the second, a square have the clicks as its diagonal, a rectangle as upright opposite corners,
-and an arrow run from the first click to its head at the second. Esc SHALL drop a shape begun and go back to 1.
+and an arrow run from the first click to its head at the second. Esc SHALL drop a shape begun and go back to 1. A
+shape's number pressed while a shape is under way SHALL make it that shape, from the same first corner or edge to where
+the pointer is, and 1 SHALL let it go; the same SHALL hold for Select's loop and the zone eraser's under way (2 to 5,
+and 1 a loop drawn freehand from where it began).
+
+#### Scenario: A circle become a square
+- **WHEN** the user presses 2, presses on the page, drags halfway, presses 4 and lets go further on
+- **THEN** the stroke is the square the two corners make, as if 4 had been pressed first
 
 #### Scenario: A circle
 - **WHEN** the user presses 2 and clicks twice on the page

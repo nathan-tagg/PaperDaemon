@@ -23,3 +23,8 @@
 ## 4. Into the app
 
 - [x] 4.1 The editor in the page dialog, for the False Mirror's notebook pages (ui/editor.html; add-false-mirror)
+
+## Shapes under way (2026-11-02)
+
+- [x] A shape's number mid shape makes the shape under way that shape (setShape keeps the first corner; reshape for
+  Select's loop and the zone's): the same stroke, selection and erase as that shape from the start

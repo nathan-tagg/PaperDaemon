@@ -4,7 +4,10 @@
 When a selection is taken up on the graphics card, the editor SHALL draw it once as a picture and the page once without
 it, and each frame of a drag SHALL put the picture where the frame takes it -- moved, turned or resized -- drawing no
 stroke. Let go after a drag, the selection SHALL stay that picture where it was let go until it is let go of: dragged,
-turned, resized or nudged again it SHALL go on from there with nothing taken up again. Anything else done to the page --
+turned, resized or nudged again it SHALL go on from there with nothing taken up again. Undo and redo SHALL go a drag at
+a time while it is held, the picture back where the drag before left it (or on to where the next did), nothing landed;
+back where it was taken up, the next undo SHALL let it go, nothing landed, and undo what came before. A modifier key
+alone (Alt snapping a turn to an angle) SHALL NOT let it go, and nothing SHALL land it in the middle of a drag. Anything else done to the page --
 the selection let go of or another made, another tool, any key but the arrows and the keys that scroll, a paste, the
 viewer's word, a zoom, the page saved by the user or left -- SHALL first land its strokes where the picture is, as one
 undo step for all its drags, and then run. While it is a picture, how it blends with the strokes under and over it, and

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.9
+
+- Turning a selection with Alt works again. In 0.2.8, once a selection had been dragged and let go, pressing Alt (or Ctrl) put its strokes down in the middle of the next drag, so the turn left them where they were while the selection's frame turned, and the drop failed. A modifier key no longer puts a selection down, and nothing does in the middle of a drag. Moving, turning, turning with Alt, resizing, nudging and dragging twice now all land every stroke exactly where the selection's move puts it.
+- Undo goes back one drag at a time while a selection is still selected: drag it, let go, drag it again, and Ctrl+Z puts it back where the first drag left it (Ctrl+Y forward again). Back where it started, the next Ctrl+Z undoes what came before it.
+- Pressing a shape's number while drawing a shape changes the shape: begin a circle, press 4, and it is a square from the same first corner. The same for Select's loop and the zone eraser (2 to 5, and 1 back to a freehand loop).
+
 ## 0.2.8
 
 - New page is instant after a heavy page. Making the blank page read every stroke of the page it follows, 13 seconds after a 150,000-stroke page; now it reads only the few blocks a blank page is made of (72 ms), the same file as before.
