@@ -43,6 +43,37 @@ once whatever their order (a pen covers, whatever was drawn before it), but ther
 highlighters, whose darkening depends on which pen is latest under them. **The split by order is not built; the
 choice of what replaces it is the maintainer's.**
 
+## The selection held as a picture (the maintainer's ruling, 2026-11-01)
+
+"Even with just 200 strokes it struggles to keep up with the cursor ... Complete paradigm shift." Each frame of the drag
+above drew the page again, from its strokes, wherever the selection was and is: on a dense page that is thousands of
+strokes for any selection. Now nothing is drawn from strokes while it moves:
+
+- **Taken up**, its records are parked off the page (MOVE's carry, 16,384 units to the right: inside a block's 16-bit
+  box, on the 1/32 grid), and the page's own draws draw it there, alone, into the working texture's corner, over white
+  and over black. From the two, what it makes of any pixel `u` under it is `b + u * (w - b)`: a pen's color whatever
+  is under it, a pencil's grain or a wash over it exactly, a highlighter darkening it as a product (the page's own
+  takes the darker of the two). The page where it was is drawn again without it (the mask's box): the picture's base.
+- **Each frame** (FLY in ui/shaders.js) puts the base back where the picture was and draws the picture, one shape,
+  where the frame's matrix takes it; the screen made anew over both. No list, no cull, no stroke.
+- **Let go**, the picture comes off, the records are put where the frame took them (from their copy as taken up, the
+  widths at the frame's size) and the page is drawn anew there, exactly, as a drag's frame was; then it lands as before.
+  Put back without a move, the records go back and the page is drawn there again.
+- A whole draw while it is held (a scroll, a resize) draws the page without it: that is kept as the base, the picture
+  over it. Scroll by moving is not used while a selection is held.
+
+Measured (the integrated card, the maintainer's 149,807-stroke page; card ms, timestamp queries):
+
+| selection | taken up (once) | a frame of the drag, before | a frame of the drag, now |
+|---|---|---|---|
+| 1,396 strokes | 8.1 | about 13 | 0.0-0.1 |
+| 32,324 strokes | 94.4 | 50-110 | 0.3-0.6 |
+
+The page's thread did nothing for 50 ms or more in either. Let go: the screen against a whole redraw 0 pixels, every
+part against a fresh one 0 of 149,807; the undo and the redo of 84,469 highlighters held so, 0 pixels. Letting go of a
+selection only moved or turned no longer works its widths out again point by point when every part's width fields are
+whole (90 ms for 84,469 strokes).
+
 ## The drop and its undo (measured)
 
 The same card and page, the maintainer's demo decomposition: its 86,254 highlighters selected, moved and let go, then

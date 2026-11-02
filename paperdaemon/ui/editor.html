@@ -618,6 +618,7 @@ span.lname { cursor: default; }
     if (S.ERASE) mE = await optional(S.ERASE);
     if (S.MOVE) mM = await optional(S.MOVE);
     let mF = S.FILL ? await optional(S.FILL) : null;          // (a fill found on the card: without it, on the processor)
+    const mFly = S.FLY ? await optional(S.FLY) : null;        // (a selection held as a picture: without it, drawn each frame)
     // THE LAYOUTS: 0 the view and the frame's table of strokes drawn on their own; 1 a chunk's records and grain
     const L0 = device.createBindGroupLayout({ entries: [
       { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: "uniform" } },
@@ -702,6 +703,9 @@ span.lname { cursor: default; }
     let cpGrab = null, cpMove = null, cpBack = null, cpAside = null;
     if (mM) Promise.all(["grab", "carry", "back", "aside"].map(e => device.createComputePipelineAsync({ layout: "auto", compute: { module: mM, entryPoint: e } })))
       .then(([g, m, b, a]) => { cpGrab = g; cpMove = m; cpBack = b; cpAside = a; }, () => {});
+    let pFly = null;                                          // (FLY's: not waited for either)
+    if (mFly) device.createRenderPipelineAsync({ layout: "auto", vertex: { module: mFly, entryPoint: "vsFly" },
+      fragment: { module: mFly, entryPoint: "fsFly", targets: [{ format: "rgba8unorm" }] }, primitive: { topology: "triangle-strip" } }).then(p => { pFly = p; }, () => {});
     let pArea = rp({ layout: device.createPipelineLayout({ bindGroupLayouts: [LA] }), vertex: { module: mA, entryPoint: "vsFull" },
       fragment: { module: mA, entryPoint: "fsAreaT", targets: [{ format: RGBA }] } });
     let pAreaP = rp({ layout: device.createPipelineLayout({ bindGroupLayouts: [LA] }), vertex: { module: mA, entryPoint: "vsFull" },
@@ -796,13 +800,15 @@ span.lname { cursor: default; }
       }
       const n = idx ? idx.length : n0, buf = new ArrayBuffer(n * PT), f32 = new Float32Array(buf), u8 = new Uint8Array(buf);
       const c = P.rgba;
-      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, wm = 0;
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, wm = 0, whole = true;
       for (let k = 0; k < n; k++) {
-        const i = idx ? idx[k] : k, qx = a[6 * i], qy = a[6 * i + 1], o = k * PT, w = P.widths[i];
+        const i = idx ? idx[k] : k, qx = a[6 * i], qy = a[6 * i + 1], o = k * PT, w = P.widths[i], wf = a[6 * i + 4];
         f32[o / 4] = qx; f32[o / 4 + 1] = qy; f32[o / 4 + 2] = w;
         u8[o + 13] = c[0]; u8[o + 14] = c[1]; u8[o + 15] = c[2];
         if (qx < x0) x0 = qx; if (qx > x1) x1 = qx; if (qy < y0) y0 = qy; if (qy > y1) y1 = qy; if (w > wm) wm = w;
+        if (!(wf >= 1 && wf === Math.round(wf))) whole = false;
       }
+      out.whole = whole;                                      // (its width fields whole, 1 or more: at its own size, as resized makes them)
       const hb = wm / 2 + 0.5;                               // where its ink can be, in page units (a draw's culling): a
       out.bb = [x0 - hb, y0 - hb, x1 + hb, y1 + hb];        // highlighter's wash reaches WASH_EPS past half its width
       if (P.kind === RF_HIGHLIGHTER) {                         // its segments, and its bevels where it turns (render.c's rule)
@@ -919,6 +925,7 @@ span.lname { cursor: default; }
         if (pieceGrainInto(pp, cut.i0, cut.i1, hp, tp, n, gr, 0)) { out.grain = true; out.gr = gr; out.seed = seedOf(P.x(0), P.y(0)) >>> 0; }
       }
       out.bb = pp.bb.slice();                                 // its ink lies within its stroke's: that box will do to cull by
+      out.whole = !!pp.whole;                                 // (its width fields its stroke's)
       out.from = { pp, r0, r1, h, mid };                      // (the area index makes its stretches from the stroke's)
       return out;
     }
@@ -1829,13 +1836,15 @@ span.lname { cursor: default; }
     function markMoveBox(m) {                                 // the mask's box (where it was and where it is) written as its header
       const b = moveBoxAt(m), l = mv.last || moveBoxAt(null);
       mv.last = b;
+      markBox([Math.min(l[0], b[0]), Math.min(l[1], b[1]), Math.max(l[2], b[2]), Math.max(l[3], b[3])]);
+    }
+    function markBox(b) {                                     // a box (page units) written as the mask's header
       const u = new Uint32Array(12);
-      u[0] = mv.n; u[1] = ordWord(Math.min(l[0], b[0])); u[2] = ordWord(Math.min(l[1], b[1]));
-      u[3] = ordWord(Math.max(l[2], b[2])); u[4] = ordWord(Math.max(l[3], b[3]));
+      u[0] = mv.n; u[1] = ordWord(b[0]); u[2] = ordWord(b[1]); u[3] = ordWord(b[2]); u[4] = ordWord(b[3]);
       u[5] = 1; u[8] = 4; u[9] = 1;                           // (its box drawn, as boxMarks has it)
       device.queue.writeBuffer(mk.buf, 0, u);
     }
-    const mvStats = { taken: 0, frames: 0, adopted: 0, anew: 0, handed: 0, swapped: 0 };
+    const mvStats = { taken: 0, frames: 0, adopted: 0, anew: 0, handed: 0, swapped: 0, flown: 0, flyFrames: 0 };
     function mvGroups() {                                     // the move's passes' groups, made again when a buffer was
       const res = [mv.u, heap.rec, mv.org, mk.buf, mv.wid];
       if (!mv.G || !res.every((b, i) => b === mv.GF[i])) {
@@ -1873,8 +1882,10 @@ span.lname { cursor: default; }
       mv.lines = lines.slice(); mv.A = A; mv.n = n; mv.blocks = blocksOf(A);
       {                                                       // (its box and widest width as taken up: markMoveBox)
         let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, w0 = 0;
+        mv.whole = true;
         for (const L of lines) {
           const p = parts.get(L), f = new Float32Array(p.rec.buffer, p.rec.byteOffset, p.n * 4);
+          if (!p.whole) mv.whole = false;
           for (let k = 0; k < f.length; k += 4) {
             const x = f[k], y = f[k + 1], w = f[k + 2];
             if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; if (w > w0) w0 = w;
@@ -1913,6 +1924,7 @@ span.lname { cursor: default; }
       return true;
     }
     function moveWidths(s) {                                  // each record's width at size s; null: each as taken up
+      if (s === 1 && mv.whole) { mv.wS = mv.w0; return null; }   // (every part's width fields whole: at its own size, its own widths)
       const out = new Float32Array(mv.n);
       let o = 0, same = true, most = 0;
       for (const L of mv.lines) {
@@ -1971,14 +1983,138 @@ span.lname { cursor: default; }
       return out;
     }
     function moveDone() {
+      if (fly.on) flyOff(false);
       for (const b of [mv.org, mv.wid, mv.u]) if (b) b.destroy();
       mv.lines = null; mv.A = null; mv.org = mv.wid = mv.u = null; mv.G = null; mv.pb = mv.last = null; mv.wArr = null;
     }
     function moveCancel() {                                   // the selection put back as it was taken up -> drawn?
       if (!mv.lines) return true;
       let ok = false;
-      try { ok = !lost && moveTo(null, mv.s, true); } finally { moveDone(); }
+      try { if (fly.on) flyOff(true); ok = !lost && moveTo(null, mv.s, true); } finally { moveDone(); }
       return ok;
+    }
+    // A SELECTION HELD AS A PICTURE (his word, 2026-11-01: "I thought you were just turning selected strokes into an
+    // image"): taken up (flyBegin, after moveBegin), its strokes are drawn once on their own -- parked off the page (PARK
+    // units to the right, MOVE's carry), where the page's own draws draw them and nothing else, over white and over black
+    // (FLY's two pictures) -- and the page once without them where they were (base). Each frame of the drag (flyTo) puts
+    // the picture where the frame's matrix takes it, over the page without them: no stroke is drawn while it moves, however
+    // many it has or the page has. Let go (flyEnd), its records are put where the frame took them and the page drawn anew
+    // there, exactly, as a drag's frame was; put back (moveCancel), where they were
+    const PARK = 16384;                                       // (off any page, inside a block's box: whole units, 16 bits)
+    const fly = { on: false, base: null, w: null, b: null, u: null, g: null, smp: null, ks: 1, ux: 0, uy: 0, pw: 0, ph: 0, m: null, at: null };
+    const texOf = (w, h, more) => device.createTexture({ size: [w, h], format: RGBA, usage: T.TEXTURE_BINDING | T.COPY_DST | (more || 0) });
+    function flyBegin() {                                     // -> held as a picture? (else: drawn each frame where it lies)
+      if (!mv.lines || fly.on || !pFly || !holds || !last || lost || !underTex || !PL) return false;
+      const { k, ox, oy, W, H, w, h } = last;
+      if (texW !== W || texH !== H || screenW !== w || screenH !== h) return false;
+      const B = moveBoxAt(null);                              // (as taken up, page units: out by its widest and the marks')
+      // the picture on the working pixels' own grid (its corner on a pixel's edge), smaller only past the working size
+      const ks = Math.min(k, (W - 3) / (B[2] - B[0]), (H - 3) / (B[3] - B[1]));
+      if (!(ks > 0)) return false;
+      const x0 = ks === k ? (Math.floor(B[0] * k + ox) - ox) / k : B[0], y0 = ks === k ? (Math.floor(B[1] * k + oy) - oy) / k : B[1];
+      const pw = Math.ceil((B[2] - x0) * ks) + 2, ph = Math.ceil((B[3] - y0) * ks) + 2;
+      if (pw > W || ph > H) return false;
+      fly.base = texOf(W, H, T.COPY_SRC); fly.w = texOf(pw, ph); fly.b = texOf(pw, ph);
+      fly.u = device.createBuffer({ size: 80, usage: U.UNIFORM | U.COPY_DST });
+      if (!fly.smp) fly.smp = device.createSampler({ magFilter: "linear", minFilter: "linear" });
+      Object.assign(fly, { on: true, ks, ux: x0 - 1 / ks, uy: y0 - 1 / ks, pw, ph, m: null, at: null });
+      flyGroup();
+      // parked, off the page (as taken up, PARK to the right; widths as they were)
+      let enc = device.createCommandEncoder();
+      enc.copyTextureToTexture({ texture: tex }, { texture: fly.base }, [W, H]);   // (the page as shown, kept: tex is drawn into)
+      const a = new ArrayBuffer(48), f = new Float32Array(a), uw = new Uint32Array(a);
+      f[0] = 1; f[3] = 1; f[4] = PARK; uw[6] = mv.n; uw[7] = mv.wide; uw[8] = 0;
+      device.queue.writeBuffer(mv.u, 0, a); mv.s = NaN;       // (the next frame's size works its widths out again: moveTo)
+      mvRun(enc, cpMove, mvGroups().move);
+      device.queue.submit([enc.finish()]);
+      for (const b of mv.blocks) boxSpans.push(b);
+      // drawn there on their own, over white and over black, in the working texture's corner, each picture copied out
+      const a0 = { ...anc };
+      viewPut(W, H, ks, 1 - (x0 + PARK) * ks, 1 - y0 * ks);
+      enc = device.createCommandEncoder();
+      listsReady(enc);
+      listRun(enc, [x0 + PARK, y0, x0 + PARK + (pw - 2) / ks, y0 + (ph - 2) / ks], ks);
+      zNeed();
+      for (const [white, to] of [[true, fly.w], [false, fly.b]]) {
+        const p = enc.beginRenderPass({ colorAttachments: [{ view: texView, loadOp: "clear", clearValue: white ? [1, 1, 1, 1] : [0, 0, 0, 1], storeOp: "store" }],
+          depthStencilAttachment: { view: zView, depthClearValue: 1, depthLoadOp: "clear", depthStoreOp: "discard" } });
+        listDraw(p, { cx0: 0, cy0: 0, cx1: pw - 1, cy1: ph - 1 });
+        p.end();
+        enc.copyTextureToTexture({ texture: tex }, { texture: to }, [pw, ph]);
+      }
+      enc.copyTextureToTexture({ texture: fly.base }, { texture: tex }, [W, H]);   // (the page as it was shown)
+      device.queue.submit([enc.finish()]);
+      Object.assign(anc, a0);
+      // the page where they were, drawn anew without them: the page under the picture (base)
+      mv.last = B; mvList(); markBox(B);
+      if (!eDraw(false, true)) { flyOff(false); return false; }
+      enc = device.createCommandEncoder();
+      enc.copyTextureToTexture({ texture: tex }, { texture: fly.base }, [W, H]);
+      device.queue.submit([enc.finish()]);
+      mvStats.flown++;
+      return true;
+    }
+    function flyGroup() {                                     // (FLY's group: made again when the page under it is)
+      fly.g = device.createBindGroup({ layout: pFly.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: fly.u } },
+        { binding: 1, resource: fly.base.createView() }, { binding: 2, resource: fly.w.createView() }, { binding: 3, resource: fly.b.createView() },
+        { binding: 4, resource: fly.smp }] });
+    }
+    // the picture where the frame's matrix m [a b c d e f] takes it, over the page without it -> drawn? (else: the page to be
+    // drawn whole -- page() keeps it as the picture's base and puts the picture over it)
+    function flyTo(m) {
+      if (!fly.on || lost || !last) return false;
+      const { k, ox, oy, W, H, w, h } = last;
+      if (texW !== W || texH !== H || screenW !== w || screenH !== h) return false;
+      fly.m = m;
+      const C = [[0, 0], [fly.pw, 0], [0, fly.ph], [fly.pw, fly.ph]].map(([u, v]) => {
+        const x = fly.ux + u / fly.ks, y = fly.uy + v / fly.ks;
+        return [(m[0] * x + m[1] * y + m[4]) * k + ox, (m[2] * x + m[3] * y + m[5]) * k + oy, u, v];
+      });
+      const f = new Float32Array(20);
+      C.forEach((c, i) => f.set(c, 4 * i));
+      f[16] = W; f[17] = H; f[18] = fly.pw; f[19] = fly.ph;
+      device.queue.writeBuffer(fly.u, 0, f);
+      const X = C.map(c => c[0]), Y = C.map(c => c[1]);
+      const now = [Math.max(0, Math.floor(Math.min(...X)) - 1), Math.max(0, Math.floor(Math.min(...Y)) - 1),
+                   Math.min(W, Math.ceil(Math.max(...X)) + 1), Math.min(H, Math.ceil(Math.max(...Y)) + 1)];
+      const was = fly.at, enc = device.createCommandEncoder();
+      if (was && was[2] > was[0] && was[3] > was[1])          // (where it was the last frame: the page under it, put back)
+        enc.copyTextureToTexture({ texture: fly.base, origin: [was[0], was[1]] }, { texture: tex, origin: [was[0], was[1]] }, [was[2] - was[0], was[3] - was[1]]);
+      if (now[2] > now[0] && now[3] > now[1]) {
+        const p = enc.beginRenderPass({ colorAttachments: [{ view: texView, loadOp: "load", storeOp: "store" }] });
+        p.setPipeline(pFly); p.setBindGroup(0, fly.g); p.draw(4); p.end();
+      }
+      const a = was ? [Math.min(was[0], now[0]), Math.min(was[1], now[1]), Math.max(was[2], now[2]), Math.max(was[3], now[3])] : now;
+      markBox([(a[0] - ox) / k, (a[1] - oy) / k, (a[2] - ox) / k, (a[3] - oy) / k]);   // (the screen over both)
+      boxScreen(enc, k, ox, oy);
+      device.queue.submit([enc.finish()]);
+      show();
+      fly.at = now; mvStats.flyFrames++;
+      return true;
+    }
+    // let go: the picture taken off, the records where the frame (matrix m, size s) took them, the page drawn anew there ->
+    // drawn? (else: the page to be drawn whole by the caller -- whole: so, a selection over most of the view)
+    function flyEnd(m, s, whole) {
+      if (fly.on) flyOff(true);
+      return moveTo(m, s, false, whole);
+    }
+    function flyOff(put) {                                    // the picture's textures given back (put: the page under it put back where it last was)
+      if (put && fly.at && last && !lost) {
+        const a = fly.at, { k, ox, oy } = last, enc = device.createCommandEncoder();
+        if (a[2] > a[0] && a[3] > a[1]) enc.copyTextureToTexture({ texture: fly.base, origin: [a[0], a[1]] }, { texture: tex, origin: [a[0], a[1]] }, [a[2] - a[0], a[3] - a[1]]);
+        markBox([(a[0] - ox) / k, (a[1] - oy) / k, (a[2] - ox) / k, (a[3] - oy) / k]);
+        boxScreen(enc, k, ox, oy);
+        device.queue.submit([enc.finish()]);
+      }
+      for (const t of [fly.base, fly.w, fly.b, fly.u]) if (t) t.destroy();
+      Object.assign(fly, { on: false, base: null, w: null, b: null, u: null, g: null, m: null, at: null });
+    }
+    function flyBase(W, H) {                                  // the page just drawn whole, the picture's base (its records parked: without them)
+      if (fly.base.width !== W || fly.base.height !== H) { fly.base.destroy(); fly.base = texOf(W, H, T.COPY_SRC); flyGroup(); }
+      const enc = device.createCommandEncoder();
+      enc.copyTextureToTexture({ texture: tex }, { texture: fly.base }, [W, H]);
+      device.queue.submit([enc.finish()]);
+      fly.at = null;
     }
     // THE MOVED STROKES MADE WHERE THEY WERE LET GO, a slice at a time (landBegin; step until the time it is given, then
     // landPut): each the stroke the drop makes (the editor's `line`, from the records read back) and its part, made from the
@@ -2038,7 +2174,7 @@ span.lname { cursor: default; }
         if (gr) { gr[2 * k] = g0[2 * k]; gr[2 * k + 1] = len; }
       }
       const q = made(N, { pts: P, n0: P.length, kind: p.kind, grain: p.grain, alpha: p.alpha, seed: gr ? seedOf(F[4 * o], F[4 * o + 1]) >>> 0 : 0, gr,
-                          rec: new Uint8Array(recs.buffer, recs.byteOffset + o * PT, n * PT), n, idx: p.idx, len, sg });
+                          rec: new Uint8Array(recs.buffer, recs.byteOffset + o * PT, n * PT), n, idx: p.idx, len, sg, whole: true });
       return q;
     }
     // A HIGHLIGHTER TWO OF WHOSE KEPT POINTS THE MOVE PUT IN ONE PLACE: its part as a fresh one makes it -- a record in the
@@ -2059,7 +2195,7 @@ span.lname { cursor: default; }
         if (t) { const b = 4 * (o + keep[t - 1]), d = Math.hypot(F[a] - F[b], F[a + 1] - F[b + 1]); len += d; if (d > sg) sg = d; }
       }
       return made(N, { pts: N.points, n0: N.points.length, kind: p.kind, grain: false, alpha: p.alpha, seed: 0, gr: null, rec, n: m,
-                       idx: m !== N.points.length ? idx : null, len, sg });
+                       idx: m !== N.points.length ? idx : null, len, sg, whole: true });
     }
     // -> { anew: those to be drawn anew, [taken, made]; ps, qs: the parts that handed their places over, and those that
     // took them (the drop's undo and redo: moveHand) }
@@ -2965,6 +3101,7 @@ span.lname { cursor: default; }
       device.queue.submit([enc.finish()]);
       show();
       holds = true; last = { k, ox, oy, sq, W, H, w, h, ix: anc.ix, iy: anc.iy };
+      if (fly.on) { flyBase(W, H); if (fly.m) flyTo(fly.m); }   // (a selection held as a picture: the page drawn is the page under it)
       roomSoon();                                             // (room ahead, once the page is idle)
       return true;
     }
@@ -3152,7 +3289,7 @@ span.lname { cursor: default; }
                last: er.last }),
              readScreen, fill, fillSweep, get fills() { return !!mF; }, scroll, lastView, moveBegin, moveWhy, moveTo, moveEnd, moveCancel, moveRestore,
              memUse: () => ({ gcap: heap.gcap, gfree: heap.gfree.reduce((t, f) => t + f[1], 0), st: st.cap * 4, sk: sk.cap, ev: ev.cap * 4,
-                              rcap: heap.cap, rfree: heap.free.reduce((t, f) => t + f[1], 0) }), landBegin, landPut, handPrep, moveHand, partsCheck, get moving() { return !!mv.lines; }, moveStats: () => ({ ...mvStats }),
+                              rcap: heap.cap, rfree: heap.free.reduce((t, f) => t + f[1], 0) }), landBegin, landPut, handPrep, moveHand, partsCheck, flyBegin, flyTo, flyEnd, get moving() { return !!mv.lines; }, moveStats: () => ({ ...mvStats }),
              holds: (W, H) => holds && texW === W && texH === H, canvas: cv,
              listStats: () => ({ strokes: ob.n, classes: ncDraw(), known: ob.ncKnown }), get tick() { return ob.tick; }, ranOut: () => (er.outNow & 191) !== 0,
              name: "WebGPU " + (info.description || info.architecture || info.vendor || "") + (info.backend ? " (" + info.backend + ")" : "") +
@@ -6650,9 +6787,12 @@ span.lname { cursor: default; }
     boxes.set(N, [x0, y0, x1, y1, wm]);
     return N;
   }
+  // HELD AS A PICTURE on the card (GL.flyBegin): drawn once, each frame the picture put where the frame is (GL.flyTo); let
+  // go, its strokes put there and drawn exactly (GL.flyEnd), then landed as ever
   function moveStart() {                                      // the selection taken up, to move, turn or resize
-    pick.card = false; pick.f0 = { ...pick.frame }; movedNow = null;
+    pick.card = false; pick.fly = false; pick.f0 = { ...pick.frame }; movedNow = null;
     if (GL && !gpuFailed && cardShows && !live && !erasing && underKey() === underWas) try { pick.card = GL.moveBegin(pick.lines); } catch (e) { gpuDown(e); }
+    if (pick.card && !gpuFailed) try { pick.fly = GL.flyBegin() && GL.flyTo([1, 0, 0, 1, 0, 0]); } catch (e) { gpuDown(e); }
     if (!pick.card) { movedNow = new Map(); pick.box = boxOfAll(pick.lines); }
   }
   function moveSoon() { if (!moveFrame) moveFrame = requestAnimationFrame(() => { moveFrame = 0; moveDraw(); }); }
@@ -6670,10 +6810,10 @@ span.lname { cursor: default; }
       // only where it was and where it is (the erase's marked draw) costs more than all of it once that is most of it
       const whole = coverOf(f0, f1) > MOVE_WHOLE;
       let ok = false;
-      try { ok = GL.moveTo(matrixOf(f0, f1), f1.w / f0.w, false, whole); } catch (e) { gpuDown(e); }
-      if (!gpuFailed) {                                       // (not drawn so: the page drawn whole, the records where the frame put them)
-        if (ok) { base = null; shown = null; cpuStale = true; paint(); }
-        else if (whole && rebuildOnCard()) paint();
+      try { ok = pick.fly ? GL.flyTo(matrixOf(f0, f1)) : GL.moveTo(matrixOf(f0, f1), f1.w / f0.w, false, whole); } catch (e) { gpuDown(e); }
+      if (!gpuFailed) {                                       // (not drawn so: the page drawn whole, the records where the frame put them,
+        if (ok) { base = null; shown = null; cpuStale = true; paint(); }   // or a picture's base: the page without them, it over that)
+        else if (whole && !pick.fly && rebuildOnCard()) paint();
         else rebuild();
         return;
       }
@@ -6689,13 +6829,19 @@ span.lname { cursor: default; }
     cancelAnimationFrame(moveFrame); moveFrame = 0;
     const f0 = pick.f0, f1 = pick.frame;
     if (f0.cx === f1.cx && f0.cy === f1.cy && f0.w === f1.w && f0.a === f1.a) {   // nothing moved: as it was taken up
-      pick.f0 = null;
+      pick.f0 = null; pick.fly = false;
       if (pick.card) { let ok = false; try { ok = GL.moveCancel(); } catch (e) { gpuDown(e); } if (ok) { base = null; shown = null; cpuStale = true; paint(); } else rebuild(); return; }
       const b = pick.box; movedNow = null;
       if (GL && !gpuFailed) rebuild(); else rebuildBand(b[1], b[3]);
       return;
     }
-    moveDraw();                                               // (the last frame drawn: what is made is what is shown)
+    if (pick.fly && !gpuFailed) {                              // (a picture: the strokes put where it was let go, drawn there exactly)
+      const whole = coverOf(f0, f1) > MOVE_WHOLE;
+      let ok = false;
+      try { ok = GL.flyEnd(matrixOf(f0, f1), f1.w / f0.w, whole); } catch (e) { gpuDown(e); }
+      pick.fly = false;
+      if (!gpuFailed) { if (ok) { base = null; shown = null; cpuStale = true; paint(); } else if (whole && rebuildOnCard()) paint(); else rebuild(); }
+    } else moveDraw();                                        // (the last frame drawn: what is made is what is shown)
     if (pick.card && !gpuFailed) {
       dropping = true;
       GL.moveEnd().then(recs => { if (recs && GL && !gpuFailed) landCard(recs); else land(); }, e => { gpuDown(e); land(); });

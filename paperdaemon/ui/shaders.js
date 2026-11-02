@@ -2736,6 +2736,34 @@ fn blockPut(b: u32, k0: u32, k1: u32, st: u32, ends: bool, sid: u32) -> bool {
   recPut(mkr[16u + j], org[j]);
 }
 `,
+  // A SELECTION HELD AS A PICTURE WHILE IT IS DRAGGED (the editor's; the engine uses none of it): drawn once on its own over
+  // white (w) and once over black (b), what it makes of any pixel u under it is b + u * (w - b) -- a pen's color whatever
+  // is under it, a pencil's grain or a wash over it, a highlighter darkening it (as a product: the page's own takes the
+  // darker of the two). Each frame puts the picture over the page without it (base): one shape, its corners the picture's
+  // where the frame takes them (F.c: x and y in the target's pixels, u and v in the picture's), the picture read between
+  // its pixels; F.size: the target's size, then the picture's
+  FLY: `
+struct FU { c: array<vec4<f32>, 4>, size: vec4<f32> };
+@group(0) @binding(0) var<uniform> F: FU;
+@group(0) @binding(1) var baseT: texture_2d<f32>;
+@group(0) @binding(2) var wT: texture_2d<f32>;
+@group(0) @binding(3) var bT: texture_2d<f32>;
+@group(0) @binding(4) var smp: sampler;
+struct FO { @builtin(position) pos: vec4<f32>, @location(0) uv: vec2<f32> };
+@vertex fn vsFly(@builtin(vertex_index) v: u32) -> FO {
+  let c = F.c[v];
+  var o: FO;
+  o.pos = vec4<f32>(c.x / F.size.x * 2.0 - 1.0, 1.0 - c.y / F.size.y * 2.0, 0.0, 1.0);
+  o.uv = c.zw / F.size.zw;
+  return o;
+}
+@fragment fn fsFly(i: FO) -> @location(0) vec4<f32> {
+  let w = textureSampleLevel(wT, smp, i.uv, 0.0).rgb;
+  let b = textureSampleLevel(bT, smp, i.uv, 0.0).rgb;
+  let u = textureLoad(baseT, vec2<i32>(i.pos.xy), 0).rgb;
+  return vec4<f32>(b + u * (w - b), 1.0);
+}
+`,
   // THE ENGINE'S CANVAS ONTO THE CARD AND ITS PICTURE BACK, as bytes (pipeline/page/gpu.py; the editor uses none of it):
   // the canvas it is given, three bytes a pixel, row after row, put up as they are -- a byte a texel, TW across --
   // and laid on the working canvas, each pixel ss x ss (fsUnpack: what render.c copies under the ink); the picture

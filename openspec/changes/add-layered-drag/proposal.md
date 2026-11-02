@@ -18,6 +18,10 @@ second.
   its strokes in the order, onto the first picture, and puts the later strokes over them.
 - Every frame shows what drawing the whole page shows, pixel for pixel. A case that cannot be made so is drawn the
   way it is now.
+- **Superseded by the maintainer, 2026-11-01** ("I thought you were just turning selected strokes into an image";
+  "Complete paradigm shift"): the selection is held as a picture while it is dragged -- drawn once, the page once
+  without it, each frame the picture put where the frame takes it; exact once let go. No stroke is drawn while it
+  moves.
 - The pictures exist only while a selection is held and are freed when it is let go.
 
 ## Impact

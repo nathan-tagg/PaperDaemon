@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.7
+
+- Dragging a selection no longer draws the page again each frame. Picked up, the selection is drawn once as a picture, and the picture is moved, turned or resized, whatever the selection's size or the page's; let go, its strokes land exactly where it was let go. On an integrated card and a 150,000-stroke page, a frame of a drag takes the card 0.1 ms for 1,400 strokes and 0.4 ms for 32,000 (13 ms and 50 to 110 ms before); picking it up takes 8 ms and 94 ms, once. While it moves, how it blends with strokes under and over it is close, not exact; it is exact once let go.
+- Letting go of a large selection that was only moved or turned no longer waits for its strokes' widths to be worked out again (90 ms for 84,000 strokes).
+
 ## 0.2.6
 
 - A notebook's title in the viewer opens its sheet: rename it, tag it, choose its cover (last page visited or first page) and export it. The gear by the title is gone. In the library, the bar for the documents picked (long or right click) has their cover as a dropdown. In the Mirror, renaming and the cover need Edit the Mirror on, and go to the tablet.

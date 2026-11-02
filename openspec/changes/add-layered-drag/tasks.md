@@ -30,15 +30,26 @@
   whole redraw after the drop, the undo and the redo, the undo against the page before and the page made up fresh
   against the drop: 0 pixels each; Ctrl+Z pressed while the drop lands undoes it, 0 pixels
 
-## 2. Layers
+## 2. The selection held as a picture (the maintainer's ruling, 2026-11-01; supersedes 3-4 below)
 
-- [ ] 2.1 The page's draws limited to a span of its order (before, between, after)
-- [ ] 2.2 Taken up: the before picture, the after colors and their mask
-- [ ] 2.3 Each frame: the before picture where the selection was and is, the between span over it, the after span's
+- [x] 2.1 Taken up: its records parked off the page, drawn there alone over white and black (the page's own draws), the
+  page where it was drawn again without it (the base)
+- [x] 2.2 Each frame: the base put back where the picture was, the picture drawn where the frame's matrix takes it
+  (FLY), the screen made anew over both
+- [x] 2.3 Let go: the records where the frame took them, the page drawn anew there exactly, landed as before; put back:
+  where they were; a whole draw while held kept as the base
+- [x] 2.4 Measured on the integrated card (design: The selection held as a picture), and proved exact once let go:
+  0 pixels against a whole redraw and the page made up fresh; undo and redo 0 pixels
+
+## 3. Layers (not built)
+
+- [ ] 3.1 The page's draws limited to a span of its order (before, between, after)
+- [ ] 3.2 Taken up: the before picture, the after colors and their mask
+- [ ] 3.3 Each frame: the before picture where the selection was and is, the between span over it, the after span's
   highlighters and grain and washes over that, the fixed after colors last
-- [ ] 2.4 Let go or put back: the textures freed; the fallbacks (view moved, card lost, a stroke cut)
+- [ ] 3.4 Let go or put back: the textures freed; the fallbacks (view moved, card lost, a stroke cut)
 
-## 3. Proof
+## 4. Proof (of the layers; not built)
 
-- [ ] 3.1 Every frame against a whole draw, 0 pixels different, in the cases of D7
-- [ ] 3.2 Each stage's time on the integrated card, before and after
+- [ ] 4.1 Every frame against a whole draw, 0 pixels different, in the cases of D7
+- [ ] 4.2 Each stage's time on the integrated card, before and after
