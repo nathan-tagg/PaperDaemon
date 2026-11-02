@@ -267,10 +267,11 @@ span.lname { cursor: default; }
   function release() { for (const e of heldEvents.splice(0)) (e.target || window).dispatchEvent(new e.constructor(e.type, e)); }
   for (const t of ["keydown", "pointerdown", "paste", "cut", "copy", "drop", "message"]) window.addEventListener(t, e => {
     if (heldEvents.length) { hold(e); return; }
+    if (inking && t === "message") return;                    // (the viewer's word: taken as it comes, a page turn above all)
     if ((t !== "keydown" || !["Shift", "Control", "Alt", "Meta"].includes(e.key)) && !settleSwipe()) { hold(e); swipeWaits.push(release); }
   }, true);
   for (const t of ["keyup", "pointermove", "pointerup", "pointercancel", "mousedown", "mouseup", "click", "dblclick", "contextmenu", "wheel"])
-    window.addEventListener(t, e => { if (heldEvents.length) hold(e); }, true);
+    window.addEventListener(t, e => { if (heldEvents.length || (inking && t === "wheel")) hold(e); }, true);
   // ALT+LEFT AND ALT+RIGHT, the page open to edit or to look at, walk the viewer's history of pages (as the mouse's back
   // and forward buttons do): never the browser's Back, which took the app behind the viewer a screen back
   // CTRL+W and CTRL+TAB (with Shift: back) are the viewer's: close the notebook, go to the next one
@@ -2026,8 +2027,8 @@ span.lname { cursor: default; }
       try { if (fly.on) flyOff(true); ok = !lost && moveTo(null, mv.s, true); } finally { moveDone(); }
       return ok;
     }
-    // A SELECTION HELD AS A PICTURE (his word, 2026-11-01: "I thought you were just turning selected strokes into an
-    // image"): taken up (flyBegin, after moveBegin), its strokes are drawn once on their own -- parked off the page (PARK
+    // A SELECTION HELD AS A PICTURE WHILE IT IS DRAGGED, so a drag draws no stroke whatever its size or the page's: taken
+    // up (flyBegin, after moveBegin), its strokes are drawn once on their own -- parked off the page (PARK
     // units to the right, MOVE's carry), where the page's own draws draw them and nothing else, over white and over black
     // (FLY's two pictures) -- and the page once without them where they were (base). Each frame of the drag (flyTo) puts
     // the picture where the frame's matrix takes it, over the page without them: no stroke is drawn while it moves, however
@@ -3311,6 +3312,37 @@ span.lname { cursor: default; }
       return true;
     }
     const synced = (from, to) => { if (ob.tick !== from) return false; ob.tick = to; return true; };   // (a change the order already has)
+    // A PAGE'S STROKES COMING IN, a frame's at a time (the editor's inkFrame): their parts made and put up, and drawn over
+    // what the frames before drew (all of it earlier in the page's order) -- the card's order, meanwhile, just them; the
+    // page's whole order made once the last are in (inkDone). A whole draw meanwhile makes the order from the strokes in
+    function inkMore(lines) {                                 // -> drawn?
+      if (!holds || !last || lost || er.live || lv) return false;
+      const { k, ox, oy, sq, W, H, w, h } = last;
+      if (texW !== W || texH !== H || screenW !== w || screenH !== h) return false;
+      const ps = [], fresh = [];
+      let nR = 0, nG = 0, lvl = 0, prev = 0, any = false;
+      for (const L of lines) { const q = partOf(L); ps.push(q); if (q.sid === undefined) { fresh.push(q); nR += q.n; if (q.gr) nG += q.n; } }
+      placeAll(fresh, nR, nG);
+      const a = new Uint32Array(Math.max(1, ps.length));    // (the order: these alone, their levels as ordAll works them out)
+      for (let i = 0; i < ps.length; i++) { const q = ps[i], kd = nonPen(q); a[i] = q.sid; if (kd === 1 && prev === 2) lvl++; if (kd) { prev = kd; any = true; } }
+      ordPipes(); ordRoom(ps.length);
+      device.queue.writeBuffer(ob.r, 0, a, 0, ps.length); device.queue.writeBuffer(ob.lh, 16, new Uint32Array([ps.length]));
+      ob.n = ps.length; ob.ncKnown = any ? 1 + 2 * (lvl + 1) : 1; ob.pend = []; ob.dirty = true; ob.tick = -1;
+      viewPut(W, H, k, ox, oy);
+      const enc = device.createCommandEncoder();
+      listsReady(enc); listRun(enc, [-ox / k, -oy / k, (W - ox) / k, (H - oy) / k], k);
+      zNeed();
+      const p = enc.beginRenderPass({ colorAttachments: [{ view: texView, loadOp: "load", storeOp: "store" }],
+        depthStencilAttachment: { view: zView, depthClearValue: 1, depthLoadOp: "clear", depthStoreOp: "discard" } });
+      listDraw(p, sq);
+      p.end();
+      const pa = enc.beginRenderPass({ colorAttachments: [{ view: screenView, loadOp: "clear", clearValue: [0, 0, 0, 1], storeOp: "store" }] });
+      pa.setPipeline(areaT.mode === 3 ? pAreaP3 : areaT.mode ? pAreaP : pArea); pa.setBindGroup(0, gArea); pa.draw(3); pa.end();
+      device.queue.submit([enc.finish()]);
+      show();
+      return true;
+    }
+    function inkDone(lines, tick) { ordAll(lines); ob.tick = tick; }   // (the page's whole order, as a whole draw would make it: nothing drawn)
     return { frameBegin, frameEnd, frameMs, page, region, regions, edit, synced, under, inkWhole,
              get eraseOn() { return ERASE_OK; }, get erasePending() { return erasePending; }, swap, eStep, ePass, eFrame: () => ePass(true), eRedraw, liveBegin, liveAdd, liveEnd, foldEnd, slotsBusy: () => er.asks > 0 || er.steps.length > 0, cardLive: () => er.live,
              planned: () => !er.live || er.planDone, planAll: () => { if (er.live && !lost) { er.planAll = true; ePlan(true); eRead([], true); } },
@@ -3322,7 +3354,7 @@ span.lname { cursor: default; }
                last: er.last }),
              readScreen, fill, fillSweep, get fills() { return !!mF; }, scroll, lastView, moveBegin, moveWhy, moveTo, moveEnd, moveCancel, moveRestore,
              memUse: () => ({ gcap: heap.gcap, gfree: heap.gfree.reduce((t, f) => t + f[1], 0), st: st.cap * 4, sk: sk.cap, ev: ev.cap * 4,
-                              rcap: heap.cap, rfree: heap.free.reduce((t, f) => t + f[1], 0) }), landBegin, landPut, handPrep, moveHand, partsCheck, flyBegin, flyTo, flyEnd, get moving() { return !!mv.lines; }, moveStats: () => ({ ...mvStats }),
+                              rcap: heap.cap, rfree: heap.free.reduce((t, f) => t + f[1], 0) }), landBegin, landPut, handPrep, moveHand, partsCheck, flyBegin, flyTo, flyEnd, inkMore, inkDone, get moving() { return !!mv.lines; }, moveStats: () => ({ ...mvStats }),
              holds: (W, H) => holds && texW === W && texH === H, canvas: cv,
              listStats: () => ({ strokes: ob.n, classes: ncDraw(), known: ob.ncKnown }), get tick() { return ob.tick; }, ranOut: () => (er.outNow & 191) !== 0,
              name: "WebGPU " + (info.description || info.architecture || info.vendor || "") + (info.backend ? " (" + info.backend + ")" : "") +
@@ -6231,7 +6263,7 @@ span.lname { cursor: default; }
   // frame or two), and what waits for it (swipeWaits) runs then
   const swipeWaits = [];
   function settleSwipe() {
-    if (dropping) return false;                               // (a selection let go: settled once the card has answered, land)
+    if (dropping || inking) return false;                     // (a selection let go: settled once the card has answered, land; a page's strokes coming in)
     if (!erasing || !erasing.ending) return true;
     const E = erasing;
     cancelAnimationFrame(eraseFrame); eraseFrame = 0;
@@ -7638,13 +7670,13 @@ span.lname { cursor: default; }
     return { column: col, x: tx.x, y: tx.y, width: tx.width, paras: (tx.paras || []).map(p => ({ style: p.style, list: p.list,
       chars: [].concat(...(p.runs || []).map(r => [...r.text].map(c => ({ c, b: !!r.bold, i: !!r.italic })))) })) };
   }
-  function fromScene(sc) {
+  function fromScene(sc, later) {                             // (later: the strokes come in a frame at a time -- inkFrame -- the layers empty for now)
     page.paperSize = sc.paperSize || [1620, 2160];
     page.source = sc.source || null;                           // "pdf" or "epub": a page of a PDF or a book
     page.zoom = sc.zoom || "bestFit";                           // how the tablet fits it on the screen (screenW)
     // the daemon's layer is shown and marked: it is his, written by him, and never the layer the pens work on
     page.layers = (sc.layers || []).map((L, i) => ({ nodeId: [0, 11 + i], label: L.label, visible: L.visible, daemon: !!L.daemon,
-                                                     ...(MIRROR ? { fileId: L.id || null } : {}), lines: (L.lines || []).map(ln => lineFromFile(ln)) }));
+                                                     ...(MIRROR ? { fileId: L.id || null } : {}), lines: later ? [] : (L.lines || []).map(ln => lineFromFile(sc.read ? pointsOf(sc.read, ln) : ln)) }));
     if (!page.layers.length) page.layers = [{ nodeId: [0, 11], label: "Layer 1", visible: true, lines: [] }];
     fileHadText = !!sc.text;
     activeLayer = page.layers.length - 1;
@@ -7764,21 +7796,24 @@ span.lname { cursor: default; }
     if (PDS.some((b, i) => u8[i] !== b)) throw new Error("not a PaperDaemon page");
     const n = dv.getUint32(4, true), sc = JSON.parse(new TextDecoder().decode(u8.subarray(8, 8 + n)));
     // EVERY STROKE'S POINTS IN ONE ARRAY, each stroke's a part of it (an array a stroke was most of reading a page of
-    // 150,000 strokes, and of the collector's work after it), and each stroke's box (boxOf's) worked out as it is read
+    // 150,000 strokes, and of the collector's work after it); read a stroke at a time (pointsOf: all at once, or a frame's
+    // worth at a time as the page comes in, inkFrame)
     let total = 0;
     for (const L of sc.layers || []) for (const ln of L.lines || []) total += ln.n || 0;
-    const pool = new Float64Array(6 * total);
-    let at = 8 + n, o = 0;
-    for (const L of sc.layers || []) for (const ln of L.lines || []) {
-      const k = ln.n || 0, a = pool.subarray(o, o + 6 * k), b = [Infinity, Infinity, -Infinity, -Infinity, 0];
-      for (let q = 0; q < 6 * k; q += 6, at += 14) {
-        const x = dv.getFloat32(at, true), y = dv.getFloat32(at + 4, true), w = dv.getUint16(at + 10, true);
-        a[q] = x; a[q + 1] = y; a[q + 2] = dv.getUint16(at + 8, true); a[q + 3] = dv.getUint8(at + 12); a[q + 4] = w; a[q + 5] = dv.getUint8(at + 13);
-        if (x < b[0]) b[0] = x; if (y < b[1]) b[1] = y; if (x > b[2]) b[2] = x; if (y > b[3]) b[3] = y; if (w > b[4]) b[4] = w;
-      }
-      ln.points = new Pts(a, k); ln.box = b; o += 6 * k; delete ln.n;
-    }
+    sc.read = { dv, at: 8 + n, o: 0, pool: new Float64Array(6 * total) };
     return sc;
+  }
+  function pointsOf(h, ln) {                                  // a stroke's points, the next in the file h: its box (boxOf's) worked out as read
+    const dv = h.dv, k = ln.n || 0, a = h.pool.subarray(h.o, h.o + 6 * k), b = [Infinity, Infinity, -Infinity, -Infinity, 0];
+    let at = h.at;
+    for (let q = 0; q < 6 * k; q += 6, at += 14) {
+      const x = dv.getFloat32(at, true), y = dv.getFloat32(at + 4, true), w = dv.getUint16(at + 10, true);
+      a[q] = x; a[q + 1] = y; a[q + 2] = dv.getUint16(at + 8, true); a[q + 3] = dv.getUint8(at + 12); a[q + 4] = w; a[q + 5] = dv.getUint8(at + 13);
+      if (x < b[0]) b[0] = x; if (y < b[1]) b[1] = y; if (x > b[2]) b[2] = x; if (y > b[3]) b[3] = y; if (w > b[4]) b[4] = w;
+    }
+    h.at = at; h.o += 6 * k;
+    ln.points = new Pts(a, k); ln.box = b; delete ln.n;
+    return ln;
   }
   // EACH STROKE'S PART OF THE FILE IS MADE ONCE and kept with it (a stroke's points never change: an erase or a move
   // makes new strokes): its line in the scene's JSON and its points' records. A save of a page of tens of thousands of
@@ -8157,6 +8192,52 @@ span.lname { cursor: default; }
       window.parent.postMessage({ pd: "thumb-done", ok: !!blob, blob }, location.origin);
     } catch (e) { window.parent.postMessage({ pd: "thumb-done", ok: false, why: String(e) }, location.origin); }
   }
+  // A PAGE'S STROKES COME IN A FRAME AT A TIME, so the page shows at once and its strokes are seen coming in -- never a
+  // picture of the page in its place: read, made, put on the card and drawn as many as INK_MS holds, in the page's
+  // order, each frame's over what the frames before drew, all of it under them in the order, so the page once the last
+  // are in is the page drawn whole. What would change the page meanwhile waits for it (settleSwipe), the wheel too; a
+  // whole draw meanwhile (the template come in, a resize) draws the page as far as it has come
+  const INK_MS = 12;                                          // (a frame's work: as many points as the frames before took to fill it)
+  let inking = null, inkLoad = null;                          // (the strokes still to come in; how the last page came in, for a look from outside)
+  window.pdInkLoad = () => inkLoad;
+  function inkStart(sc, buf) {
+    inking = { sc, buf, li: 0, j: 0, t0: performance.now(), frames: 0, first: 0, longest: 0 };
+    requestAnimationFrame(inkFrame);
+  }
+  function inkFrame() {
+    const I = inking;
+    if (!I) return;
+    const t = performance.now(), src = I.sc.layers || [], batch = [], all = !GL || gpuFailed;
+    const cap = all ? Infinity : I.rate ? Math.max(2000, INK_MS / I.rate) : 20000;   // (points this frame; I.rate: ms a point, the last frame's)
+    let pts = 0;
+    while (I.li < src.length && pts < cap) {
+      const from = src[I.li].lines || [];
+      if (I.j >= from.length) { I.li++; I.j = 0; continue; }
+      const L = lineFromFile(pointsOf(I.sc.read, from[I.j++])), Ly = page.layers[I.li];
+      Ly.lines.push(L); pts += L.points.n;
+      if (Ly.visible) batch.push(L);
+    }
+    if (batch.length && !all) { let ok = false; try { ok = GL.inkMore(batch); } catch (e) { gpuDown(e); } if (!ok) I.redraw = true; }
+    const dt = performance.now() - t;
+    if (pts) I.rate = dt / pts;
+    I.frames++; I.longest = Math.max(I.longest, dt);
+    if (!I.first) I.first = performance.now() - I.t0;
+    if (I.li < src.length) { requestAnimationFrame(inkFrame); return; }
+    inkEnd();
+  }
+  function inkEnd() {                                         // every stroke in: the page's order made whole, the page loaded
+    const I = inking;
+    inking = null;
+    inkChanged();
+    let whole = !!I.redraw || !GL || gpuFailed;               // (a frame's strokes not drawn: the page drawn whole)
+    if (!whole) try { GL.inkDone(inkList(), inkTick); } catch (e) { gpuDown(e); whole = true; }
+    if (whole) rebuild(); else drawnTick = inkTick;           // (the page as drawn is the page: a scroll moves it)
+    if (filerOk) filerAsk({ op: "load", buf: I.buf, uids: uidsOf(page.layers.map(L => L.lines)), version, mirror: MIRROR }, [I.buf]);
+    largeCheck(); loaded = true;
+    savedAt = changes;                                        // as read: nothing to save until something changes
+    inkLoad = { first: I.first, frames: I.frames, longest: I.longest, total: performance.now() - I.t0 };
+    if (swipeWaits.length) { const w = swipeWaits.splice(0); queueMicrotask(() => { for (const f of w) f(); }); }
+  }
   async function loadPage() {
     try {
       // the card is asked for as the page loads, and the page read meanwhile: it is first drawn once the card has answered
@@ -8168,12 +8249,16 @@ span.lname { cursor: default; }
       if (MIRROR) stamp = version;                            // a Mirror page's stamp: its writes go against the page as read
       // THE FILE AS READ is kept as it came (bytes the collector never walks), not as the scene read from it: that held
       // every point of the page a second time, for as long as the page was open -- by the worker, where there is one
-      fromScene(sc);
-      if (filerOk) filerAsk({ op: "load", buf, uids: uidsOf(page.layers.map(L => L.lines)), version, mirror: MIRROR }, [buf]);
-      if (THUMB_W) { drawThumb(); return; }
-      loadTemplate(); loadSource().then(loadLinks); largeCheck();
-      loaded = true;
-      savedAt = changes;                                      // as read: nothing to save until something changes
+      const later = !THUMB_W && !!GL && !gpuFailed;           // (on the card: the strokes come in a frame at a time)
+      fromScene(sc, later);
+      if (later) inkStart(sc, buf);
+      else {
+        if (filerOk) filerAsk({ op: "load", buf, uids: uidsOf(page.layers.map(L => L.lines)), version, mirror: MIRROR }, [buf]);
+        if (THUMB_W) { drawThumb(); return; }
+        largeCheck(); loaded = true;
+        savedAt = changes;                                    // as read: nothing to save until something changes
+      }
+      loadTemplate(); loadSource().then(loadLinks);
     } catch (e) {
       await gpuReady;                                         // (whatever happened, the card's answer first: nothing is drawn before it)
       if (THUMB_W) { window.parent.postMessage({ pd: "thumb-done", ok: false, why: e.message }, location.origin); return; }

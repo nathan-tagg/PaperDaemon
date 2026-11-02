@@ -4,7 +4,7 @@
 
 - Dragging a selection no longer draws the page again each frame. Picked up, the selection is drawn once as a picture, and the picture is moved, turned or resized, whatever the selection's size or the page's; let go, its strokes land exactly where it was let go. On an integrated card and a 150,000-stroke page, a frame of a drag takes the card 0.1 ms for 1,400 strokes and 0.4 ms for 32,000 (13 ms and 50 to 110 ms before); picking it up takes 8 ms and 94 ms, once. While it moves, how it blends with strokes under and over it is close, not exact; it is exact once let go.
 - Letting go of a large selection that was only moved or turned no longer waits for its strokes' widths to be worked out again (90 ms for 84,000 strokes).
-- A page opens faster: its strokes are read into one array, and each stroke's drawing data is made in one walk along its points, without the temporary lists it was made from before. The heaviest test page (150,000 strokes) opens in 1.1 s instead of 1.6 s on the integrated card, its pixels and strokes' data unchanged.
+- A page shows at once and its strokes come in a frame at a time, in the page's order, as many as a frame holds; keys, clicks and the wheel wait until they are all in. The heaviest test page (150,000 strokes) shows in 0.23 s on the integrated card and has all its strokes in after 1.15 s (it showed nothing for 1.6 s before). Reading and making a page's strokes also cost less: its points in one array, each stroke's drawing data made in one walk along its points. The page once in is the same, pixel for pixel. A page the engine has not read since it changed still waits for the engine first.
 
 ## 0.2.6
 
