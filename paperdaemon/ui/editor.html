@@ -493,13 +493,20 @@ span.lname { cursor: default; }
   }
   // a grain's seed, from where its stroke starts
   const seedOf = (x, y) => mix((Math.imul(Math.round((x + page.paperSize[0] / 2) * 16), 0x27d4eb2d) ^ mix(Math.round(y * 16))) >>> 0);
+  const famOf = new Map();                                    // (a pen's family: its name before "_", once a pen)
+  const famFor = pen => { let f = famOf.get(pen); if (f === undefined) { f = pen.split("_")[0]; famOf.set(pen, f); } return f; };
+  function rgbaOf(L, fam) {                                   // prepared's color (and a wash's alpha), on its own
+    if (L.pen.startsWith("HIGHLIGHTER")) return L.colorRgba ? L.colorRgba.slice(0, 3) : (HL_ENUM[L.color] || [255, 239, 115]);
+    if (L.pen === "SHADER") return L.colorRgba || SHADER_PLAIN[L.color] || (ENUM[L.color] || [0, 0, 0]).concat([255]);
+    return (PEN_ENUM[fam] || {})[L.color] || ENUM[L.color] || [0, 0, 0];
+  }
   function prepared(L) {                                      // render.py's preparation of a line
-    const fam = L.pen.split("_")[0], scaleW = WSCALE[fam] || WSCALE_DEFAULT, P = L.points, n = P.n, a = P.a, widths = [];
-    for (let i = 0; i < n; i++) widths.push(Math.max(1, a[6 * i + 4] * scaleW));
+    const fam = famFor(L.pen), scaleW = WSCALE[fam] || WSCALE_DEFAULT, P = L.points, n = P.n, a = P.a, widths = new Float64Array(n);
+    for (let i = 0; i < n; i++) widths[i] = Math.max(1, a[6 * i + 4] * scaleW);
     if (L.pen.startsWith("HIGHLIGHTER")) return { kind: RF_HIGHLIGHTER, rgba: (L.colorRgba ? L.colorRgba.slice(0, 3) : (HL_ENUM[L.color] || [255, 239, 115])), widths };
     const least = fam === "PENCIL" || fam === "MECHANICAL" ? 2 : 1;   // the tablet draws no pencil narrower than 2 units
-    const dens = [];
-    for (let i = 0; i < n; i++) { const k = response(fam, a[6 * i + 5], a[6 * i + 2]); widths[i] = k > 0 ? Math.max(least, widths[i] * k) : 0; dens.push(respD); }
+    const dens = new Float64Array(n);
+    for (let i = 0; i < n; i++) { const k = response(fam, a[6 * i + 5], a[6 * i + 2]); widths[i] = k > 0 ? Math.max(least, widths[i] * k) : 0; dens[i] = respD; }
     if (L.pen === "SHADER") return { kind: RF_SHADER, rgba: L.colorRgba || SHADER_PLAIN[L.color] || (ENUM[L.color] || [0, 0, 0]).concat([255]), widths };
     const seed = seedOf(a[0], a[1]);
     return { kind: RF_PEN, rgba: (PEN_ENUM[fam] || {})[L.color] || ENUM[L.color] || [0, 0, 0], widths, dens, seed };
@@ -790,53 +797,76 @@ span.lname { cursor: default; }
       parts.set(L, out);
       return out;
     }
+    // PARTS' RECORDS IN RUNS OF ONE BUFFER (16 MB a run; a part past a MB its own): a buffer a part was most of making a
+    // page's parts, and of the collector's work after it. A run is let go once no part in it is kept
+    let arena = null, arenaAt = 0;
+    function arenaGive(u, keep) {                             // a part's records past `keep` bytes back to the run (the last made)
+      if (u.buffer === arena && u.byteOffset + u.byteLength === arenaAt) arenaAt = u.byteOffset + keep;
+    }
+    function recRoom(bytes) {                                 // -> a part's records, zeroed
+      if (bytes > 1 << 20) return new Uint8Array(bytes);
+      if (!arena || arenaAt + bytes > arena.byteLength) { arena = new ArrayBuffer(16 << 20); arenaAt = 0; }
+      const u = new Uint8Array(arena, arenaAt, bytes);
+      arenaAt += bytes;
+      return u;
+    }
+    // A STROKE'S PART, in one walk along its points: each kept point's width (prepared's arithmetic), its record, the box,
+    // the length along the records (lenOf's), a highlighter's turns, a grain stroke's densities -- what prepared() and four
+    // walks after it made (an array or two a stroke, most of a heavy page's reading), to the bit
+    let walkD = new Float64Array(1 << 12), walkI = new Int32Array(1 << 12);   // (a stroke's densities, its kept points: kept between strokes)
     function freshPart(L) {
-      const P = prepared(L), n0 = L.points.length, pts = L.points, a = pts.a;
-      const out = { pts, n0, kind: P.kind, grain: false, alpha: 1, seed: 0, gr: null };
-      let idx = null;                                         // the points on the card: a highlighter's repeats dropped
-      if (P.kind === RF_HIGHLIGHTER) {                        // against the last point kept, as render.c drops them (null:
-        idx = [0];                                            // every point)
-        for (let i = 1; i < n0; i++) { const j = idx[idx.length - 1]; if (Math.abs(a[6 * i] - a[6 * j]) > 1e-6 || Math.abs(a[6 * i + 1] - a[6 * j + 1]) > 1e-6) idx.push(i); }
-      }
-      const n = idx ? idx.length : n0, buf = new ArrayBuffer(n * PT), f32 = new Float32Array(buf), u8 = new Uint8Array(buf);
-      const c = P.rgba;
-      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, wm = 0, whole = true;
-      for (let k = 0; k < n; k++) {
-        const i = idx ? idx[k] : k, qx = a[6 * i], qy = a[6 * i + 1], o = k * PT, w = P.widths[i], wf = a[6 * i + 4];
-        f32[o / 4] = qx; f32[o / 4 + 1] = qy; f32[o / 4 + 2] = w;
-        u8[o + 13] = c[0]; u8[o + 14] = c[1]; u8[o + 15] = c[2];
+      const pts = L.points, n0 = pts.length, a = pts.a, fam = famFor(L.pen), scaleW = WSCALE[fam] || WSCALE_DEFAULT;
+      const hl = L.pen.startsWith("HIGHLIGHTER"), kind = hl ? RF_HIGHLIGHTER : L.pen === "SHADER" ? RF_SHADER : RF_PEN;
+      const least = fam === "PENCIL" || fam === "MECHANICAL" ? 2 : 1, c = rgbaOf(L, fam);
+      const out = { pts, n0, kind, grain: false, alpha: 1, seed: 0, gr: null };
+      if (walkD.length < n0) { walkD = new Float64Array(2 * n0); walkI = new Int32Array(2 * n0); }
+      const u8 = recRoom(n0 * PT), f32 = new Float32Array(u8.buffer, u8.byteOffset, n0 * 4), D = walkD, I = walkI;
+      let n = 0, x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, wm = 0, whole = true, len = 0, sg = 0, grain = false;
+      let pdx = 0, pdy = 0, prev = false, jx = 0, jy = 0;
+      for (let i = 0; i < n0; i++) {
+        const qx = a[6 * i], qy = a[6 * i + 1], wf = a[6 * i + 4];
+        // a highlighter's repeat dropped, against the last point kept, as render.c drops it
+        if (hl && i && !(Math.abs(qx - jx) > 1e-6 || Math.abs(qy - jy) > 1e-6)) continue;
+        let w = Math.max(1, wf * scaleW);
+        if (!hl) { const k = response(fam, a[6 * i + 5], a[6 * i + 2]); w = k > 0 ? Math.max(least, w * k) : 0; D[n] = respD; if (respD < 1) grain = true; }
+        const o = n * 4;
+        f32[o] = qx; f32[o + 1] = qy; f32[o + 2] = w;
+        u8[4 * o + 13] = c[0]; u8[4 * o + 14] = c[1]; u8[4 * o + 15] = c[2];
+        if (n) {
+          const d = Math.hypot(f32[o] - f32[o - 4], f32[o + 1] - f32[o - 3]); len += d; if (d > sg) sg = d;   // (lenOf's, on the records)
+          if (hl) {                                           // the turn at the point before (render.c's rule)
+            const ex = qx - jx, ey = qy - jy, Ln = Math.sqrt(ex * ex + ey * ey), dx = ex / Ln, dy = ey / Ln;
+            let f = SEG;
+            if (prev) { const cross = pdx * dy - pdy * dx; if (Math.abs(cross) >= 1e-6) f |= cross > 0 ? BEVEL | OTHER : BEVEL; }
+            u8[4 * (o - 4) + 12] = f;
+            pdx = dx; pdy = dy; prev = true;
+          }
+        }
         if (qx < x0) x0 = qx; if (qx > x1) x1 = qx; if (qy < y0) y0 = qy; if (qy > y1) y1 = qy; if (w > wm) wm = w;
         if (!(wf >= 1 && wf === Math.round(wf))) whole = false;
+        I[n++] = i; jx = qx; jy = qy;
       }
+      if (n < n0) arenaGive(u8, n * PT);                      // (a highlighter's repeats: its records' room past them back)
       out.whole = whole;                                      // (its width fields whole, 1 or more: at its own size, as resized makes them)
+      out.len = len; out.sg = sg;
       const hb = wm / 2 + 0.5;                               // where its ink can be, in page units (a draw's culling): a
       out.bb = [x0 - hb, y0 - hb, x1 + hb, y1 + hb];        // highlighter's wash reaches WASH_EPS past half its width
-      if (P.kind === RF_HIGHLIGHTER) {                         // its segments, and its bevels where it turns (render.c's rule)
-        let pdx = 0, pdy = 0, prev = false;
-        for (let k = 0; k + 1 < n; k++) {
-          const ia = 6 * idx[k], ib = 6 * idx[k + 1], ex = a[ib] - a[ia], ey = a[ib + 1] - a[ia + 1], L = Math.sqrt(ex * ex + ey * ey);
-          const dx = ex / L, dy = ey / L;
-          let f = SEG;
-          if (prev) { const cross = pdx * dy - pdy * dx; if (Math.abs(cross) >= 1e-6) f |= cross > 0 ? BEVEL | OTHER : BEVEL; }
-          u8[k * PT + 12] = f;
-          pdx = dx; pdy = dy; prev = true;
-        }
-      } else {
+      if (!hl) {
         if (n === 1) u8[12] = DOT; else for (let k = 0; k + 1 < n; k++) u8[k * PT + 12] = SEG;
-        out.grain = P.kind === RF_PEN && P.dens.some(d => d < 1);
-        out.alpha = P.kind === RF_SHADER ? P.rgba[3] / 255 : 1;
+        out.grain = kind === RF_PEN && grain;
+        out.alpha = kind === RF_SHADER ? c[3] / 255 : 1;
         if (out.grain) {                                      // its densities, and its length along it at each point
           const gr = new Float32Array(n * 2);
           let u = 0;
           for (let k = 0; k < n; k++) {
             if (k) u += Math.hypot(a[6 * k] - a[6 * k - 6], a[6 * k + 1] - a[6 * k - 5]);
-            gr[2 * k] = P.dens[k]; gr[2 * k + 1] = u;
+            gr[2 * k] = D[k]; gr[2 * k + 1] = u;
           }
-          out.gr = gr; out.seed = (P.seed || 0) >>> 0;
+          out.gr = gr; out.seed = seedOf(a[0], a[1]) >>> 0;
         }
       }
-      out.rec = u8; out.n = n;
-      out.idx = P.kind === RF_HIGHLIGHTER && n !== n0 ? Int32Array.from(idx) : null;   // which points have records (else all)
+      out.rec = n < n0 ? u8.subarray(0, n * PT) : u8; out.n = n;
+      out.idx = hl && n !== n0 ? I.slice(0, n) : null;      // which points have records (else all)
       return out;
     }
     const keptAt = (idx, i) => {                             // the record of point i, by its kept points' list (-1: none)
@@ -1124,6 +1154,8 @@ span.lname { cursor: default; }
     const colorIn = u8 => u8[13] | u8[14] << 8 | u8[15] << 16;   // a part's color, from its first record
     // (the records as the engine's, here, and which are a stroke's (1), start it (2), a highlighter's (4): made blocks)
     let scratchRk = new Uint8Array(1 << 14), scratchW = new Uint32Array(1 << 16), scratchSide = new Uint32Array(1 << 10);
+    let fvB = null, fvF = null;                               // (a buffer of parts' records seen as floats: the last one)
+    const f32Of = u8 => u8.buffer === fvB ? fvF : (fvF = new Float32Array(fvB = u8.buffer));
     function place(ps) {                                      // the parts' records put up in a place of their own, each its number
       const sids = stTake(ps.length), offs = new Array(ps.length);
       let pN = 1, nG = 1;                                     // a record before the points; one after the grain
@@ -1136,12 +1168,12 @@ span.lname { cursor: default; }
       const fits = (ax, ay, aw, bx, by, bw) => { const cx = Math.floor(ax / 32), cy = Math.floor(ay / 32), nw = Math.floor(Math.max(aw, 0) / 16);
         return !(cx < OX || cx - OX > 4095 || cy < OY || cy - OY > 8191 || nw > 127 || bx - cx * 32 > 4095 || by - cy * 32 > 4095 || bw - nw * 16 > 255); };
       for (let i = 0; i < ps.length; i++) {
-        const p = ps[i], f = new Float32Array(p.rec.buffer, p.rec.byteOffset, p.n * 4);
+        const p = ps[i], f = f32Of(p.rec), b = p.rec.byteOffset >> 2;   // (its records as floats from b: a view a buffer, not a part)
         let brk = i > 0 && sids[i] !== sids[i - 1] + 1;
         if (!brk && any && (pN & 15)) {                       // (its points that would land in this block, with those in it)
           let ax = lo[0], ay = lo[1], aw = lo[2], bx = hi[0], by = hi[1], bw = hi[2];
           for (let k = 0, m = Math.min(p.n, BLK - (pN & 15)); k < m; k++) {
-            const x = gq(f[4 * k]), y = gq(f[4 * k + 1]), w = wq(f[4 * k + 2]);
+            const x = gq(f[b + 4 * k]), y = gq(f[b + 4 * k + 1]), w = wq(f[b + 4 * k + 2]);
             if (x < ax) ax = x; if (x > bx) bx = x; if (y < ay) ay = y; if (y > by) by = y; if (w < aw) aw = w; if (w > bw) bw = w;
           }
           brk = !fits(ax, ay, aw, bx, by, bw);
@@ -1152,7 +1184,7 @@ span.lname { cursor: default; }
         const first = Math.max(0, ((pN + p.n - 1) & ~15) - pN);   // (its first point in the block its last lies in)
         if (first > 0) any = false;
         for (let k = first; k < p.n; k++) {
-          const x = gq(f[4 * k]), y = gq(f[4 * k + 1]), w = wq(f[4 * k + 2]);
+          const x = gq(f[b + 4 * k]), y = gq(f[b + 4 * k + 1]), w = wq(f[b + 4 * k + 2]);
           if (!any) { lo[0] = hi[0] = x; lo[1] = hi[1] = y; lo[2] = hi[2] = w; any = true; continue; }
           if (x < lo[0]) lo[0] = x; if (x > hi[0]) hi[0] = x; if (y < lo[1]) lo[1] = y; if (y > hi[1]) hi[1] = y; if (w < lo[2]) lo[2] = w; if (w > hi[2]) hi[2] = w;
         }
@@ -1169,7 +1201,9 @@ span.lname { cursor: default; }
       if (gr) gr.fill(0, (nG - 1) * 2);
       for (let i = 0; i < ps.length; i++) {
         const p = ps[i];
-        rec.set(p.rec, offs[i] * PT); sidInto(rec, offs[i], p.n, sids[i]);
+        rec.set(p.rec, offs[i] * PT);                         // (its number where a block's words read it: its first record, and each that
+        sidInto(rec, offs[i], 1, sids[i]);                    // starts a block -- a block's first stroke is one of those)
+        for (let r = Math.ceil((offs[i] + 1) / BLK) * BLK; r < offs[i] + p.n; r += BLK) sidInto(rec, r, 1, sids[i]);
         const hl = p.kind === RF_HIGHLIGHTER ? 4 : 0;
         rk.fill(1 | hl, offs[i], offs[i] + p.n); rk[offs[i]] |= 2;
       }
@@ -1210,13 +1244,12 @@ span.lname { cursor: default; }
       boxSpans.push([at0 / BLK, nB / BLK]);
       return out;
     }
-    function placeAll(fresh) {                                // parts put up 512 at a time, the room for all of them made first
-      placeRoom(fresh);
+    function placeAll(fresh, nR, nG) {                        // parts put up 512 at a time, the room for all of them made first
+      placeRoom(fresh, nR, nG);
       for (let k = 0; k < fresh.length; k += 512) place(fresh.slice(k, k + 512));
     }
-    function placeRoom(fresh) {
-      let nR = 0, nG = 0;
-      for (const p of fresh) { nR += p.n; if (p.gr) nG += p.n; }
+    function placeRoom(fresh, nR, nG) {                       // (nR, nG: their records and grain records, counted already)
+      if (nR === undefined) { nR = nG = 0; for (const p of fresh) { nR += p.n; if (p.gr) nG += p.n; } }
       nR += 3 * BLK * Math.ceil(fresh.length / 512);         // (each place's ends, and its last block's rest)
       // THE TABLE OF STROKES SIZED ONCE for all of them: grown a doubling at a time as they were placed, each move took a
       // place in the grain records larger than any let go before it, and that room was never used again (a page of
@@ -1382,7 +1415,7 @@ span.lname { cursor: default; }
       ordPipes();
       for (let sid = 0; sid < st.top; sid++) { const q = st.part[sid]; if (q) offPage(q); }
       const ends = lines.ends, ids = lines.ids, ps = [], fresh = [];
-      let li = 0;
+      let li = 0, nR = 0, nG = 0;
       for (let i = 0; i < lines.length; i++) {
         const q = partOf(lines[i]);
         if (ends) {                                           // (its layer's number, for the eraser)
@@ -1391,9 +1424,9 @@ span.lname { cursor: default; }
         }
         if (q.on) continue;                                   // (a stroke twice: once)
         q.on = true; ps.push(q);
-        if (q.sid === undefined) fresh.push(q);
+        if (q.sid === undefined) { fresh.push(q); nR += q.n; if (q.gr) nG += q.n; }
       }
-      placeAll(fresh);
+      placeAll(fresh, nR, nG);
       const a = new Uint32Array(Math.max(1, ps.length));
       let lvl = 0, prev = 0, any = false;
       for (let i = 0; i < ps.length; i++) {
@@ -7563,8 +7596,10 @@ span.lname { cursor: default; }
   // a stroke from the file or the clipboard: its points as lists, or (sceneFromBytes's) as the editor keeps them
   const lineIn = ln => {
     const P = ln.points instanceof Pts ? ln.points : Pts.from(ln.points);
-    return { itemId: [2, page.nextId++], pen: ln.pen || "FINELINER_2", penCode: ln.penCode, color: ln.color, colorRgba: ln.colorRgba,
-             thicknessScale: ln.thicknessScale, startingLength: 0, width: (P.n ? P.width(0) : 0) || 16, points: P };
+    const L = { itemId: [2, page.nextId++], pen: ln.pen || "FINELINER_2", penCode: ln.penCode, color: ln.color, colorRgba: ln.colorRgba,
+                thicknessScale: ln.thicknessScale, startingLength: 0, width: (P.n ? P.width(0) : 0) || 16, points: P };
+    if (ln.box) boxes.set(L, ln.box);                         // (its box, as read: sceneFromBytes)
+    return L;
   };
   // A MIRROR PAGE'S STROKE KEEPS ITS ID while it is the stroke it was read as: the id is kept by the stroke's number (its
   // itemId's), so a stroke made from it (an erase's piece, a move, a transform, a copy: a new number) never has it and goes
@@ -7728,14 +7763,20 @@ span.lname { cursor: default; }
     const dv = new DataView(buf), u8 = new Uint8Array(buf);
     if (PDS.some((b, i) => u8[i] !== b)) throw new Error("not a PaperDaemon page");
     const n = dv.getUint32(4, true), sc = JSON.parse(new TextDecoder().decode(u8.subarray(8, 8 + n)));
-    let at = 8 + n;
+    // EVERY STROKE'S POINTS IN ONE ARRAY, each stroke's a part of it (an array a stroke was most of reading a page of
+    // 150,000 strokes, and of the collector's work after it), and each stroke's box (boxOf's) worked out as it is read
+    let total = 0;
+    for (const L of sc.layers || []) for (const ln of L.lines || []) total += ln.n || 0;
+    const pool = new Float64Array(6 * total);
+    let at = 8 + n, o = 0;
     for (const L of sc.layers || []) for (const ln of L.lines || []) {
-      const k = ln.n || 0, a = new Float64Array(6 * k);
-      for (let o = 0; o < 6 * k; o += 6, at += 14) {
-        a[o] = dv.getFloat32(at, true); a[o + 1] = dv.getFloat32(at + 4, true); a[o + 2] = dv.getUint16(at + 8, true);
-        a[o + 3] = dv.getUint8(at + 12); a[o + 4] = dv.getUint16(at + 10, true); a[o + 5] = dv.getUint8(at + 13);
+      const k = ln.n || 0, a = pool.subarray(o, o + 6 * k), b = [Infinity, Infinity, -Infinity, -Infinity, 0];
+      for (let q = 0; q < 6 * k; q += 6, at += 14) {
+        const x = dv.getFloat32(at, true), y = dv.getFloat32(at + 4, true), w = dv.getUint16(at + 10, true);
+        a[q] = x; a[q + 1] = y; a[q + 2] = dv.getUint16(at + 8, true); a[q + 3] = dv.getUint8(at + 12); a[q + 4] = w; a[q + 5] = dv.getUint8(at + 13);
+        if (x < b[0]) b[0] = x; if (y < b[1]) b[1] = y; if (x > b[2]) b[2] = x; if (y > b[3]) b[3] = y; if (w > b[4]) b[4] = w;
       }
-      ln.points = new Pts(a, k); delete ln.n;
+      ln.points = new Pts(a, k); ln.box = b; o += 6 * k; delete ln.n;
     }
     return sc;
   }
