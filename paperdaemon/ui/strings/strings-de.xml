@@ -190,8 +190,8 @@
   <string name="keys.corners_d">Loslassen: zwei ergeben eine Linie, mehr eine geschlossene Form.</string>
   <string name="keys.snap_corners">Ecken am Winkel eingerastet</string>
   <string name="keys.snap_corners_d">Jede Kante in 15°-Schritten.</string>
-  <string name="keys.pen">Stift</string>
-  <string name="keys.pen_d">Zurück zum Stift; Esc verwirft eine begonnene Form.</string>
+  <string name="keys.pen">Gerade Linie</string>
+  <string name="keys.pen_d">Eine Linie, danach wieder der Stift; erneut 1 oder Esc kehrt zurück. Alt rastet sie in 15°-Schritten ein.</string>
   <string name="keys.circle">Kreis</string>
   <string name="keys.circle_d">Zwei Klicks, Rand zu Rand.</string>
   <string name="keys.triangle">Dreieck</string>

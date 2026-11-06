@@ -190,8 +190,8 @@
   <string name="keys.corners_d">놓으면 두 개는 선, 그 이상은 닫힌 도형이 됩니다.</string>
   <string name="keys.snap_corners">각도에 맞춘 꼭짓점</string>
   <string name="keys.snap_corners_d">각 변을 15° 단위로.</string>
-  <string name="keys.pen">펜</string>
-  <string name="keys.pen_d">펜으로 돌아갑니다. Esc는 그리던 도형을 버립니다.</string>
+  <string name="keys.pen">직선</string>
+  <string name="keys.pen_d">직선 하나를 그린 뒤 펜으로 돌아갑니다. 1을 다시 누르거나 Esc로도 돌아갑니다. Alt를 누르면 15° 단위로 맞춥니다.</string>
   <string name="keys.circle">원</string>
   <string name="keys.circle_d">두 번 클릭, 가장자리에서 가장자리로.</string>
   <string name="keys.triangle">삼각형</string>

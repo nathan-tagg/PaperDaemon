@@ -189,8 +189,8 @@
   <string name="keys.corners_d">Let go: two make a line, more a closed shape.</string>
   <string name="keys.snap_corners">Corners snapped to an angle</string>
   <string name="keys.snap_corners_d">Each edge at a 15° step.</string>
-  <string name="keys.pen">Pen</string>
-  <string name="keys.pen_d">Back to the pen; Esc drops a shape begun.</string>
+  <string name="keys.pen">Straight line</string>
+  <string name="keys.pen_d">One line, then the pen again; 1 again or Esc goes back. Alt snaps it to 15° steps.</string>
   <string name="keys.circle">Circle</string>
   <string name="keys.circle_d">Two clicks, edge to edge.</string>
   <string name="keys.triangle">Triangle</string>

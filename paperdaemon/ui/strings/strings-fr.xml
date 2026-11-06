@@ -189,8 +189,8 @@
   <string name="keys.corners_d">En relâchant : deux font une ligne, plus une forme fermée.</string>
   <string name="keys.snap_corners">Coins alignés sur un angle</string>
   <string name="keys.snap_corners_d">Chaque côté par pas de 15°.</string>
-  <string name="keys.pen">Stylo</string>
-  <string name="keys.pen_d">Retour au stylo ; Échap abandonne une forme commencée.</string>
+  <string name="keys.pen">Ligne droite</string>
+  <string name="keys.pen_d">Une ligne, puis de nouveau le stylo ; 1 à nouveau ou Échap pour revenir. Alt l’aligne par pas de 15°.</string>
   <string name="keys.circle">Cercle</string>
   <string name="keys.circle_d">Deux clics, d'un bord à l'autre.</string>
   <string name="keys.triangle">Triangle</string>

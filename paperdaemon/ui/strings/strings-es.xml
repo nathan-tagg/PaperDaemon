@@ -189,8 +189,8 @@
   <string name="keys.corners_d">Al soltar: dos hacen una línea, más una forma cerrada.</string>
   <string name="keys.snap_corners">Esquinas ajustadas a un ángulo</string>
   <string name="keys.snap_corners_d">Cada lado en pasos de 15°.</string>
-  <string name="keys.pen">Bolígrafo</string>
-  <string name="keys.pen_d">Vuelve al bolígrafo; Esc descarta una forma empezada.</string>
+  <string name="keys.pen">Línea recta</string>
+  <string name="keys.pen_d">Una línea y luego otra vez el bolígrafo; 1 de nuevo o Esc vuelve. Alt la ajusta en pasos de 15°.</string>
   <string name="keys.circle">Círculo</string>
   <string name="keys.circle_d">Dos clics, de borde a borde.</string>
   <string name="keys.triangle">Triángulo</string>

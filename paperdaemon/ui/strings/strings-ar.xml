@@ -190,8 +190,8 @@
   <string name="keys.corners_d">عند الإفلات: اثنتان تصنعان خطًا، وأكثر شكلًا مغلقًا.</string>
   <string name="keys.snap_corners">رؤوس مثبتة على زوايا</string>
   <string name="keys.snap_corners_d">كل ضلع بخطوات 15°.</string>
-  <string name="keys.pen">القلم</string>
-  <string name="keys.pen_d">العودة إلى القلم؛ وEsc يلغي شكلًا بدأته.</string>
+  <string name="keys.pen">خط مستقيم</string>
+  <string name="keys.pen_d">خط واحد ثم العودة إلى القلم؛ اضغط 1 مرة أخرى أو Esc للرجوع. ويثبّته Alt على خطوات من 15°.</string>
   <string name="keys.circle">دائرة</string>
   <string name="keys.circle_d">نقرتان، من حافة إلى حافة.</string>
   <string name="keys.triangle">مثلث</string>

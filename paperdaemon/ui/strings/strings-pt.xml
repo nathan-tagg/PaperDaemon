@@ -189,8 +189,8 @@
   <string name="keys.corners_d">Ao soltar: dois fazem uma linha, mais uma forma fechada.</string>
   <string name="keys.snap_corners">Cantos ajustados a um ângulo</string>
   <string name="keys.snap_corners_d">Cada lado em passos de 15°.</string>
-  <string name="keys.pen">Caneta</string>
-  <string name="keys.pen_d">Volta à caneta; Esc descarta uma forma começada.</string>
+  <string name="keys.pen">Linha reta</string>
+  <string name="keys.pen_d">Uma linha e depois a caneta de novo; 1 outra vez ou Esc volta. Alt a ajusta em passos de 15°.</string>
   <string name="keys.circle">Círculo</string>
   <string name="keys.circle_d">Dois cliques, de borda a borda.</string>
   <string name="keys.triangle">Triângulo</string>

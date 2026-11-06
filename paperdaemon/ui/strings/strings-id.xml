@@ -190,8 +190,8 @@
   <string name="keys.corners_d">Lepaskan: dua menjadi garis, lebih menjadi bentuk tertutup.</string>
   <string name="keys.snap_corners">Sudut dikunci ke kelipatan 15°</string>
   <string name="keys.snap_corners_d">Setiap sisi pada kelipatan 15°.</string>
-  <string name="keys.pen">Pena</string>
-  <string name="keys.pen_d">Kembali ke pena; Esc membatalkan bentuk yang dimulai.</string>
+  <string name="keys.pen">Garis lurus</string>
+  <string name="keys.pen_d">Satu garis, lalu kembali ke pena; tekan 1 lagi atau Esc untuk kembali. Alt menguncinya per 15°.</string>
   <string name="keys.circle">Lingkaran</string>
   <string name="keys.circle_d">Dua klik, tepi ke tepi.</string>
   <string name="keys.triangle">Segitiga</string>

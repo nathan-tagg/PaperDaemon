@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.15
+
+- Straight lines: with a pen in hand, 1 makes the next stroke a straight line -- a drag, or two clicks, from one end to the other, Alt snapping it to 15° steps -- and once it is drawn the pen is freehand again. 1 again, or Esc, goes back without drawing one; mid shape, 1 makes the shape under way a line from the same start.
+- Holding Shift in the middle of a stroke no longer turns the pointer into the eraser's ring. The stroke never erased; now the pointer says so too.
+
 ## 0.2.14
 
 - The dotted lines show only while the view moves -- a pan, a scroll or a zoom -- and go a moment after it stops: the screen's side edges, and the top of the safe area that 0.2.12 added and left on every page. Opening or turning to a page shows none.

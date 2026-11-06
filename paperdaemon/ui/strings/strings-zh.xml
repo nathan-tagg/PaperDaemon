@@ -190,8 +190,8 @@
   <string name="keys.corners_d">松开后：两个点成线，更多点成闭合形状。</string>
   <string name="keys.snap_corners">角点吸附角度</string>
   <string name="keys.snap_corners_d">每条边按 15° 步进。</string>
-  <string name="keys.pen">笔</string>
-  <string name="keys.pen_d">回到笔；Esc 放弃已开始的形状。</string>
+  <string name="keys.pen">直线</string>
+  <string name="keys.pen_d">画一条直线后回到笔；再按 1 或 Esc 也可返回。按住 Alt 以 15° 为步进对齐。</string>
   <string name="keys.circle">圆形</string>
   <string name="keys.circle_d">点击两次，从边到边。</string>
   <string name="keys.triangle">三角形</string>

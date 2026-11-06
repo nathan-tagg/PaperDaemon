@@ -190,8 +190,8 @@
   <string name="keys.corners_d">ছেড়ে দিলে: দুটিতে রেখা, বেশিতে বন্ধ আকার।</string>
   <string name="keys.snap_corners">কোণে স্ন্যাপ করা কোণবিন্দু</string>
   <string name="keys.snap_corners_d">প্রতিটি বাহু 15° ধাপে।</string>
-  <string name="keys.pen">কলম</string>
-  <string name="keys.pen_d">কলমে ফিরুন; Esc শুরু করা আকার বাদ দেয়।</string>
+  <string name="keys.pen">সরলরেখা</string>
+  <string name="keys.pen_d">একটি রেখা, তারপর আবার কলম; আবার 1 বা Esc চাপলে ফিরে যায়। Alt চাপলে ১৫° ধাপে আটকে যায়।</string>
   <string name="keys.circle">বৃত্ত</string>
   <string name="keys.circle_d">দুটি ক্লিক, কিনারা থেকে কিনারা।</string>
   <string name="keys.triangle">ত্রিভুজ</string>

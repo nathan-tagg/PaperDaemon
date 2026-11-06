@@ -190,8 +190,8 @@
   <string name="keys.corners_d">Thả ra: hai góc thành đường, nhiều hơn thành hình kín.</string>
   <string name="keys.snap_corners">Góc bắt theo góc nghiêng</string>
   <string name="keys.snap_corners_d">Mỗi cạnh theo bước 15°.</string>
-  <string name="keys.pen">Bút</string>
-  <string name="keys.pen_d">Trở lại bút; Esc bỏ hình đang vẽ dở.</string>
+  <string name="keys.pen">Đường thẳng</string>
+  <string name="keys.pen_d">Một đường thẳng, rồi lại là bút; nhấn 1 lần nữa hoặc Esc để quay lại. Alt khóa nó theo bước 15°.</string>
   <string name="keys.circle">Hình tròn</string>
   <string name="keys.circle_d">Hai lần nhấp, mép tới mép.</string>
   <string name="keys.triangle">Tam giác</string>

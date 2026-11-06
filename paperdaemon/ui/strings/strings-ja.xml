@@ -190,8 +190,8 @@
   <string name="keys.corners_d">離すと、2点で線、それ以上で閉じた図形になります。</string>
   <string name="keys.snap_corners">角度にスナップした頂点</string>
   <string name="keys.snap_corners_d">各辺を15°刻みに。</string>
-  <string name="keys.pen">ペン</string>
-  <string name="keys.pen_d">ペンに戻ります。Escで描きかけの図形を取り消します。</string>
+  <string name="keys.pen">直線</string>
+  <string name="keys.pen_d">直線を1本引くとペンに戻ります。もう一度1を押すかEscでも戻ります。Altで15°刻みに揃えます。</string>
   <string name="keys.circle">円</string>
   <string name="keys.circle_d">2回クリック、端から端まで。</string>
   <string name="keys.triangle">三角形</string>

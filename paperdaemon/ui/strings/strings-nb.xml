@@ -190,8 +190,8 @@
   <string name="keys.corners_d">Slipp: to blir en linje, flere en lukket form.</string>
   <string name="keys.snap_corners">Hjørner festet til en vinkel</string>
   <string name="keys.snap_corners_d">Hver kant i trinn på 15°.</string>
-  <string name="keys.pen">Penn</string>
-  <string name="keys.pen_d">Tilbake til pennen; Esc forkaster en påbegynt form.</string>
+  <string name="keys.pen">Rett linje</string>
+  <string name="keys.pen_d">Én linje, så pennen igjen; 1 på nytt eller Esc går tilbake. Alt låser den i trinn på 15°.</string>
   <string name="keys.circle">Sirkel</string>
   <string name="keys.circle_d">To klikk, fra kant til kant.</string>
   <string name="keys.triangle">Trekant</string>

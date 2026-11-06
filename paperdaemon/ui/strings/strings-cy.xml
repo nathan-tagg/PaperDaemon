@@ -190,8 +190,8 @@
   <string name="keys.corners_d">Gollwng: mae dwy yn gwneud llinell, mwy yn siâp caeedig.</string>
   <string name="keys.snap_corners">Corneli wedi'u snapio i ongl</string>
   <string name="keys.snap_corners_d">Pob ochr mewn camau o 15°.</string>
-  <string name="keys.pen">Ysgrifbin</string>
-  <string name="keys.pen_d">Yn ôl at yr ysgrifbin; mae Esc yn gollwng siâp a ddechreuwyd.</string>
+  <string name="keys.pen">Llinell syth</string>
+  <string name="keys.pen_d">Un llinell, yna'r ysgrifbin eto; mae 1 eto neu Esc yn mynd yn ôl. Mae Alt yn ei chloi ar gamau 15°.</string>
   <string name="keys.circle">Cylch</string>
   <string name="keys.circle_d">Dau glic, o ymyl i ymyl.</string>
   <string name="keys.triangle">Triongl</string>

@@ -5289,14 +5289,15 @@ span.lname { cursor: default; }
     if (e.key === "Control" && !e.ctrlKey) { e.preventDefault(); closePoly(); }
   });
   window.addEventListener("blur", () => { if (poly) closePoly(); });
-  // SHAPES BY NUMBER, with a pen in hand and no text being typed: 1 the pen as it is, 2 a circle, 3 a triangle, 4 a
-  // square, 5 a rectangle, 6 an arrow. The pointer becomes the shape; the first click sets one corner or edge, the
+  // SHAPES BY NUMBER, with a pen in hand and no text being typed: 1 a straight line (and 1 again the pen as it is), 2 a
+  // circle, 3 a triangle, 4 a square, 5 a rectangle, 6 an arrow. The pointer becomes the shape; the first click sets one corner or edge, the
   // second the other (or one drag sets both; Alt snaps the second to an angle from the first), and the pen is back to 1. A circle
   // spans the two clicks as its diameter; a triangle is equilateral, its tip the first click and the middle of the side
   // across the second; a square has the clicks as its diagonal; a rectangle as opposite corners, upright; an arrow runs
   // from the first to the second, its head there. Each is one stroke of the pen in hand.
   let shapeKind = 1, shapeAt = null, shapeHover = null;
-  const SHAPE_NAMES = { 2: "circle", 3: "triangle", 4: "square", 5: "rectangle", 6: "arrow" };
+  const LINE = 7;                                             // the straight line: key 1, the pen again on 1 or once drawn
+  const SHAPE_NAMES = { 2: "circle", 3: "triangle", 4: "square", 5: "rectangle", 6: "arrow", 7: "line" };
   function setShape(k) {                                      // (MID SHAPE, ANOTHER SHAPE'S NUMBER: the shape under way becomes it,
     shapeKind = k;                                            // from the same first corner to where the pointer is; 1 lets it go)
     if (!(k > 1 && shapeAt)) shapeAt = shapeHover = null;
@@ -5327,6 +5328,7 @@ span.lname { cursor: default; }
       return [[ax, ay], [mx - hy, my + hx], [bx, by], [mx + hy, my - hx], [ax, ay]];
     }
     if (kind === 5) return [[ax, ay], [bx, ay], [bx, by], [ax, by], [ax, ay]];
+    if (kind === LINE) return [[ax, ay], [bx, by]];
     const L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, head = Math.min(L * 0.3, 90), t = Math.PI / 6.5;
     const barb = s => [bx - head * (ux * Math.cos(t) - s * uy * Math.sin(t)), by - head * (uy * Math.cos(t) + s * ux * Math.sin(t))];
     return [[ax, ay], [bx, by], barb(1), [bx, by], barb(-1)];
@@ -5337,7 +5339,8 @@ span.lname { cursor: default; }
     '"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><g stroke="#fff" stroke-width="3">' + body + '</g><g stroke="#000" stroke-width="1.2"' +
     (dash ? ' stroke-dasharray="' + dash + '"' : "") + ">" + body + "</g></g></svg>") + '") ' + Math.floor(n / 2) + " " + Math.floor(n / 2) + ", crosshair";
   const SHAPE_LOOKS = { circle: '<circle cx="10.5" cy="10.5" r="6.5"/>', triangle: '<path d="M10.5 3.5l6.8 12H3.7z"/>', square: '<rect x="4.5" y="4.5" width="12" height="12"/>',
-                        rectangle: '<rect x="2.5" y="6" width="16" height="9"/>', arrow: '<path d="M4 17L17 4M17 4h-6M17 4v6"/>' };
+                        rectangle: '<rect x="2.5" y="6" width="16" height="9"/>', arrow: '<path d="M4 17L17 4M17 4h-6M17 4v6"/>',
+                        line: '<path d="M4 17L17 4"/>' };
   const PEN_CURSOR = cursorOf('<path d="M10.5 5.5v10M5.5 10.5h10"/>');
   (() => {
     const dot = '<path d="M10.5 10.5h.01"/>';
@@ -6012,7 +6015,9 @@ span.lname { cursor: default; }
   const zoneLoop = z => z.shape ? shapePoints(z.shape, z.pts[0], z.end || z.pts[0]) : z.pts.concat([z.pts[0]]);
   function updateCursor() {
     // at once, unless text is being typed (a key typed in the last 0.4 s): then once the mouse moves or the typing stops
-    const byKeys = keyErase(held), armed = byKeys && (heldMoved || !editing() || performance.now() - typedAt >= 400);
+    // (A STROKE UNDER WAY KEEPS ITS POINTER: Shift mid stroke erases nothing, so it shows no eraser either)
+    const byKeys = live || (shapeAt && pointer !== null) ? null : keyErase(held);
+    const armed = byKeys && (heldMoved || !editing() || performance.now() - typedAt >= 400);
     const mode = erasing && !erasing.ending ? erasing.mode || eraseMode : zone ? "zone" : tool === "eraser" ? eraseMode : armed ? byKeys : null;
     const key = mode ? eraserCursor(mode, mode === "zone" ? (zone ? zone.shape : zoneShapeNow()) : 0) : null;
     if (key) { if (vp.dataset.erase !== key) vp.dataset.erase = key; } else delete vp.dataset.erase;
@@ -6746,7 +6751,10 @@ span.lname { cursor: default; }
       selectAll(L => kind(L) && color(L));
       return;
     }
-    if (!editing() && !ctrl && !e.altKey && pickers[tool] && /^[1-6]$/.test(e.key)) { e.preventDefault(); setShape(Number(e.key)); return; }
+    // (1 TOGGLES the straight line and the pen; mid shape, it makes the shape under way a line from the same start)
+    if (!editing() && !ctrl && !e.altKey && pickers[tool] && /^[1-6]$/.test(e.key)) {
+      e.preventDefault(); setShape(e.key === "1" ? (shapeKind === LINE ? 1 : LINE) : Number(e.key)); return;
+    }
     // SELECT IN HAND: 1 to 5 its loop's shape (pickShape), and no key starts typing -- the keyboard stays the selection's
     if (tool === "pick" && !editing()) {
       if (!ctrl && !e.altKey && /^[1-5]$/.test(e.key)) { e.preventDefault(); setShape(Number(e.key)); if (pickLoop) reshape(pickLoop, Number(e.key)); return; }

@@ -190,8 +190,8 @@
   <string name="keys.corners_d">چھوڑنے پر: دو سے لکیر، زیادہ سے بند شکل۔</string>
   <string name="keys.snap_corners">زاویے پر جمے کونے</string>
   <string name="keys.snap_corners_d">ہر کنارہ 15° کے قدموں میں۔</string>
-  <string name="keys.pen">قلم</string>
-  <string name="keys.pen_d">قلم پر واپس؛ Esc شروع کی ہوئی شکل چھوڑ دیتا ہے۔</string>
+  <string name="keys.pen">سیدھی لکیر</string>
+  <string name="keys.pen_d">ایک لکیر، پھر دوبارہ قلم؛ دوبارہ 1 یا Esc سے واپس۔ Alt اسے 15° کے مراحل پر جماتا ہے۔</string>
   <string name="keys.circle">دائرہ</string>
   <string name="keys.circle_d">دو کلک، کنارے سے کنارے تک۔</string>
   <string name="keys.triangle">مثلث</string>

@@ -190,8 +190,8 @@
   <string name="keys.corners_d">छोड़ने पर: दो से रेखा, ज़्यादा से बंद आकृति।</string>
   <string name="keys.snap_corners">कोण पर स्नैप किए कोने</string>
   <string name="keys.snap_corners_d">हर किनारा 15° के चरणों में।</string>
-  <string name="keys.pen">पेन</string>
-  <string name="keys.pen_d">पेन पर वापस; Esc शुरू की गई आकृति छोड़ देता है।</string>
+  <string name="keys.pen">सीधी रेखा</string>
+  <string name="keys.pen_d">एक रेखा, फिर वापस पेन; दोबारा 1 या Esc से लौटें। Alt इसे 15° के चरणों पर टिका देता है।</string>
   <string name="keys.circle">वृत्त</string>
   <string name="keys.circle_d">दो क्लिक, किनारे से किनारे तक।</string>
   <string name="keys.triangle">त्रिभुज</string>

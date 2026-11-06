@@ -190,8 +190,8 @@
   <string name="keys.corners_d">Al rilascio: due fanno una linea, di più una forma chiusa.</string>
   <string name="keys.snap_corners">Vertici agganciati all'angolo</string>
   <string name="keys.snap_corners_d">Ogni lato a passi di 15°.</string>
-  <string name="keys.pen">Penna</string>
-  <string name="keys.pen_d">Torna alla penna; Esc scarta una forma iniziata.</string>
+  <string name="keys.pen">Linea retta</string>
+  <string name="keys.pen_d">Una linea, poi di nuovo la penna; 1 di nuovo o Esc per tornare. Alt la blocca a passi di 15°.</string>
   <string name="keys.circle">Cerchio</string>
   <string name="keys.circle_d">Due clic, da bordo a bordo.</string>
   <string name="keys.triangle">Triangolo</string>

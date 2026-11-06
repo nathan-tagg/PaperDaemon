@@ -190,8 +190,8 @@
   <string name="keys.corners_d">Bırakınca: iki köşe çizgi, daha fazlası kapalı şekil olur.</string>
   <string name="keys.snap_corners">Açıya hizalı köşeler</string>
   <string name="keys.snap_corners_d">Her kenar 15°'lik adımlarla.</string>
-  <string name="keys.pen">Kalem</string>
-  <string name="keys.pen_d">Kaleme dön; Esc başlanan şekli bırakır.</string>
+  <string name="keys.pen">Düz çizgi</string>
+  <string name="keys.pen_d">Bir çizgi, sonra yeniden kalem; tekrar 1 ya da Esc geri döner. Alt onu 15°'lik adımlara sabitler.</string>
   <string name="keys.circle">Daire</string>
   <string name="keys.circle_d">İki tık, kenardan kenara.</string>
   <string name="keys.triangle">Üçgen</string>
