@@ -1043,13 +1043,9 @@ def _haiku_check(lines):
 
 
 def _card_text(card):
-    """The haiku as ONE run of text: its three lines joined, a comma where a line ends without its own stop."""
-    out = ""
-    for ln in _haiku_lines(card):
-        if out:
-            out += (" " if out[-1] in ".,;:!?-–—" else ", ")
-        out += ln
-    return out
+    """The haiku as ONE run of text: its lines joined by a space and nothing else -- a verse line often breaks inside
+    a phrase, and a comma put at every break fell mid-phrase ("fleets in our, hemisphere now")."""
+    return " ".join(_haiku_lines(card))
 
 
 def _card_lines(card, units, max_lines):

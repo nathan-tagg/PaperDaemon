@@ -3376,15 +3376,23 @@ span.lname { cursor: default; }
                                    : (face === "serif" ? "Gelasio, Georgia, serif" : "Arimo, Arial, sans-serif");
   const fontOf = (style, b, i) => { const st = STYLE[style]; return (i ? "italic " : "") + (b || st.bold ? "700 " : "400 ") + st.size + "px " + family(st.face); };
   const meas = document.createElement("canvas").getContext("2d");
-  function width(chars, s, e, style) {                         // the advance of chars[s, e), run by run
-    let w = 0, k = s;
-    while (k < e) {
-      let j = k; const b = chars[k].b, i = chars[k].i;
-      while (j < e && chars[j].b === b && chars[j].i === i) j++;
-      meas.font = fontOf(style, b, i);
-      w += meas.measureText(chars.slice(k, j).map(c => c.c).join("")).width;
-      k = j;
-    }
+  // EACH LETTER'S ADVANCE AS THE ENGINE MEASURES IT (page/typed.py: the face at four times the size, the advance rounded
+  // to a whole pixel there, a quarter of that -- equal to the engine's to the unit, measured line by line). A run measured
+  // whole at the type's own size came out about 1% wider, the browser's rounding at small sizes: the window wrapped a
+  // line the engine had fitted, and a reply the engine placed under the text's last line landed on the window's
+  const advs = new Map();
+  let advsTick = -1;
+  const font4 = (style, b, i) => { const st = STYLE[style]; return (i ? "italic " : "") + (b || st.bold ? "700 " : "400 ") + st.size * 4 + "px " + family(st.face); };
+  function adv(f4, ch) {
+    if (advsTick !== facesTick) { advs.clear(); advsTick = facesTick; }    // (measured in a face still loading: again)
+    const key = f4 + "\u0000" + ch;
+    let a = advs.get(key);
+    if (a === undefined) { meas.font = f4; a = Math.round(meas.measureText(ch).width) / 4; advs.set(key, a); }
+    return a;
+  }
+  function width(chars, s, e, style) {                         // the advance of chars[s, e), a letter at a time
+    let w = 0;
+    for (let k = s; k < e; k++) w += adv(font4(style, chars[k].b, chars[k].i), chars[k].c);
     return w;
   }
   function wrap(chars, style, available) {                     // typed.py's wrap, as [start, end) rows over the characters
@@ -3433,12 +3441,12 @@ span.lname { cursor: default; }
         let x = ln.x, k = ln.s;
         g.font = fontOf(P.p.style, false, false);
         const base = ln.y + g.measureText("Hg").fontBoundingBoxAscent;
-        while (k < ln.e) {
-          let j = k; const b = chars[k].b, i = chars[k].i;
-          while (j < ln.e && chars[j].b === b && chars[j].i === i) j++;
-          g.font = fontOf(P.p.style, b, i);
-          const t = chars.slice(k, j).map(c => c.c).join("");
-          g.fillText(t, x, base); x += g.measureText(t).width; k = j;
+        // A LETTER AT A TIME, each where width() puts it, so the line drawn is the line measured (and wrapped)
+        let fk = "";
+        for (; k < ln.e; k++) {
+          const ch = chars[k], f = fontOf(P.p.style, ch.b, ch.i);
+          if (f !== fk) { g.font = f; fk = f; }
+          g.fillText(ch.c, x, base); x += adv(font4(P.p.style, ch.b, ch.i), ch.c);
         }
         if (P.list === "checked") {                            // every line struck through
           let e = ln.e; while (e > ln.s && /\s/.test(chars[e - 1].c)) e--;

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.13
+
+- The window lays out typed text exactly as the engine does, so a reply never lands on typed text there. It measured a line whole at the type's own size, about 1% wider than the engine's measure, and wrapped a line the engine had fitted: the window showed one more line of typed text than the engine knew of, and a reply placed under the engine's last line sat on the window's. Each letter is now measured and placed the engine's way, equal to the unit.
+- An on-this-day card joins its haiku's lines with spaces only. 0.2.12 put a comma at each break, and a verse line often breaks mid-phrase.
+
 ## 0.2.12
 
 - A month calendar's days are never colored by what is on them. Holidays, birthdays and appointments are all one-line pills under the day's number, none more important than another; with the weather, the sky colors only the weather block above its rule; without it there is no weather block and no rule. The on-this-day card is docked at the day's foot, and is left off rather than ever overlapping the day's items. A holiday colored its whole day, and the card was drawn over it.
