@@ -293,6 +293,7 @@ span.lname { cursor: default; }
     if (t === "pointerup" && window.parent !== window) window.parent.postMessage({ pd: "view-key", key: e.button === 3 ? "ArrowLeft" : "ArrowRight", altKey: true }, location.origin);
   }, true);
   const SCREEN_W = 1620;                                                               // what the Paper Pro shows at 1x
+  const SAFE_TOP = 115;                    // where the toolbar ends on that screen (page.safe_area's top on its notebook page)
 
   // ================================================================ PENS AND COLORS
   // The tablet's 3 x 3 order. STORED WIDTH per thickness scale (1 / 2 / 3): the fineliner's 8 and the highlighter's 120
@@ -5498,12 +5499,18 @@ span.lname { cursor: default; }
   // THE SCREEN AT 1x, zoomed or scrolled sideways: where the window's edges fall at 1x (the tablet's screen across),
   // subtle gray dotted lines down the page, so what the tablet shows at once stays in sight
   function drawScreenEdges() {
-    if (Math.abs(view.zoom - 1) < 1e-3 && Math.abs(view.cx) < 0.5) return;
     ctx.save(); ctx.setLineDash([2, 5]); ctx.strokeStyle = "rgba(0,0,0,0.22)"; ctx.lineWidth = 1;
     ctx.beginPath();
-    for (const ex of [-screenW() / 2, screenW() / 2]) {
-      const sx = Math.round(toScreen(ex, 0)[0]) + 0.5;
-      if (sx > 0 && sx < vpW) { ctx.moveTo(sx, 0); ctx.lineTo(sx, vpH); }
+    // THE TOP OF THE SAFE AREA, across: where the tablet's toolbar ends -- SAFE_TOP of the screen's SCREEN_W across,
+    // in page units as the screen shows the page (screenW), so a page's zoom moves it as it moves the sides. Always
+    // shown: the toolbar's edge is never the window's, and what lies above it is under the toolbar on the tablet
+    const ty = Math.round(toScreen(0, SAFE_TOP * screenW() / SCREEN_W)[1]) + 0.5;
+    if (ty > 0 && ty < vpH) { ctx.moveTo(0, ty); ctx.lineTo(vpW, ty); }
+    if (Math.abs(view.zoom - 1) >= 1e-3 || Math.abs(view.cx) >= 0.5) {
+      for (const ex of [-screenW() / 2, screenW() / 2]) {
+        const sx = Math.round(toScreen(ex, 0)[0]) + 0.5;
+        if (sx > 0 && sx < vpW) { ctx.moveTo(sx, 0); ctx.lineTo(sx, vpH); }
+      }
     }
     ctx.stroke(); ctx.restore();
   }

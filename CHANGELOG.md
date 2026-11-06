@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.12
+
+- A month calendar's days are never colored by what is on them. Holidays, birthdays and appointments are all one-line pills under the day's number, none more important than another; with the weather, the sky colors only the weather block above its rule; without it there is no weather block and no rule. The on-this-day card is docked at the day's foot, and is left off rather than ever overlapping the day's items. A holiday colored its whole day, and the card was drawn over it.
+- An on-this-day card reads as one flowing text: the haiku's lines run together and wrap at the card's width, with no line breaks and no indented run-overs, on the month and on the week.
+- A month calendar fits its page. Drawn the safe area's height, then widened to its box with its title above, it ran past the foot of the page (2,412 tall on a 2,160 page); a month that would is drawn shorter until it fits.
+- The editor shows the top of the safe area as a subtle dashed line across the page, where the tablet's toolbar ends when it is docked at the top, moving with the page's zoom as the screen's side edges do.
+
 ## 0.2.11
 
 - The daemon's handwritten replies match the typed text by their ink: their lowercase is as tall as a typed paragraph's. 0.2.10 matched the letters' center lines, and with the pen's own thickness the replies still stood larger, their capitals nearly half again the typed ones. Lines stay 45 apart with 25 more between paragraphs, and a reply's first line sits where the next typed paragraph would, so the space under the typed text is a typed paragraph's every time.

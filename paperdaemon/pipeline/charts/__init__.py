@@ -987,6 +987,7 @@ ORNAMENT = "M -0.86 0 L 0.86 0"
 CARD_SZ = 19.0           # the card's type (13 is too small on the tablet); a haiku
                          # line that does not fit at this size runs over once (_card_lines)
 RUNOVER = 1.2            # a run-over line is indented this many ems, the way verse is set
+CARD_MAX_LINES = 6       # the card's text, run together and wrapped, at most this many lines (a month day's room)
 
 
 def _haiku_lines(card):
@@ -1041,32 +1042,35 @@ def _haiku_check(lines):
     return None
 
 
-def _card_lines(card, units, max_lines):
-    """The card's lines as (text, runover). Each haiku line is set whole when it fits; one that does
-    not is broken ONCE at a space and the rest set RUNOVER ems in, the way verse is set. The card's
-    type is 19 (13 read too small on the tablet), and at that size a seven-syllable line does not
-    always fit a day's width -- so it runs over rather than being cut or refused. A line that would need a second break is cut; the validator refuses it first."""
-    from paperdaemon.pipeline.draw import glyphs as _GL
-    out = []
-    indent = RUNOVER / CAPF                          # the run-over's indent, in cap units
+def _card_text(card):
+    """The haiku as ONE run of text: its three lines joined, a comma where a line ends without its own stop."""
+    out = ""
     for ln in _haiku_lines(card):
-        if _GL.measure(ln, TRACK) <= units:
-            out.append((ln, False))
-            continue
-        words, head = ln.split(), []
-        while words and _GL.measure(" ".join(head + [words[0]]), TRACK) <= units:
-            head.append(words.pop(0))
-        if not head:
-            head = [words.pop(0)]
-        # A RUN-OVER OF ONE WORD reads as a mistake ("Little Rock Nine walk / in"). Two words go
-        # down when they fit.
-        if len(words) == 1 and len(head) >= 3 and \
-                _GL.measure(" ".join([head[-1]] + words), TRACK) <= units - indent:
-            words.insert(0, head.pop())
-        out.append((" ".join(head), False))
-        if words:
-            out.append((_GL.fit(" ".join(words), units - indent, TRACK), True))
-    return out[:max_lines]
+        if out:
+            out += (" " if out[-1] in ".,;:!?-–—" else ", ")
+        out += ln
+    return out
+
+
+def _card_lines(card, units, max_lines):
+    """The card's text as (line, False): the haiku's lines RUN TOGETHER and wrapped at spaces to the card's width,
+    like any text. Set as verse -- a line each, a long one broken and run over, indented -- a day-wide slip turned it
+    into ragged fragments ("Rosa stood and / said no / a bus seat held / its history"). A last line that would not
+    fit is cut with an ellipsis; the validator refuses a card that long first."""
+    from paperdaemon.pipeline.draw import glyphs as _GL
+    out, cur = [], []
+    for w in _card_text(card).split():
+        if cur and _GL.measure(" ".join(cur + [w]), TRACK) > units:
+            out.append(" ".join(cur))
+            cur = [w]
+        else:
+            cur.append(w)
+    if cur:
+        out.append(" ".join(cur))
+    if len(out) > max_lines:
+        out = out[:max_lines]
+        out[-1] = _GL.fit(out[-1] + " " + "...", units, TRACK)
+    return [(ln, False) for ln in out]
 
 
 def _needs_two_breaks(ln, units):
@@ -1111,11 +1115,10 @@ def _validate_card(where, card, cw):
     if bad:
         raise SpecError("%s: a card is a HAIKU, three lines of 5, 7, 5 syllables -- %s" % (where, bad))
     units = _card_units(cw)
-    for i, ln in enumerate(_haiku_lines(card)):
-        if _needs_two_breaks(ln, units):
-            raise SpecError("%s: haiku line %d is too long for the card -- a line may run over "
-                            "ONCE; about %d characters fit on two lines; shorten it"
-                            % (where, i + 1, int(2 * units / 0.65)))
+    # (run together and wrapped, _card_lines: a month's card holds six lines of it)
+    if len(_card_lines(card, units, 99)) > CARD_MAX_LINES:
+        raise SpecError("%s: the haiku is too long for the card -- about %d characters fit; shorten it"
+                        % (where, int(CARD_MAX_LINES * units / 0.65)))
 
 
 def _card_geom(cw, ch, pad, big, note):
@@ -4223,15 +4226,14 @@ def _grid_vl(spec):
             m = marks.get(day) or {}
             fill = "#FFFFFF"
             wd = wx.get(day) or {}
-            # (a day's card is history: its own gray slip, never a wash -- KINDS above)
-            kinds_here = [e.get("kind") for e in (m.get("events") or [])
-                          if e.get("kind") in KIND_COLOR]
+            # A DAY IS NEVER COLORED BY WHAT IS ON IT. Its sky colors the weather block above its rule, and that is
+            # all; a holiday is one of the day's items, a pill like any calendar entry, no more important than they
+            # are. (Washing a holiday's whole day, its card drawn over the wash, read as a mess.) A color the mark
+            # names itself stays over the day's number only.
             if day and m.get("color"):
                 fill = WASH.get(m["color"], WASH["yellow"])
             elif day and color_by == "weather" and weather_wash(wd):
                 fill = weather_wash(wd)
-            elif day and color_by != "weather" and kinds_here:
-                fill = WASH[KIND_COLOR[min(kinds_here, key=KINDS.index)]]
             elif not day:
                 fill = "#F4F4F5"
             elif dows[d] in weekend:
@@ -4241,7 +4243,7 @@ def _grid_vl(spec):
             base = "#F4F4F5" if not day else ("#FBFBFC" if dows[d] in weekend else "#FFFFFF")
             if day and fill not in (base, "#FFFFFF"):
                 tiles.append({"x0": x0 + ins, "y0": y0 + ins, "x1": x0 + CW - ins,
-                              "y1": (y0 + sep_off - small * 0.15) if sep_off else (y0 + CH_ - ins),
+                              "y1": (y0 + sep_off - small * 0.15) if sep_off else (y0 + pad + big + small * 0.35),
                               "fill": fill, "r": rad})
                 fill = base
             cells.append({"x0": x0, "y0": y0, "x1": x0 + CW, "y1": y0 + CH_, "fill": fill})
@@ -4329,24 +4331,22 @@ def _grid_vl(spec):
                     stats.append({"x": x_, "y": y_, "s": s_, "b": False, "t": t_, "al": al_})
                 rows_bottom = wx_grid(_I, _T, x0, CW, pad, grid_top, wd, small,
                                       max_rows=rows_here) + small * 0.3
-            if sep_off:
+            if sep_off and have_t:
                 # the month's one rule height -- except on a card day that gave up a row, whose
                 # rule (and color tile) closes under the rows it kept
-                # (a day past the forecast has no figures above its rule at all; when it carries a
-                # card the rule comes up under the day number and the card has the cell)
-                if have_t:
-                    ry = y0 + sep_off if rows_here == grid_rows else rows_bottom
-                else:
-                    ry = grid_top if clines else y0 + sep_off
+                ry = y0 + sep_off if rows_here == grid_rows else rows_bottom
                 seps.append({"k": "sep%d" % day, "x0": x0 + pad, "x1": x0 + CW - pad, "y": ry})
                 if tiles and tiles[-1]["x0"] == x0 + ins and tiles[-1]["y0"] == y0 + ins:
                     tiles[-1]["y1"] = ry - small * 0.15      # the day's color ends at its rule
                 rows_bottom = ry
-            # EVENTS LIST TOP-DOWN under the rule that closes the weather block. The card keeps
-            # the foot, and shows only when the day has three events or fewer and the whole haiku
-            # fits under the last of them; otherwise it is left off, never cut.
+            elif not have_t:
+                # NO WEATHER, NO WEATHER BLOCK AND NO RULE: the day's items go straight under its number
+                rows_bottom = y0 + pad + big + small * 0.15
+            # THE DAY'S ITEMS LIST TOP-DOWN, every one a one-line pill -- a holiday, a birthday, an errand alike, none
+            # more important than another. The card is docked at the foot, and only when it fits under the last of
+            # them: the day's own items come first, and a card that would reach them is left off, never cut.
             ev_top = rows_bottom + note_sz * 0.85
-            if clines and len(evs) <= 3:
+            if clines:
                 n = len(evs)
                 bottom_of_events = (ev_top + (n - 1) * line_h + note_sz * 0.45) if n \
                     else (ev_top - note_sz * 0.4)

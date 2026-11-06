@@ -109,6 +109,21 @@ def t_chart(spec, place=None):
     except Exception as ex:
         return {"error": "the chart would not render: %s: %s" % (type(ex).__name__, str(ex)[:120])}
     from PIL import Image as _Im
+    # A MONTH FITS ITS PAGE. Its grid is drawn the safe area's height, its title goes above that, and the whole is
+    # widened to the box: a month ran 2,412 tall on a 2,160 page. One that would run past the foot of the safe area
+    # is drawn again with its grid shorter by just that much (a height the model gave stands as given).
+    if str(spec_r.get("type")) in ("calendar", "weather_calendar") and not spec.get("height"):
+        with _Im.open(png) as _m:
+            _pw, _ph = _m.size
+        _s = min(float(box["w"]) / _pw, float(box["w"]) / (2.0 * float(spec_r.get("width") or CH.WIDTH)))
+        _room = float(H._safe()[3]) - float(box["y0"])
+        if _ph * _s > _room:
+            _grid_h = float(spec_r.get("height") or CH.PAGES["tablet"][1])
+            spec_r = dict(spec_r, height=int(_grid_h - (_ph * _s - _room) / (2.0 * _s)) - 4)
+            try:
+                CH.render(spec_r, png, scale=2.0, crisp=False)
+            except Exception as ex:
+                return {"error": "the chart would not render: %s: %s" % (type(ex).__name__, str(ex)[:120])}
     with _Im.open(png) as _im:
         pw, ph = _im.size
         # A CHART FILLS ITS BOX'S WIDTH and its height follows: the page scrolls, and the places
