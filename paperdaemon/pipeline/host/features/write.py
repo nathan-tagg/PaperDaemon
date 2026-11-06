@@ -23,7 +23,8 @@ _MD_TASK = re.compile(r"^(\s*)(?:[-*+]\s+)?\[([ xX])\]\s+")      # "- [ ] item" 
 # what starts a LIST ITEM: its wrapped lines hang under the item's first word, not under the marker
 # ("Arrange utilities ... (electricity, water, / internet)" would otherwise come back to the margin)
 _LIST_MARK = re.compile(r"^(\s*(?:[-•·]|\d{1,2}[.)]|[☐☑☒□])\s+)")
-BOLD_W = 21                      # the lettering pen is 13; a bold word is drawn this heavy
+PEN_W = 13                       # the lettering pen's width field (on the tablet: PEN_W / 4 page units of ink)
+BOLD_W = 21                      # a bold word is drawn this heavy
 ITALIC = 0.22                    # how far an italic glyph leans, in its own height
 _DANGLING = set("the a an of to and but or nor in on at for with from by my your his her their our "
                 "its that this these those is are was were as than into onto".split())
@@ -124,11 +125,11 @@ def _mend_breaks(lines):
 def _letter(d, words, x, y, size):
     """[(word, bold, italic)] as one line of lettering from x; a plain line is one run."""
     if not any(b or i for _w, b, i in words):
-        T.text(d, " ".join(w for w, _b, _i in words), x, y, size=size, width=13)
+        T.text(d, " ".join(w for w, _b, _i in words), x, y, size=size, width=PEN_W)
         return
     for k, (w, b, i) in enumerate(words):
         wx = x + (T.measure(" ".join(v for v, _b, _i in words[:k]) + " ", size) if k else 0.0)
-        T.text(d, w, wx, y, size=size, width=BOLD_W if b else 13, slant=ITALIC if i else 0.0)
+        T.text(d, w, wx, y, size=size, width=BOLD_W if b else PEN_W, slant=ITALIC if i else 0.0)
 
 
 def t_write_line(text, y=None, size=30, align="left", place=None):
@@ -188,13 +189,18 @@ def t_write_line(text, y=None, size=30, align="left", place=None):
 # apart, run at the typed lines' own pitch (45), so the user's lines and the reply's read as one column
 def _body():
     """(size, line pitch, room between paragraphs, a line's top to its baseline) the replies are written at: THE TYPED
-    TEXT'S OWN (page.typed: body_measure) -- the lettering's lowercase as tall as a plain typed paragraph's (its
-    x-height is T.XH of its size), its lines 45 apart and 25 more between paragraphs, its first baseline where a typed
-    paragraph's would be (the handwritten replies match the typed paragraphs' size and
-    spacing, exactly)."""
+    TEXT'S OWN (page.typed: body_measure) -- the lettering's lowercase INK as tall as a plain typed paragraph's, its
+    lines 45 apart and 25 more between paragraphs, its first baseline where a typed paragraph's would be, so the room
+    between the user's typed text and the reply is a typed paragraph's, always (the handwritten replies match the typed
+    paragraphs' size and spacing, exactly).
+    BY THE INK, NOT THE LINE: a typed letter's ink stops at its outline, a lettered one's runs half the pen past its
+    centerline on each side. Set by the centerline (x-height / T.XH, 27.7), the reply's lowercase ink stood 2 units
+    taller and its capitals nearly half again the typed ones -- larger, and set by the ink (22.3), it is the same height.
+    The pen's line on the tablet is its width field / 4 page units (render.WSCALE_DEFAULT, measured on the tablet)."""
+    from paperdaemon.pipeline.page import render as R
     from paperdaemon.pipeline.page import typed as TY
     xh, lead, gap, base = TY.body_measure()
-    return xh / T.XH, lead, gap, base
+    return (xh - PEN_W * R.WSCALE_DEFAULT) / T.XH, lead, gap, base
 
 
 def t_write_paragraph(lines, start_y=None, size=None, place=None):

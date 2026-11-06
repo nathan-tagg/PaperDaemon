@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.11
+
+- The daemon's handwritten replies match the typed text by their ink: their lowercase is as tall as a typed paragraph's. 0.2.10 matched the letters' center lines, and with the pen's own thickness the replies still stood larger, their capitals nearly half again the typed ones. Lines stay 45 apart with 25 more between paragraphs, and a reply's first line sits where the next typed paragraph would, so the space under the typed text is a typed paragraph's every time.
+
 ## 0.2.10
 
 - A page's pictures show as soon as they load: a daemon's chart, a coloring page, chess pieces, a pasted picture. Since 0.2.0 a picture that arrived after the page was first drawn stayed hidden until the page was scrolled or zoomed, so a chart showed in the page's thumbnail and not on the page.
