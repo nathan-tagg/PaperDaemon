@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.14
+
+- The dotted lines show only while the view moves -- a pan, a scroll or a zoom -- and go a moment after it stops: the screen's side edges, and the top of the safe area that 0.2.12 added and left on every page. Opening or turning to a page shows none.
+
 ## 0.2.13
 
 - The window lays out typed text exactly as the engine does, so a reply never lands on typed text there. It measured a line whole at the type's own size, about 1% wider than the engine's measure, and wrapped a line the engine had fitted: the window showed one more line of typed text than the engine knew of, and a reply placed under the engine's last line sat on the window's. Each letter is now measured and placed the engine's way, equal to the unit.

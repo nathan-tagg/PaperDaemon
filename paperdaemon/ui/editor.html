@@ -5506,7 +5506,20 @@ span.lname { cursor: default; }
   // point, it ran away from the pointer when the view scrolled under a still mouse (the wheel, or typing that took the view down)
   // THE SCREEN AT 1x, zoomed or scrolled sideways: where the window's edges fall at 1x (the tablet's screen across),
   // subtle gray dotted lines down the page, so what the tablet shows at once stays in sight
+  // ONLY WHILE THE VIEW MOVES -- a pan, a scroll, a zoom -- and gone a moment after it stops: left on a still page the
+  // lines were clutter. A page opened or turned to is not a move (fromScene starts the count again).
+  const EDGES_MS = 700;
+  let edgesKey = null, edgesUntil = 0, edgesTimer = 0;
   function drawScreenEdges() {
+    const key = view.zoom + "|" + view.cx + "|" + view.top, now = performance.now();
+    if (key !== edgesKey) {
+      if (edgesKey !== null) {
+        edgesUntil = now + EDGES_MS;
+        clearTimeout(edgesTimer); edgesTimer = setTimeout(() => requestAnimationFrame(paint), EDGES_MS + 30);
+      }
+      edgesKey = key;
+    }
+    if (now >= edgesUntil) return;
     ctx.save(); ctx.setLineDash([2, 5]); ctx.strokeStyle = "rgba(0,0,0,0.22)"; ctx.lineWidth = 1;
     ctx.beginPath();
     // THE TOP OF THE SAFE AREA, across: where the tablet's toolbar ends -- SAFE_TOP of the screen's SCREEN_W across,
@@ -7804,6 +7817,7 @@ span.lname { cursor: default; }
       chars: [].concat(...(p.runs || []).map(r => [...r.text].map(c => ({ c, b: !!r.bold, i: !!r.italic })))) })) };
   }
   function fromScene(sc, later) {                             // (later: the strokes come in a frame at a time -- inkFrame -- the layers empty for now)
+    edgesKey = null; edgesUntil = 0;                           // (a page opened: its first view is not a move)
     page.paperSize = sc.paperSize || [1620, 2160];
     page.source = sc.source || null;                           // "pdf" or "epub": a page of a PDF or a book
     page.zoom = sc.zoom || "bestFit";                           // how the tablet fits it on the screen (screenW)
