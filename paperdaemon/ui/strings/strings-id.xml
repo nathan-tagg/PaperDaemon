@@ -669,7 +669,8 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="fm.duplicate">Duplikat</string>
   <string name="fm.delete_n_q">Hapus yang dipilih ({n})?</string>
   <string name="fm.select_all">Pilih semua</string>
-  <string name="fm.delete_pages_q">Hapus halaman yang dipilih ({n})?</string>
+  <string name="fm.delete_pages_q.one">Hapus halaman yang dipilih?</string>
+  <string name="fm.delete_pages_q.other">Hapus halaman yang dipilih?</string>
   <string name="fm.move_before">Pindah ke sebelum</string>
   <string name="fm.move_after">Pindah ke sesudah</string>
   <string name="fm.lmove_one">Pindahkan “{name}”: buka folder</string>

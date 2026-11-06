@@ -108,3 +108,46 @@ def test_what_a_job_writes_has_paperdaemons_own_author_and_ids(tmp_path):
     assert [tuple(x) for x in d["lines"]] == [(h, 1), (h, 2)]
     assert [tuple(x) for x in d["text"]] == [(h, 3)] and h in d["table"]
     assert d["pic"] == [[h, 12], [h, 13]] and d["pics"] == 1      # after the text's ids (3..11), its own
+
+
+def test_a_typed_paragraph_erased_takes_only_itself(tmp_path):
+    """Erasing the list item "milk" and then the request asking for it (both by their text, as para:N is staged) takes
+    those two paragraphs, and "milk" stays in no other paragraph cut out of it; a quote that is no whole paragraph and
+    stands in more than one place takes nothing."""
+    code = textwrap.dedent("""
+        import io, json, os, sys, uuid
+        sys.path.insert(0, %r)
+        import paperdaemon.pipeline  # noqa: F401
+        from paperdaemon import paths
+        from paperdaemon.pipeline import page as P
+        from rmscene import read_blocks, write_blocks, simple_text_document
+        from rmscene import scene_stream as ss
+        M = paths.mirror_dir()
+        doc, pid = str(uuid.uuid4()), str(uuid.uuid4())
+        os.makedirs(os.path.join(M, doc))
+        ask = "Please remove milk from my list, I already bought it."
+        buf = io.BytesIO()
+        write_blocks(buf, list(simple_text_document(chr(10).join(["Groceries:", "eggs", "milk", "bread", "apples", ask]))))
+        open(os.path.join(M, doc, pid + ".rm"), "wb").write(buf.getvalue())
+        json.dump({"cPages": {"pages": [{"id": pid, "idx": {"timestamp": "1:2", "value": "ba"}}]}, "fileType": "notebook",
+                   "pageCount": 1}, open(os.path.join(M, doc + ".content"), "w"))
+        json.dump({"visibleName": "T", "parent": "", "type": "DocumentType"}, open(os.path.join(M, doc + ".metadata"), "w"))
+
+        def text():
+            for b in read_blocks(io.BytesIO(open(os.path.join(M, doc, pid + ".rm"), "rb").read())):
+                if isinstance(b, ss.RootTextBlock):
+                    return "".join(it.value for it in b.value.items._items.values()
+                                   if isinstance(it.value, str) and it.value and not it.deleted_length)
+        twice = P.erase_text(doc, 1, contains="ea")["items"]          # bread, Please, already: which is not known
+        first = P.erase_text(doc, 1, contains="milk")["items"]
+        second = P.erase_text(doc, 1, contains=ask.lower())["items"]
+        print(json.dumps({"twice": twice, "first": first, "second": second, "left": text()}))
+    """) % ROOT
+    env = dict(os.environ, PAPERDAEMON_HOME=str(tmp_path / "home"), PYTHON_KEYRING_BACKEND="keyring.backends.null.Keyring")
+    for k in ("RM_STATE", "RM_MIRROR", "RM_CACHE", "RM_RUN"):
+        env.pop(k, None)
+    out = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True, timeout=300)
+    assert out.returncode == 0, out.stderr[-3000:]
+    d = json.loads(out.stdout.strip().splitlines()[-1])
+    assert d["twice"] == 0 and d["first"] >= 1 and d["second"] >= 1
+    assert d["left"] == "Groceries:\neggs\nbread\napples", d["left"]

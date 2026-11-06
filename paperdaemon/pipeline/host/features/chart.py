@@ -30,6 +30,12 @@ def t_chart(spec, place=None):
     if place is None:
         place = H._cur_place()
     if place not in boxes:
+        # A NAME THE PLAN DOES NOT HAVE, where it is known which place is meant: the place of the step being carried
+        # out, or the plan's only one. Refused, "center" and "replaces picture:1" each cost a turn in a dogfood run.
+        known = H._cur_place() if H._cur_place() in boxes else (next(iter(boxes)) if len(boxes) == 1 else None)
+        if known is not None:
+            place = known
+    if place not in boxes:
         return {"error": "there is no place called %r in your plan. You planned: %s."
                          % (place, ", ".join(sorted(boxes)))}
     box = boxes[place]
@@ -376,11 +382,10 @@ def _calendar_facts(cur):
             label = dates[0].strftime("%B")
             per, cut = 3, 80
             key = lambda d: str(d.day)
-        by_month, rows = {}, []
+        # ONLY THESE DATES, together (history.days): a week fetched its whole month, a day at a time
+        have, rows = _H.days([(d.month, d.day) for d in dates]), []
         for d in dates:
-            if d.month not in by_month:
-                by_month[d.month] = _H.month(d.month)
-            got = by_month[d.month].get(d.day) or []
+            got = have.get((d.month, d.day)) or []
             # SPREAD OVER THE DAY'S HISTORY, not its first few: Wikipedia lists a day newest first,
             # and the first ones handed the model 2012-2022 shootings and collapses to choose "firsts
             # worth a smile" from

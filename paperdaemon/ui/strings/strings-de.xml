@@ -669,7 +669,8 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="fm.duplicate">Duplizieren</string>
   <string name="fm.delete_n_q">Auswahl ({n}) löschen?</string>
   <string name="fm.select_all">Alle auswählen</string>
-  <string name="fm.delete_pages_q">Ausgewählte Seiten ({n}) löschen?</string>
+  <string name="fm.delete_pages_q.one">Ausgewählte Seite löschen?</string>
+  <string name="fm.delete_pages_q.other">Ausgewählte Seiten löschen?</string>
   <string name="fm.move_before">Davor verschieben</string>
   <string name="fm.move_after">Dahinter verschieben</string>
   <string name="fm.lmove_one">„{name}“ verschieben: Ordner öffnen</string>

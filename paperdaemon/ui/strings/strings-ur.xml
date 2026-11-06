@@ -669,7 +669,8 @@
   <string name="fm.duplicate">نقل بنائیں</string>
   <string name="fm.delete_n_q">منتخب ({n}) حذف کریں؟</string>
   <string name="fm.select_all">سب منتخب کریں</string>
-  <string name="fm.delete_pages_q">منتخب صفحات ({n}) حذف کریں؟</string>
+  <string name="fm.delete_pages_q.one">منتخب صفحہ حذف کریں؟</string>
+  <string name="fm.delete_pages_q.other">منتخب صفحات حذف کریں؟</string>
   <string name="fm.move_before">پہلے رکھیں</string>
   <string name="fm.move_after">بعد میں رکھیں</string>
   <string name="fm.lmove_one">“{name}” منتقل کریں: کوئی فولڈر کھولیں</string>

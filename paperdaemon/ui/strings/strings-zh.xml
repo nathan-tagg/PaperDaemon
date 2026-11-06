@@ -669,7 +669,8 @@
   <string name="fm.duplicate">复制</string>
   <string name="fm.delete_n_q">删除所选内容 ({n})?</string>
   <string name="fm.select_all">全选</string>
-  <string name="fm.delete_pages_q">删除所选页面 ({n})?</string>
+  <string name="fm.delete_pages_q.one">删除所选页面?</string>
+  <string name="fm.delete_pages_q.other">删除所选页面?</string>
   <string name="fm.move_before">移到前面</string>
   <string name="fm.move_after">移到后面</string>
   <string name="fm.lmove_one">移动“{name}”：打开一个文件夹</string>

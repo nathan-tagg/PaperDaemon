@@ -81,7 +81,9 @@ def t_erase_typed_text(text):
         return dict({"error": "that text is already staged for deletion; it goes at commit()."},
                     **H._did())
     H._stage("erase typed text containing %r" % text[:40], typed=[want])
-    hits = [h for h in have if _n_want in ER._normalize(h or "")[0]]
+    # (what ER.erase_text takes: the paragraph that IS the text where there is one, not each it is part of)
+    hits = ([h for h in have if ER._normalize(h or "")[0] == _n_want]
+            or [h for h in have if _n_want in ER._normalize(h or "")[0]])
     H.log("  staged typed-text erase matching %r (%d paragraph(s)) on %s p%s"
         % (text[:40], len(hits), doc[:8], page))
     return dict({"ok": True, "paragraphs": len(hits),

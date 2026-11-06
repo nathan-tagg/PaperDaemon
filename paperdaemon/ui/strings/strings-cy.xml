@@ -669,7 +669,8 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="fm.duplicate">Dyblygu</string>
   <string name="fm.delete_n_q">Dileu'r hyn a ddewiswyd ({n})?</string>
   <string name="fm.select_all">Dewis y cyfan</string>
-  <string name="fm.delete_pages_q">Dileu'r tudalennau a ddewiswyd ({n})?</string>
+  <string name="fm.delete_pages_q.one">Dileu'r dudalen a ddewiswyd?</string>
+  <string name="fm.delete_pages_q.other">Dileu'r tudalennau a ddewiswyd?</string>
   <string name="fm.move_before">Symud o flaen</string>
   <string name="fm.move_after">Symud ar ôl</string>
   <string name="fm.lmove_one">Symud “{name}”: agorwch ffolder</string>

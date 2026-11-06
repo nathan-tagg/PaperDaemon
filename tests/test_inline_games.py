@@ -88,6 +88,34 @@ def test_an_ink_adventure_is_played_in_the_notebook_that_asked(tmp_path):
                  "same_pages": True}
 
 
+def test_an_adventure_played_here_keeps_its_sheet_off_the_story(tmp_path):
+    """`here`: the scene is the page that asked, the sheet the page after it -- the sheet's picture on its own page, and
+    the scene's picture still on the scene after a turn (drawn on the asking page, the sheet went over the story, and
+    each turn's new sheet wiped the story off)."""
+    d = _run(tmp_path, """
+        from paperdaemon.pipeline.games import adventure as AD
+        from paperdaemon.pipeline.games import chess as CH
+        from paperdaemon.pipeline.page import images as IM, render as R
+        a, b = notebook("nb", 2)
+        st, doc = AD.start("an ink adventure", None, doc="nb", after=a, here=True, workdir=os.path.join(M, "..", "work"))
+
+        def pics(pid):
+            return [p for p in IM.parse(open(R.page_file("nb", pid), "rb").read()) if not p.get("deleted")]
+        out = {"scene_is_asking_page": st["page_id"] == a, "sheet_page": st["sheet"]["page_id"] != a,
+               "sheet_on_its_page": len(pics(st["sheet"]["page_id"])) == 1, "scene_pics": len(pics(a))}
+        AD.read_action = lambda *a_, **k: "I look around"
+        pages = order("nb")
+        AD.turn("nb", pages.index(st["page_id"]) + 1, st["page_id"], CH.load_state("nb", page_id=st["page_id"]),
+                lambda q: "{}", lambda q, png=None: "{}", workdir=os.path.join(M, "..", "work"))
+        st2 = CH.load_state("nb", page_id=st["page_id"])
+        out["after_turn_sheet_page"] = st2["sheet"]["page_id"] == st["sheet"]["page_id"]
+        out["after_turn_sheet_on_scene"] = any(abs(p["box"][3] - p["box"][1]) > 2000 for p in pics(a))
+        print(json.dumps(out))
+    """)
+    assert d["scene_is_asking_page"] and d["sheet_page"] and d["sheet_on_its_page"], d
+    assert d["after_turn_sheet_page"] and not d["after_turn_sheet_on_scene"], d
+
+
 def test_a_finished_game_gives_its_page_back(monkeypatch):
     # the game is over: what is written on its page next goes to the model (a new game, a question), not to a game
     # that can only refuse it; a game still being played keeps its page

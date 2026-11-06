@@ -157,9 +157,9 @@ def _typed_boxes(doc, page):
         from paperdaemon.pipeline.draw import lettering as _T
         tb, ps = TY.paragraphs(doc, page)
         moved = H._reflow()
-        needles = [ER._normalize(s)[0] for s in (JOB.hide_typed or []) if s]
+        gone = ER.staged_paragraphs([p.get("text") or "" for p in (ps or ())], JOB.hide_typed) if JOB.hide_typed else set()
         for n_, p in enumerate(ps or ()):
-            if needles and any(n and n in ER._normalize(p.get("text") or "")[0] for n in needles):
+            if n_ in gone:
                 continue                         # staged for erasing: not an obstacle
             dy = moved.get(n_, 0.0)
             for i, line in enumerate(p["lines"]):

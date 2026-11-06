@@ -369,10 +369,11 @@ def test_pages_chosen_are_deleted_duplicated_moved_and_tagged_as_the_tablet_does
                          [t["name"] for t in local._content(b).get("pageTags") or []]]
         local.delete_pages(a, [1, 2])
         out["deleted"] = [len(ids(a)), local._content(a)["pageCount"]]
-        try:
-            local.delete_pages(a, list(range(1, len(ids(a)) + 1))); out["all"] = "deleted"
-        except ValueError:
-            out["all"] = "refused"
+        was = ids(a)                                             # every page: one blank page, no template, in their place
+        local.delete_pages(a, list(range(1, len(was) + 1)))
+        left = local._live(local._content(a))
+        out["all"] = [len(left), left[0]["id"] not in was, (left[0].get("template") or {}).get("value"),
+                      [len(L["lines"]) for L in local.scene_of(a, 1)["layers"]], local._content(a)["pageCount"]]
         c = local.duplicate(a)
         out["copy"] = [local._read(os.path.join(local.M, c + ".metadata"))["visibleName"], ids(c) == ids(a)]
         print(json.dumps(out))
@@ -383,7 +384,7 @@ def test_pages_chosen_are_deleted_duplicated_moved_and_tagged_as_the_tablet_does
     assert got["ptags"] == [[2, "Notes"]]
     assert got["across"] == [5, True, True, 2, ["Notes"]]
     assert got["deleted"] == [3, 3]
-    assert got["all"] == "refused"
+    assert got["all"] == [1, True, "Blank", [0], 1]
     assert got["copy"] == ["A copy", True]
 
 

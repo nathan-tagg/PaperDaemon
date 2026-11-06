@@ -3804,7 +3804,7 @@ span.lname { cursor: default; }
   // in `changes`), never once a frame: the text, all of it, was gone over for each draw of a stroke being drawn
   let ukMemo = null, ukWas = [];
   const ukOf = () => [cv.width, cv.height, SS, dpr, vpW, view.zoom, view.cx, view.top, page.paperSize, useTablet, page.templateVisible, tplImg,
-    srcImg, page.images, page.images.length, hiddenPics.size, changes, page.text, page.textVisible, pictures.size, facesTick];
+    srcImg, page.images, page.images.length, hiddenPics.size, changes, page.text, page.textVisible, pictures.size, picsTick, facesTick];
   const underKey = () => {
     const now = ukOf();
     if (ukMemo !== null && now.length === ukWas.length && now.every((v, i) => v === ukWas[i])) return ukMemo;
@@ -7692,6 +7692,10 @@ span.lname { cursor: default; }
   // A PAGE'S PICTURES (captures, pasted images, the daemon's coloring pages and chess pieces) are drawn over the template
   // and under the ink and the text, each by its four corners (so a turned one turns), and kept through every save
   const pictures = new Map();                                // name -> the loaded image (null while it loads)
+  // HOW MANY TIMES PICTURES HAVE COME IN: what is under the ink is kept by its key (ukOf), and a picture's coming in
+  // changes nothing else there -- the map holds it from the moment it is asked for (null), so its size stays the same, and
+  // a picture that came after the page's first draw was never drawn (a daemon's chart, there in the thumbnail, not here)
+  let picsTick = 0;
   const picturesIn = sc => (sc.images || []).filter(im => im && im.name && (im.quad || []).length === 4)
     .map(im => ({ name: im.name, key: im.key || "", quad: im.quad.map(p => [Number(p[0]), Number(p[1])]), ...(MIRROR && im.id ? { id: im.id } : {}) }));
   function pictureUrl(name) {
@@ -7710,6 +7714,7 @@ span.lname { cursor: default; }
         pictures.set(n, img);
       } catch (e) { pictures.delete(n); }
     }));
+    picsTick++;
     rebuild();
   }
   function drawPictures(g) {                                  // on the page's own transform: corners top left, top right, bottom right, bottom left
@@ -7908,12 +7913,15 @@ span.lname { cursor: default; }
     const dv = new DataView(buf), u8 = new Uint8Array(buf);
     if (PDS.some((b, i) => u8[i] !== b)) throw new Error("not a PaperDaemon page");
     const n = dv.getUint32(4, true), sc = JSON.parse(new TextDecoder().decode(u8.subarray(8, 8 + n)));
+    // (ITS STROKES AS COLUMNS, as the engine sends a page: each stroke's object made from them, PDFile.columnLines --
+    // 150,000 objects in the page's JSON were most of reading a heavy page here; the first form: in the JSON)
+    const from = sc.cols ? PDFile.columnLines(sc, buf, n) : 8 + n;
     // EVERY STROKE'S POINTS IN ONE ARRAY, each stroke's a part of it (an array a stroke was most of reading a page of
     // 150,000 strokes, and of the collector's work after it); read a stroke at a time (pointsOf: all at once, or a frame's
     // worth at a time as the page comes in, inkFrame)
     let total = 0;
     for (const L of sc.layers || []) for (const ln of L.lines || []) total += ln.n || 0;
-    sc.read = { dv, at: 8 + n, o: 0, pool: new Float64Array(6 * total) };
+    sc.read = { dv, at: from, o: 0, pool: new Float64Array(6 * total) };
     return sc;
   }
   function pointsOf(h, ln) {                                  // a stroke's points, the next in the file h: its box (boxOf's) worked out as read

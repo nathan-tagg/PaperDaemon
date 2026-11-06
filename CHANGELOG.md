@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.10
+
+- A page's pictures show as soon as they load: a daemon's chart, a coloring page, chess pieces, a pasted picture. Since 0.2.0 a picture that arrived after the page was first drawn stayed hidden until the page was scrolled or zoomed, so a chart showed in the page's thumbnail and not on the page.
+- The daemon's handwritten replies are set to the typed text's own measure: their lowercase as tall as a typed paragraph's, their lines 45 apart and 25 more between paragraphs, the first line where the next typed paragraph would sit. They were a quarter larger, with lines 58 apart.
+- The retry box under a skipped or failed job's note is smaller (2.7 mm) and sits under the note's line at the left, still under the toolbar.
+- Erasing a typed paragraph takes that paragraph only. Erasing the list item "milk" also cut the word out of every other paragraph holding it, the user's own request among them, which then stayed on the page.
+- An Ink Adventure played on the page that asked for it keeps its story: the hero sheet goes on its own page. It landed on the story page, and the first turn wiped the story off. The story so far ends at a whole word.
+- A month calendar with "on this day" cards draws for a month past the forecast; it failed and left the cards off.
+- A habit tracker takes habits given by their names alone, and the model is told it can set the days.
+- Deleting pages asks "Delete the selected page?" or "Delete the selected pages?", with no number that reads like a page's. Deleting every page of a notebook leaves it one blank page instead of refusing.
+- Faster: a heavy page the engine has not read yet opens in a fifth of the time (1.24 s to 0.22 s for 150,000 strokes), sent to the editor a column per fact instead of a record per stroke. A large picture goes onto its page six times faster (13.3 s to 2.0 s for 29,538 strokes), the file the same to the byte. A web search no longer runs a test search first, and a job asking the same thing twice searches once. A week page fetches its seven days' history, not its month's.
+- Fewer refused turns: a calendar asked for as "December 2026" or "the week starting Monday" is read, not refused, and one day's schedule is pointed to the agenda chart; a chart that names a place its plan does not have takes its step's own; a refused plan step is numbered as the model wrote it.
+
 ## 0.2.9
 
 - Turning a selection with Alt works again. In 0.2.8, once a selection had been dragged and let go, pressing Alt (or Ctrl) put its strokes down in the middle of the next drag, so the turn left them where they were while the selection's frame turned, and the drop failed. A modifier key no longer puts a selection down, and nothing does in the middle of a drag. Moving, turning, turning with Alt, resizing, nudging and dragging twice now all land every stroke exactly where the selection's move puts it.

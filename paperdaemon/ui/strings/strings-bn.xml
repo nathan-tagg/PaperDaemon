@@ -669,7 +669,8 @@
   <string name="fm.duplicate">ডুপ্লিকেট</string>
   <string name="fm.delete_n_q">নির্বাচিতগুলো ({n}) মুছবেন?</string>
   <string name="fm.select_all">সব নির্বাচন</string>
-  <string name="fm.delete_pages_q">নির্বাচিত পৃষ্ঠাগুলো ({n}) মুছবেন?</string>
+  <string name="fm.delete_pages_q.one">নির্বাচিত পৃষ্ঠাটি মুছবেন?</string>
+  <string name="fm.delete_pages_q.other">নির্বাচিত পৃষ্ঠাগুলো মুছবেন?</string>
   <string name="fm.move_before">আগে সরান</string>
   <string name="fm.move_after">পরে সরান</string>
   <string name="fm.lmove_one">“{name}” সরান: একটি ফোল্ডার খুলুন</string>

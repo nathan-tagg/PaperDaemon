@@ -667,7 +667,21 @@
     function pagesGone(gone) {
       const n0 = pageCount(), out = new Set(gone), newOf = new Map();
       for (let n = 1, k = 0; n <= n0; n++) if (!out.has(n)) newOf.set(n, ++k);
-      if (!newOf.size) return;
+      if (!newOf.size) {                                    // EVERY PAGE: a blank page in their place (made by the engine, no
+        S.page = 1; S.hist = [1]; S.hpos = 0; S.doc.pages = 1;   // template), shown at once as the grid's one page
+        if (S.tags && S.tags.page_tags) S.tags.page_tags = [[]];
+        PD.thumbsRenumbered(base + "/library/" + S.doc.id + "/thumb/", newOf);
+        S.pp = [];
+        $("#" + VIEWER).querySelectorAll(".thumb[data-go]").forEach((t, i) => {
+          if (i) { t.remove(); return; }
+          t.dataset.go = 1; t.classList.add("here");
+          const m = t.querySelector(".meta"), img = t.querySelector("img[data-thumb]");
+          if (m) m.textContent = 1;
+          if (img) { img.removeAttribute("src"); img.dataset.thumb = 1; }
+        });
+        paintPagePick(); paintBar();
+        return;
+      }
       const near = n => {
         if (newOf.has(n)) return newOf.get(n);
         let b = n - 1, a = n + 1;
@@ -730,10 +744,12 @@
       if (act === "all") { S.pp = Array.from({ length: pageCount() }, (_, i) => i + 1); paintPagePick(); return; }
       if (act === "duplicate") { await run("duplicate"); return; }
       if (act === "delete") {
-        if (!await PD.confirm({ title: PD.t("fm.delete_pages_q", { n: pages.length }),
+        if (!await PD.confirm({ title: PD.count("fm.delete_pages_q", pages.length),
                                 action: PD.t("common.delete"), danger: true })) return;
         // THE PAGES GO AT ONCE (pagesGone), then the engine is told: refused, the notebook as the engine has it again,
-        // the pages chosen again with the reason; done, the page open is the page it opens at next
+        // the pages chosen again with the reason; done, the page open is the page it opens at next (every page gone:
+        // the blank page the engine made in their place, the grid drawn anew with it)
+        const every = pages.length >= pageCount();
         pagesGone(pages);
         const [, e] = await PD.safe(api("POST", "/library/" + doc + "/pages/delete", { pages }));
         if (e) {
@@ -743,6 +759,7 @@
           return;
         }
         if (S.doc && S.doc.id === doc) opened(doc, S.page);
+        if (every) { await pagesChanged(); return; }
         PD.safe(api("GET", "/library/" + doc)).then(([d]) => { if (d && S.doc && S.doc.id === doc) { S.tags = d; paintBar(); } });
         return;
       }

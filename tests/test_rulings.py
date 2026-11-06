@@ -145,9 +145,14 @@ def test_rule_8_replaces_is_a_picture_of_yours_and_once(page):
 
 def test_c22_a_calendars_what_is_a_month_or_week(page):
     assert ST.calendar_what("2026-10") == ("month", 2026, 10) and ST.calendar_what("week") == ("week",)
-    assert ST.calendar_what("October") is None and ST.calendar_what("2026-13") is None
+    # the ways a month or a week is written are read, not refused (a turn each, every calendar of a dogfood run)
+    assert ST.calendar_what("December 2026") == ST.calendar_what("Dec. 2026") == ST.calendar_what("12/2026") \
+        == ("month", 2026, 12)
+    assert ST.calendar_what("the week starting Monday, November 9") == ("week",)
+    assert ST.calendar_what("October")[0] == "month" and ST.calendar_what("2026-13") is None
+    assert ST.calendar_what("Saturday schedule") is None
     rs = [rule("para:1"), rule("line:1", "note", "keep")]
-    assert any("YYYY-MM" in x for x in RU.problems(
+    assert any("agenda" in x for x in RU.problems(
         "plan", {"steps": [{"do": "calendar", "what": "this October", "answers": []}], "rulings": rs}))
 
 

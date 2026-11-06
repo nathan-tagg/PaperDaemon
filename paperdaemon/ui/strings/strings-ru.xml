@@ -683,7 +683,8 @@
   <string name="fm.duplicate">Дублировать</string>
   <string name="fm.delete_n_q">Удалить выбранное ({n})?</string>
   <string name="fm.select_all">Выбрать все</string>
-  <string name="fm.delete_pages_q">Удалить выбранные страницы ({n})?</string>
+  <string name="fm.delete_pages_q.one">Удалить выбранную страницу?</string>
+  <string name="fm.delete_pages_q.other">Удалить выбранные страницы?</string>
   <string name="fm.move_before">Поставить перед</string>
   <string name="fm.move_after">Поставить после</string>
   <string name="fm.lmove_one">Переместить «{name}»: откройте папку</string>

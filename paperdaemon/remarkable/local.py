@@ -361,11 +361,13 @@ def _keys_at(live, moving, at, where, n):
 
 
 def delete_pages(doc, page_nos):
-    """-> how many went."""
+    """-> how many went. EVERY PAGE CHOSEN: a blank page with no template made after them first (_blank_after), so the
+    notebook keeps one -- the page it opens on next."""
     _guard()
     c, live, chosen = _chosen(doc, page_nos)
     if len(chosen) >= len(live):
-        raise ValueError("a notebook keeps at least one page")
+        _blank_after(doc, live)
+        c, live, chosen = _chosen(doc, page_nos)             # (the new page after them: the pages chosen keep their numbers)
     ids = {p["id"] for p in chosen}
     _mark_deleted(c, ids)
     c["pageTags"] = [t for t in c.get("pageTags") or [] if t.get("pageId") not in ids]
@@ -373,6 +375,28 @@ def delete_pages(doc, page_nos):
     for pid in ids:
         _drop_page_files(doc, pid)
     return len(ids)
+
+
+def _blank_after(doc, live):
+    """A blank page with no template after the last of `live` -> its id: in the frame of a page of the notebook that has
+    its file (insert_pages), else the bundled Paper Pro page new notebooks start from (a book's pages may have none)."""
+    with_file = [p for p in reversed(live) if os.path.exists(_page_files(doc, p["id"])[0])]
+    if with_file:
+        [(pid, _key)] = F.insert_pages(doc, live[-1]["id"], 1, template_from=with_file[0]["id"])
+    else:
+        from paperdaemon import studio
+        pid, last = str(uuid.uuid4()), live[-1]
+        paths.write_atomic(_page_files(doc, pid)[0], studio._blank_page_bytes(_pipeline()))
+        c = _content(doc)
+        c["cPages"]["pages"].append({"id": pid, "idx": {"timestamp": last["idx"]["timestamp"], "value": F.key_between(last["idx"]["value"])},
+                                     "modifed": str(_now())})
+        _save_content(doc, c)
+    c = _content(doc)
+    for p in c["cPages"]["pages"]:
+        if p["id"] == pid:
+            p["template"] = {"timestamp": (p.get("template") or {}).get("timestamp") or "1:1", "value": "Blank"}
+    _save_content(doc, c)
+    return pid
 
 
 def _mark_deleted(c, ids):
@@ -669,7 +693,7 @@ def scene_head(doc, page_no):
     return got
 
 
-def scene_of(doc, page_no, arrays=False, data=None):
+def scene_of(doc, page_no, arrays=False, data=None, columns=False):
     """The page as the editor holds it (see the module's note). With `arrays`, each stroke's points are its fastrm.POINT
     array as read, for the editor's binary form (scene_bytes); else rows [x, y, speed, direction, width, pressure].
 
@@ -696,7 +720,9 @@ def scene_of(doc, page_no, arrays=False, data=None):
     # text's own reader runs only when the page has typed text -- a page with a decomp on it is seconds a parse
     # IN ONE PASS where it can be (fastrm.scene_parts: the strokes read in C, the few other blocks by rmscene); a page it
     # does not cover is read block by block, the strokes' points in one step each (fastrm.read_blocks)
-    parts = fastrm.scene_parts(data)
+    # (columns: each layer's strokes left as the C reader's rows over the page's bytes, for scene_bytes to write as
+    # columns -- "rows", "data", "shift" in place of "lines"; where the C reader is not sure, the strokes as ever)
+    parts = fastrm.scene_rows(data) if columns else fastrm.scene_parts(data)
     blocks = parts[0] if parts else list(fastrm.read_blocks(data))
     info = next((b for b in blocks if isinstance(b, ss.SceneInfo)), None)
     tree = SceneTree()
@@ -734,14 +760,20 @@ def scene_of(doc, page_no, arrays=False, data=None):
     layers = []
     for g in tree.root.children.values():
         if isinstance(g, si.Group):
-            if parts:
+            extra = {}
+            if parts and columns:
+                rs = parts[1].get(g.node_id)
+                extra = {"rows": rs if rs is not None else np.zeros((0, 26), np.int64), "data": data,
+                         "shift": offs.get(g.node_id, (0.0, 0.0))}
+                lines = None
+            elif parts:
                 dx, dy = offs.get(g.node_id, (0.0, 0.0))
                 lines = [dict(ln, points=_moved(_rows(ln["points"], arrays), dx, dy)) for ln in parts[1].get(g.node_id, [])]
             else:
                 lines = lines_in(g, [])
             # THE DAEMON'S LAYER (named as his, or under his old author): shown, and marked, so the editor leaves it to him
             layers.append({"label": g.label.value or "Layer %d" % (len(layers) + 1), "visible": bool(g.visible.value),
-                           "lines": lines, "daemon": g.node_id.part1 == R.DAEMON_AUTHOR
+                           **({"lines": lines} if lines is not None else extra), "daemon": g.node_id.part1 == R.DAEMON_AUTHOR
                            or g.label.value in (R.daemon_layer_name(), R.DAEMON_LEGACY),
                            "id": [g.node_id.part1, g.node_id.part2]})
     if not layers:

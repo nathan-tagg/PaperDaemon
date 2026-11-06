@@ -165,6 +165,14 @@ keys = [k for k, e in S.load()["entries"].items() if e.get("status") == "pending
 S.claim(keys[0], "replay")
 import paperdaemon.pipeline.host as H
 H.run_job({"keys": keys[:1]})
+# THE DAEMON TAKES THE RECORD IN, as its finish_job does: the host's "checked" cleared, and the page as the job left it
+# the page as handled -- so a page changed after it (a test's next request) comes back as a job
+with S.locked():
+    led = S.load(); ent = led["entries"].get(keys[0])
+    if ent is not None:
+        ent.pop("checked", None)
+        ent["handled_sha"] = S.page_state(ent["doc_id"], ent.get("page_id"))["sha"]
+        S.save(led)
 print(json.dumps({"key": keys[0], "entry": S.load()["entries"][keys[0]]}))
 """
 

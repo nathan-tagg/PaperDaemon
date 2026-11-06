@@ -148,6 +148,15 @@ def query(q, images=False, s=None):
         except urllib.error.HTTPError as ex:
             raise SearchError("%s answered %s" % (PROVIDERS[sr["provider"]], ex.code))
     if kind == "local":
+        # THE QUERY ITSELF FIRST: a server that answers it in SearXNG's shape is up. A test search before every query
+        # doubled each lookup; only a query that is not answered so has the server made ready (_ensure_local: its
+        # start script) and asked again.
+        try:
+            got = _get(_local_url(sr, q, images))
+            if searxng_shape(got):
+                return got
+        except Exception:
+            pass
         _ensure_local(sr, s)
         return _get(_local_url(sr, q, images))
     raise SearchError("this lineup has no web search")

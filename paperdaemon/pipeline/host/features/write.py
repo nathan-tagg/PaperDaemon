@@ -186,15 +186,36 @@ def t_write_line(text, y=None, size=30, align="left", place=None):
 
 # THE REPLY'S SIZE IS THE TYPED TEXT'S: lettering at 26 stands as tall as the typed body text, and its lines, 1.7 sizes
 # apart, run at the typed lines' own pitch (45), so the user's lines and the reply's read as one column
-def t_write_paragraph(lines, start_y=None, size=26, place=None):
-    """Several lines of lettering, placed by the host.
+def _body():
+    """(size, line pitch, room between paragraphs, a line's top to its baseline) the replies are written at: THE TYPED
+    TEXT'S OWN (page.typed: body_measure) -- the lettering's lowercase as tall as a plain typed paragraph's (its
+    x-height is T.XH of its size), its lines 45 apart and 25 more between paragraphs, its first baseline where a typed
+    paragraph's would be (the handwritten replies match the typed paragraphs' size and
+    spacing, exactly)."""
+    from paperdaemon.pipeline.page import typed as TY
+    xh, lead, gap, base = TY.body_measure()
+    return xh / T.XH, lead, gap, base
+
+
+def t_write_paragraph(lines, start_y=None, size=None, place=None):
+    """Several lines of lettering, placed by the host, at the typed text's size and spacing (_body): each string of
+    `lines` a paragraph, as each line typed on the tablet with Enter is.
 
     A LINE THAT IS TOO LONG IS WRAPPED, NOT REFUSED. Refusing sent the model round again to
     re-split its own prose -- a turn spent on typesetting, which is the host's job -- and when
     the text then did not fit the box vertically it was refused again. So: wrap every line to the
-    box, and if the block is still too tall step the size down (26 -> 22) before saying no.
+    box, and if the block is still too tall step the size down (by 22/26) before saying no.
     Only a single word wider than the column is genuinely unwritable.
     """
+    body, lead, gap, base = _body()
+    size = float(size) if size else body
+
+    def pitch(sz):                                        # lines and paragraphs apart at size sz
+        return lead * sz / body, gap * sz / body
+
+    def tall(rows, sz):                                   # baseline of the first row to that of the row after the last
+        p, g = pitch(sz)
+        return p * len(rows) + g * sum(1 for i, (_r, new) in enumerate(rows) if new and i)
     if isinstance(lines, str):
         lines = [lines]
     md = [H._md_words(str(l)) for l in H._mend_breaks(lines or [])]
@@ -212,44 +233,46 @@ def t_write_paragraph(lines, start_y=None, size=26, place=None):
     col = H._text_col()
     pad = H._pad_for(box, col)
     usable = (box["x1"] - box["x0"] if box else col[1] - col[0]) - 2 * pad
-    floor = box["y1"] + int(size) * 0.5 if box else H._safe()[3]
+    floor = box["y1"] + size * 0.5 if box else H._safe()[3]
 
     def fit(sz):
+        """-> ([(row, starts a paragraph)], None), or (None, why)."""
         out = []
         for ln in lines:
             if not ln.strip():
-                out.append("")
+                rows = [""]
             elif T.measure(ln, sz) > usable:
                 mk = _LIST_MARK.match(ln)
                 if mk:
                     # a list item: the rest of it hangs under its first word (spaces, since the
                     # drawing offsets a line by its leading whitespace; never less than the marker)
                     hang = " " * int(math.ceil(T.measure(mk.group(1), sz) / max(1e-6, T.measure(" ", sz))))
-                    body = T.wrap(ln[mk.end():], sz, usable - T.measure(hang, sz)) or [ln[mk.end():]]
-                    out += [mk.group(1) + body[0]] + [hang + b for b in body[1:]]
+                    rest_ = T.wrap(ln[mk.end():], sz, usable - T.measure(hang, sz)) or [ln[mk.end():]]
+                    rows = [mk.group(1) + rest_[0]] + [hang + b for b in rest_[1:]]
                 else:
-                    out += T.wrap(ln, sz, usable) or [ln]
+                    rows = T.wrap(ln, sz, usable) or [ln]
             else:
-                out.append(ln)
-        for ln in out:
+                rows = [ln]
+            out += [(r, j == 0) for j, r in enumerate(rows)]
+        for ln, _new in out:
             if ln.strip() and T.measure(ln, sz) > usable:
                 return None, "the word %r is wider than the column at size %d" % (ln[:30], sz)
         return out, None
 
     chosen, why, rest = None, None, []
-    for sz in sorted({int(size), 22}, reverse=True):
-        if sz > int(size):
-            continue
+    for sz in sorted({size, size * 22.0 / 26.0}, reverse=True):
         wrapped, why = fit(sz)
         if wrapped is None:
             continue
-        top = float(start_y) if start_y is not None else (box["y0"] + sz * 1.15 if box else None)
+        # the first baseline as far below the box's top as a typed line's below its own (the box starts where the next
+        # typed paragraph would: intake's gap 25 under typed text)
+        top = float(start_y) if start_y is not None else (box["y0"] + base * sz / body if box else None)
         if top is None:
             return dict({"error": "give start_y or place (a box from your plan)."}, **H._did())
         bad = H._bad_y(top, sz)
         if bad:
             return dict({"error": bad}, **H._did())
-        end = top + sz * 1.7 * len(wrapped)
+        end = top + tall(wrapped, sz)
         if end <= floor:
             chosen = (sz, top, wrapped)
             break
@@ -262,33 +285,36 @@ def t_write_paragraph(lines, start_y=None, size=26, place=None):
         # page. A reMarkable page scrolls: _safe()[3] is where the first
         # screen's safe area ends, not where the page does. So the words go on at the asked size,
         # straight down, and the page extends beneath them.
-        sz = int(size)
+        sz = size
         wrapped, why2 = fit(sz)
         if wrapped is None:
             return dict({"error": "%s. NOTHING written." % why2}, **H._did())
-        top = float(start_y) if start_y is not None else (box["y0"] + sz * 1.15 if box else H._safe()[1] + sz)
+        top = float(start_y) if start_y is not None else (box["y0"] + base * sz / body if box else H._safe()[1] + sz)
         bad = H._bad_y(top, sz)
         if bad:
             return dict({"error": bad}, **H._did())
         chosen = (sz, top, wrapped)
         H.log("  %d line(s) run %d px past the first screen; the page extends below"
-            % (len(wrapped), int(top + sz * 1.7 * len(wrapped) - floor)))
+            % (len(wrapped), int(top + tall(wrapped, sz) - floor)))
     sz, y, wrapped = chosen
     H._mark()
     x = (box["x0"] if box else col[0]) + pad
     k = 0
-    for ln in wrapped:
+    p_, g_ = pitch(sz)
+    for i, (ln, new) in enumerate(wrapped):
+        if new and i:
+            y += g_                              # a new paragraph: the room the tablet leaves after one
         if ln.strip():
             n = len(ln.split())                  # wrapping splits at spaces only, so words line up
             H._letter(JOB.draw, flat[k:k + n], x + T.measure(ln[:len(ln) - len(ln.lstrip())], sz), y, sz)
             k += n
-        y += sz * 1.7
+        y += p_
     JOB.ops.append("paragraph of %d line(s) from y=%d" % (len(wrapped), int(chosen[1])))
     # the notepad records WHAT was written, so a follow-up ("which of those is the shortest?") can see it
-    JOB.written.extend(ln for ln in wrapped if ln.strip())
-    out = dict({"ok": True, "lines": len(wrapped), "size": sz, "next_free_y": round(y)}, **H._did())
-    if sz != int(size):
-        out["note"] = "written at size %d so it fits the box" % sz
+    JOB.written.extend(ln for ln, _new in wrapped if ln.strip())
+    out = dict({"ok": True, "lines": len(wrapped), "size": round(sz, 1), "next_free_y": round(y)}, **H._did())
+    if sz != size:
+        out["note"] = "written smaller (%d) so it fits the box" % round(sz)
     if y > H._safe()[3]:
         JOB.extends_to = max(JOB.extends_to or 0, int(y))
         out["note"] = ("the last lines sit below the first screen (down to y=%d); the page scrolls"
@@ -301,8 +327,7 @@ TOOLS = [
  ("write_paragraph", "The words for a write step: lines in reading order, at the length the step "
   "deserves. The host puts them in the step's box and wraps any line that is too long; words that "
   "run past the first screen extend the page below (it scrolls).",
-  {"lines": "array", "size": {"type": "number", "optional": True},
-   "place": {"type": "string", "optional": True}}, t_write_paragraph),
+  {"lines": "array", "place": {"type": "string", "optional": True}}, t_write_paragraph),
  ("write_line", "ONE line of lettering when a single line is the whole step (a title, a label, a "
   "date). align left|center|right within the step's box.",
   {"text": "string", "size": {"type": "number", "optional": True},

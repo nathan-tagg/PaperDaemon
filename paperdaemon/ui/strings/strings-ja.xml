@@ -669,7 +669,8 @@
   <string name="fm.duplicate">複製</string>
   <string name="fm.delete_n_q">選択したもの ({n}) を削除しますか?</string>
   <string name="fm.select_all">すべて選択</string>
-  <string name="fm.delete_pages_q">選択したページ ({n}) を削除しますか?</string>
+  <string name="fm.delete_pages_q.one">選択したページを削除しますか?</string>
+  <string name="fm.delete_pages_q.other">選択したページを削除しますか?</string>
   <string name="fm.move_before">前に移動</string>
   <string name="fm.move_after">後に移動</string>
   <string name="fm.lmove_one">「{name}」を移動：フォルダを開く</string>

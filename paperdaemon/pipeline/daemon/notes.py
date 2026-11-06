@@ -57,7 +57,7 @@ GAP = 100_000
 SIZE = 15.0                         # the lettering's cap height, page units on a Paper Pro page
 LEAD = 24.0                         # baseline to baseline
 PEN_W = 5                           # the fineliner's width at that size
-BOX = 40.0                          # the retry box's side: about 4.5 mm on a Paper Pro, room for a tick
+BOX = 24.0                          # the retry box's side: about 2.7 mm on a Paper Pro (40 was too big)
 ROOT = (0, 1)                       # the page's list of layers
 LAID_MAX = 40                       # what he laid that a page has not shown back yet, kept at most
 
@@ -403,9 +403,9 @@ def band(frame):
 
 
 def letter(lines, frame, box=False, latest=False):
-    """The note: ONE line in the band, `lines` run together, signed at its end, with a retry box at the band's right
-    end when `box`. -> (Drawing strokes, the box (x0, y0, x1, y1) or None). It never wraps: a note too long for the
-    line is cut, with an ellipsis, where the signature (and the box) begin. (`latest` is kept for its callers; one line
+    """The note: ONE line in the band, `lines` run together, signed at its end, with a retry box under it when `box`,
+    at the band's left like the line. -> (Drawing strokes, the box (x0, y0, x1, y1) or None). It never wraps: a note too
+    long for the line is cut, with an ellipsis, where the signature begins. (`latest` is kept for its callers; one line
     is all there is.)"""
     from paperdaemon.pipeline import draw as A
     from paperdaemon.pipeline.draw import lettering as T
@@ -415,8 +415,7 @@ def letter(lines, frame, box=False, latest=False):
     size, lead = SIZE * s, LEAD * s
     first = top + lead + 2 * s
     sig_w = size * 0.9 + SIG.signature_width(size * 0.9)       # the signature's room at the end of the last line
-    box_w = (BOX * s + size * 5.5) if box else 0.0             # the retry box, at the band's right end, and its word
-    width = x1 - x0 - box_w
+    width = x1 - x0
     wrapped = [" ".join(" ".join(str(ln).split()) for ln in lines)]
     last = 0
     wrapped[last] = _cut(T, wrapped[last], size, width - sig_w)
@@ -430,10 +429,11 @@ def letter(lines, frame, box=False, latest=False):
     SIG.draw_signature(d, cur, y, height=size * 0.9)
     got = None
     if box:
-        # the box at the band's right end, centered in its depth, the word "retry" after it
+        # THE BOX UNDER THE LINE, at the band's left like it (it sat at the band's right end, too
+        # big), still in the band under the toolbar; the word "retry" after it
         side = BOX * s
-        bx = x1 - side - size * 4.6
-        by = top + ((bottom - top) - side) / 2.0
+        bx = x0
+        by = y + lead * 0.55
         b = (bx, by, bx + side, by + side)
         d.stroke([(b[0], b[1]), (b[2], b[1]), (b[2], b[3]), (b[0], b[3]), (b[0], b[1])], width=PEN_W)
         T.text(d, "retry", b[2] + size * 0.5, by + side / 2.0 + size / 2.0, size=size, width=PEN_W)

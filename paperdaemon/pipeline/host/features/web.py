@@ -39,6 +39,12 @@ def _wiki_summary(url):
 
 
 def t_web_search(query):
+    # THE SAME QUERY ONCE A JOB: the decision turn's web_search, then a planned search step for the same words, ran
+    # it twice (3 of 4 lookups in a dogfood run). What this job already found is kept (below) and given again.
+    key = " ".join(str(query or "").split()).lower()
+    for prev in H._scratch().get("searches") or []:
+        if prev.get("web") and prev.get("results") and " ".join(str(prev.get("query") or "").split()).lower() == key:
+            return {"results": list(prev["results"])}
     try:
         d = H._search(query)
     except Exception as e:
@@ -52,9 +58,9 @@ def t_web_search(query):
             hits.remove(h)
             hits.insert(0, h)                  # first, so no length cap downstream can cut it
             break
-    # Kept so a restart does not have to search the web again for something it
+    # Kept so a restart -- or a step asking the same -- does not have to search the web again for something it
     # already looked up.
-    H._scratch()["searches"].append({"query": query, "results": hits[:3]})
+    H._scratch()["searches"].append({"query": query, "results": hits, "web": True})     # (a picture search's: no)
     return {"results": hits}
 
 

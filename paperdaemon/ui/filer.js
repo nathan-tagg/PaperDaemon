@@ -75,7 +75,34 @@
   const picturesHash = list => valueHash(list.map(im => [im.name, im.quad.map(p => [Math.round(p[0] * 10), Math.round(p[1] * 10)])]));
   const picturesIn = (sc, mirror) => (sc.images || []).filter(im => im && im.name && (im.quad || []).length === 4)
     .map(im => ({ name: im.name, key: im.key || "", quad: im.quad.map(p => [Number(p[0]), Number(p[1])]), ...(mirror && im.id ? { id: im.id } : {}) }));
-  const shared = { recordsOf, headOf, strokeHash, textHash, metaHash, picturesHash, REC };
+  // THE STROKES AS COLUMNS (the engine's binary form "cols": fastrm.scene_bytes): from the 8-byte boundary after the
+  // page's JSON, each fact of every stroke one array, all layers in order -- thicknessScale (f64), points' count, pen
+  // code, color, ARGB, id's two parts, group's two parts (u32), which it has (u8: 1 ARGB, 2 id, 4 group) -- then their
+  // points. Each layer's strokes made into the objects the first form's JSON had -> where their points begin
+  function columnLines(sc, buf, headLen) {
+    const C = sc.cols, N = C.count | 0, pens = C.pens || {};
+    let at = Math.ceil((8 + headLen) / 8) * 8;
+    const thick = new Float64Array(buf, at, N); at += 8 * N;
+    const u32 = () => { const a = new Uint32Array(buf, at, N); at += 4 * N; return a; };
+    const n = u32(), code = u32(), color = u32(), argb = u32(), ia = u32(), ib = u32(), ga = u32(), gb = u32();
+    const has = new Uint8Array(buf, at, N); at += N;
+    let k = 0;
+    for (const L of sc.layers || []) {
+      const m = L.n | 0, lines = new Array(m);
+      for (let j = 0; j < m; j++, k++) {
+        const p = argb[k], h = has[k];
+        const ln = { pen: pens[code[k]] || "FINELINER_2", penCode: code[k], color: color[k],
+                     colorRgba: h & 1 ? [(p >>> 16) & 255, (p >>> 8) & 255, p & 255, p >>> 24] : null, thicknessScale: thick[k], n: n[k] };
+        if (h & 2) ln.id = [ia[k], ib[k]];
+        if (h & 4) ln.group = [ga[k], gb[k]];
+        lines[j] = ln;
+      }
+      L.lines = lines; delete L.n;
+    }
+    delete sc.cols;
+    return at;
+  }
+  const shared = { recordsOf, headOf, strokeHash, textHash, metaHash, picturesHash, columnLines, REC };
 
   if (typeof WorkerGlobalScope === "undefined" || !(self instanceof WorkerGlobalScope)) { window.PDFile = shared; return; }
 
@@ -90,7 +117,7 @@
     const dv = new DataView(buf), u8 = new Uint8Array(buf);
     if (PDS.some((b, i) => u8[i] !== b)) throw new Error("not a PaperDaemon page");
     const hl = dv.getUint32(4, true), sc = JSON.parse(new TextDecoder().decode(u8.subarray(8, 8 + hl)));
-    let at = 8 + hl;
+    let at = sc.cols ? columnLines(sc, buf, hl) : 8 + hl;   // (its strokes as columns, or an object a stroke)
     sc.layers = sc.layers || [];
     const layers = sc.layers.map(L => (L.lines || []).map(ln => {
       const n = ln.n || 0, e = { ln, at, n, h: strokeHash(ln.penCode, ln.color, u8, at, n) };

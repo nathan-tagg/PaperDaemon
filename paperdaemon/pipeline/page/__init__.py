@@ -45,16 +45,22 @@ from rmscene.scene_items import Line
 
 
 def _sig(line):
-    """Translation-invariant fingerprint of one stroke."""
-    h = hashlib.sha256()
-    h.update(("%s|%s|%s|%d|" % (
-        getattr(line.tool, "value", line.tool),
-        getattr(line.color, "value", line.color),
-        line.color_rgba, len(line.points))).encode())
+    """Translation-invariant fingerprint of one stroke. WORKED OUT ONCE A STROKE (kept on it, with the points list it
+    was made from: a copy given other points is worked out again), and hashed in one go -- the same bytes as a hash
+    fed a point at a time, so the same fingerprint: a job asked it four times a stroke, 14 s of a page of 150,000."""
     pts = line.points
-    for a, b in zip(pts, pts[1:]):
-        h.update(("%.1f,%.1f;" % (b.x - a.x, b.y - a.y)).encode())
-    return h.hexdigest()[:16]
+    kept = getattr(line, "__dict__", {}).get("_sig_kept")
+    if kept is not None and kept[0] is pts:
+        return kept[1]
+    head = "%s|%s|%s|%d|" % (getattr(line.tool, "value", line.tool), getattr(line.color, "value", line.color),
+                             line.color_rgba, len(pts))
+    body = "".join(["%.1f,%.1f;" % (b.x - a.x, b.y - a.y) for a, b in zip(pts, pts[1:])])
+    sig = hashlib.sha256((head + body).encode()).hexdigest()[:16]
+    try:
+        line.__dict__["_sig_kept"] = (pts, sig)
+    except (AttributeError, TypeError):
+        pass
+    return sig
 
 
 def skey(line):
@@ -594,6 +600,30 @@ def _normalize(s):
     return "".join(out), back
 
 
+_PARA_ENDS = ("\n", " ", " ")                # what ends a typed paragraph (page.typed: \n, LS, PS)
+
+
+def staged_paragraphs(texts, passages):
+    """Which of these paragraphs (their texts, in order) the typed passages staged for erasing take -> the set of their
+    indexes: erase_text's own rule, so what a render hides and what a commit removes are one set. A paragraph that IS a
+    passage; a passage that is no whole paragraph, the one paragraph holding it once (anywhere more: none) -- never each
+    paragraph its words are in (a staged "milk" took the user's sentence asking for it out of the renders)."""
+    norm = [_normalize(t or "")[0] for t in texts]
+    out = set()
+    for s in passages or ():
+        n = _normalize(s or "")[0]
+        if not n:
+            continue
+        same = [i for i, t in enumerate(norm) if t == n]
+        if same:
+            out.update(same)
+            continue
+        holding = [i for i, t in enumerate(norm) if n in t]
+        if len(holding) == 1 and norm[holding[0]].count(n) == 1:
+            out.update(holding)
+    return out
+
+
 def erase_text(doc_name, page_no, keep=None, contains=None, dry_run=False, data=None):
     """Tombstone typed text in the RootTextBlock, the way the device does.
 
@@ -615,7 +645,9 @@ def erase_text(doc_name, page_no, keep=None, contains=None, dry_run=False, data=
     the model was staged.
 
     `contains="..."` fixes that: match against the WHOLE assembled live text of the block, then
-    tombstone every item whose span overlaps a match, however many items the phrase crosses.
+    tombstone every item whose span overlaps a match, however many items the phrase crosses. The
+    match is the paragraph that IS the text, where there is one -- never its words inside another
+    paragraph -- else the one place the text is.
 
     Typed text is the user's. Erase it when asked, not as tidying.
 
@@ -659,6 +691,24 @@ def erase_text(doc_name, page_no, keep=None, contains=None, dry_run=False, data=
                 # the span is one past the last matched character's original index.
                 spans.append((back[i], back[i + len(needle) - 1] + 1))
                 start = i + 1
+            # A WHOLE PARAGRAPH, NOT EVERY PLACE ITS WORDS ARE. What is staged is a paragraph the listing printed (para:N,
+            # by its text): erasing the list item "milk" took "milk" out of the user's own sentence asking for it -- and
+            # then that sentence, staged too, matched nothing and stayed. A match that is a paragraph of its own (only
+            # spaces between it and the paragraph's ends) is the one meant; a quote that is no whole paragraph comes off
+            # only where it is the one match on the page -- in more than one place, which is meant is not known, and
+            # nothing comes off (the caller reports it).
+            def _alone(a_, b_):
+                j = a_ - 1
+                while j >= 0 and full[j].isspace() and full[j] not in _PARA_ENDS:
+                    j -= 1
+                k = b_
+                while k < len(full) and full[k].isspace() and full[k] not in _PARA_ENDS:
+                    k += 1
+                if (j < 0 or full[j] in _PARA_ENDS) and (k >= len(full) or full[k] in _PARA_ENDS):
+                    return (j + 1, k)                       # with its own spaces, so no blank paragraph is left
+                return None
+            whole = [w for w in (_alone(a_, b_) for a_, b_ in spans) if w]
+            spans = whole if whole else (spans if len(spans) == 1 else [])
             # A PARAGRAPH GOES WITH THE NEWLINE IN FRONT OF IT (its style is keyed to that newline),
             # so no empty line is left where it was
             spans = [(a_ - 1 if a_ > 0 and full[a_ - 1] == "\n" else a_, b_) for a_, b_ in spans]

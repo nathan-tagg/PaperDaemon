@@ -10,6 +10,7 @@ tool for organic line work -- the .rm format stores width per sample, so a
 swelling-and-thinning contour is native, not a hack.
 """
 import io, math, os, sys
+import numpy as np
 from PIL import Image, ImageChops, ImageDraw
 
 from paperdaemon import paths
@@ -531,20 +532,24 @@ class Drawing:
         redraws that one region and leaves the rest of the page untouched.
         Size the box to your own artwork and nothing else.
         """
+        # READ AND WRITTEN IN BULK (remarkable.fastrm: each stroke's points one array, every other block rmscene's own),
+        # the same bytes as rmscene's read_blocks and write_blocks: point by point, a picture's commit took 20 s
+        from paperdaemon.remarkable import fastrm as FR
         doc = R.find_doc(doc_name)
         pid = R.live_pages(doc)[page_no - 1]["id"]
         src = os.path.join(R.RM, doc, pid + ".rm")
-        allb = list(read_blocks(io.BytesIO(open(src, "rb").read())))
+        allb = list(FR.read_blocks(open(src, "rb").read()))
 
         def _boxed(b):
             """True if b is a live stroke lying wholly inside replace_box."""
             if replace_box is None:
                 return False
             v = getattr(b.item, "value", None)
-            if not isinstance(v, Line) or not v.points:
+            if not isinstance(v, Line) or not len(v.points):
                 return False
             x0, y0, x1, y1 = replace_box
-            return all(x0 <= p.x <= x1 and y0 <= p.y <= y1 for p in v.points)
+            xs, ys = v.points["x"].astype(np.float64), v.points["y"].astype(np.float64)
+            return bool(((x0 <= xs) & (xs <= x1) & (y0 <= ys) & (ys <= y1)).all())
 
         if keep_existing:
             # Keep the originals in their original positions -- order is the
@@ -604,9 +609,8 @@ class Drawing:
             # an optional 6th element carries per-stroke point attributes -- the device
             # renders the highlighter's chisel nib from them (calibration)
             attrs = st[5] if len(st) > 5 and isinstance(st[5], dict) else {}
-            P = [Point(x=float(x), y=float(y), speed=int(attrs.get("speed", 0)), direction=int(attrs.get("direction", 0)),
-                       width=int(widths[i]), pressure=int(attrs.get("pressure", 190)))
-                 for i, (x, y) in enumerate(pts)]
+            P = FR.line_points(pts, widths[:len(pts)], attrs.get("speed", 0), attrs.get("direction", 0),
+                               attrs.get("pressure", 190))
             L = Line(color=color, tool=tool, points=P,
                      thickness_scale=(1.0 if tool == Pen.HIGHLIGHTER_2 else 3.0),
                      starting_length=0.0, move_id=None,
@@ -621,12 +625,12 @@ class Drawing:
                                       value=L)))
             prev = iid
         buf = io.BytesIO()
-        write_blocks(buf, blocks)
+        FR.write_blocks(buf, blocks)
         data = buf.getvalue()
         # ONE round-trip parse, used for both checks below. It was parsed twice -- once for the
         # stroke count, once more for dead_ranges -- and on a busy page a parse is over a second
         # (profiled: dead_ranges alone was 27% of write_rm's time).
-        rb_all = list(read_blocks(io.BytesIO(data)))
+        rb_all = list(FR.read_blocks(data))
         rb = [b for b in rb_all
               if isinstance(b, ss.SceneLineItemBlock)
               and isinstance(getattr(b.item, "value", None), Line)]

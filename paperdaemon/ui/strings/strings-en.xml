@@ -669,7 +669,8 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="fm.duplicate">Duplicate</string>
   <string name="fm.delete_n_q">Delete what is selected ({n})?</string>
   <string name="fm.select_all">Select all</string>
-  <string name="fm.delete_pages_q">Delete the selected pages ({n})?</string>
+  <string name="fm.delete_pages_q.one">Delete the selected page?</string>
+  <string name="fm.delete_pages_q.other">Delete the selected pages?</string>
   <string name="fm.move_before">Move before</string>
   <string name="fm.move_after">Move after</string>
   <string name="fm.lmove_one">Move “{name}”: open a folder</string>

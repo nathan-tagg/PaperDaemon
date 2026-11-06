@@ -444,9 +444,9 @@ def draw(dr, doc_name, page_no, xform=None, ox=0.0, oy=0.0,
     # actually removes are the same set. A raw lowercase test here could hide a paragraph the
     # erase then failed to touch, or show one it was about to delete.
     from paperdaemon.pipeline import page as _ER
-    skip = [_ER._normalize(s)[0] for s in (skip or []) if s]
-    for p in ps:
-        if skip and any(s in _ER._normalize(p.get("text") or "")[0] for s in skip):
+    gone = _ER.staged_paragraphs([p.get("text") or "" for p in ps], skip) if skip else set()
+    for i_p, p in enumerate(ps):
+        if i_p in gone:
             continue                      # staged for deletion by the current job
         for i, line in enumerate(p["lines"]):
             if not line.strip():
@@ -705,6 +705,31 @@ def face_path(name):
         folder,own=OWN[family]
         return OWN_DIR/folder/f'{own}-{style}.ttf'
     return FONT_DIR/(name+'.ttf')
+
+BODY_LEAD, BODY_GAP = 45.0, 25.0      # a plain paragraph's lines apart, and the room after a paragraph (layout())
+BODY_XH, BODY_ASC = 16.64, 29.6       # reMarkable Sans at 32 units: its x-height (OS/2 520 of 1000) and ascent (hhea 925)
+
+
+def body_measure():
+    """A plain typed paragraph's measure, in page units: (x-height, line pitch, room between paragraphs, its line's top
+    to its baseline) -- set in the face this library uses (the tablet's, or PaperDaemon's own) at its 32 units, a line
+    drawn 5 below its top (layout()); the tablet's, measured, when no face is installed. What the daemon's handwritten
+    replies are set to (host write: _body)."""
+    try:
+        xh, asc = _face_heights(str(face_path('reMarkableSans-Regular')))
+        xh, asc = xh * 32.0, asc * 32.0
+    except Exception:
+        xh, asc = BODY_XH, BODY_ASC
+    return xh, BODY_LEAD, BODY_GAP, 5.0 + asc
+
+
+@lru_cache(maxsize=4)
+def _face_heights(path):
+    """(x-height, ascent) of a face, in ems."""
+    with TTFont(path) as face:
+        em = float(face['head'].unitsPerEm)
+        return face['OS/2'].sxHeight / em, face['hhea'].ascent / em
+
 
 def fonts_available():
     """True when every face this layout draws with is installed."""

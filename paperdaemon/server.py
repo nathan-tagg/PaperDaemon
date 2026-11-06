@@ -1966,7 +1966,7 @@ def _scene_ahead(kind, doc, page):
         if kind == "mirror":
             got = _local(lambda: inplace.read_page(doc, page, arrays=True))
             return (fastrm.scene_bytes(got), got["stamp"]) if isinstance(got, dict) else got
-        got = _local(lambda: local.scene_of(doc, page, arrays=True))
+        got = _local(lambda: local.scene_of(doc, page, arrays=True, columns=True))
         return fastrm.scene_bytes(got) if isinstance(got, dict) else got
 
     def run():
@@ -2000,7 +2000,7 @@ def get_library_scene(doc: str, page: int, request: Request):
         from .remarkable import fastrm
 
         def make():
-            got = _local(lambda: local.scene_of(doc, page, arrays=True))
+            got = _local(lambda: local.scene_of(doc, page, arrays=True, columns=True))
             return fastrm.scene_bytes(got) if isinstance(got, dict) else got
         data = _scene_kept("scene", doc, page, make)
         if not isinstance(data, (bytes, bytearray)):

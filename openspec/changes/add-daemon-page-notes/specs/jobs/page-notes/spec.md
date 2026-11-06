@@ -70,8 +70,13 @@ a hand wrote on such a layer SHALL be read as the user's. Only the page editor S
 - **THEN** the page reads the same strokes and keeps the same fingerprint as without it
 
 ### Requirement: The retry box
-A note for a job left skipped or failed SHALL end with a box. Anything the user writes in it, found where
-the tablet draws it, SHALL hand the job over again, told that the user asked.
+A note for a job left skipped or failed SHALL carry a small box under its line, at the band's left like the
+line and still in the band under the toolbar, with the word "retry" beside it. Anything the user writes in it,
+found where the tablet draws it, SHALL hand the job over again, told that the user asked.
+
+#### Scenario: Where the box sits
+- **WHEN** a job is left skipped
+- **THEN** its note's box sits under the note's line, at the band's left, inside the band
 
 #### Scenario: A tick on a page with typed text
 - **WHEN** the tablet stores the user's tick in a group anchored to the typed text

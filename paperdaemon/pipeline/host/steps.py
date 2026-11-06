@@ -11,6 +11,7 @@ steps get a turn of their own (the words of a write step, the spec of a chart).
 The order is the host's: erases first (placement is measured as though they were gone), then searches (data is
 in before anything is built from it), then the rest in the order asked.
 """
+import calendar as _calendar
 import re
 
 HOST, MODEL = "host", "model"
@@ -115,14 +116,33 @@ def fields_of(do):
     return COMMON + FIELDS.get(do, ())
 
 
+_MONTH_NAMES = dict([(m.lower(), i) for i, m in enumerate(_calendar.month_name) if m]
+                    + [(m.lower(), i) for i, m in enumerate(_calendar.month_abbr) if m])
+
+
 def calendar_what(what):
-    """A calendar step's what -> ("month", year, month) or ("week",), or None when it is neither form."""
-    w = str(what or "").strip().lower()
-    if w == "week":
+    """A calendar step's what -> ("month", year, month) or ("week",), or None when it names neither. The forms the step
+    asks for ("YYYY-MM", "week") and the ways a month or a week is written otherwise -- "December 2026", "Dec 2026",
+    "12/2026", "the week starting Monday, November 9" -- read here, not refused: refusing them cost every calendar plan
+    of the dogfood run a turn (four of four). A month named without a year is its next one."""
+    w = " ".join(str(what or "").lower().replace(",", " ").split())
+    if re.search(r"\bweek\b", w):
         return ("week",)
-    m = re.fullmatch(r"(\d{4})-(\d{1,2})", w)
+    m = re.fullmatch(r"(\d{4})[-/.](\d{1,2})", w)
     if m and 1 <= int(m.group(2)) <= 12:
         return ("month", int(m.group(1)), int(m.group(2)))
+    m = re.fullmatch(r"(\d{1,2})[-/.](\d{4})", w)
+    if m and 1 <= int(m.group(1)) <= 12:
+        return ("month", int(m.group(2)), int(m.group(1)))
+    words = [x.rstrip(".") for x in w.split()]
+    months = [_MONTH_NAMES[x] for x in words if x in _MONTH_NAMES]
+    years = [int(x) for x in words if re.fullmatch(r"\d{4}", x)]
+    if len(months) == 1 and len(years) <= 1 and len(months) + len(years) == len(words):
+        if years:
+            return ("month", years[0], months[0])
+        import datetime as _dt
+        today = _dt.date.today()
+        return ("month", today.year + (1 if months[0] < today.month else 0), months[0])
     return None
 
 

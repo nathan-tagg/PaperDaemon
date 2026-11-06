@@ -48,16 +48,24 @@ def day(mo, d, kind="selected"):
     return out
 
 
-def month(mo, kind="selected", year=2026):
-    """{day: [(year, text), ...]} for every day of the month. {} on network failure."""
-    import calendar
+def days(dates, kind="selected"):
+    """{(month, day): [(year, text), ...]} for these dates and no others (a week's seven: it fetched its whole month,
+    31 requests, 14 s); what is cached comes from the cache. ONE REQUEST AT A TIME: the feed refuses a burst without a
+    key (429, eight at once), and a refused date is a card lost. A date the network fails is left out."""
     out = {}
-    for d in range(1, calendar.monthrange(year, mo)[1] + 1):
+    for md in sorted(set((int(m), int(d)) for m, d in dates)):
         try:
-            out[d] = day(mo, d, kind)
+            out[md] = day(md[0], md[1], kind)
         except Exception:
             pass
     return out
+
+
+def month(mo, kind="selected", year=2026):
+    """{day: [(year, text), ...]} for every day of the month. {} on network failure."""
+    import calendar
+    got = days([(mo, d) for d in range(1, calendar.monthrange(year, mo)[1] + 1)], kind)
+    return dict((d, v) for (_m, d), v in got.items())
 
 
 def find(mo, words, kind="events", year=2026):

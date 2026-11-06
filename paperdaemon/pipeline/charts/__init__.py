@@ -271,7 +271,8 @@ POWERS = {
     "timeline": "dated events along a line -- events:[{date or year, text}]",
     "gantt": "tasks over time -- tasks:[{name, start, end}] (end after start)",
     "clock": "a day as a 24-hour dial -- blocks:[{start, end, label}] (hours 0-24)",
-    "habit": "a habit tracker grid -- habits:[...]",
+    "habit": "a habit tracker grid -- habits:[{name, done:[days done]}], days:[the columns, e.g. 6..30 for the rest "
+             "of a month; else 1-14]",
     "yearmap": "a whole year of days as a grid (all fields optional)",
     "journey": "stages of an experience -- steps:[{label, ...}]",
     "flow": "a process as boxes and arrows -- steps:[{text, ...}]",
@@ -377,6 +378,11 @@ def _validate_grid(spec, t):
             raise SpecError("%s needs %r: a non-empty list" % (t, key))
         if t == "agenda":
             _agenda_items(spec)
+        if t == "habit":
+            for i, h in enumerate(items):
+                # a habit is its name, or {name, done, color} (_habit_vl takes either)
+                if not ((isinstance(h, str) and h.strip()) or (isinstance(h, dict) and str(h.get("name") or "").strip())):
+                    raise SpecError("habit %d needs a 'name' ({\"name\": \"Drink water\", \"done\": [6, 7]})" % i)
         if t == "progress":
             for i, c in enumerate(items):
                 if not isinstance(c, dict) or "label" not in c or "value" not in c:
@@ -3262,7 +3268,9 @@ def _checklist_vl(spec, cfg, schema):
 
 def _habit_vl(spec, cfg, schema):
     """Habits down the side, days across the top, a filled square where it happened."""
-    habits = spec.get("habits") or []
+    # a habit given as its name alone is that habit, nothing done yet (it passed the check, then failed here: 'str' has
+    # no .get)
+    habits = [{"name": h.strip()} if isinstance(h, str) else h for h in (spec.get("habits") or [])]
     days = spec.get("days") or [str(d) for d in range(1, 15)]
     rows = []
     for h in habits:
@@ -4215,10 +4223,9 @@ def _grid_vl(spec):
             m = marks.get(day) or {}
             fill = "#FFFFFF"
             wd = wx.get(day) or {}
+            # (a day's card is history: its own gray slip, never a wash -- KINDS above)
             kinds_here = [e.get("kind") for e in (m.get("events") or [])
                           if e.get("kind") in KIND_COLOR]
-            if m.get("card"):
-                kinds_here.append("history")
             if day and m.get("color"):
                 fill = WASH.get(m["color"], WASH["yellow"])
             elif day and color_by == "weather" and weather_wash(wd):

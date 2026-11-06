@@ -669,7 +669,8 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="fm.duplicate">Dupliser</string>
   <string name="fm.delete_n_q">Slette det som er valgt ({n})?</string>
   <string name="fm.select_all">Velg alle</string>
-  <string name="fm.delete_pages_q">Slette de valgte sidene ({n})?</string>
+  <string name="fm.delete_pages_q.one">Slette den valgte siden?</string>
+  <string name="fm.delete_pages_q.other">Slette de valgte sidene?</string>
   <string name="fm.move_before">Flytt foran</string>
   <string name="fm.move_after">Flytt etter</string>
   <string name="fm.lmove_one">Flytt «{name}»: åpne en mappe</string>

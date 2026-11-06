@@ -157,9 +157,10 @@ def test_a_reply_goes_right_under_what_stays_when_a_request_above_it_comes_off(w
     assert [p[0] for p in d["paras"]] == ["How many moons does Mars have, and what are they called?",
                                           "Note: Phobos is slowly falling toward Mars."]
     note_bottom = d["paras"][1][1] + d["paras"][1][2]
-    # the gap a reply always leaves under the text (85 units on this page), from where the note WILL be: measured
-    # where it is today, the reply sat a paragraph (45 units) lower
-    assert note_bottom + 78 < d["ink_top"] < note_bottom + 92
+    # the room a reply leaves under typed text (the text's own 25 between paragraphs: intake's gap, so it reads as the
+    # next paragraph), from where the note WILL be: measured where it is today, the reply sat a paragraph (70 units)
+    # lower -- under the note's old place
+    assert note_bottom + 20 < d["ink_top"] < note_bottom + 45
 
 
 def test_a_long_reply_runs_past_the_first_screen_whole(work):

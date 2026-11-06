@@ -690,7 +690,9 @@
   <string name="fm.duplicate">تكرار</string>
   <string name="fm.delete_n_q">حذف المحدد ({n})؟</string>
   <string name="fm.select_all">تحديد الكل</string>
-  <string name="fm.delete_pages_q">حذف الصفحات المحددة ({n})؟</string>
+  <string name="fm.delete_pages_q.one">حذف الصفحة المحددة؟</string>
+  <string name="fm.delete_pages_q.two">حذف الصفحتين المحددتين؟</string>
+  <string name="fm.delete_pages_q.other">حذف الصفحات المحددة؟</string>
   <string name="fm.move_before">انقل قبلها</string>
   <string name="fm.move_after">انقل بعدها</string>
   <string name="fm.lmove_one">نقل “{name}”: افتح مجلدًا</string>

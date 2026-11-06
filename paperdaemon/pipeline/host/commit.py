@@ -233,10 +233,12 @@ def t_commit():
         except Exception as ex:
             H.log("  picture NOT removed: %s" % str(ex)[:80])
     overflow = H._validate_draft(doc, page)
+    _t0 = time.time()
     before = P.snapshot(doc, page)
     res = {"strokes": 0}
     if JOB.draw.strokes:
         res = JOB.draw.write_rm(name, page, keep_existing=True)
+    _t1 = time.time()
     if overflow:
         H._write_overflow(name, overflow)
     # EVERYTHING THIS JOB INKED IS RECORDED AS ITS OWN, the page's own ink and its overflow page alike. (Since 0.1.15
@@ -247,6 +249,10 @@ def t_commit():
             H._record_made(doc, page, before)
         except Exception as ex:
             H.log("  provenance NOT recorded: %s" % str(ex)[:90])
+    if JOB.draw.strokes:
+        # (how long the ink took to go on: a picture's thousands of strokes were 17-27 s of silence in the log)
+        H.log("  ink written: %d stroke(s) in %.1fs, recorded in %.1fs"
+              % (len(JOB.draw.strokes), _t1 - _t0, time.time() - _t1))
     # PICTURES go on after the ink is written: the same page file, the app's own image blocks, the asset beside
     # the page. rm_cloud.push_doc gathers the asset with the page.
     placed = []

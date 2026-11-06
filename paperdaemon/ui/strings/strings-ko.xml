@@ -669,7 +669,8 @@
   <string name="fm.duplicate">복제</string>
   <string name="fm.delete_n_q">선택한 항목 ({n})을(를) 삭제할까요?</string>
   <string name="fm.select_all">모두 선택</string>
-  <string name="fm.delete_pages_q">선택한 페이지 ({n})를 삭제할까요?</string>
+  <string name="fm.delete_pages_q.one">선택한 페이지를 삭제할까요?</string>
+  <string name="fm.delete_pages_q.other">선택한 페이지를 삭제할까요?</string>
   <string name="fm.move_before">앞으로 이동</string>
   <string name="fm.move_after">뒤로 이동</string>
   <string name="fm.lmove_one">“{name}” 이동: 폴더 열기</string>

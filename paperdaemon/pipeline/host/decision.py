@@ -30,9 +30,10 @@ _ABILITY_WORDS = {
 }
 
 
-def t_answer(answers, lines, rulings=None, size=34):
+def t_answer(answers, lines, rulings=None, size=None):
     """The decision when the whole job is words: the reply written and committed in one call. `answers` are the
-    ids of what on the page it answers; `rulings` as for plan (checked the same way)."""
+    ids of what on the page it answers; `rulings` as for plan (checked the same way). The reply is at the typed text's
+    size and spacing (write._body); a `size` sent anyway changes nothing."""
     rulings = rulings if isinstance(rulings, list) else []
     answers = answers if isinstance(answers, list) else []
     probs = RU.problems("answer", {"answers": answers, "rulings": rulings})
@@ -44,10 +45,10 @@ def t_answer(answers, lines, rulings=None, size=34):
     if probs:
         return dict({"error": "This answer cannot be written as it is. Fix it and answer again:\n- "
                               + "\n- ".join(probs)}, **H._did())
-    return H._reply(lines, answers, rulings, size)
+    return H._reply(lines, answers, rulings)
 
 
-def _reply(lines, answers=(), rulings=(), size=34, task=None):
+def _reply(lines, answers=(), rulings=(), size=None, task=None):
     """Write the reply under what is on the page, in the text column, and commit it."""
     if isinstance(lines, str):
         lines = [lines]
@@ -72,7 +73,7 @@ def _reply(lines, answers=(), rulings=(), size=34, task=None):
     if "answer" not in (plan.get("places") or {}):
         return dict({"error": "your plan has no place called 'answer'. Use write_paragraph with one of your own "
                               "places, or answer() before planning."}, **H._did())
-    r = H.t_write_paragraph(lines, place="answer", size=int(size))
+    r = H.t_write_paragraph(lines, place="answer", size=size)
     if r.get("error"):
         return r
     r = H.t_commit()
@@ -118,6 +119,9 @@ def t_plan(steps, rulings=None, places=None):
         return {"error": hint + " Plan again: keep your plan or change it."}
     steps, rulings = d["steps"], d["rulings"]
     try:
+        # ITS OWN STEPS CHECKED FIRST, numbered as it wrote them: checked behind the rulings' erases, "step 3" of a
+        # plan of two was refused twice, the model not finding what to fix
+        ST.build(list(steps))
         plan_steps = ST.build(ST.erase_steps(RU.erase_of(rulings)) + list(steps))
     except ST.StepError as ex:
         return {"error": str(ex)}
@@ -909,8 +913,7 @@ TOOLS = [
   "answers = the ids of what it answers; lines = the reply, one string per line, at the length the question "
   "deserves (the host fits it to the page); rulings = your RULINGS on the page. Written below what is on the page, "
   "in the text column, and put on the page at once.",
-  {"answers": RU.ANSWERS, "lines": "array", "rulings": RU.RULINGS, "size": {"type": "number", "optional": True},
-   "remember": H.REMEMBER}, t_answer),
+  {"answers": RU.ANSWERS, "lines": "array", "rulings": RU.RULINGS, "remember": H.REMEMBER}, t_answer),
  ("ask", "Your ONE decision when the request cannot be done without something only the user can tell "
   "you (ASKING): lines = your question, in your own words, one string per line. It is written under the "
   "request and nothing comes off; the request stays until the user's reply lets a later job do it.",

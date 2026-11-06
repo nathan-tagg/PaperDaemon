@@ -261,6 +261,37 @@ def write_lines(buf, blocks):
     buf.write(b"".join(out))
 
 
+def write_blocks(buf, blocks):
+    """rmscene.write_blocks, every stroke block written by write_lines: the same bytes in the same order, without a
+    Python object for each point (a picture's 1.26 million points were most of a commit's 20 s). Every other block is
+    rmscene's own, written by rmscene."""
+    stream = Writer(buf, options=None)
+    stream.write_header()
+    run = []
+    for b in blocks:
+        if isinstance(b, LINE) and (b.item.value is None or isinstance(b.item.value, si.Line)):
+            run.append(b)
+            continue
+        if run:
+            write_lines(buf, run)
+            run = []
+        b.write(stream)
+    if run:
+        write_lines(buf, run)
+
+
+def line_points(pts, widths, speed=0, direction=0, pressure=190):
+    """A stroke's points as POINT, from [(x, y)] and their widths: what si.Point(x=float(x), y=float(y), speed, direction,
+    width=int(w), pressure) writes, made in one step."""
+    xy = np.asarray(pts, dtype=np.float64).reshape(-1, 2)
+    out = np.empty(len(xy), POINT)
+    out["x"], out["y"] = xy[:, 0], xy[:, 1]
+    out["speed"], out["direction"], out["pressure"] = int(speed), int(direction), int(pressure)
+    w = np.asarray(widths)
+    out["width"] = (np.trunc(w) if w.dtype.kind == "f" else w).astype(np.int64)     # int(w): toward zero
+    return out
+
+
 # ---------------------------------------------------------------- the page editor's binary form of a scene
 # "PDS1", the length of what follows as JSON (uint32, little-endian), that JSON -- the scene as scene_of gives it, each
 # stroke's points replaced by their count, "n" -- then every stroke's points, in the scene's order, as POINT records
@@ -483,8 +514,111 @@ def without_strokes(data):
     return b"".join(out)
 
 
+# THE STROKES AS COLUMNS (the binary form's "cols", version 2): after the page's JSON -- each layer with its strokes'
+# count "n", no stroke objects -- and from the next 8-byte boundary, every stroke's facts one array a fact, the strokes
+# of all the layers in order: thicknessScale (f64), its points' count, pen code, color, ARGB (u32 each), its id's two
+# parts and its group's (u32 each), and a byte of which it has (1 an ARGB, 2 an id, 4 a group); then their points.
+# The pens' names by code are in the JSON. A page of 150,000 strokes was 150,000 objects to make, write and parse.
+COLS_FORM = 2
+_COL_FACTS = ("pen", "penCode", "color", "colorRgba", "thicknessScale", "points", "id", "group")
+
+
+def _cols_at(head_len):
+    return (8 + head_len + 7) // 8 * 8
+
+
+def _lines_columns(lines):
+    """A layer's strokes as dicts -> (columns, their points' bytes, pens by code), or None when a stroke carries what the
+    columns cannot (another fact, an id past 32 bits)."""
+    n = len(lines)
+    c = {k: np.zeros(n, t) for k, t in (("thick", np.float64), ("n", np.uint32), ("code", np.uint32), ("color", np.uint32),
+                                         ("argb", np.uint32), ("ia", np.uint32), ("ib", np.uint32), ("ga", np.uint32),
+                                         ("gb", np.uint32), ("has", np.uint8))}
+    parts, pens = [], {}
+    for i, ln in enumerate(lines):
+        if set(ln) - set(_COL_FACTS):
+            return None
+        pts = points_of(ln.get("points") if ln.get("points") is not None else [])
+        parts.append(pts.tobytes())
+        c["n"][i] = len(pts)
+        code = int(ln.get("penCode", 17))
+        c["code"][i] = code
+        pens[str(code)] = ln.get("pen") or si.Pen(code).name
+        c["color"][i] = int(ln.get("color", 0))
+        c["thick"][i] = float(ln.get("thicknessScale") or 1.0)
+        has = 0
+        rgba = ln.get("colorRgba")
+        if rgba:
+            r, g, b, a = (list(rgba) + [255])[:4]
+            c["argb"][i] = (int(a) << 24) | (int(r) << 16) | (int(g) << 8) | int(b)
+            has |= 1
+        for key, (ka, kb), bit in (("id", ("ia", "ib"), 2), ("group", ("ga", "gb"), 4)):
+            v = ln.get(key)
+            if v is not None:
+                if not (0 <= v[0] <= 0xFFFFFFFF and 0 <= v[1] <= 0xFFFFFFFF):
+                    return None
+                c[ka][i], c[kb][i] = v[0], v[1]
+                has |= bit
+        c["has"][i] = has
+    return c, b"".join(parts), pens
+
+
+def _rows_columns(rows, data, shift):
+    """A layer's strokes as the C reader's rows over the page's bytes (scene_rows) -> (columns, their points' bytes,
+    pens by code), as _lines_columns makes them from scene_parts' dicts: the same facts, the same points (moved by the
+    layer's shift the way _moved moves them)."""
+    n = len(rows)
+    if n and ((rows[:, [5, 6, 7, 8]] < 0).any() or (rows[:, [5, 6, 7, 8]] > 0xFFFFFFFF).any()):
+        return None
+    c = {"thick": rows[:, 17].astype(np.int64).view(np.float64) if n else np.zeros(0, np.float64),
+         "n": (rows[:, 20] // POINT.itemsize).astype(np.uint32), "code": rows[:, 15].astype(np.uint32),
+         "color": rows[:, 16].astype(np.uint32), "argb": (rows[:, 25] & 0xFFFFFFFF).astype(np.uint32),
+         "ia": rows[:, 7].astype(np.uint32), "ib": rows[:, 8].astype(np.uint32),
+         "ga": rows[:, 5].astype(np.uint32), "gb": rows[:, 6].astype(np.uint32),
+         "has": (np.where(rows[:, 24] != 0, 1, 0) | 2 | 4).astype(np.uint8)}
+    c["argb"][rows[:, 24] == 0] = 0
+    pens = {str(int(k)): si.Pen(int(k)).name for k in np.unique(rows[:, 15])} if n else {}
+    view = memoryview(data)
+    pool = b"".join([view[o:o + k] for o, k in zip(rows[:, 19].tolist(), rows[:, 20].tolist())])
+    dx, dy = shift or (0.0, 0.0)
+    if dx or dy:
+        arr = np.frombuffer(pool, dtype=POINT).copy()
+        arr["x"] += dx
+        arr["y"] += dy
+        pool = arr.tobytes()
+    return c, pool, pens
+
+
 def scene_bytes(scene):
-    """A scene whose strokes' points are POINT arrays (scene_of(..., arrays=True)) -> its binary form."""
+    """A scene -> its binary form, its strokes as COLUMNS (above): each layer's strokes as dicts whose points are POINT
+    arrays (scene_of(..., arrays=True)), or as the C reader's rows over the page's bytes ("rows", "data" and "shift":
+    scene_of(..., columns=True)). A stroke the columns cannot carry: the whole page in the first form, a JSON object a
+    stroke."""
+    import json
+    meta, layers, cols, pools, pens = dict(scene), [], [], [], {}
+    for L in scene.get("layers") or []:
+        if L.get("rows") is not None:
+            got = _rows_columns(L["rows"], L["data"], L.get("shift"))
+        else:
+            got = _lines_columns(L.get("lines") or [])
+        if got is None:
+            return _scene_bytes_v1(scene)
+        c, pool, p = got
+        cols.append(c); pools.append(pool); pens.update(p)
+        layers.append({k: v for k, v in L.items() if k not in ("lines", "rows", "data", "shift")} | {"n": int(len(c["n"]))})
+    meta["layers"] = layers
+    count = sum(len(c["n"]) for c in cols)
+    meta["cols"] = {"v": COLS_FORM, "count": count, "pens": pens}
+    head = json.dumps(meta, separators=(",", ":")).encode("utf-8")
+    out = [MAGIC, len(head).to_bytes(4, "little"), head, b"\0" * (_cols_at(len(head)) - 8 - len(head))]
+    for key, t in (("thick", "<f8"), ("n", "<u4"), ("code", "<u4"), ("color", "<u4"), ("argb", "<u4"), ("ia", "<u4"),
+                   ("ib", "<u4"), ("ga", "<u4"), ("gb", "<u4"), ("has", "u1")):
+        out.append(np.concatenate([c[key] for c in cols]).astype(t).tobytes() if cols else b"")
+    return b"".join(out + pools)
+
+
+def _scene_bytes_v1(scene):
+    """The first binary form: the page's JSON with an object a stroke (its points' count "n"), then their points."""
     import json
     meta, parts = dict(scene), []
     meta["layers"] = []
@@ -500,12 +634,42 @@ def scene_bytes(scene):
 
 
 def scene_from_bytes(data):
-    """The binary form -> the scene, each stroke's points a POINT array."""
+    """The binary form (either: its strokes as columns, or an object a stroke) -> the scene, each stroke's points a
+    POINT array."""
     import json
     if data[:4] != MAGIC:
         raise ValueError("not a PaperDaemon page")
     n = int.from_bytes(data[4:8], "little")
     scene = json.loads(data[8:8 + n].decode("utf-8"))
+    cols = scene.pop("cols", None)
+    if cols:
+        N, at = int(cols["count"]), _cols_at(n)
+        arr = {}
+        for key, t, size in (("thick", "<f8", 8), ("n", "<u4", 4), ("code", "<u4", 4), ("color", "<u4", 4), ("argb", "<u4", 4),
+                             ("ia", "<u4", 4), ("ib", "<u4", 4), ("ga", "<u4", 4), ("gb", "<u4", 4), ("has", "u1", 1)):
+            arr[key] = np.frombuffer(data, dtype=t, count=N, offset=at)
+            at += size * N
+        k = 0
+        pens = cols.get("pens") or {}
+        for L in scene.get("layers") or []:
+            lines = []
+            for _ in range(int(L.pop("n", 0))):
+                cnt, code, has = int(arr["n"][k]), int(arr["code"][k]), int(arr["has"][k])
+                if at + cnt * POINT.itemsize > len(data):
+                    raise ValueError("the page's points end early")
+                p = int(arr["argb"][k])
+                lines.append({"pen": pens.get(str(code)) or si.Pen(code).name, "penCode": code, "color": int(arr["color"][k]),
+                              "colorRgba": [(p >> 16) & 0xFF, (p >> 8) & 0xFF, p & 0xFF, (p >> 24) & 0xFF] if has & 1 else None,
+                              "thicknessScale": float(arr["thick"][k]),
+                              "points": np.frombuffer(data, dtype=POINT, count=cnt, offset=at),
+                              **({"id": [int(arr["ia"][k]), int(arr["ib"][k])]} if has & 2 else {}),
+                              **({"group": [int(arr["ga"][k]), int(arr["gb"][k])]} if has & 4 else {})})
+                at += cnt * POINT.itemsize
+                k += 1
+            L["lines"] = lines
+        if at != len(data):
+            raise ValueError("the page has %d bytes past its points" % (len(data) - at))
+        return scene
     at = 8 + n
     for L in scene.get("layers") or []:
         for ln in L.get("lines") or []:
@@ -540,6 +704,43 @@ def _lib():
     if _COLS is None:
         _COLS = int(L.rf_rm_cols())
     return L
+
+
+def scene_rows(data):
+    """scene_parts' one C pass, its strokes left as the reader's rows -> (the blocks other than strokes, {layer node id:
+    the rows of its live strokes, in their order}), the order checked in arrays; or None where scene_parts says None."""
+    import ctypes
+    from rmscene.tagged_block_common import HEADER_V6
+    try:
+        L = _lib()
+    except OSError:
+        return None
+    if not data.startswith(HEADER_V6):
+        return None
+    cap = len(data) // 8 + 16
+    rows = np.empty((cap, _COLS), np.int64)
+    n = L.rf_rm_blocks(data, len(data), len(HEADER_V6), rows.ctypes.data_as(ctypes.POINTER(ctypes.c_int64)), cap)
+    if n < 0:
+        return None
+    rows = rows[:n]
+    T, START, END, VERSION, ODD = 0, 1, 2, 3, 4
+    lines = rows[rows[:, T] == LINE.BLOCK_TYPE]
+    if (lines[:, ODD] != 0).any() or (lines[:, VERSION] != 2).any():
+        return None
+    others = rows[rows[:, T] != LINE.BLOCK_TYPE]
+    frames = b"".join(data[s - 8:e] for s, e in others[:, [START, END]].tolist())
+    blocks = list(ss.read_blocks(io.BytesIO(HEADER_V6 + frames)))
+    out = {}
+    if len(lines):
+        keys, first, inv = np.unique(lines[:, 5:7], axis=0, return_index=True, return_inverse=True)
+        inv = np.asarray(inv).reshape(-1)
+        for g in np.argsort(first, kind="stable"):
+            rs = lines[inv == g]
+            # each layer's strokes stored in their order: the first after nothing, each after the one before
+            if rs[0, 9] != 0 or rs[0, 10] != 0 or (rs[1:, 9:11] != rs[:-1, 7:9]).any():
+                return None
+            out[CrdtId(int(keys[g, 0]), int(keys[g, 1]))] = rs[rs[:, 14] != 0]
+    return blocks, out
 
 
 def scene_parts(data):

@@ -669,7 +669,8 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="fm.duplicate">Duplica</string>
   <string name="fm.delete_n_q">Eliminare la selezione ({n})?</string>
   <string name="fm.select_all">Seleziona tutto</string>
-  <string name="fm.delete_pages_q">Eliminare le pagine selezionate ({n})?</string>
+  <string name="fm.delete_pages_q.one">Eliminare la pagina selezionata?</string>
+  <string name="fm.delete_pages_q.other">Eliminare le pagine selezionate?</string>
   <string name="fm.move_before">Sposta prima</string>
   <string name="fm.move_after">Sposta dopo</string>
   <string name="fm.lmove_one">Sposta «{name}»: apri una cartella</string>

@@ -377,6 +377,15 @@ def _s(v, n=80):
     return " ".join(str(v or "").split())[:n]
 
 
+def _clip(v, n):
+    """_s for what is read as a sentence (the story log): longer than n, cut at its last whole word, with "..." --
+    cut at n characters, the story so far ended "knocks a heavy iron wrench fr"."""
+    t = _s(v, 1 << 20)
+    if len(t) <= n:
+        return t
+    return t[:max(1, n - 3)].rsplit(" ", 1)[0].rstrip(" ,;:-") + "..."
+
+
 def person_ac(p):
     """10 + DEX, or the armor it wears by the SRD; a shield adds 2."""
     dex = mod(p["abilities"]["DEX"])
@@ -1600,7 +1609,7 @@ def _fixed(doc, state, log=None):
     state.setdefault("present", [])
     if not state.get("events"):
         state["events"] = [{"n": t["n"] - 1, "place": t["scene"].get("place") or "",
-                            "text": _s(t["scene"].get("what_happened"), 300), "roll": ""} for t in state["turns"]]
+                            "text": _clip(t["scene"].get("what_happened"), 300), "roll": ""} for t in state["turns"]]
     state["layout"] = "fixed"
     _log(log, "  adventure: fixed pages from now on; the log is page %d" % _page_no(doc, pid))
 
@@ -1714,13 +1723,17 @@ def _start_inline(doc, after, state, scene, kept, workdir, log, here=False):
         ids = [pid for pid, _ in PG.insert_pages(doc, after, 3)]
         state["sheet"] = {"page_id": ids[0], "hash": None, "box": None}
         state["page_id"], state["log_page"] = ids[1], ids[2]
-    state["pages"], state["journal_pages"] = list(ids), []
+    # (sheet, scene, log -- the order _inline_journal keeps them in; `here` makes the asking page the scene, not the first)
+    sheet_id = state["sheet"]["page_id"]
+    state["pages"], state["journal_pages"] = [sheet_id, state["page_id"], state["log_page"]], []
     # THE GAME IS SAVED BEFORE ITS PAGES ARE DRAWN: a job on one of them must find the game behind it
     CH.save_state(state)
     png = os.path.join(workdir, "_adv_sheet_%d.png" % int(time.time() * 1000))
     try:
         sheet_png(state, png)
-        state["sheet"] = _put_full(doc, _page_no(doc, ids[0]), ids[0], png, "adventure-sheet", state)
+        # ON THE SHEET'S OWN PAGE: drawn on ids[0], which `here` makes the scene's, the sheet went over the story,
+        # and each turn's new sheet (_redraw_sheet, by this page) wiped the story off from then on
+        state["sheet"] = _put_full(doc, _page_no(doc, sheet_id), sheet_id, png, "adventure-sheet", state)
     finally:
         try:
             os.remove(png)
@@ -1785,7 +1798,7 @@ def start(what, ask_text, paint=None, log=None, workdir=None, parent=None, doc=N
             pass
     state["place"] = scene["place"]
     state["present"] = [p["name"] for p in present]
-    state["events"] = [{"n": 0, "place": scene["place"], "text": _s(scene["what_happened"], 300), "roll": ""}]
+    state["events"] = [{"n": 0, "place": scene["place"], "text": _clip(scene["what_happened"], 300), "roll": ""}]
     if inline:
         _start_inline(doc, after, state, scene, kept, workdir, log, here=here)
     else:
@@ -1907,7 +1920,7 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
     if people_notes:
         roll_line = (roll_line + "  ·  " if roll_line else "") + "; ".join(people_notes[:3])
     state.setdefault("events", []).append({"n": n - 1, "place": state["place"] or new_scene["place"],
-                                           "text": _s(tell.get("log") or new_scene["what_happened"], 300), "roll": roll_line})
+                                           "text": _clip(tell.get("log") or new_scene["what_happened"], 300), "roll": roll_line})
     if is_book(state):
         _render_book(doc, state, new_scene, roll_line, kept, workdir, log, n=n)
     else:
