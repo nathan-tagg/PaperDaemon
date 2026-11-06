@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.16
+
+- The dotted lines stay on the page: the top of the safe area runs from the page's left edge to its right, and the screen's side edges from its top to its foot, never across the gray around the page.
+
 ## 0.2.15
 
 - Straight lines: with a pen in hand, 1 makes the next stroke a straight line -- a drag, or two clicks, from one end to the other, Alt snapping it to 15° steps -- and once it is drawn the pen is freehand again. 1 again, or Esc, goes back without drawing one; mid shape, 1 makes the shape under way a line from the same start.

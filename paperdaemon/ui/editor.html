@@ -5528,12 +5528,16 @@ span.lname { cursor: default; }
     // THE TOP OF THE SAFE AREA, across: where the tablet's toolbar ends -- SAFE_TOP of the screen's SCREEN_W across,
     // in page units as the screen shows the page (screenW), so a page's zoom moves it as it moves the sides. Always
     // shown: the toolbar's edge is never the window's, and what lies above it is under the toolbar on the tablet
+    // ON THE PAGE ONLY: never across the gray around it -- the top line from the page's left edge to its right, the side
+    // lines from its top to its foot
+    const [pw, ph] = page.paperSize, [lx, py0] = toScreen(-pw / 2, 0), [rx, py1] = toScreen(pw / 2, ph);
+    const x0 = Math.max(0, lx), x1 = Math.min(vpW, rx), y0 = Math.max(0, py0), y1 = Math.min(vpH, py1);
     const ty = Math.round(toScreen(0, SAFE_TOP * screenW() / SCREEN_W)[1]) + 0.5;
-    if (ty > 0 && ty < vpH) { ctx.moveTo(0, ty); ctx.lineTo(vpW, ty); }
+    if (ty > y0 && ty < y1 && x1 > x0) { ctx.moveTo(x0, ty); ctx.lineTo(x1, ty); }
     if (Math.abs(view.zoom - 1) >= 1e-3 || Math.abs(view.cx) >= 0.5) {
       for (const ex of [-screenW() / 2, screenW() / 2]) {
         const sx = Math.round(toScreen(ex, 0)[0]) + 0.5;
-        if (sx > 0 && sx < vpW) { ctx.moveTo(sx, 0); ctx.lineTo(sx, vpH); }
+        if (sx > x0 && sx < x1 && y1 > y0) { ctx.moveTo(sx, y0); ctx.lineTo(sx, y1); }
       }
     }
     ctx.stroke(); ctx.restore();
