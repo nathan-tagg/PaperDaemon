@@ -998,6 +998,21 @@ def converse(doc_id, page, name, keys=(), extra=None, conflict=None):
             cur["status"] = "doing"
             cur["draw_from"], prev = len(JOB.draw.strokes), cur
             cur.pop("draw_to", None)
+            # A CHART WHOSE SPEC CAME WITH THE PLAN is drawn from it, with no turn of its own: refused for carrying
+            # it, a plan was made again, and the chart's turn then wrote the same spec a third time (four turns,
+            # 20 s, for one month added). A spec that does not draw goes to the step's turn with the reason.
+            given = cur.pop("spec", None) if cur["do"] == "chart" else None
+            if isinstance(given, dict):
+                try:
+                    r0 = t_chart(given, place=cur.get("place"))
+                except Exception as ex:
+                    r0 = {"error": "%s: %s" % (type(ex).__name__, str(ex)[:120])}
+                if isinstance(r0, dict) and not r0.get("error"):
+                    _close_step("chart")
+                    if cur["status"] == "done":
+                        log("  step %d (chart) drawn from the spec the plan gave it" % cur["id"])
+                        continue
+                cur["plan_spec_error"] = str((r0 or {}).get("error") or "it did not draw")[:200]
             proto = JB.protocol(cur["do"], H)
             told = H.step_skill(cur["do"])
             msgs.append({"role": "user", "content": step_message(cur) + (("\n\n" + told) if told else "")})

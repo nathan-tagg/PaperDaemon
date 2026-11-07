@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.22
+
+- A chart whose numbers the plan already gave is drawn from them at once. A plan that carried the chart's whole spec was refused for it, made again, and the chart's own turn then wrote the same spec a third time: four turns and 20 seconds to add one month to a chart, now one.
+
 ## 0.2.21
 
 - A job's note says what was written, never what the plan guessed before it looked: when a search found nothing, the page said "I couldn't look that up just now" while the note beside it quoted the plan's own guess at the answer.

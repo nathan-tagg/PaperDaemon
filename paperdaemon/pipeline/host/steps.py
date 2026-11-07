@@ -33,7 +33,7 @@ TIER = {"erase": 0, "search": 1}
 # refused with the list (validity rule 4).
 COMMON = ("do", "what", "answers", "size", "near", "side", "at", "replaces")
 FIELDS = {
-    "erase": (), "search": (), "write": (), "draw": (), "chart": (),
+    "erase": (), "search": (), "write": (), "draw": (), "chart": ("spec",),        # a spec given here is drawn from
     "calendar": (),                                          # what: YYYY-MM or week
     "image": ("workflow", "source", "steps", "seed", "quote", "paste"),
     "coloring": ("workflow", "steps", "seed", "quote"),
@@ -197,6 +197,8 @@ def build(raw):
                 pass
         if s.get("pictures") is not None:
             step["pictures"] = bool(s["pictures"])
+        if do == "chart" and isinstance(s.get("spec"), dict):
+            step["spec"] = s["spec"]                     # drawn from as it is, no turn of its own (host)
         # PASTED: the picture itself goes on the page, not strokes drawn from it (only a plain true says so)
         if s.get("paste") in (True, "true"):
             step["paste"] = True

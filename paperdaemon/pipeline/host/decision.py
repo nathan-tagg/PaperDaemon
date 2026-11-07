@@ -853,6 +853,8 @@ def step_message(cur):
     steps = JOB.steps or []
     box = ((JOB.plan or {}).get("places") or {}).get(cur.get("place"))
     L = ["STEP %d OF %d: %s." % (cur["id"], len(steps), ST.describe(cur))]
+    if cur.get("plan_spec_error"):
+        L.append("The spec your plan gave this chart did not draw: %s. Give the chart with chart()." % cur["plan_spec_error"])
     mk = onto_mark(cur) if cur.get("do") == "draw" else None
     if mk:
         # AN ADDITION TO A DRAWING is told the drawing's parts, and is drawn where it belongs on them: told only the
