@@ -41,6 +41,29 @@ ManifestDPIAwareness PerMonitorV2
 ${StrCase}
 ${StrLoc}
 
+; A FILE STILL HELD BY THE APP IT BELONGS TO: up to 10 s for it to be free to write, then on (the copy then asks, as it
+; always did). An update started the copy while the old PaperDaemon was still closing, and the install stopped on
+; "Error opening file for writing ... PaperDaemon.exe" until Retry was pressed.
+!macro WaitFileFree path
+  StrCpy $R9 0
+  ${Do}
+    ${IfNot} ${FileExists} "${path}"
+      ${Break}
+    ${EndIf}
+    ClearErrors
+    FileOpen $R8 "${path}" a
+    ${IfNot} ${Errors}
+      FileClose $R8
+      ${Break}
+    ${EndIf}
+    IntOp $R9 $R9 + 1
+    ${If} $R9 >= 40
+      ${Break}
+    ${EndIf}
+    Sleep 250
+  ${Loop}
+!macroend
+
 {{#if installer_hooks}}
 !include "{{installer_hooks}}"
 {{/if}}
@@ -630,6 +653,8 @@ Section Install
   !endif
 
   !insertmacro CheckIfAppIsRunning "$INSTDIR\${MAINBINARYNAME}.exe" "${PRODUCTNAME}"
+  !insertmacro WaitFileFree "$INSTDIR\${MAINBINARYNAME}.exe"
+  !insertmacro WaitFileFree "$INSTDIR\engine\PaperDaemon.exe"
 
   ; Copy main executable
   File "${MAINBINARYSRCPATH}"

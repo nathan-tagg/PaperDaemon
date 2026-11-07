@@ -1002,9 +1002,10 @@ Answer with JSON only:
  "lore": ["each fact about the world, a place, a people or its history that the hero learned this turn"],
  "quests": [{{"name": "a short name", "goal": "for a new quest: what must be done", "status": "open | done | failed",
              "update": "one line: what changed"}}],
- "picture": {{"mode": "edit" if same_place and the scene only changed a little (say the change: "remove the lantern from
-             the table, keep everything else") else "new", "prompt": "the change, or for a new scene what the hero SEES in
-             front of them: the place, the objects, where each person stands. Never describe the hero."}},
+ "picture": {{"mode": "keep" if same_place and nothing in view changed (words were said, a look, a thought), "edit" if
+             same_place and the scene only changed a little (say the change: "remove the lantern from the table, keep
+             everything else") else "new", "prompt": "the change, or for a new scene what the hero SEES in front of them:
+             the place, the objects, where each person stands. Never describe the hero."}},
  "changes": {{"hp": "0", "gain": [{{"name": "...", "qty": 1}}], "lose": ["..."], "gold": 0, "xp": 0,
              "skills_gain": [], "talents_gain": [{{"name": "...", "kind": "talent or spell",
                                                   "effect": "one short line: what it lets the hero do", "mods": {{}}}}],
@@ -1143,6 +1144,16 @@ def _keep(state, turn_no, png):
     dst = os.path.join(pictures_dir(state), "%03d.png" % turn_no)
     shutil.copyfile(png, dst)
     return dst
+
+
+def _scene_picture(paint, pic_spec, shot, newcomers, pictures):
+    """The turn's scene picture -> a PNG path, or None. NOTHING IN VIEW CHANGED ("keep": words were said, a look, a
+    thought) and nobody new came: the last scene's picture stays as it was -- no repaint and no hand-over of the card.
+    An "edit" for a few words took 40 s to change nothing the page shows (a mean difference of 4%), and the text model
+    came back cold for the next job. Else `pictures()` paints, inside one hand-over (_with_card)."""
+    if (pic_spec or {}).get("mode") == "keep" and shot and os.path.exists(shot) and not newcomers:
+        return shot
+    return _with_card(paint, pictures) if paint else None
 
 
 def _with_card(paint, fn):
@@ -2000,7 +2011,7 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
         _portraits(paint, state, newcomers, log)
         return _paint_scene(paint, state, pic_spec, shot, present, newcomers, log, fallback=new_scene["around"],
                             setting=setting)
-    pic = _with_card(paint, pictures) if paint else None
+    pic = _scene_picture(paint, pic_spec, shot, newcomers, pictures)
     kept = _keep(state, n, pic) if pic else None
     last["action"], last["check"], last["notes"], last["understood"] = action, result, notes, rule.get("understood")
     if notes:

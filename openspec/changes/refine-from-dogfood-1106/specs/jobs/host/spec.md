@@ -83,3 +83,11 @@ page's ids (line:1, mark:11, para:2).
 #### Scenario: A note to someone else
 - **WHEN** a page's new handwriting is a note to someone else and the job skips it
 - **THEN** the receipt says the note is addressed to that person, with no ids
+
+### Requirement: An update waits for the old app's files
+The installer SHALL wait, a few seconds at most, for the old app's executables to be free to write before it copies
+the new ones, so an update started while the old app is still closing never stops on a file-in-use error.
+
+#### Scenario: The old app is still closing
+- **WHEN** an update's installer starts while the old PaperDaemon is still letting go of its executable
+- **THEN** the installer waits for it and installs without asking anything

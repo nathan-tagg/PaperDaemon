@@ -12,7 +12,7 @@ A small per-glyph baseline wobble and rotation is applied by default. Without it
 the lettering reads as plotter output next to hand-drawn sketches; the amount is
 deliberately under a pixel or two at caption sizes.
 """
-import math, random, unicodedata
+import math, random, re, unicodedata
 from rmscene.scene_items import Pen, PenColor
 
 XH = 0.60          # x-height
@@ -424,14 +424,24 @@ def right(d, s, rx, y, size=34, **kw):
     return text(d, s, rx - measure(s, size, track), y, size, **kw)
 
 
+_NUMBER = re.compile(r"^[$£€]?\d[\d.,:/]*$")
+_UNIT = re.compile(r"^[A-Za-z%°µ]{1,3}[.,;:!?)]*$")
+
+
 def wrap(s, size, maxw, track=0.13):
-    """Greedy word wrap to a pixel width. Returns a list of lines."""
+    """Greedy word wrap to a pixel width. Returns a list of lines. A NUMBER AND THE SHORT WORD AFTER IT stay on one
+    line ("3 pm", "10 kg"): broken between them, "pm." sat alone at the start of the next line."""
     lines, cur = [], ""
     for word in s.split():
         trial = (cur + " " + word) if cur else word
         if cur and measure(trial, size, track) > maxw:
-            lines.append(cur)
-            cur = word
+            head, _, last = cur.rpartition(" ")
+            if head and _NUMBER.match(last) and _UNIT.match(word):
+                lines.append(head)
+                cur = last + " " + word
+            else:
+                lines.append(cur)
+                cur = word
         else:
             cur = trial
     if cur:

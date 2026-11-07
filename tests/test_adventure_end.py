@@ -32,3 +32,29 @@ def test_one_still_played_offers_its_loose_ideas(tmp_path, monkeypatch):
     said = _drawn(tmp_path, "playing", monkeypatch)
     assert any(s.startswith("You could: Crawl to the cart") for s in said)
     assert not any(s.startswith("The end") for s in said)
+
+
+def test_a_turn_where_nothing_in_view_changed_keeps_its_picture_and_never_takes_the_card(tmp_path):
+    # an "edit" for a few words took 40 s to change nothing the page shows, and the text model came back cold
+    from PIL import Image
+    shot = tmp_path / "003.png"
+    Image.new("RGB", (8, 8)).save(shot)
+    calls = []
+
+    class Paint(object):
+        def session(self, fn):
+            calls.append("card")
+            return fn()
+
+    def painted():
+        calls.append("painted")
+        return str(shot)
+    assert AD._scene_picture(Paint(), {"mode": "keep"}, str(shot), [], painted) == str(shot) and calls == []
+    AD._scene_picture(Paint(), {"mode": "keep"}, str(shot), [{"name": "Jory"}], painted)
+    assert calls == ["card", "painted"]                  # someone new came: they are painted, the scene with them
+    del calls[:]
+    AD._scene_picture(Paint(), {"mode": "edit"}, str(shot), [], painted)
+    assert calls == ["card", "painted"]
+    del calls[:]
+    AD._scene_picture(Paint(), {"mode": "keep"}, str(tmp_path / "none.png"), [], painted)
+    assert calls == ["card", "painted"]                  # no picture to keep: one is painted

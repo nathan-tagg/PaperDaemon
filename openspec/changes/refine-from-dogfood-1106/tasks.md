@@ -48,3 +48,7 @@
       dragged one too; chess receipts never empty, nothing said twice; *emphasis* marks off the strip
 - [x] 7.6 The job's date line gives this week's and next week's first days by the user's week start
 - [x] 7.7 A ring's open side keeps the open-paper end when the other side is tight
+- [x] 7.8 An adventure turn where nothing in view changed keeps its picture without the card (0.2.26)
+- [x] 7.9 The installer waits for the old app's executables to be free before copying (0.2.26)
+- [x] 7.10 A draw's receipt says it once; the closing line's prompt leaves a pack character's voice alone; a number
+      and its unit stay on one line (0.2.26)

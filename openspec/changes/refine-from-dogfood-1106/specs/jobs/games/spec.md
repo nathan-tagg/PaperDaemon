@@ -64,3 +64,12 @@ thing once.
 - **WHEN** the player types "Ke3" with their king on e1
 - **THEN** nothing is played, "Ke3" comes off the page, the receipt says Ke3 is not a legal move here, and the
   opponent's line says so
+
+### Requirement: A scene that did not change keeps its picture
+An ink adventure turn in the same place where nothing in view changed (words were said, a look, a thought) and nobody
+new came SHALL keep the last scene's picture as it was: no picture painted, and the card never handed to the picture
+model, so the next job's text model is still loaded.
+
+#### Scenario: Talking to someone in the same room
+- **WHEN** the hero asks a question of someone already in the scene, in the same place
+- **THEN** the scene keeps its picture, and the turn takes no picture time

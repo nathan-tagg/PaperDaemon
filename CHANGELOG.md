@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.26
+
+- An ink adventure turn where nothing in view changed (words were said, a look, a thought) keeps its picture: no repaint and no hand-over of the graphics card. A turn that only talked spent 40 seconds on an "edit" that changed nothing the page shows, and the next job's text model came back cold.
+- An update waits for the old PaperDaemon to let go of its files before copying the new ones: one stopped on "Error opening file for writing ... PaperDaemon.exe" until Retry was pressed.
+- A chess draw's receipt says it once ("Game over: a draw by agreement."); it said "a draw, agreed; Game over: draw agreed, a draw."
+- An opponent's closing line is theirs to choose again: 0.2.25 asked for words, not a sound, which fought a cast pack's character who keeps a goat's act.
+- A number and the short word after it stay on one line in an answer ("3 pm", "10 kg"): "pm." sat alone at the start of a line.
+
 ## 0.2.25
 
 - A chess move that is not legal is refused out loud: written or typed ("Ke3" with the king on e1), it comes off the page, the receipt names it, and the opponent tells you in their own words; a piece dragged where it cannot go is put back and the opponent says so. It was passed over in silence, the typed move left on the page.

@@ -536,15 +536,19 @@ def _over_line(state):
         return "Checkmate. %s" % ("You win." if won else "%s wins." % _name(state))
     if st == "resigned":
         return "Game over: %s." % ("you win" if won else "you resigned" if lost else "draw")
-    return "Game over: %s, a draw." % what if res == "1/2-1/2" else "Game over: %s (%s)." % (what, res)
+    if res == "1/2-1/2":                               # "Game over: draw agreed, a draw." said "draw" twice
+        return "Game over: a draw by %s." % {"draw_agreed": "agreement", "fifty_moves": "the fifty-move rule",
+                                             "seventyfive_moves": "the seventy-five-move rule",
+                                             "threefold_repetition": "repetition",
+                                             "fivefold_repetition": "repetition"}.get(st, what)
+    return "Game over: %s (%s)." % (what, res)
 
 
 FAREWELL_PROMPT = """You are this character; your chess game with the player has just ended: {persona}
 {facts}
 {plan}
 {context}
-Reply with a line SAY: one short thing you say now the game is over, in your own voice, true to how it ended --
-words, not a sound or an action.
+Reply with a line SAY: one short thing you say now the game is over, in your own voice, true to how it ended.
 Then a line FEEL: what you truly feel now -- one of {emotions} -- how strongly, 1 to 10, and at whom if anyone.
 Then a line TRUTH: true, lie or bluff (nobody sees it). Then FACE: one fitting signature ID from the private menu
 above, or none. Not a tell."""
@@ -715,8 +719,7 @@ def play(doc, page_no, page_id, ask_text=None, ask_vision=None, log=None, workdi
         # IN THEIR OWN VOICE: taken, the game is over and the opponent's last word says so (_farewell, below); refused,
         # they say why. A fixed "A draw? Fine by me." was every character's answer, whoever they were
         if ahead <= 50:
-            state["status"], state["result"] = "draw_agreed", "1/2-1/2"
-            notes.append("a draw, agreed")
+            state["status"], state["result"] = "draw_agreed", "1/2-1/2"    # (the end line says so, once)
             if ask_text is None:
                 talk.append((_name(state), express(state, "relieved", 0.6, "the player"), "A draw? Fine by me."))
         else:

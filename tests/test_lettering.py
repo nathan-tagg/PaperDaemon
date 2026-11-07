@@ -26,3 +26,13 @@ def test_fractions_and_signs_are_drawn_as_themselves():
     assert top <= 1.0 + 1e-9 and min(y for p in half for _x, y in p) >= -1e-9    # within the cap height
     plain = T.ascent("Bake 6-7 minutes")
     assert T.ascent("Bake 6½–7 minutes ≈ 40 min, x²") >= plain and T.ascent("plain") == T.ascent("plain words")
+
+
+def test_a_number_and_the_short_word_after_it_stay_on_one_line():
+    # DF130: "...November 19 at 3" ended a line and "pm." sat alone at the start of the next
+    from paperdaemon.pipeline.draw import lettering as T
+    text = "All baked goods must be dropped off in the cafeteria by Thursday, November 19 at 3 pm."
+    for width in range(300, 1400, 7):
+        for line in T.wrap(text, 30, width):
+            assert not line.startswith("pm"), (width, T.wrap(text, 30, width))
+    assert T.wrap("one two 3 pm.", 30, T.measure("one two 3", 30, 0.13) + 1) == ["one two", "3 pm."]
