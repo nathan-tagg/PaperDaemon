@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.27
+
+- A calendar keeps every event you gave it: "Dec 12 work party" was lost, and a three-day visit showed on one day. The model wrote those days twice (their events, then their on-this-day card), and only the second entry was read; now both are.
+- A line chart's markers ride their own lines: with series not in alphabetical order, one line's dashes and markers were drawn on the other ("Mia" through "Liam"'s squares). A chart of one line has no key, and a key's names are never cut ("Reading mi...").
+- A drawing's color the tablet has no pen for is drawn in the nearest one it has: an orange fox was drawn black.
+- A creature, a person or a scene you ask to have drawn is made as a picture, not built from simple shapes; a sketch is for simple shapes and additions to a drawing.
+- An adventure turn's log says whether its picture was kept, edited or painted anew, and why.
+
 ## 0.2.26
 
 - An ink adventure turn where nothing in view changed (words were said, a look, a thought) keeps its picture: no repaint and no hand-over of the graphics card. A turn that only talked spent 40 seconds on an "edit" that changed nothing the page shows, and the next job's text model came back cold.

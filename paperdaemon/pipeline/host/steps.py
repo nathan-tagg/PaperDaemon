@@ -72,7 +72,7 @@ STEP_BRIEF = [
     (('draw',),
      '  draw         a sketch: lines from simple shapes, a figure or an icon'),
     (('image',),
-     '  image        a picture generated from one sentence (subject, light, style), drawn onto the page\n               in strokes, or pasted as it is with paste: true; steps and seed only when the user asked\n               for them, with quote: their words'),
+     '  image        a picture generated from one sentence (subject, light, style), drawn onto the page\n               in strokes, or pasted as it is with paste: true; steps and seed only when the user asked\n               for them, with quote: their words. A creature, a person or a scene asked to be DRAWN is an\n               image ("draw a fox asleep in the snow"); draw is for simple shapes and additions'),
     (('web_picture',),
      '  web_picture  a real picture that exists, found by image search, drawn in strokes or pasted as it is\n               (paste: true); one per step, never for facts; site: the domain to search, when the request\n               names one'),
     (('coloring',),

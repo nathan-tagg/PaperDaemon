@@ -38,3 +38,19 @@ be a chart of type habit, not a calendar.
 #### Scenario: Next week's appointments
 - **WHEN** on a Saturday the user asks for a page for next week with a dentist on Monday and soccer on Saturday
 - **THEN** the week runs from the first day of the user's next week, and soccer is on the coming Saturday, not today
+
+### Requirement: A model's call that names a key twice keeps both
+The host SHALL read a tool call whose JSON names one key twice as one value: two objects merged, two lists joined, and
+an empty value never wiping a filled one.
+
+#### Scenario: A day's events and its card written apart
+- **WHEN** a calendar call gives "12": {"events": [work party]} and, further on, "12": {"card": ...}
+- **THEN** the 12th shows the work party and the card
+
+### Requirement: A line chart's channels follow its series
+Every channel of a line chart that tells its series apart (color, dash, marker shape and fill) SHALL follow the
+series' own order; a chart of one line SHALL have no key, and no key's names SHALL be cut.
+
+#### Scenario: Two series not in alphabetical order
+- **WHEN** a line chart has "Mia" then "Liam"
+- **THEN** Mia's line carries Mia's markers and dash, and Liam's carries Liam's

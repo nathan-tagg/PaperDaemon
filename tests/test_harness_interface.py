@@ -185,3 +185,18 @@ def test_validate_refuses_the_toolbar_and_moves_what_overflows(tmp_path):
     d = json.loads(out.stdout.strip().splitlines()[-1])
     assert d["kept"] == [400, 500, 600] and d["over"] == [700, 800]
     assert "1 stroke(s) outside the page's safe area" in d["warn"][0]
+
+
+def test_a_key_written_twice_in_a_call_keeps_both_values():
+    # a December calendar lost "Dec 12 work party": the model wrote the 12th's events, then further on its card as a
+    # second "12" entry, and the plain JSON reading kept only the card
+    args = ('{"spec": {"type": "calendar", "marks": {"12": {"events": [{"text": "Work party"}]}, '
+            '"24": {"events": [{"text": "Grandma visits"}]}, "12": {"card": {"year": 1964}, "events": []}, '
+            '"24": {"card": {"year": 1925}}}}, "place": "s2", "place": ""}')
+    call = HT.TextProtocols().read_call({"id": "c1", "function": {"name": "chart", "arguments": args}}, False)
+    assert call.error is None
+    got = call.args
+    marks = got["spec"]["marks"]
+    assert marks["12"] == {"events": [{"text": "Work party"}], "card": {"year": 1964}}
+    assert marks["24"]["events"] == [{"text": "Grandma visits"}] and marks["24"]["card"] == {"year": 1925}
+    assert got["place"] == "s2"                        # an empty value never wipes a filled one

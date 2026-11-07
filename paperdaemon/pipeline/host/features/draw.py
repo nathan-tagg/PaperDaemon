@@ -179,9 +179,12 @@ def _redraw_figure(parts):
     return H._draw_figure(parts, fig.get("place"))
 
 
-# A PART'S INK, by the name the model gives it -- the tablet's own pen colors; "red apples" were drawn black
+# A PART'S INK, by the name the model gives it -- the tablet's own pen colors; "red apples" were drawn black. A color
+# the tablet has no pen for is drawn in the nearest one it has: an "orange" fox was drawn black
 _INKS = {"black": "BLACK", "gray": "GRAY", "white": "WHITE", "yellow": "YELLOW",
-         "green": "GREEN", "pink": "PINK", "blue": "BLUE", "red": "RED", "cyan": "CYAN", "magenta": "MAGENTA"}
+         "green": "GREEN", "pink": "PINK", "blue": "BLUE", "red": "RED", "cyan": "CYAN", "magenta": "MAGENTA",
+         "orange": "RED", "brown": "BLACK", "purple": "MAGENTA", "violet": "MAGENTA", "teal": "CYAN",
+         "turquoise": "CYAN", "gold": "YELLOW", "navy": "BLUE", "silver": "GRAY", "lime": "GREEN"}
 
 
 def _ink(name):

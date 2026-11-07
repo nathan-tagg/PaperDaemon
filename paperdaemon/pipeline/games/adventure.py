@@ -1146,13 +1146,20 @@ def _keep(state, turn_no, png):
     return dst
 
 
-def _scene_picture(paint, pic_spec, shot, newcomers, pictures):
+def _scene_picture(paint, pic_spec, shot, newcomers, pictures, log=None):
     """The turn's scene picture -> a PNG path, or None. NOTHING IN VIEW CHANGED ("keep": words were said, a look, a
     thought) and nobody new came: the last scene's picture stays as it was -- no repaint and no hand-over of the card.
     An "edit" for a few words took 40 s to change nothing the page shows (a mean difference of 4%), and the text model
-    came back cold for the next job. Else `pictures()` paints, inside one hand-over (_with_card)."""
-    if (pic_spec or {}).get("mode") == "keep" and shot and os.path.exists(shot) and not newcomers:
+    came back cold for the next job. Else `pictures()` paints, inside one hand-over (_with_card). The log says which,
+    and why (a turn that repainted said nothing of it)."""
+    mode = (pic_spec or {}).get("mode") or "new"
+    if mode == "keep" and shot and os.path.exists(shot) and not newcomers:
+        _log(log, "  adventure: the picture is kept (nothing in view changed)")
         return shot
+    _log(log, "  adventure: the picture is %s%s" % ({"edit": "edited", "keep": "painted anew"}.get(mode, "painted anew"),
+                                                    " (someone new came)" if mode == "keep" and newcomers else
+                                                    " (no picture to keep)" if mode == "keep" else
+                                                    ": %s" % str((pic_spec or {}).get("prompt") or "")[:80]))
     return _with_card(paint, pictures) if paint else None
 
 
@@ -2011,7 +2018,7 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
         _portraits(paint, state, newcomers, log)
         return _paint_scene(paint, state, pic_spec, shot, present, newcomers, log, fallback=new_scene["around"],
                             setting=setting)
-    pic = _scene_picture(paint, pic_spec, shot, newcomers, pictures)
+    pic = _scene_picture(paint, pic_spec, shot, newcomers, pictures, log)
     kept = _keep(state, n, pic) if pic else None
     last["action"], last["check"], last["notes"], last["understood"] = action, result, notes, rule.get("understood")
     if notes:

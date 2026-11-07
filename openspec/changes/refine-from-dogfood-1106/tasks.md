@@ -52,3 +52,10 @@
 - [x] 7.9 The installer waits for the old app's executables to be free before copying (0.2.26)
 - [x] 7.10 A draw's receipt says it once; the closing line's prompt leaves a pack character's voice alone; a number
       and its unit stay on one line (0.2.26)
+
+## 8. Round 10 (0.2.27)
+
+- [x] 8.1 Tool calls with a key written twice merge (harnesses/text._object): a calendar's lost event
+- [x] 8.2 Line charts: every series channel in the series' order; no key for one line; legend labels never cut
+- [x] 8.3 Off-palette part colors to the nearest tablet ink; a creature, person or scene to draw is an image
+- [x] 8.4 The adventure logs its picture decision

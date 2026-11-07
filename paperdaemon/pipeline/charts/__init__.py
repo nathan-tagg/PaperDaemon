@@ -720,7 +720,7 @@ def _config():
                       "anchor": "middle", "offset": 16},
             # THE KEY ABOVE THE PLOT, in a row: inside its top-left corner it covered the data there (a bar chart's
             # tall January bars, a line chart's Monday points)
-            "legend": {"labelColor": "black", "titleColor": "black", "labelFontSize": 26,
+            "legend": {"labelColor": "black", "titleColor": "black", "labelFontSize": 26, "labelLimit": 0,
                        "titleFontSize": 26, "symbolStrokeColor": "black", "symbolStrokeWidth": 2.6,
                        "symbolSize": 240, "orient": "top", "direction": "horizontal",
                        "fillColor": "white", "strokeColor": "black", "padding": 12,
@@ -4766,9 +4766,13 @@ def _to_vegalite(spec):
                          "color": {"field": "s", "type": "nominal", "title": None,
                                    "scale": {"domain": [d["name"] for d in series],
                                              "range": LINE_INK[:n]},
-                                   "legend": {"symbolType": "stroke", "symbolStrokeWidth": 4}},
+                                   # a single line needs no key (the title names it): "Reading minutes" was a
+                                   # key of one, cut to "Reading mi..."
+                                   "legend": ({"symbolType": "stroke", "symbolStrokeWidth": 4} if n > 1 else None)},
+                         # EVERY CHANNEL IN THE SERIES' OWN ORDER: without a domain a scale sorts the names, so
+                         # "Mia" then "Liam" drew Mia's dashed blue line through Liam's brown squares
                          "strokeDash": {"field": "s", "type": "nominal", "title": None,
-                                        "scale": {"range": DASHES[:n]},
+                                        "scale": {"domain": [d["name"] for d in series], "range": DASHES[:n]},
                                         "legend": None},
                          "detail": {"field": "s", "type": "nominal"}}},
                     # any extra channel spawns ANOTHER legend box -> legend: None
@@ -4776,9 +4780,9 @@ def _to_vegalite(spec):
                               "strokeWidth": 2, "stroke": "black"},
                      "encoding": {
                          "shape": {"field": "s", "type": "nominal", "legend": None,
-                                   "scale": {"range": SHAPES[:n]}},
+                                   "scale": {"domain": [d["name"] for d in series], "range": SHAPES[:n]}},
                          "fill": {"field": "s", "type": "nominal", "legend": None,
-                                  "scale": {"range": MARKER_FILL[:n]}}}}],
+                                  "scale": {"domain": [d["name"] for d in series], "range": MARKER_FILL[:n]}}}}],
                 "config": cfg}, spec, "x")
 
     if t in ("pie", "donut"):

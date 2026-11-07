@@ -782,7 +782,10 @@ def _turn(msgs, allowed, tries=3, choice="required", accept_prose=False, final=N
                 msgs.append({"role": "tool", "tool_call_id": cid, "content": json.dumps({"error": call.error})})
                 last = {"error": call.error}
                 continue
-            H.log("  -> %s(%s)" % (fn, json.dumps(args)[:700 if fn in ("plan", "answer", "write_paragraph") else 100]))   # a plan and a reply whole
+            # a plan, a reply and a chart's spec whole enough to tell what the model gave (a calendar's lost event could
+            # not be traced from 100 characters)
+            H.log("  -> %s(%s)" % (fn, json.dumps(args)[:1500 if fn == "chart" else 700 if fn in ("plan", "answer",
+                                                                                              "write_paragraph") else 100]))
             if fn in H.LOOK_TOOLS and fn != "find":
                 key = (fn, json.dumps(args, sort_keys=True))
                 if deciding and key in asked:

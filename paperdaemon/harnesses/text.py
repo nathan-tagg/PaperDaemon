@@ -18,6 +18,31 @@ import re
 from dataclasses import dataclass, field
 
 
+def _merge(a, b):
+    """Two values for one key -> one: two objects merge, two lists join (without repeats), and an empty value never
+    wipes a filled one; anything else, the later one stands, as JSON's own reading has it."""
+    if isinstance(a, dict) and isinstance(b, dict):
+        out = dict(a)
+        for k, v in b.items():
+            out[k] = _merge(out[k], v) if k in out else v
+        return out
+    if isinstance(a, list) and isinstance(b, list):
+        return a + [x for x in b if x not in a]
+    if b in ([], {}, None, ""):
+        return a
+    return b
+
+
+def _object(pairs):
+    """A JSON object whose key comes twice is ONE object (_merge). A model that wrote a day's events and, further on,
+    its on-this-day card as two "12": {...} entries meant both, and the plain reading kept the last: a December calendar
+    lost "Dec 12 work party" to its card, and a three-day visit kept only the day without one."""
+    out = {}
+    for k, v in pairs:
+        out[k] = _merge(out[k], v) if k in out else v
+    return out
+
+
 # ---------------------------------------------------------------- what passes between the host and a harness
 
 @dataclass
@@ -151,7 +176,7 @@ class TextProtocols:
         cid = c.get("id", "x")
         fn = c["function"]["name"]
         try:
-            args = json.loads(c["function"]["arguments"] or "{}")
+            args = json.loads(c["function"]["arguments"] or "{}", object_pairs_hook=_object)
             if not isinstance(args, dict):
                 raise ValueError("arguments are not an object")
         except Exception:

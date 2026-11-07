@@ -60,3 +60,17 @@ def test_a_table_entry_longer_than_its_column_goes_on_two_lines_in_its_cell(tmp_
     shown = _texts(svg.read_text(encoding="utf-8"))
     assert "Set table," in shown and "Recycling" in shown and "Set table, Recycling" not in shown
     assert "Feed dog" in shown                            # what fits stays on one line
+
+
+def test_a_line_charts_markers_and_dashes_follow_the_series_order_and_one_line_has_no_key():
+    # "Mia" then "Liam": scales without a domain sorted the names, and Mia's dashed blue line ran through Liam's squares
+    spec = {"type": "line", "title": "Reading", "categories": ["Mon", "Tue"],
+            "series": [{"name": "Mia", "values": [20, 35]}, {"name": "Liam", "values": [10, 25]}]}
+    vl = C.to_vegalite(spec)
+    layers = [l for l in vl.get("layer") or [] if isinstance(l, dict)]
+    domains = [ch["scale"]["domain"] for l in layers for ch in (l.get("encoding") or {}).values()
+               if isinstance(ch, dict) and ch.get("field") == "s" and "scale" in ch]
+    assert len(domains) >= 4 and all(d == ["Mia", "Liam"] for d in domains)
+    one = C.to_vegalite(dict(spec, series=spec["series"][:1]))
+    colors = [l["encoding"]["color"] for l in one.get("layer") or [] if "color" in (l.get("encoding") or {})]
+    assert colors and colors[0]["legend"] is None          # a single line needs no key
