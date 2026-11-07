@@ -211,6 +211,12 @@ def talk_lines(lines):
     return [l for i, l in enumerate(lines) if not bare(i, l)]
 
 
+def _plain(text):
+    """Words as the strip shows them: a model's *emphasis* or _emphasis_ marks come off ("*Baa.*" was drawn with its
+    asterisks)."""
+    return re.sub(r"(\*{1,2}|_{1,2})(\S(?:.*?\S)?)\1", r"\2", str(text or "")).strip()
+
+
 def place_talk(doc, page_no, state, lines, page_id=None, workdir=None):
     """Replace the talk strip at the top of the page with these lines (or remove it when there are
     none)."""
@@ -226,6 +232,7 @@ def place_talk(doc, page_no, state, lines, page_id=None, workdir=None):
         if line[0] == "narrator" or len(line) < 3:
             merged.append(line)
             continue
+        line[2] = _plain(line[2])
         if line[0] not in at:
             at[line[0]] = len(merged)
             merged.append(line)
@@ -362,13 +369,17 @@ def read_writing(state, png, ask_vision):
 
 
 def _written(state, line, sans):
-    """A reader's one line (MOVE: / RESIGN / DRAW / SAY: / NOTHING) -> what the player wrote."""
+    """A reader's one line (MOVE: / RESIGN / DRAW / SAY: / NOTHING) -> what the player wrote. A move read clearly that
+    is not legal here is "illegal" (refused, with the move named); one that could not be made out is "unclear"."""
     from paperdaemon.pipeline.games import chess as CH
     m = re.match(r"(?i)^MOVE:\s*(.+)$", line)
     if m and sans:
         uci = CH.parse_text_move(state, m.group(1).strip())
         if uci:
             return {"kind": "move", "uci": uci, "raw": line}
+        named = m.group(1).strip().strip('"')
+        if re.fullmatch(r"(?:[KQRBN]?[a-h]?[1-8]?x?[a-h][1-8](?:=?[QRBN])?|O-O(?:-O)?|0-0(?:-0)?)[+#]?", named):
+            return {"kind": "illegal", "move": named, "raw": line}
         return {"kind": "unclear", "raw": line}
     if re.match(r"(?i)^RESIGN\b", line):
         return {"kind": "resign", "raw": line}
@@ -421,22 +432,25 @@ def _table_lines(state, r, silent_line=""):
     return out
 
 
-def _remark(state, context, ask_text, log=None):
-    """The player spoke on their own turn: the table decides whether the character answers."""
+def _remark(state, context, ask_text, log=None, spoken=True):
+    """The player spoke on their own turn: the table decides whether the character answers. `spoken`=False: nothing
+    was said -- the context is what happened (a move that is not legal), and the character tells the player; what the
+    player says is the cast's to weigh, so only words they spoke go to it."""
     from paperdaemon.pipeline.games import chess as CH
     cid = state["persona"].get("character")
     if not cid:
         return []
     from paperdaemon.pipeline.games import table as TB
     current=re.search(r'The player just said to you: "(.*)"',context)
-    state['cast_input']=current.group(1) if current else context
+    state['cast_input']=(current.group(1) if current else context) if spoken else ''
     TB.next_turn(state)
     rng = CH.Rng(**state["rng"])
     TB.seat(state, [cid])
     from paperdaemon.pipeline.games import cast as rm_cast
-    rm_cast.interact(state,state['cast_input'],ask_text)
-    active = rm_cast.prepare(state,cid,rng,())
-    rm_cast.challenge_input(state,[active],state['cast_input'],ask_text)
+    if spoken:
+        rm_cast.interact(state,state['cast_input'],ask_text)
+        active = rm_cast.prepare(state,cid,rng,())
+        rm_cast.challenge_input(state,[active],state['cast_input'],ask_text)
     plan = TB.pre_turn(state, cid, set(), rng, addressed=True, interaction='conversation')
     state["rng"] = rng.state()
     said, feel, strong, at, truth = "", "", None, "", ""
@@ -462,6 +476,16 @@ def _remark(state, context, ask_text, log=None):
     seen = TB.post_turn(state, cid, plan, feel or None, strong, at, truth, speech=said,presentation=presentation)
     said=seen.get('speech', said)
     return _table_lines(state, {"table": seen, "said": said})
+
+
+def _refused(state, what, ask_text, log=None):
+    """A MOVE THAT IS NOT LEGAL, told by the opponent: the board puts a piece back, but only words say why, and on a
+    game page the opponent's are the words there are (the strip shows the character alone). -> talk lines, none
+    without a model or a roster opponent (the receipt still names it)."""
+    if ask_text is None or not state["persona"].get("character"):
+        return []
+    return _remark(state, "%s It is still their move: tell them so, in a few words, without teaching the rules." % what,
+                   ask_text, log, spoken=False)
 
 
 def _remember_turn(doc, page_id, state, heard, said, ended, log=None):
@@ -519,7 +543,8 @@ FAREWELL_PROMPT = """You are this character; your chess game with the player has
 {facts}
 {plan}
 {context}
-Reply with a line SAY: one short thing you say now the game is over, in your own voice, true to how it ended.
+Reply with a line SAY: one short thing you say now the game is over, in your own voice, true to how it ended --
+words, not a sound or an action.
 Then a line FEEL: what you truly feel now -- one of {emotions} -- how strongly, 1 to 10, and at whom if anyone.
 Then a line TRUTH: true, lie or bluff (nobody sees it). Then FACE: one fitting signature ID from the private menu
 above, or none. Not a tell."""
@@ -604,7 +629,7 @@ def play(doc, page_no, page_id, ask_text=None, ask_vision=None, log=None, workdi
     written = read_typed(state, IA.typed(doc, page_no), ask_text)
     if written is not None:
         _log(log, "  game: the typed text reads %r" % (written.get("raw") or "")[:80])
-        if written.get("kind") in ("move", "resign", "draw", "say"):
+        if written.get("kind") in ("move", "resign", "draw", "say", "illegal"):
             try:
                 ER.erase_text(doc, page_no)
             except Exception as ex:
@@ -635,10 +660,10 @@ def play(doc, page_no, page_id, ask_text=None, ask_vision=None, log=None, workdi
                 except OSError:
                     pass
             _log(log, "  game: the writing reads %r" % (written.get("raw") or "")[:80])
-        # ONLY WRITING THAT WAS READ comes off -- a move, a resignation, a draw offer or a remark, which the page
-        # now shows in its own way. Writing that could not be read (no vision model, an unclear or empty reading)
-        # stays exactly where the player put it.
-        if written and written.get("kind") in ("move", "resign", "draw", "say"):
+        # ONLY WRITING THAT WAS READ comes off -- a move (played, or refused as not legal: the opponent says so), a
+        # resignation, a draw offer or a remark, which the page now shows in its own way. Writing that could not be
+        # read (no vision model, an unclear or empty reading) stays exactly where the player put it.
+        if written and written.get("kind") in ("move", "resign", "draw", "say", "illegal"):
             try:
                 ER.erase(doc, page_no, lambda L: True)
             except Exception as ex:
@@ -653,9 +678,14 @@ def play(doc, page_no, page_id, ask_text=None, ask_vision=None, log=None, workdi
             talk.append(("narrator", "", "Not played: %s." % r["reason"]))
             CH.tidy(doc, page_no, state, page_id)
     elif written and written["kind"] == "resign" and state["status"] == "playing":
-        state["status"] = "resigned"
+        state["status"] = "resigned"                   # (the game's end line says so: "Game over: you resigned.")
         state["result"] = "0-1" if state["colors"]["user"] == "w" else "1-0"
-        notes.append("you resigned")
+    elif written and written["kind"] == "illegal":
+        # A MOVE READ CLEARLY THAT IS NOT LEGAL: refused, named in the receipt, and the opponent tells the player. It
+        # was passed over in silence -- "Ke3" typed with the king on e1 left the job "nothing new on the page"
+        notes.append("not played: %s is not a legal move here" % written["move"])
+        talk += _refused(state, "The player tried to play %s, which is not a legal move here." % written["move"],
+                         ask_text, log)
     else:
         if written and written["kind"] == "say":
             context = "The player just said to you: \"%s\"" % written["text"][:200]
@@ -670,6 +700,8 @@ def play(doc, page_no, page_id, ask_text=None, ask_vision=None, log=None, workdi
         elif not r.get("ok"):
             talk.append(("narrator", "", "Not legal: %s. The piece went back." % r["reason"]))
             notes.append("refused: %s" % r["reason"])
+            talk += _refused(state, "The player moved a piece where it cannot go (%s); the piece went back." % r["reason"],
+                             ask_text, log)
     # a draw offer: the opponent takes it when it is not ahead
     if written and written["kind"] == "draw" and state["status"] == "playing":
         try:
@@ -680,11 +712,20 @@ def play(doc, page_no, page_id, ask_text=None, ask_vision=None, log=None, workdi
             ahead = (c[0]["cp"] if engine_to_move else -c[0]["cp"]) if c else 0
         except Exception:
             ahead = 0
+        # IN THEIR OWN VOICE: taken, the game is over and the opponent's last word says so (_farewell, below); refused,
+        # they say why. A fixed "A draw? Fine by me." was every character's answer, whoever they were
         if ahead <= 50:
             state["status"], state["result"] = "draw_agreed", "1/2-1/2"
-            talk.append((_name(state), express(state, "relieved", 0.6, "the player"), "A draw? Fine by me."))
+            notes.append("a draw, agreed")
+            if ask_text is None:
+                talk.append((_name(state), express(state, "relieved", 0.6, "the player"), "A draw? Fine by me."))
         else:
-            talk.append((_name(state), express(state, "smug", 0.6, "the player"), "A draw? Not a chance."))
+            notes.append("you offered a draw; %s said no" % _short(state))
+            said = _remark(state, 'The player just said to you: "I offer a draw." You refuse it: you are ahead.',
+                           ask_text, log)
+            if not any(t[0] != "narrator" and str(t[2] or "").strip() for t in said):
+                said = [(_name(state), express(state, "smug", 0.6, "the player"), "A draw? Not a chance.")]
+            talk += said
     # 3. THE OPPONENT ANSWERS
     board = chess.Board(state["fen"])
     engine_to_move = ("w" if board.turn == chess.WHITE else "b") == state["colors"]["engine"]

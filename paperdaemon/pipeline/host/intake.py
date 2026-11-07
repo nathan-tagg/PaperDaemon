@@ -447,13 +447,28 @@ def describe_page(doc, page):
     return "\n".join(L)
 
 
+def _weeks():
+    """This week's and next week's first days by the user's week start -- the host's date arithmetic, said with the
+    date. Left to the model, "a week page for next week" started on a Monday for a user whose weeks start on Sunday."""
+    import datetime as _dt
+    days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+    try:
+        first = str(H._CT.prefs().get("week_start") or "sunday").lower()
+    except Exception:
+        first = "sunday"
+    today = _dt.date.today()
+    this = today - _dt.timedelta(days=(today.weekday() - days.index(first if first in days else "sunday")) % 7)
+    nxt = this + _dt.timedelta(days=7)
+    return " This week began %s; next week begins %s." % (this.strftime("%A %d %B"), nxt.strftime("%A %d %B %Y"))
+
+
 def job_context(doc, page, name):
     """Everything the decision turn needs, AS TEXT: the typed paragraphs verbatim and numbered, the ink
     as numbered marks with their owner and extent, the arrows, the pictures, the free space. The
     picture of the page goes with it. The model reads text exactly and pictures approximately, and
     an id cannot be misquoted."""
-    L = ["This is %s page %s. It changed, which is why you were woken. Today is %s; the time is %s."
-         % (name, page, time.strftime("%A %d %B %Y"), time.strftime("%H:%M")), TB.coordinates(H._frame())]
+    L = ["This is %s page %s. It changed, which is why you were woken. Today is %s; the time is %s.%s"
+         % (name, page, time.strftime("%A %d %B %Y"), time.strftime("%H:%M"), _weeks()), TB.coordinates(H._frame())]
     try:
         numbers = dict((p["id"], i + 1) for i, p in enumerate(R.live_pages(doc)))
     except Exception:

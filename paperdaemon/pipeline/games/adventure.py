@@ -907,8 +907,14 @@ def turn_png(state, scene, out, roll_line="", n=None):
                 d.text((tx, y), line, font=font, fill=INK)
                 y += LH
             y += 10
+    # THE END SAYS SO, where the next move's ideas would be: a story that is over showed "You could: ..." for a turn
+    # no game would take (a finished game gives its page back, and what is written there next is a new request)
+    end = {"victory": "The end: a victory.", "death": "The end: %s has died.",
+           "down": "The end: %s has fallen."}.get(state.get("status"))
+    if end:
+        d.text((tx, y), end % state["hero"]["name"] if "%s" in end else end, font=med, fill=INK)
     # the loose ideas: as many WHOLE ones as two lines and the cell hold, never one cut off mid-phrase
-    opts = [str(o).strip() for o in (scene.get("options") or []) if str(o).strip()][:4]
+    opts = [] if end else [str(o).strip() for o in (scene.get("options") or []) if str(o).strip()][:4]
     while opts:
         lines = _wrap(d, "You could: " + "  ·  ".join(opts), small, tw)
         if len(lines) <= 2 and y + 32 * len(lines) <= bottom:

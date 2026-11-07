@@ -143,3 +143,92 @@ def test_a_finished_game_takes_no_more_moves(tmp_path):
     assert d["written"]["ok"] is False and "over" in d["written"]["reason"]
     assert d["still"] == {"ok": True, "uci": None}       # nothing moved after the game is no move, not a refusal
     assert d["dragged"]["ok"] is False and "over" in d["dragged"]["reason"]
+
+
+def test_a_draw_offer_is_answered_in_the_opponents_own_voice(tmp_path):
+    # a fixed "A draw? Fine by me." was every character's answer, whoever they were
+    d = _run(tmp_path, """
+        from paperdaemon.pipeline.games import chess as CH
+        from paperdaemon.pipeline import games as GM
+        from paperdaemon.pipeline import page as P
+        from paperdaemon.pipeline.page import render as R
+        from paperdaemon.pipeline.games import inputarea as IA
+        out = {}
+        for case, cp in (("taken", 200), ("refused", -200)):
+            st = CH.new_game("doc", "pid", user_color="w")
+            st["persona"].update({"name": "Barty Tusk", "character": "barty-tusk"})
+            placed = []
+            GM.game_on_page = lambda doc, page_id, st=st: st
+            P.record = P.erase_text = lambda *a, **k: None
+            R.strokes = lambda doc, page_no: []
+            IA.typed = lambda doc, page_no: "Draw?"
+
+            class Eng(object):
+                def __init__(self, elo):
+                    pass
+
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, *a):
+                    return False
+
+                def candidates(self, fen, multipv=1, cp=cp):
+                    return [{"cp": cp}]
+            CH.Engine = Eng
+            CH.user_turn = lambda doc, page_no, state, page_id: {"ok": True, "uci": None}
+            CH.tidy = CH.save_state = lambda *a, **k: None
+            GM.place_talk = lambda doc, page_no, state, lines, page_id=None, workdir=None, placed=placed: placed.append(
+                [list(l) for l in lines])
+            GM._remember_turn = lambda *a, **k: None
+
+            def model(prompt, case=case):
+                if "What does it say?" in prompt:
+                    return "DRAW"
+                return ("SAY: A draw it is, friend. Honors even.\\nFEEL: relieved 5" if case == "taken" else
+                        "SAY: Oh no, not while I hold the open file.\\nFEEL: smug 6")
+            GM.play("doc", 1, "pid", ask_text=model)
+            out[case] = {"status": st["status"], "said": [l[2] for l in placed[0] if l[0] == "Barty Tusk"]}
+        print(json.dumps(out))
+    """)
+    assert d["taken"]["status"] == "draw_agreed" and d["taken"]["said"] == ["A draw it is, friend. Honors even."]
+    assert d["refused"]["status"] == "playing" and d["refused"]["said"] == ["Oh no, not while I hold the open file."]
+
+
+def test_a_move_that_is_not_legal_is_refused_by_the_opponent_and_named_in_the_receipt(tmp_path):
+    # "Ke3" typed with the king on e1 was passed over in silence: "nothing new on the page", the typed move left there
+    d = _run(tmp_path, """
+        from paperdaemon.pipeline.games import chess as CH
+        from paperdaemon.pipeline import games as GM
+        from paperdaemon.pipeline import page as P
+        from paperdaemon.pipeline.page import render as R
+        from paperdaemon.pipeline.games import inputarea as IA
+        st = CH.new_game("doc", "pid", user_color="w")
+        st["persona"].update({"name": "Barty Tusk", "character": "barty-tusk"})
+        placed, erased, asked = [], [], []
+        GM.game_on_page = lambda doc, page_id: st
+        P.record = lambda *a, **k: None
+        P.erase_text = lambda *a, **k: erased.append(1)
+        R.strokes = lambda doc, page_no: []
+        IA.typed = lambda doc, page_no: "Ke3"
+        CH.user_turn = lambda doc, page_no, state, page_id: {"ok": True, "uci": None}
+        CH.tidy = CH.save_state = lambda *a, **k: None
+        GM.place_talk = lambda doc, page_no, state, lines, page_id=None, workdir=None: placed.append(
+            [list(l) for l in lines])
+        GM._remember_turn = lambda *a, **k: None
+
+        def model(prompt):
+            asked.append(prompt)
+            if "What does it say?" in prompt:
+                return "MOVE: Ke3"
+            return "SAY: Your king doesn't jump, friend. Try again.\\nFEEL: amused 4"
+        out = GM.play("doc", 1, "pid", ask_text=model)
+        print(json.dumps({"out": out, "placed": placed, "erased": len(erased), "asked": asked[-1],
+                          "history": len(st["history"]), "plain": [GM._plain(s) for s in ("*Baa.*", "I **win**", "a*b")]}))
+    """)
+    assert d["out"][0] == "done" and "not played: Ke3 is not a legal move here" in d["out"][1]
+    said = [l[2] for l in d["placed"][0] if l[0] == "Barty Tusk"]
+    assert said == ["Your king doesn't jump, friend. Try again."]
+    assert d["erased"] == 1 and d["history"] == 0              # the typed move came off; nothing was played
+    assert "Ke3" in d["asked"] and "not a legal move" in d["asked"]
+    assert d["plain"] == ["Baa.", "I win", "a*b"]

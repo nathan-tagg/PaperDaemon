@@ -75,3 +75,11 @@ still all inside it. On open paper the ring SHALL be the ring it always was.
 #### Scenario: A date that wraps in a paragraph
 - **WHEN** a date that runs over two lines of a paragraph is circled
 - **THEN** neither ring crosses a word that is not part of the date, and no ring's edge runs through the line above
+
+### Requirement: A skipped page's note is plain words
+The note a skipped page carries SHALL say why in plain words: it is shown on the page, so it SHALL NOT name the
+page's ids (line:1, mark:11, para:2).
+
+#### Scenario: A note to someone else
+- **WHEN** a page's new handwriting is a note to someone else and the job skips it
+- **THEN** the receipt says the note is addressed to that person, with no ids

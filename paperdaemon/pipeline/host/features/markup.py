@@ -376,15 +376,19 @@ def _ring(x0, y0, x1, y1, room=None):
     bot = y1 + max(3.0, min(m, room["down"] - CLEAR_V))
     rcy, rry = (top + bot) / 2.0, (bot - top) / 2.0
     k = math.sqrt(max(0.0, 1.0 - (max(rcy - y0, y1 - rcy) / rry) ** 2))
-    pad = 2.0
 
-    def reach(free):                                                    # an end's half-width for the gap beside it
-        a = rry
+    def reach(free):
+        """An end's half-width and its pad beyond the words, for the gap beside it: the open-paper end (a round end
+        and 12 units past the words) where there is room -- a tight side never squeezes the open one, which ran a
+        ring into the last letter of a line ("November") -- else the pad, then the end, cut until it fits."""
+        a, pad = rry, 12.0
         if a * (1.0 - k) + pad > free - CLEAR_H:
-            a = max(2.0, (free - CLEAR_H - pad) / max(1e-6, 1.0 - k))
-        return min(a, rry)
-    a_l, a_r = reach(room["left"]), reach(room["right"])
-    ex_l, ex_r = x0 + a_l * k - pad, x1 - a_r * k + pad
+            pad = max(2.0, free - CLEAR_H - a * (1.0 - k))
+            if a * (1.0 - k) + pad > free - CLEAR_H:
+                a = max(2.0, (free - CLEAR_H - pad) / max(1e-6, 1.0 - k))
+        return min(a, rry), pad
+    (a_l, pad_l), (a_r, pad_r) = reach(room["left"]), reach(room["right"])
+    ex_l, ex_r = x0 + a_l * k - pad_l, x1 - a_r * k + pad_r
     if ex_l > ex_r:
         ex_l = ex_r = (ex_l + ex_r) / 2.0
     pts = [(ex_l + a_l * math.cos(math.radians(a)), rcy - rry * math.sin(math.radians(a))) for a in range(90, 271, 8)]

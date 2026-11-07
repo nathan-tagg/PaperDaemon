@@ -37,3 +37,30 @@ refusal.
 #### Scenario: A move written after a resignation
 - **WHEN** the player resigned and a move is then written on the page
 - **THEN** the move is not played and the finished game's record is unchanged
+
+### Requirement: A draw offer is answered in the opponent's own voice
+A chess opponent SHALL answer a draw offer in their own voice: taken, the game ends and their last word says so;
+refused, they say why and the game goes on. A fixed line SHALL be the answer only when no text model can speak.
+
+#### Scenario: A draw offered while the opponent is ahead
+- **WHEN** the player writes "Draw?" and the opponent is ahead
+- **THEN** the opponent refuses in their own words and the game goes on
+
+### Requirement: A finished adventure says so
+The last scene page of an ink adventure that is over (a victory, the hero's death, the hero fallen) SHALL say the
+story has ended, and how, where the ideas for a next move would be; it SHALL offer no next move.
+
+#### Scenario: The hero falls
+- **WHEN** the hero drops to no hit points and the adventure ends
+- **THEN** the scene page says "The end:" and that the hero has fallen, and shows no "You could:" ideas
+
+### Requirement: A move that is not legal is refused out loud
+A move the player writes or types that is read clearly but is not legal SHALL be refused: it SHALL come off the page,
+the job's receipt SHALL name it, and the opponent SHALL tell the player in their own words. A piece moved where it
+cannot go SHALL be put back and the opponent SHALL say so. A chess receipt SHALL never be empty, and SHALL say each
+thing once.
+
+#### Scenario: A king move two squares away
+- **WHEN** the player types "Ke3" with their king on e1
+- **THEN** nothing is played, "Ke3" comes off the page, the receipt says Ke3 is not a legal move here, and the
+  opponent's line says so

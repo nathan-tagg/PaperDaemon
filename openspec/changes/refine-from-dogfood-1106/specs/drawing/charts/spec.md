@@ -31,7 +31,8 @@ the two lines centered on the cell's middle; an entry that fits SHALL stay on on
 
 ### Requirement: A week starts where it is asked to
 A week calendar SHALL take `start` (YYYY-MM-DD) and run seven days from it; without one it SHALL run seven days from
-today. The brief SHALL say so, and that "next week" starts on the first day of the user's week. A habit tracker SHALL
+today. The brief SHALL say so, and the job's first lines SHALL give the day this week began and the day next week
+begins, by the user's first day of the week -- the host's date arithmetic, not the model's. A habit tracker SHALL
 be a chart of type habit, not a calendar.
 
 #### Scenario: Next week's appointments

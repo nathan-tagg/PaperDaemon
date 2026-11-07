@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.25
+
+- A chess move that is not legal is refused out loud: written or typed ("Ke3" with the king on e1), it comes off the page, the receipt names it, and the opponent tells you in their own words; a piece dragged where it cannot go is put back and the opponent says so. It was passed over in silence, the typed move left on the page.
+- A chess opponent answers a draw offer in their own voice: taken, their last word says so; refused, they say why and the game goes on. Every character used to answer with the same fixed line ("A draw? Fine by me.").
+- Chess receipts say each thing once and are never empty: a refused draw offer left "chess:" with nothing after it, and a resignation was said twice.
+- An opponent's closing line is words, drawn without a model's asterisks ("*Baa.*").
+- A week page for next week starts on the first day of your week: the job now says which days this week and next week begin, so the model no longer works it out (it started next week on a Monday for a week that starts on Sunday).
+- A ring round words at the end of a line keeps its round end past the last letter; only the side with a word close beside it is drawn tight.
+- A skipped page's note says why in plain words: it showed ids like "line:1, mark:11".
+- A typewriter's dash between words (" -- ") in an answer is drawn as a real dash.
+- An ink adventure that is over says so on its last scene ("The end: a victory.", "The end: Elara Vane has fallen.") instead of offering ideas for a next move no game would take.
+
 ## 0.2.24
 
 - A chess opponent stays at the table when the game ends and has the last word, in their own voice and true to how it ended: a winner's, a loser's or a draw's. A game won on your move or ended by resigning left the page with no opponent at all. Without a text model their face stays, in the mood the end left them in.

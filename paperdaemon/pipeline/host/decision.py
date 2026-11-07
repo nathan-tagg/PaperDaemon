@@ -19,8 +19,8 @@ CAL_BRIEF = {
     "page": """CALENDARS: a calendar, a month, a week, the forecast or the weather is one calendar
 step (it takes the page); its chart call is {"type": "calendar", "year": 2026, "month": 10} for a
 month, {"type": "week"} for the seven days from today, or {"type": "week", "start": "2026-11-15"} for
-seven days from another (next week starts on the first day of the user's week). A habit tracker is no
-calendar: a chart step, type habit.""",
+seven days from another ("next week" starts on the day the job's first lines say it begins). A habit
+tracker is no calendar: a chart step, type habit.""",
 }
 _SITE_NAMES = {"reddit": "Reddit", "hackernews": "Hacker News", "bluesky": "Bluesky", "4chan": "4chan",
                "mastodon": "Mastodon"}
@@ -955,7 +955,8 @@ TOOLS = [
   "request and nothing comes off; the request stays until the user's reply lets a later job do it.",
   {"lines": "array", "remember": H.REMEMBER}, t_ask),
  ("skip", "Your ONE decision when THIS page asks for nothing, or when this notebook's system prompt "
-  "says to leave it alone: say what is on it and why you are not acting. Nothing changes. What "
+  "says to leave it alone: say what is on it and why you are not acting, in plain words -- the note is "
+  "shown on the page, so never an id like line:1 or mark:11. Nothing changes. What "
   "another page answered never answers a request on this one.", {"note": "string", "remember": H.REMEMBER},
   t_skip),
  ("need_step", "The plan missed something -- a search that came back useless, a second chart you only "

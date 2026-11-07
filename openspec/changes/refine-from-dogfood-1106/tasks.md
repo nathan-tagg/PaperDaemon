@@ -37,3 +37,14 @@
 - [x] 6.3 The brief: a week takes `start`, "next week" starts on the user's first day; a habit tracker is a chart
 - [x] 6.4 A ring keeps to the free paper round the words it circles
 - [x] 6.5 A table entry longer than its column goes on two lines in its cell
+
+## 7. Found re-judging rounds 4-6 (0.2.25)
+
+- [x] 7.1 A draw offer is answered in the opponent's own voice
+- [x] 7.2 A skipped page's note is plain words, no ids
+- [x] 7.3 " -- " in lettered words is drawn as a dash
+- [x] 7.4 A finished ink adventure says so on its last scene
+- [x] 7.5 A move read clearly that is not legal is refused: erased, named in the receipt, told by the opponent; a
+      dragged one too; chess receipts never empty, nothing said twice; *emphasis* marks off the strip
+- [x] 7.6 The job's date line gives this week's and next week's first days by the user's week start
+- [x] 7.7 A ring's open side keeps the open-paper end when the other side is tight

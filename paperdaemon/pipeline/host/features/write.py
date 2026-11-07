@@ -78,8 +78,10 @@ def _md_words(line):
 
     ITALICS STAY ITALICS, drawn leaning: a role-play turn writes its actions in them, and with the
     asterisks simply taken off "*Steps forward, hand on hilt* I seek only passage" runs the action
-    into the speech. Code ticks come off."""
+    into the speech. Code ticks come off. A typewriter's dash between words, " -- ", is drawn as the dash it
+    stands for ("the sweet spot -- cool enough" read as a typed page, not a written one)."""
     lead = line[:len(line) - len(line.lstrip())]
+    line = line.replace(" -- ", " — ")
     line = _MD_TASK.sub(lambda m: m.group(1) + ("☐ " if m.group(2) == " " else "☑ "), line)
     line = _MD_ITEM.sub(r"\1- ", line)
     head = bool(_MD_HEAD.match(line))
