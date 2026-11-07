@@ -1,5 +1,6 @@
 """The decomposer gives exactly the strokes it gave when the record was made: every picture in
-tests/decompose/pictures (three public-domain paintings and two generated pages), in a full-page box and a
+tests/decompose/pictures (three public-domain paintings, two generated pages, and two busy pictures an image model made
+for the torture test), in a full-page box and a
 half-width box through decompose_into, and at a width through decompose, compared by a digest of the strokes' exact values and types.
 
     uv run python tests/test_decompose_identity.py --record     (only when a change to the strokes is intended)

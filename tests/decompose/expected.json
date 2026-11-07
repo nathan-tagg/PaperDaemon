@@ -1,4 +1,16 @@
 {
+ "autumn-path.jpg@half": {
+  "sha256": "d9e3bc9aa398daed9eeffdef65cd2a32ef7a60342a1016dcaf87141b12187ef9",
+  "strokes": 60357
+ },
+ "autumn-path.jpg@page": {
+  "sha256": "ff5caa314ea74ec8eae26a2a55b7ccb2a07277ddc2681b289cf7a8be89b6411f",
+  "strokes": 75983
+ },
+ "autumn-path.jpg@width": {
+  "sha256": "b39e2a0a25ee92d95fdc3da921440320746a05afe0aef8c54c2a3cc9998a0ce5",
+  "strokes": 77452
+ },
  "chart.png@half": {
   "sha256": "7ead496e9c6ac08df23cc74834b833f8d4d5b460731011c0ed16239c015a1150",
   "strokes": 688
@@ -22,6 +34,18 @@
  "great-wave.jpg@width": {
   "sha256": "ec111f94f9ff618c288e62f4b043d563beb2efb630470b9a9f0cf9fc761489e5",
   "strokes": 19201
+ },
+ "koi-pond.jpg@half": {
+  "sha256": "18b0c365a455d4eb223023ab9ed2442e8f54c4408dfc516c1fc47c5d8568fdfc",
+  "strokes": 117222
+ },
+ "koi-pond.jpg@page": {
+  "sha256": "d987d6f2df8835ac5e686f03beb12497f535079bbffe889eab4edb4914ca10df",
+  "strokes": 143239
+ },
+ "koi-pond.jpg@width": {
+  "sha256": "058a18d11d0fdbc342de4d34e9032c17b11ab44e611e1d1a0c15f2cb82b7ad50",
+  "strokes": 144610
  },
  "pearl-earring.jpg@half": {
   "sha256": "0663992cfad8f5cd018582cdc30b827c76cc9bbf5a7674f457ee157cb03bc888",
