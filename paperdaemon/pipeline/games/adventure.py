@@ -37,7 +37,6 @@ import json
 import os
 import re
 import time
-import zlib
 from paperdaemon.pipeline.games import chess as CH
 from paperdaemon.pipeline.page import tablets as TB
 
@@ -432,6 +431,11 @@ def _clip(v, n):
     t = _s(v, 1 << 20)
     if len(t) <= n:
         return t
+    # A WHOLE SENTENCE when one ends far enough in: cut at a word, the journal's beginning read "...a sturdy oak box
+    # on a stand, and..." -- stopped mid-thought
+    ends = [m.end() for m in re.finditer(r"[.!?][\"”')]?(?=\s)", t[:n])]
+    if ends and ends[-1] >= 0.4 * n:
+        return t[:ends[-1]]
     return t[:max(1, n - 3)].rsplit(" ", 1)[0].rstrip(" ,;:-") + "..."
 
 
@@ -855,35 +859,6 @@ SCENE_BOX = ((PAGE_W - _SCENE_SIDE) // 2, int(CH.TOP), (PAGE_W + _SCENE_SIDE) //
 TEXT_TOP, WRITE_TOP = 1300, 1810            # the story, then the player's space: the turn page's picture ends there,
                                             # and under it is the page itself, to type or write in (inputarea.py)
 CELL_PAD = 24                               # the story's cell is as wide as the picture's frame; its text inset this much
-PROMPT_H = 46                               # the line over the player's space, above the rule
-
-# THE LINE OVER THE PLAYER'S SPACE, in italics: a few for each mood the story can give a scene ("mood" in the
-# prompts), one picked per turn from the adventure's seed, so the page reads the same however often it is drawn.
-MOOD_LINES = {
-    "calm": ("Describe your action…", "Take your time…", "The next move is yours…"),
-    "tense": ("Choose carefully…", "Weigh your next step…", "Every move counts…"),
-    "danger": ("Think quickly…", "Act fast…", "No time to waste…"),
-    "mystery": ("Look closer…", "Trust your instincts…", "Follow the clues…"),
-    "wonder": ("Take it all in…", "Follow your curiosity…"),
-    "grim": ("Steady yourself…", "Gather your resolve…"),
-    "social": ("Choose your words…", "Speak your mind…"),
-    "triumph": ("Savor the moment…", "Press your advantage…"),
-}
-MOODS = tuple(MOOD_LINES)
-
-
-def mood_of(value):
-    """The story's mood for a scene, if it is one of MOODS, else ''."""
-    m = str(value or "").strip().lower()
-    return m if m in MOOD_LINES else ""
-
-
-def mood_line(state, scene, n):
-    lines = MOOD_LINES.get(mood_of(scene.get("mood"))) or ("Describe your action…",)
-    seed = (state.get("rng") or {}).get("seed", 0)
-    return lines[zlib.crc32(("%s:%s" % (seed, n)).encode("utf-8")) % len(lines)]
-
-
 def scene_frame_page(s=1.0):
     """The picture's box in the page's own coordinates (x from the center), for the strokes; `s` scales the designed
     page to the page's own tablet (tablets.picture_page)."""
@@ -893,17 +868,16 @@ def scene_frame_page(s=1.0):
 
 def turn_png(state, scene, out, roll_line="", n=None):
     """A TURN PAGE's picture: a frame where the scene goes (its strokes are laid over it), under it a cell as wide
-    as the frame with what happened, what is around and a few loose options, then the mood's line (MOOD_LINES) over
-    a rule as wide as the cells, the top of the player's space. `n`: the turn's number (the next one). On the page
+    as the frame with what happened, what is around and a few loose options, then a rule as wide as the cells, the
+    top of the player's space -- no line over it (where to write is plain to see). `n`: the turn's number (the next one). On the page
     it is cut at WRITE_TOP."""
     from PIL import Image, ImageDraw
     from paperdaemon.pipeline.draw import scaled as SD
-    from paperdaemon.pipeline.games import inputarea as IA
     im, d = SD.canvas(PAGE_W, PAGE_H)                 # (laid out in design pixels; sent at twice the tablet's resolution)
     x0, y0, x1, y1 = SCENE_BOX
     cx0, cx1 = x0 - 6, x1 + 6                         # the cells' outer edges: the picture's frame
     tx, tw = cx0 + CELL_PAD, (cx1 - cx0) - 2 * CELL_PAD
-    cell_top, cell_bot = TEXT_TOP - 6, WRITE_TOP - PROMPT_H - 14
+    cell_top, cell_bot = TEXT_TOP - 6, WRITE_TOP - 18
     n = n or len(state["turns"]) + 1
     small, med = _font("reMarkableSans-Regular.ttf", 24), _font("reMarkableSans-Medium.ttf", 30)
     # A STORY TOLD IN FULL (a character's tale is three to six sentences) must fit in its cell: the largest type
@@ -943,9 +917,7 @@ def turn_png(state, scene, out, roll_line="", n=None):
                 y += 32
             break
         opts = opts[:-1]
-    # the player's space: the mood's line over a rule as wide as the cells
-    d.text((tx, WRITE_TOP - PROMPT_H + 2), mood_line(state, scene, n),
-           font=_font("reMarkableSans-RegularItalic.ttf", 30), fill=IA.LABEL_INK)
+    # the player's space: under a rule as wide as the cells
     d.line((cx0, WRITE_TOP - 2, cx1, WRITE_TOP - 2), fill=RULE, width=3)
     im.save(out)
     return out
@@ -964,7 +936,6 @@ Answer with JSON only:
           "skills": ["up to four skills from: {skills}"]}},
  "opening": {{"place": "where the story begins, a few words", "what_happened": "two to four sentences, second person",
              "around": "two sentences: what the hero can see around them", "options": ["three or four loose ideas"],
-             "mood": the feel of the scene, one of {moods},
              "people": [every named person in the opening scene, each {person}],
              "picture": "what the hero SEES in front of them: the place, the objects in it, where each person stands. Never describe the hero."}}}}
 "around" and "options" name only what the hero can see: never the premise, a secret or a hidden place."""
@@ -1015,7 +986,6 @@ Answer with JSON only:
  "place": "where the hero is now, a few words", "same_place": true if the hero is still looking at the same scene,
  "around": "two sentences: what the hero can see now",
  "options": ["three or four loose ideas, not the only choices"],
- "mood": the feel of the next scene, one of {moods},
  "present": ["the name of each person listed above who is in the next scene"],
  "new_people": [every named person appearing for the FIRST time, each {person}],
  "people_changes": [{{"name": "...", "status": one of {statuses}, "disposition": one of {dispositions}, "hp": "0",
@@ -1866,7 +1836,7 @@ def start(what, ask_text, paint=None, log=None, workdir=None, parent=None, doc=N
     workdir = workdir or os.path.join(paths.state_dir(), "rm-queue")
     os.makedirs(workdir, exist_ok=True)
     spec = parse_json(ask_text(SETUP_PROMPT.format(what=str(what)[:400], races=", ".join(RACES), classes=", ".join(CLASSES),
-                                                   skills=", ".join(SKILLS), person=PERSON_JSON, moods=", ".join(MOODS)))) if ask_text else {}
+                                                   skills=", ".join(SKILLS), person=PERSON_JSON))) if ask_text else {}
     if not spec.get("hero"):
         spec = {"title": "The Lantern Road", "premise": "A road that only appears at night.", "tone": "eerie",
                 "hero": {"name": "Wren", "race": "halfling", "class": "rogue"},
@@ -1890,8 +1860,7 @@ def start(what, ask_text, paint=None, log=None, workdir=None, parent=None, doc=N
         state["format"], state["book_pages"] = "book", []
     op = spec.get("opening") or {}
     scene = {"place": str(op.get("place") or "")[:80], "what_happened": str(op.get("what_happened") or "")[:1200],
-             "around": str(op.get("around") or "")[:500], "options": [str(o)[:80] for o in (op.get("options") or [])][:4],
-             "mood": mood_of(op.get("mood"))}
+             "around": str(op.get("around") or "")[:500], "options": [str(o)[:80] for o in (op.get("options") or [])][:4]}
     rng = CH.Rng(**state["rng"])
     present = add_people(state, op.get("people"), rng, 1, scene["place"])
     state["rng"] = rng.state()
@@ -1988,7 +1957,7 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
                                                   person=PERSON_JSON, statuses=", ".join(STATUSES),
                                                   dispositions=", ".join(DISPOSITIONS), lore=lore_block(state),
                                                   quests=quests_line(state), fields=", ".join(KNOWABLE),
-                                                  skills=", ".join(SKILLS), moods=", ".join(MOODS)))) or {}
+                                                  skills=", ".join(SKILLS)))) or {}
     allowed = list(rule.get("uses") or []) if possible else []
     if result and result["success"]:
         allowed += [g.get("name") if isinstance(g, dict) else g for g in ((tell.get("changes") or {}).get("gain") or [])]
@@ -2000,8 +1969,7 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
     new_scene = {"place": str(tell.get("place") or state["place"])[:80],
                  "what_happened": str(tell.get("what_happened") or "")[:1200],
                  "around": str(tell.get("around") or "")[:500],
-                 "options": [str(o)[:80] for o in (tell.get("options") or [])][:4],
-                 "mood": mood_of(tell.get("mood"))}
+                 "options": [str(o)[:80] for o in (tell.get("options") or [])][:4]}
     n = len(state["turns"]) + 1
     # THE CAST, through the engine: newcomers rolled and recorded once, changes checked, looks never touched
     rng = CH.Rng(**state["rng"])

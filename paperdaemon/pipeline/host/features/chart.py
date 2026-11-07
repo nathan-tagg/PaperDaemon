@@ -143,6 +143,20 @@ def t_chart(spec, place=None):
         wu, hu = pw * s, ph * s                         # the picture's size in page units
         x0 = float(box["x0"]) + (float(box["w"]) - wu) / 2.0
         y0 = float(box["y0"])
+        if str(spec_r.get("type")) == "checklist":
+            # A CHECKLIST READS AS LINES OF THE PAGE'S TEXT: trimmed to its boxes and words, its words the typed
+            # text's size (32 units: its 30 px, drawn at twice that), its left edge on the text column's. Drawn as wide
+            # as the page and scaled to it, its boxes sat at the page's far left, left of the typed lines above it,
+            # and its words stood larger than theirs
+            from PIL import ImageOps as _Ops
+            bb = _Ops.invert(_im.convert("L")).point(lambda v: 255 if v > 24 else 0).getbbox()
+            if bb:
+                _im = _im.crop((max(0, bb[0] - 12), max(0, bb[1] - 12), min(pw, bb[2] + 12), min(ph, bb[3] + 12)))
+                pw, ph = _im.size
+            col = H._text_col()
+            s = min(32.0 / 60.0, (float(col[1]) - float(col[0])) / float(pw))
+            wu, hu = pw * s, ph * s
+            x0, y0 = float(col[0]), float(box["y0"])
         aw, ah = int(round(wu * 1.25)), int(round(hu * 1.25))   # ~1.1 device px per asset px
         asset = _im.convert("RGB")
         if pw > aw:

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.23
+
+- An ink adventure's scene page has no line over the place to write: the story's cell, then the rule, and the page under it is yours.
+- A checklist reads as lines of the page's text: trimmed to its boxes and words, at the typed text's size, its left edge on the text column's, its boxes square. It was drawn as wide as the page, its boxes at the page's far left and its words larger than the typed lines above it.
+- The adventure's journal ends an entry at a whole sentence, not mid-thought ("...on a stand, and...").
+- Dashes are drawn as dashes: an em dash came out "--".
+
 ## 0.2.22
 
 - A reply goes right under the question it answers when the paper there holds it, even with a note further down the page. It went below everything on the page: under a note to someone at the page's foot, a screen and a half below its question, with white paper between them. A reply too tall for that space still goes below everything.
