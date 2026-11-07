@@ -516,6 +516,7 @@ def _page_path(doc_name, page_no):
     return os.path.join(R.RM, doc, pid + ".rm")
 
 
+@paths.locks_page(lambda doc_name, page_no, *a, **k: _page_path(doc_name, page_no))
 def erase(doc_name, page_no, kill, dry_run=False):
     """Tombstone every live stroke for which `kill(Line)` is true.
 
@@ -624,6 +625,7 @@ def staged_paragraphs(texts, passages):
     return out
 
 
+@paths.locks_page(lambda doc_name, page_no, *a, **k: _page_path(doc_name, page_no))
 def erase_text(doc_name, page_no, keep=None, contains=None, dry_run=False, data=None):
     """Tombstone typed text in the RootTextBlock, the way the device does.
 

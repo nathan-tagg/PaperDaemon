@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.17
+
+- The pointer: the text tool is now the first in the bar, an arrow. It is the I-beam over text it can select or type into, and the hand over a PDF's or a book's link: a click follows the link (to its page, or the address in the browser), and a drag selects the link's words instead. With a pen or an eraser in hand, Ctrl and a click follow a link, and the pointer over one says so. The shortcut sheet lists it.
+- A click with the highlighter leaves a mark: a small square as wide as the highlighter, on the tablet too. A highlighter stroke of one place drew nothing anywhere.
+- The daemon's drawings stay on the page. A job's commit and the daemon's progress note could write the same page at the same moment, and the note's write took out what the commit had just drawn (a cat's whiskers, there and then gone). Every write of a page now waits for the one before it: the host's, the daemon's notes and the editor's saves.
+- A drawing added to a sketch lands where it was drawn: a chimney on the roof, apples in the tree. It was fitted into the sketch's box, scaled up and centered, and missed.
+- A reply is never written smaller near the foot of the page: it keeps the typed text's size, and the page extends below.
+- An ink adventure's scene page: the story in a cell as wide as the picture, then an italic line chosen by the scene's mood ("Think quickly…", "Describe your action…") over a rule as wide as the cells, where to answer. The ideas under the story never stop mid-phrase.
+- An adventure hero's sheet lists only the skills they have, each once, with its bonus, and the story can give them skills and spells of their own, each with what it lets them do; the game master is told of them every turn.
+- The daemon keeps a question even when it also says how to answer it ("in three short paragraphs"), and takes writing addressed to someone else (a person, or another assistant) as a note, not a request.
+- The start-script help, and its "Ask AI for help" prompts, suggest keeping the text model's prompt cache across picture swaps with llama-server's slot save and restore, so the first job after a picture starts warm.
+
 ## 0.2.16
 
 - The dotted lines stay on the page: the top of the safe area runs from the page's left edge to its right, and the screen's side edges from its top to its foot, never across the gray around the page.

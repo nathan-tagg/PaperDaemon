@@ -958,7 +958,8 @@ def _build_tree(tree, blocks):
 
 
 def write_scene(doc, page_no, scene):
-    with _writing:
+    # the engine's own lock, and the page's across the processes (the daemon's notes, the host's commits)
+    with _writing, paths.page_lock(_rm(doc, page_no)):
         return _write_scene(doc, page_no, scene)
 
 

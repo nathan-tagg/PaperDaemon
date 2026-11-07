@@ -14,6 +14,7 @@
     turn: svg('<path d="M6 3.5h8l4 4v13H6z"/><path d="M9.5 14h5M12.5 11.5 15 14l-2.5 2.5"/>'),
     history: svg('<path d="M9 7 4 12l5 5M15 7l5 5-5 5"/>'),
     close: svg('<path d="M6 6l12 12M18 6 6 18"/>'),
+    link: svg('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'),
     sync: svg('<path d="M19 8.5a7.5 7.5 0 0 0-13.6 1M5 15.5a7.5 7.5 0 0 0 13.6-1"/><path d="M19 4v4.5h-4.5M5 20v-4.5h4.5"/>'),
     undo: svg('<path d="M9 6.5 4.5 11 9 15.5"/><path d="M4.5 11H14a5 5 0 0 1 0 10h-2.5"/>'),
     fill: svg('<path d="M4.6 10.4 11 4l7.5 7.5-6.4 6.4a1.4 1.4 0 0 1-2 0l-5.5-5.5a1.4 1.4 0 0 1 0-2z"/><path d="M4.5 11.5h13.6"/><path d="M20.5 16.5c0 1.4-.8 2.5-1.7 2.5s-1.7-1.1-1.7-2.5c0-1 1.7-3 1.7-3s1.7 2 1.7 3z"/>'),
@@ -60,6 +61,7 @@
     { title: "keys.s_pages", items: [
       ["turn", [["←", "→"]], "keys.turn", "keys.turn_d", "viewer"],
       ["history", [["alt", "←"], ["alt", "→"]], "keys.history", "keys.history_d"],
+      ["link", [["ctrl", "click"]], "keys.link", "keys.link_d"],
       ["close", [["esc"], ["ctrl", "W"]], "keys.close", "keys.close_d"],
       ["across", [["ctrl", "Tab"], ["ctrl", "shift", "Tab"]], "keys.cycle", "keys.cycle_d"]] },
     { title: "keys.s_draw", editor: true, items: [

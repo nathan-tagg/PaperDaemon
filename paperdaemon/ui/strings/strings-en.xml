@@ -175,6 +175,8 @@
   <string name="keys.turn_d">The page before or after.</string>
   <string name="keys.history">Back and forward</string>
   <string name="keys.history_d">Through the pages you opened.</string>
+  <string name="keys.link">Follow a link</string>
+  <string name="keys.link_d">On a PDF's or a book's page. With the pointer tool, a click is enough.</string>
   <string name="keys.close">Close</string>
   <string name="keys.close_d">Closes the document.</string>
   <string name="keys.cycle">Next notebook</string>
@@ -466,6 +468,7 @@
   <string name="help.model.wrong_vram">**The graphics card is full.** A model needs room in your card's memory (VRAM). If another model server, a game or an image tool is holding that memory, the model fails to load or runs very slowly. If you run other model servers yourself, have your script stop them first (for example `taskkill /IM llama-server.exe /F`). PaperDaemon only stops what it started.</string>
   <string name="help.model.wrong_own_vram">**PaperDaemon's own share.** PaperDaemon uses some of your card's memory too. With a page open in the page editor, its window uses about 100 MB for a page with a large decomp, up to about 200 MB for the very largest pages (over 250,000 strokes, which the editor warns about). While a job runs, the engine draws pages on the card: about 50 MB for an ordinary page, up to about 350 MB for the very largest, all given back when the job ends. Leave about 550 MB free if you work on huge pages, about 150 MB otherwise.</string>
   <string name="help.model.wrong_two">**Two models that don't fit together.** If your text model and your image model can't both fit on your card, write each script so it stops the other one's server before starting its own.</string>
+  <string name="help.model.wrong_cache">**The first job after a picture is slow.** If your text and image models take turns on the card, the text model forgets what it has read every time the image script stops it, and the next job reads PaperDaemon's instructions all over again, which can take a minute. llama.cpp's `llama-server` can keep it: start the text server with `--slot-save-path` and a folder; in the image script, just before stopping it, send it `POST /slots/0?action=save` with a file name; in the text script, once the server answers, send `POST /slots/0?action=restore` with the same name. **Ask AI for help** can write it for you.</string>
   <string name="help.model.wrong_port">**The port is taken.** If another program already uses that port, your server can't start there. Pick a free port and use the same one in the address above.</string>
   <string name="help.wrong_spaces">**Spaces in a path.** Put quotes around any path with spaces in it.</string>
   <string name="help.model.wrong_keys">**Keys and passwords.** Don't write them in the script. Use the key box for an API key.</string>
@@ -495,6 +498,8 @@ Rules the script has to follow:
 - PaperDaemon itself uses some of my graphics card's memory: usually under 150 MB, and up to about 550 MB at the worst moment (a huge page open in its page editor while a job draws one), so the model should leave that much free.
 - The server must speak the OpenAI-compatible chat API (/v1/chat/completions), as llama.cpp's llama-server, Ollama, LM Studio or vLLM do.
 
+Something to consider: if my text and image models take turns on the graphics card and the text server is llama.cpp's llama-server, it forgets what it has read every time the image script stops it, so the first job after a picture reads PaperDaemon's long instructions all over again. llama-server can keep that between runs: start it with --slot-save-path and a folder, and once it answers at %PAPERDAEMON_LOCATION%, ask it to load the saved file back (POST /slots/0?action=restore with {"filename": "text-model.bin"}). That one small step may run in the background with start /b, while the server itself stays in the foreground; it should end once it has asked, and also if the server stops. The image script saves the file just before it stops this server. Suggest this if it fits my setup.
+
 Before you write it, ask me these questions one at a time and wait for each answer:
 1. Which graphics card do I have, and how much VRAM does it have?
 2. Which model do I want to run, and where is the model file on my PC?
@@ -515,6 +520,8 @@ Rules the script has to follow:
 - PaperDaemon only stops programs it started. If other model servers might be using my graphics card's memory, the script should stop them first.
 - PaperDaemon itself uses some of my graphics card's memory: usually under 150 MB, and up to about 550 MB at the worst moment (a huge page open in its page editor while a job draws one), so the model should leave that much free.
 - The server must speak the Stable Diffusion web UI API (/sdapi/v1/txt2img), as stable-diffusion.cpp's server, Forge or AUTOMATIC1111 do, or the OpenAI Images API.
+
+Something to consider: if this script stops my text model's server and that server is llama.cpp's llama-server started with --slot-save-path, have the script ask it to save what it has read just before stopping it (POST %PAPERDAEMON_OTHER_LOCATION%/slots/0?action=save with {"filename": "text-model.bin"}, the name the text script loads), and wait for the answer. The text script loads it back, so the first job after a picture doesn't read PaperDaemon's long instructions all over again. Suggest this if it fits my setup.
 
 Before you write it, ask me these questions one at a time and wait for each answer:
 1. Which graphics card do I have, and how much VRAM does it have?

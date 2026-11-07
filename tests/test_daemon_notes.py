@@ -321,9 +321,10 @@ def test_the_renderer_never_draws_his_notes(tmp_path, monkeypatch):
     assert len(R.strokes(DOC, 1)) == 1
 
 
-def test_in_the_false_mirror_the_note_goes_into_the_page_unless_the_host_wrote_it_meanwhile(tmp_path, monkeypatch):
+def test_in_the_false_mirror_the_note_goes_into_the_page_as_it_is_now(tmp_path, monkeypatch):
     """The false mirror has no tablet to send a copy to: the note goes into the page itself, where its editor shows it,
-    and the page reads the same to the host. A page that changed while the note was made keeps what was written."""
+    and the page reads the same to the host. It is read and written under the page's lock (paths.page_lock, its race
+    in test_page_lock), so what the host wrote since the last note is kept under the new one."""
     import paperdaemon.pipeline.daemon as D
     f = _mirror(tmp_path, monkeypatch)
     page = _page([(0.0, 900.0), (60.0, 950.0)])
@@ -340,14 +341,10 @@ def test_in_the_false_mirror_the_note_goes_into_the_page_unless_the_host_wrote_i
     L._CONTENT_CACHE.clear()
     assert L.page_state(DOC, PID)["sha"] == before                # the host and the fingerprint never see it
     host = _page([(0.0, 900.0), (60.0, 950.0)], [(-300.0, 500.0), (-250.0, 520.0)])
-    real = N.with_note
-    def meanwhile(data, strokes, state):                          # the host writes the page as the note is made
-        f.write_bytes(host)
-        os.utime(f, ns=(1, 1))
-        return real(data, strokes, state)
-    monkeypatch.setattr(N, "with_note", meanwhile)
+    f.write_bytes(host)                                            # the host wrote the page since the last note
     D._note_copy(DOC, PID, page, ["Done"], "end")
-    assert f.read_bytes() == host
+    mine, users, placed = _counts(f.read_bytes())
+    assert users == 2 and mine > 0                                 # the host's stroke kept, the note on the page
 
 
 def test_settings_notes_and_retries_are_off_and_his_layer_is_named_daemon():

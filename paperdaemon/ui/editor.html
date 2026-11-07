@@ -56,9 +56,10 @@ img, a, svg, canvas { -webkit-user-drag: none; }
    that is not all there yet. No spinner: the page shows as soon as the engine says what it is, its strokes landing */
 .loading { position: absolute; inset: 0; z-index: 5; cursor: progress; }
 .loading[hidden] { display: none; }
-.viewport.typing { cursor: text; }
-.viewport.typing.docsel:not([data-erase]) { cursor: default; }
-.viewport.typing.docsel.ibeam:not([data-erase]) { cursor: text; }
+/* THE POINTER TOOL (the text tool, as a mouse knows it): the arrow, the I-beam over text it can select or type into (the
+   typed text, a PDF's or a book's own), the hand over a link (.linkhand) */
+.viewport.typing:not([data-erase]) { cursor: default; }
+.viewport.typing.ibeam:not([data-erase]) { cursor: text; }
 .viewport.linkhand { cursor: pointer !important; }
 canvas { display: block; }
 /* where the view is, down the page: a thin bar at the page's right edge, its thumb dragged to scroll */
@@ -6006,6 +6007,8 @@ span.lname { cursor: default; }
   window.addEventListener("keypress", penDown, true);
   document.addEventListener("paste", penDown, true);
   const local = e => { const r = vp.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  // every point of a stroke in one place (a click that never moved)
+  const onePlace = P => { for (let i = 1; i < P.length; i++) if (Math.abs(P.x(i) - P.x(0)) > 1e-6 || Math.abs(P.y(i) - P.y(0)) > 1e-6) return false; return true; };
   // THE ERASER ON THE KEYS, whatever is in hand, with the left button: Shift and a drag erases what it passes over, Ctrl +
   // Shift whole strokes, Ctrl + Shift + Alt a zone (a loop; or, with 2 to 5 pressed, a circle, triangle, square or
   // rectangle dragged out). It starts once the pointer moves: Shift and a click without moving extends the text's
@@ -6026,8 +6029,13 @@ span.lname { cursor: default; }
     const key = mode ? eraserCursor(mode, mode === "zone" ? (zone ? zone.shape : zoneShapeNow()) : 0) : null;
     if (key) { if (vp.dataset.erase !== key) vp.dataset.erase = key; } else delete vp.dataset.erase;
     vp.classList.toggle("ibeam", !key && overText);
-    // Ctrl held over a link of the PDF or book (not Shift or Alt: those are the erasers' and a fill's): the pointer is a hand
-    vp.classList.toggle("linkhand", !!linkOver && held.ctrlKey && !held.shiftKey && !held.altKey && !poly && !shapeAt && (pointer === null || !!linkPress));
+    // Ctrl held over a link of the PDF or book (not Shift or Alt: those are the erasers' and a fill's): the pointer is a hand.
+    // So it is with the text tool in hand and no keys held, as in a browser: a click there follows the link (finish), and a
+    // drag is the I-beam again and selects the text, as anywhere else (the hand stays only while a press holds still). A
+    // pen or an eraser in hand draws or erases over a link; only Ctrl follows it
+    const textLink = tool === "text" && !!page.source && !held.ctrlKey && !held.shiftKey && !held.altKey &&
+      (pointer === null || (!!docDrag && !!docDrag.link && !docDrag.moved));
+    vp.classList.toggle("linkhand", !!linkOver && (textLink || (held.ctrlKey && !held.shiftKey && !held.altKey && !poly && !shapeAt && (pointer === null || !!linkPress))));
   }
   function heldKeys(e) {                                      // the keys as this event has them -> did the eraser change?
     const was = keyErase(held);
@@ -6115,7 +6123,9 @@ span.lname { cursor: default; }
     if (tool === "text" && page.source) {                     // the I-beam on a PDF's or a book's page: its own text, selected (docLoad)
       e.preventDefault();
       docSel = null; paint();                                  // a press elsewhere lets the selection go
-      const D = docDrag = { pt: [x, y], at: local(e), anchor: -1, moved: false, last: null };
+      // (a press on a link, no keys held, follows it when let go without a drag: finish)
+      const D = docDrag = { pt: [x, y], at: local(e), anchor: -1, moved: false, last: null,
+                            link: e.button === 0 && !e.ctrlKey && !e.shiftKey && !e.altKey ? linkAt(x, y) : null };
       pointer = e.pointerId; vp.setPointerCapture(e.pointerId);
       docLoad().then(() => { if (docDrag === D) docAnchor(); });
       return;
@@ -6185,8 +6195,11 @@ span.lname { cursor: default; }
     if (keyErase(held)) heldMoved = true;
     if (e.pointerId !== pointer) {
       const [hx, hy] = toPage(...local(e));
-      overText = tool === "text" && page.source ? docOver(hx, hy) : !!pickers[tool] && editing() && overTextAt(hx, hy);
+      overText = tool === "text" ? (page.source ? docOver(hx, hy) : overTextAt(hx, hy)) : !!pickers[tool] && editing() && overTextAt(hx, hy);
       linkOver = linkAt(hx, hy);
+      // a pen or an eraser over a link: how to follow it, said where the pointer is (a click there draws)
+      const hint = linkOver && tool !== "text" ? "Ctrl + click to follow the link" : "";
+      if (vp.title !== hint) vp.title = hint;
     }
     if (linkPress && e.pointerId === pointer && Math.hypot(local(e)[0] - linkPress.at[0], local(e)[1] - linkPress.at[1]) > 4) linkPress.moved = true;
     updateCursor();
@@ -6269,7 +6282,11 @@ span.lname { cursor: default; }
       if (e.type === "pointerup" && !p.moved) followLink(p.link);
       updateCursor(); return;
     }
-    if (docDrag) { docDrag = null; return; }                  // the selection stays, drawn, to be copied
+    if (docDrag) {                                            // the selection stays, drawn, to be copied; a click on a link
+      const D = docDrag; docDrag = null;                      // (let go without a drag) follows it instead
+      if (D.link && !D.moved && e.type === "pointerup") { docSel = null; paint(); followLink(D.link); updateCursor(); }
+      return;
+    }
     if (pending) { const p = pending; pending = null; if (p.mode === "area" && e.type === "pointerup") extendTo(...p.pt); return; }
     if (shapeFrom) {                                          // a shape ends where the button is let go: after the second press,
       const { at: [ax, ay], second } = shapeFrom, [bx, by] = local(e); shapeFrom = null;   // or a first one dragged out
@@ -6282,6 +6299,14 @@ span.lname { cursor: default; }
       const z = zone; zone = null; zoneDone(z);
       if (z.shape) { zoneShape = 0; if (shapeKind > 1) setShape(1); }
       updateCursor(); return;
+    }
+    // A HIGHLIGHTER'S CLICK, a stroke of one place, is nothing to a highlighter's renderer: render.c, the card and the
+    // tablet draw a highlighter's segments, and one place has none (a pen's one place is its round dot). So it gets a
+    // second point a width along: the small square a highlighter's tap leaves, drawn as any new point is
+    if (live && live.pen.startsWith("HIGHLIGHTER") && onePlace(live.points)) {
+      const P = live.points, i = P.length - 1, from = P.length;
+      P.copyAt(P, i, P.x(i) + Math.max(1, P.width(i) * (WSCALE.HIGHLIGHTER || WSCALE_DEFAULT)), P.y(i));
+      if (liveOnCard) liveGrew(from); else drawTail(live);
     }
     if (live) live.points.trim();                             // (its room to grow let go)
     if (live && liveOnCard) {                                 // ON THE CARD the page already shows it where it lies: it is
@@ -6422,7 +6447,7 @@ span.lname { cursor: default; }
     marker: svg(COLLAR + '<path d="M8 15.2 9.4 10h5.2l1.4 5.2"/><path d="M9.6 10 12 3.5l2.4 6.5z" fill="currentColor"/>'),
     shader: svg(COLLAR + '<path d="M9 15.2c0-5 1.3-9.4 3-12.2 1.7 2.8 3 7.2 3 12.2z" fill="currentColor"/>'),
     brush: svg(COLLAR + '<path d="M12 3c3.4 3.8 4.4 7.2 3.7 9.4-.5 1.5-2 2.4-3.7 2.4s-3.2-.9-3.7-2.4C7.6 10.2 8.6 6.8 12 3z" fill="currentColor"/>'),
-    text: svg('<path d="M9 4h2c.6 0 1 .4 1 1v14c0 .6-.4 1-1 1H9M15 4h-2c-.6 0-1 .4-1 1v14c0 .6.4 1 1 1h2"/>'),
+    text: svg('<path d="M6 3.5v15l4.2-4.1 2.9 6.6 2.6-1.1-2.9-6.5h5.7z"/>'),
     eraser: svg('<path d="M9.5 20H20"/><path d="M4.4 14.6 13.6 5.4a1.5 1.5 0 0 1 2.1 0l3.9 3.9a1.5 1.5 0 0 1 0 2.1L11 20H8.2l-3.8-3.8a1.1 1.1 0 0 1 0-1.6z"/><path d="M8.6 10.4 14.6 16.4"/>'),
     eraseStroke: svg('<path d="M3 16c3-7 6.5-9.5 9.5-5.5S17.5 13 21 7"/><path d="M13 3.5l5 5M18 3.5l-5 5" stroke-width="1.7"/>'),
     eraseZone: svg('<path d="M5 9c0-3.5 3.5-5.5 7.5-5.5S20 6 20 10s-3 7.5-8 7.5S5 13.5 5 9z" stroke-dasharray="2 2.4"/><path d="M8 11c2-2.5 3.5-2.5 5 0s3 2.5 4 0"/>'),
@@ -6465,10 +6490,11 @@ span.lname { cursor: default; }
       return '<button class="ib" data-tool="' + k + '" aria-pressed="' + (tool === k) + '" aria-label="' + PEN[pk.pen].name + '" title="' + PEN[pk.pen].name + SHAPE_KEYS + '">' +
         ICON[pk.pen] + '<span class="dot' + ring + '" style="background:' + dotBg + '"></span></button>';
     };
-    // (the pages grid is the viewer's, beside its page numbers: the editor's bar starts with the pens)
+    // (the pages grid is the viewer's, beside its page numbers: the editor's bar starts with the pointer)
     // ON A PAGE OF A PDF OR A BOOK, as on the tablet: the text tool selects the document's own text (docLoad) and types nothing
-    controls.innerHTML = pen("a") + pen("b") +
-      '<button class="ib" data-tool="text" aria-pressed="' + (tool === "text") + '" aria-label="Text" title="Text">' + ICON.text + "</button>" +
+    // (the pointer first, as a mouse's tool comes before the pens)
+    controls.innerHTML = '<button class="ib" data-tool="text" aria-pressed="' + (tool === "text") + '" aria-label="Pointer" title="Pointer: type, select text, follow links">' + ICON.text + "</button>" +
+      pen("a") + pen("b") +
       '<button class="ib" data-tool="eraser" aria-pressed="' + (tool === "eraser") + '" aria-label="Eraser" title="Eraser">' + ICON.eraser + "</button>" +
       '<button class="ib" data-tool="pick" aria-pressed="' + (tool === "pick") + '" aria-label="' + (pickMode === "capture" ? "Capture" : "Select") + '" title="' +
         (pickMode === "capture" ? "Capture" : "Select") + '">' + (pickMode === "capture" ? ICON.capture : ICON.select) + "</button>" +

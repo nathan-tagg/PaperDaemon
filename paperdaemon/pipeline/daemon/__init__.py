@@ -481,23 +481,17 @@ def _note_in_place(doc, pid, lines, what):
     page the host wrote in between keeps what it wrote, and the note waits for the next one."""
     from paperdaemon.pipeline.daemon import notes as N
     path = N.page_file(doc, pid)
-    try:
-        st0 = os.stat(path)
-        data = open(path, "rb").read()
-    except OSError:
-        return
-    state = _ink(doc, pid)
     strokes, _box = _letter(lines, _frame_of(doc, pid), latest=True)
-    new = N.with_note(data, strokes, state)
-    try:
-        st1 = os.stat(path)
-    except OSError:
-        return
-    if (st1.st_mtime_ns, st1.st_size) != (st0.st_mtime_ns, st0.st_size):
-        log("  the %s note waits: the page changed as it was written" % what)
-        return
-    paths.write_atomic(path, new)
-    _ink_keep(doc, pid, state)
+    # read and written under the page's lock (paths.page_lock): the host's commit can no longer land between this
+    # note's read and its write, which put a drawing just committed out of the page
+    with paths.page_lock(path):
+        try:
+            data = open(path, "rb").read()
+        except OSError:
+            return
+        state = _ink(doc, pid)
+        paths.write_atomic(path, N.with_note(data, strokes, state))
+        _ink_keep(doc, pid, state)
     log("  the %s note is on the page" % what)
 
 
@@ -515,13 +509,15 @@ def prepare_page(job):
     doc, pid, path = _page_of(job)
     if not path or not os.path.exists(path):
         return
-    data = open(path, "rb").read()
-    ticks = N.box_marks(data, ent.get("note_box"), shifts=_shifts_of(doc, pid, path)) if ent.get("note_box") else []
-    state = _ink(doc, pid)
-    clean, n = N.erase(data, state, also=ticks)
+    with paths.page_lock(path):                               # (one writer of the page at a time)
+        data = open(path, "rb").read()
+        ticks = N.box_marks(data, ent.get("note_box"), shifts=_shifts_of(doc, pid, path)) if ent.get("note_box") else []
+        state = _ink(doc, pid)
+        clean, n = N.erase(data, state, also=ticks)
+        if clean is not data:
+            paths.write_atomic(path, clean)
+            _ink_keep(doc, pid, state)
     if clean is not data:
-        paths.write_atomic(path, clean)
-        _ink_keep(doc, pid, state)
         log("  erased the daemon's notes%s" % (" and the tick in its retry box" if ticks else ""))
     if ticks:
         job["retry"] = {"asked": True, "note": ent.get("note") or ""}
@@ -578,9 +574,10 @@ def final_note(job, since):
     lines = [(seen + " " + end).strip()]
     box = not again and (failed or st != "done")
     strokes, b = _letter(lines, _frame_of(doc, pid), box=box)
-    state = _ink(doc, pid)
-    paths.write_atomic(path, N.with_note(open(path, "rb").read(), strokes, state))
-    _ink_keep(doc, pid, state)
+    with paths.page_lock(path):                               # (one writer of the page at a time)
+        state = _ink(doc, pid)
+        paths.write_atomic(path, N.with_note(open(path, "rb").read(), strokes, state))
+        _ink_keep(doc, pid, state)
     with rm_scan.locked():
         led = rm_scan.load()
         e = led["entries"].get(key)

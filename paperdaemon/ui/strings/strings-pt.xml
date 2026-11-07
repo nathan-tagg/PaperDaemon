@@ -175,6 +175,8 @@
   <string name="keys.turn_d">A página anterior ou a seguinte.</string>
   <string name="keys.history">Voltar e avançar</string>
   <string name="keys.history_d">Pelas páginas que você abriu.</string>
+  <string name="keys.link">Seguir um link</string>
+  <string name="keys.link_d">Em uma página de PDF ou de livro. Com a ferramenta de ponteiro, um clique basta.</string>
   <string name="keys.close">Fechar</string>
   <string name="keys.close_d">Fecha o documento.</string>
   <string name="keys.cycle">Próximo caderno</string>
@@ -466,6 +468,7 @@
   <string name="help.model.wrong_vram">**A placa de vídeo está cheia.** Um modelo precisa de espaço na memória da sua placa (VRAM). Se outro servidor de modelos, um jogo ou uma ferramenta de imagens está ocupando essa memória, o modelo não carrega ou roda muito devagar. Se você mesmo roda outros servidores de modelos, faça o seu script pará-los primeiro (por exemplo `taskkill /IM llama-server.exe /F`). O PaperDaemon só para o que ele iniciou.</string>
   <string name="help.model.wrong_own_vram">**O que o próprio PaperDaemon usa.** O PaperDaemon também usa parte da memória da sua placa. Com uma página aberta no editor de páginas, a janela dele usa cerca de 100 MB para uma página com uma decomposição grande, e até cerca de 200 MB para as maiores páginas de todas (mais de 250.000 traços, sobre as quais o editor avisa). Enquanto uma tarefa roda, o motor desenha páginas na placa: cerca de 50 MB para uma página comum, até cerca de 350 MB para as maiores, e devolve tudo quando a tarefa termina. Deixe cerca de 550 MB livres se você trabalha com páginas enormes; caso contrário, cerca de 150 MB.</string>
   <string name="help.model.wrong_two">**Dois modelos que não cabem juntos.** Se o seu modelo de texto e o seu modelo de imagem não cabem juntos na placa, escreva cada script para parar o servidor do outro antes de iniciar o próprio.</string>
+  <string name="help.model.wrong_cache">**O primeiro trabalho depois de uma imagem é lento.** Se o seu modelo de texto e o seu modelo de imagem se revezam na placa, o modelo de texto esquece o que leu toda vez que o script de imagem o para, e o próximo trabalho lê de novo, desde o início, as instruções do PaperDaemon, o que pode levar um minuto. O `llama-server` do llama.cpp pode guardar isso: inicie o servidor de texto com `--slot-save-path` e uma pasta; no script de imagem, logo antes de pará-lo, envie a ele `POST /slots/0?action=save` com um nome de arquivo; no script de texto, assim que o servidor responder, envie `POST /slots/0?action=restore` com o mesmo nome. Clique em **Pedir ajuda a uma IA** e uma IA escreve isso para você.</string>
   <string name="help.model.wrong_port">**A porta está ocupada.** Se outro programa já usa essa porta, o seu servidor não pode iniciar ali. Escolha uma porta livre e use a mesma no endereço acima.</string>
   <string name="help.wrong_spaces">**Espaços em um caminho.** Coloque aspas em volta de qualquer caminho com espaços.</string>
   <string name="help.model.wrong_keys">**Chaves e senhas.** Não as escreva no script. Use o campo da chave para uma chave de API.</string>
@@ -495,6 +498,8 @@ Regras que o script precisa seguir:
 - O próprio PaperDaemon usa parte da memória da minha placa de vídeo: normalmente menos de 150 MB, e até cerca de 550 MB no pior momento (uma página enorme aberta no editor de páginas enquanto uma tarefa desenha outra), então o modelo deve deixar isso livre.
 - O servidor precisa falar a API de chat compatível com OpenAI (/v1/chat/completions), como fazem o llama-server do llama.cpp, o Ollama, o LM Studio ou o vLLM.
 
+Algo a considerar: se o meu modelo de texto e o meu modelo de imagem se revezam na placa de vídeo e o servidor de texto é o llama-server do llama.cpp, ele esquece o que leu toda vez que o script de imagem o para, então o primeiro trabalho depois de uma imagem lê de novo, desde o início, as longas instruções do PaperDaemon. O llama-server pode guardar isso de uma execução para outra: inicie-o com --slot-save-path e uma pasta e, assim que ele responder em %PAPERDAEMON_LOCATION%, peça a ele que carregue de volta o arquivo salvo (POST /slots/0?action=restore com {"filename": "text-model.bin"}). Só esse pequeno passo pode rodar em segundo plano com start /b, enquanto o servidor continua em primeiro plano; ele deve terminar assim que fizer o pedido, e também se o servidor parar. O script de imagem salva o arquivo logo antes de parar este servidor. Sugira isso se combinar com a minha configuração.
+
 Antes de escrever, faça estas perguntas uma de cada vez e espere cada resposta:
 1. Qual placa de vídeo eu tenho, e quanta VRAM ela tem?
 2. Qual modelo eu quero rodar, e onde está o arquivo do modelo no meu PC?
@@ -515,6 +520,8 @@ Regras que o script precisa seguir:
 - O PaperDaemon só para programas que ele iniciou. Se outros servidores de modelos puderem estar usando a memória da minha placa de vídeo, o script deve pará-los primeiro.
 - O próprio PaperDaemon usa parte da memória da minha placa de vídeo: normalmente menos de 150 MB, e até cerca de 550 MB no pior momento (uma página enorme aberta no editor de páginas enquanto uma tarefa desenha outra), então o modelo deve deixar isso livre.
 - O servidor precisa falar a API do Stable Diffusion web UI (/sdapi/v1/txt2img), como fazem o servidor do stable-diffusion.cpp, o Forge ou o AUTOMATIC1111, ou a API de imagens da OpenAI.
+
+Algo a considerar: se este script para o servidor do meu modelo de texto e esse servidor é o llama-server do llama.cpp iniciado com --slot-save-path, faça o script pedir a ele que salve o que leu logo antes de pará-lo (POST %PAPERDAEMON_OTHER_LOCATION%/slots/0?action=save com {"filename": "text-model.bin"}, o nome que o script de texto carrega) e esperar a resposta. O script de texto carrega o arquivo de volta, para que o primeiro trabalho depois de uma imagem não leia de novo, desde o início, as longas instruções do PaperDaemon. Sugira isso se combinar com a minha configuração.
 
 Antes de escrever, faça estas perguntas uma de cada vez e espere cada resposta:
 1. Qual placa de vídeo eu tenho, e quanta VRAM ela tem?

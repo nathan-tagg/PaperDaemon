@@ -176,6 +176,8 @@
   <string name="keys.turn_d">Halaman sebelum atau sesudahnya.</string>
   <string name="keys.history">Mundur dan maju</string>
   <string name="keys.history_d">Melalui halaman yang Anda buka.</string>
+  <string name="keys.link">Ikuti tautan</string>
+  <string name="keys.link_d">Di halaman PDF atau buku. Dengan alat penunjuk, cukup satu klik.</string>
   <string name="keys.close">Tutup</string>
   <string name="keys.close_d">Menutup dokumen.</string>
   <string name="keys.cycle">Buku catatan berikutnya</string>
@@ -467,6 +469,7 @@
   <string name="help.model.wrong_vram">**Kartu grafis penuh.** Sebuah model memerlukan ruang di memori kartu Anda (VRAM). Jika server model lain, game, atau alat gambar sedang memakai memori itu, model gagal dimuat atau berjalan sangat lambat. Jika Anda sendiri menjalankan server model lain, buat skrip Anda menghentikannya terlebih dahulu (misalnya `taskkill /IM llama-server.exe /F`). PaperDaemon hanya menghentikan yang dijalankannya.</string>
   <string name="help.model.wrong_own_vram">**Bagian PaperDaemon sendiri.** PaperDaemon juga memakai sebagian memori kartu Anda. Saat sebuah halaman terbuka di editor halaman, jendelanya memakai sekitar 100 MB untuk halaman dengan dekomposisi besar, hingga sekitar 200 MB untuk halaman terbesar (lebih dari 250.000 goresan, yang diperingatkan editor). Saat tugas berjalan, mesin menggambar halaman di kartu: sekitar 50 MB untuk halaman biasa, hingga sekitar 350 MB untuk yang terbesar, dan semuanya dikembalikan saat tugas selesai. Sisakan sekitar 550 MB jika Anda bekerja dengan halaman yang sangat besar, sekitar 150 MB jika tidak.</string>
   <string name="help.model.wrong_two">**Dua model yang tidak muat bersama.** Jika model teks dan model gambar Anda tidak muat bersamaan di kartu, tulis setiap skrip agar menghentikan server yang lain sebelum menjalankan servernya sendiri.</string>
+  <string name="help.model.wrong_cache">**Tugas pertama setelah gambar terasa lambat.** Jika model teks dan model gambar Anda bergantian memakai kartu, model teks melupakan apa yang sudah dibacanya setiap kali skrip gambar menghentikannya, sehingga tugas berikutnya membaca ulang instruksi PaperDaemon dari awal, dan itu bisa memakan waktu semenit. `llama-server` dari llama.cpp bisa menyimpannya: jalankan server teks dengan `--slot-save-path` dan sebuah folder; di skrip gambar, tepat sebelum menghentikannya, kirimkan `POST /slots/0?action=save` dengan nama berkas; di skrip teks, begitu server menjawab, kirimkan `POST /slots/0?action=restore` dengan nama yang sama. Tekan **Minta bantuan AI**, dan AI akan menuliskannya untuk Anda.</string>
   <string name="help.model.wrong_port">**Port sudah dipakai.** Jika program lain sudah memakai port itu, server Anda tidak bisa berjalan di sana. Pilih port yang kosong dan pakai port yang sama di alamat di atas.</string>
   <string name="help.wrong_spaces">**Spasi di jalur.** Beri tanda kutip pada setiap jalur yang berisi spasi.</string>
   <string name="help.model.wrong_keys">**Kunci dan kata sandi.** Jangan menuliskannya di skrip. Pakai kotak kunci untuk kunci API.</string>
@@ -496,6 +499,8 @@ Aturan yang harus diikuti skrip:
 - PaperDaemon sendiri memakai sebagian memori kartu grafis saya: biasanya di bawah 150 MB, dan hingga sekitar 550 MB pada saat terburuk (halaman sangat besar terbuka di editor halamannya sementara sebuah tugas menggambar halaman lain), jadi model harus menyisakan sebanyak itu.
 - Server harus berbicara dengan API chat yang kompatibel dengan OpenAI (/v1/chat/completions), seperti llama-server dari llama.cpp, Ollama, LM Studio, atau vLLM.
 
+Hal yang patut dipertimbangkan: jika model teks dan model gambar saya bergantian memakai kartu grafis dan server teksnya adalah llama-server dari llama.cpp, server itu melupakan apa yang sudah dibacanya setiap kali skrip gambar menghentikannya, sehingga tugas pertama setelah gambar membaca ulang instruksi panjang PaperDaemon dari awal. llama-server bisa menyimpannya di antara dua kali jalan: jalankan dengan --slot-save-path dan sebuah folder, lalu begitu ia menjawab di %PAPERDAEMON_LOCATION%, minta ia memuat kembali berkas yang tersimpan (POST /slots/0?action=restore dengan {"filename": "text-model.bin"}). Hanya langkah kecil ini yang boleh berjalan di latar belakang dengan start /b, sedangkan servernya tetap di latar depan; langkah ini harus berhenti begitu sudah meminta, dan juga jika server berhenti. Skrip gambar menyimpan berkas itu tepat sebelum menghentikan server ini. Sarankan ini jika cocok dengan pengaturan saya.
+
 Sebelum menulisnya, ajukan pertanyaan-pertanyaan ini satu per satu dan tunggu setiap jawaban:
 1. Kartu grafis apa yang saya punya, dan berapa VRAM-nya?
 2. Model apa yang ingin saya jalankan, dan di mana berkas modelnya di PC saya?
@@ -516,6 +521,8 @@ Aturan yang harus diikuti skrip:
 - PaperDaemon hanya menghentikan program yang dijalankannya. Jika server model lain mungkin memakai memori kartu grafis saya, skrip harus menghentikannya terlebih dahulu.
 - PaperDaemon sendiri memakai sebagian memori kartu grafis saya: biasanya di bawah 150 MB, dan hingga sekitar 550 MB pada saat terburuk (halaman sangat besar terbuka di editor halamannya sementara sebuah tugas menggambar halaman lain), jadi model harus menyisakan sebanyak itu.
 - Server harus berbicara dengan API web UI Stable Diffusion (/sdapi/v1/txt2img), seperti server stable-diffusion.cpp, Forge, atau AUTOMATIC1111, atau dengan API Images OpenAI.
+
+Hal yang patut dipertimbangkan: jika skrip ini menghentikan server model teks saya dan server itu adalah llama-server dari llama.cpp yang dijalankan dengan --slot-save-path, buat skrip memintanya menyimpan apa yang sudah dibacanya tepat sebelum menghentikannya (POST %PAPERDAEMON_OTHER_LOCATION%/slots/0?action=save dengan {"filename": "text-model.bin"}, nama yang dimuat skrip teks) dan menunggu jawabannya. Skrip teks memuatnya kembali, sehingga tugas pertama setelah gambar tidak membaca ulang instruksi panjang PaperDaemon dari awal. Sarankan ini jika cocok dengan pengaturan saya.
 
 Sebelum menulisnya, ajukan pertanyaan-pertanyaan ini satu per satu dan tunggu setiap jawaban:
 1. Kartu grafis apa yang saya punya, dan berapa VRAM-nya?

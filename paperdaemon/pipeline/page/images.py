@@ -122,6 +122,14 @@ def strip(data):
     return bytes(out)
 
 
+def _page_file(doc, page_no, page_id=None):
+    """The page file a picture writer changes (its lock's name: paths.locks_page)."""
+    from paperdaemon.pipeline.page import render as R
+    d = R.find_doc(doc) if hasattr(R, "find_doc") else doc
+    return os.path.join(RM, d, (page_id or R.live_pages(d)[page_no - 1]["id"]) + ".rm")
+
+
+@paths.locks_page(lambda doc, page_no, box=None, page_id=None: _page_file(doc, page_no, page_id))
 def remove_in_box(doc, page_no, box, page_id=None):
     """Take off the page every picture whose center lies inside `box` (x0, y0, x1, y1). Returns
     how many. Their blocks go, their files go; everything else stays byte for byte."""
@@ -150,6 +158,7 @@ def remove_in_box(doc, page_no, box, page_id=None):
     return _remove(d, pid, path, data, live, victims)
 
 
+@paths.locks_page(lambda doc, page_no, items=None, page_id=None: _page_file(doc, page_no, page_id))
 def remove_items(doc, page_no, items, page_id=None):
     """Take these pictures off the page by their item ids ((author, n), as parse() gives them) --
     for two pictures in the same place, where a box cannot tell them apart. -> how many."""
@@ -743,6 +752,7 @@ def item_block_quad(layer_id, item_id, asset_id, hash16, quad):
     return _block(15, body, 2, 2)
 
 
+@paths.locks_page(lambda doc, page_no, png_path=None, box=None, page_id=None: _page_file(doc, page_no, page_id))
 def insert(doc, page_no, png_path, box, page_id=None):
     """Place a picture on a notebook page the way the app does. Returns what was written.
 
@@ -823,6 +833,7 @@ def insert(doc, page_no, png_path, box, page_id=None):
 # its item and adds a new one after the last (a dragged chess piece: the old square's item dead, a new
 # one for the target square). to_front does the same, so a picture put on the page since (a board redrawn each turn)
 # ends up under these again.
+@paths.locks_page(lambda doc, page_no, keys=None, page_id=None: _page_file(doc, page_no, page_id))
 def to_front(doc, page_no, keys, page_id=None):
     """Bring pictures to the top of the page: each is tombstoned and added again as a new item after
     every other, with its own asset and hash, ON LAYER 1 at its box on the page. keys = hashes (hex). -> how many.

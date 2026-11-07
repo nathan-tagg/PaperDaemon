@@ -176,6 +176,8 @@
   <string name="keys.turn_d">前または次のページ。</string>
   <string name="keys.history">戻る・進む</string>
   <string name="keys.history_d">開いたページの間を。</string>
+  <string name="keys.link">リンクを開く</string>
+  <string name="keys.link_d">PDF や本のページで。ポインターツールならクリックだけで開きます。</string>
   <string name="keys.close">閉じる</string>
   <string name="keys.close_d">ドキュメントを閉じます。</string>
   <string name="keys.cycle">次のノートブック</string>
@@ -467,6 +469,7 @@
   <string name="help.model.wrong_vram">**グラフィックカードがいっぱい。** モデルにはカードのメモリ (VRAM) の空きが必要です。ほかのモデルサーバー、ゲーム、画像ツールがそのメモリを使っていると、モデルが読み込めないか、とても遅くなります。ほかのモデルサーバーを自分で動かしている場合は、スクリプトで先にそれらを止めてください (たとえば `taskkill /IM llama-server.exe /F`)。PaperDaemon が止めるのは自分が起動したものだけです。</string>
   <string name="help.model.wrong_own_vram">**PaperDaemon自身の使用分。** PaperDaemonもカードのメモリを少し使います。ページエディターでページを開いていると、そのウィンドウは大きな分解のあるページで約100MB、最大級のページ（25万本を超えるストローク。エディターが警告します）で約200MBまで使います。ジョブの実行中は、エンジンがカード上でページを描きます。通常のページで約50MB、最大級のページで約350MBまで使い、ジョブが終わるとすべて返します。巨大なページを扱うなら約550MB、そうでなければ約150MBを空けておいてください。</string>
   <string name="help.model.wrong_two">**一緒に載らない 2 つのモデル。** テキストモデルと画像モデルが同時にカードに載らない場合は、各スクリプトが自分のサーバーを起動する前に相手のサーバーを止めるように書いてください。</string>
+  <string name="help.model.wrong_cache">**画像のあとの最初のジョブが遅い。** テキストモデルと画像モデルが交代でカードを使う場合、画像スクリプトがテキストモデルを止めるたびに、テキストモデルは読んだ内容を忘れます。次のジョブは PaperDaemon の指示を最初から読み直すため、1 分ほどかかることがあります。llama.cpp の `llama-server` なら、それを保存しておけます: テキストサーバーを `--slot-save-path` とフォルダーを付けて起動し、画像スクリプトでは止める直前に `POST /slots/0?action=save` をファイル名付きで送り、テキストスクリプトではサーバーが応答したらすぐに同じ名前で `POST /slots/0?action=restore` を送ります。**AI に助けを求める** を押せば、AI がこれを書いてくれます。</string>
   <string name="help.model.wrong_port">**ポートが使用中。** ほかのプログラムがそのポートを使っていると、サーバーはそこで起動できません。空いているポートを選び、上のアドレスにも同じポートを使ってください。</string>
   <string name="help.wrong_spaces">**パスに空白がある。** 空白を含むパスは引用符で囲んでください。</string>
   <string name="help.model.wrong_keys">**キーとパスワード。** スクリプトに書かないでください。API キーにはキーの欄を使ってください。</string>
@@ -496,6 +499,8 @@
 - PaperDaemon自身も私のグラフィックカードのメモリを少し使います。普段は150MB未満、最悪の瞬間（ページエディターで巨大なページを開いたまま、ジョブが別のページを描いているとき）には約550MBまで使うので、モデルはその分を空けておく必要があります。
 - サーバーは OpenAI 互換のチャット API (/v1/chat/completions) を話す必要がある。llama.cpp の llama-server、Ollama、LM Studio、vLLM などがそうです。
 
+検討してほしいこと: テキストモデルと画像モデルが交代でグラフィックカードを使い、テキストサーバーが llama.cpp の llama-server である場合、画像スクリプトが止めるたびにサーバーは読んだ内容を忘れるので、画像のあとの最初のジョブは PaperDaemon の長い指示を最初から読み直します。llama-server は実行と実行のあいだでそれを保存できます: --slot-save-path とフォルダーを付けて起動し、%PAPERDAEMON_LOCATION% で応答したらすぐに、保存したファイルを読み込み直すよう頼んでください (POST /slots/0?action=restore、{"filename": "text-model.bin"} を付けて)。この小さな処理だけは start /b でバックグラウンドで動かしてかまいません。サーバー自体はフォアグラウンドのままです。この処理は頼み終えたら終了し、サーバーが止まった場合にも終了するようにしてください。画像スクリプトは、このサーバーを止める直前にファイルを保存します。私の環境に合うなら提案してください。
+
 書く前に、次の質問を 1 つずつしてください。毎回私の答えを待ってください:
 1. 私のグラフィックカードは何で、VRAM はどれくらいありますか?
 2. どのモデルを動かしたいですか? モデルファイルは PC のどこにありますか?
@@ -516,6 +521,8 @@
 - PaperDaemon が止めるのは自分が起動したプログラムだけ。ほかのモデルサーバーがグラフィックカードのメモリを使っている可能性があれば、スクリプトが先にそれらを止める。
 - PaperDaemon自身も私のグラフィックカードのメモリを少し使います。普段は150MB未満、最悪の瞬間（ページエディターで巨大なページを開いたまま、ジョブが別のページを描いているとき）には約550MBまで使うので、モデルはその分を空けておく必要があります。
 - サーバーは Stable Diffusion web UI の API (/sdapi/v1/txt2img) か OpenAI の Images API を話す必要がある。stable-diffusion.cpp のサーバー、Forge、AUTOMATIC1111 などがそうです。
+
+検討してほしいこと: このスクリプトがテキストモデルのサーバーを止める場合で、そのサーバーが --slot-save-path 付きで起動した llama.cpp の llama-server なら、止める直前に、読んだ内容を保存するようスクリプトから頼み (POST %PAPERDAEMON_OTHER_LOCATION%/slots/0?action=save、テキストスクリプトが読み込む名前の {"filename": "text-model.bin"} を付けて)、応答を待つようにしてください。テキストスクリプトがそれを読み込み直すので、画像のあとの最初のジョブが PaperDaemon の長い指示を最初から読み直さずに済みます。私の環境に合うなら提案してください。
 
 書く前に、次の質問を 1 つずつしてください。毎回私の答えを待ってください:
 1. 私のグラフィックカードは何で、VRAM はどれくらいありますか?

@@ -210,8 +210,9 @@ def t_write_paragraph(lines, start_y=None, size=None, place=None):
     A LINE THAT IS TOO LONG IS WRAPPED, NOT REFUSED. Refusing sent the model round again to
     re-split its own prose -- a turn spent on typesetting, which is the host's job -- and when
     the text then did not fit the box vertically it was refused again. So: wrap every line to the
-    box, and if the block is still too tall step the size down (by 22/26) before saying no.
-    Only a single word wider than the column is genuinely unwritable.
+    box, and if the block is still too tall it goes on below at the same size (the page extends).
+    THE SIZE NEVER STEPS DOWN to fit: an answer near the foot of the page written smaller than the
+    rest read as wrong. Only a single word wider than the column is genuinely unwritable.
     """
     body, lead, gap, base = _body()
     size = float(size) if size else body
@@ -266,7 +267,7 @@ def t_write_paragraph(lines, start_y=None, size=None, place=None):
         return out, None
 
     chosen, why, rest = None, None, []
-    for sz in sorted({size, size * 22.0 / 26.0}, reverse=True):
+    for sz in (size,):
         wrapped, why = fit(sz)
         if wrapped is None:
             continue
@@ -319,8 +320,6 @@ def t_write_paragraph(lines, start_y=None, size=None, place=None):
     # the notepad records WHAT was written, so a follow-up ("which of those is the shortest?") can see it
     JOB.written.extend(ln for ln, _new in wrapped if ln.strip())
     out = dict({"ok": True, "lines": len(wrapped), "size": round(sz, 1), "next_free_y": round(y)}, **H._did())
-    if sz != size:
-        out["note"] = "written smaller (%d) so it fits the box" % round(sz)
     if y > H._safe()[3]:
         JOB.extends_to = max(JOB.extends_to or 0, int(y))
         out["note"] = ("the last lines sit below the first screen (down to y=%d); the page scrolls"

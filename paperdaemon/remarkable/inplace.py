@@ -846,6 +846,7 @@ def _settle_ledger(doc, pid):
 
 
 # ---------------------------------------------------------------- writing and pushing
+@paths.locks_page(lambda doc, page_no, *a, **k: _page(doc, page_no)[1])
 def write_in_place(doc, page_no, scene, stamp):
     """The editor's `scene` of a Mirror page written into the page in place (see the module's note), if the page is still
     the one the scene was read from (`stamp`) and the tablet has not changed it. -> {strokes, kept, erased, added, text,

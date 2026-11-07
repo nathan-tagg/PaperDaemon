@@ -176,6 +176,8 @@
   <string name="keys.turn_d">上一页或下一页。</string>
   <string name="keys.history">后退与前进</string>
   <string name="keys.history_d">在打开过的页面之间。</string>
+  <string name="keys.link">打开链接</string>
+  <string name="keys.link_d">在 PDF 或书的页面上。使用指针工具时，单击即可。</string>
   <string name="keys.close">关闭</string>
   <string name="keys.close_d">关闭文档。</string>
   <string name="keys.cycle">下一个笔记本</string>
@@ -467,6 +469,7 @@
   <string name="help.model.wrong_vram">**显卡已满。** 模型需要显卡内存（显存）中的空间。如果其他模型服务器、游戏或图像工具占用了这些内存，模型会无法加载或运行得很慢。如果您自己运行其他模型服务器，请让脚本先停止它们（例如 `taskkill /IM llama-server.exe /F`）。PaperDaemon 只停止它自己启动的程序。</string>
   <string name="help.model.wrong_own_vram">**PaperDaemon 自己占用的部分。** PaperDaemon 也会占用一些显卡内存。在页面编辑器中打开页面时，它的窗口对包含大型分解的页面约占 100 MB，对最大的页面（超过 250,000 笔，编辑器会对此发出警告）最多约占 200 MB。任务运行期间，引擎会在显卡上绘制页面：普通页面约 50 MB，最大的页面最多约 350 MB，任务结束后全部归还。如果你处理超大页面，请预留约 550 MB，否则约 150 MB。</string>
   <string name="help.model.wrong_two">**两个模型放不下。** 如果您的文本模型和图片模型不能同时放进显卡，请让每个脚本在启动自己的服务器之前先停止另一个的服务器。</string>
+  <string name="help.model.wrong_cache">**图片之后的第一个任务很慢。** 如果您的文本模型和图片模型轮流使用显卡，每次图片脚本停止文本模型时，文本模型都会忘记它读过的内容，下一个任务就要从头重读 PaperDaemon 的指令，这可能需要一分钟。llama.cpp 的 `llama-server` 可以把它保存下来：用 `--slot-save-path` 和一个文件夹启动文本服务器；在图片脚本里，停止它之前先发送带文件名的 `POST /slots/0?action=save`；在文本脚本里，服务器一响应就用同样的文件名发送 `POST /slots/0?action=restore`。点击 **向 AI 求助**，AI 就能替您写好。</string>
   <string name="help.model.wrong_port">**端口被占用。** 如果其他程序已在使用该端口，您的服务器就无法在那里启动。请选择一个空闲端口，并在上方地址中使用同一个端口。</string>
   <string name="help.wrong_spaces">**路径中有空格。** 给任何带空格的路径加上引号。</string>
   <string name="help.model.wrong_keys">**密钥和密码。** 不要把它们写在脚本里。API 密钥请使用密钥框。</string>
@@ -496,6 +499,8 @@
 - PaperDaemon 本身会占用我显卡的一些内存：通常不到 150 MB，在最糟糕的时刻（页面编辑器中打开着超大页面，同时有任务在绘制另一个页面）最多约 550 MB，因此模型应预留这么多空间。
 - 服务器必须支持兼容 OpenAI 的聊天 API（/v1/chat/completions），就像 llama.cpp 的 llama-server、Ollama、LM Studio 或 vLLM 那样。
 
+可以考虑：如果我的文本模型和图片模型轮流使用显卡，而文本服务器是 llama.cpp 的 llama-server，那么每次图片脚本停止它时，它都会忘记读过的内容，所以图片之后的第一个任务要从头重读 PaperDaemon 的长指令。llama-server 可以在两次运行之间保存这些内容：用 --slot-save-path 和一个文件夹启动它，并在它于 %PAPERDAEMON_LOCATION% 响应后，立即让它重新载入保存的文件（POST /slots/0?action=restore，带上 {"filename": "text-model.bin"}）。只有这个小步骤可以用 start /b 在后台运行，服务器本身仍在前台；这个步骤发出请求后就应结束，服务器停止时也应结束。图片脚本会在停止这个服务器之前保存该文件。如果适合我的配置，请建议这样做。
+
 在你编写之前，请一次问我一个下面的问题，并等我回答：
 1. 我的显卡是什么型号，有多少显存？
 2. 我想运行哪个模型，模型文件在我电脑的哪里？
@@ -516,6 +521,8 @@
 - PaperDaemon 只停止它自己启动的程序。如果其他模型服务器可能占用我的显卡内存，脚本应先停止它们。
 - PaperDaemon 本身会占用我显卡的一些内存：通常不到 150 MB，在最糟糕的时刻（页面编辑器中打开着超大页面，同时有任务在绘制另一个页面）最多约 550 MB，因此模型应预留这么多空间。
 - 服务器必须支持 Stable Diffusion web UI API（/sdapi/v1/txt2img），就像 stable-diffusion.cpp 的服务器、Forge 或 AUTOMATIC1111 那样，或者支持 OpenAI 的图像 API。
+
+可以考虑：如果这个脚本会停止我的文本模型的服务器，而那个服务器是用 --slot-save-path 启动的 llama.cpp 的 llama-server，请让脚本在停止它之前请求它保存读过的内容（POST %PAPERDAEMON_OTHER_LOCATION%/slots/0?action=save，带上文本脚本载入的文件名 {"filename": "text-model.bin"}），并等待回应。文本脚本会把它重新载入，这样图片之后的第一个任务就不必从头重读 PaperDaemon 的长指令。如果适合我的配置，请建议这样做。
 
 在你编写之前，请一次问我一个下面的问题，并等我回答：
 1. 我的显卡是什么型号，有多少显存？

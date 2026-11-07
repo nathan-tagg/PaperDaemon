@@ -176,6 +176,8 @@
   <string name="keys.turn_d">Siden før eller etter.</string>
   <string name="keys.history">Tilbake og fram</string>
   <string name="keys.history_d">Gjennom sidene du har åpnet.</string>
+  <string name="keys.link">Følg en lenke</string>
+  <string name="keys.link_d">På en side i en PDF eller bok. Med pekerverktøyet holder det med et klikk.</string>
   <string name="keys.close">Lukk</string>
   <string name="keys.close_d">Lukker dokumentet.</string>
   <string name="keys.cycle">Neste notatbok</string>
@@ -467,6 +469,7 @@
   <string name="help.model.wrong_vram">**Grafikkortet er fullt.** En modell trenger plass i kortets minne (VRAM). Hvis en annen modellserver, et spill eller et bildeverktøy holder på det minnet, klarer ikke modellen å laste, eller den går svært tregt. Hvis du kjører andre modellservere selv, la skriptet stoppe dem først (for eksempel `taskkill /IM llama-server.exe /F`). PaperDaemon stopper bare det det startet.</string>
   <string name="help.model.wrong_own_vram">**Det PaperDaemon selv bruker.** PaperDaemon bruker også litt av kortets minne. Med en side åpen i sideredigeringen bruker vinduet omtrent 100 MB for en side med en stor dekomponering, og opptil omtrent 200 MB for de aller største sidene (over 250 000 strøk, som redigeringen advarer om). Mens en jobb kjører, tegner motoren sider på kortet: omtrent 50 MB for en vanlig side, opptil omtrent 350 MB for de største, og alt gis tilbake når jobben er ferdig. La omtrent 550 MB være ledig hvis du jobber med enorme sider, ellers omtrent 150 MB.</string>
   <string name="help.model.wrong_two">**To modeller som ikke får plass sammen.** Hvis tekstmodellen og bildemodellen ikke får plass på kortet samtidig, skriv hvert skript slik at det stopper den andres server før det starter sin egen.</string>
+  <string name="help.model.wrong_cache">**Den første jobben etter et bilde går tregt.** Hvis tekstmodellen og bildemodellen bytter på kortet, glemmer tekstmodellen det den har lest hver gang bildeskriptet stopper den, og den neste jobben leser PaperDaemons instruksjoner på nytt fra starten, noe som kan ta et minutt. `llama-server` fra llama.cpp kan ta vare på det: start tekstserveren med `--slot-save-path` og en mappe; i bildeskriptet, rett før du stopper den, send den `POST /slots/0?action=save` med et filnavn; i tekstskriptet, så snart serveren svarer, send `POST /slots/0?action=restore` med samme navn. Trykk **Be en KI om hjelp**, så skriver en KI det for deg.</string>
   <string name="help.model.wrong_port">**Porten er opptatt.** Hvis et annet program allerede bruker den porten, kan ikke serveren din starte der. Velg en ledig port og bruk den samme i adressen over.</string>
   <string name="help.wrong_spaces">**Mellomrom i en bane.** Sett anførselstegn rundt alle baner med mellomrom i.</string>
   <string name="help.model.wrong_keys">**Nøkler og passord.** Ikke skriv dem i skriptet. Bruk nøkkelfeltet for en API-nøkkel.</string>
@@ -496,6 +499,8 @@ Regler skriptet må følge:
 - PaperDaemon selv bruker litt av grafikkortets minne: vanligvis under 150 MB, og opptil omtrent 550 MB i verste øyeblikk (en enorm side åpen i sideredigeringen mens en jobb tegner en annen), så modellen bør la så mye være ledig.
 - Serveren må snakke det OpenAI-kompatible chat-API-et (/v1/chat/completions), slik llama-server fra llama.cpp, Ollama, LM Studio eller vLLM gjør.
 
+Noe å vurdere: hvis tekstmodellen og bildemodellen min bytter på grafikkortet og tekstserveren er llama-server fra llama.cpp, glemmer den det den har lest hver gang bildeskriptet stopper den, så den første jobben etter et bilde leser PaperDaemons lange instruksjoner på nytt fra starten. llama-server kan ta vare på det mellom kjøringer: start den med --slot-save-path og en mappe, og så snart den svarer på %PAPERDAEMON_LOCATION%, be den laste inn den lagrede filen igjen (POST /slots/0?action=restore med {"filename": "text-model.bin"}). Bare dette ene lille steget kan kjøre i bakgrunnen med start /b, mens selve serveren blir i forgrunnen; steget skal avslutte så snart det har spurt, og også hvis serveren stopper. Bildeskriptet lagrer filen rett før det stopper denne serveren. Foreslå dette hvis det passer oppsettet mitt.
+
 Før du skriver det, still meg disse spørsmålene ett om gangen og vent på hvert svar:
 1. Hvilket grafikkort har jeg, og hvor mye VRAM har det?
 2. Hvilken modell vil jeg kjøre, og hvor ligger modellfilen på PC-en min?
@@ -516,6 +521,8 @@ Regler skriptet må følge:
 - PaperDaemon stopper bare programmer den har startet. Hvis andre modellservere kan bruke minnet på grafikkortet mitt, bør skriptet stoppe dem først.
 - PaperDaemon selv bruker litt av grafikkortets minne: vanligvis under 150 MB, og opptil omtrent 550 MB i verste øyeblikk (en enorm side åpen i sideredigeringen mens en jobb tegner en annen), så modellen bør la så mye være ledig.
 - Serveren må snakke Stable Diffusion web UI-API-et (/sdapi/v1/txt2img), slik serveren til stable-diffusion.cpp, Forge eller AUTOMATIC1111 gjør, eller OpenAI Images-API-et.
+
+Noe å vurdere: hvis dette skriptet stopper serveren til tekstmodellen min, og den serveren er llama-server fra llama.cpp startet med --slot-save-path, la skriptet be den lagre det den har lest rett før den stoppes (POST %PAPERDAEMON_OTHER_LOCATION%/slots/0?action=save med {"filename": "text-model.bin"}, navnet tekstskriptet laster inn), og vente på svaret. Tekstskriptet laster det inn igjen, så den første jobben etter et bilde ikke leser PaperDaemons lange instruksjoner på nytt fra starten. Foreslå dette hvis det passer oppsettet mitt.
 
 Før du skriver det, still meg disse spørsmålene ett om gangen og vent på hvert svar:
 1. Hvilket grafikkort har jeg, og hvor mye VRAM har det?

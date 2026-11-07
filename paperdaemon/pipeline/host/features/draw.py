@@ -221,9 +221,21 @@ def _draw_figure(parts, place):
     # the whole figure is scaled (aspect kept) and centered into the box the plan gave this step, so its
     # coordinates need only be consistent with each other. Without a box the page's safe area is the box.
     box = ((JOB.plan or {}).get("places") or {}).get(place)
-    fitted = H._fit_paths(paths_all, box)
+    # A FIGURE ADDED ONTO A DRAWING ALREADY ON THE PAGE (its step's side "on" a mark) stays where the model put it: it
+    # is told where that drawing's parts are and draws in the page's own numbers, and fitting it into the drawing's box
+    # -- scaled up and centered -- took the apples off the tree and the chimney off the roof. Only a figure that does
+    # not meet the drawing at all (made on a grid of its own) is fitted as any other.
+    step = next((q for q in (JOB.steps or []) if q.get("place") == place), None)
+    onto = bool(step and str(step.get("side") or "").lower() == "on" and str(step.get("near") or "").lower().startswith("mark"))
+    if onto and box and paths_all:
+        xs = [p[0] for pth in paths_all for p in pth]
+        ys = [p[1] for pth in paths_all for p in pth]
+        onto = min(xs) <= box["x1"] and max(xs) >= box["x0"] and min(ys) <= box["y1"] and max(ys) >= box["y0"]
+    fitted = None if onto else H._fit_paths(paths_all, box)
     if fitted is not None:
         paths_all = fitted
+    elif onto:
+        H.log("  figure kept where it was drawn, onto %s" % step.get("near"))
     for pth in paths_all:
         ys = [p[1] for p in pth]
         if min(ys) < H._safe()[1] or max(ys) > H._safe()[3]:

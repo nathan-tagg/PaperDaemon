@@ -175,6 +175,8 @@
   <string name="keys.turn_d">La página anterior o la siguiente.</string>
   <string name="keys.history">Atrás y adelante</string>
   <string name="keys.history_d">Por las páginas que abriste.</string>
+  <string name="keys.link">Seguir un enlace</string>
+  <string name="keys.link_d">En una página de un PDF o de un libro. Con la herramienta puntero basta un clic.</string>
   <string name="keys.close">Cerrar</string>
   <string name="keys.close_d">Cierra el documento.</string>
   <string name="keys.cycle">Siguiente cuaderno</string>
@@ -466,6 +468,7 @@
   <string name="help.model.wrong_vram">**La tarjeta gráfica está llena.** Un modelo necesita espacio en la memoria de tu tarjeta (VRAM). Si otro servidor de modelos, un juego o una herramienta de imágenes ocupa esa memoria, el modelo no carga o va muy lento. Si tú mismo ejecutas otros servidores de modelos, haz que tu script los detenga primero (por ejemplo `taskkill /IM llama-server.exe /F`). PaperDaemon solo detiene lo que arrancó.</string>
   <string name="help.model.wrong_own_vram">**Lo que usa el propio PaperDaemon.** PaperDaemon también usa parte de la memoria de tu tarjeta. Con una página abierta en el editor de páginas, su ventana usa unos 100 MB para una página con una descomposición grande, y hasta unos 200 MB para las páginas más grandes (más de 250.000 trazos; el editor avisa de ellas). Mientras se ejecuta un trabajo, el motor dibuja páginas en la tarjeta: unos 50 MB para una página normal, hasta unos 350 MB para las más grandes, y lo devuelve todo al terminar el trabajo. Deja libres unos 550 MB si trabajas con páginas enormes; si no, unos 150 MB.</string>
   <string name="help.model.wrong_two">**Dos modelos que no caben juntos.** Si tu modelo de texto y tu modelo de imagen no caben a la vez en tu tarjeta, escribe cada script para que detenga el servidor del otro antes de arrancar el suyo.</string>
+  <string name="help.model.wrong_cache">**El primer trabajo después de una imagen es lento.** Si tu modelo de texto y tu modelo de imagen se turnan en la tarjeta, el modelo de texto olvida lo que ha leído cada vez que el script de imagen lo detiene, y el siguiente trabajo vuelve a leer desde el principio las instrucciones de PaperDaemon, lo que puede tardar un minuto. `llama-server` de llama.cpp puede conservarlo: arranca el servidor de texto con `--slot-save-path` y una carpeta; en el script de imagen, justo antes de detenerlo, envíale `POST /slots/0?action=save` con un nombre de archivo; en el script de texto, en cuanto el servidor responda, envía `POST /slots/0?action=restore` con el mismo nombre. Pulsa **Pedir ayuda a una IA** y una IA lo escribirá por ti.</string>
   <string name="help.model.wrong_port">**El puerto está ocupado.** Si otro programa ya usa ese puerto, tu servidor no puede arrancar ahí. Elige un puerto libre y usa el mismo en la dirección de arriba.</string>
   <string name="help.wrong_spaces">**Espacios en una ruta.** Pon comillas alrededor de cualquier ruta que tenga espacios.</string>
   <string name="help.model.wrong_keys">**Claves y contraseñas.** No las escribas en el script. Usa el cuadro de la clave para una clave de API.</string>
@@ -495,6 +498,8 @@ Reglas que debe seguir el script:
 - El propio PaperDaemon usa parte de la memoria de mi tarjeta gráfica: normalmente menos de 150 MB, y hasta unos 550 MB en el peor momento (una página enorme abierta en su editor de páginas mientras un trabajo dibuja otra), así que el modelo debe dejar libre esa cantidad.
 - El servidor debe hablar la API de chat compatible con OpenAI (/v1/chat/completions), como lo hacen llama-server de llama.cpp, Ollama, LM Studio o vLLM.
 
+Algo a tener en cuenta: si mi modelo de texto y mi modelo de imagen se turnan en la tarjeta gráfica y el servidor de texto es llama-server de llama.cpp, olvida lo que ha leído cada vez que el script de imagen lo detiene, así que el primer trabajo después de una imagen vuelve a leer desde el principio las largas instrucciones de PaperDaemon. llama-server puede conservarlo entre una ejecución y otra: arráncalo con --slot-save-path y una carpeta, y en cuanto responda en %PAPERDAEMON_LOCATION%, pídele que vuelva a cargar el archivo guardado (POST /slots/0?action=restore con {"filename": "text-model.bin"}). Solo ese pequeño paso puede ejecutarse en segundo plano con start /b; el servidor sigue en primer plano. Ese paso debe terminar en cuanto haya hecho la petición, y también si el servidor se detiene. El script de imagen guarda el archivo justo antes de detener este servidor. Sugiérelo si encaja con mi configuración.
+
 Antes de escribirlo, hazme estas preguntas una por una y espera cada respuesta:
 1. ¿Qué tarjeta gráfica tengo y cuánta VRAM tiene?
 2. ¿Qué modelo quiero ejecutar y dónde está el archivo del modelo en mi PC?
@@ -515,6 +520,8 @@ Reglas que debe seguir el script:
 - PaperDaemon solo detiene los programas que arrancó. Si otros servidores de modelos pudieran estar usando la memoria de mi tarjeta gráfica, el script debe detenerlos primero.
 - El propio PaperDaemon usa parte de la memoria de mi tarjeta gráfica: normalmente menos de 150 MB, y hasta unos 550 MB en el peor momento (una página enorme abierta en su editor de páginas mientras un trabajo dibuja otra), así que el modelo debe dejar libre esa cantidad.
 - El servidor debe hablar la API de Stable Diffusion web UI (/sdapi/v1/txt2img), como lo hacen el servidor de stable-diffusion.cpp, Forge o AUTOMATIC1111, o la API de imágenes de OpenAI.
+
+Algo a tener en cuenta: si este script detiene el servidor de mi modelo de texto y ese servidor es llama-server de llama.cpp arrancado con --slot-save-path, haz que el script le pida guardar lo que ha leído justo antes de detenerlo (POST %PAPERDAEMON_OTHER_LOCATION%/slots/0?action=save con {"filename": "text-model.bin"}, el nombre que carga el script de texto) y espere la respuesta. El script de texto lo vuelve a cargar, para que el primer trabajo después de una imagen no lea otra vez desde el principio las largas instrucciones de PaperDaemon. Sugiérelo si encaja con mi configuración.
 
 Antes de escribirlo, hazme estas preguntas una por una y espera cada respuesta:
 1. ¿Qué tarjeta gráfica tengo y cuánta VRAM tiene?

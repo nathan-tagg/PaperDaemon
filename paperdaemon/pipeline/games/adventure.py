@@ -37,6 +37,7 @@ import json
 import os
 import re
 import time
+import zlib
 from paperdaemon.pipeline.games import chess as CH
 from paperdaemon.pipeline.page import tablets as TB
 
@@ -187,7 +188,7 @@ def make_hero(spec, rng):
     ab = {a: v for a, v in zip(order, rolls)}
     for a, b in Rc["bonus"].items():
         ab[a] = ab[a] + b
-    want = [s for s in (spec.get("skills") or []) if s in C["skills"]]
+    want = list(dict.fromkeys(s for s in (str(x).strip().lower() for x in (spec.get("skills") or [])) if s in C["skills"]))
     for s in C["skills"]:
         if len(want) >= C["n"]:
             break
@@ -222,16 +223,52 @@ def armor_class(h):
     return ac
 
 
+def add_talent(h, t):
+    """A UNIQUE SKILL OR SPELL the story grants -> a note, or '' when there is nothing to take. Each is the hero's
+    own: a name nobody else's list has twice, what it lets the hero do (the game master is told it every turn), and
+    at most two small numbers ("mods": +-1 or +-2 to a skill's or an ability's checks), which most have none of."""
+    if not isinstance(t, dict):
+        return ""
+    name = " ".join(str(t.get("name") or "").split())[:40]
+    if not name:
+        return ""
+    have = {s.lower() for s in h["skills"]} | {s.lower() for s in h.get("spells") or []} | \
+        {x["name"].lower() for x in h.setdefault("talents", [])}
+    if name.lower() in have or name.lower() in SKILLS:
+        return "already known: %s" % name
+    mods = {}
+    raw = t.get("mods") if isinstance(t.get("mods"), dict) else {}
+    for k, v in list(raw.items())[:2]:
+        k = str(k).strip()
+        ab = next((a for a in ABILITIES if k.upper() == a or k.lower() == ABILITY_NAMES[a].lower()), None)
+        key = ab or k.lower()
+        try:
+            v = max(-2, min(2, int(v)))
+        except (TypeError, ValueError):
+            continue
+        if v and (key in ABILITIES or key in SKILLS):
+            mods[key] = v
+    kind = "spell" if str(t.get("kind") or "").strip().lower() == "spell" else "talent"
+    h["talents"].append({"name": name, "kind": kind, "effect": " ".join(str(t.get("effect") or "").split())[:140],
+                         "mods": mods})
+    return "learned %s%s" % ("the spell " if kind == "spell" else "", name)
+
+
+def talent_mod(h, key):
+    """What the hero's own skills and spells add to checks with `key` (a skill, or an ability)."""
+    return sum(int((t.get("mods") or {}).get(key, 0)) for t in h.get("talents") or [])
+
+
 def bonus(h, kind, key):
     """The bonus a check adds: a skill, an ability, a saving throw, or an attack with their weapon."""
     a, p = h["abilities"], prof(h["level"])
     if kind == "skill":
-        return mod(a[SKILLS[key]]) + (p if key in h["skills"] else 0)
+        return mod(a[SKILLS[key]]) + (p if key in h["skills"] else 0) + talent_mod(h, key) + talent_mod(h, SKILLS[key])
     if kind == "save":
-        return mod(a[key]) + (p if key in h["saves"] else 0)
+        return mod(a[key]) + (p if key in h["saves"] else 0) + talent_mod(h, key)
     if kind == "attack":
         return mod(a[h["weapon"]["ability"]]) + p
-    return mod(a[key])
+    return mod(a[key]) + talent_mod(h, key)
 
 
 def check(state, kind, key, dc, adv=0):
@@ -282,10 +319,11 @@ def apply(state, ch, allowed_items=()):
     """What the story says changed -> what the ENGINE accepts, and why not the rest.
 
     ch = {hp: "+3" | "-1d6" | int, gain: [{name, qty}], lose: [names], gold: int, xp: int,
-          conditions_add: [...], conditions_remove: [...], flags_add: [...]}
+          skills_gain: [names], conditions_add: [...], conditions_remove: [...], flags_add: [...]}
     An item GAINED must be one the action was ruled to use from the picture (allowed_items) or be
     explicitly granted by a success the engine rolled (the caller passes it in allowed_items too).
-    An item LOST must be one the hero has. Hit points stay in 0..max."""
+    An item LOST must be one the hero has. Hit points stay in 0..max. A SKILL the story teaches is taken
+    only from the rules' list (SKILLS) and only once: the hero's skills grow like the inventory."""
     h = state["hero"]
     rng = CH.Rng(**state["rng"])
     notes = []
@@ -323,6 +361,17 @@ def apply(state, ch, allowed_items=()):
         if hit["qty"] <= 0:
             h["inventory"].remove(hit)
         notes.append("lost %s" % hit["name"])
+    for s in ch.get("skills_gain") or []:
+        s = str(s).strip().lower()
+        if s not in SKILLS:
+            notes.append("not learned: %s (not a skill)" % s[:40])
+        elif s not in h["skills"]:
+            h["skills"].append(s)
+            notes.append("learned %s" % s)
+    for t in ch.get("talents_gain") or []:
+        note = add_talent(h, t)
+        if note:
+            notes.append(note)
     if ch.get("gold"):
         g = int(ch["gold"])
         h["gold"] = max(0, h["gold"] + g)
@@ -742,12 +791,25 @@ def sheet_png(state, out):
         d.text((M + 28, ly), "%+d  %s" % (bonus(h, "save", a), ABILITY_NAMES[a]), font=small, fill=INK)
         ly += 34
     ly += 16
-    d.text((M, ly), "Skills", font=med, fill=INK)
+    # WHAT THE HERO CAN DO, ONLY WHAT THEY HAVE, each once: the trained skills from the rules' list (SKILLS) with
+    # their bonus, then the hero's own skills and spells, each with what it does. The story adds to it as it goes
+    # (apply: skills_gain, talents_gain), like the inventory.
+    mine = sorted(s for s in set(h["skills"]) if s in SKILLS)
+    own = [{"name": s, "kind": "spell", "effect": "", "mods": {}} for s in h.get("spells") or []] + list(h.get("talents") or [])
+    d.text((M, ly), "Skills and spells" if any(t["kind"] == "spell" for t in own) else "Skills", font=med, fill=INK)
     ly += 44
-    for s in sorted(SKILLS):
-        on = s in h["skills"]
-        d.ellipse((M, ly + 8, M + 16, ly + 24), fill=INK if on else None, outline=INK, width=2)
-        d.text((M + 28, ly), "%+d  %s (%s)" % (bonus(h, "skill", s), s.capitalize(), SKILLS[s]), font=small, fill=INK)
+    for s in mine:
+        d.text((M, ly), "%+d  %s (%s)" % (bonus(h, "skill", s), s.capitalize(), SKILLS[s]), font=small, fill=INK)
+        ly += 32
+    for t in own:
+        nums = ", ".join("%+d %s" % (v, k if k in ABILITIES else k.capitalize()) for k, v in (t.get("mods") or {}).items())
+        line = "• %s%s%s%s" % (t["name"][:1].upper() + t["name"][1:], " (spell)" if t["kind"] == "spell" else "",
+                               ": " + t["effect"] if t.get("effect") else "", " (%s)" % nums if nums else "")
+        for l in _wrap(d, line, small, col)[:2]:
+            d.text((M, ly), l, font=small, fill=INK)
+            ly += 32
+    if not mine and not own:
+        d.text((M, ly), "None yet", font=small, fill=GRAY)
         ly += 32
     rx, ry = M + col + 40, y
     d.text((rx, ry), "Attack", font=med, fill=INK)
@@ -756,7 +818,7 @@ def sheet_png(state, out):
     d.text((rx, ry), "%s: %+d to hit, %s%+d" % (w["name"].capitalize(), bonus(h, "attack", None), w["die"],
                                                mod(h["abilities"][w["ability"]])), font=small, fill=INK)
     ry += 48
-    for title, items in (("Features", h["features"]), ("Spells", h["spells"]), ("Conditions", h["conditions"])):
+    for title, items in (("Features", h["features"]), ("Conditions", h["conditions"])):
         if not items:
             continue
         d.text((rx, ry), title, font=med, fill=INK)
@@ -792,6 +854,34 @@ _SCENE_SIDE = 1270 - int(CH.TOP)
 SCENE_BOX = ((PAGE_W - _SCENE_SIDE) // 2, int(CH.TOP), (PAGE_W + _SCENE_SIDE) // 2, 1270)
 TEXT_TOP, WRITE_TOP = 1300, 1810            # the story, then the player's space: the turn page's picture ends there,
                                             # and under it is the page itself, to type or write in (inputarea.py)
+CELL_PAD = 24                               # the story's cell is as wide as the picture's frame; its text inset this much
+PROMPT_H = 46                               # the line over the player's space, above the rule
+
+# THE LINE OVER THE PLAYER'S SPACE, in italics: a few for each mood the story can give a scene ("mood" in the
+# prompts), one picked per turn from the adventure's seed, so the page reads the same however often it is drawn.
+MOOD_LINES = {
+    "calm": ("Describe your action…", "Take your time…", "The next move is yours…"),
+    "tense": ("Choose carefully…", "Weigh your next step…", "Every move counts…"),
+    "danger": ("Think quickly…", "Act fast…", "No time to waste…"),
+    "mystery": ("Look closer…", "Trust your instincts…", "Follow the clues…"),
+    "wonder": ("Take it all in…", "Follow your curiosity…"),
+    "grim": ("Steady yourself…", "Gather your resolve…"),
+    "social": ("Choose your words…", "Speak your mind…"),
+    "triumph": ("Savor the moment…", "Press your advantage…"),
+}
+MOODS = tuple(MOOD_LINES)
+
+
+def mood_of(value):
+    """The story's mood for a scene, if it is one of MOODS, else ''."""
+    m = str(value or "").strip().lower()
+    return m if m in MOOD_LINES else ""
+
+
+def mood_line(state, scene, n):
+    lines = MOOD_LINES.get(mood_of(scene.get("mood"))) or ("Describe your action…",)
+    seed = (state.get("rng") or {}).get("seed", 0)
+    return lines[zlib.crc32(("%s:%s" % (seed, n)).encode("utf-8")) % len(lines)]
 
 
 def scene_frame_page(s=1.0):
@@ -801,51 +891,62 @@ def scene_frame_page(s=1.0):
     return ((x0 - PAGE_W / 2.0) * s, y0 * s, (x1 - PAGE_W / 2.0) * s, y1 * s)
 
 
-def turn_png(state, scene, out, roll_line="", n=None, col_px=None):
-    """A TURN PAGE's picture: a frame where the scene goes (its strokes are laid over it), what happened,
-    what is around, a few loose options, and at its foot where to answer, from `col_px` (the typed-text column's
-    left edge, design pixels). `n`: the turn's number (the next one). On the page it is cut at WRITE_TOP."""
+def turn_png(state, scene, out, roll_line="", n=None):
+    """A TURN PAGE's picture: a frame where the scene goes (its strokes are laid over it), under it a cell as wide
+    as the frame with what happened, what is around and a few loose options, then the mood's line (MOOD_LINES) over
+    a rule as wide as the cells, the top of the player's space. `n`: the turn's number (the next one). On the page
+    it is cut at WRITE_TOP."""
     from PIL import Image, ImageDraw
     from paperdaemon.pipeline.draw import scaled as SD
+    from paperdaemon.pipeline.games import inputarea as IA
     im, d = SD.canvas(PAGE_W, PAGE_H)                 # (laid out in design pixels; sent at twice the tablet's resolution)
-    M, W = 80, PAGE_W - 160
-    # A STORY TOLD IN FULL (a character's tale is three to six sentences) must fit above the box: the largest
-    # type that holds it all
-    for size, LH in ((30, 40), (26, 35), (23, 31)):
-        reg, ital, med, small = (_font("reMarkableSans-Regular.ttf", size), _font("reMarkableSans-RegularItalic.ttf", size - 2),
-                                 _font("reMarkableSans-Medium.ttf", 30), _font("reMarkableSans-Regular.ttf", 24))
-        need = TEXT_TOP + 46 + (36 if roll_line else 0) + 64
-        for part, font in ((scene.get("what_happened"), reg), (scene.get("around"), ital)):
-            need += len(_wrap(d, part or "", font, W)) * LH + 10
-        if need <= WRITE_TOP - 30:
-            break
     x0, y0, x1, y1 = SCENE_BOX
-    d.rounded_rectangle((x0 - 6, y0 - 6, x1 + 6, y1 + 6), 16, outline=RULE, width=3)
-    y = TEXT_TOP
-    head = "%s  ·  turn %d" % (scene.get("place") or state["place"] or state["title"], n or len(state["turns"]) + 1)
-    d.text((M, y), head, font=med, fill=INK)
+    cx0, cx1 = x0 - 6, x1 + 6                         # the cells' outer edges: the picture's frame
+    tx, tw = cx0 + CELL_PAD, (cx1 - cx0) - 2 * CELL_PAD
+    cell_top, cell_bot = TEXT_TOP - 6, WRITE_TOP - PROMPT_H - 14
+    n = n or len(state["turns"]) + 1
+    small, med = _font("reMarkableSans-Regular.ttf", 24), _font("reMarkableSans-Medium.ttf", 30)
+    # A STORY TOLD IN FULL (a character's tale is three to six sentences) must fit in its cell: the largest type
+    # that holds it all
+    for size, LH in ((30, 40), (26, 35), (23, 31), (21, 28)):
+        reg, ital = _font("reMarkableSans-Regular.ttf", size), _font("reMarkableSans-RegularItalic.ttf", size - 2)
+        need = cell_top + CELL_PAD + 46 + (36 if roll_line else 0) + 64
+        for part, font in ((scene.get("what_happened"), reg), (scene.get("around"), ital)):
+            need += len(_wrap(d, part or "", font, tw)) * LH + 10
+        if need <= cell_bot - CELL_PAD:
+            break
+    d.rounded_rectangle((cx0, y0 - 6, cx1, y1 + 6), 16, outline=RULE, width=3)
+    d.rounded_rectangle((cx0, cell_top, cx1, cell_bot), 16, outline=RULE, width=3)
+    bottom = cell_bot - CELL_PAD
+    y = cell_top + CELL_PAD
+    head = "%s  ·  turn %d" % (scene.get("place") or state["place"] or state["title"], n)
+    d.text((tx, y), head, font=med, fill=INK)
     y += 46
     if roll_line:
-        d.text((M, y), roll_line, font=small, fill=GRAY)
+        d.text((tx, y), roll_line, font=small, fill=GRAY)
         y += 36
     for part, font in ((scene.get("what_happened"), reg), (scene.get("around"), ital)):
         if part:
-            for line in _wrap(d, part, font, W):
-                if y > WRITE_TOP - 30 - LH:
+            for line in _wrap(d, part, font, tw):
+                if y + LH > bottom:
                     break
-                d.text((M, y), line, font=font, fill=INK)
+                d.text((tx, y), line, font=font, fill=INK)
                 y += LH
             y += 10
-    opts = [o for o in (scene.get("options") or []) if str(o).strip()][:4]
-    from paperdaemon.pipeline.games import inputarea as IA
-    if opts and y < WRITE_TOP - 60:
-        line = "You could: " + "  ·  ".join(opts)
-        for l in _wrap(d, line, small, W)[:2]:
-            if y + 32 > WRITE_TOP - IA.LABEL_H - 6:
-                break                                    # clear of the instruction at the foot
-            d.text((M, y), l, font=small, fill=GRAY)
-            y += 32
-    IA.foot(d, WRITE_TOP, "What do you do? Type or write it below", M if col_px is None else col_px, _font("reMarkableSans-Medium.ttf", 30), IA.LABEL_INK, RULE)
+    # the loose ideas: as many WHOLE ones as two lines and the cell hold, never one cut off mid-phrase
+    opts = [str(o).strip() for o in (scene.get("options") or []) if str(o).strip()][:4]
+    while opts:
+        lines = _wrap(d, "You could: " + "  ·  ".join(opts), small, tw)
+        if len(lines) <= 2 and y + 32 * len(lines) <= bottom:
+            for l in lines:
+                d.text((tx, y), l, font=small, fill=GRAY)
+                y += 32
+            break
+        opts = opts[:-1]
+    # the player's space: the mood's line over a rule as wide as the cells
+    d.text((tx, WRITE_TOP - PROMPT_H + 2), mood_line(state, scene, n),
+           font=_font("reMarkableSans-RegularItalic.ttf", 30), fill=IA.LABEL_INK)
+    d.line((cx0, WRITE_TOP - 2, cx1, WRITE_TOP - 2), fill=RULE, width=3)
     im.save(out)
     return out
 
@@ -863,6 +964,7 @@ Answer with JSON only:
           "skills": ["up to four skills from: {skills}"]}},
  "opening": {{"place": "where the story begins, a few words", "what_happened": "two to four sentences, second person",
              "around": "two sentences: what the hero can see around them", "options": ["three or four loose ideas"],
+             "mood": the feel of the scene, one of {moods},
              "people": [every named person in the opening scene, each {person}],
              "picture": "what the hero SEES in front of them: the place, the objects in it, where each person stands. Never describe the hero."}}}}
 "around" and "options" name only what the hero can see: never the premise, a secret or a hidden place."""
@@ -913,6 +1015,7 @@ Answer with JSON only:
  "place": "where the hero is now, a few words", "same_place": true if the hero is still looking at the same scene,
  "around": "two sentences: what the hero can see now",
  "options": ["three or four loose ideas, not the only choices"],
+ "mood": the feel of the next scene, one of {moods},
  "present": ["the name of each person listed above who is in the next scene"],
  "new_people": [every named person appearing for the FIRST time, each {person}],
  "people_changes": [{{"name": "...", "status": one of {statuses}, "disposition": one of {dispositions}, "hp": "0",
@@ -927,9 +1030,16 @@ Answer with JSON only:
              the table, keep everything else") else "new", "prompt": "the change, or for a new scene what the hero SEES in
              front of them: the place, the objects, where each person stands. Never describe the hero."}},
  "changes": {{"hp": "0", "gain": [{{"name": "...", "qty": 1}}], "lose": ["..."], "gold": 0, "xp": 0,
+             "skills_gain": [], "talents_gain": [{{"name": "...", "kind": "talent or spell",
+                                                  "effect": "one short line: what it lets the hero do", "mods": {{}}}}],
              "conditions_add": [], "conditions_remove": [], "flags_add": []}},
  "over": null or "death" or "victory"}}
-Only give items the hero actually took or was given; hit point loss can be dice like "-1d6". Leave out what did not change."""
+Only give items the hero actually took or was given; hit point loss can be dice like "-1d6". Leave out what did not change.
+Skills and spells are earned, and rare: only when the story truly teaches, grants or awakens one. A trained skill goes in
+skills_gain by its name from: {skills}. Anything else -- a unique skill of the hero's own or a spell -- goes in
+talents_gain: a creative name, and what it lets the hero do (sense a storm coming, speak with gulls, call light from
+the sea). Most change what the hero can do, not a number; a few may carry one small number in "mods", as
+{{"perception": 1}} or {{"DEX": 2}} (a skill or an ability, at most +2)."""
 
 READ_PROMPT = """This is the player's handwriting from the bottom of a page of a text adventure on a tablet, alone:
 what they do next (or the rest of it, after what they typed). Answer with one line:
@@ -1141,7 +1251,8 @@ def _clear_page(doc, page_id):
     except Exception:
         pass
     path = os.path.join(R.RM, doc, page_id + ".rm")
-    paths.write_atomic(path, PG.blank_page_bytes(path))
+    with paths.page_lock(path):                               # (one writer of the page at a time)
+        paths.write_atomic(path, PG.blank_page_bytes(path))
     return pno
 
 
@@ -1154,7 +1265,7 @@ def _draw_play_page(doc, state, scene, roll_line, scene_png, workdir, log=None, 
     try:
         from paperdaemon.pipeline.games import inputarea as IA
         from paperdaemon.pipeline.page import images as IM
-        turn_png(state, scene, png, roll_line, col_px=IA.column_px(doc, pno, PAGE_W))
+        turn_png(state, scene, png, roll_line)
         r = IA.place(doc, pno, pid, png, WRITE_TOP)                # the picture ends where the player's space begins
         IM.record_placement(r["doc"], pno, r["name"], r["box"], hash=r["hash"], kind="adventure-turn", game=state["id"])
     finally:
@@ -1755,7 +1866,7 @@ def start(what, ask_text, paint=None, log=None, workdir=None, parent=None, doc=N
     workdir = workdir or os.path.join(paths.state_dir(), "rm-queue")
     os.makedirs(workdir, exist_ok=True)
     spec = parse_json(ask_text(SETUP_PROMPT.format(what=str(what)[:400], races=", ".join(RACES), classes=", ".join(CLASSES),
-                                                   skills=", ".join(SKILLS), person=PERSON_JSON))) if ask_text else {}
+                                                   skills=", ".join(SKILLS), person=PERSON_JSON, moods=", ".join(MOODS)))) if ask_text else {}
     if not spec.get("hero"):
         spec = {"title": "The Lantern Road", "premise": "A road that only appears at night.", "tone": "eerie",
                 "hero": {"name": "Wren", "race": "halfling", "class": "rogue"},
@@ -1779,7 +1890,8 @@ def start(what, ask_text, paint=None, log=None, workdir=None, parent=None, doc=N
         state["format"], state["book_pages"] = "book", []
     op = spec.get("opening") or {}
     scene = {"place": str(op.get("place") or "")[:80], "what_happened": str(op.get("what_happened") or "")[:1200],
-             "around": str(op.get("around") or "")[:500], "options": [str(o)[:80] for o in (op.get("options") or [])][:4]}
+             "around": str(op.get("around") or "")[:500], "options": [str(o)[:80] for o in (op.get("options") or [])][:4],
+             "mood": mood_of(op.get("mood"))}
     rng = CH.Rng(**state["rng"])
     present = add_people(state, op.get("people"), rng, 1, scene["place"])
     state["rng"] = rng.state()
@@ -1875,7 +1987,8 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
                                                   understood=rule.get("understood") or action[:200], roll=roll,
                                                   person=PERSON_JSON, statuses=", ".join(STATUSES),
                                                   dispositions=", ".join(DISPOSITIONS), lore=lore_block(state),
-                                                  quests=quests_line(state), fields=", ".join(KNOWABLE)))) or {}
+                                                  quests=quests_line(state), fields=", ".join(KNOWABLE),
+                                                  skills=", ".join(SKILLS), moods=", ".join(MOODS)))) or {}
     allowed = list(rule.get("uses") or []) if possible else []
     if result and result["success"]:
         allowed += [g.get("name") if isinstance(g, dict) else g for g in ((tell.get("changes") or {}).get("gain") or [])]
@@ -1887,7 +2000,8 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
     new_scene = {"place": str(tell.get("place") or state["place"])[:80],
                  "what_happened": str(tell.get("what_happened") or "")[:1200],
                  "around": str(tell.get("around") or "")[:500],
-                 "options": [str(o)[:80] for o in (tell.get("options") or [])][:4]}
+                 "options": [str(o)[:80] for o in (tell.get("options") or [])][:4],
+                 "mood": mood_of(tell.get("mood"))}
     n = len(state["turns"]) + 1
     # THE CAST, through the engine: newcomers rolled and recorded once, changes checked, looks never touched
     rng = CH.Rng(**state["rng"])
@@ -1948,7 +2062,11 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
 
 
 def hero_line(h):
-    return ("%s, a level %d %s %s (%s); %d/%d hit points, armor %d; carries %s; %s" % (
+    own = ["%s (spell)" % s for s in h.get("spells") or []] + [
+        "%s (%s%s)" % (t["name"], "spell: " if t["kind"] == "spell" else "", t.get("effect") or "no effect given")
+        for t in h.get("talents") or []]
+    return ("%s, a level %d %s %s (%s); %d/%d hit points, armor %d; carries %s; trained in %s%s; %s" % (
         h["name"], h["level"], h["race"], h["class"], h["background"], h["hp"]["now"], h["hp"]["max"], h["ac"],
-        ", ".join(it["name"] for it in h["inventory"]) or "nothing",
+        ", ".join(it["name"] for it in h["inventory"]) or "nothing", ", ".join(h["skills"]) or "nothing",
+        ("; can also: " + "; ".join(own)) if own else "",
         ("conditions: " + ", ".join(h["conditions"])) if h["conditions"] else "no conditions"))

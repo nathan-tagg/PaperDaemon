@@ -176,6 +176,8 @@
   <string name="keys.turn_d">Y dudalen cynt neu wedyn.</string>
   <string name="keys.history">Yn ôl ac ymlaen</string>
   <string name="keys.history_d">Drwy'r tudalennau a agoroch.</string>
+  <string name="keys.link">Dilyn dolen</string>
+  <string name="keys.link_d">Ar dudalen PDF neu lyfr. Gyda'r offeryn pwyntydd, mae clic yn ddigon.</string>
   <string name="keys.close">Cau</string>
   <string name="keys.close_d">Yn cau'r ddogfen.</string>
   <string name="keys.cycle">Llyfr nodiadau nesaf</string>
@@ -467,6 +469,7 @@
   <string name="help.model.wrong_vram">**Mae'r cerdyn graffeg yn llawn.** Mae angen lle ar fodel yng nghof eich cerdyn (VRAM). Os yw gweinydd model arall, gêm neu offeryn delweddau yn dal y cof hwnnw, mae'r model yn methu llwytho neu'n rhedeg yn araf iawn. Os ydych yn rhedeg gweinyddion model eraill eich hun, gwnewch i'ch sgript eu stopio yn gyntaf (er enghraifft `taskkill /IM llama-server.exe /F`). Dim ond yr hyn a gychwynnodd y mae PaperDaemon yn ei stopio.</string>
   <string name="help.model.wrong_own_vram">**Cyfran PaperDaemon ei hun.** Mae PaperDaemon hefyd yn defnyddio rhywfaint o gof eich cerdyn. Gyda thudalen ar agor yn y golygydd tudalennau, mae ei ffenestr yn defnyddio tua 100 MB ar gyfer tudalen gyda dadelfeniad mawr, hyd at tua 200 MB ar gyfer y tudalennau mwyaf (dros 250,000 o linellau, y mae'r golygydd yn rhybuddio amdanynt). Tra bo tasg yn rhedeg, mae'r injan yn tynnu tudalennau ar y cerdyn: tua 50 MB ar gyfer tudalen arferol, hyd at tua 350 MB ar gyfer y mwyaf, a'r cyfan yn cael ei roi'n ôl pan ddaw'r dasg i ben. Gadewch tua 550 MB yn rhydd os ydych yn gweithio ar dudalennau enfawr, tua 150 MB fel arall.</string>
   <string name="help.model.wrong_two">**Dau fodel nad ydynt yn ffitio gyda'i gilydd.** Os na all eich model testun a'ch model delwedd ffitio ar eich cerdyn gyda'i gilydd, ysgrifennwch bob sgript fel ei bod yn stopio gweinydd y llall cyn cychwyn ei un ei hun.</string>
+  <string name="help.model.wrong_cache">**Mae'r dasg gyntaf ar ôl llun yn araf.** Os yw eich model testun a'ch model delwedd yn cymryd eu tro ar y cerdyn, mae'r model testun yn anghofio'r hyn y mae wedi'i ddarllen bob tro y mae'r sgript delwedd yn ei stopio, ac mae'r dasg nesaf yn darllen cyfarwyddiadau PaperDaemon o'r dechrau eto, a gall hynny gymryd munud. Gall `llama-server` llama.cpp ei gadw: cychwynnwch y gweinydd testun gyda `--slot-save-path` a ffolder; yn y sgript delwedd, ychydig cyn ei stopio, anfonwch `POST /slots/0?action=save` ato gydag enw ffeil; yn y sgript testun, cyn gynted ag y bydd y gweinydd yn ateb, anfonwch `POST /slots/0?action=restore` gyda'r un enw. Pwyswch **Gofyn i AI am help** a bydd AI yn ei ysgrifennu i chi.</string>
   <string name="help.model.wrong_port">**Mae'r porth wedi'i gymryd.** Os yw rhaglen arall eisoes yn defnyddio'r porth hwnnw, ni all eich gweinydd gychwyn yno. Dewiswch borth rhydd a defnyddiwch yr un un yn y cyfeiriad uchod.</string>
   <string name="help.wrong_spaces">**Bylchau mewn llwybr.** Rhowch ddyfynodau o amgylch unrhyw lwybr sydd â bylchau ynddo.</string>
   <string name="help.model.wrong_keys">**Allweddi a chyfrineiriau.** Peidiwch â'u hysgrifennu yn y sgript. Defnyddiwch y blwch allwedd ar gyfer allwedd API.</string>
@@ -496,6 +499,8 @@ Rheolau y mae'n rhaid i'r sgript eu dilyn:
 - Mae PaperDaemon ei hun yn defnyddio rhywfaint o gof fy ngherdyn graffeg: fel arfer llai na 150 MB, a hyd at tua 550 MB ar yr eiliad waethaf (tudalen enfawr ar agor yn ei olygydd tudalennau tra bo tasg yn tynnu un arall), felly dylai'r model adael cymaint â hynny'n rhydd.
 - Rhaid i'r gweinydd siarad yr API sgwrsio sy'n gydnaws ag OpenAI (/v1/chat/completions), fel y mae llama-server llama.cpp, Ollama, LM Studio neu vLLM yn ei wneud.
 
+Rhywbeth i'w ystyried: os yw fy model testun a fy model delwedd yn cymryd eu tro ar y cerdyn graffeg a'r gweinydd testun yw llama-server llama.cpp, mae'n anghofio'r hyn y mae wedi'i ddarllen bob tro y mae'r sgript delwedd yn ei stopio, felly mae'r dasg gyntaf ar ôl llun yn darllen cyfarwyddiadau hir PaperDaemon o'r dechrau eto. Gall llama-server gadw hynny rhwng rhediadau: cychwyn ef gyda --slot-save-path a ffolder, a chyn gynted ag y bydd yn ateb yn %PAPERDAEMON_LOCATION%, gofyn iddo lwytho'r ffeil a gadwyd yn ôl (POST /slots/0?action=restore gyda {"filename": "text-model.bin"}). Dim ond y cam bach hwn all redeg yn y cefndir gyda start /b, tra bod y gweinydd ei hun yn aros yn y blaendir; dylai'r cam ddod i ben cyn gynted ag y mae wedi gofyn, a hefyd os bydd y gweinydd yn stopio. Mae'r sgript delwedd yn cadw'r ffeil ychydig cyn iddi stopio'r gweinydd hwn. Awgryma hyn os yw'n gweddu i fy ngosodiad.
+
 Cyn i ti ei hysgrifennu, gofyn y cwestiynau hyn i mi un ar y tro ac aros am bob ateb:
 1. Pa gerdyn graffeg sydd gen i, a faint o VRAM sydd ganddo?
 2. Pa fodel ydw i eisiau ei redeg, a ble mae ffeil y model ar fy nghyfrifiadur?
@@ -516,6 +521,8 @@ Rheolau y mae'n rhaid i'r sgript eu dilyn:
 - Dim ond rhaglenni a gychwynnodd y mae PaperDaemon yn eu stopio. Os gallai gweinyddion model eraill fod yn defnyddio cof fy ngherdyn graffeg, dylai'r sgript eu stopio yn gyntaf.
 - Mae PaperDaemon ei hun yn defnyddio rhywfaint o gof fy ngherdyn graffeg: fel arfer llai na 150 MB, a hyd at tua 550 MB ar yr eiliad waethaf (tudalen enfawr ar agor yn ei olygydd tudalennau tra bo tasg yn tynnu un arall), felly dylai'r model adael cymaint â hynny'n rhydd.
 - Rhaid i'r gweinydd siarad API Stable Diffusion web UI (/sdapi/v1/txt2img), fel y mae gweinydd stable-diffusion.cpp, Forge neu AUTOMATIC1111 yn ei wneud, neu API Images OpenAI.
+
+Rhywbeth i'w ystyried: os yw'r sgript hon yn stopio gweinydd fy model testun a bod y gweinydd hwnnw'n llama-server llama.cpp wedi'i gychwyn gyda --slot-save-path, gwna i'r sgript ofyn iddo gadw'r hyn y mae wedi'i ddarllen ychydig cyn ei stopio (POST %PAPERDAEMON_OTHER_LOCATION%/slots/0?action=save gyda {"filename": "text-model.bin"}, yr enw y mae'r sgript testun yn ei lwytho), ac aros am yr ateb. Mae'r sgript testun yn ei lwytho'n ôl, fel nad yw'r dasg gyntaf ar ôl llun yn darllen cyfarwyddiadau hir PaperDaemon o'r dechrau eto. Awgryma hyn os yw'n gweddu i fy ngosodiad.
 
 Cyn i ti ei hysgrifennu, gofyn y cwestiynau hyn i mi un ar y tro ac aros am bob ateb:
 1. Pa gerdyn graffeg sydd gen i, a faint o VRAM sydd ganddo?

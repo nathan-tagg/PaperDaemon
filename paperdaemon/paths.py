@@ -46,6 +46,53 @@ def cap_file(path, cap=LOG_CAP):
         pass
 
 
+_PAGE_LOCKS = {}
+_PAGE_GUARD = __import__("threading").Lock()
+
+
+def page_lock(path):
+    """ONE WRITER OF A PAGE FILE AT A TIME, across PaperDaemon's processes: the host's commit, the daemon's notes and the
+    engine's editor saves each read a page, change it and write it whole, and a write made from a read taken before
+    another's write puts the other's change out of the file (a drawing committed while the daemon rewrote its progress
+    note was gone from the page a moment later). Hold it from the read to the write:
+
+        with paths.page_lock(path):
+            data = open(path, "rb").read(); ...; write_atomic(path, new)
+
+    Re-entrant in a process (a commit holds it across every write it makes). The lock files are in the system's
+    temporary folder, never beside the page, so nothing of them is in the library or goes to the tablet."""
+    import hashlib
+    import tempfile
+    from paperdaemon.filelock import FileLock
+    key = hashlib.sha1(os.path.normcase(os.path.abspath(path)).encode("utf-8")).hexdigest()[:24]
+    lp = os.path.join(tempfile.gettempdir(), "paperdaemon-locks", key + ".lock")
+    with _PAGE_GUARD:
+        lk = _PAGE_LOCKS.get(lp)
+        if lk is None:
+            lk = _PAGE_LOCKS[lp] = FileLock(lp)
+    return lk
+
+
+def locks_page(path_of):
+    """A writer of a page, run holding its page's lock (page_lock): `path_of` takes the writer's own arguments and names
+    the page file. A page it cannot name runs the writer as it is, which then says itself what is wrong."""
+    import functools
+
+    def wrap(fn):
+        @functools.wraps(fn)
+        def run(*a, **k):
+            try:
+                path = path_of(*a, **k)
+            except Exception:
+                path = None
+            if not path:
+                return fn(*a, **k)
+            with page_lock(path):
+                return fn(*a, **k)
+        return run
+    return wrap
+
+
 def write_atomic(path, data):
     """Write a file whole or not at all: a temporary file beside it, then a rename. A crash, a full disk or a quit
     mid-write leaves the old file as it was, never half of a page. `data` is bytes, or text (written UTF-8). The

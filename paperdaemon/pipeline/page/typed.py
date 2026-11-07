@@ -587,6 +587,9 @@ def _end_of(items):
     return end
 
 
+@paths.locks_page(lambda doc_name, page_no, *a, **k: R.page_file(
+    R.find_doc(doc_name) if "-" not in doc_name else doc_name,
+    R.live_pages(R.find_doc(doc_name) if "-" not in doc_name else doc_name)[page_no - 1]["id"]))
 def insert(doc_name, page_no, text, dry_run=False):
     """APPEND typed text -- real keyboard text, not lettering drawn as strokes.
 

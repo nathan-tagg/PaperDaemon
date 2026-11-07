@@ -516,6 +516,8 @@ class Drawing:
         return len(self.strokes)
 
     # ---- commit ----
+    @paths.locks_page(lambda self, doc_name, page_no, *a, **k: os.path.join(
+        R.RM, R.find_doc(doc_name), R.live_pages(R.find_doc(doc_name))[page_no - 1]["id"] + ".rm"))
     def write_rm(self, doc_name, page_no, dry_run=False, drop_text=False,
                  keep_existing=True, replace_box=None):
         """Write these strokes into a page, after every stroke already on it.

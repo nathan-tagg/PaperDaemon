@@ -21,7 +21,8 @@ what PaperDaemon renders, and SHALL redraw a stroke while it is being drawn.
 - **THEN** the ink stays dark under the highlight, as PaperDaemon's renders draw it
 
 ### Requirement: Two pen pickers like the tablet's
-The editor's bar SHALL hold, beside the pages grid, two pen pickers, the text tool and the eraser. A
+The editor's bar SHALL hold, beside the pages grid, the pointer first (the text tool: an arrow, the I-beam over text it can
+select or type into, the hand over a link), then two pen pickers and the eraser. A
 picker SHALL show its pen's head and its color as a dot at its top right, and the tool in hand SHALL be
 shown inverted. Choosing the tool already in hand SHALL open its menu: the pen's name, the nine pens in
 a 3 x 3 grid, the sizes (except for the highlighter), and the pen's colors, each a dot over its name.
@@ -35,6 +36,14 @@ The highlighter SHALL offer six colors, the shader eight and every other pen nin
 #### Scenario: The highlighter's menu
 - **WHEN** the user opens the menu of a picker holding the highlighter
 - **THEN** it shows no sizes and six colors in two rows
+
+### Requirement: A highlighter's click leaves a mark
+A click with the highlighter that does not move SHALL leave a mark, as a pen's click leaves a dot: a square as wide as
+the highlighter, stored as a stroke of two points a width apart, so PaperDaemon's renderers and the tablet draw it.
+
+#### Scenario: Dotting with the highlighter
+- **WHEN** the user, holding the highlighter, clicks the page without moving
+- **THEN** a small square of the highlighter's color is on the page, and on the tablet
 
 ### Requirement: The eraser erases strokes or what it passes over
 The eraser SHALL offer two modes: erasing whole strokes, and erasing what it passes over by splitting
