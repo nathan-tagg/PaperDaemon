@@ -66,3 +66,5 @@
 - [x] 9.1 The rulings' categories: a request is an instruction alone; data with its request is a note
 - [x] 9.2 A handwritten word alone on its line is listed as a line
 - [x] 9.3 A checklist asked for is written as "- [ ] " lines (boxes to tick)
+- [x] 9.4 The host refuses erasing a typed paragraph with a question mark as a request, and the paragraph a chart's
+      numbers come from; checklist boxes a little taller than the capitals (0.2.30)

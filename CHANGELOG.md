@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.30
+
+- The paragraph a chart is drawn from stays on the page, even with the request in it: the job refuses a plan that would erase a paragraph holding the chart's numbers. Brief wording alone did not stop it, three times running.
+- A typed question stays, whatever else it says: a paragraph with a question mark is never erased as a request ("What should I pack...? Give me a checklist." was erased once).
+- Checklist boxes are a little taller than the capitals, big enough to tick with a pen; they were about a lowercase letter tall.
+
 ## 0.2.29
 
 - A paragraph with your data and the request in it ("Mia: Mon 20, Tue 35 ... Make a line chart of both.") is ruled your data and stays; 0.2.28's rule was read after the paragraph had already been called a request, and it was still erased.

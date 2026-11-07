@@ -1,6 +1,6 @@
 {
  "answer": {
-  "note": "write How many moons does Mars have, and what are they called?. Wrote: Mars has two moons: Phobos and Deimos.",
+  "note": "write. Wrote: Mars has two moons: Phobos and Deimos.",
   "offered": [
    [
     "plan",
@@ -15,7 +15,6 @@
     "element",
     "draw_figure",
     "edit_figure",
-    "image",
     "find",
     "look_closer",
     "show_marks",
@@ -28,12 +27,12 @@
     "web_search"
    ]
   ],
-  "rm 1": "d8ae359fdb34081a4cc543fe2b35a25d888d184b72db80a39c8e8c5875695755",
+  "rm 1": "006d417e44bf9e20c6a52a822dee4f84db33d56581391e3fae0af5a6e8107c46",
   "status": "done",
   "unused_replies": []
  },
  "ask": {
-  "note": "write asked the user for what the request needs. Wrote: Do you mean Mars's natural moons, or its moons and spacecraft too?",
+  "note": "write. Wrote: Do you mean Mars's natural moons, or its moons and spacecraft too?",
   "offered": [
    [
     "plan",
@@ -48,7 +47,6 @@
     "element",
     "draw_figure",
     "edit_figure",
-    "image",
     "find",
     "look_closer",
     "show_marks",
@@ -61,7 +59,7 @@
     "web_search"
    ]
   ],
-  "rm 1": "369ea435bba38131586084b5f529cf2b98d8426fa1e23083f5800a818790e109",
+  "rm 1": "060d902609cf615a272af0b21adf2401d92820fb1d1d6972d281abe975fae32f",
   "status": "done",
   "unused_replies": []
  },
@@ -81,7 +79,6 @@
     "element",
     "draw_figure",
     "edit_figure",
-    "image",
     "find",
     "look_closer",
     "show_marks",
@@ -106,7 +103,6 @@
     "element",
     "draw_figure",
     "edit_figure",
-    "image",
     "find",
     "look_closer",
     "show_marks",
@@ -119,8 +115,8 @@
     "web_search"
    ]
   ],
-  "png 1": "11491bf26169e7cf42df5698540614a10bd8d7d9a52e115d564f1e9e81f28685",
-  "rm 1": "ae8b04485e53c47879a281443cdf203aa02b7b19cbf3eeb62292eaff9ee8fcb0",
+  "png 1": "77b6b7e9fe0f4d365fe4f372cd0eb0f647ef73172ef11e90037346032bce5786",
+  "rm 1": "117fe8a1df0ee7a5c866fc60879491477e49369129d286fd86ba728f4600fd42",
   "status": "done",
   "unused_replies": []
  },
@@ -140,7 +136,6 @@
     "element",
     "draw_figure",
     "edit_figure",
-    "image",
     "find",
     "look_closer",
     "show_marks",
@@ -153,12 +148,12 @@
     "web_search"
    ]
   ],
-  "rm 1": "9fe4a40bb16cb15fa6518b13ab62adf80d5be7ff966fef9ae413eb88ef2ef0d4",
+  "rm 1": "da254b29107388713aa40018d39d846eba28d4502072ba0b3cb0378edcec31be",
   "status": "done",
   "unused_replies": []
  },
  "ink": {
-  "note": "write How many legg does a spider have?. Wrote: A spider has eight legs.",
+  "note": "write. Wrote: A spider has eight legs.",
   "offered": [
    [
     "plan",
@@ -173,7 +168,6 @@
     "element",
     "draw_figure",
     "edit_figure",
-    "image",
     "find",
     "look_closer",
     "show_marks",
@@ -186,7 +180,7 @@
     "web_search"
    ]
   ],
-  "rm 1": "c9eb20a9d1ac21f1026819e24d559ab732490b31a4cd5630ac89682cb70bad99",
+  "rm 1": "2ae49b4ac931dd48d90796d17324400cc306f3debccc9e558b78cb336d0f24ae",
   "status": "done",
   "unused_replies": []
  },
@@ -206,7 +200,6 @@
     "element",
     "draw_figure",
     "edit_figure",
-    "image",
     "find",
     "look_closer",
     "show_marks",
@@ -231,7 +224,6 @@
     "element",
     "draw_figure",
     "edit_figure",
-    "image",
     "find",
     "look_closer",
     "show_marks",
@@ -256,7 +248,6 @@
     "element",
     "draw_figure",
     "edit_figure",
-    "image",
     "find",
     "look_closer",
     "show_marks",
@@ -269,13 +260,13 @@
     "web_search"
    ]
   ],
-  "png 1": "8e0a90ff9b7cae937e0444ae408f102af25b2571c1e27f63cf2ff36de20e9e30",
-  "rm 1": "cbf49342086b1fa4179ad78963ed4a4b9363ff94787665838ba2c2e4acc0385b",
+  "png 1": "563f88a8c14dd22d3f4f7153e69220dcc2d0ad011761321832d6d66971b4e1d2",
+  "rm 1": "c4acf4d2b63d0261c74d83602a450998a8c31de31cfc975f02c8e5ffaf38ac69",
   "status": "done",
   "unused_replies": []
  },
  "remember": {
-  "note": "write How many moons does Mars have, and what are they called?. Wrote: Two: Phobos and Deimos.",
+  "note": "write. Wrote: Two: Phobos and Deimos.",
   "offered": [
    [
     "plan",
@@ -290,7 +281,6 @@
     "element",
     "draw_figure",
     "edit_figure",
-    "image",
     "find",
     "look_closer",
     "show_marks",
@@ -303,7 +293,7 @@
     "web_search"
    ]
   ],
-  "rm 1": "cc47ff35dc236316d1a6a3066d71aeeffa51264c26c9ca86b557856e4b329c94",
+  "rm 1": "d00023c1f64d8107483f57f2467488dde4e9586642db4aab653bd0cff3389be1",
   "status": "done",
   "unused_replies": []
  },
@@ -323,7 +313,6 @@
     "element",
     "draw_figure",
     "edit_figure",
-    "image",
     "find",
     "look_closer",
     "show_marks",
@@ -340,7 +329,7 @@
   "unused_replies": []
  },
  "write-and-erase": {
-  "note": "erase typed paragraph 1; write the moons of Mars. Wrote: Phobos is the larger and closer moon. Deimos is small and far out.",
+  "note": "erase typed paragraph 1; write. Wrote: Phobos is the larger and closer moon. Deimos is small and far out.",
   "offered": [
    [
     "plan",
@@ -355,7 +344,6 @@
     "element",
     "draw_figure",
     "edit_figure",
-    "image",
     "find",
     "look_closer",
     "show_marks",
@@ -380,7 +368,6 @@
     "element",
     "draw_figure",
     "edit_figure",
-    "image",
     "find",
     "look_closer",
     "show_marks",
@@ -393,7 +380,7 @@
     "web_search"
    ]
   ],
-  "rm 1": "f4215f9793c925e3968801a203c08914f4e772513499051815e95e1516883aaa",
+  "rm 1": "e4b11bd73cf238adc35640588e4ebc68add9c1d40b5959ee046dfba80181f36b",
   "status": "done",
   "unused_replies": []
  }

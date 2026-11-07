@@ -46,7 +46,7 @@ SCRIPTS = {
     "answer": {"fixture": "typed-question", "replies": [
         ("answer", {"answers": NEW, "lines": ["Mars has two moons: Phobos and Deimos."],
                     "rulings": RULE("question", "keep")})]},
-    "write-and-erase": {"fixture": "typed-question", "replies": [
+    "write-and-erase": {"fixture": "draw", "replies": [
         ("plan", {"steps": [{"do": "write", "what": "the moons of Mars", "answers": NEW}],
                   "rulings": RULE("request", "erase")}),
         ("write_paragraph", {"lines": ["Phobos is the larger and closer moon.", "Deimos is small and far out."]})]},

@@ -7,6 +7,8 @@ names exists on this page, every item new since the last job is ruled, the rulin
 step is one the lineup can do with fields that step declares, quotes are the user's words, a replaced picture
 is this system's -- and refuses an invalid one with a turn that says what to fix. It never rewrites a decision.
 """
+import re
+
 from paperdaemon.pipeline.host import steps as ST
 from paperdaemon.pipeline.host.job import JOB
 
@@ -59,6 +61,12 @@ def problems(kind, args, offered=None):
         if then == "erase" and is_ not in ERASABLE:
             out.append("ruling %d: %s is %s, which stays -- then: keep (only a request, a command, what the user "
                        "asked to remove or your own stale work comes off)." % (i, rid, is_))
+        # A TYPED PARAGRAPH THAT ASKS SOMETHING IS A QUESTION, whatever else it says -- the brief's rule, held here: "What
+        # should I pack ...? Give me a checklist." was ruled a request and erased, the checklist left under nothing
+        elif (then == "erase" and is_ in ("request", "command") and rid.startswith("para:")
+              and "?" in str(listing[rid].get("text") or "")):
+            out.append("ruling %d: %s asks something (it has a question mark), so it is a question, which stays -- "
+                       "then: keep." % (i, rid))
         if is_ == "stale_work" and listing[rid].get("owner") != "system":
             out.append("ruling %d: %s is the user's, so it is not stale_work of yours." % (i, rid))
         if rid in seen and seen[rid] != (is_, then):
@@ -133,6 +141,15 @@ def problems(kind, args, offered=None):
             if do == "posts" and not str(q.get("source") or "").strip():
                 out.append("step %d (posts): source is where the posts come from (r/<sub>, reddit, hn, bsky, "
                            "4chan/<board>, mastodon/<server>, x/<link>)." % i)
+        # THE NUMBERS A CHART IS DRAWN FROM ARE THE USER'S DATA: a typed paragraph a chart step answers that carries
+        # numbers stays, the request in it or not -- "Mia: Mon 20, Tue 35 ... Make a line chart of both." was ruled a
+        # request three rounds running, whatever the brief said, and its numbers were left only as the chart's lines
+        charted = set(a for q in steps if isinstance(q, dict) and q.get("do") == "chart" for a in (q.get("answers") or []))
+        for rid in sorted(charted):
+            if (seen.get(rid, ("", ""))[1] == "erase" and rid.startswith("para:")
+                    and len(re.findall(r"\d+(?:\.\d+)?", str((listing.get(rid) or {}).get("text") or ""))) >= 3):
+                out.append("%s holds the numbers the chart is drawn from: it is the user's data, a note -- then: "
+                           "keep." % rid)
         # A GAME TAKES THE PAGE IT WAS ASKED ON, whole: anything else the plan would put there lands on the board
         games = [str(q.get("do")) for q in steps if isinstance(q, dict) and q.get("do") in ST.GAMES]
         others = [str(q.get("do")) for q in steps if isinstance(q, dict) and q.get("do") in ST.PLACE_KIND]

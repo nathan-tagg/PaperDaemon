@@ -106,3 +106,12 @@ reading, like any other line; ink that reads as no word SHALL stay a mark.
 #### Scenario: A grocery list with a one-word item
 - **WHEN** the page holds "eggs", "rye bread" and "2 lemons" in ink, one item a line
 - **THEN** the listing names three lines of handwriting, and "eggs" carries no stroke count beside it
+
+### Requirement: The host holds the rulings to the brief's own rules
+The host SHALL refuse a plan or an answer that rules a typed paragraph with a question mark a request or command to
+erase (a paragraph that asks something is a question), and a plan that erases a typed paragraph a chart step answers
+when that paragraph carries three or more numbers (the chart's data).
+
+#### Scenario: A question with an instruction on the answer's form
+- **WHEN** a ruling erases "What should I pack for winter camping? Give me a checklist." as a request
+- **THEN** the decision is refused: the paragraph asks something, so it stays

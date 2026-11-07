@@ -212,14 +212,15 @@ G["9"] = (G["6"][0], _rot180(G["6"][1], 0.30, 0.50))
 G["\u00b7"] = (0.26, [_dot(0.11, 0.36)])
 G["\u2212"] = G["-"]
 # BOXES: a to-do list is written "\u2610 Pack a box", and the font dropped the box and left a space in
-# front of every item. A cap-high square, empty, ticked or crossed. (A tick
-# or cross on its own is an emoji and drawn from the icon library; in a box it is this glyph, which
-# is why emoji_icon() gives way to the font.)
-_BOX = [[(0.06, 0.0), (0.84, 0.0), (0.84, 0.78), (0.06, 0.78), (0.06, 0.0)]]
-G["\u2610"] = (1.0, _BOX)                                                        # ballot box
+# front of every item. A square a little taller than the capitals, empty, ticked or crossed -- one a box
+# to tick with a pen: at 0.78 of a capital, a camping checklist's boxes were about a lowercase letter
+# tall. (A tick or cross on its own is an emoji and drawn from the icon library; in a box it is this
+# glyph, which is why emoji_icon() gives way to the font.)
+_BOX = [[(0.06, -0.12), (1.18, -0.12), (1.18, 1.0), (0.06, 1.0), (0.06, -0.12)]]
+G["\u2610"] = (1.40, _BOX)                                                       # ballot box
 G["\u25a1"] = G["\u2610"]                                                        # white square
-G["\u2611"] = (1.0, _BOX + [[(0.20, 0.40), (0.38, 0.17), (0.72, 0.66)]])        # box, ticked
-G["\u2612"] = (1.0, _BOX + [[(0.22, 0.16), (0.68, 0.62)], [(0.22, 0.62), (0.68, 0.16)]])
+G["\u2611"] = (1.40, _BOX + [[(0.30, 0.44), (0.55, 0.10), (1.02, 0.86)]])       # box, ticked
+G["\u2612"] = (1.40, _BOX + [[(0.32, 0.18), (0.92, 0.78)], [(0.32, 0.78), (0.92, 0.18)]])
 
 _FALLBACK = "-"
 

@@ -219,3 +219,25 @@ def test_the_host_offers_steps_and_rulings_and_resolves_lines(tmp_path):
     assert step["required"] == ["do", "what", "answers"] and sorted(step["properties"]["do"]["enum"]) == d["kinds"]
     assert d["bad"] == []
     assert d["lines"][0] == "mark:6..12" and d["lines"][1] == "mark:13"
+
+
+def test_a_typed_question_is_never_erased_as_a_request(page):
+    # "What should I pack ...? Give me a checklist." was ruled a request and erased, the checklist left under nothing
+    page.listing["para:1"] = {"owner": "user", "text": "What should I pack for winter camping? Give me a checklist."}
+    probs = RU.problems("answer", {"answers": ["para:1"], "rulings": [rule("para:1"), rule("line:1", "note", "keep")]})
+    assert any("para:1 asks something" in p for p in probs)
+    ok = RU.problems("answer", {"answers": ["para:1"], "rulings": [rule("para:1", "question", "keep"),
+                                                                   rule("line:1", "note", "keep")]})
+    assert not any("asks something" in p for p in ok)
+
+
+def test_the_paragraph_a_chart_is_drawn_from_stays(page):
+    # "Mia: Mon 20, Tue 35 ... Make a line chart of both." was ruled a request three rounds running and erased
+    page.listing["para:1"] = {"owner": "user", "text": "Reading minutes. Mia: Mon 20, Tue 35, Wed 15. Make a line chart."}
+    steps = [{"do": "chart", "what": "Mia's reading minutes", "answers": ["para:1"]}]
+    probs = RU.problems("plan", {"steps": steps, "rulings": [rule("para:1"), rule("line:1", "note", "keep")]})
+    assert any("para:1 holds the numbers the chart is drawn from" in p for p in probs)
+    plain = dict(page.listing["para:1"], text="Make a bar chart of my steps.")
+    page.listing["para:1"] = plain                           # a request with no data of its own still comes off
+    probs = RU.problems("plan", {"steps": steps, "rulings": [rule("para:1"), rule("line:1", "note", "keep")]})
+    assert not any("holds the numbers" in p for p in probs)
