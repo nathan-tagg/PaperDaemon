@@ -209,7 +209,8 @@ def test_writing_on_a_game_page_comes_off_only_once_it_was_read(tmp_path):
         P.record = lambda *a, **k: None
         P.erase = lambda doc, page_no, which: erased.append(page_no)
         R.strokes = lambda doc, page_no: ["a stroke"]
-        R.render = lambda doc, page_no, png: None
+        from paperdaemon.pipeline.games import inputarea as IA
+        IA.ink_png = lambda doc, page_no, png, top=None: True       # the player's ink alone is what the reader sees
         CH.user_turn = lambda doc, page_no, state, page_id: {"ok": True}
         CH.tidy = CH.save_state = lambda *a, **k: None
         GM.place_talk = lambda *a, **k: None

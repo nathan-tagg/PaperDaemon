@@ -64,3 +64,17 @@ def test_a_picture_is_the_pages_width_under_the_words_and_never_shrinks():
         assert pic["y0"] >= reply["y1"] + PL.GAP
     small = PL.solve([{"id": "pic", "kind": "image", "size": "small"}], first_free_y=300)["pic"]
     assert (small["w"], small["h"], small["cx"]) == (800.0, 800.0, 0.0)
+
+
+def test_additions_drawn_onto_one_drawing_never_crowd_each_other():
+    # "add a top hat, a scarf and buttons to the snowman": every addition goes ON mark 1. Each one's place is the
+    # drawing itself, not new room, so they may share it -- while a new place beside it still keeps clear.
+    snowman = {"x0": -200.0, "y0": 600.0, "x1": 200.0, "y1": 1300.0}
+    places = [{"id": "s%d" % i, "kind": "drawing", "size": "small", "near": "mark:1", "side": "on"} for i in range(3)]
+    out = LY.solve(places, first_free_y=1350.0, marks={1: snowman}, obstacles=[snowman])
+    for p in places:
+        b = out[p["id"]]
+        assert snowman["x0"] <= b["x0"] < b["x1"] <= snowman["x1"] and snowman["y0"] <= b["y0"] < b["y1"] <= snowman["y1"]
+    beside = places[:2] + [{"id": "t", "kind": "text", "size": "small", "near": "mark:1", "side": "right"}]
+    out = LY.solve(beside, first_free_y=1350.0, marks={1: snowman}, obstacles=[snowman])
+    assert out["t"]["x0"] >= out["s0"]["x1"] - 1e-6

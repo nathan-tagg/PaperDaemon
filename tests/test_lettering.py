@@ -14,3 +14,15 @@ def test_accents_move_only_the_line_they_are_in():
     assert T.ascent() == T.ascent("plain $ text") == 1.10        # the face's own tallest glyph, `$`
     assert T.ascent("Ångström") > 1.10                           # a capital's mark stands above the cap line
     assert T.descent() == 0.28
+
+
+def test_fractions_and_signs_are_drawn_as_themselves():
+    # "6½–7" was lettered "61/2-7", "¾" came out "34", and "≈" vanished with its meaning
+    from paperdaemon.pipeline.draw import symbols as S
+    for ch in S.FRACTIONS + S.SUPERSCRIPTS + S.SUBSCRIPTS + "≈±×÷√∞πµ":
+        assert ch in T.G and T.fold(ch) == ch, ch
+    half = T.G["½"][1]
+    top = max(y for p in half for _x, y in p)
+    assert top <= 1.0 + 1e-9 and min(y for p in half for _x, y in p) >= -1e-9    # within the cap height
+    plain = T.ascent("Bake 6-7 minutes")
+    assert T.ascent("Bake 6½–7 minutes ≈ 40 min, x²") >= plain and T.ascent("plain") == T.ascent("plain words")

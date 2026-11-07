@@ -612,3 +612,39 @@ def test_the_model_reads_the_users_bold_and_italic():
         print(json.dumps([(p["text"], p["marked"]) for p in ps if p["text"].strip()]))
     """)
     assert got == [["She draws her sword and says now", "She *draws her sword* and says **now**"]]
+
+
+def test_typed_text_beside_a_picture_reads_and_survives_a_save():
+    """A page with a picture still shows its typed text (the picture blocks are not text), a save that carries no text
+    leaves the page's text exactly as it was, and only a save with no paragraphs deletes it."""
+    got = _run("""
+        import io, json
+        from PIL import Image
+        from paperdaemon.remarkable import local
+        doc = local.new_notebook("Text and a picture")
+        scene = local.scene_of(doc, 1)
+        scene["text"] = {"x": -576, "y": 234, "width": 1152, "paras": [
+            {"style": "body", "list": None, "runs": [{"text": "Electric bills this year", "bold": False, "italic": False}]},
+            {"style": "body", "list": None, "runs": [{"text": "Jan $142, Feb $131", "bold": False, "italic": False}]}]}
+        local.write_scene(doc, 1, scene)
+        buf = io.BytesIO(); Image.new("RGB", (40, 20), (200, 30, 30)).save(buf, "PNG")
+        a = local.add_picture(doc, 1, buf.getvalue())
+        shown = local.scene_of(doc, 1)
+        shown["images"] = [{"name": a["name"], "quad": [[-200, 600], [200, 600], [200, 800], [-200, 800]]}]
+        local.write_scene(doc, 1, shown)
+        with_picture = local.scene_of(doc, 1)
+        untouched = dict(with_picture, text=None)
+        untouched["layers"][0]["lines"] = [{"penCode": 17, "color": 0, "colorRgba": None, "thicknessScale": 1,
+                                            "points": [[-100, 1300, 0, 0, 8, 128], [100, 1300, 0, 0, 8, 128]]}]
+        local.write_scene(doc, 1, untouched)
+        kept = local.scene_of(doc, 1)
+        local.write_scene(doc, 1, dict(kept, text=dict(kept["text"], paras=[])))
+        gone = local.scene_of(doc, 1)
+        words = lambda s: [r["text"] for p in ((s.get("text") or {}).get("paras") or []) for r in p["runs"]]
+        print(json.dumps({"pictures": len(with_picture["images"]), "with_picture": words(with_picture),
+                          "kept": words(kept), "strokes": len(kept["layers"][0]["lines"]), "gone": words(gone)}))
+    """)
+    assert got["pictures"] == 1
+    assert got["with_picture"] == ["Electric bills this year", "Jan $142, Feb $131"]
+    assert got["kept"] == got["with_picture"] and got["strokes"] == 1
+    assert got["gone"] == []

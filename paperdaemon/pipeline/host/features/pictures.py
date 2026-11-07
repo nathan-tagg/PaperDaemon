@@ -250,6 +250,25 @@ def _trace_into(png, box, place, what, **kw):
 # direct image insert (otherwise it is a decomposition). Traced into strokes, the lines would be
 # ink like the user's: every stroke of the eraser would take a piece of the drawing with it. As the
 # app's own image block, the user's coloring and erasing touch only their own ink.
+def _pictures_under(box):
+    """The boxes of the pictures already on the page that a new picture at `box` (x0, y0, x1, y1) covers -- most of
+    each (40%) -> [box]. A picture landing on an old one is that one redone ("add Thursday to the steps chart", a
+    coloring page made again): the old one comes off when the new one lands, so the page never carries both. A
+    redone coloring page once kept its old picture under the new one, the old edges showing."""
+    out = []
+    try:
+        from paperdaemon.pipeline.page import images as IM
+        for old in IM.items(JOB.doc, JOB.page):
+            ob = old["box"]
+            ix = max(0.0, min(box[2], ob[2]) - max(box[0], ob[0]))
+            iy = max(0.0, min(box[3], ob[3]) - max(box[1], ob[1]))
+            if ix * iy / max(1.0, (ob[2] - ob[0]) * (ob[3] - ob[1])) > 0.4:
+                out.append(tuple(ob))
+    except Exception:
+        return []
+    return out
+
+
 def _picture_asset(png, box):
     """A picture fitted inside `box` (aspect kept, centered) -> (asset path, its box on the page)."""
     import uuid
@@ -281,7 +300,7 @@ def _paste_into(png, box, place, what, title=""):
         except OSError:
             pass
     JOB.images.append({"place": place, "png": apath, "box": pbox, "type": "image", "title": str(title)[:40],
-                       "spec": None, "replaces": []})
+                       "spec": None, "replaces": H._pictures_under(tuple(pbox))})
     H._mark()
     JOB.ops.append("%s pasted as a picture in %r" % (what, place))
 
@@ -395,7 +414,7 @@ def _run_images(batch):
                         pass
                 JOB.images.append({"place": q.get("place"), "png": apath, "box": pbox,
                                                       "type": "coloring", "title": str(q["what"])[:40],
-                                                      "spec": None, "replaces": []})
+                                                      "spec": None, "replaces": H._pictures_under(tuple(pbox))})
                 H._mark()
                 JOB.ops.append("coloring page %r as a picture in %r (%s)" % (str(q["what"])[:30], q.get("place"),
                                                                               H._render_note(q)))

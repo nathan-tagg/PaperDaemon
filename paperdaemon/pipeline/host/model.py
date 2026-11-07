@@ -199,16 +199,18 @@ def _runaway(text, chunk=40, times=6):
     return t.count(tail) >= times
 
 
-def _looping(text, times=6):
+def _looping(text, times=6, span=400):
     """True when a TOOL CALL's arguments have started repeating a chunk back to back. Stricter
     than _runaway on purpose: a hundred-part figure legitimately says '"kind": "line"' a hundred
-    times, so only a chunk repeated CONTIGUOUSLY counts."""
+    times, so only a chunk repeated CONTIGUOUSLY counts -- six times, AND over `span` characters:
+    a chart's data repeats a short value legitimately ("121, " nine times is a line at the average,
+    and six of them cut one chart four times running), while a real loop runs on to any length."""
     t = (text or "")[-4000:]
-    if len(t) < 240:
+    if len(t) < span:
         return False
     for L in range(3, 151):                    # every period: a 23-char part repeats with period 23
         tail = t[-L:]
-        if tail.strip() and t.endswith(tail * times):
+        if tail.strip() and t.endswith(tail * max(times, -(-span // L))):
             return True
     return False
 

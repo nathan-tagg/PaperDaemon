@@ -966,7 +966,10 @@ def extract_text(tb):
 def from_blocks(blocks,data,doc_id=None,page_id=None):
     roots=[b for b in blocks if isinstance(b,ss.RootTextBlock)]
     if len(roots)>1:raise ValueError('Multiple root text blocks require CRDT merge; refusing to guess')
-    if any(type(b).__name__=='UnreadableBlock' for b in blocks):raise ValueError('Unreadable blocks: native extraction incomplete')
+    # ONLY AN UNREAD TEXT BLOCK leaves the text incomplete. The pictures on a page (blocks 14 and 15: the tablet's own
+    # captures, the daemon's coloring pages and charts) are blocks this reader does not know, and refusing on them hid
+    # the typed text of every page with a picture -- and the editor's save of such a page wrote it without its text.
+    if any(type(b).__name__=='UnreadableBlock' and getattr(getattr(b,'info',None),'block_type',None)==ss.RootTextBlock.BLOCK_TYPE for b in blocks):raise ValueError('Unreadable text block: native extraction incomplete')
     rows,warnings=extract_text(roots[0].value) if roots else ([],[])
     box=None
     if roots:

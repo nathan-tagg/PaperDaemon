@@ -278,11 +278,13 @@ def place_talk(doc, page_no, state, lines, page_id=None, workdir=None):
 
 
 # ------------------------------------------------------------------------------ reading writing
-READ_PROMPT = """This is a chess page on a tablet: a board and its pieces, which are pictures, and
-possibly something the player WROTE by hand in ink. Read only the handwriting.
+READ_PROMPT = """This is what the player of a chess game WROTE by hand in ink on the game's page -- their
+writing alone, cut from the page.
 The player plays {side}; {turn}.
 Their legal moves now: {moves}
-What did they write? Answer with exactly ONE line:
+Answer with exactly TWO lines. First the handwriting copied exactly, letter for letter:
+WROTE: <the handwriting as written, or nothing>
+Then what it means, ONE of:
 MOVE: <one of the legal moves above>   -- a move however it was written ("knight takes c2",
        "Nxc2", "castle", "promote to knight" = the promotion move to that piece)
 RESIGN   -- they give up
@@ -291,18 +293,69 @@ SAY: <their words>   -- something said to the opponent
 NOTHING   -- no handwriting, or it cannot be read"""
 
 
-def read_writing(state, png, ask_vision):
-    """What the player wrote -> {"kind": move|resign|draw|say|nothing, "uci"?, "text"?}"""
+READ_TYPED_PROMPT = """The player of a chess game typed this on the game's page: "{text}"
+The player plays {side}; {turn}.
+Their legal moves now: {moves}
+What does it say? Answer with exactly ONE line:
+MOVE: <one of the legal moves above>   -- a move however it was put ("knight takes c2", "castle",
+       "promote to knight" = the promotion move to that piece)
+RESIGN   -- they give up
+DRAW   -- they offer a draw
+SAY: <their words>   -- something said to the opponent"""
+
+
+def _turn_words(state):
     from paperdaemon.pipeline.games.chess import rules as chess
     from paperdaemon.pipeline.games import chess as CH
     board = chess.Board(state["fen"])
     user_turn = ("w" if board.turn == chess.WHITE else "b") == state["colors"]["user"]
     sans = CH.legal_sans(state) if user_turn else []
-    reply = ask_vision(READ_PROMPT.format(
-        side="White" if state["colors"]["user"] == "w" else "Black",
-        turn="it is their turn" if user_turn else "it is NOT their turn (the opponent moves next)",
-        moves=", ".join(sans) if sans else "(none: not their turn)"), png)
-    line = next((l.strip() for l in str(reply or "").splitlines() if l.strip()), "")
+    return dict(side="White" if state["colors"]["user"] == "w" else "Black",
+                turn="it is their turn" if user_turn else "it is NOT their turn (the opponent moves next)",
+                moves=", ".join(sans) if sans else "(none: not their turn)"), sans
+
+
+def read_typed(state, text, ask_text):
+    """What the player TYPED on the game's page -> as read_writing's, or None when nothing is typed. On a computer a
+    move is typed sooner than drawn: one in chess's own notation ("e4", "Nxc2", "O-O") is played as it is, read
+    exactly, no model asked; anything else is read by the text model the way handwriting is by the vision model."""
+    from paperdaemon.pipeline.games import chess as CH
+    t = " ".join(str(text or "").split())
+    if not t:
+        return None
+    words, sans = _turn_words(state)
+    uci = CH.parse_text_move(state, t) if sans else None
+    if uci:
+        return {"kind": "move", "uci": uci, "raw": t}
+    if ask_text is None:
+        return {"kind": "say", "text": t, "raw": t}
+    reply = ask_text(READ_TYPED_PROMPT.format(text=t[:400].replace('"', "'"), **words))
+    return _written(state, next((l.strip() for l in str(reply or "").splitlines() if l.strip()), ""), sans)
+
+
+def read_writing(state, png, ask_vision):
+    """What the player wrote -> {"kind": move|resign|draw|say|nothing, "uci"?, "text"?}
+
+    A MOVE WRITTEN IN CHESS'S OWN NOTATION IS PLAYED AS WRITTEN, as a typed one is (read_typed): the reader copies the
+    handwriting, and a copy that is a legal move in notation is that move -- the reader's choice from the legal moves
+    is only for the rest ("knight takes c2"). Asked only to choose, a reader that read "c3" answered Nc3: a knight
+    could also go there."""
+    from paperdaemon.pipeline.games import chess as CH
+    words, sans = _turn_words(state)
+    reply = ask_vision(READ_PROMPT.format(**words), png)
+    lines = [l.strip() for l in str(reply or "").splitlines() if l.strip()]
+    wrote = next((l.split(":", 1)[1].strip() for l in lines if re.match(r"(?i)^WROTE:", l)), "")
+    meant = next((l for l in lines if not re.match(r"(?i)^WROTE:", l)), "")
+    raw = " / ".join(x for x in (wrote and "WROTE: " + wrote, meant) if x)
+    uci = CH.parse_text_move(state, wrote) if (sans and wrote) else None
+    if uci:
+        return {"kind": "move", "uci": uci, "raw": raw}
+    return dict(_written(state, meant, sans), raw=raw)
+
+
+def _written(state, line, sans):
+    """A reader's one line (MOVE: / RESIGN / DRAW / SAY: / NOTHING) -> what the player wrote."""
+    from paperdaemon.pipeline.games import chess as CH
     m = re.match(r"(?i)^MOVE:\s*(.+)$", line)
     if m and sans:
         uci = CH.parse_text_move(state, m.group(1).strip())
@@ -477,20 +530,34 @@ def play(doc, page_no, page_id, ask_text=None, ask_vision=None, log=None, workdi
         P.record(doc, page_no, note="before a %s turn" % state.get("game", "game"))
     except Exception:
         pass
-    # 1. WHAT WAS WRITTEN comes first: it may be the move itself, or say how to promote
+    # 1. WHAT WAS WRITTEN comes first: it may be the move itself, or say how to promote. What was TYPED is read first,
+    # exactly (read_typed), and comes off once read, as read handwriting does; handwriting is read when nothing typed was
+    from paperdaemon.pipeline.games import inputarea as IA
+    written = read_typed(state, IA.typed(doc, page_no), ask_text)
+    if written is not None:
+        _log(log, "  game: the typed text reads %r" % (written.get("raw") or "")[:80])
+        if written.get("kind") in ("move", "resign", "draw", "say"):
+            try:
+                ER.erase_text(doc, page_no)
+            except Exception as ex:
+                _log(log, "  game: the typed text was NOT erased: %s" % str(ex)[:90])
+        else:
+            written = None
     try:
-        ink = [L for L in R.strokes(doc, page_no)]
+        ink = [L for L in R.strokes(doc, page_no)] if written is None else []
     except Exception:
         ink = []
-    written = None
     if ink:
         if ask_vision is None:
             talk.append(("narrator", "", "I cannot read writing right now; move a piece instead."))
         else:
             png = os.path.join(workdir, "_game_read_%d.png" % int(time.time() * 1000))
             try:
-                R.render(doc, page_no, png)
-                written = read_writing(state, png, ask_vision)
+                # THE PLAYER'S INK ALONE is read, as the other games read it (inputarea): shown the whole page, a
+                # reader took the opponent's own words in the talk strip -- "Bishop to a6. I do hope the arithmetic
+                # is sound." -- for the player's, and the move written under them was never played
+                written = (read_writing(state, png, ask_vision) if IA.ink_png(doc, page_no, png)
+                           else {"kind": "nothing", "raw": ""})
             except Exception as ex:
                 _log(log, "  game: reading the writing failed: %s" % str(ex)[:90])
                 written = {"kind": "nothing", "raw": ""}

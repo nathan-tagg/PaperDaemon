@@ -154,6 +154,19 @@ open to edit, the old one shown until the new one replaces it.
 - **WHEN** a notebook's page is written on, on the tablet or in PaperDaemon, and its cover or grid picture is next shown
 - **THEN** the old picture shows at once and is replaced, without a spinner, once the new one is drawn
 
+### Requirement: A page's typed text shows and is kept beside its pictures
+A page's typed text SHALL show in the viewer and the editor whatever else the page holds, its pictures among them (the
+tablet's captures, a coloring page, a chart). A save that carries no typed text SHALL leave the page's typed text
+exactly as it was, as the Mirror's does; only a save whose text has no paragraphs SHALL delete it.
+
+#### Scenario: Notes beside a chart
+- **WHEN** a page holds the user's typed notes and a chart a job placed, and the user opens it
+- **THEN** the notes show, and drawing on the page and saving keeps them
+
+#### Scenario: All the text deleted
+- **WHEN** the user deletes all of a page's typed text in the editor and the page is saved
+- **THEN** the page has no typed text
+
 ### Requirement: Start waits for a lineup that could take a page
 Start and Pause SHALL sit in the rail's foot, left of the version, on every screen (the Daemon screen holds none). Start SHALL show as Paused and be disabled while no lineup could take a page (none has a tag, or its
 text model has no location, or a model on this computer has no start script), its hover saying so; passing the lineup's

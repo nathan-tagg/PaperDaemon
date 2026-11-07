@@ -8049,8 +8049,9 @@ span.lname { cursor: default; }
                ...(counted ? { n: ln.points.n } : { points: ln.points.toArrays() }) })) })) }),
              text: page.text.paras.length ? { x: page.text.x, y: page.text.y, width: page.text.width,
                paras: page.text.paras.map(p => ({ style: p.style, list: p.list, runs: runs(p.chars) })) }
-               // a Mirror page whose typed text was all deleted: its text with no paragraphs (no text at all is "left as it is")
-               : MIRROR && fileHadText ? { x: page.text.x, y: page.text.y, width: page.text.width, paras: [] } : null };
+               // a page whose typed text was all deleted: its text with no paragraphs (no text at all is "left as it is",
+               // in the Mirror and the false mirror alike: a page whose text could not be read keeps it)
+               : fileHadText ? { x: page.text.x, y: page.text.y, width: page.text.width, paras: [] } : null };
   }
 
   // HOW THE SAVING GOES, told to the viewer (by the document's name: a spinner while a save is slow, ! when one failed,

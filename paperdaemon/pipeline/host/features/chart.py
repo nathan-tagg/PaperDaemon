@@ -150,21 +150,7 @@ def t_chart(spec, place=None):
         asset.save(apath, "PNG", optimize=True)
     prev = [im for im in (JOB.images or []) if im["place"] == place]
     JOB.images = [im for im in (JOB.images or []) if im["place"] != place]
-    # A picture ALREADY ON THE PAGE under the new one is the old chart being updated ("add Thursday to the
-    # steps chart"): it goes when this one lands, so the page never carries both.
-    replacing = []
-    try:
-        from paperdaemon.pipeline.page import images as IM
-        nb = (x0, y0, x0 + wu, y0 + hu)
-        for old in IM.items(JOB.doc, JOB.page):
-            ob = old["box"]
-            ix = max(0.0, min(nb[2], ob[2]) - max(nb[0], ob[0]))
-            iy = max(0.0, min(nb[3], ob[3]) - max(nb[1], ob[1]))
-            area = max(1.0, (ob[2] - ob[0]) * (ob[3] - ob[1]))
-            if ix * iy / area > 0.4:
-                replacing.append(tuple(ob))
-    except Exception:
-        replacing = []
+    replacing = H._pictures_under((x0, y0, x0 + wu, y0 + hu))     # the old chart this one updates
     JOB.images.append({"place": place, "png": apath, "box": (x0, y0, x0 + wu, y0 + hu),
                           "type": ctype, "title": str(spec.get("title") or "")[:40],
                           "spec": H._as_recorded(spec),
@@ -430,7 +416,11 @@ def _chart_figures():
     for im in JOB.images or []:
         spec = im.get("spec") or {}
         cats = spec.get("categories") or []
-        for s in spec.get("series") or []:
+        # THE TREND, fitted by the host (the line it draws for "trend": true) -- a model's own "going down, 132 to
+        # 90" was a fit that runs 119 to 123, up
+        trends = ({d["of"]: d["values"] for d in CH.derived_lines(spec, ["trend"])}
+                  if spec.get("type") in ("line", "step", "bar", "area") else {})
+        for i, s in enumerate(spec.get("series") or []):
             try:
                 vals = [float(v) for v in s.get("values") or []]
             except (TypeError, ValueError):
@@ -450,6 +440,11 @@ def _chart_figures():
                            f(avg - vals[lo]),
                            ", ".join("%s %s (%.0f%%)" % (c, f(v), 100.0 * v / tot if tot else 0)
                                      for c, v in zip(cats, vals))))
+            tr = trends.get(i)
+            if tr:
+                way = "up" if tr[-1] > tr[0] else ("down" if tr[-1] < tr[0] else "flat")
+                out[-1] += "; trend line %s at %s to %s at %s: %s %s" % (
+                    f(tr[0]), cats[0], f(tr[-1]), cats[-1], way, f(abs(tr[-1] - tr[0])))
     if not out:
         return ""
     return ("THE CHART'S FIGURES, worked out by the host -- use these, not your own arithmetic:\n  "

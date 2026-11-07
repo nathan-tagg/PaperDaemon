@@ -410,8 +410,14 @@ def solve(places, first_free_y=None, safe=SAFE, arrow_tip=None, marks=None, obst
                     out[p["id"]] = b
             y += h + GAP
 
+    # ONTO WHAT IS ALREADY THERE: a place "on" a mark is that mark, not new room -- a hat, a scarf and buttons
+    # all go on one snowman, apples on one tree -- so places drawn onto the page's own content never crowd
+    # each other. Everything else still may not overlap anything.
+    onto = {p["id"] for p in places if p["side"] == "on" and _mark_ref(p["near"]) is not None}
     for i in range(len(boxes)):
         for j in range(i + 1, len(boxes)):
+            if boxes[i]["id"] in onto and boxes[j]["id"] in onto:
+                continue
             if _overlap(boxes[i], boxes[j]):
                 raise PlanError(
                     "%r and %r would overlap. Anchor them to different things, stack them, or ask "

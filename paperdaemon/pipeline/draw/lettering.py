@@ -584,3 +584,11 @@ try:
 except Exception as _e:                    # pragma: no cover
     import sys as _sys
     print("rm_text: no accented letters (%s)" % _e, file=_sys.stderr)
+
+# THE SYMBOLS an answer reaches for -- fractions, superscripts, ≈ ± √ ∞ π -- built from the installed face too
+try:
+    from paperdaemon.pipeline.draw import symbols as _symbols
+    _symbols.install()
+except Exception as _e:                    # pragma: no cover
+    import sys as _sys
+    print("rm_text: no symbols (%s)" % _e, file=_sys.stderr)

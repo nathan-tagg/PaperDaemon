@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.18
+
+- Typed text shows on every page, pictures and all. On a page holding a picture (a capture, a coloring page, a chart) the viewer and the editor showed none of the page's typed text, and saving such a page from the editor took the text off it. A save that carries no text now leaves the page's text exactly as it is, as the Mirror's always has.
+- A chart's trend line and average line are worked out by PaperDaemon, never by the model: ask for a trend or an average on a line, step or bar chart and they are drawn dashed and dotted in the series' ink, named at their ends. A model's own trend ran "down, 132 to 90" through bills whose fit runs 119 to 123, up; the words written about a chart now get the fitted trend with its other figures. An average line no longer stops the job as "the model kept repeating itself".
+- Several additions to one drawing (a hat, a scarf and buttons for the snowman) are drawn on it, instead of the plan being refused as overlapping. An addition to a drawing is put on the drawing, even where it sticks out past it.
+- The daemon erases only an instruction it has carried out. A question stays even when it says how to answer, and the facts and numbers a request works from (the bills a chart was made from, a schedule put on a calendar) stay on the page.
+- A coloring page or a picture made again replaces the old one, as a chart redone already did; the old one stayed under it.
+- Fractions, superscripts and signs are written as themselves: "6½" was written "61/2", "¾" came out "34", and "≈", "±", "√", "π" and "∞" vanished.
+- Chess reads a written move from the player's writing alone and plays notation as written: "c3" moved a knight to c3 when the pawn could go there too, and the opponent's own last words ("Bishop to a6. I do hope the arithmetic is sound.") were once taken for the player's.
+- Chess moves can be typed: "e4", "Nxc2", "O-O" typed on the game's page is played as it is, read exactly with no model asked, and comes off once read, as written moves do. Anything else typed (a resignation, a draw offer, a remark to the opponent) is read by the text model, the way handwriting is read by the vision model.
+- A web picture is never taken from a stock-photo site, whose pictures are watermarked previews ("a real photo" came back with the site's name across it). Wikimedia's are tried first.
+
 ## 0.2.17
 
 - The pointer: the text tool is now the first in the bar, an arrow. It is the I-beam over text it can select or type into, and the hand over a PDF's or a book's link: a click follows the link (to its page, or the address in the browser), and a drag selects the link's words instead. With a pen or an eraser in hand, Ctrl and a click follow a link, and the pointer over one says so. The shortcut sheet lists it.

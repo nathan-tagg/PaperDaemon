@@ -925,6 +925,38 @@ def _line_blocks_in(data):
     return n if pos == end else -1
 
 
+def _text_frames(data):
+    """The page's typed-text blocks as they are in its bytes, each block's whole frame, found by walking the frames
+    (as _line_blocks_in does) without reading a block -> [bytes]; none when the frames do not add up."""
+    from rmscene.tagged_block_common import HEADER_V6
+    if not data.startswith(HEADER_V6):
+        return []
+    pos, end, out = len(HEADER_V6), len(data), []
+    while pos + 8 <= end:
+        size = int.from_bytes(data[pos:pos + 4], "little")
+        if data[pos + 7] == ss.RootTextBlock.BLOCK_TYPE:
+            out.append(data[pos:pos + 8 + size])
+        pos += 8 + size
+    return out if pos == end else []
+
+
+def _past_ids(frame):
+    """The first id past every id a kept text block uses (a text item of n characters holds n ids), so a page written
+    around it never gives one id to two things; past a block that cannot be read, far past anything a page holds."""
+    from rmscene.tagged_block_common import HEADER_V6
+    try:
+        tb = next(b for b in read_blocks(io.BytesIO(HEADER_V6 + frame)) if isinstance(b, ss.RootTextBlock))
+        top = tb.block_id.part2
+        for it in tb.value.items.sequence_items():
+            n = len(it.value) if isinstance(it.value, str) else max(1, it.deleted_length or 0)
+            top = max(top, it.item_id.part2 + n - 1)
+        for k in tb.value.styles:
+            top = max(top, k.part2)
+        return top + 1
+    except Exception:
+        return 1 << 24
+
+
 _writing = threading.Lock()                          # one page written at a time: a save never meets another half way
 
 
@@ -975,7 +1007,11 @@ def _write_scene(doc, page_no, scene):
     info = next((b for b in old if isinstance(b, ss.SceneInfo)), None)
     if not any(isinstance(b, ss.AuthorIdsBlock) for b in head):
         head.insert(0, ss.AuthorIdsBlock(author_uuids={1: uuid.uuid4()}))
-    seq = [16]
+    # NO TEXT IN THE SAVE IS "LEAVE THE TEXT AS IT IS", as the Mirror has it (a save that deletes it all sends a text
+    # with no paragraphs): the page's own text blocks go back exactly as they were, and the new ids start past theirs.
+    # Written from a scene whose text could not be read, a page lost its typed text.
+    kept = _text_frames(open(path, "rb").read()) if scene.get("text") is None and os.path.exists(path) else []
+    seq = [max([16] + [_past_ids(f) for f in kept])]
 
     def nid(n=1):
         k = seq[0]
@@ -1025,8 +1061,11 @@ def _write_scene(doc, page_no, scene):
         info.root_document_visible = LwwValue(timestamp=CrdtId(1, 1), value=bool(scene.get("textVisible", True)))
         info.background_visible = LwwValue(timestamp=CrdtId(1, 1), value=bool(scene.get("templateVisible", True)))
     chars = sum(len(r.get("text") or "") for p in ((scene.get("text") or {}).get("paras") or []) for r in p.get("runs") or [])
-    blocks = head + [ss.PageInfoBlock(loads_count=1, merges_count=0, text_chars_count=chars,
-                                      text_lines_count=len(((scene.get("text") or {}).get("paras")) or []))]
+    lines = len(((scene.get("text") or {}).get("paras")) or [])
+    was = next((b for b in old if isinstance(b, ss.PageInfoBlock)), None)
+    if kept and was is not None:
+        chars, lines = was.text_chars_count, was.text_lines_count          # the kept text's own counts
+    blocks = head + [ss.PageInfoBlock(loads_count=1, merges_count=0, text_chars_count=chars, text_lines_count=lines)]
     if his:
         # his layer at the bottom of the list again, before the editor's first layer; his strokes after the editor's
         tree += his["tree"]
@@ -1040,6 +1079,8 @@ def _write_scene(doc, page_no, scene):
     blocks += ([info] if info is not None else []) + tree + groups + placed + ([text] if text else [])
     buf = io.BytesIO()
     write_blocks(buf, blocks)
+    for f in kept:
+        buf.write(f)                                 # the page's text, byte for byte
     fastrm.write_lines(buf, strokes)                 # the strokes last, as rmscene would write them, in bulk (fastrm)
     pics, npics = _picture_blocks(doc, page_no, scene.get("images"), nodes[0], nid)
     data = buf.getvalue() + pics

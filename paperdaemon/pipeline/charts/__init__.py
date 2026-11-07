@@ -208,12 +208,13 @@ TYPES += TABLETOP_TYPES
 # entry, so the two cannot drift.
 POWERS = {
     # --- numbers -----------------------------------------------------------------------------
-    "bar": "compare values across categories -- categories:[...], series:[{name, values:[...]}] (up to 6 series); title, x_label, y_label",
+    "bar": "compare values across categories -- categories:[...], series:[{name, values:[...]}] (up to 6 series); title, x_label, y_label; trend:true / average:true as on a line",
     "hbar": "ranked bars with their labels, ONE series -- same fields as bar",
     "stacked": "parts of each category's total, bars split by series -- bar fields",
-    "line": "a trend over time or order -- bar fields; several series fine",
+    "line": "a trend over time or order -- bar fields; several series fine; trend:true and/or average:true and the "
+            "host fits each series' trend line (dashed) and draws its average (dotted) -- never type those as series",
     "area": "a trend with the volume under it -- bar fields",
-    "step": "a value that changes in jumps (prices, levels) -- bar fields",
+    "step": "a value that changes in jumps (prices, levels) -- bar fields; trend:true / average:true as on a line",
     "scatter": "two measures against each other -- bar fields",
     "pie": "shares of a whole, ONE series, at most 7 slices, no negatives -- bar fields",
     "donut": "pie with a hole -- pie fields",
@@ -313,6 +314,79 @@ def powers(types=None):
     return "\n".join("  %-10s %s" % (t, POWERS[t]) for t in ts)
 
 
+# LINES THE HOST WORKS OUT: a series' trend -- the straight line that fits it best, least squares over its points in
+# order -- and its average, asked for with "trend": true / "average": true and never typed by the model. Typed, a trend
+# ran "down, 132 to 90" through bills whose fit runs 119 to 123, up; and an average typed as nine equal numbers read to
+# the runaway guard as a loop.
+DERIVED = ("line", "step", "bar")
+
+
+def derived_lines(spec, kinds=None):
+    """[{"of": series index, "kind": "trend"|"average", "label", "values": one per category}] for the chart's series,
+    the kinds it asks for (or `kinds`, for words about a chart that drew none)."""
+    kinds = kinds or [k for k in ("trend", "average") if spec.get(k) is True]
+    cats, series, out = spec.get("categories") or [], spec.get("series") or [], []
+    for i, s in enumerate(series):
+        try:
+            vals = [float(v) for v in s.get("values") or []]
+        except (TypeError, ValueError):
+            continue
+        n = len(vals)
+        if n < 2 or n != len(cats):
+            continue
+        mean = sum(vals) / n
+        own = (str(s.get("name") or "") + " ") if len(series) > 1 else ""
+        for k in kinds:
+            if k == "trend":
+                mid = (n - 1) / 2.0
+                slope = sum((j - mid) * (v - mean) for j, v in enumerate(vals)) / sum((j - mid) ** 2 for j in range(n))
+                line = [mean + slope * (j - mid) for j in range(n)]
+            else:
+                line = [mean] * n
+            out.append({"of": i, "kind": k, "label": (own + k).capitalize(), "values": line})
+    return out
+
+
+def _with_derived(vl, spec, xfield):
+    """The chart with its host-worked lines over it: each in its series' ink, the trend dashed and the average dotted,
+    no markers, named at its right end."""
+    lines = derived_lines(spec) if spec.get("type") in DERIVED else []
+    if not lines:
+        return vl
+    cats = spec["categories"]
+    if "layer" not in vl:
+        vl = dict(vl)
+        vl["layer"] = [{"mark": vl.pop("mark"), "encoding": vl.pop("encoding")}]
+    else:
+        vl = dict(vl, layer=list(vl["layer"]))
+    x = {"field": xfield, "type": "nominal", "sort": cats}
+    # NAMES THAT WOULD SIT ON EACH OTHER are spread: a trend and an average often end within a few units, and their
+    # names were drawn one over the other. Pixels per unit on the plot's 560 px (its scale starts at zero).
+    vals = [float(v) for s in spec["series"] for v in s["values"]] + [v for d in lines for v in d["values"]]
+    px = 560.0 / ((max(vals + [0.0]) - min(vals + [0.0])) or 1.0)
+    ends = sorted(range(len(lines)), key=lambda k: -lines[k]["values"][-1])
+    dy, prev = {}, None
+    for k in ends:
+        y = -lines[k]["values"][-1] * px
+        y = y if prev is None else max(y, prev + 26)
+        dy[k], prev = y + lines[k]["values"][-1] * px, y
+    # a name starts past the last BAR (its center is mid-band), and just past a line's last point
+    dx = (WIDTH - 80) / float(len(cats)) / 2.0 + 10 if spec["type"] == "bar" else 14
+    for k, d in enumerate(lines):
+        ink = LINE_INK[d["of"] % len(LINE_INK)]
+        rows = [{xfield: c, "v": v} for c, v in zip(cats, d["values"])]
+        vl["layer"].append({"data": {"values": rows},
+                            "mark": {"type": "line", "color": ink, "strokeWidth": 3,
+                                     "strokeDash": [11, 7] if d["kind"] == "trend" else [3, 5]},
+                            "encoding": {"x": x, "y": {"field": "v", "type": "quantitative"}}})
+        vl["layer"].append({"data": {"values": [dict(rows[-1], t=d["label"])]},
+                            "mark": {"type": "text", "align": "left", "baseline": "middle", "dx": round(dx, 1),
+                                     "dy": round(dy[k], 1), "fontSize": 22, "color": ink},
+                            "encoding": {"x": x, "y": {"field": "v", "type": "quantitative"},
+                                         "text": {"field": "t"}}})
+    return vl
+
+
 def validate(spec):
     if not isinstance(spec, dict):
         raise SpecError("spec must be a JSON object")
@@ -344,6 +418,11 @@ def validate(spec):
             if isinstance(x, bool) or not isinstance(x, (int, float)):
                 raise SpecError("series[%d] %r: values must all be numbers"
                                 % (i, s.get("name")))
+    for k in ("trend", "average"):
+        if k in spec and not isinstance(spec[k], bool):
+            raise SpecError("%s is true or false: the host works the line out from the series itself" % k)
+        if spec.get(k) and t not in DERIVED:
+            raise SpecError("%s lines go on a line, step or bar chart, not a %s" % (k, t))
     if t in ("hbar", "pie", "donut") and len(series) != 1:
         raise SpecError("%s supports exactly one series" % t)
     if t in ("pie", "donut"):
@@ -4615,7 +4694,7 @@ def _to_vegalite(spec):
                                          "sort": [d["name"] for d in series]}
         else:
             vl["encoding"]["color"]["legend"] = None
-        return vl
+        return _with_derived(vl, spec, "c")
 
     if t == "area":
         rows = [{"x": c, "s": d["name"], "v": d["values"][i]}
@@ -4665,7 +4744,7 @@ def _to_vegalite(spec):
         rows = [{"x": c, "s": d["name"], "v": d["values"][i]}
                 for d in series for i, c in enumerate(cats)]
         interp = {"interpolate": "step-after"} if t == "step" else {}
-        return {"$schema": schema, "title": title, "width": WIDTH - 100, "height": 560,
+        return _with_derived({"$schema": schema, "title": title, "width": WIDTH - 100, "height": 560,
                 "data": {"values": rows},
                 "encoding": {
                     "x": {"field": "x", "type": "nominal", "title": xl, "sort": cats,
@@ -4693,7 +4772,7 @@ def _to_vegalite(spec):
                                    "scale": {"range": SHAPES[:n]}},
                          "fill": {"field": "s", "type": "nominal", "legend": None,
                                   "scale": {"range": MARKER_FILL[:n]}}}}],
-                "config": cfg}
+                "config": cfg}, spec, "x")
 
     if t in ("pie", "donut"):
         # DEVICE WASHES, not a grayscale ramp. The tablet has six highlighter washes, and a

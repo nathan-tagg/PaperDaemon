@@ -72,29 +72,38 @@ def typed(doc, page_no):
     return " ".join(" ".join(str(p.get("text") or "").split()) for p in paras if str(p.get("text") or "").strip())
 
 
-def handwriting(doc, page_no, top, ask_vision, prompt, key, workdir):
-    """The player's handwriting from `top` (page units) down, read: their ink alone (no picture, no typed text),
-    cropped close, for the vision model. `key`: the word the answer starts with ("MESSAGE"). -> text, or ''."""
+def ink_png(doc, page_no, png, top=None):
+    """The player's ink alone -- no picture (a board, its pieces, a character's words in their strip), no typed
+    text -- from `top` (page units) down, or the whole page, cropped close with a margin, saved to `png` for a vision
+    model. -> True, or False when there is no ink there."""
     from PIL import Image, ImageOps
     from paperdaemon.pipeline.page import images as IM
     from paperdaemon.pipeline.page import render as R
+    try:
+        boxes = [im["box"] for im in IM.items(doc, page_no) if im.get("box")]
+        _ox, oy = R.render(doc, page_no, png, typed=False, hide_images=boxes)[4]   # one pixel a page unit
+    except ValueError:
+        return False                                           # no ink on the page at all
+    with Image.open(png) as im:
+        w, h = im.size
+        page = im.convert("L").crop((0, max(0, int(top - oy)) if top is not None else 0, w, h))
+    # the writing alone, with a margin: a vision model shrinks a big picture, and the page is mostly paper
+    ink = ImageOps.invert(page).point(lambda v: 255 if v > 40 else 0).getbbox()
+    if not ink:
+        return False
+    pad = 40
+    page.crop((max(0, ink[0] - pad), max(0, ink[1] - pad), min(page.width, ink[2] + pad),
+               min(page.height, ink[3] + pad))).save(png)
+    return True
+
+
+def handwriting(doc, page_no, top, ask_vision, prompt, key, workdir):
+    """The player's handwriting from `top` (page units) down, read: their ink alone (no picture, no typed text),
+    cropped close, for the vision model. `key`: the word the answer starts with ("MESSAGE"). -> text, or ''."""
     png = os.path.join(workdir, "_player_read_%d.png" % int(time.time() * 1000))
     try:
-        try:
-            boxes = [im["box"] for im in IM.items(doc, page_no) if im.get("box")]
-            _ox, oy = R.render(doc, page_no, png, typed=False, hide_images=boxes)[4]   # one pixel a page unit
-        except ValueError:
-            return ""                                          # no ink on the page at all
-        with Image.open(png) as im:
-            w, h = im.size
-            page = im.convert("L").crop((0, max(0, int(top - oy)), w, h))
-        # the writing alone, with a margin: a vision model shrinks a big picture, and the page is mostly paper
-        ink = ImageOps.invert(page).point(lambda v: 255 if v > 40 else 0).getbbox()
-        if not ink:
+        if not ink_png(doc, page_no, png, top):
             return ""
-        pad = 40
-        page.crop((max(0, ink[0] - pad), max(0, ink[1] - pad), min(page.width, ink[2] + pad),
-                   min(page.height, ink[3] + pad))).save(png)
         reply = ask_vision(prompt, png)
     finally:
         try:

@@ -151,3 +151,14 @@ def test_a_stalled_server_is_waited_for_until_its_process_ends(tmp_path):
     got = json.loads(out.strip().splitlines()[-1])
     assert got.get("error") or got.get("finish") is None, got
     assert got["secs"] >= 7.0
+
+
+def test_a_charts_constant_series_is_data_and_a_real_loop_is_still_a_loop():
+    from paperdaemon.pipeline.host import model as M
+    head = '{"steps": [{"do": "chart", "spec": {"type": "line", "categories": ["Jan", "Feb", "Mar", "Apr", "May"], '
+    average = head + '"series": [{"name": "Bills", "values": [142, 131, 118, 96, 88]}, {"name": "Average", "values": [' + "121, " * 52
+    assert not M._looping(average)                 # a year of weeks at one value is data, not a loop
+    assert M._looping(head + '"values": [' + "0, " * 200)
+    part = '{"kind": "line", "points": [[10, 20], [30, 40]]}, '
+    assert M._looping(head + part * 12)            # a figure's part repeated is still caught
+    assert not M._looping(head + "".join('{"kind": "line", "points": [[%d, 20], [30, 40]]}, ' % i for i in range(40)))

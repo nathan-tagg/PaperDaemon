@@ -14,6 +14,28 @@ from paperdaemon.pipeline import host as H
 
 SKETCH_UA = {"User-Agent": "PaperDaemon/1.0 (reMarkable assistant)"}
 _SKIP_ENGINES = ("lucide", "devicons", "svgrepo", "material icons")
+# STOCK-PHOTO SITES serve their pictures as watermarked previews: "a real photo" came back with the site's name across
+# it. Their pictures are never taken; Wikimedia's (free, unmarked, described) are tried first.
+_STOCK_HOSTS = ("shutterstock.", "depositphotos.", "alamy.", "istockphoto.", "gettyimages.", "dreamstime.", "123rf.",
+                "stock.adobe.", "bigstockphoto.", "pond5.", "vectorstock.", "canstockphoto.", "stockfresh.", "fotolia.")
+
+
+def _host_of(url):
+    try:
+        return urllib.parse.urlsplit(str(url or "")).netloc.lower()
+    except ValueError:
+        return ""
+
+
+def _stock(r):
+    """Is a search result a stock-photo site's (its page or its picture)?"""
+    return any(s in _host_of(u) for u in (r.get("url"), r.get("img_src"), r.get("thumbnail_src")) for s in _STOCK_HOSTS)
+
+
+def _free_first(cands):
+    """Wikimedia's pictures before the rest, the search's own order kept within each."""
+    return sorted(cands, key=lambda r: 0 if any("wikimedia.org" in _host_of(u) or "wikipedia.org" in _host_of(u)
+                                                for u in (r.get("url"), r.get("img_src"))) else 1)
 
 
 def _wiki_summary(url):
@@ -107,9 +129,9 @@ def _fetch_png(what, site=None, tries=6):
     least 256 px on its short side."""
     q = ("%s site:%s" % (what, site)) if site else what
     d = H._search(q, images=True)
-    cands = [r for r in d.get("results", [])
-             if r.get("img_src") and not r["img_src"].lower().split("?")[0].endswith((".svg", ".gif"))
-             and not any(s in str(r.get("engine", "")).lower() for s in _SKIP_ENGINES)]
+    cands = _free_first([r for r in d.get("results", [])
+                         if r.get("img_src") and not r["img_src"].lower().split("?")[0].endswith((".svg", ".gif"))
+                         and not any(s in str(r.get("engine", "")).lower() for s in _SKIP_ENGINES) and not _stock(r)])
     H._scratch()["searches"].append({"query": q, "results": [
         {"title": r.get("title"), "snippet": (r.get("img_src") or "")[:120]} for r in cands[:3]]})
     tried = 0
