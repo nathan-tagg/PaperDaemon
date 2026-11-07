@@ -179,6 +179,16 @@ def _redraw_figure(parts):
     return H._draw_figure(parts, fig.get("place"))
 
 
+# A PART'S INK, by the name the model gives it -- the tablet's own pen colors; "red apples" were drawn black
+_INKS = {"black": "BLACK", "gray": "GRAY", "white": "WHITE", "yellow": "YELLOW",
+         "green": "GREEN", "pink": "PINK", "blue": "BLUE", "red": "RED", "cyan": "CYAN", "magenta": "MAGENTA"}
+
+
+def _ink(name):
+    k = _INKS.get(str(name or "").strip().lower())
+    return getattr(A.PenColor, k) if k else A.PenColor.BLACK
+
+
 def _onto_page(paths):
     """A figure kept where it was drawn, moved (never scaled) just far enough to lie inside the page's safe area."""
     x0, y0, x1, y1 = H._safe()
@@ -215,7 +225,7 @@ def _draw_figure(parts, place):
     H._mark()
     JOB.figure = {"parts": [dict(p) for p in parts if isinstance(p, dict)],
                      "at": len(JOB.draw.strokes), "op": None, "place": place, "turn": JOB.turns}
-    drawn, bad, paths_all = 0, [], []
+    drawn, bad, paths_all, inks = 0, [], [], []
     for i, part in enumerate(parts):
         if not isinstance(part, dict):
             bad.append("part %d is not an object" % i)
@@ -229,6 +239,7 @@ def _draw_figure(parts, place):
             bad.append("part %d: unknown or empty kind %r" % (i, part.get("kind")))
             continue
         paths_all += [list(pth) for pth in paths]
+        inks += [_ink(part.get("color"))] * len(paths)
     # THE HOST FITS THE FIGURE TO ITS BOX. The numbers the model sends are taken as a sketch on its own grid:
     # the whole figure is scaled (aspect kept) and centered into the box the plan gave this step, so its
     # coordinates need only be consistent with each other. Without a box the page's safe area is the box.
@@ -253,13 +264,13 @@ def _draw_figure(parts, place):
         fitted = H._fit_paths(paths_all, box)
         if fitted is not None:
             paths_all = fitted
-    for pth in paths_all:
+    for pth, ink in zip(paths_all, inks):
         ys = [p[1] for p in pth]
         if min(ys) < H._safe()[1] or max(ys) > H._safe()[3]:
             bad.append("a part runs off the page (y %d..%d, page is %d..%d)"
                        % (min(ys), max(ys), H._safe()[1], H._safe()[3]))
             continue
-        JOB.draw.stroke(pth, width=A.prof_swell(7, 12))
+        JOB.draw.stroke(pth, width=A.prof_swell(7, 12), color=ink)
         drawn += 1
     if not drawn:
         return dict({"error": "nothing was drawn", "problems": bad[:6]}, **H._did())

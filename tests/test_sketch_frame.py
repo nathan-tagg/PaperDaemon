@@ -131,3 +131,15 @@ def test_an_addition_drawn_on_a_grid_of_its_own_is_still_fitted():
     assert H._draw_figure(far, "p1").get("ok")
     x0, y0, x1, y1 = _extent(H.JOB.draw.strokes)
     assert -160 <= x0 and x1 <= 160 and 580 <= y0 and y1 <= 1270                  # fitted into the drawing's box
+
+
+def test_a_part_drawn_in_a_color_keeps_it():
+    # "add red apples": the apples were drawn in black
+    from paperdaemon.pipeline.draw import PenColor
+    H = _onto_job([-140, 600, 140, 1250])
+    apples = [{"kind": "circle", "cx": -40, "cy": 700, "r": 14, "color": "red"},
+              {"kind": "circle", "cx": 40, "cy": 720, "r": 14, "color": "Red"},
+              {"kind": "line", "x1": -40, "y1": 686, "x2": -36, "y2": 676}]
+    assert H._draw_figure(apples, "p1").get("ok")
+    inks = [s[3] for s in H.JOB.draw.strokes]
+    assert inks.count(PenColor.RED) >= 2 and inks[-1] == PenColor.BLACK

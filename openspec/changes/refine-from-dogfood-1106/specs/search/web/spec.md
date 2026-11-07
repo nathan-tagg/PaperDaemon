@@ -15,3 +15,13 @@ The model SHALL write the facts the results give, and say it could not find one 
 #### Scenario: The internet is off
 - **WHEN** network access is off in PaperDaemon's settings
 - **THEN** no page is read, and the search step reports that search is unavailable
+
+### Requirement: A search that finds nothing fails with the engines' reasons
+A search that returns no results SHALL fail, with the reasons the search engines gave (asked too often, a CAPTCHA),
+and the step that writes the answer SHALL be told to say it could not look the question up, never to write its facts
+from memory.
+
+#### Scenario: The engines refuse
+- **WHEN** every engine of the search service refuses ("too many requests", "CAPTCHA") and a page asks a lookup
+  question
+- **THEN** the answer says it could not look it up just now, and the question stays on the page

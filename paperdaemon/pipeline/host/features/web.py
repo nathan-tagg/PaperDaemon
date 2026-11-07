@@ -73,6 +73,13 @@ def t_web_search(query):
     except Exception as e:
         return {"error": "search unavailable: %s" % str(e)[:80]}
     rs = d.get("results", [])[:5]
+    if not rs:
+        # NOTHING FOUND IS A SEARCH THAT FAILED, with the engines' own reasons: taken as done, it handed the answer
+        # nothing, and the answer named a dozen states from memory. (A search service's engines refuse when they
+        # are asked too often: "too many requests", a CAPTCHA.)
+        why = "; ".join("%s: %s" % (e[0], e[1]) for e in (d.get("unresponsive_engines") or [])
+                        if isinstance(e, (list, tuple)) and len(e) >= 2)[:160]
+        return {"error": "the search found nothing" + (" -- the search engines refused (%s)" % why if why else "")}
     hits = [{"title": r.get("title"), "snippet": (r.get("content") or "")[:320]} for r in rs]
     # THE PAGES' OWN WORDS: a snippet is a line, and a write step given only those filled the rest in from memory
     # ("the next total eclipse crosses California, Nevada, Utah..." -- the 2044 path crosses Montana and the

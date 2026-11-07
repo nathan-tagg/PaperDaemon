@@ -190,7 +190,8 @@ PART_SCHEMA = {
     "items": {"type": "object", "description":
               "kind, then its numbers: line x1 y1 x2 y2; rect x1 y1 x2 y2 (corners); circle cx cy r; "
               "ellipse cx cy rx ry; arc cx cy r start end (degrees); polyline points [[x, y], ...]; "
-              "icon name cx cy r (a shape or icon by name, as element takes it).",
+              "icon name cx cy r (a shape or icon by name, as element takes it). Any part may have color: "
+              "black (the default), gray, blue, red, green, yellow or pink -- the tablet's inks.",
               "properties": {"kind": {"type": "string", "enum": ["line", "circle", "ellipse", "arc",
                                                                    "polyline", "rect", "icon"]}},
               "required": ["kind"], "additionalProperties": True},
@@ -642,9 +643,9 @@ asked for.
 
 RULINGS. With answer() or plan() you rule on the page: one ruling for every item the listing marks
 NEW, and one for anything else that should come off. Each is {"id", "is", "then"}: the id copied from
-the listing; is = question (it asks something -- also when it says how to answer or what to make of the
-answer, "... in three paragraphs", "... and chart it"), request (an instruction that asks nothing: "draw a
-cat"), command (an instruction to you), asked_to_remove (the user asked for it to go), stale_work (your own
+the listing; is = question (a paragraph that asks something is a question, whatever else it says: "...?
+Please look it up.", "...? Answer in three paragraphs.", "... and chart it"), request (an instruction that
+asks nothing: "draw a cat"), command (an instruction to you), asked_to_remove (the user asked for it to go), stale_work (your own
 earlier work this job replaces), conversation, note (the user's own writing; anything addressed to someone
 else, "Dad - circle the one you like", which is theirs to do, not yours; and the facts, numbers and lists a
 request works from) or other; then = erase or keep. ONLY A PURE INSTRUCTION COMES OFF: erase a

@@ -877,6 +877,9 @@ def step_message(cur):
     for q in steps:
         if q["do"] == "search" and q["status"] == "done" and q.get("results"):
             L.append("Search results for %r: %s" % (q["what"][:60], q["results"][:6400]))
+        elif q["do"] == "search" and q["status"] == "failed":
+            L.append("The search for %r found nothing (%s). Write that you could not look it up just now -- never "
+                     "its facts from memory." % (q["what"][:60], str(q.get("note") or "")[:160]))
     if cur.get("posts_found"):
         f = cur["posts_found"]
         try:

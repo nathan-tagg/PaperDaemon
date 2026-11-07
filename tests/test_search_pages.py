@@ -40,3 +40,21 @@ def test_the_paragraph_with_the_facts_beats_the_ones_that_repeat_the_topic():
            "over Montana, North Dakota and South Dakota.</p></article></body></html>" % generic
     got = W.readable(page, "next total solar eclipse visible from lower 48 states path of totality", cap=200)
     assert "Montana" in got and "2044" in got
+
+
+def test_a_search_that_finds_nothing_fails_with_the_engines_reasons(monkeypatch):
+    from paperdaemon.pipeline import host as H
+    sc = {"searches": []}
+    monkeypatch.setattr(H, "_scratch", lambda: sc)
+    monkeypatch.setattr(H, "_search", lambda q, images=False: {"results": [], "unresponsive_engines": [
+        ["brave", "Suspended: too many requests"], ["duckduckgo", "CAPTCHA"]]})
+    got = W.t_web_search("next total solar eclipse lower 48")
+    assert "found nothing" in got["error"] and "too many requests" in got["error"] and "CAPTCHA" in got["error"]
+    from paperdaemon.pipeline.host import decision as D
+    from paperdaemon.pipeline.host import job as J
+    J.begin(doc="nodoc", page=1, frame=(1620.0, 2160.0), ops=[])
+    H.JOB.steps = [{"id": 1, "do": "search", "what": "next total solar eclipse", "status": "failed",
+                    "note": got["error"]},
+                   {"id": 2, "do": "write", "what": "the answer", "status": "doing"}]
+    told = D.step_message(H.JOB.steps[1])
+    assert "found nothing" in told and "never its facts from memory" in told

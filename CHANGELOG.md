@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.20
+
+- A search that finds nothing says so. When the search engines refuse (asked too often: "too many requests", a CAPTCHA), the answer now says it could not look the question up just now, with the engines' reasons in the job's note, instead of writing the facts from memory: an answer named seven states the eclipse never crosses.
+- A question stays on the page whatever else its paragraph says: "When is the next eclipse...? Please look it up." was taken for a plain instruction and erased.
+- A drawing's parts can be drawn in the tablet's inks: "add red apples" draws them red, not black.
+- The decomposer's identity test covers its two busy test pictures as well (their records were missing).
+
 ## 0.2.19
 
 - An answer that looks something up is written from the pages found, not only their one-line snippets: the two best results are read for the paragraphs that bear on the question. An answer about the next total eclipse named a dozen states its path never crosses. What the results do not say, the answer says it could not find, rather than filling it in from memory.
