@@ -19,7 +19,12 @@
 - [x] 3.1 Chess reads the player's ink alone (`inputarea.ink_png`)
 - [x] 3.2 The reader copies the handwriting; a copy in notation is played as written
 
-## 4. Proof
+## 4. Search
 
-- [ ] 4.1 Released, then dogfooded in the False Mirror: a chart with a trend and an average, additions to a sketch, a
+- [x] 4.1 The two best results' pages are read for what bears on the question (web.readable); the brief:
+      facts come from the results, and one they do not give is said not found
+
+## 5. Proof
+
+- [ ] 5.1 Released, then dogfooded in the False Mirror: a chart with a trend and an average, additions to a sketch, a
       question that says how to answer, a written pawn move in chess

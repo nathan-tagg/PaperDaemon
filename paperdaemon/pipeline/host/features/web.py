@@ -2,6 +2,7 @@
 import base64
 import io
 import json
+import math
 import os
 import re
 import time
@@ -73,6 +74,17 @@ def t_web_search(query):
         return {"error": "search unavailable: %s" % str(e)[:80]}
     rs = d.get("results", [])[:5]
     hits = [{"title": r.get("title"), "snippet": (r.get("content") or "")[:320]} for r in rs]
+    # THE PAGES' OWN WORDS: a snippet is a line, and a write step given only those filled the rest in from memory
+    # ("the next total eclipse crosses California, Nevada, Utah..." -- the 2044 path crosses Montana and the
+    # Dakotas). The best pages are read side by side for the parts that bear on the question, and the first two that
+    # give any text are kept: a page drawn by its scripts (a news site's) gives none.
+    read = [(h, r.get("url")) for h, r in zip(hits, rs) if _readable_url(r.get("url"))][:4]
+    if read:
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(len(read)) as pool:
+            got = list(pool.map(lambda hu: _page_text(hu[1], query), read))
+        for (h, _u), text in [(hu, t) for hu, t in zip(read, got) if t][:2]:
+            h["page"] = text
     for r, h in zip(rs, hits):
         s = H._wiki_summary(r.get("url"))
         if s:
@@ -84,6 +96,65 @@ def t_web_search(query):
     # already looked up.
     H._scratch()["searches"].append({"query": query, "results": hits, "web": True})     # (a picture search's: no)
     return {"results": hits}
+
+
+_NOT_READ = ("wikipedia.org", "youtube.com", "youtu.be", "reddit.com", "facebook.com", "instagram.com", "tiktok.com",
+             "x.com/", "twitter.com")      # Wikipedia's lead comes its own way; the rest are not pages of prose
+_STOP = set("the and for with from that this what which when where who whom whose how why are was were will would "
+            "could should can into onto about over under than then them they their there these those its it's our "
+            "your you not but all any some one two our has have had does did doing near next".split())
+
+
+def _readable_url(url):
+    return bool(url) and str(url).startswith(("http://", "https://")) and not any(h in url for h in _NOT_READ) \
+        and not str(url).lower().split("?")[0].endswith((".pdf", ".jpg", ".png", ".gif", ".zip"))
+
+
+def readable(html, query, cap=1200):
+    """The part of a page's HTML that bears on `query`: its prose (no scripts, menus, headers, footers or forms), the
+    paragraphs sharing the most of the query's words, kept in the page's order, up to `cap` characters -> text."""
+    import html as _html
+    h = re.sub(r"(?is)<(script|style|noscript|svg|nav|header|footer|aside|form|template)\b.*?</\1\s*>", " ", html)
+    h = re.sub(r"(?is)<!--.*?-->", " ", h)
+    h = re.sub(r"(?i)<(br|/p|/li|/h[1-6]|/td|/th|/tr|/div|/dd|/dt|/blockquote|/section|/article)\b[^>]*>", "\n", h)
+    text = _html.unescape(re.sub(r"<[^>]+>", " ", h))
+    paras = [p for p in (" ".join(line.split()) for line in text.split("\n")) if len(p) >= 40]
+    words = {w for w in re.findall(r"[a-z]{3,}|[0-9]{2,}", str(query).lower()) if w not in _STOP}
+    if not paras or not words:
+        return ""
+    # A WORD IS WORTH WHAT IT TELLS APART: on a page about eclipses every paragraph says "total solar eclipse", and
+    # counting it chose the page's generic opening over the paragraph with the dates and the states. Each of the
+    # question's words weighs by how few of this page's paragraphs hold it (an inverse document frequency).
+    low = [p.lower() for p in paras]
+    weight = {w: math.log((len(paras) + 1.0) / (1.0 + sum(1 for p in low if w in p))) + 1.0 for w in words}
+    score = [sum(weight[w] for w in words if w in p) for p in low]
+    # the best first, each only while it still fits: shown in the page's order, a lesser paragraph above the best
+    # one took the room and the cap cut the best one off
+    keep, n = set(), 0
+    for i in sorted(range(len(paras)), key=lambda k: (-score[k], k)):
+        if score[i] == 0 or n >= cap:
+            break
+        if keep and n + len(paras[i]) > cap:
+            continue
+        keep.add(i)
+        n += len(paras[i]) + 5
+    return " ... ".join(paras[i] for i in sorted(keep))[:cap]
+
+
+def _page_text(url, query, cap=1200):
+    """A search result's page, fetched and cut to what bears on `query` (readable) -> text, or "" when it cannot be
+    read (not HTML, unreachable, the internet off)."""
+    try:
+        req = urllib.request.Request(url, headers=H.REDDIT_UA)
+        with H._net.urlopen(req, timeout=12) as r:
+            kind = str(r.headers.get("Content-Type") or "")
+            if "html" not in kind:
+                return ""
+            raw = r.read(1500000)
+            charset = r.headers.get_content_charset() or "utf-8"
+        return readable(raw.decode(charset, "replace"), query, cap)
+    except Exception:
+        return ""
 
 
 def _search(q, images=False):

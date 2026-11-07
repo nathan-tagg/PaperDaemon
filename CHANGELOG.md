@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.19
+
+- An answer that looks something up is written from the pages found, not only their one-line snippets: the two best results are read for the paragraphs that bear on the question. An answer about the next total eclipse named a dozen states its path never crosses. What the results do not say, the answer says it could not find, rather than filling it in from memory.
+- A chart's key sits above the chart in a row, clear of the data: in the chart's top-left corner it covered the first bars and points.
+
 ## 0.2.18
 
 - Typed text shows on every page, pictures and all. On a page holding a picture (a capture, a coloring page, a chart) the viewer and the editor showed none of the page's typed text, and saving such a page from the editor took the text off it. A save that carries no text now leaves the page's text exactly as it is, as the Mirror's always has.

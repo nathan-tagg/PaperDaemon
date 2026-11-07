@@ -800,7 +800,7 @@ def _turn(msgs, allowed, tries=3, choice="required", accept_prose=False, final=N
                 res = {"error": "bad arguments: %s" % str(ex)[:110]}
             except Exception as ex:
                 res = {"error": "%s: %s" % (type(ex).__name__, str(ex)[:100])}
-            msgs.append({"role": "tool", "tool_call_id": cid, "content": json.dumps(res)[:1500 if fn in ("history", "web_search") else 600]})
+            msgs.append({"role": "tool", "tool_call_id": cid, "content": json.dumps(res)[:{"web_search": 3600, "history": 1500}.get(fn, 600)]})
             if isinstance(res, dict) and not res.get("error"):
                 H._close_step(fn)
                 if final is not None and fn not in final:
@@ -847,7 +847,7 @@ def step_message(cur):
                     if cur.get("base_spec") else "Make the whole replacement."))
     for q in steps:
         if q["do"] == "search" and q["status"] == "done" and q.get("results"):
-            L.append("Search results for %r: %s" % (q["what"][:60], q["results"][:3200]))
+            L.append("Search results for %r: %s" % (q["what"][:60], q["results"][:6400]))
     if cur.get("posts_found"):
         f = cur["posts_found"]
         try:

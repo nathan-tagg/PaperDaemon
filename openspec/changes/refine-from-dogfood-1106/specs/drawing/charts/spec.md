@@ -13,3 +13,10 @@ average as a series. The figures the host gives the words about a chart SHALL in
 #### Scenario: A pie with a trend
 - **WHEN** a pie chart's spec asks for a trend line
 - **THEN** the spec is refused with the reason, and the model can change it
+
+### Requirement: A chart's key never covers its data
+A chart with a key (several series) SHALL show the key above the plot, in a row, never over the plot's marks.
+
+#### Scenario: Two years of bills
+- **WHEN** a bar chart shows this year's and last year's bills, January's bars the tallest
+- **THEN** the key sits above the chart and every bar shows whole

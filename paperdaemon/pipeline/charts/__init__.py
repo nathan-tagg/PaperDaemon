@@ -718,9 +718,11 @@ def _config():
             "mark": {"ellipsis": ".."}, "text": {"ellipsis": ".."},
             "title": {"color": "black", "fontSize": 34, "fontWeight": "bold",
                       "anchor": "middle", "offset": 16},
+            # THE KEY ABOVE THE PLOT, in a row: inside its top-left corner it covered the data there (a bar chart's
+            # tall January bars, a line chart's Monday points)
             "legend": {"labelColor": "black", "titleColor": "black", "labelFontSize": 26,
                        "titleFontSize": 26, "symbolStrokeColor": "black", "symbolStrokeWidth": 2.6,
-                       "symbolSize": 240, "orient": "top-left", "direction": "vertical",
+                       "symbolSize": 240, "orient": "top", "direction": "horizontal",
                        "fillColor": "white", "strokeColor": "black", "padding": 12,
                        "cornerRadius": 0, "offset": 10},
             "range": {"category": PALETTE}}
@@ -2199,7 +2201,7 @@ def _dumbbell_vl(spec, cfg, schema):
                               "shape": {"field": "k", "type": "nominal", "title": None,
                                         "scale": {"domain": [a_lab, b_lab],
                                                   "range": ["circle", "diamond"]}}}}],
-            # the legend defaults to top-left, which is INSIDE the plot and on top of the first row
+            # its key at the bottom right, clear of the rows (the default once sat inside the plot, on the first row)
             "config": dict(cfg, legend=dict(cfg["legend"], orient="bottom-right",
                                             direction="horizontal", offset=6))}
 

@@ -326,7 +326,7 @@ def _drain_host_steps(limit=8, kinds=None):
                 ok = not r.get("error")
                 # where the results come from travels with them, so the model can say how current they are
                 cur["results"] = (((r["source"] + ": ") if r.get("source") else "")
-                                  + json.dumps(r.get("results") or [], ensure_ascii=False))[:3200] if ok else ""
+                                  + json.dumps(r.get("results") or [], ensure_ascii=False))[:6400] if ok else ""
                 ST.finish(steps, cur, ok, r.get("error") or "")
             elif cur["do"] in ST.MARK_UP:
                 ok, note = _run_mark_up(cur["do"], cur.get("target"), cur.get("words"), cur.get("at_box"))
@@ -683,8 +683,10 @@ stale_work and made again. Never a second copy.
 
 WORDS. answer(answers, lines, rulings) when the whole job is words; a write step takes
 write_paragraph(lines). Answer at the length the question deserves; the page scrolls. Facts about
-the world -- places, people, numbers, dates, news -- are looked up: a search step, then a write
-step. answer() is for what needs no looking up.
+the world -- places, people, numbers, dates, distances, times, news -- are looked up: a search step,
+then a write step, also when they sit inside advice. Write the facts the results give; one they do
+not give, say you could not find -- never fill it in from memory. answer() is for what needs no
+looking up.
 
 <<CALENDAR>>
 The host fills in the forecast, holidays and sunrise and sunset. The user's dates go in as events;
