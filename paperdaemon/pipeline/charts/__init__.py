@@ -4150,13 +4150,6 @@ def _grid_vl(spec):
              "labelLimit": 0, "grid": False, "title": None}
     if spec["type"] == "table":
         cols, rows = spec["columns"], spec["rows"]
-        cells = []
-        for r, row in enumerate(rows):
-            for c, val in enumerate(row):
-                cells.append({"col": cols[c], "row": r, "v": "" if val is None else str(val),
-                              "head": 0})
-        for c, name in enumerate(cols):                 # the header, as row -1
-            cells.append({"col": name, "row": -1, "v": name, "head": 1})
         # THE TYPE FITS THE TABLE. At a fixed 16 px, a table of two columns of short words across
         # the whole width comes out smaller than the typed text above it. The widest entry sets
         # it (to 3/4 of its column), up to 28 px for a short table, back down to 16 as the rows
@@ -4164,21 +4157,33 @@ def _grid_vl(spec):
         longest = max([len(str(v)) for row in rows for v in row] + [len(str(c)) for c in cols] + [1])
         fs = 0.75 * (WIDTH - 90) / max(1, len(cols)) / (0.5 * longest)
         fs = max(16.0, min(fs, 28.0, 28.0 * 12.0 / max(12.0, len(rows) + 1.0)))
+        # AN ENTRY LONGER THAN ITS COLUMN GOES ON TWO LINES in its cell (a row is 2.75 lines tall): at the smallest
+        # size, eight columns, "Set table, Recycling" ran out of its cell and was cut to "Set table, Recyclin"
+        per_line = max(4, int(((WIDTH - 90) / max(1, len(cols)) - 16) / (0.56 * fs)))
+        cells = []
+        for r, row in enumerate(rows):
+            for c, val in enumerate(row):
+                a, b = _wrap2("" if val is None else str(val), per_line)
+                cells.append({"col": cols[c], "row": r, "v": a, "b": b, "head": 0})
+        for c, name in enumerate(cols):                 # the header, as row -1
+            a, b = _wrap2(str(name), per_line)
+            cells.append({"col": name, "row": -1, "v": a, "b": b, "head": 1})
         h = 2.75 * fs * (len(rows) + 1) + 40
+        # each line its own text: a one-line entry on the cell's middle, a two-line one's lines either side of it
+        texts = [{"transform": [{"filter": "datum.head == %d && %s" % (head, test)}],
+                  "mark": dict({"type": "text", "fontSize": round(fs), "font": FONT, "color": "black", "dy": dy},
+                               **({"fontWeight": "bold"} if head else {})),
+                  "encoding": {"text": {"field": field, "type": "nominal"}}}
+                 for head in (0, 1)
+                 for field, test, dy in (("v", "datum.b == ''", 0), ("v", "datum.b != ''", -0.6 * fs),
+                                         ("b", "datum.b != ''", 0.6 * fs))]
         return {"$schema": schema, "title": spec.get("title", ""),
                 "width": WIDTH - 90, "height": h, "data": {"values": cells},
                 "layer": [
                     {"mark": {"type": "rect", "stroke": "black", "strokeWidth": 1.5},
                      "encoding": {"color": {"field": "head", "type": "quantitative", "legend": None,
                                             "scale": {"domain": [0, 1],
-                                                      "range": ["#FFFFFF", "#D9D9D9"]}}}},
-                    {"transform": [{"filter": "datum.head == 0"}],
-                     "mark": {"type": "text", "fontSize": round(fs), "font": FONT, "color": "black"},
-                     "encoding": {"text": {"field": "v", "type": "nominal"}}},
-                    {"transform": [{"filter": "datum.head == 1"}],
-                     "mark": {"type": "text", "fontSize": round(fs), "font": FONT, "color": "black",
-                              "fontWeight": "bold"},
-                     "encoding": {"text": {"field": "v", "type": "nominal"}}}],
+                                                      "range": ["#FFFFFF", "#D9D9D9"]}}}}] + texts,
                 "encoding": {
                     "x": {"field": "col", "type": "nominal", "sort": cols, "axis": None},
                     "y": {"field": "row", "type": "ordinal",

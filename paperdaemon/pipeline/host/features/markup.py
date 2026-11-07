@@ -17,6 +17,7 @@ from paperdaemon.pipeline import host as H
 # the app's yellow highlighter, RGB only: rm_art adds the alpha itself
 HIGHLIGHT_RGBA = (255, 237, 117)
 MARK_PEN = 13                    # the lettering pen: a circle or an underline in the same hand
+CLEAR_V, CLEAR_H = 3.0, 4.0      # a ring's clear paper from the words over and under it, and beside it (_ring)
 
 
 def _from_view(at):
@@ -329,10 +330,15 @@ def _landed(boxes):
     return out
 
 
-def _ring(x0, y0, x1, y1):
+def _ring(x0, y0, x1, y1, room=None):
     """A hand-drawn ring round a box: an ellipse for a word, a pill for a phrase -- wide enough that
     the box's corners are inside (an ellipse through the box's own half-sizes cuts them off), one
-    stroke that overlaps where it began, as a pen circling something does."""
+    stroke that overlaps where it began, as a pen circling something does.
+
+    `room` ({"up", "down", "left", "right"}, _room) is how far the paper is free round the box. A ring that would
+    run into what is there is drawn inside that room instead, hugging the words: round "Thursday, November / 19 at
+    3 pm." in a paragraph, the open-paper ring cut the "y" of the "by" before it, and its top edge ran through
+    "All baked" on the line above, where it read as a strike-through of the user's words."""
     w, h = max(1.0, x1 - x0), max(1.0, y1 - y0)
     cx, cy = (x0 + x1) / 2.0, (y0 + y1) / 2.0
     # a margin that stays a margin: 45% of a four-line stanza put the ring's top edge through the
@@ -340,18 +346,115 @@ def _ring(x0, y0, x1, y1):
     ry = h / 2.0 + min(24.0, max(14.0, 0.45 * h))
     if w <= 2.5 * h:
         rx = (w / 2.0) / math.sqrt(1.0 - (h / 2.0 / ry) ** 2) + 10.0
-        return [(cx + rx * math.cos(math.radians(a)), cy - ry * math.sin(math.radians(a)))
-                for a in range(200, 200 + 380 + 1, 6)]
-    # a phrase or a block: straight along the top and bottom, round at the ends, the end circles
-    # centered far enough in that the box's corners are inside them, and a pad beyond the words
-    r = ry
-    half = max(0.0, w / 2.0 - math.sqrt(max(0.0, r * r - (h / 2.0) ** 2)) + 12.0)
-    pts = []
-    for a in range(90, 270 + 1, 8):                                  # the left end
-        pts.append((cx - half + r * math.cos(math.radians(a)), cy - r * math.sin(math.radians(a))))
-    for a in range(270, 450 + 1, 8):                                 # the right end
-        pts.append((cx + half + r * math.cos(math.radians(a)), cy - r * math.sin(math.radians(a))))
-    return pts + pts[:4]                                             # and past the start
+        out = [(cx + rx * math.cos(math.radians(a)), cy - ry * math.sin(math.radians(a)))
+               for a in range(200, 200 + 380 + 1, 6)]
+    else:
+        # a phrase or a block: straight along the top and bottom, round at the ends, the end circles
+        # centered far enough in that the box's corners are inside them, and a pad beyond the words
+        r = ry
+        half = max(0.0, w / 2.0 - math.sqrt(max(0.0, r * r - (h / 2.0) ** 2)) + 12.0)
+        pts = []
+        for a in range(90, 270 + 1, 8):                                  # the left end
+            pts.append((cx - half + r * math.cos(math.radians(a)), cy - r * math.sin(math.radians(a))))
+        for a in range(270, 450 + 1, 8):                                 # the right end
+            pts.append((cx + half + r * math.cos(math.radians(a)), cy - r * math.sin(math.radians(a))))
+        out = pts + pts[:4]                                              # and past the start
+    if room is None:
+        return out
+    # CLEAR PAPER between the ring and what is there: the pen's own width, and a word's box beside it is measured,
+    # not seen (CLEAR_V over and under, CLEAR_H beside)
+    xs, ys = [p[0] for p in out], [p[1] for p in out]
+    over = (y0 - min(ys) > room["up"] - CLEAR_V, max(ys) - y1 > room["down"] - CLEAR_V,
+            x0 - min(xs) > room["left"] - CLEAR_H, max(xs) - x1 > room["right"] - CLEAR_H)
+    if not any(over):
+        return out                                                       # open paper: the ring as it always was
+    # THE RING IN THE ROOM THERE IS: top and bottom no further out than the free paper (never closer than 3 units
+    # to the words), ends flattened until they fit the gap beside the words -- half-ellipses whose middles sit far
+    # enough in that the box's corners stay inside
+    m = ry - h / 2.0
+    top = y0 - max(3.0, min(m, room["up"] - CLEAR_V))
+    bot = y1 + max(3.0, min(m, room["down"] - CLEAR_V))
+    rcy, rry = (top + bot) / 2.0, (bot - top) / 2.0
+    k = math.sqrt(max(0.0, 1.0 - (max(rcy - y0, y1 - rcy) / rry) ** 2))
+    pad = 2.0
+
+    def reach(free):                                                    # an end's half-width for the gap beside it
+        a = rry
+        if a * (1.0 - k) + pad > free - CLEAR_H:
+            a = max(2.0, (free - CLEAR_H - pad) / max(1e-6, 1.0 - k))
+        return min(a, rry)
+    a_l, a_r = reach(room["left"]), reach(room["right"])
+    ex_l, ex_r = x0 + a_l * k - pad, x1 - a_r * k + pad
+    if ex_l > ex_r:
+        ex_l = ex_r = (ex_l + ex_r) / 2.0
+    pts = [(ex_l + a_l * math.cos(math.radians(a)), rcy - rry * math.sin(math.radians(a))) for a in range(90, 271, 8)]
+    pts += [(ex_r + a_r * math.cos(math.radians(a)), rcy - rry * math.sin(math.radians(a))) for a in range(270, 451, 8)]
+    return pts + pts[:4]
+
+
+def _others():
+    """What a ring has to stay off, as boxes: every word of typed text where it will be once this job's erasing is done
+    (words staged for erasing are not there; a paragraph under one that comes off moves up, as _landed moves the
+    marked words), every mark of ink this job is not erasing, and this job's own new ink."""
+    out = []
+    try:
+        tb, ps = TY.paragraphs(JOB.doc, JOB.page)
+    except Exception:
+        tb, ps = None, []
+    moved = H._reflow() or {}
+    norm = lambda s: " ".join(str(s or "").lower().split())
+    gone = [g for g in (norm(s) for s in (JOB.hide_typed or [])) if g]
+    for i, p in enumerate(ps):
+        blank = norm(p.get("text"))
+        for g in gone:
+            blank = blank.replace(g, "\0" * len(g))
+        dy = moved.get(i, 0.0)
+        sc = p.get("style_code") if p.get("measured") else None
+        for line, s, x0, w, y0, y1 in H._typed_line_spans(tb, p):
+            words = line.strip()
+            if not words:
+                continue
+            real = TY.span_width(words, sc) if sc is not None else None
+            size_of = ((lambda t: TY.span_width(t, sc)) if real else (lambda t: T.measure(t, p["size"], 0.11)))
+            full = max(1.0, size_of(words))
+            for mw in re.finditer(r"\S+", words):
+                if "\0" in blank[s + mw.start():s + mw.end()]:
+                    continue
+                out.append((x0 + w * size_of(words[:mw.start()]) / full, y0 + dy,
+                            x0 + w * size_of(words[:mw.end()]) / full, y1 + dy))
+    gone_ink = set(g for keys in (JOB.at_ink or {}).values() for g in keys) | H._hide()
+    for m in JOB.mark_index or []:
+        ks = set(m.get("keys") or m.get("sigs") or [])
+        if not (ks and ks <= gone_ink):
+            out.append(tuple(m["bbox"]))
+    from paperdaemon.pipeline.host import layout as PL
+    for s in (JOB.draw.strokes if JOB.draw is not None else []):
+        pts = PL._points(s)
+        if pts:
+            out.append((min(x for x, _ in pts), min(y for _, y in pts), max(x for x, _ in pts), max(y for _, y in pts)))
+    return out
+
+
+def _room(box, others):
+    """How far the paper is free on each side of `box` -> {"up", "down", "left", "right"} (infinite with nothing
+    there): the nearest of `others` over, under or beside it. One mostly inside the box is part of what is marked."""
+    x0, y0, x1, y1 = box
+    room = {"up": float("inf"), "down": float("inf"), "left": float("inf"), "right": float("inf")}
+    for bx0, by0, bx1, by1 in others:
+        iw, ih = max(0.0, min(x1, bx1) - max(x0, bx0)), max(0.0, min(y1, by1) - max(y0, by0))
+        if iw * ih >= 0.5 * max(1e-6, (bx1 - bx0) * (by1 - by0)):
+            continue
+        if bx0 < x1 and bx1 > x0:
+            if by1 <= (y0 + y1) / 2.0:
+                room["up"] = min(room["up"], y0 - by1)
+            elif by0 >= (y0 + y1) / 2.0:
+                room["down"] = min(room["down"], by0 - y1)
+        elif by0 < y1 and by1 > y0:
+            if bx1 <= (x0 + x1) / 2.0:
+                room["left"] = min(room["left"], x0 - bx1)
+            elif bx0 >= (x0 + x1) / 2.0:
+                room["right"] = min(room["right"], bx0 - x1)
+    return room
 
 
 def _run_mark_up(style, target=None, words=None, at_box=None):
@@ -416,9 +519,10 @@ def _run_mark_up(style, target=None, words=None, at_box=None):
                     break
             else:
                 groups.append([b])
+        others = _others()
         for g in groups:
-            d.stroke(H._ring(min(b[0] for b in g), min(b[1] for b in g),
-                           max(b[2] for b in g), max(b[3] for b in g)), width=MARK_PEN)
+            box = (min(b[0] for b in g), min(b[1] for b in g), max(b[2] for b in g), max(b[3] for b in g))
+            d.stroke(H._ring(*box, room=_room(box, others)), width=MARK_PEN)
         done = "circle round %d line(s) in %d place(s)" % (len(boxes), len(groups))
     JOB.ops.append("%s: %s" % (done, what[:60]))
     H.log("  %s for %r" % (done, what[:50]))

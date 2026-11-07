@@ -539,10 +539,32 @@ def facts(state):
     to_move = "your turn" if ("w" if board.turn == chess.WHITE else "b") == state["colors"]["engine"] else "the player's turn"
     out = ["You play %s and the player plays %s. %s moved first, so %s made the first move of this game."
            % (you, them, first, "you" if first == you else "the player"),
+           ("THE GAME IS OVER: %s" % ended(state)) if state["status"] != "playing" else
            "It is move %d, %s%s." % (board.fullmove_number, to_move,
                                      ("; the player's last move was %s" % last["san"]) if last and last.get("by") == "user" else ""),
-           "The moves so far: %s" % (movetext(state) or "none yet")]
+           "The moves %s: %s" % ("played" if state["status"] != "playing" else "so far", movetext(state) or "none yet")]
     return out
+
+
+def ended(state):
+    """How the game ended, from the opponent's side ("you" is the opponent) -> words, or "" while it is played."""
+    st, res = state["status"], state.get("result")
+    if st == "playing":
+        return ""
+    you = state["colors"]["user"]
+    they_won = (res == "1-0" and you == "b") or (res == "0-1" and you == "w")
+    they_lost = (res == "1-0" and you == "w") or (res == "0-1" and you == "b")
+    last = state["history"][-1] if state["history"] else None
+    if st == "checkmate" and last:
+        return ("you checkmated the player with %s; you won." % last["san"] if they_won else
+                "the player checkmated you with %s; the player won." % last["san"])
+    if st == "resigned":
+        return "the player resigned; you won." if they_won else "you resigned; the player won."
+    if st == "draw_agreed":
+        return "you and the player agreed to a draw."
+    if res == "1/2-1/2":
+        return "a draw, by %s." % st.replace("_", " ")
+    return "%s (%s): %s." % (st.replace("_", " "), res, "you won" if they_won else "the player won" if they_lost else "a draw")
 
 
 def persona_text(state):
@@ -745,7 +767,11 @@ def pid_at(state, square):
 
 def apply_move(state, uci):
     """Play a legal move on the state -> what changed: {san, moved: [(pid, from, to)], captured,
-    promoted}. Raises ValueError on an illegal one."""
+    promoted}. Raises ValueError on an illegal one -- and on any move once the game is over: after a
+    resignation or an agreed draw the board still has legal moves, and one written afterward was played into
+    the finished game's record."""
+    if state.get("status", "playing") != "playing":
+        raise ValueError("the game is over (%s)" % state.get("result"))
     board = chess.Board(state["fen"])
     move = chess.Move.from_uci(uci)
     if move not in board.legal_moves:
@@ -1126,9 +1152,7 @@ def infer_move(state, seen, promote="q"):
     opponent's piece, castling when the king moves two files, en passant, promotion to a queen unless
     told otherwise); castling with the king AND the rook moved; a capture where you also pulled the
     captured piece aside. Anything else is refused with a reason, and `tidy` then puts every piece
-    back where the state has it."""
-    if state["status"] != "playing":
-        return {"ok": False, "reason": "the game is over (%s)" % state["result"]}
+    back where the state has it. Once the game is over nothing moved is no move, and anything moved is refused."""
     board = chess.Board(state["fen"])
     user = state["colors"]["user"]
     moved = []
@@ -1140,6 +1164,8 @@ def infer_move(state, seen, promote="q"):
             moved.append((pid, p["square"], s["square"]))
     if not moved:
         return {"ok": True, "uci": None}
+    if state["status"] != "playing":
+        return {"ok": False, "reason": "the game is over (%s)" % state["result"]}
     turn = "w" if board.turn == chess.WHITE else "b"
     if turn != user:
         return {"ok": False, "reason": "it is your opponent's turn; wait for its move"}
@@ -1447,6 +1473,8 @@ def parse_text_move(state, text, promote="q"):
 def play_user_uci(doc, page_no, state, uci, page_id=None):
     """A move the player WROTE rather than dragged: played, and its piece set on its square by the
     host (with any capture moved to the captured row). -> {ok, san, change} or {ok: False, reason}"""
+    if state["status"] != "playing":
+        return {"ok": False, "reason": "the game is over (%s)" % state["result"]}
     board = chess.Board(state["fen"])
     turn = "w" if board.turn == chess.WHITE else "b"
     if turn != state["colors"]["user"]:

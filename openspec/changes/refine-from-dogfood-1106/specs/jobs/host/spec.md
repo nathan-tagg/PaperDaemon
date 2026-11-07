@@ -58,3 +58,20 @@ its own.
 - **WHEN** a typed question sits at the top of a page, a note to someone sits near its foot, and the answer fits in
   the paper between them
 - **THEN** the answer is written right under the question, and the note stays below it, untouched
+
+### Requirement: A reply moved under its question is checked where it is
+When a reply is written under what it answers instead of in the box its plan gave it, the plan's box SHALL move with
+the words, so every check of the plan afterward looks where they are.
+
+#### Scenario: An answer above a note at the foot of the page
+- **WHEN** the reply to a question is written under the question, above a note at the page's foot
+- **THEN** the job is done, with no "failed" receipt and no retry box
+
+### Requirement: A ring round words keeps off what is around them
+A circle round words SHALL keep to the free paper round them: its top and bottom no nearer than a few units to the
+words or ink over and under it, and its ends inside the gap beside the words, flattened as needed, the marked words
+still all inside it. On open paper the ring SHALL be the ring it always was.
+
+#### Scenario: A date that wraps in a paragraph
+- **WHEN** a date that runs over two lines of a paragraph is circled
+- **THEN** neither ring crosses a word that is not part of the date, and no ring's edge runs through the line above

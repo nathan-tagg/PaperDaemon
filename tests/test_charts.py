@@ -48,3 +48,15 @@ def test_trend_and_average_lines_are_worked_out_by_the_host(tmp_path):
             raise AssertionError("accepted %r" % bad)
         except C.SpecError:
             pass
+
+
+def test_a_table_entry_longer_than_its_column_goes_on_two_lines_in_its_cell(tmp_path):
+    # DF110: eight columns at the smallest size, and "Set table, Recycling" was cut to "Set table, Recyclin"
+    svg = tmp_path / "t.svg"
+    spec = {"type": "table", "columns": ["Person", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+            "rows": [["Max", "Set table", "Set table", "Set table, Recycling", "Set table", "Set table", "", ""],
+                     ["Ella", "Feed dog", "", "", "", "", "", ""]]}
+    C.render(spec, png_path=str(tmp_path / "t.png"), svg_path=str(svg))
+    shown = _texts(svg.read_text(encoding="utf-8"))
+    assert "Set table," in shown and "Recycling" in shown and "Set table, Recycling" not in shown
+    assert "Feed dog" in shown                            # what fits stays on one line

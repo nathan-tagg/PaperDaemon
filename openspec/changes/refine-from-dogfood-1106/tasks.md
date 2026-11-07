@@ -28,3 +28,12 @@
 
 - [ ] 5.1 Released, then dogfooded in the False Mirror: a chart with a trend and an average, additions to a sketch, a
       question that says how to answer, a written pawn move in chess
+
+## 6. Round 6 and the end of a chess game (0.2.24)
+
+- [x] 6.1 The chess opponent has the last word when the game ends and stays on the page; a turn with no line of
+      theirs keeps their face; a finished game takes no more moves; the receipt names the move once
+- [x] 6.2 A reply moved under its question moves its plan box with it (no false "failed")
+- [x] 6.3 The brief: a week takes `start`, "next week" starts on the user's first day; a habit tracker is a chart
+- [x] 6.4 A ring keeps to the free paper round the words it circles
+- [x] 6.5 A table entry longer than its column goes on two lines in its cell

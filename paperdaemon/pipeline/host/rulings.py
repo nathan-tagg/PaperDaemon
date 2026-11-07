@@ -126,7 +126,8 @@ def problems(kind, args, offered=None):
                     out.append("step %d tags the page %r: %s" % (i, q.get("what"), why))
             if do == "calendar" and not ST.calendar_what(q.get("what")):
                 out.append("step %d (calendar): what is the month (2026-12, or December 2026), or week. One day's "
-                           "schedule is not a calendar: a chart step, type agenda." % i)
+                           "schedule is not a calendar: a chart step, type agenda; nor is a habit tracker: a chart "
+                           "step, type habit." % i)
             if do == "chess" and q.get("color") not in (None, "white", "black", "either"):
                 out.append("step %d (chess): color is the side the user plays: white, black or either." % i)
             if do == "posts" and not str(q.get("source") or "").strip():

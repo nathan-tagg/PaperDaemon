@@ -238,14 +238,22 @@ def place_talk(doc, page_no, state, lines, page_id=None, workdir=None):
         first[3:] = line[3:]
     lines = [tuple(m) for m in merged]
     old = state.get("talk") or {}
+    # THE CHARACTER ALONE: no narrator lines (the board shows the move; the face takes the room)
+    lines = talk_lines([l for l in lines if l and l[0] != "narrator"])
+    if not lines:
+        # THE OPPONENT NEVER LEAVES THE TABLE: a turn with no line of theirs (a refused move, a turn after the game)
+        # keeps their face as it was, without its words or a passing tell. The strip went -- and the opponent with
+        # it -- whenever a turn had no line of theirs, as at the end of a game won on the player's move
+        lines = talk_lines([(l[0], l[1], "", [], l[4] if len(l) > 4 else None)
+                            for l in old.get("lines") or [] if l and l[0] != "narrator"])
+        if lines and [list(l) for l in lines] == old.get("lines"):
+            return old                                   # on the page already, as it is
     if old.get("box"):
         try:
             IM.remove_in_box(doc, page_no, tuple(old["box"]), page_id=page_id)
         except Exception:
             pass
     state["talk"] = {}
-    # THE CHARACTER ALONE: no narrator lines (the board shows the move; the face takes the room)
-    lines = talk_lines([l for l in lines if l and l[0] != "narrator"])
     if not lines:
         return None
     x0, y0, x1, y1 = CH.talk_box(tuple(state["board"]["box"]), state["board"].get("top"))
@@ -507,6 +515,66 @@ def _over_line(state):
     return "Game over: %s, a draw." % what if res == "1/2-1/2" else "Game over: %s (%s)." % (what, res)
 
 
+FAREWELL_PROMPT = """You are this character; your chess game with the player has just ended: {persona}
+{facts}
+{plan}
+{context}
+Reply with a line SAY: one short thing you say now the game is over, in your own voice, true to how it ended.
+Then a line FEEL: what you truly feel now -- one of {emotions} -- how strongly, 1 to 10, and at whom if anyone.
+Then a line TRUTH: true, lie or bluff (nobody sees it). Then FACE: one fitting signature ID from the private menu
+above, or none. Not a tell."""
+
+
+def _farewell(state, ask_text, log=None):
+    """THE GAME HAS JUST ENDED and the opponent is still at the table: they have the last word -- a winner's, a
+    loser's or a draw's -- in their own voice, the table moving their feelings with the result (won, lost; a draw is
+    close). At the end they always speak, the quietest a word or two. Without a model their face stays, in the mood
+    the end left them in. A game that ended on the player's move or a resignation had no line of theirs, and the
+    talk strip went, the opponent with it. -> talk lines"""
+    from paperdaemon.pipeline.games import chess as CH
+    you, res = state["colors"]["user"], state.get("result")
+    sit = ("won" if (res == "1-0") == (you == "b") else "lost") if res in ("1-0", "0-1") else "close"
+    context = "The game is over: %s" % CH.ended(state)
+    cid = state["persona"].get("character")
+    if not cid:
+        # an opponent who is no roster character has no face: only words show
+        said = ""
+        if ask_text is not None:
+            try:
+                reply = ask_text("You are this chess opponent: %s\n%s\n%s\nReply with ONE line SAY: one short thing "
+                                 "you say now the game is over, in your own voice, true to how it ended."
+                                 % (CH.persona_text(state), "\n".join(CH.facts(state)), context))
+                m = re.search(r"(?im)^\s*SAY:\s*(.+)$", reply or "")
+                said = m.group(1).strip().strip('"') if m else ""
+            except Exception as ex:
+                _log(log, "  game: the closing word failed: %s" % str(ex)[:90])
+        return [(_name(state), "neutral", said)] if said else []
+    from paperdaemon.pipeline.games import table as TB
+    from paperdaemon.pipeline.games import cast as rm_cast
+    state["cast_input"] = ""                              # the player said nothing: the game ended
+    TB.next_turn(state)
+    rng = CH.Rng(**state["rng"])
+    TB.seat(state, [cid])
+    plan = TB.pre_turn(state, cid, {sit}, rng, addressed=True, interaction="conversation")
+    state["rng"] = rng.state()
+    said, feel, strong, at, truth, presentation = "", "", None, "", "", None
+    if ask_text is not None:
+        try:
+            reply = ask_text(FAREWELL_PROMPT.format(
+                persona=CH.persona_text(state), facts="\n".join(CH.facts(state)), plan="\n".join(plan["prompt_lines"]),
+                context=context + CH.recall_block(state, context), emotions=", ".join(CH.EMOTIONS)))
+            m = re.search(r"(?im)^\s*SAY:\s*(.+)$", reply or "")
+            said = m.group(1).strip().strip('"') if m else ""
+            feel, strong, at = CH.parse_feel(reply)
+            truth = CH.parse_truth(reply)
+            presentation = rm_cast.parse_face(reply)
+            rm_cast.suspicion_from_reply(state, plan, reply)
+        except Exception as ex:
+            _log(log, "  game: the closing word failed: %s" % str(ex)[:90])
+    seen = TB.post_turn(state, cid, plan, feel or None, strong, at, truth, speech=said, presentation=presentation)
+    return _table_lines(state, {"table": seen, "said": seen.get("speech", said)})
+
+
 def play(doc, page_no, page_id, ask_text=None, ask_vision=None, log=None, workdir=None, paint=None):
     """One job on a game page -> (outcome, note), or None when the page holds no game. `paint(prompt,
     mode, src)` -> a PNG path is the host's picture model, for the games that draw (Ink Adventure)."""
@@ -628,19 +696,28 @@ def play(doc, page_no, page_id, ask_text=None, ask_vision=None, log=None, workdi
             pick = lambda prompt: ask_text(prompt)
         r = CH.engine_turn(doc, page_no, state, page_id, pick=pick, context=context.strip())
         if r.get("ok"):
-            notes.append("%s played %s (%s%s)" % (_name(state), r["san"], r["how"], ", a blunder draw" if r.get("blundered") else ""))
-            talk += _table_lines(state, r, "%s plays %s." % (_short(state), r["san"]))
+            # THE RECEIPT SAYS THE MOVE ONCE, in the player's words: "Rook -- Marsh played Nf6 (model); Rook plays Nf6."
+            # named it twice and showed how the move was chosen, which is the log's business
+            _log(log, "  game: %s played %s (%s%s)" % (_name(state), r["san"], r["how"],
+                                                        ", a blunder draw" if r.get("blundered") else ""))
+            notes.append("%s played %s" % (_short(state), r["san"]))
+            talk += _table_lines(state, r)
     elif context and state["status"] == "playing" and not engine_to_move:
         # a remark on the player's own turn: the character may answer (the table decides; a stone
         # may just look at you), and waits for the move
         talk += _remark(state, context, ask_text, log)
     end = _over_line(state)
+    if end and not any(t[0] != "narrator" and str(t[2] or "").strip() for t in talk):
+        # THE LAST WORD: the game ended on this turn (a finished game gives its page back, so there is no later turn),
+        # and the opponent says something unless they already did on the move that ended it
+        talk += _farewell(state, ask_text, log)
     if end:
         talk.append(("narrator", "", end))
     _remember_turn(doc, page_id, state, written.get("text") if written and written["kind"] == "say" else "",
                    [t[2] for t in talk if t[0] != "narrator" and str(t[2] or "").strip()], bool(end), log)
     # 4. THE PAGE: every piece exactly on its square, the talk strip replaced, the state saved. The
-    # strip is this turn's lines only, every turn -- a bubble never lingers into the next
+    # strip is this turn's lines only, every turn -- a bubble never lingers into the next; a turn with no
+    # line of the opponent's keeps their face (place_talk)
     CH.tidy(doc, page_no, state, page_id)
     if talk or notes:
         place_talk(doc, page_no, state, talk, page_id, workdir)

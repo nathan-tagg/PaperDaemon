@@ -313,6 +313,7 @@ def t_write_paragraph(lines, start_y=None, size=None, place=None):
         return out, None
 
     chosen, why, rest = None, None, []
+    moved = None                                          # the top the reply moved up to, under what it answers
     for sz in (size,):
         wrapped, why = fit(sz)
         if wrapped is None:
@@ -326,6 +327,7 @@ def t_write_paragraph(lines, start_y=None, size=None, place=None):
                 H.log("  written under what it answers (y %d), not below everything else (y %d)"
                       % (int(under), int(box["y0"])))
                 top = under + base * sz / body
+                moved = under
         if top is None:
             return dict({"error": "give start_y or place (a box from your plan)."}, **H._did())
         bad = H._bad_y(top, sz)
@@ -345,6 +347,7 @@ def t_write_paragraph(lines, start_y=None, size=None, place=None):
         # screen's safe area ends, not where the page does. So the words go on at the asked size,
         # straight down, and the page extends beneath them.
         sz = size
+        moved = None                                      # (written where the box is, below everything)
         wrapped, why2 = fit(sz)
         if wrapped is None:
             return dict({"error": "%s. NOTHING written." % why2}, **H._did())
@@ -368,6 +371,11 @@ def t_write_paragraph(lines, start_y=None, size=None, place=None):
             H._letter(JOB.draw, flat[k:k + n], x + T.measure(ln[:len(ln) - len(ln.lstrip())], sz), y, sz)
             k += n
         y += p_
+    if moved is not None:
+        # THE PLACE IS WHERE THE WORDS WENT: the plan's box moves with them, so what checks the plan afterward looks
+        # where they are. Left where it was planned, a reply written under its question was reported "nothing landed
+        # in the box", and the job was marked FAILED, with a retry box, its answer on the page
+        box["y0"], box["y1"] = float(moved), max(float(moved) + 1.0, float(y))
     JOB.ops.append("paragraph of %d line(s) from y=%d" % (len(wrapped), int(chosen[1])))
     # the notepad records WHAT was written, so a follow-up ("which of those is the shortest?") can see it
     JOB.written.extend(ln for ln, _new in wrapped if ln.strip())

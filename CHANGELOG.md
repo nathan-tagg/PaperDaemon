@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.24
+
+- A chess opponent stays at the table when the game ends and has the last word, in their own voice and true to how it ended: a winner's, a loser's or a draw's. A game won on your move or ended by resigning left the page with no opponent at all. Without a text model their face stays, in the mood the end left them in.
+- The opponent's face stays on the page through a turn with nothing from them (a move refused and put back, writing that could not be read); it used to vanish until their next move.
+- A finished chess game takes no more moves: after a resignation or an agreed draw the board still has legal moves, and one written afterward was played into the finished game.
+- A chess receipt names the opponent's move once ("Rook played Nf6"), without how the move was chosen.
+- An answer written under its question is no longer reported as failed, with a retry box, when it landed fine: the check looked for it where the plan had first put it, at the foot of the page.
+- A week page for next week starts on the first day of your next week; it started today, so "Saturday: soccer" landed on this Saturday. A habit tracker is a tracker grid, not a month calendar with the habits written into every day.
+- A ring round words in a paragraph keeps off the words around it: round a date that wrapped, it cut the "by" before it, and its top edge ran through the line above like a strike-through.
+- A table entry too long for its column goes on two lines in its cell instead of being cut off ("Set table, Recyclin").
+
 ## 0.2.23
 
 - An ink adventure's scene page has no line over the place to write: the story's cell, then the rule, and the page under it is yours.

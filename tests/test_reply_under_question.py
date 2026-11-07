@@ -2,6 +2,7 @@
 someone at the page's foot, a screen and a half under its own question); one that does not fit there still goes
 below everything, and a question staged for erasing hands its place to the stack."""
 from paperdaemon.pipeline import host as H
+from paperdaemon.pipeline import draw as A
 from paperdaemon.pipeline.host import job as J
 from paperdaemon.pipeline.host.features import write as W
 from paperdaemon.pipeline.page import typed as TY
@@ -11,7 +12,7 @@ QUESTION = {"text": "What are some gentle ways to get a toddler to eat more vege
 
 
 def _job(monkeypatch, staged=()):
-    J.begin(doc="nodoc", page=1, frame=(1620.0, 2160.0), ops=[])
+    J.begin(doc="nodoc", page=1, frame=(1620.0, 2160.0), draw=A.Drawing(), ops=[])
     monkeypatch.setattr(TY, "paragraphs", lambda doc, page: (None, [dict(QUESTION)]))
     monkeypatch.setattr(H, "_reflow", lambda: {})
     H.JOB.hide_typed = list(staged)
@@ -39,3 +40,14 @@ def test_a_question_staged_for_erasing_hands_its_place_to_the_stack(monkeypatch)
     _job(monkeypatch, staged=["What are some gentle ways"])
     monkeypatch.setattr(ER, "staged_paragraphs", lambda texts, passages: {0})
     assert W._under_answered(400.0, -576.0, 576.0) is None
+
+
+def test_the_plans_box_moves_with_the_words_so_the_commit_finds_them(monkeypatch):
+    # DF108: written under its question, the reply was reported "nothing landed in the box" -- the check looked where
+    # the box had been planned, at the page's foot -- and the job was marked failed with its answer on the page
+    from paperdaemon.pipeline.host import layout as PL
+    _job(monkeypatch)
+    got = W.t_write_paragraph(["A two-year-old turning down greens is very common.", "Keep offering, without pressure."])
+    box = H.JOB.plan["places"]["s1"]
+    assert got.get("ok"), got
+    assert box["y0"] < 400 and PL.covered(box, H.JOB.draw.strokes)

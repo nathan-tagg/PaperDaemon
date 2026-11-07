@@ -18,7 +18,9 @@ STEP_KINDS = "<step kinds>"         # filled in with this lineup's offered kinds
 CAL_BRIEF = {
     "page": """CALENDARS: a calendar, a month, a week, the forecast or the weather is one calendar
 step (it takes the page); its chart call is {"type": "calendar", "year": 2026, "month": 10} for a
-month or {"type": "week"} for the seven days from today.""",
+month, {"type": "week"} for the seven days from today, or {"type": "week", "start": "2026-11-15"} for
+seven days from another (next week starts on the first day of the user's week). A habit tracker is no
+calendar: a chart step, type habit.""",
 }
 _SITE_NAMES = {"reddit": "Reddit", "hackernews": "Hacker News", "bluesky": "Bluesky", "4chan": "4chan",
                "mastodon": "Mastodon"}

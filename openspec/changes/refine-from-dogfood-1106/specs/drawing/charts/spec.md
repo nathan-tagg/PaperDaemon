@@ -20,3 +20,20 @@ A chart with a key (several series) SHALL show the key above the plot, in a row,
 #### Scenario: Two years of bills
 - **WHEN** a bar chart shows this year's and last year's bills, January's bars the tallest
 - **THEN** the key sits above the chart and every bar shows whole
+
+### Requirement: A table entry stays in its cell
+A table entry longer than its column at the table's type size SHALL go on two lines in its cell, broken at a space,
+the two lines centered on the cell's middle; an entry that fits SHALL stay on one line.
+
+#### Scenario: Eight columns of chores
+- **WHEN** a chores table has a column per day and an entry "Set table, Recycling"
+- **THEN** the cell shows "Set table," over "Recycling", whole, inside its borders
+
+### Requirement: A week starts where it is asked to
+A week calendar SHALL take `start` (YYYY-MM-DD) and run seven days from it; without one it SHALL run seven days from
+today. The brief SHALL say so, and that "next week" starts on the first day of the user's week. A habit tracker SHALL
+be a chart of type habit, not a calendar.
+
+#### Scenario: Next week's appointments
+- **WHEN** on a Saturday the user asks for a page for next week with a dentist on Monday and soccer on Saturday
+- **THEN** the week runs from the first day of the user's next week, and soccer is on the coming Saturday, not today
