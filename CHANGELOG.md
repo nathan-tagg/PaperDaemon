@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.21
+
+- A job's note says what was written, never what the plan guessed before it looked: when a search found nothing, the page said "I couldn't look that up just now" while the note beside it quoted the plan's own guess at the answer.
+
 ## 0.2.20
 
 - A search that finds nothing says so. When the search engines refuse (asked too often: "too many requests", a CAPTCHA), the answer now says it could not look the question up just now, with the engines' reasons in the job's note, instead of writing the facts from memory: an answer named seven states the eclipse never crosses.

@@ -889,6 +889,11 @@ def _host_note(problems):
         t = ST.erase_targets(q["what"]) if q["do"] == "erase" else []
         if t and all(k == "para" and int(v) in kept for k, v in t):
             return None
+        # A WRITE IS TOLD BY WHAT IT WROTE (the "Wrote:" below), never by the plan's words for it: a plan made before
+        # its search carried a guessed answer ("crossing Texas, Oklahoma...") the search never confirmed, and the
+        # note on the page quoted it beside the honest "I couldn't look that up"
+        if q["do"] == "write":
+            return "write"
         return ST.describe(q)
     did = [d for d in (_said(q) for q in steps if q["status"] == "done") if d]
     note = "; ".join(did) if did else "nothing"
