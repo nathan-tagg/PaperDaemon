@@ -203,6 +203,52 @@ def _body():
     return (xh - PEN_W * R.WSCALE_DEFAULT) / T.XH, lead, gap, base
 
 
+def _under_answered(height, x0, x1):
+    """The top of a reply's first line right under what the current step answers -- the lowest typed paragraph or
+    handwritten line it names that stays on the page -- when the free paper there, down to the next thing on the
+    page or another place of this job, holds `height`; else None.
+
+    A REPLY GOES UNDER WHAT IT ANSWERS. Stacked below everything, an answer went under a note to someone at the
+    foot of the page, a screen and a half below its own question, with white paper between them."""
+    from paperdaemon.pipeline import page as ER
+    from paperdaemon.pipeline.page import typed as TY
+    cur = ST.current(JOB.steps or [])
+    if not cur or not JOB.doc:
+        return None
+    rf = (JOB.plan or {}).get("reflow") or {}
+    others = [tuple(o) for o in (rf.get("obstacles") or [])]
+    ends, kept = [], None
+    for a in cur.get("answers") or []:
+        kind, _, n = str(a).partition(":")
+        try:
+            n = int(n)
+        except ValueError:
+            continue
+        if kind == "para":
+            if kept is None:
+                _tb, ps = TY.paragraphs(JOB.doc, JOB.page)
+                ps = ps or []
+                gone = (ER.staged_paragraphs([p.get("text") or "" for p in ps], JOB.hide_typed)
+                        if JOB.hide_typed else set())
+                kept = [(i, p) for i, p in enumerate(ps) if str(p.get("text", "")).strip()]
+                moved = H._reflow()
+            if 1 <= n <= len(kept) and kept[n - 1][0] not in gone:
+                i, p = kept[n - 1]
+                ends.append((H._line_ink(p, max(0, len(p["lines"]) - 1))[1] + moved.get(i, 0.0), 25))
+        elif kind == "line" and (JOB.ink_lines or {}).get(n):
+            b = JOB.ink_lines[n][2]
+            if any(o[0] < b[2] and o[2] > b[0] and o[1] < b[3] and o[3] > b[1] for o in others):   # still there
+                ends.append((float(b[3]), 40))
+    if not ends:
+        return None
+    end, gap = max(ends)
+    top = end + gap
+    others += [(q["x0"], q["y0"], q["x1"], q["y1"]) for k, q in ((JOB.plan or {}).get("places") or {}).items()
+               if k != cur.get("place")]
+    below = [o[1] for o in others if o[1] >= top - 1 and o[0] < x1 and o[2] > x0]
+    return top if (min(below) - 40 if below else float("inf")) - top >= height else None
+
+
 def t_write_paragraph(lines, start_y=None, size=None, place=None):
     """Several lines of lettering, placed by the host, at the typed text's size and spacing (_body): each string of
     `lines` a paragraph, as each line typed on the tablet with Enter is.
@@ -274,6 +320,12 @@ def t_write_paragraph(lines, start_y=None, size=None, place=None):
         # the first baseline as far below the box's top as a typed line's below its own (the box starts where the next
         # typed paragraph would: intake's gap 25 under typed text)
         top = float(start_y) if start_y is not None else (box["y0"] + base * sz / body if box else None)
+        if start_y is None and box is not None:
+            under = _under_answered(base * sz / body + tall(wrapped, sz), box["x0"], box["x1"])
+            if under is not None and under + base * sz / body < top - 1:
+                H.log("  written under what it answers (y %d), not below everything else (y %d)"
+                      % (int(under), int(box["y0"])))
+                top = under + base * sz / body
         if top is None:
             return dict({"error": "give start_y or place (a box from your plan)."}, **H._did())
         bad = H._bad_y(top, sz)

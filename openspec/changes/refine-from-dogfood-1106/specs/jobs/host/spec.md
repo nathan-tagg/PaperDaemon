@@ -47,3 +47,14 @@ words, nor where it is SHALL be refused before anything runs.
 #### Scenario: A circle described only in words
 - **WHEN** a plan's circle step says "circle the word 'Vienna' in the first answer paragraph" with no target or words
 - **THEN** the plan is refused with what the step needs, and nothing has run
+
+### Requirement: A reply goes under what it answers
+A written reply SHALL start right under the lowest item it answers that stays on the page (a typed paragraph, a
+handwritten line) when the free paper there, down to the next thing on the page, holds the whole reply; otherwise it
+SHALL go below everything, as before. A chart a plan gave its spec SHALL be drawn from that spec without a turn of
+its own.
+
+#### Scenario: A question at the top, a note at the foot
+- **WHEN** a typed question sits at the top of a page, a note to someone sits near its foot, and the answer fits in
+  the paper between them
+- **THEN** the answer is written right under the question, and the note stays below it, untouched

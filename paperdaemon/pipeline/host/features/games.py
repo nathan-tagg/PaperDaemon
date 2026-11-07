@@ -34,7 +34,11 @@ def _game_job(doc_id, page, name, t0):
     except Exception:
         pass
     JOB.outcome, JOB.note = outcome, note
-    H.log("  %s in %ds -- %s" % (outcome.upper(), int(time.time() - t0), note[:160]))
+    # WHERE A TURN'S TIME WENT, as every other job says it: an adventure turn of 70-80 s said nothing more
+    dt = time.time() - t0
+    H.log("  %s in %ds -- model %.1fs, host %.1fs (pictures and the page included)"
+          % (outcome.upper(), int(dt), JOB.model_s, max(0.0, dt - JOB.model_s)))
+    H.log("  %s in %ds -- %s" % (outcome.upper(), int(dt), note[:160]))
     return outcome, note, int(time.time() - t0), []
 
 

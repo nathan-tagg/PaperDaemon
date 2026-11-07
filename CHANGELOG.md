@@ -2,6 +2,8 @@
 
 ## 0.2.22
 
+- A reply goes right under the question it answers when the paper there holds it, even with a note further down the page. It went below everything on the page: under a note to someone at the page's foot, a screen and a half below its question, with white paper between them. A reply too tall for that space still goes below everything.
+- A game's turn says in the log where its time went (the model, the pictures and the page), and a calendar says how long its on-this-day facts took to fetch.
 - A chart whose numbers the plan already gave is drawn from them at once. A plan that carried the chart's whole spec was refused for it, made again, and the chart's own turn then wrote the same spec a third time: four turns and 20 seconds to add one month to a chart, now one.
 
 ## 0.2.21

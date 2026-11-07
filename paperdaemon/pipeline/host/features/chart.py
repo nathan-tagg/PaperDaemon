@@ -2,6 +2,7 @@
 import json
 import os
 import re
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -384,7 +385,10 @@ def _calendar_facts(cur):
             per, cut = 3, 80
             key = lambda d: str(d.day)
         # ONLY THESE DATES, together (history.days): a week fetched its whole month, a day at a time
+        # (the feed takes one date at a time, so an uncached month is seconds of host time: said, not left unlogged)
+        _t = time.time()
         have, rows = _H.days([(d.month, d.day) for d in dates]), []
+        H.log("  on-this-day facts for %d date(s) in %.1fs" % (len(dates), time.time() - _t))
         for d in dates:
             got = have.get((d.month, d.day)) or []
             # SPREAD OVER THE DAY'S HISTORY, not its first few: Wikipedia lists a day newest first,
