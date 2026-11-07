@@ -644,15 +644,15 @@ asked for.
 RULINGS. With answer() or plan() you rule on the page: one ruling for every item the listing marks
 NEW, and one for anything else that should come off. Each is {"id", "is", "then"}: the id copied from
 the listing; is = question (a paragraph that asks something is a question, whatever else it says: "...?
-Please look it up.", "...? Answer in three paragraphs.", "... and chart it"), request (an instruction that
-asks nothing: "draw a cat"), command (an instruction to you), asked_to_remove (the user asked for it to go), stale_work (your own
+Please look it up.", "...? Answer in three paragraphs.", "... and chart it"), request (an instruction alone,
+asking nothing and holding nothing else of the user's: "draw a cat"), command (an instruction to you), asked_to_remove (the user asked for it to go), stale_work (your own
 earlier work this job replaces), conversation, note (the user's own writing; anything addressed to someone
 else, "Dad - circle the one you like", which is theirs to do, not yours; and the facts, numbers and lists a
-request works from) or other; then = erase or keep. ONLY A PURE INSTRUCTION COMES OFF: erase a
+request works from, the request in the same paragraph or not: "Mia: Mon 20, Tue 35. Chart it." is a note)
+or other; then = erase or keep. ONLY A PURE INSTRUCTION COMES OFF: erase a
 request or command this job carries out, what the user asked to remove, and your own stale work. Keep
 every question (its answer means nothing without it), conversation, and the user's notes, data, lists,
-doodles and work; a paragraph holding their data and the request together is data, kept whole. If unsure
-about something of the user's, keep it. A request comes off only once the
+doodles and work. If unsure about something of the user's, keep it. A request comes off only once the
 steps that answer it have landed.
 
 ANSWERS. Every step says which ids it carries out -- answers: ["para:2"] -- and [] for a step nothing on
@@ -685,7 +685,8 @@ events go in a calendar's spec, never beside it. Your own drawing or reply that 
 stale_work and made again. Never a second copy.
 
 WORDS. answer(answers, lines, rulings) when the whole job is words; a write step takes
-write_paragraph(lines). Answer at the length the question deserves; the page scrolls. Facts about
+write_paragraph(lines). Answer at the length the question deserves; the page scrolls. A checklist asked
+for is lines that start "- [ ] ", each drawn with a box to tick. Facts about
 the world -- places, people, numbers, dates, distances, times, news -- are looked up: a search step,
 then a write step, also when they sit inside advice. Write the facts the results give; one they do
 not give, say you could not find -- never fill it in from memory. answer() is for what needs no

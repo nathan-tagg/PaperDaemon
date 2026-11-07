@@ -561,7 +561,11 @@ def job_context(doc, page, name):
             if shown >= 40:
                 break
             i_ += len(run)
-            if len(run) >= 2:
+            # A WORD ALONE ON ITS LINE is a line of handwriting too ("eggs" in a list): listed as a mark with its
+            # stroke count, it was answered as "Eggs (9)"
+            one_word = (len(run) == 1 and run[0]["owner"] == "yours"
+                        and re.search(r"[A-Za-z0-9]{2,}", words.get(run[0]["id"]) or ""))
+            if len(run) >= 2 or one_word:
                 if len(JOB.ink_lines) >= ST.ERASE_RANGE["line"]:
                     unlisted += len(run)
                     continue
@@ -574,8 +578,9 @@ def job_context(doc, page, name):
                     entry_of[m["id"]] = "line:%d" % n_
                     if m["id"] <= ST.ERASE_RANGE["mark"]:
                         JOB.listing["mark:%d" % m["id"]] = {"owner": "user", "text": words.get(m["id"], "")}
-                L.append("  line:%d  yours, one line of %d words, x %d..%d, y %d..%d, reads %r (%s)"
-                         % (n_, sum(1 for m in run if words.get(m["id"])), box_[0], box_[2], box_[1], box_[3],
+                nw_ = sum(1 for m in run if words.get(m["id"]))
+                L.append("  line:%d  yours, one line of %d word%s, x %d..%d, y %d..%d, reads %r (%s)"
+                         % (n_, nw_, "" if nw_ == 1 else "s", box_[0], box_[2], box_[1], box_[3],
                             H._run_reading(run, words)[:160],
                             ", ".join(("mark:%d %r" % (m["id"], words.get(m["id"], ".")[:24]))
                                       if m["id"] <= ST.ERASE_RANGE["mark"] else repr(words.get(m["id"], ".")[:24])

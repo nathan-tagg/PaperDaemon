@@ -98,3 +98,11 @@ A typed paragraph that holds the user's data and their request together SHALL be
 #### Scenario: Numbers and "make a chart" in one paragraph
 - **WHEN** the user types "Reading minutes this week. Mia: Mon 20, ... Make a line chart of both." as one paragraph
 - **THEN** the chart is drawn and the paragraph stays on the page
+
+### Requirement: A word alone on its line is a line of handwriting
+The page listing SHALL list a word of the user's handwriting alone on its line as a line of handwriting, with its
+reading, like any other line; ink that reads as no word SHALL stay a mark.
+
+#### Scenario: A grocery list with a one-word item
+- **WHEN** the page holds "eggs", "rye bread" and "2 lemons" in ink, one item a line
+- **THEN** the listing names three lines of handwriting, and "eggs" carries no stroke count beside it

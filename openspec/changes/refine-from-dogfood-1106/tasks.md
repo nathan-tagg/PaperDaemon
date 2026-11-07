@@ -60,3 +60,9 @@
 - [x] 8.3 Off-palette part colors to the nearest tablet ink; a creature, person or scene to draw is an image
 - [x] 8.4 The adventure logs its picture decision
 - [x] 8.5 A paragraph holding the user's data and the request together is kept whole (0.2.28)
+
+## 9. Round 12 (0.2.29)
+
+- [x] 9.1 The rulings' categories: a request is an instruction alone; data with its request is a note
+- [x] 9.2 A handwritten word alone on its line is listed as a line
+- [x] 9.3 A checklist asked for is written as "- [ ] " lines (boxes to tick)

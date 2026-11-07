@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.29
+
+- A paragraph with your data and the request in it ("Mia: Mon 20, Tue 35 ... Make a line chart of both.") is ruled your data and stays; 0.2.28's rule was read after the paragraph had already been called a request, and it was still erased.
+- A handwritten word alone on its line ("eggs" in a list) is read as a line of your handwriting: listed as a mark with its stroke count, it was answered as "Eggs (9)".
+- A checklist you ask for is written with a box to tick on each item; it came back as a plain list.
+
 ## 0.2.28
 
 - A paragraph that holds your data and the request together ("Reading minutes this week. Mia: Mon 20, ... Make a line chart of both.") stays on the page: it was erased whole, and the numbers were left only as a chart's lines.
