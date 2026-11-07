@@ -710,7 +710,10 @@ def watch_inflight():
     recorded.
     """
     for k, (doc, pid, was) in list(INFLIGHT["seen"].items()):
-        cur = rm_scan.page_state(doc, pid)["sha"]
+        try:
+            cur = rm_scan.page_state(doc, pid)["sha"]
+        except OSError:
+            continue                    # being written this instant: read again next second, never fail the job
         if cur != was:
             INFLIGHT["seen"][k] = (doc, pid, cur)
             INFLIGHT["moved"][k] = time.time()

@@ -28,3 +28,22 @@ comes off when the new one lands. This SHALL hold for charts, coloring pages and
 #### Scenario: A coloring page made again
 - **WHEN** the user asks for a coloring page to be redone, and the new one lands where the old one was
 - **THEN** the page holds only the new coloring page
+
+### Requirement: An addition to a drawing is drawn on its parts and stays where it is drawn
+A step that draws on a drawing already on the page SHALL be told the drawing's parts (the boxes of its biggest
+strokes, top to bottom) and SHALL draw in the page's own numbers. What it draws near the drawing (within the
+drawing's own size of it) SHALL stay exactly where it was drawn, never scaled, moved only as far as needed to stay on
+the page. Only a figure far from the drawing, made on a grid of its own, SHALL be fitted into the drawing's box.
+
+#### Scenario: A top hat for the snowman
+- **WHEN** the model draws a hat above the snowman's head, outside the snowman's own box
+- **THEN** the hat stays on the head, at the size it was drawn
+
+### Requirement: A plan hears all its problems at once
+A plan refused for its fields or rulings SHALL also be told what its steps would be refused for, in the same reply,
+so it can be fixed in one turn. A circle, highlight, underline or strike that names neither the id it is in, nor the
+words, nor where it is SHALL be refused before anything runs.
+
+#### Scenario: A circle described only in words
+- **WHEN** a plan's circle step says "circle the word 'Vienna' in the first answer paragraph" with no target or words
+- **THEN** the plan is refused with what the step needs, and nothing has run

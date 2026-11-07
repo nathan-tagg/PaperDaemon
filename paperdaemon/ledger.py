@@ -263,11 +263,24 @@ def page_state(doc, pid):
     if not pid or not os.path.exists(path):
         return {"exists": False, "size": 0, "sha": None, "raw": None,
                 "empty": True}
-    data = open(path, "rb").read()
+    data = _read_page(path)
     raw = hashlib.sha256(data).hexdigest()[:16]
     return {"exists": True, "size": len(data),
             "sha": _content_sha(path, data, raw), "raw": raw,
             "empty": _is_empty(path, data)}
+
+
+def _read_page(path):
+    """A page file's bytes, waiting out (up to 2 s) the instant a writer's rename is replacing it. Read in that instant,
+    the daemon's watch on a running job raised PermissionError, and the job's final note never replaced its progress."""
+    for i in range(40):
+        try:
+            with open(path, "rb") as f:
+                return f.read()
+        except PermissionError:
+            if i == 39:
+                raise
+            time.sleep(0.05)
 
 
 _CONTENT_CACHE = {}        # path -> ((mtime_ns, size), content_sha)

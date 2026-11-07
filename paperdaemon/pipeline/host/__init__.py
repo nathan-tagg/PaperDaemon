@@ -645,8 +645,9 @@ NEW, and one for anything else that should come off. Each is {"id", "is", "then"
 the listing; is = question (it asks something -- also when it says how to answer or what to make of the
 answer, "... in three paragraphs", "... and chart it"), request (an instruction that asks nothing: "draw a
 cat"), command (an instruction to you), asked_to_remove (the user asked for it to go), stale_work (your own
-earlier work this job replaces), conversation, note (the user's own writing, and the facts, numbers and
-lists a request works from) or other; then = erase or keep. ONLY A PURE INSTRUCTION COMES OFF: erase a
+earlier work this job replaces), conversation, note (the user's own writing; anything addressed to someone
+else, "Dad - circle the one you like", which is theirs to do, not yours; and the facts, numbers and lists a
+request works from) or other; then = erase or keep. ONLY A PURE INSTRUCTION COMES OFF: erase a
 request or command this job carries out, what the user asked to remove, and your own stale work. Keep
 every question (its answer means nothing without it), conversation, and the user's notes, data, lists,
 doodles and work. If unsure about something of the user's, keep it. A request comes off only once the

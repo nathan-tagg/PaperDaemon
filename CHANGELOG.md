@@ -4,6 +4,10 @@
 
 - An answer that looks something up is written from the pages found, not only their one-line snippets: the two best results are read for the paragraphs that bear on the question. An answer about the next total eclipse named a dozen states its path never crosses. What the results do not say, the answer says it could not find, rather than filling it in from memory.
 - A chart's key sits above the chart in a row, clear of the data: in the chart's top-left corner it covered the first bars and points.
+- Additions to a drawing go where they belong on it: the daemon is told the drawing's parts (a snowman's head, body and base) and draws on them in the page's own numbers, and what it draws stays exactly where it drew it. A hat, sitting above the snowman's head and so outside the snowman's box, was scaled to the whole snowman and landed on its body; a chimney ended up inside the wall.
+- Writing addressed to someone else ("Dad - circle the one you like!") is theirs to do: the daemon keeps it and leaves it alone. A circle or highlight that does not say what it marks is sent back to the model before anything runs, instead of failing after.
+- A plan with several problems hears about all of them at once, not one a turn, and a coloring page may name the image harness's workflow as a picture can.
+- The daemon no longer stops with an error when it reads a page in the instant it is being written; the job's last note always replaces its progress line.
 
 ## 0.2.18
 

@@ -136,7 +136,11 @@ def marks(doc, page_no, gap=GAP, hide=None):
             n_mine = sum(1 for g in sigs if g in mine)
             owner = ("mine" if n_mine == len(sigs)
                      else "yours" if n_mine == 0 else "mixed")
-            m = {"strokes": sub, "bbox": [round(v) for v in bx],
+            # ITS PARTS, for adding to it: the boxes of its biggest strokes, top to bottom -- a snowman's head, body and
+            # base -- so a hat goes on the head, not wherever the whole drawing's box put it
+            big = sorted(sub, key=lambda i: -(boxes[i][2] - boxes[i][0]) * (boxes[i][3] - boxes[i][1]))[:8]
+            parts = sorted(([round(v) for v in boxes[i]] for i in big), key=lambda b: (b[1], b[0]))
+            m = {"strokes": sub, "bbox": [round(v) for v in bx], "parts": parts,
                  "count": len(sub), "owner": owner, "sigs": sigs, "keys": keys}
             # WHAT IT IS, for this system's own ink: the description most of its strokes were
             # recorded with, and when -- so a later job can see which of its old things a new

@@ -113,6 +113,15 @@ def t_plan(steps, rulings=None, places=None):
     offered = [k for k in ST.KINDS if k not in H._off_steps_and_tools()[0]]
     probs = RU.problems("plan", {"steps": steps, "rulings": rulings}, offered=offered)
     if probs:
+        # AND WHAT ITS STEPS WOULD BE REFUSED FOR NEXT, in the same reply: told one kind of problem at a time, a
+        # coloring redo's plan took three turns to get right (a field, then two quotes, then an erase step)
+        try:
+            ST.build(list(steps))
+        except ST.StepError as ex:
+            if str(ex) not in probs:
+                probs.append(str(ex))
+        except Exception:
+            pass
         return {"error": "This plan cannot run as it is. Fix it and plan again:\n- " + "\n- ".join(probs)}
     d, hint = AS.apply({"steps": steps, "rulings": rulings}, getattr(H._H(), "assists", ()))
     if hint:
@@ -830,11 +839,31 @@ def _turn(msgs, allowed, tries=3, choice="required", accept_prose=False, final=N
     return None, None, last or {"error": "no usable call"}
 
 
+def onto_mark(cur):
+    """The drawing on the page a step adds to (side "on", near "mark:N") -> that mark from the page's index, or None."""
+    if str(cur.get("side") or "").lower() != "on":
+        return None
+    m_ = re.fullmatch(r"mark:(\d+)", str(cur.get("near") or "").strip().lower())
+    if not m_:
+        return None
+    return next((k for k in (JOB.mark_index or []) if k.get("id") == int(m_.group(1))), None)
+
+
 def step_message(cur):
     steps = JOB.steps or []
     box = ((JOB.plan or {}).get("places") or {}).get(cur.get("place"))
     L = ["STEP %d OF %d: %s." % (cur["id"], len(steps), ST.describe(cur))]
-    if box:
+    mk = onto_mark(cur) if cur.get("do") == "draw" else None
+    if mk:
+        # AN ADDITION TO A DRAWING is told the drawing's parts, and is drawn where it belongs on them: told only the
+        # whole snowman's box, a hat went on its body and buttons on its head
+        b = mk["bbox"]
+        L.append("This draws ON mark:%d, already on the page: x %d..%d, y %d..%d. Its biggest strokes, top to "
+                 "bottom: %s. Draw in the page's own numbers, on the part where this belongs -- it may reach past "
+                 "the drawing (a hat above a head, smoke above a chimney). It stays exactly where you draw it: "
+                 "nothing is moved or scaled." % (mk["id"], b[0], b[2], b[1], b[3], "; ".join(
+                     "x %d..%d, y %d..%d" % (p[0], p[2], p[1], p[3]) for p in (mk.get("parts") or [b]))))
+    elif box:
         L.append("Its box: x %d..%d, y %d..%d (center %d, %d; %d wide, %d tall). What you make for "
                  "this step lands there." % (box["x0"], box["x1"], box["y0"], box["y1"], box["cx"],
                                             box["cy"], box["w"], box["h"]))

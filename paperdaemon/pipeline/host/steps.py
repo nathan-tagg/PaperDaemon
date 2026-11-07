@@ -36,7 +36,7 @@ FIELDS = {
     "erase": (), "search": (), "write": (), "draw": (), "chart": (),
     "calendar": (),                                          # what: YYYY-MM or week
     "image": ("workflow", "source", "steps", "seed", "quote", "paste"),
-    "coloring": ("steps", "seed", "quote"),
+    "coloring": ("workflow", "steps", "seed", "quote"),
     "web_picture": ("site", "paste"),
     "posts": ("source", "search", "sort", "period", "count", "pictures"),
     "highlight": ("target", "words"), "circle": ("target", "words"),
@@ -219,6 +219,13 @@ def build(raw):
                 pass
         elif isinstance(at, str) and at.strip():
             step["at"] = " ".join(at.split())
+        # A MARK-UP NAMES WHAT IT MARKS: the id it is in (target), the exact words (words), or where it is (at). One
+        # that said it only in its what ("circle the word 'Vienna' in the first answer paragraph") matched nothing and
+        # left the job NOT DONE; refused here, the plan is made again in the same turn.
+        if do in MARK_UP and not (step.get("target") or step.get("words") or step.get("at")):
+            raise StepError("step %d (%s) says what to mark only in its what. Give target: the id it is in "
+                            "(para:N, line:N), and words: the exact words to mark -- or at: where it is."
+                            % (i + 1, do))
         out.append(step)
     out.sort(key=lambda s: (TIER.get(s["do"], 2), s["id"]))
     for n, s in enumerate(out, 1):          # renumbered so ids read in the order they run
