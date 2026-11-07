@@ -91,3 +91,10 @@ the new ones, so an update started while the old app is still closing never stop
 #### Scenario: The old app is still closing
 - **WHEN** an update's installer starts while the old PaperDaemon is still letting go of its executable
 - **THEN** the installer waits for it and installs without asking anything
+
+### Requirement: The user's data stays even when the request is in the same paragraph
+A typed paragraph that holds the user's data and their request together SHALL be ruled data and kept whole.
+
+#### Scenario: Numbers and "make a chart" in one paragraph
+- **WHEN** the user types "Reading minutes this week. Mia: Mon 20, ... Make a line chart of both." as one paragraph
+- **THEN** the chart is drawn and the paragraph stays on the page

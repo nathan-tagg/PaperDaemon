@@ -59,3 +59,4 @@
 - [x] 8.2 Line charts: every series channel in the series' order; no key for one line; legend labels never cut
 - [x] 8.3 Off-palette part colors to the nearest tablet ink; a creature, person or scene to draw is an image
 - [x] 8.4 The adventure logs its picture decision
+- [x] 8.5 A paragraph holding the user's data and the request together is kept whole (0.2.28)

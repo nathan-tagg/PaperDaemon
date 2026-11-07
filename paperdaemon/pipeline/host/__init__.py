@@ -651,7 +651,8 @@ else, "Dad - circle the one you like", which is theirs to do, not yours; and the
 request works from) or other; then = erase or keep. ONLY A PURE INSTRUCTION COMES OFF: erase a
 request or command this job carries out, what the user asked to remove, and your own stale work. Keep
 every question (its answer means nothing without it), conversation, and the user's notes, data, lists,
-doodles and work. If unsure about something of the user's, keep it. A request comes off only once the
+doodles and work; a paragraph holding their data and the request together is data, kept whole. If unsure
+about something of the user's, keep it. A request comes off only once the
 steps that answer it have landed.
 
 ANSWERS. Every step says which ids it carries out -- answers: ["para:2"] -- and [] for a step nothing on

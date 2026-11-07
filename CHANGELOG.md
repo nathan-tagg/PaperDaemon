@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.28
+
+- A paragraph that holds your data and the request together ("Reading minutes this week. Mia: Mon 20, ... Make a line chart of both.") stays on the page: it was erased whole, and the numbers were left only as a chart's lines.
+
 ## 0.2.27
 
 - A calendar keeps every event you gave it: "Dec 12 work party" was lost, and a three-day visit showed on one day. The model wrote those days twice (their events, then their on-this-day card), and only the second entry was read; now both are.
