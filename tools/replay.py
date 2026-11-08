@@ -67,6 +67,10 @@ SCRIPTS = {
     "highlight": {"fixture": "typed-question", "replies": [
         ("plan", {"steps": [{"do": "highlight", "what": "the planet", "target": "para:1", "words": "Mars",
                              "answers": []}], "rulings": RULE("question", "keep")})]},
+    # a typed paragraph made the tablet's own checkbox (round 15: the step's plan crashed on its description)
+    "checkbox": {"fixture": "typed-question", "replies": [
+        ("plan", {"steps": [{"do": "checkbox", "what": "the list", "answers": [], "targets": ["para:1"],
+                             "checked": False}], "rulings": RULE("question", "keep")})]},
     "refused-then-fixed": {"fixture": "chart", "replies": [
         ("plan", {"steps": [{"do": "chart", "what": "diameters", "answers": NEW}], "rulings": []}),
         ("plan", {"steps": [{"do": "chart", "what": "diameters", "answers": NEW}], "rulings": RULE("request", "erase")}),

@@ -265,6 +265,7 @@ def note(doc_name, page_no, message):
         _backup_page(doc_name, page_no)
         frame = R.page_frame(R.find_doc(doc_name), page_no)              # the page's own tablet's frame
         d = A.Drawing(*[int(round(v)) for v in frame])
+        d.kind = "notes"                               # the daemon's own words on the page (render.author_of)
         y = SIG.draw_footer(d, message, content_bottom=content_bottom(doc_name, page_no), frame=frame)
         res = d.write_rm(doc_name, page_no, keep_existing=True)
         log("  noted on %s p%s at y=%.0f (%s strokes)"

@@ -410,6 +410,9 @@ def describe(step):
         aim = " ".join(x for x in (repr(step["words"]) if step.get("words") else "",
                                    ("in " if step.get("words") else "") + step["target"] if step.get("target") else "") if x)
         return "%s %s" % ("strike through" if d == "strike" else d, aim or w)
+    if d == "checkbox":
+        return "make %s the tablet's %s" % (", ".join(step.get("targets") or []) or w,
+                                            "ticked checkboxes" if step.get("checked") else "checkboxes")
     return {
         "search": "search for %s", "image": "make a picture of %s", "web_picture": "find a real picture on the web: %s",
         "coloring": "make a coloring page of %s", "posts": "clip posts: %s",

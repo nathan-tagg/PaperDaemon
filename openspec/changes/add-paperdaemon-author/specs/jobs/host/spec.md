@@ -23,6 +23,11 @@ look. A picture's ids SHALL be written with their author in one byte, as the for
 - **THEN** every new stroke is of author 129, numbered on from that author's own ids, and the page's author table
   names 129
 
+#### Scenario: A page saved from the editor
+- **WHEN** the user edits a page of the False Mirror that holds an answer and a picture of PaperDaemon's, and the page is
+  written anew from the editor's scene
+- **THEN** the answer's strokes are still 129 and the picture 135, and the strokes the user added are 1
+
 #### Scenario: A page with an answer, a highlight and a picture
 - **WHEN** one job writes an answer, highlights a word and places a picture
 - **THEN** the answer's strokes are 129, the highlight's 133 and the picture's 135, and PaperDaemon reads each back as

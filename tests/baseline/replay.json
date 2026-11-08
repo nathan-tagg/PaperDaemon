@@ -120,6 +120,38 @@
   "status": "done",
   "unused_replies": []
  },
+ "checkbox": {
+  "note": "make para:1 the tablet's checkboxes",
+  "offered": [
+   [
+    "plan",
+    "answer",
+    "ask",
+    "skip",
+    "need_step",
+    "write_paragraph",
+    "write_line",
+    "chart",
+    "history",
+    "element",
+    "draw_figure",
+    "edit_figure",
+    "find",
+    "look_closer",
+    "show_marks",
+    "render",
+    "page_history",
+    "changes",
+    "notepad_read",
+    "undo_last",
+    "notepad",
+    "web_search"
+   ]
+  ],
+  "rm 1": "f6caad356bc1aaeaf1619485018bf699ce76d953b660932cfffc8efddaab69f5",
+  "status": "done",
+  "unused_replies": []
+ },
  "highlight": {
   "note": "highlight 'Mars' in para:1",
   "offered": [

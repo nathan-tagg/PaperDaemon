@@ -16,3 +16,6 @@
   their bytes; the replay re-recorded (only the author bytes changed)
 - [ ] 1.8 A real run: a note, an answer, a highlight and a picture on a tablet page under their bytes, and the page
   opens there
+- [x] 1.9 Round 15 fixes: the adventure scene traced as 130, the daemon footer 134, studio decomps 130, the overflow page keeps
+  each stroke's kind, the False Mirror's whole-page save keeps PaperDaemon's bytes (it rewrote pieces and answers as 1),
+  fixtures write as the user (Drawing.author)

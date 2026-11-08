@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.32
+
+- "Make these a checklist" works: every plan with a checkbox step was refused with an error (KeyError) in 0.2.31, and the raw error showed in the page's receipt.
+- After a chess match, what the opponent answers is your own words, as typed or as written: asked for the words themselves, the reader once put "You should have taken more time" in place of "Start a new game against someone stronger", erased the request, and the opponent answered words nobody wrote. A request written there now goes to a job like any page's.
+- A chess opponent always has a closing word when the game ends: after a resignation the table could leave them silent.
+- A failed death save leaves the hero dying: the story's healing on that turn is not taken, so a failure and "+1 hit point" no longer get the hero up without a success.
+- The right author bytes everywhere: an adventure's traced scene is 130 (it was 128), the daemon's footer 134, the studio's decompositions 130, and a page's overflow strokes keep theirs. A page of the False Mirror saved from the editor keeps PaperDaemon's bytes: written anew, its answers, chess pieces and pictures all became yours (author 1).
+- A fault inside PaperDaemon during a model's turn writes where it happened to the host log.
+
 ## 0.2.31
 
 - PaperDaemon's strokes say whose they are and what they were, in their author byte: 100 and five bits of what each is -- 129 a written answer, 130 a picture traced into strokes, 131 a chart, calendar or table, 132 a sketch, 133 a mark-up, 134 the daemon's note, 135 a placed picture, 136 typed text. Your tablet writes as 1. Nothing is kept beside the page: the byte says it, and nothing is judged by how the strokes look. A stroke's author is one byte, and the tablet opens a page with 1-159, 175, 191, 207, 212 and 240-255 (measured on the tablet, a page per number from 1 to 512); every one of PaperDaemon's opens.

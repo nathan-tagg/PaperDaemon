@@ -354,8 +354,9 @@ def _plan(plan_steps, rulings=(), places=None):
            for p in places) and not index:
         return {"error": "near='mark:N' names an ink mark, but this page has no ink to anchor to. "
                          "Use near='stack', a corner, or 'center'."}
-    if not places and not erase and not any(q["do"] in ST.MARK_UP for q in plan_steps):
-        # AN ERASE-ONLY JOB has nothing to place, nor does a highlight: the step is the whole of the work.
+    if not places and not erase and not any(q["do"] in ST.MARK_UP or q["do"] == "checkbox" for q in plan_steps):
+        # AN ERASE-ONLY JOB has nothing to place, nor does a highlight or a checklist made of the user's own typed
+        # paragraphs: the step is the whole of the work.
         return {"error": "a plan needs at least one place, or an erase list. What goes on the "
                          "page, or what comes off it?"}
     # Resolve erase-by-number NOW, to stroke signatures: the numbers go stale the moment anything
@@ -814,6 +815,10 @@ def _turn(msgs, allowed, tries=3, choice="required", accept_prose=False, final=N
             except TypeError as ex:
                 res = {"error": "bad arguments: %s" % str(ex)[:110]}
             except Exception as ex:
+                # A FAULT OF PAPERDAEMON'S OWN, not the model's: where it happened goes in the log (a KeyError on a new
+                # step kind was a line with no place in round 15)
+                import traceback
+                H.log("  %s failed inside PaperDaemon:\n%s" % (fn, traceback.format_exc()[-1500:]))
                 res = {"error": "%s: %s" % (type(ex).__name__, str(ex)[:100])}
             msgs.append({"role": "tool", "tool_call_id": cid, "content": json.dumps(res)[:{"web_search": 3600, "history": 1500}.get(fn, 600)]})
             if isinstance(res, dict) and not res.get("error"):

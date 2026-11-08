@@ -867,8 +867,9 @@ def _add_picture(doc, page_no, data):
     return {"name": name, "width": w, "height": h}
 
 
-def _picture_blocks(doc, page_no, pictures, layer, nid):
-    """The asset and item blocks of the scene's pictures, as raw bytes in the tablet's form, and how many."""
+def _picture_blocks(doc, page_no, pictures, layer, nid, oid=None):
+    """The asset and item blocks of the scene's pictures, as raw bytes in the tablet's form, and how many. `oid(id)`:
+    the new id of something that had `id` (a picture of PaperDaemon's stays under its author byte)."""
     import hashlib
     from paperdaemon.pipeline.page import images as IM
     out, n = b"", 0
@@ -882,7 +883,7 @@ def _picture_blocks(doc, page_no, pictures, layer, nid):
             h = b""
         if len(h) != 16:
             h = hashlib.md5(name.encode("ascii")).digest()
-        asset, item = nid(), nid()
+        asset, item = (oid(pic.get("id")), oid(pic.get("id"))) if oid else (nid(), nid())
         out += IM.asset_block(h, name, (asset.part1, asset.part2))
         out += IM.item_block_quad((layer.part1, layer.part2), (item.part1, item.part2), (asset.part1, asset.part2), h, quad)
         n += 1
@@ -999,6 +1000,7 @@ def _write_scene(doc, page_no, scene):
     """The page made anew from the editor's scene, its header blocks kept. -> the number of strokes written. A stroke's
     points are rows [x, y, speed, direction, width, pressure] or a fastrm.POINT array (the editor's binary form)."""
     from paperdaemon.remarkable import fastrm
+    from paperdaemon.pipeline.page import render as R
     _guard()
     path = _rm(doc, page_no)
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -1017,6 +1019,18 @@ def _write_scene(doc, page_no, scene):
         k = seq[0]
         seq[0] += n
         return CrdtId(1, k)
+
+    # WHAT PAPERDAEMON WROTE STAYS ITS OWN (render.author_of): a stroke or a picture whose id said so is written anew
+    # under that same author byte, numbered past everything kept; the rest is the user's (1). Written anew under the
+    # editor's ids, a page's answers, pieces and pictures all became the user's after any edit.
+    own_seq = {}
+
+    def oid(of):
+        a = (of or [1])[0] if isinstance(of, (list, tuple)) and of else 1
+        if not R.is_own(a):
+            return nid()
+        own_seq[a] = own_seq.get(a, seq[0] + 100_000) + 1
+        return CrdtId(a, own_seq[a])
 
     layers = scene.get("layers") or [{"label": "Layer 1", "visible": True, "lines": []}]
     # THE DAEMON'S LAYER IS HIS: the editor's copy of it is dropped, and his own blocks are kept from the file as he
@@ -1051,7 +1065,7 @@ def _write_scene(doc, page_no, scene):
             line = si.Line(color=_enum(si.PenColor, ln.get("color", 0)), tool=_enum(si.Pen, ln.get("penCode", 17)),
                            points=pts, thickness_scale=float(ln.get("thicknessScale") or 1.0), starting_length=0.0,
                            move_id=None, color_rgba=tuple(int(v) for v in rgba) if rgba else None)
-            iid = nid()
+            iid = oid(ln.get("id"))
             strokes.append(ss.SceneLineItemBlock(parent_id=n, item=CrdtSequenceItem(
                 item_id=iid, left_id=prev, right_id=CrdtId(0, 0), deleted_length=0, value=line)))
             prev = iid
@@ -1082,7 +1096,7 @@ def _write_scene(doc, page_no, scene):
     for f in kept:
         buf.write(f)                                 # the page's text, byte for byte
     fastrm.write_lines(buf, strokes)                 # the strokes last, as rmscene would write them, in bulk (fastrm)
-    pics, npics = _picture_blocks(doc, page_no, scene.get("images"), nodes[0], nid)
+    pics, npics = _picture_blocks(doc, page_no, scene.get("images"), nodes[0], nid, oid)
     data = buf.getvalue() + pics
     back = _line_blocks_in(data)
     if back != count:

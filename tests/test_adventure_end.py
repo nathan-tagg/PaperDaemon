@@ -178,3 +178,27 @@ def test_a_dying_turn_rolls_the_save_and_the_last_failure_carries_the_story_on(t
     out = AD.turn("doc", 1, "pid", st, text, lambda *a: "", workdir=str(tmp_path))
     assert out[0] == "done" and st["status"] == "playing" and st["hero"]["hp"]["now"] == st["hero"]["hp"]["max"]
     assert any("HAS DIED" in a for a in asked) and st["place"] == "The Great Beyond"
+
+
+def test_a_failed_death_save_is_not_undone_by_the_storys_healing(tmp_path, monkeypatch):
+    # round 15: "death save: 5, a failure (2 of 3) · hit points +1 (1/14)" -- up with no success
+    import json
+    monkeypatch.setattr(AD.CH, "Rng", _Dice)
+    for name in ("_fixed", "_draw_play_page", "_redraw_log", "_redraw_sheet", "update_journal", "_inline_journal"):
+        monkeypatch.setattr(AD, name, lambda *a, **k: None)
+    monkeypatch.setattr(AD.CH, "save_state", lambda *a, **k: None)
+    monkeypatch.setattr(AD, "_scene_picture", lambda *a, **k: None)
+    monkeypatch.setattr(AD, "is_book", lambda st: False)
+    monkeypatch.setattr(AD, "is_inline", lambda st: False)
+    monkeypatch.setattr(AD, "read_action", lambda *a, **k: "roll")
+    st = _hero_state()
+    AD.apply(st, {"hp": -999})
+
+    def text(prompt):
+        if "ROLL or GIVE_UP" in prompt:
+            return "ROLL"
+        return json.dumps({"what_happened": "You stir.", "log": "x", "place": "Oakhaven Apiary", "around": "Hives.",
+                           "options": [], "same_place": True, "picture": {"mode": "keep"}, "changes": {"hp": "+1"}})
+    _Dice.rolls = [5]
+    AD.turn("doc", 1, "pid", st, text, lambda *a: "", workdir=str(tmp_path))
+    assert st["status"] == "dying" and st["hero"]["hp"]["now"] == 0 and st["death_saves"]["failed"] == 1

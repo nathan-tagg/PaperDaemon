@@ -226,6 +226,7 @@ class Drawing:
         self.w, self.h = w, h
         self.strokes = []          # (pts, widths, tool, color, rgba)
         self.kind = None           # what the strokes drawn now are to PaperDaemon (render.KINDS)
+        self.author = None         # every stroke written as this author instead (1: the user's own, as a fixture's)
 
     def tag(self, start, kind):
         """Every stroke from `start` on that says nothing of what it is, as `kind` (a step's strokes, once it is
@@ -602,11 +603,12 @@ class Drawing:
         # EACH STROKE UNDER THE AUTHOR BYTE OF WHAT IT IS (render.author_of: PaperDaemon's, and what it was to it), its
         # ids counted on from the last of that author's own, never from the tablet's, so what the user writes on the
         # tablet meanwhile can never take the same ids
-        authors = [R.author_of(getattr(st, "kind", None) or self.kind) for st in self.strokes]
+        authors = [self.author or R.author_of(getattr(st, "kind", None) or self.kind) for st in self.strokes]
         seqs = {}
         for a in authors:
             if a not in seqs:
-                with_author(blocks, a, R.author_uuid(a))
+                if R.is_own(a):
+                    with_author(blocks, a, R.author_uuid(a))
                 seqs[a] = next_free_id(blocks, a) - 1
         prev = CrdtId(0, 0)
         if kept:

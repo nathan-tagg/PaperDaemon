@@ -87,3 +87,6 @@
 - [x] 10.11 Native typed checkboxes: the checkbox step (targets, checked), typed.restyle at commit, the plan checks
 - [x] 10.12 Tablet test: checkboxes PaperDaemon set show, and tick and untick there afterwards (Checkbox test notebook,
       11-07: both pages ticked and unticked; the tablet stamps with the next item number, so restyles stamp one past the old)
+- [x] 10.13 Round 15: the checkbox step's description (KeyError crashed every plan), a checkbox-only plan needs no place;
+      after a match the words are the player's own and the model only says SAY or OTHER; the closing line always
+      spoken; a failed death save is not undone by the story's healing; a tool's own fault logs its traceback

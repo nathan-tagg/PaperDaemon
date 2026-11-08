@@ -648,3 +648,36 @@ def test_typed_text_beside_a_picture_reads_and_survives_a_save():
     assert got["with_picture"] == ["Electric bills this year", "Jan $142, Feb $131"]
     assert got["kept"] == got["with_picture"] and got["strokes"] == 1
     assert got["gone"] == []
+
+
+def test_a_save_from_the_editor_keeps_what_paperdaemon_wrote_its_own():
+    """Round 15: written anew under the editor's ids, a page's answers, chess pieces and pictures all became the user's
+    (author 1) after any edit. Saved through the scene, what had PaperDaemon's author byte keeps it; a stroke the editor
+    adds is the user's."""
+    got = _run("""
+        import io, json
+        from PIL import Image
+        from rmscene import read_blocks
+        from rmscene import scene_stream as ss
+        from paperdaemon.remarkable import local
+        from paperdaemon.pipeline.page import images as IM
+        doc = local.new_notebook("Bytes")
+        scene = local.scene_of(doc, 1)
+        scene["layers"][0]["lines"] = [{"penCode": 17, "color": 0, "colorRgba": None, "thicknessScale": 1,
+                                        "id": [129, 7], "points": [[-100, 300, 0, 0, 8, 190], [100, 300, 0, 0, 8, 190]]},
+                                       {"penCode": 17, "color": 0, "colorRgba": None, "thicknessScale": 1,
+                                        "points": [[-100, 500, 3, 9, 8, 120], [100, 500, 3, 9, 8, 130]]}]
+        buf = io.BytesIO(); Image.new("RGB", (40, 20), (200, 30, 30)).save(buf, "PNG")
+        a = local.add_picture(doc, 1, buf.getvalue())
+        scene["images"] = [{"name": a["name"], "quad": [[-200, 700], [200, 700], [200, 900], [-200, 900]], "id": [135, 3]}]
+        local.write_scene(doc, 1, scene)
+        again = local.scene_of(doc, 1)
+        local.write_scene(doc, 1, again)
+        data = open(local._rm(doc, 1), "rb").read()
+        lines = sorted(b.item.item_id.part1 for b in read_blocks(io.BytesIO(data))
+                       if isinstance(b, ss.SceneLineItemBlock) and b.item.value is not None)
+        pics = [list(im["item"]) for im in IM.parse(data) if not im["deleted"]]
+        print(json.dumps({"lines": lines, "pics": pics}))
+    """)
+    assert got["lines"] == [1, 129]                       # the answer stays PaperDaemon's, the new stroke the user's
+    assert [p[0] for p in got["pics"]] == [135]

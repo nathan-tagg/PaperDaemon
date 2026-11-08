@@ -59,7 +59,8 @@ move.
 An ink adventure's hero who drops to 0 hit points, or is struck down, SHALL be dying, not dead: the scene page SHALL
 say so, with the death saves failed so far, and SHALL offer two things to do: roll a death save, or give up. A death
 save SHALL be a d20 the engine rolls, 10 or more a success. One success SHALL get the hero back up with 1 hit point;
-the third failure, or giving up, SHALL be the hero's death. A dying hero healed by anyone SHALL be up again. The model
+the third failure, or giving up, SHALL be the hero's death. On a failed save the story's hit points for that turn
+SHALL NOT be taken: the dice decide (a failure and "+1 hit point" at once got a hero up with no success). The model
 SHALL read whether the player rolls or gives up; anything but giving up SHALL be a roll.
 
 #### Scenario: A death save that succeeds
@@ -107,6 +108,10 @@ it SHALL come off the page, and the opponent SHALL answer in their own voice, th
 face kept when they say nothing. Anything else written there (a new game, a request, notes of the player's own) SHALL
 be no business of the game's: the page's job SHALL be any page's. The model SHALL tell which it is; no words are
 matched.
+
+The words the opponent answers SHALL be the player's own, as typed or as the reader copied the handwriting; the
+model SHALL only say whether they are said to the opponent (a reader asked for the words put words nobody wrote in
+place of a request, and the opponent answered them).
 
 #### Scenario: A word after the game
 - **WHEN** the player writes "Good game!" under a finished game

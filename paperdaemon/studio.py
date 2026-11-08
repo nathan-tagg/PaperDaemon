@@ -480,6 +480,7 @@ def send(image=None, width=None, s=None, decomp=None):
             strokes = strokes0 if abs(k - 1.0) <= 1e-6 else \
                 [([(x * k, y * k) for x, y in st[0]], [w * k for w in st[1]]) + tuple(st[2:]) for st in strokes0]
             d = A.Drawing(*[int(round(v)) for v in frame])
+            d.kind = "decomp"                          # a picture traced into strokes (render.author_of)
             d.strokes = list(strokes)
             w = d.write_rm(doc, page_no)
             if not (w or {}).get("written"):

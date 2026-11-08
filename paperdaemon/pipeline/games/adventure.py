@@ -1236,6 +1236,7 @@ def _draw_scene(doc, page_no, scene_png):
     x0, y0, x1, y1 = scene_frame_page(TB.picture_page(frame)[1])
     strokes, info, secs = M.decompose_into(scene_png, int(x1 - x0), int(y1 - y0), origin=(x0, y0))
     d = A.Drawing(*[int(round(v)) for v in frame])
+    d.kind = "decomp"                                 # a picture traced into strokes (render.author_of)
     d.strokes = list(strokes)
     d.write_rm(doc, page_no, keep_existing=True)
     return len(strokes), secs
@@ -1787,6 +1788,7 @@ def _draw_scene_book(doc, scene_png):
     x0, y0, x1, y1 = scene_frame_page()
     strokes, info, secs = M.decompose_into(scene_png, int((x1 - x0) * BK), int((y1 - y0) * BK), origin=(x0 * BK, y0 * BK))
     d = A.Drawing(BOOK_W, BOOK_H)
+    d.kind = "decomp"                                 # a picture traced into strokes (render.author_of)
     d.strokes = list(strokes)
     d.write_rm(doc, 2, keep_existing=True)
     return len(strokes), secs
@@ -2118,7 +2120,13 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
     if result and result["success"]:
         allowed += [g.get("name") if isinstance(g, dict) else g for g in ((tell.get("changes") or {}).get("gain") or [])]
     death_note = after_death(state, tell) if died else ""
-    notes = apply(state, tell.get("changes") or {}, allowed)
+    changes = tell.get("changes") or {}
+    if dying and saved and not saved["success"] and not died and changes.get("hp") not in (None, "", 0, "0", "+0"):
+        # A FAILED DEATH SAVE LEAVES THE HERO DYING: the story's hit points on that turn are not taken -- a failure and
+        # "+1 hit point" at once got the hero up with no success, and the third failure never came. The dice decide.
+        changes = dict(changes)
+        changes.pop("hp", None)
+    notes = apply(state, changes, allowed)
     if death_note:
         notes.insert(0, death_note)
     if result and result.get("damage"):

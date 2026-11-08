@@ -338,17 +338,17 @@ AFTER_READ_PROMPT = """This is what the player WROTE by hand in ink on the page 
 writing alone, cut from the page. {ended} Their opponent was {name}, who is still at the table.
 Answer with exactly TWO lines. First the handwriting copied exactly, letter for letter:
 WROTE: <the handwriting as written, or nothing>
-Then what it is, ONE of:
-SAY: <their words>   -- something said to {name}: about the game, to them, an answer to what they said
-OTHER   -- anything else: a new game, a request or a question for the assistant, notes of their own
-NOTHING   -- no handwriting, or it cannot be read"""
+Then ONE word, what it is:
+SAY      -- said TO {name}: a word about the game, an answer to them, a remark or a challenge to them
+OTHER    -- for the assistant: a new game, another opponent, a drawing, a question, any request; or notes of their own
+NOTHING  -- no handwriting, or it cannot be read"""
 
 
 AFTER_TYPED_PROMPT = """The player typed this on the page of a chess game that is over: "{text}"
 {ended} Their opponent was {name}, who is still at the table.
-What is it? Answer with exactly ONE line:
-SAY: <their words>   -- something said to {name}: about the game, to them, an answer to what they said
-OTHER   -- anything else: a new game, a request or a question for the assistant, notes of their own"""
+Answer with ONE word, what it is:
+SAY      -- said TO {name}: a word about the game, an answer to them, a remark or a challenge to them
+OTHER    -- for the assistant: a new game, another opponent, a drawing, a question, any request; or notes of their own"""
 
 
 def _turn_words(state):
@@ -617,6 +617,10 @@ def _farewell(state, ask_text, log=None):
     rng = CH.Rng(**state["rng"])
     TB.seat(state, [cid])
     plan = TB.pre_turn(state, cid, {sit}, rng, addressed=True, interaction="conversation")
+    if not plan.get("speak"):
+        # AT THE END THEY ALWAYS SPEAK, the quietest a word or two: the table let Vera stay silent after a resignation,
+        # and the game ended with her face and no word
+        plan = TB.force_speak(state, cid, plan)
     state["rng"] = rng.state()
     said, feel, strong, at, truth, presentation = "", "", None, "", "", None
     if ask_text is not None:
@@ -809,7 +813,10 @@ def play(doc, page_no, page_id, ask_text=None, ask_vision=None, log=None, workdi
 
 def _said_after(state, doc, page_no, ask_text, ask_vision, workdir, log):
     """What the player wrote on a finished game's page, when it is said to the opponent -> (their words, "typed" or
-    "ink"), else None. Typed text is read first, as on a game's turn; handwriting when nothing is typed."""
+    "ink"), else None. Typed text is read first, as on a game's turn; handwriting when nothing is typed. THE WORDS ARE
+    THE PLAYER'S OWN, as typed or as the reader copied the handwriting: the model only says whether they are said to
+    the opponent (a reader asked for the words themselves put "You should have taken more time" in place of "Start a
+    new game against someone stronger", and the opponent answered words nobody wrote)."""
     from paperdaemon.pipeline.games import chess as CH
     from paperdaemon.pipeline.games import inputarea as IA
     from paperdaemon.pipeline.page import render as R
@@ -819,10 +826,9 @@ def _said_after(state, doc, page_no, ask_text, ask_vision, workdir, log):
         if ask_text is None:
             return None
         reply = ask_text(AFTER_TYPED_PROMPT.format(text=text[:400].replace('"', "'"), **words))
-        line = next((l.strip() for l in str(reply or "").splitlines() if l.strip()), "")
-        _log(log, "  game over: the typed text reads %r" % line[:80])
-        m = re.match(r"(?i)^SAY:\s*(.+)$", line)
-        return (m.group(1).strip().strip('"'), "typed") if m else None
+        word = next((l.strip() for l in str(reply or "").splitlines() if l.strip()), "")
+        _log(log, "  game over: %r reads as %s" % (text[:60], word[:20] or "nothing"))
+        return (text, "typed") if re.match(r"(?i)^SAY\b", word) else None
     try:
         ink = R.strokes(doc, page_no)
     except Exception:
@@ -840,10 +846,10 @@ def _said_after(state, doc, page_no, ask_text, ask_vision, workdir, log):
         except OSError:
             pass
     lines = [l.strip() for l in str(reply or "").splitlines() if l.strip()]
+    wrote = next((l.split(":", 1)[1].strip().strip('"') for l in lines if re.match(r"(?i)^WROTE:", l)), "")
     meant = next((l for l in lines if not re.match(r"(?i)^WROTE:", l)), "")
     _log(log, "  game over: the writing reads %r" % " / ".join(lines)[:120])
-    m = re.match(r"(?i)^SAY:\s*(.+)$", meant)
-    return (m.group(1).strip().strip('"'), "ink") if m else None
+    return (wrote, "ink") if wrote and re.match(r"(?i)^SAY\b", meant) else None
 
 
 def after_game(doc, page_no, page_id, ask_text=None, ask_vision=None, log=None, workdir=None):

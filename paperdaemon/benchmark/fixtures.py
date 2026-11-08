@@ -99,6 +99,7 @@ def _write_request(doc, case):
         TY.insert(doc, 1, case["request"])
     else:
         d = A.Drawing()
+        d.author = 1                                   # the request stands in for the user's own handwriting
         T.paragraph(d, case["request"], -600, 360, 1200, size=44, width=13, seed=7)
         d.write_rm(doc, 1, keep_existing=True)
 

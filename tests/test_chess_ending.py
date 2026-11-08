@@ -259,8 +259,9 @@ def test_talk_after_a_match_goes_to_the_opponent_and_anything_else_is_any_pages_
 
         def model(prompt):
             asked.append(prompt)
-            if "What is it?" in prompt:
-                return "SAY: Good game! You almost had me." if "Good game" in prompt else "OTHER"
+            if "Answer with ONE word" in prompt:
+                # a reader that also offers words of its own: they are never taken, only SAY or OTHER is
+                return "SAY: You should have taken more time" if "Good game" in prompt else "OTHER"
             return "SAY: Almost is the word. Rematch soon.\\nFEEL: amused 5\\nTRUTH: true\\nFACE: none"
         active = GM.game_on_page("doc", "pid")
         out = GM.after_game("doc", 1, "pid", ask_text=model, ask_vision=None, workdir=%r)

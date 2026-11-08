@@ -448,7 +448,10 @@ def _write_overflow(name, strokes):
         top = min(p[1] for st in strokes for p in st[0])
         dy = _P.safe_area(H._frame())[1] + H.PAD - top
         d = H._drawing()
-        d.strokes = [([(p[0], p[1] + dy) for p in st[0]],) + tuple(st[1:]) for st in strokes]
+        from paperdaemon.pipeline import draw as _A
+        # moved up, each still what it was (its author byte)
+        d.strokes = [_A.kinded(([(p[0], p[1] + dy) for p in st[0]],) + tuple(st[1:]), getattr(st, "kind", None))
+                     for st in strokes]
         d.write_rm(name, pno, keep_existing=True)
         H._page_done(key, "the rest of a page that passed %d strokes" % H.PAGE_STROKE_LIMIT)
         JOB.ops.append("%d stroke(s) continued on page %d" % (len(strokes), pno))
