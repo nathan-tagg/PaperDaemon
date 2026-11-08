@@ -7,8 +7,6 @@ names exists on this page, every item new since the last job is ruled, the rulin
 step is one the lineup can do with fields that step declares, quotes are the user's words, a replaced picture
 is this system's -- and refuses an invalid one with a turn that says what to fix. It never rewrites a decision.
 """
-import re
-
 from paperdaemon.pipeline.host import steps as ST
 from paperdaemon.pipeline.host.job import JOB
 
@@ -45,6 +43,7 @@ def problems(kind, args, offered=None):
     if not isinstance(rulings, list):
         return ["rulings is a list of {\"id\", \"is\", \"then\"}."]
     seen = {}
+    asks = []                                          # (ruling, id): a typed question ruled to erase
     for i, r in enumerate(rulings, 1):
         if not isinstance(r, dict):
             out.append("ruling %d is not an object {\"id\", \"is\", \"then\"}." % i)
@@ -61,12 +60,9 @@ def problems(kind, args, offered=None):
         if then == "erase" and is_ not in ERASABLE:
             out.append("ruling %d: %s is %s, which stays -- then: keep (only a request, a command, what the user "
                        "asked to remove or your own stale work comes off)." % (i, rid, is_))
-        # A TYPED PARAGRAPH THAT ASKS SOMETHING IS A QUESTION, whatever else it says -- the brief's rule, held here: "What
-        # should I pack ...? Give me a checklist." was ruled a request and erased, the checklist left under nothing
         elif (then == "erase" and is_ in ("request", "command") and rid.startswith("para:")
               and "?" in str(listing[rid].get("text") or "")):
-            out.append("ruling %d: %s asks something (it has a question mark), so it is a question, which stays -- "
-                       "then: keep." % (i, rid))
+            asks.append((i, rid))                        # held below, once it is known what answers it
         if is_ == "stale_work" and listing[rid].get("owner") != "system":
             out.append("ruling %d: %s is the user's, so it is not stale_work of yours." % (i, rid))
         if rid in seen and seen[rid] != (is_, then):
@@ -78,6 +74,7 @@ def problems(kind, args, offered=None):
         out.append("rule every item listed as NEW: %s %s no ruling." % (", ".join(unruled),
                                                                        "has" if len(unruled) == 1 else "have"))
     answered = []
+    erased_ids = set(k for k, (_is, then) in seen.items() if then == "erase")
     if kind == "answer":
         answered = args.get("answers") or []
     steps = args.get("steps") if kind == "plan" else None
@@ -122,6 +119,19 @@ def problems(kind, args, offered=None):
             # a mark-up's target is an id on this page
             if do in ST.MARK_UP and q.get("target") and q["target"] not in listing:
                 out.append("step %d: target %s is not on this page." % (i, q["target"]))
+            # a checkbox step's targets are the user's own TYPED paragraphs on this page, which stay (they take the
+            # boxes)
+            if do == "checkbox":
+                tg = q.get("targets") if isinstance(q.get("targets"), list) else []
+                bad = [t for t in tg if not str(t).startswith("para:") or t not in listing]
+                if bad:
+                    out.append("step %d (checkbox): %s %s not a typed paragraph on this page; targets are typed "
+                               "paragraphs (para:N)." % (i, ", ".join(map(str, bad)), "is" if len(bad) == 1 else "are"))
+                gone = [t for t in tg if t in erased_ids]
+                if gone:
+                    out.append("step %d (checkbox): %s %s ruled to come off, but the checkboxes go on %s: they "
+                               "stay -- then: keep." % (i, ", ".join(gone), "is" if len(gone) == 1 else "are",
+                                                        "it" if len(gone) == 1 else "them"))
             # 7. a quote is the user's words and holds the value it vouches for
             for k in ("steps", "seed"):
                 if q.get(k) is not None:
@@ -141,15 +151,6 @@ def problems(kind, args, offered=None):
             if do == "posts" and not str(q.get("source") or "").strip():
                 out.append("step %d (posts): source is where the posts come from (r/<sub>, reddit, hn, bsky, "
                            "4chan/<board>, mastodon/<server>, x/<link>)." % i)
-        # THE NUMBERS A CHART IS DRAWN FROM ARE THE USER'S DATA: a typed paragraph a chart step answers that carries
-        # numbers stays, the request in it or not -- "Mia: Mon 20, Tue 35 ... Make a line chart of both." was ruled a
-        # request three rounds running, whatever the brief said, and its numbers were left only as the chart's lines
-        charted = set(a for q in steps if isinstance(q, dict) and q.get("do") == "chart" for a in (q.get("answers") or []))
-        for rid in sorted(charted):
-            if (seen.get(rid, ("", ""))[1] == "erase" and rid.startswith("para:")
-                    and len(re.findall(r"\d+(?:\.\d+)?", str((listing.get(rid) or {}).get("text") or ""))) >= 3):
-                out.append("%s holds the numbers the chart is drawn from: it is the user's data, a note -- then: "
-                           "keep." % rid)
         # A GAME TAKES THE PAGE IT WAS ASKED ON, whole: anything else the plan would put there lands on the board
         games = [str(q.get("do")) for q in steps if isinstance(q, dict) and q.get("do") in ST.GAMES]
         others = [str(q.get("do")) for q in steps if isinstance(q, dict) and q.get("do") in ST.PLACE_KIND]
@@ -159,6 +160,15 @@ def problems(kind, args, offered=None):
     for a in answered:
         if a not in listing:
             out.append("answers names %s, which is not on this page." % a)
+    # A QUESTION ANSWERED IN WORDS STAYS, whatever else it says -- the brief's rule, held here: "What should I pack ...?
+    # Give me a checklist." was ruled a request and erased, the checklist left under nothing. One the job answers some
+    # other way is the request it reads as ("Can you draw a cat?" comes off once the cat is drawn)
+    worded = set(answered) if kind == "answer" else set(
+        a for q in (steps or []) if isinstance(q, dict) and q.get("do") == "write" for a in (q.get("answers") or []))
+    for i, rid in asks:
+        if rid in worded:
+            out.append("ruling %d: %s asks something (it has a question mark) and is answered in words, so it is a "
+                       "question, which stays -- then: keep." % (i, rid))
     return out
 
 

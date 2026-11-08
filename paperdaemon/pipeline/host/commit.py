@@ -28,7 +28,7 @@ def _staged():
     """Anything erased in the draft but not yet committed, including the ink the PLAN named by mark number
     (as _hide() counts it): a job that only erases ink still has something to commit."""
     plan = JOB.plan or {}
-    return bool(JOB.hide or JOB.hide_typed or JOB.hide_images
+    return bool(JOB.hide or JOB.hide_typed or JOB.hide_images or JOB.restyle_typed
                 or (plan.get("erase_sigs") and not plan.get("erase_done")))
 
 
@@ -280,6 +280,21 @@ def t_commit():
             H.log("  picture NOT placed in %r: %s: %s" % (_im["place"], type(ex).__name__, str(ex)[:100]))
             placed.append({"place": _im["place"], "error": str(ex)[:120]})
     JOB.images = []
+    # THE USER'S TYPED PARAGRAPHS RESTYLED (a checkbox step): the tablet's own checkboxes, before any typed text comes
+    # off (the request that asked for them)
+    if JOB.restyle_typed:
+        try:
+            from paperdaemon.pipeline.page import typed as _TY
+            H._snap("commit: restyle typed text")
+            n_ = _TY.restyle(doc, page, list(JOB.restyle_typed))
+            H.log("  typed paragraphs restyled at commit: %d of %d" % (n_, len(JOB.restyle_typed)))
+            if n_ < len(JOB.restyle_typed):
+                erase_failed.append("typed: %d paragraph(s) to make checkboxes were not found"
+                                    % (len(JOB.restyle_typed) - n_))
+        except Exception as ex:
+            H._warn("restyling typed text at commit", ex)
+            erase_failed.append("typed restyle: %s: %s" % (type(ex).__name__, str(ex)[:90]))
+        JOB.restyle_typed = []
     # TYPED TEXT staged for deletion goes last, after the work is on the page.
     typed_gone = 0
     typed_left = []
@@ -461,6 +476,7 @@ def _finished_page(fp):
         apath, box = H._picture_asset(pic["png"], {"x0": x0, "y0": y0, "w": x1 - x0, "h": y1 - y0})
         JOB.images.append({"place": "finished-%d" % k, "png": apath, "box": box, "type": "image",
                                               "title": "", "spec": None, "replaces": []})
+    JOB.draw.tag(0, "other")                    # the model's own strokes: PaperDaemon's, of no kind the host knows
     if fp.strokes or fp.pictures:
         H._mark()
         JOB.ops.append("the model's own page: %d stroke(s), %d picture(s)%s"

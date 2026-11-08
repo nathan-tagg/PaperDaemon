@@ -92,12 +92,14 @@ the new ones, so an update started while the old app is still closing never stop
 - **WHEN** an update's installer starts while the old PaperDaemon is still letting go of its executable
 - **THEN** the installer waits for it and installs without asking anything
 
-### Requirement: The user's data stays even when the request is in the same paragraph
-A typed paragraph that holds the user's data and their request together SHALL be ruled data and kept whole.
+### Requirement: The request comes off with its numbers; the user's other paragraphs stay
+A typed paragraph that asks for the work SHALL come off once the work is on the page, the numbers or data it works
+from included when they are in that paragraph; the user's other paragraphs SHALL stay, and which paragraphs are the
+request is judged from the page.
 
 #### Scenario: Numbers and "make a chart" in one paragraph
 - **WHEN** the user types "Reading minutes this week. Mia: Mon 20, ... Make a line chart of both." as one paragraph
-- **THEN** the chart is drawn and the paragraph stays on the page
+- **THEN** the chart is drawn and that paragraph comes off
 
 ### Requirement: A word alone on its line is a line of handwriting
 The page listing SHALL list a word of the user's handwriting alone on its line as a line of handwriting, with its
@@ -107,11 +109,33 @@ reading, like any other line; ink that reads as no word SHALL stay a mark.
 - **WHEN** the page holds "eggs", "rye bread" and "2 lemons" in ink, one item a line
 - **THEN** the listing names three lines of handwriting, and "eggs" carries no stroke count beside it
 
-### Requirement: The host holds the rulings to the brief's own rules
-The host SHALL refuse a plan or an answer that rules a typed paragraph with a question mark a request or command to
-erase (a paragraph that asks something is a question), and a plan that erases a typed paragraph a chart step answers
-when that paragraph carries three or more numbers (the chart's data).
+### Requirement: A question answered in words stays
+The host SHALL refuse a decision that rules a typed paragraph with a question mark a request or command to erase
+when the job answers it in words (an answer, or a write step); a question the job answers some other way is the
+request it reads as ("Can you draw a cat?" comes off once the cat is drawn).
 
 #### Scenario: A question with an instruction on the answer's form
-- **WHEN** a ruling erases "What should I pack for winter camping? Give me a checklist." as a request
-- **THEN** the decision is refused: the paragraph asks something, so it stays
+- **WHEN** a ruling erases "What should I pack for winter camping? Give me a checklist." and the job answers it in words
+- **THEN** the decision is refused: the question stays
+
+
+### Requirement: A typed list asked to be a checklist takes the tablet's own checkboxes
+When the user asks for their own typed list to be a checklist, the plan SHALL have a checkbox step naming the list's
+typed paragraphs, and at commit those paragraphs SHALL take the tablet's own checkbox style (ticked when the step
+says checked), where they are; the list SHALL NOT be drawn again beside itself. Only typed paragraphs SHALL be
+targets, and a target SHALL never be one the plan has come off the page. The style SHALL be stamped as PaperDaemon's
+typed text, one past the stamp it replaces: newer than that style, and older than what the user does on the tablet
+afterwards, which the tablet stamps with the page's next item number. Measured on the tablet (11-07): boxes
+PaperDaemon set were ticked and unticked there, and the user's change stayed.
+
+#### Scenario: The user ticks a box PaperDaemon made
+- **WHEN** PaperDaemon has made a typed list into checkboxes and the user ticks one on the tablet
+- **THEN** the box stays ticked, and the tablet's stamp on it is newer than PaperDaemon's
+
+#### Scenario: "Make these a checklist" under a typed list
+- **WHEN** the user types "milk", "eggs" and "bread" as paragraphs and writes "make these a checklist" under them
+- **THEN** the three paragraphs become the tablet's checkboxes, the request comes off, and nothing is drawn
+
+#### Scenario: A checkbox on handwriting
+- **WHEN** a plan's checkbox step names a line of handwriting
+- **THEN** the plan is refused: only typed paragraphs take the tablet's checkboxes

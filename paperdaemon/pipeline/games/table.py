@@ -288,6 +288,17 @@ def pre_turn(state, cid, situations, rng, addressed=False, others_speaking=0, bu
             "front": dict(fr) if fr else None, "interaction": interaction or ('conversation' if state.get('game')=='messages' else 'gameplay')})
 
 
+def force_speak(state, cid, plan):
+    """The character speaks this turn after all -- a group text nobody would have answered: the plan says so, and so
+    does its line for the model. -> the plan"""
+    name = who(state, cid)
+    plan["speak"] = True
+    plan["prompt_lines"] = [("This turn %s says ONE short thing (to the player, or to someone at the table by name)."
+                             % name) if l == "This turn %s stays silent: no SAY line." % name else l
+                            for l in plan.get("prompt_lines") or []]
+    return plan
+
+
 def post_turn(state, cid, plan, feel=None, intensity=None, at="", truth="", extra=(), speech="", presentation=None):
     """After the model answered: its named feeling joins the state, what it said adds `lying` or
     `bluffing`, and the rolled tells whose triggers hold now fire. -> {feeling, intensity, at, shows,

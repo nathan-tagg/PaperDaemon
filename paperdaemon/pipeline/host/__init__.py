@@ -316,6 +316,7 @@ def _drain_host_steps(limit=8, kinds=None):
         if kinds and cur["do"] not in kinds:
             break
         cur["status"] = "doing"
+        s0 = len(JOB.draw.strokes)
         try:
             if cur["do"] == "erase":
                 n0 = len(JOB.erase_log or [])
@@ -331,6 +332,9 @@ def _drain_host_steps(limit=8, kinds=None):
                 ST.finish(steps, cur, ok, r.get("error") or "")
             elif cur["do"] in ST.MARK_UP:
                 ok, note = _run_mark_up(cur["do"], cur.get("target"), cur.get("words"), cur.get("at_box"))
+                ST.finish(steps, cur, ok, note)
+            elif cur["do"] == "checkbox":
+                ok, note = _stage_checkbox(cur.get("targets"), cur.get("checked"))
                 ST.finish(steps, cur, ok, note)
             elif cur["do"] == "tag":
                 ok, note = _stage_tag(cur["what"])
@@ -377,6 +381,7 @@ def _drain_host_steps(limit=8, kinds=None):
         except Exception as ex:
             _warn("step %d (%s)" % (cur["id"], cur["do"]), ex)
             ST.finish(steps, cur, False, "%s: %s" % (type(ex).__name__, str(ex)[:90]))
+        JOB.draw.tag(s0, ST.STROKE_KIND.get(cur["do"]))     # what this step drew, as what it is
         ran.append("%d %s -> %s%s" % (cur["id"], cur["do"], cur["status"],
                                       (" (%s)" % cur.get("note")) if cur["status"] == "failed" else ""))
     if ran:
@@ -428,6 +433,8 @@ from paperdaemon.pipeline.host.model import (  # noqa: E402
     _looping,
     plain,
     _llm_up,
+    keep_prefix,
+    keep_prefix_later,
     _ask,
     _ask_text,
     _ask_vision)
@@ -506,6 +513,7 @@ from paperdaemon.pipeline.host.features.write import (  # noqa: E402
     _md_words,
     _mend_breaks,
     _letter,
+    _stage_checkbox,
     t_write_line,
     t_write_paragraph)
 from paperdaemon.pipeline.host.features.draw import (  # noqa: E402
@@ -594,6 +602,7 @@ from paperdaemon.pipeline.host.features.find import (  # noqa: E402
     _look_round)
 from paperdaemon.pipeline.host.features.games import (  # noqa: E402
     _game_job,
+    _after_game_job,
     _paint,
     _game_page,
     _run_game)
@@ -644,12 +653,13 @@ asked for.
 RULINGS. With answer() or plan() you rule on the page: one ruling for every item the listing marks
 NEW, and one for anything else that should come off. Each is {"id", "is", "then"}: the id copied from
 the listing; is = question (a paragraph that asks something is a question, whatever else it says: "...?
-Please look it up.", "...? Answer in three paragraphs.", "... and chart it"), request (an instruction alone,
-asking nothing and holding nothing else of the user's: "draw a cat"), command (an instruction to you), asked_to_remove (the user asked for it to go), stale_work (your own
+Please look it up.", "...? Answer in three paragraphs.", "... and chart it"), request (an instruction that
+asks nothing: "draw a cat"; with the numbers it works from in the same paragraph it is still the request:
+"Mia: Mon 20, Tue 35. Chart it." comes off once the chart is on the page), command (an instruction to you), asked_to_remove (the user asked for it to go), stale_work (your own
 earlier work this job replaces), conversation, note (the user's own writing; anything addressed to someone
-else, "Dad - circle the one you like", which is theirs to do, not yours; and the facts, numbers and lists a
-request works from, the request in the same paragraph or not: "Mia: Mon 20, Tue 35. Chart it." is a note)
-or other; then = erase or keep. ONLY A PURE INSTRUCTION COMES OFF: erase a
+else, "Dad - circle the one you like", which is theirs to do, not yours; and the user's other paragraphs,
+data of their own among them -- which paragraphs are the request and which are the user's own text depends
+on the page) or other; then = erase or keep. ONLY A PURE INSTRUCTION COMES OFF: erase a
 request or command this job carries out, what the user asked to remove, and your own stale work. Keep
 every question (its answer means nothing without it), conversation, and the user's notes, data, lists,
 doodles and work. If unsure about something of the user's, keep it. A request comes off only once the
@@ -685,7 +695,8 @@ events go in a calendar's spec, never beside it. Your own drawing or reply that 
 stale_work and made again. Never a second copy.
 
 WORDS. answer(answers, lines, rulings) when the whole job is words; a write step takes
-write_paragraph(lines). Answer at the length the question deserves; the page scrolls. A checklist asked
+write_paragraph(lines). Answer at the length the question deserves; the page scrolls. The user's own typed
+list asked to be a checklist becomes one where it is: a checkbox step on its paragraphs. A new checklist asked
 for is lines that start "- [ ] ", each drawn with a box to tick. Facts about
 the world -- places, people, numbers, dates, distances, times, news -- are looked up: a search step,
 then a write step, also when they sit inside advice. Write the facts the results give; one they do
@@ -863,9 +874,10 @@ def run_job_pages(job):
 # placing, committing, checking, recording.
 PLAN_TOOLS = ("plan", "answer", "ask", "skip")
 LOOK_TOOLS = JB.LOOK_TOOLS       # served, then the turn is re-asked
-# how many times a drawing is shown back for a fix. Zero by default: the host fits the figure into its box
-# itself, and further rounds made drawings different rather than better. RM_HOST_DRAW_LOOKS=1 restores one.
-DRAW_LOOKS = int(os.environ.get("RM_HOST_DRAW_LOOKS", "0"))
+# how many times a drawing is shown back for a fix: ONE by default (the ruling, 11-07). With none, "a lighthouse on a
+# rock" came out as a few rectangles with no rock, and nothing looked; a second round made drawings different rather
+# than better. RM_HOST_DRAW_LOOKS=0 turns the look off.
+DRAW_LOOKS = int(os.environ.get("RM_HOST_DRAW_LOOKS", "1"))
 MAX_STEPS = 12
 
 
@@ -950,6 +962,11 @@ def converse(doc_id, page, name, keys=(), extra=None, conflict=None):
         try:
             if _H().route(_host(), doc_id, JOB.page_id) == JB.JobKind.GAME_TURN:
                 return _game_job(doc_id, page, name, t0)
+            # A GAME THAT IS OVER: what the player says to the opponent goes to them; anything else written on its
+            # page is a job like any page's
+            done = _after_game_job(doc_id, page, name, t0)
+            if done is not None:
+                return done
         except Exception as ex:
             _warn("the game on this page", ex)
     msgs = [{"role": "system", "content": _H().system(_host(), doc_id)}]
@@ -992,6 +1009,7 @@ def converse(doc_id, page, name, keys=(), extra=None, conflict=None):
         for _ in range(MAX_STEPS):
             if prev is not None and prev.get("draw_to") is None:
                 prev["draw_to"] = len(JOB.draw.strokes)     # what the last model step drew
+                JOB.draw.tag(prev["draw_from"], ST.STROKE_KIND.get(prev["do"]))   # as what it is
             _drain_host_steps()
             _reflow_places()                   # the places still to come, below what has landed
             cur = ST.current(steps)
@@ -1030,6 +1048,8 @@ def converse(doc_id, page, name, keys=(), extra=None, conflict=None):
                 continue
             if cur["do"] == "draw" and DRAW_LOOKS > 0 and fn2 in ("draw_figure", "element"):
                 _look_round(msgs, doc_id, page)
+        if prev is not None and prev.get("draw_from") is not None:
+            JOB.draw.tag(prev["draw_from"], ST.STROKE_KIND.get(prev["do"]))   # the last model step's, as what it is
         # 3. A REQUEST COMES OFF ONLY ONCE THE WORK THAT ANSWERS IT LANDED (validity rule 10): what was not
         # carried out stays on the page, which still says what was asked
         _keep_unanswered()

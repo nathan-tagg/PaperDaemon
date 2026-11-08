@@ -108,6 +108,7 @@ class Job:
     marks: list = field(default_factory=list)
     hide: dict = field(default_factory=dict)
     hide_typed: list = field(default_factory=list)
+    restyle_typed: list = field(default_factory=list)   # (a typed paragraph's text, ParagraphStyle) set at commit
     hide_images: list = field(default_factory=list)
     erase_log: Any = field(default_factory=list)
     erased_pictures: dict = field(default_factory=dict)

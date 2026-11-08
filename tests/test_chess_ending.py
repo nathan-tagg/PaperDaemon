@@ -232,3 +232,55 @@ def test_a_move_that_is_not_legal_is_refused_by_the_opponent_and_named_in_the_re
     assert d["erased"] == 1 and d["history"] == 0              # the typed move came off; nothing was played
     assert "Ke3" in d["asked"] and "not a legal move" in d["asked"]
     assert d["plain"] == ["Baa.", "I win", "a*b"]
+
+
+def test_talk_after_a_match_goes_to_the_opponent_and_anything_else_is_any_pages_job(tmp_path):
+    # the ruling (11-07): talk after a match goes to the opponent. Said to them, it comes off and they answer in their
+    # own voice; anything else written on the finished game's page (a new game, a request) is not the game's
+    d = _run(tmp_path, """
+        from paperdaemon.pipeline.games import chess as CH
+        from paperdaemon.pipeline import games as GM
+        from paperdaemon.pipeline import page as P
+        from paperdaemon.pipeline.games import inputarea as IA
+        st = CH.new_game("doc", "pid", user_color="w")
+        st["persona"].update({"name": "Barty Tusk", "character": "barty-tusk"})
+        st["status"], st["result"] = "checkmate", "1-0"
+        CH.game_for_page = lambda doc, page_id: st
+        P.record = lambda *a, **k: None
+        erased, placed, asked = [], [], []
+        P.erase_text = lambda *a, **k: erased.append("text")
+        P.erase = lambda *a, **k: erased.append("ink")
+        CH.save_state = lambda *a, **k: None
+        GM.place_talk = lambda doc, page_no, state, lines, page_id=None, workdir=None: placed.append(
+            [list(l) for l in lines])
+        GM._remember_turn = lambda *a, **k: None
+        typed = {"t": "Good game! You almost had me."}
+        IA.typed = lambda doc, page_no: typed["t"]
+
+        def model(prompt):
+            asked.append(prompt)
+            if "What is it?" in prompt:
+                return "SAY: Good game! You almost had me." if "Good game" in prompt else "OTHER"
+            return "SAY: Almost is the word. Rematch soon.\\nFEEL: amused 5\\nTRUTH: true\\nFACE: none"
+        active = GM.game_on_page("doc", "pid")
+        out = GM.after_game("doc", 1, "pid", ask_text=model, ask_vision=None, workdir=%r)
+        talk_prompt = next((a for a in asked if "The player just said to you" in a), "")
+        typed["t"] = "Start a new game against someone stronger"
+        n_erased = len(erased)
+        other = GM.after_game("doc", 1, "pid", ask_text=model, ask_vision=None, workdir=%r)
+        typed["t"] = ""
+        empty = GM.after_game("doc", 1, "pid", ask_text=model, ask_vision=None, workdir=%r)
+        st["status"] = "playing"
+        live = GM.after_game("doc", 1, "pid", ask_text=model, ask_vision=None, workdir=%r)
+        print(json.dumps({"active": active is None, "out": out, "placed": placed, "erased": erased[:n_erased],
+                          "erased_after": erased[n_erased:], "talk_prompt": talk_prompt, "other": other,
+                          "empty": empty, "live": live}))
+    """ % ((str(tmp_path),) * 4))
+    assert d["active"]                                    # a finished game holds no turns of its own
+    assert d["out"][0] == "done" and "Good game!" in d["out"][1] and "answered" in d["out"][1]
+    assert d["erased"] == ["text"]                        # what was said to the opponent came off
+    said = [l[2] for l in d["placed"][0] if l[0] == "Barty Tusk"]
+    assert said == ["Almost is the word. Rematch soon."]
+    assert "The game is over" in d["talk_prompt"] and "Good game! You almost had me." in d["talk_prompt"]
+    assert d["other"] is None and d["erased_after"] == []   # a new game asked for: any page's job, nothing erased
+    assert d["empty"] is None and d["live"] is None

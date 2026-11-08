@@ -78,6 +78,7 @@ def _reply(lines, answers=(), rulings=(), size=None, task=None):
     r = H.t_write_paragraph(lines, place="answer", size=size)
     if r.get("error"):
         return r
+    JOB.draw.tag(0, "written")              # the reply's strokes, as what they are (render.author_of)
     r = H.t_commit()
     if r.get("error"):
         return r

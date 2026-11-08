@@ -63,7 +63,7 @@ PROTOCOLS = {
     "draw": JobProtocol(True, ("draw_figure", "element", "need_step") + LOOK_TOOLS,
                         ("element", "draw_figure", "edit_figure")),
     "image": _HOST, "coloring": _HOST, "web_picture": _HOST,
-    "highlight": _HOST, "circle": _HOST, "underline": _HOST, "strike": _HOST,
+    "highlight": _HOST, "circle": _HOST, "underline": _HOST, "strike": _HOST, "checkbox": _HOST,
     "chess": _HOST, "adventure": _HOST, "messages": _HOST, "posts": _HOST, "tag": _HOST,
     "game_turn": JobProtocol(True), "note": _HOST, "remember": _HOST,
     "conflict": JobProtocol(True),

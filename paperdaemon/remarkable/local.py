@@ -1097,24 +1097,27 @@ def _write_scene(doc, page_no, scene):
 
 
 def _daemon_blocks(path):
-    """The daemon's own blocks in the page file -- his layers' tree blocks and nodes, their places in the list of
-    layers, and every stroke block on them (tombstones too, so what he erased stays erased) -> {tree, nodes, places,
-    lines}, or None when the page has none."""
+    """The daemon's own blocks in the page file -- his layers (render.daemon_layer_ids: named as his, whoever made
+    them, or under his old author), their tree blocks and nodes, their places in the list of layers, and every stroke
+    block on them (tombstones too, so what he erased stays erased) -> {tree, nodes, places, lines}, or None when the
+    page has none. (Found by his old author alone, his layer made under any other author was lost on a save.)"""
     from paperdaemon.remarkable import fastrm
     from paperdaemon.pipeline.page import render as R
     if not os.path.exists(path):
         return None
-    me = R.DAEMON_AUTHOR
+    blocks = list(fastrm.read_blocks(open(path, "rb").read()))
+    his = R.daemon_layer_ids(blocks)
     out = {"tree": [], "nodes": [], "places": [], "lines": []}
-    for b in fastrm.read_blocks(open(path, "rb").read()):
-        if isinstance(b, ss.SceneTreeBlock) and b.tree_id.part1 == me:
+    for b in blocks:
+        if isinstance(b, ss.SceneTreeBlock) and (b.tree_id.part1, b.tree_id.part2) in his:
             out["tree"].append(b)
-        elif isinstance(b, ss.TreeNodeBlock) and b.group.node_id.part1 == me:
+        elif isinstance(b, ss.TreeNodeBlock) and (b.group.node_id.part1, b.group.node_id.part2) in his:
             out["nodes"].append(b)
         elif isinstance(b, ss.SceneGroupItemBlock) and b.item.value is not None and b.item.deleted_length == 0 \
-                and getattr(b.item.value, "part1", None) == me and b.parent_id == CrdtId(0, 1):
+                and (getattr(b.item.value, "part1", None), getattr(b.item.value, "part2", None)) in his \
+                and b.parent_id == CrdtId(0, 1):
             out["places"].append(b)
-        elif isinstance(b, ss.SceneLineItemBlock) and b.parent_id.part1 == me:
+        elif isinstance(b, ss.SceneLineItemBlock) and (b.parent_id.part1, b.parent_id.part2) in his:
             out["lines"].append(b)
     return out if out["nodes"] else None
 

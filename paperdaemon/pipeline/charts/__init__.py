@@ -4748,7 +4748,9 @@ def _to_vegalite(spec):
     if t in ("line", "step"):
         # `step` is a line that holds its value until the next reading -- which is the truth for
         # anything that changes in jumps: a setting, a price band, a headcount, a version.
-        rows = [{"x": c, "s": d["name"], "v": d["values"][i]}
+        # the markers name their series by a field of their own ("m"): on the series' own field Vega folds the marker's
+        # shape into the key, and Liam's dashed line came out a square with a dashed edge and a tail
+        rows = [{"x": c, "s": d["name"], "m": d["name"], "v": d["values"][i]}
                 for d in series for i, c in enumerate(cats)]
         interp = {"interpolate": "step-after"} if t == "step" else {}
         return _with_derived({"$schema": schema, "title": title, "width": WIDTH - 100, "height": 560,
@@ -4779,10 +4781,14 @@ def _to_vegalite(spec):
                     {"mark": {"type": "point", "filled": True, "size": 160, "opacity": 1,
                               "strokeWidth": 2, "stroke": "black"},
                      "encoding": {
-                         "shape": {"field": "s", "type": "nominal", "legend": None,
+                         "shape": {"field": "m", "type": "nominal", "legend": None,
                                    "scale": {"domain": [d["name"] for d in series], "range": SHAPES[:n]}},
-                         "fill": {"field": "s", "type": "nominal", "legend": None,
+                         "fill": {"field": "m", "type": "nominal", "legend": None,
                                   "scale": {"domain": [d["name"] for d in series], "range": MARKER_FILL[:n]}}}}],
+                # the key is each line in its color and dash: a point layer's shapes otherwise become the key's
+                # symbols, whatever its legend says, and Liam's dashed line was keyed as a square with a dashed edge
+                "resolve": {"scale": {"shape": "independent", "fill": "independent"},
+                            "legend": {"shape": "independent", "fill": "independent"}},
                 "config": cfg}, spec, "x")
 
     if t in ("pie", "donut"):

@@ -392,9 +392,104 @@ def apply(state, ch, allowed_items=()):
         if f not in state["flags"]:
             state["flags"].append(str(f)[:40])
     state["rng"] = rng.state()
-    if h["hp"]["now"] <= 0:
-        state["status"] = "down"
+    # AT 0 HIT POINTS THE HERO IS DYING, not dead: they make death saves (dying_turn); healed by anyone meanwhile, they
+    # are up again
+    if h["hp"]["now"] <= 0 and state.get("status") != "dying":
+        state["status"], state["death_saves"] = "dying", {"failed": 0}
+    elif h["hp"]["now"] > 0 and state.get("status") == "dying":
+        state["status"] = "playing"
+        state.pop("death_saves", None)
     return notes
+
+
+# ------------------------------------------------------------------------------ death saves, and after a death
+# THE RULING (11-07): "real death saves should be offered, roll death save, or give up option, 3 failed rolls you die,
+# 1 successful roll you get back up with 1 hp; if the character does die, the adventure must continue somehow." A
+# dying hero's turn is a death save the engine rolls (a d20; DEATH_SAVE_DC or more is a success), or giving up; at
+# DEATH_SAVES failures, or given up, the hero dies -- and the story goes on (AFTER_DEATH_PROMPT).
+DEATH_SAVES = 3
+DEATH_SAVE_DC = 10
+
+DYING_PROMPT = """The hero of a text adventure, {name}, lies dying at 0 hit points, making death saves: {failed} of
+{saves} failed so far (one more than that and they die; one success and they get back up with 1 hit point).
+The player wrote: "{action}"
+Do they roll a death save, or give up? Answer with one word: ROLL or GIVE_UP. Anything but giving up is a roll."""
+
+AFTER_DEATH_PROMPT = """You are the game master of a text adventure. The adventure: {title} (tone: {tone}).
+FOR THE GAME MASTER ONLY: the premise ({premise}).
+The hero, {hero}, HAS DIED: {how}.
+The people of this story. THEIR LOOKS ARE FIXED: never change anyone's race, height, build, hair, face or marks.
+{cast}
+What has happened so far:
+{events}
+Quests: {quests}
+Where they were: {place}. What was around: {around}
+THE ADVENTURE DOES NOT END. Tell how it goes on, creatively and true to the story's tone: the hero wakes in the great
+beyond, or comes back years later as something else, or a successor takes up what they left behind, or anything else
+that keeps the story going. The player plays on as whoever the story now follows.
+Answer with JSON only:
+{{"way": "one line: how the story goes on",
+ "what_happened": "three to six sentences, second person: the death, then what comes after",
+ "log": "one line for the adventure log, past tense",
+ "place": "where the story is now, a few words", "around": "two sentences: what can be seen now",
+ "options": ["three or four loose ideas"],
+ "present": ["the name of each person listed above who is in the next scene"],
+ "new_people": [every named person appearing for the FIRST time, each {person}],
+ "picture": {{"mode": "new", "prompt": "what the one the story now follows SEES: the place, the objects, where each
+             person stands. Never describe them."}},
+ "successor": null if the hero goes on themselves, else the new hero the player now plays: {{"name": "...", "race": one
+             of {races}, "class": one of {classes}, "background": "...", "alignment": "...", "height_cm": a number,
+             "look": "one sentence: build, hair, eyes, skin, clothing", "personality": "two sentences",
+             "backstory": "three sentences: who they are, and what the fallen hero was to them"}},
+ "changes": {{"conditions_add": ["what the hero who goes on now is, if anything: undead, a ghost ..."],
+             "conditions_remove": []}}}}"""
+
+
+def death_choice(state, action, ask_text):
+    """A dying hero's turn: does the player roll a death save, or give up? The model reads what they wrote; anything
+    but giving up is a roll. -> "roll" or "give_up"."""
+    try:
+        reply = ask_text(DYING_PROMPT.format(name=state["hero"]["name"], action=str(action)[:300],
+                                             failed=(state.get("death_saves") or {}).get("failed", 0),
+                                             saves=DEATH_SAVES))
+    except Exception:
+        reply = ""
+    return "give_up" if re.search(r"(?i)\bGIVE[_ ]?UP\b", str(reply or "")) else "roll"
+
+
+def death_save(state):
+    """The engine rolls a dying hero's death save: a success and they are up with 1 hit point; a failure counts, and
+    the last one kills them. -> {"roll": n, "success": bool, "failed": count, "died": bool}."""
+    rng = CH.Rng(**state["rng"])
+    n = rng.randint(1, 20)
+    state["rng"] = rng.state()
+    ds = state.setdefault("death_saves", {"failed": 0})
+    if n >= DEATH_SAVE_DC:
+        state["hero"]["hp"]["now"] = 1
+        state["status"] = "playing"
+        state.pop("death_saves", None)
+        return {"roll": n, "success": True, "failed": ds["failed"], "died": False}
+    ds["failed"] = int(ds.get("failed", 0)) + 1
+    return {"roll": n, "success": False, "failed": ds["failed"], "died": ds["failed"] >= DEATH_SAVES}
+
+
+def after_death(state, tell):
+    """The hero has died and the story goes on (AFTER_DEATH_PROMPT's `tell`): a successor the engine makes from the
+    model's proposal takes the hero's place, the fallen one kept in state["fallen"]; or the hero goes on themselves,
+    their hit points whole again. Either way the story is playing again. -> a line for the turn's notes."""
+    st = tell.get("successor")
+    state.pop("death_saves", None)
+    state["status"] = "playing"
+    if isinstance(st, dict) and st.get("name"):
+        rng = CH.Rng(**state["rng"])
+        fallen = state["hero"]
+        state.setdefault("fallen", []).append(fallen)
+        state["hero"] = make_hero(st, rng)
+        state["rng"] = rng.state()
+        return "%s fell; %s takes up the story" % (fallen["name"], state["hero"]["name"])
+    h = state["hero"]
+    h["hp"]["now"] = h["hp"]["max"]
+    return "%s died, and goes on: %s" % (h["name"], _s(tell.get("way") or "", 100))
 
 
 # ------------------------------------------------------------------------------ the cast
@@ -884,7 +979,7 @@ def turn_png(state, scene, out, roll_line="", n=None):
     # that holds it all
     for size, LH in ((30, 40), (26, 35), (23, 31), (21, 28)):
         reg, ital = _font("reMarkableSans-Regular.ttf", size), _font("reMarkableSans-RegularItalic.ttf", size - 2)
-        need = cell_top + CELL_PAD + 46 + (36 if roll_line else 0) + 64
+        need = cell_top + CELL_PAD + 46 + (36 if roll_line else 0) + 64 + (46 if state.get("status") == "dying" else 0)
         for part, font in ((scene.get("what_happened"), reg), (scene.get("around"), ital)):
             need += len(_wrap(d, part or "", font, tw)) * LH + 10
         if need <= cell_bot - CELL_PAD:
@@ -913,8 +1008,16 @@ def turn_png(state, scene, out, roll_line="", n=None):
            "down": "The end: %s has fallen."}.get(state.get("status"))
     if end:
         d.text((tx, y), end % state["hero"]["name"] if "%s" in end else end, font=med, fill=INK)
+    # A DYING HERO: the death saves failed so far, and the two things to do -- roll one, or give up
+    dying = state.get("status") == "dying"
+    if dying and not end:
+        failed = int((state.get("death_saves") or {}).get("failed", 0))
+        d.text((tx, y), "%s is dying: %d of %d death saves failed." % (state["hero"]["name"], failed, DEATH_SAVES),
+               font=med, fill=INK)
+        y += 46
     # the loose ideas: as many WHOLE ones as two lines and the cell hold, never one cut off mid-phrase
-    opts = [] if end else [str(o).strip() for o in (scene.get("options") or []) if str(o).strip()][:4]
+    opts = [] if end else (["Roll a death save", "Give up"] if dying else
+                           [str(o).strip() for o in (scene.get("options") or []) if str(o).strip()][:4])
     while opts:
         lines = _wrap(d, "You could: " + "  ·  ".join(opts), small, tw)
         if len(lines) <= 2 and y + 32 * len(lines) <= bottom:
@@ -1010,7 +1113,7 @@ Answer with JSON only:
              "skills_gain": [], "talents_gain": [{{"name": "...", "kind": "talent or spell",
                                                   "effect": "one short line: what it lets the hero do", "mods": {{}}}}],
              "conditions_add": [], "conditions_remove": [], "flags_add": []}},
- "over": null or "death" or "victory"}}
+ "over": null, or "death" when the hero is struck down (they drop to 0 hit points and make death saves), or "victory"}}
 Only give items the hero actually took or was given; hit point loss can be dice like "-1d6". Leave out what did not change.
 Skills and spells are earned, and rare: only when the story truly teaches, grants or awakens one. A trained skill goes in
 skills_gain by its name from: {skills}. Anything else -- a unique skill of the hero's own or a spell -- goes in
@@ -1931,7 +2034,7 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
     what changed (the hero's and the cast's, through the engine), and draw the next scene on the SAME page,
     the log on page 3. -> (outcome, note)."""
     workdir = workdir or os.path.join(paths.state_dir(), "rm-queue")
-    if state["status"] != "playing":
+    if state["status"] not in ("playing", "dying"):
         return "skipped", "the adventure is over (%s)" % state["status"]
     if page_id != state["page_id"]:
         return "skipped", "ink adventure: an earlier page; the story goes on at the last one"
@@ -1946,14 +2049,27 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
     shot = os.path.join(pictures_dir(state), last["picture"]) if last.get("picture") else None
     h = state["hero"]
     here = [n for n in (state.get("present") or []) if n in (state.get("cast") or {})]
-    rule_q = RULE_PROMPT.format(hero=hero_line(h), place=state["place"] or "unknown", around=scene.get("around", ""),
-                                people=cast_block(state, here) if here else "- nobody the story has met",
-                                events=events_block(state, 6), action=action[:300], skills=", ".join(SKILLS),
-                                abilities=", ".join(ABILITIES))
-    rule = parse_json(ask_vision(rule_q, shot) if shot and os.path.exists(shot) else ask_text(rule_q)) or {}
-    possible = rule.get("possible", True) is not False
-    result, roll_line = None, ""
-    ck = rule.get("check") if possible else None
+    dying, died, how, saved = state["status"] == "dying", False, "", None
+    if dying:
+        # A DYING HERO'S TURN: a death save the engine rolls, or giving up -- nothing else is ruled on
+        rule, possible, result, ck = {"understood": "a death save"}, True, None, None
+        if death_choice(state, action, ask_text) == "give_up":
+            died, how = True, "they gave up at death's door"
+            roll_line = "%s gave up" % h["name"]
+        else:
+            saved = death_save(state)
+            died, how = saved["died"], "%d death saves failed" % DEATH_SAVES
+            roll_line = ("death save: %d, a success -- up with 1 hit point" % saved["roll"] if saved["success"] else
+                         "death save: %d, a failure (%d of %d)" % (saved["roll"], saved["failed"], DEATH_SAVES))
+    else:
+        rule_q = RULE_PROMPT.format(hero=hero_line(h), place=state["place"] or "unknown", around=scene.get("around", ""),
+                                    people=cast_block(state, here) if here else "- nobody the story has met",
+                                    events=events_block(state, 6), action=action[:300], skills=", ".join(SKILLS),
+                                    abilities=", ".join(ABILITIES))
+        rule = parse_json(ask_vision(rule_q, shot) if shot and os.path.exists(shot) else ask_text(rule_q)) or {}
+        possible = rule.get("possible", True) is not False
+        result, roll_line = None, ""
+        ck = rule.get("check") if possible else None
     if isinstance(ck, dict) and ck.get("key"):
         try:
             # AN ATTACK ON SOMEONE THE STORY KNOWS: their armor is the DC, and the damage is theirs (the engine's)
@@ -1967,29 +2083,52 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
                 roll_line += "; %s at %d/%d hit points" % (target["name"], target["hp"]["now"], target["hp"]["max"])
         except (ValueError, KeyError) as ex:
             _log(log, "  adventure: the check was not understood: %s" % ex)
-    if not possible:
+    if dying and saved and saved["success"]:
+        roll = "The engine rolled a death save: %d, a success: %s gets back up with 1 hit point." % (saved["roll"],
+                                                                                                 h["name"])
+    elif dying and saved and not died:
+        left = DEATH_SAVES - saved["failed"]
+        roll = ("The engine rolled a death save: %d, a failure (%d of %d): %s lies dying, unconscious at 0 hit points; "
+                "%d more failure%s and they die, one success and they get back up with 1 hit point."
+                % (saved["roll"], saved["failed"], DEATH_SAVES, h["name"], left, "" if left == 1 else "s"))
+    elif not possible:
         roll = "It cannot be done: %s" % (rule.get("why_not") or "the scene does not allow it")
     elif result:
         roll = "The engine rolled: %s." % roll_line
     else:
         roll = "No roll was needed: it simply happens."
-    tell = parse_json(ask_text(TELL_PROMPT.format(title=state["title"], premise=state["premise"], tone=state["tone"],
-                                                  hero=hero_line(h), look=hero_look(h), cast=cast_block(state),
-                                                  events=events_block(state), place=state["place"] or "unknown",
-                                                  around=scene.get("around", ""), action=action[:300],
-                                                  understood=rule.get("understood") or action[:200], roll=roll,
-                                                  person=PERSON_JSON, statuses=", ".join(STATUSES),
-                                                  dispositions=", ".join(DISPOSITIONS), lore=lore_block(state),
-                                                  quests=quests_line(state), fields=", ".join(KNOWABLE),
-                                                  skills=", ".join(SKILLS)))) or {}
+    if died:
+        # THE HERO HAS DIED, AND THE STORY GOES ON (after_death): how, the model's to tell
+        tell = parse_json(ask_text(AFTER_DEATH_PROMPT.format(
+            title=state["title"], premise=state["premise"], tone=state["tone"], hero=hero_line(h), how=how,
+            cast=cast_block(state), events=events_block(state), quests=quests_line(state),
+            place=state["place"] or "unknown", around=scene.get("around", ""), person=PERSON_JSON,
+            races=", ".join(RACES), classes=", ".join(CLASSES)))) or {}
+    else:
+        tell = parse_json(ask_text(TELL_PROMPT.format(title=state["title"], premise=state["premise"], tone=state["tone"],
+                                                      hero=hero_line(h), look=hero_look(h), cast=cast_block(state),
+                                                      events=events_block(state), place=state["place"] or "unknown",
+                                                      around=scene.get("around", ""), action=action[:300],
+                                                      understood=rule.get("understood") or action[:200], roll=roll,
+                                                      person=PERSON_JSON, statuses=", ".join(STATUSES),
+                                                      dispositions=", ".join(DISPOSITIONS), lore=lore_block(state),
+                                                      quests=quests_line(state), fields=", ".join(KNOWABLE),
+                                                      skills=", ".join(SKILLS)))) or {}
     allowed = list(rule.get("uses") or []) if possible else []
     if result and result["success"]:
         allowed += [g.get("name") if isinstance(g, dict) else g for g in ((tell.get("changes") or {}).get("gain") or [])]
+    death_note = after_death(state, tell) if died else ""
     notes = apply(state, tell.get("changes") or {}, allowed)
+    if death_note:
+        notes.insert(0, death_note)
     if result and result.get("damage"):
         notes.append("dealt %d damage" % result["damage"])
-    if tell.get("over") in ("death", "victory"):
-        state["status"] = tell["over"]
+    if tell.get("over") == "victory" and state["status"] == "playing":
+        state["status"] = "victory"
+    elif tell.get("over") == "death" and state["status"] == "playing" and not died:
+        # STRUCK DOWN: the hero drops to 0 hit points and makes death saves; nobody simply dies
+        state["hero"]["hp"]["now"] = 0
+        state["status"], state["death_saves"] = "dying", {"failed": 0}
     new_scene = {"place": str(tell.get("place") or state["place"])[:80],
                  "what_happened": str(tell.get("what_happened") or "")[:1200],
                  "around": str(tell.get("around") or "")[:500],
@@ -2045,7 +2184,7 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
         if is_inline(state):
             _inline_journal(doc, state, workdir, log)     # first: the log shows the journal's page number
         _redraw_log(doc, state, workdir)
-        if notes or result:
+        if notes or result or dying:
             _redraw_sheet(doc, state, workdir)
         if not is_inline(state):
             update_journal(state, log)

@@ -199,3 +199,24 @@ def test_a_chat_reads_the_players_writing_wherever_it_is(monkeypatch, tmp_path):
         return "MESSAGE: I had chicken cordon bleu"
     assert MS._read("doc", 1, ask, str(tmp_path)) == "I had chicken cordon bleu"
     assert seen["size"] == (481, 141)
+
+
+def test_a_member_the_dice_left_silent_can_be_made_to_answer_a_group_text():
+    # the ruling: "a group text with any number of people needs at least 1 reply" -- messages.turn makes the member the
+    # message names first, else the chattiest, answer when nobody would
+    from paperdaemon.pipeline.games import table as TB
+    from paperdaemon.pipeline.games import characters as RC
+    from paperdaemon.pipeline.games import chess as CH
+    cid = next(iter(RC.roster()))
+    st = {"table": {}, "game": "messages"}
+    rng = CH.Rng(seed="1" * 32)
+    TB.seat(st, [cid])
+    plan = None
+    for _ in range(200):                                       # a turn the dice leave silent
+        plan = TB.pre_turn(st, cid, set(), rng, addressed=False, others_speaking=0, budget=1)
+        if not plan["speak"]:
+            break
+    assert plan is not None and not plan["speak"]
+    TB.force_speak(st, cid, plan)
+    assert plan["speak"] and not any("stays silent" in l for l in plan["prompt_lines"])
+    assert any("says ONE short thing" in l for l in plan["prompt_lines"])

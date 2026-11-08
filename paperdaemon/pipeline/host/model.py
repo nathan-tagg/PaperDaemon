@@ -249,6 +249,49 @@ def plain(body):
 
 
 # --------------------------------------------------------------- games (rm_games, rm_chess)
+def keep_prefix(doc_id):
+    """THE JOB'S INSTRUCTIONS BACK IN THE TEXT MODEL'S MEMORY after a turn that was not a job's (a game's). A server
+    that keeps one prompt in memory (llama.cpp's slot) holds what it read last, and a start script that saves it
+    across a picture swap saves that: after a game turn, the game's prompt, and the next job read PaperDaemon's
+    instructions cold (13k tokens, about 15 s, plus the swap's reload). One request with the job's own system
+    message and tools, one token out, puts them back. Only a server on this computer that says it keeps slots
+    (/props); a hosted model is never sent a request of PaperDaemon's own. -> True when it was sent."""
+    loc = H.RUN.get("text_location") or ""
+    if (urllib.parse.urlsplit(loc).hostname or "").lower() not in ("127.0.0.1", "localhost", "::1"):
+        return False
+    try:
+        with urllib.request.urlopen(loc.rstrip("/") + "/props", timeout=5) as r:
+            if not json.loads(r.read().decode("utf-8", "replace")).get("total_slots"):
+                return False
+    except Exception:
+        return False
+    body = {"model": H.MODEL, "max_tokens": 1, "tools": H.tool_schema(), "tool_choice": "auto",
+            "messages": [{"role": "system", "content": H._H().system(H._host(), doc_id)},
+                         {"role": "user", "content": "."}]}
+    if NOTHINK:
+        body["chat_template_kwargs"] = {"enable_thinking": False}
+    req = urllib.request.Request(H.LLM + "/v1/chat/completions", data=json.dumps(body).encode(),
+                                 headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req) as r:
+        r.read()
+    return True
+
+
+def keep_prefix_later(doc_id):
+    """keep_prefix in the background, after the job is done: its page goes up meanwhile, and the next job's first
+    request waits for it at the server, then finds the instructions read."""
+    import threading
+
+    def run():
+        t = time.time()
+        try:
+            if keep_prefix(doc_id):
+                H.log("  the job instructions are back in the text model's memory (%.1fs)" % (time.time() - t))
+        except Exception as ex:
+            H.log("  the job instructions could not be put back in the text model's memory: %s" % str(ex)[:100])
+    threading.Thread(target=run, name="keep-prefix", daemon=True).start()
+
+
 def _llm_up():
     """Is the text model answering? A game plays without it; only its talk and written moves wait."""
     try:

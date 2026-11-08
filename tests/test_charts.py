@@ -69,8 +69,20 @@ def test_a_line_charts_markers_and_dashes_follow_the_series_order_and_one_line_h
     vl = C.to_vegalite(spec)
     layers = [l for l in vl.get("layer") or [] if isinstance(l, dict)]
     domains = [ch["scale"]["domain"] for l in layers for ch in (l.get("encoding") or {}).values()
-               if isinstance(ch, dict) and ch.get("field") == "s" and "scale" in ch]
+               if isinstance(ch, dict) and ch.get("field") in ("s", "m") and "scale" in ch]
     assert len(domains) >= 4 and all(d == ["Mia", "Liam"] for d in domains)
     one = C.to_vegalite(dict(spec, series=spec["series"][:1]))
     colors = [l["encoding"]["color"] for l in one.get("layer") or [] if "color" in (l.get("encoding") or {})]
     assert colors and colors[0]["legend"] is None          # a single line needs no key
+
+
+def test_a_line_charts_key_is_its_lines_not_its_markers(tmp_path):
+    # Liam's dashed line was keyed as a square with a dashed edge and a tail: the marker layer's shapes became the key
+    svg = tmp_path / "k.svg"
+    spec = {"type": "line", "title": "Reading", "categories": ["Mon", "Tue", "Wed"],
+            "series": [{"name": "Mia", "values": [20, 35, 15]}, {"name": "Liam", "values": [10, 25, 30]}]}
+    C.render(spec, png_path=str(tmp_path / "k.png"), svg_path=str(svg))
+    text = svg.read_text(encoding="utf-8")
+    legend = text[text.find("role-legend"):]
+    symbols = re.findall(r'role-legend-symbol[^>]*>\s*<path[^>]*d="([^"]+)"', legend)
+    assert symbols and all(s.startswith("M-") and "L" in s and "A" not in s and "h" not in s for s in symbols[:2])

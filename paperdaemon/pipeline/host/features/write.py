@@ -401,3 +401,27 @@ TOOLS = [
    "align": {"type": "string", "optional": True}, "place": {"type": "string", "optional": True},
    "y": {"type": "number", "optional": True}}, t_write_line),
 ]
+
+
+def _stage_checkbox(targets, checked=False):
+    """A CHECKBOX STEP: the user's own typed paragraphs (`targets`, their ids) made the tablet's checkboxes, ticked
+    when `checked`, at commit (typed.restyle). Only typed text has the tablet's checkboxes: an id that is ink, or not
+    on the page, is named in the note and left as it is. A typed list asked to be a checklist was drawn again beside
+    itself; now its own paragraphs take the boxes, which tick on the tablet. -> (ok, note)."""
+    from rmscene.scene_items import ParagraphStyle
+    style = ParagraphStyle.CHECKBOX_CHECKED if checked else ParagraphStyle.CHECKBOX
+    done, missing = [], []
+    for t in targets or []:
+        item = (JOB.listing or {}).get(t) or {}
+        text = str(item.get("text") or "").strip()
+        if not t.startswith("para:") or not text:
+            missing.append(t)
+            continue
+        JOB.restyle_typed.append((text, int(style)))
+        done.append(t)
+    if not done:
+        return False, "no typed paragraph to make a checkbox (%s)" % ", ".join(missing or ["none named"])
+    note = "%d typed paragraph(s) made checkboxes%s" % (len(done), ", ticked" if checked else "")
+    if missing:
+        note += "; not typed text, left as it is: %s" % ", ".join(missing)
+    return True, note

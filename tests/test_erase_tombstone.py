@@ -61,9 +61,10 @@ def test_an_erased_stroke_is_a_tombstone_and_nothing_else_moves(tmp_path):
 
 
 def test_what_a_job_writes_has_paperdaemons_own_author_and_ids(tmp_path):
-    """A job's strokes and typed text are written under render.HOST_AUTHOR, numbered on from its own ids and never from
-    the tablet's, with the author in the page's table: what the user adds on the tablet meanwhile can never take the
-    same ids (a page with two items of one id would not open there)."""
+    """A job's strokes, typed text and pictures are written under PaperDaemon's author bytes (render.author_of: 100
+    and what each is), each numbered on from its own ids and never from the tablet's, each named in the page's author
+    table: what the user adds on the tablet meanwhile can never take the same ids (a page with two items of one id
+    would not open there)."""
     code = textwrap.dedent("""
         import io, json, os, shutil, sys, uuid
         sys.path.insert(0, %r)
@@ -82,6 +83,7 @@ def test_what_a_job_writes_has_paperdaemons_own_author_and_ids(tmp_path):
         json.dump({"visibleName": "T", "parent": "", "type": "DocumentType"}, open(os.path.join(M, doc + ".metadata"), "w"))
         for k in range(2):
             d = A.Drawing(1620, 2160)
+            d.kind = "written"
             d.stroke([(0, 400 + 100 * k), (100, 500 + 100 * k)])
             d.write_rm(doc, 1, keep_existing=True)
         TY.insert(doc, 1, "an answer")
@@ -94,8 +96,10 @@ def test_what_a_job_writes_has_paperdaemons_own_author_and_ids(tmp_path):
         lines = [(b.item.item_id.part1, b.item.item_id.part2) for b in bl if isinstance(b, ss.SceneLineItemBlock)]
         tb = next(b for b in bl if isinstance(b, ss.RootTextBlock)).value
         text = [(i.item_id.part1, i.item_id.part2) for i in tb.items.sequence_items()]
-        table = list(next(b for b in bl if isinstance(b, ss.AuthorIdsBlock)).author_uuids)
-        print(json.dumps({"lines": lines, "text": text, "table": table, "host": R.HOST_AUTHOR,
+        uuids = next(b for b in bl if isinstance(b, ss.AuthorIdsBlock)).author_uuids
+        table = list(uuids)
+        named = all(str(uuids.get(a)) == str(R.author_uuid(a)) for a in (129, 135, 136))
+        print(json.dumps({"lines": lines, "text": text, "table": table, "named": named,
                           "pic": [list(pic["asset_id"]), list(pic["item_id"])], "pics": len(pics)}))
     """) % ROOT
     env = dict(os.environ, PAPERDAEMON_HOME=str(tmp_path / "home"), PYTHON_KEYRING_BACKEND="keyring.backends.null.Keyring")
@@ -104,10 +108,11 @@ def test_what_a_job_writes_has_paperdaemons_own_author_and_ids(tmp_path):
     out = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True, timeout=300)
     assert out.returncode == 0, out.stderr[-3000:]
     d = json.loads(out.stdout.strip().splitlines()[-1])
-    h = d["host"]
-    assert [tuple(x) for x in d["lines"]] == [(h, 1), (h, 2)]
-    assert [tuple(x) for x in d["text"]] == [(h, 3)] and h in d["table"]
-    assert d["pic"] == [[h, 12], [h, 13]] and d["pics"] == 1      # after the text's ids (3..11), its own
+    # each kind under its own byte, numbered from its own: written strokes 129, the picture 135, typed text 136
+    assert d["named"] and {129, 135, 136} <= set(d["table"])
+    assert [tuple(x) for x in d["lines"]] == [(129, 1), (129, 2)]
+    assert [tuple(x) for x in d["text"]] == [(136, 1)]
+    assert d["pic"] == [[135, 1], [135, 2]] and d["pics"] == 1
 
 
 def test_a_typed_paragraph_erased_takes_only_itself(tmp_path):

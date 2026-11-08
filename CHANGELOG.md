@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.2.31
+
+- PaperDaemon's strokes say whose they are and what they were, in their author byte: 100 and five bits of what each is -- 129 a written answer, 130 a picture traced into strokes, 131 a chart, calendar or table, 132 a sketch, 133 a mark-up, 134 the daemon's note, 135 a placed picture, 136 typed text. Your tablet writes as 1. Nothing is kept beside the page: the byte says it, and nothing is judged by how the strokes look. A stroke's author is one byte, and the tablet opens a page with 1-159, 175, 191, 207, 212 and 240-255 (measured on the tablet, a page per number from 1 to 512); every one of PaperDaemon's opens.
+- Everything on the daemon's layer is the daemon's; no stroke anywhere is judged by how its points look (a stroke drawn with a mouse looked machine-made and could be erased).
+- The Mirror's whole-page save keeps the daemon's layer, whatever author made it.
+- A request with the numbers it works from comes off once its chart is on the page, as any request does; your other paragraphs stay. 0.2.28 to 0.2.30 kept it.
+- A question asking for something done ("Can you draw a cat?") comes off once it is done; a question answered in words stays.
+- Talk after a chess match goes to the opponent: what you write to them on the finished game's page comes off and they answer in their own voice. Anything else written there (a new game, a request) is a job like any page's.
+- A strong chess opponent (1600 and up) turns down a draw in the first 20 moves unless it stands clearly worse, and says why: a 2600 took a draw on move 3 of an even game.
+- An adventure hero at 0 hit points is dying, not dead: the page offers "Roll a death save" or "Give up". One success and the hero is up with 1 hit point; three failures, or giving up, and the hero dies -- and the story goes on, as the model tells it: the great beyond, a return, a successor who takes up the quest.
+- Every group text gets at least one reply: each member may answer and none has to, but when nobody would, the one the message names (else the chattiest) answers.
+- A sketch is shown back to the model once for a fix: "a lighthouse on a rock" came out with no rock, and nothing looked.
+- A typed list you ask to be a checklist takes the tablet's own checkboxes, where it is, instead of being drawn again beside itself.
+- After a game turn, PaperDaemon puts its instructions back into a local text model's memory in the background, so the next job (and a start script's save across a picture swap) finds them read instead of reading them cold.
+- A line chart's key draws each line in its color and dash: Liam's dashed line was keyed as a square with a dashed edge.
+- Select all (Ctrl+A) in the page editor shows that selection's counts; after switching windows it could show the counts of the selection before.
+
 ## 0.2.30
 
 - The paragraph a chart is drawn from stays on the page, even with the request in it: the job refuses a plan that would erase a paragraph holding the chart's numbers. Brief wording alone did not stop it, three times running.

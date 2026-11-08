@@ -168,7 +168,7 @@ def next_free_id(blocks, author=None):
     ids 872..915 while a tombstone covered 827..931, and they never appeared on
     the device while rendering perfectly here.
 
-    `author`: count that author's ids alone (render.HOST_AUTHOR, what a job writes: its own id space).
+    `author`: count that author's ids alone (render.author_of, what PaperDaemon writes: each kind its own id space).
     """
     end = 0
     mine = (lambda p1: True) if author is None else (lambda p1: p1 == author)
@@ -208,10 +208,33 @@ def next_free_id(blocks, author=None):
     return end + 1
 
 
+class Stroke(tuple):
+    """A Drawing's stroke, (pts, widths, tool, color, rgba[, attrs]), with what it is to PaperDaemon: `kind`
+    (render.KINDS), which picks the author byte it is written under (render.author_of)."""
+    kind = None
+
+
+def kinded(st, kind):
+    """The stroke `st` as a Stroke of this kind."""
+    s = Stroke(st)
+    s.kind = kind
+    return s
+
+
 class Drawing:
     def __init__(self, w=1620, h=2160):
         self.w, self.h = w, h
         self.strokes = []          # (pts, widths, tool, color, rgba)
+        self.kind = None           # what the strokes drawn now are to PaperDaemon (render.KINDS)
+
+    def tag(self, start, kind):
+        """Every stroke from `start` on that says nothing of what it is, as `kind` (a step's strokes, once it is
+        done)."""
+        if not kind:
+            return
+        for i in range(max(0, int(start)), len(self.strokes)):
+            if getattr(self.strokes[i], "kind", None) is None:
+                self.strokes[i] = kinded(self.strokes[i], kind)
 
     # ---- authoring ----
     def stroke(self, pts, width=24, tool=Pen.FINELINER_2,
@@ -223,7 +246,8 @@ class Drawing:
             widths = [max(2, int(round(width(i / n)))) for i in range(len(pts))]
         else:
             widths = [int(width)] * len(pts)
-        self.strokes.append((pts, widths, tool, color, rgba))
+        st = (pts, widths, tool, color, rgba)
+        self.strokes.append(kinded(st, self.kind) if self.kind else st)
 
     def hl(self, pts, rgba, width=120):
         self.stroke(pts, width, Pen.HIGHLIGHTER_2, PenColor.HIGHLIGHT, rgba)
@@ -575,11 +599,15 @@ class Drawing:
                 layer = b.group.node_id
         if layer is None:
             raise RuntimeError("no Layer 1 on that page")
-        # PAPERDAEMON'S OWN IDS (render.HOST_AUTHOR): counted on from the last of its own, never from the tablet's, so
-        # what the user writes on the tablet meanwhile can never take the same ids (see render.HOST_AUTHOR)
-        HOST = R.HOST_AUTHOR
-        with_author(blocks, HOST, R.HOST_UUID)
-        seq = [next_free_id(blocks, HOST) - 1]
+        # EACH STROKE UNDER THE AUTHOR BYTE OF WHAT IT IS (render.author_of: PaperDaemon's, and what it was to it), its
+        # ids counted on from the last of that author's own, never from the tablet's, so what the user writes on the
+        # tablet meanwhile can never take the same ids
+        authors = [R.author_of(getattr(st, "kind", None) or self.kind) for st in self.strokes]
+        seqs = {}
+        for a in authors:
+            if a not in seqs:
+                with_author(blocks, a, R.author_uuid(a))
+                seqs[a] = next_free_id(blocks, a) - 1
         prev = CrdtId(0, 0)
         if kept:
             # Never reuse an id that is already on the page, and hang the new
@@ -606,7 +634,7 @@ class Drawing:
                      if (c.item_id.part1, c.item_id.part2) not in lefts]
             if len(tails) == 1:
                 prev = tails[0].item_id
-        for st in self.strokes:
+        for st, a in zip(self.strokes, authors):
             pts, widths, tool, color, rgba = st[:5]
             # an optional 6th element carries per-stroke point attributes -- the device
             # renders the highlighter's chisel nib from them (calibration)
@@ -618,8 +646,8 @@ class Drawing:
                      starting_length=0.0, move_id=None,
                      # (r, g, b), opaque, or (r, g, b, a) as a kept decomp carries it: four values either way
                      color_rgba=(tuple(rgba[:3]) + (tuple(rgba[3:4]) or (255,)) if rgba else None))
-            seq[0] += 1
-            iid = CrdtId(HOST, seq[0])
+            seqs[a] += 1
+            iid = CrdtId(a, seqs[a])
             blocks.append(ss.SceneLineItemBlock(
                 parent_id=layer,
                 item=CrdtSequenceItem(item_id=iid, left_id=prev,
@@ -650,14 +678,16 @@ class Drawing:
         # hours precisely because every local check passes. Belt and braces on
         # top of next_free_id(): if the allocator is ever wrong again, this
         # stops the file reaching the page instead of letting it look fine.
-        rng = dead_ranges(rb_all, HOST)
-        buried = [b.item.item_id.part2 for b in rb if b.item.item_id.part1 == HOST
-                  and any(a <= b.item.item_id.part2 <= z for a, z in rng)]
+        buried = []
+        for au in seqs:
+            rng = dead_ranges(rb_all, au)
+            buried += [b.item.item_id.part2 for b in rb if b.item.item_id.part1 == au
+                       and any(a <= b.item.item_id.part2 <= z for a, z in rng)]
         if buried:
             raise RuntimeError(
                 "REFUSING TO WRITE: %d stroke id(s) fall inside a deleted "
-                "range %s -- they would render locally and be invisible on the "
-                "device. ids: %s" % (len(buried), rng, buried[:8]))
+                "range -- they would render locally and be invisible on the "
+                "device. ids: %s" % (len(buried), buried[:8]))
         if dry_run:
             return dict(strokes=len(self.strokes), kept=kept_lines, dropped=dropped,
                         text_dropped=text_dropped, bytes=len(data),

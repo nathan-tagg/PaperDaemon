@@ -34,18 +34,33 @@ def _log(log, msg):
     (log or print)(msg)
 
 
-ACTIVE = ("playing", "open")          # a game still being played (chess, the adventure) or a chat (messages)
+ACTIVE = ("playing", "dying", "open")  # a game still being played (chess, the adventure, its hero dying) or a chat
+DRAW_STRONG_ELO = 1600                # a chess opponent this strong takes no draw in the opening ...
+DRAW_OPENING_MOVES = 20               # ... the first 20 moves, unless it stands clearly worse
 
 
 def game_on_page(doc, page_id):
-    """The game being played on this page, or None. A FINISHED GAME DOES NOT KEEP ITS PAGE: what is written there
-    next goes to the model like any page's (a new game, a question), instead of to a game that can only refuse it."""
+    """The game being played on this page, or None. A FINISHED GAME DOES NOT KEEP ITS PAGE for its turns: what is
+    written there next is the opponent's only when it is said to them (after_game); anything else goes to the model
+    like any page's (a new game, a question), instead of to a game that can only refuse it."""
     from paperdaemon.pipeline.games import chess as CH
     try:
         g = CH.game_for_page(doc, page_id)
     except Exception:
         return None
     return g if g is not None and g.get("status", "playing") in ACTIVE else None
+
+
+def finished_game(doc, page_id):
+    """The chess game on this page that is over, or None: its opponent is still at the table (after_game)."""
+    from paperdaemon.pipeline.games import chess as CH
+    try:
+        g = CH.game_for_page(doc, page_id)
+    except Exception:
+        return None
+    if g is None or g.get("game", "chess") != "chess" or g.get("status", "playing") in ACTIVE:
+        return None
+    return g
 
 
 # ------------------------------------------------------------------------------ the talk strip
@@ -317,6 +332,23 @@ MOVE: <one of the legal moves above>   -- a move however it was put ("knight tak
 RESIGN   -- they give up
 DRAW   -- they offer a draw
 SAY: <their words>   -- something said to the opponent"""
+
+
+AFTER_READ_PROMPT = """This is what the player WROTE by hand in ink on the page of a chess game that is over -- their
+writing alone, cut from the page. {ended} Their opponent was {name}, who is still at the table.
+Answer with exactly TWO lines. First the handwriting copied exactly, letter for letter:
+WROTE: <the handwriting as written, or nothing>
+Then what it is, ONE of:
+SAY: <their words>   -- something said to {name}: about the game, to them, an answer to what they said
+OTHER   -- anything else: a new game, a request or a question for the assistant, notes of their own
+NOTHING   -- no handwriting, or it cannot be read"""
+
+
+AFTER_TYPED_PROMPT = """The player typed this on the page of a chess game that is over: "{text}"
+{ended} Their opponent was {name}, who is still at the table.
+What is it? Answer with exactly ONE line:
+SAY: <their words>   -- something said to {name}: about the game, to them, an answer to what they said
+OTHER   -- anything else: a new game, a request or a question for the assistant, notes of their own"""
 
 
 def _turn_words(state):
@@ -706,7 +738,8 @@ def play(doc, page_no, page_id, ask_text=None, ask_vision=None, log=None, workdi
             notes.append("refused: %s" % r["reason"])
             talk += _refused(state, "The player moved a piece where it cannot go (%s); the piece went back." % r["reason"],
                              ask_text, log)
-    # a draw offer: the opponent takes it when it is not ahead
+    # a draw offer: the opponent takes it when it is not ahead -- and a strong one not in the opening, unless it stands
+    # clearly worse (a 2600 took a draw on move 3 of an even game)
     if written and written["kind"] == "draw" and state["status"] == "playing":
         try:
             with CH.Engine(state["strength"]["elo"]) as eng:
@@ -716,15 +749,18 @@ def play(doc, page_no, page_id, ask_text=None, ask_vision=None, log=None, workdi
             ahead = (c[0]["cp"] if engine_to_move else -c[0]["cp"]) if c else 0
         except Exception:
             ahead = 0
+        early = (len(state["history"]) < 2 * DRAW_OPENING_MOVES and int(state["strength"]["elo"]) >= DRAW_STRONG_ELO
+                 and ahead > -150)
+        why = "the game has barely begun" if early else "you are ahead"
         # IN THEIR OWN VOICE: taken, the game is over and the opponent's last word says so (_farewell, below); refused,
         # they say why. A fixed "A draw? Fine by me." was every character's answer, whoever they were
-        if ahead <= 50:
+        if ahead <= 50 and not early:
             state["status"], state["result"] = "draw_agreed", "1/2-1/2"    # (the end line says so, once)
             if ask_text is None:
                 talk.append((_name(state), express(state, "relieved", 0.6, "the player"), "A draw? Fine by me."))
         else:
             notes.append("you offered a draw; %s said no" % _short(state))
-            said = _remark(state, 'The player just said to you: "I offer a draw." You refuse it: you are ahead.',
+            said = _remark(state, 'The player just said to you: "I offer a draw." You refuse it: %s.' % why,
                            ask_text, log)
             if not any(t[0] != "narrator" and str(t[2] or "").strip() for t in said):
                 said = [(_name(state), express(state, "smug", 0.6, "the player"), "A draw? Not a chance.")]
@@ -769,6 +805,81 @@ def play(doc, page_no, page_id, ask_text=None, ask_vision=None, log=None, workdi
     if not notes and not talk:
         return "skipped", "chess: nothing new on the page (no move, no writing)"
     return "done", "chess: " + "; ".join(notes + [t[2] for t in talk if t[0] == "narrator"])[:600]
+
+
+def _said_after(state, doc, page_no, ask_text, ask_vision, workdir, log):
+    """What the player wrote on a finished game's page, when it is said to the opponent -> (their words, "typed" or
+    "ink"), else None. Typed text is read first, as on a game's turn; handwriting when nothing is typed."""
+    from paperdaemon.pipeline.games import chess as CH
+    from paperdaemon.pipeline.games import inputarea as IA
+    from paperdaemon.pipeline.page import render as R
+    words = dict(ended=CH.ended(state), name=_name(state))
+    text = " ".join(str(IA.typed(doc, page_no) or "").split())
+    if text:
+        if ask_text is None:
+            return None
+        reply = ask_text(AFTER_TYPED_PROMPT.format(text=text[:400].replace('"', "'"), **words))
+        line = next((l.strip() for l in str(reply or "").splitlines() if l.strip()), "")
+        _log(log, "  game over: the typed text reads %r" % line[:80])
+        m = re.match(r"(?i)^SAY:\s*(.+)$", line)
+        return (m.group(1).strip().strip('"'), "typed") if m else None
+    try:
+        ink = R.strokes(doc, page_no)
+    except Exception:
+        ink = []
+    if not ink or ask_vision is None:
+        return None
+    png = os.path.join(workdir, "_game_read_%d.png" % int(time.time() * 1000))
+    try:
+        if not IA.ink_png(doc, page_no, png):
+            return None
+        reply = ask_vision(AFTER_READ_PROMPT.format(**words), png)
+    finally:
+        try:
+            os.remove(png)
+        except OSError:
+            pass
+    lines = [l.strip() for l in str(reply or "").splitlines() if l.strip()]
+    meant = next((l for l in lines if not re.match(r"(?i)^WROTE:", l)), "")
+    _log(log, "  game over: the writing reads %r" % " / ".join(lines)[:120])
+    m = re.match(r"(?i)^SAY:\s*(.+)$", meant)
+    return (m.group(1).strip().strip('"'), "ink") if m else None
+
+
+def after_game(doc, page_no, page_id, ask_text=None, ask_vision=None, log=None, workdir=None):
+    """TALK AFTER A MATCH GOES TO THE OPPONENT (the ruling, 11-07): on the page of a chess game that is over, what the
+    player says to the opponent comes off the page and the opponent answers in their own voice, the table deciding
+    as on any turn, their face kept when they say nothing. Anything else written there (a new game, a request, notes
+    of the player's own) is not the game's. -> (outcome, note), or None when the page's job is any page's."""
+    from paperdaemon.pipeline.games import chess as CH
+    from paperdaemon.pipeline import page as ER
+    state = finished_game(doc, page_id)
+    if state is None or (ask_text is None and ask_vision is None):
+        return None
+    workdir = workdir or os.path.join(paths.state_dir(), "rm-queue")
+    got = _said_after(state, doc, page_no, ask_text, ask_vision, workdir, log)
+    if got is None:
+        return None
+    said, where = got
+    try:
+        ER.record(doc, page_no, note="before talk after a chess game")
+    except Exception:
+        pass
+    try:
+        if where == "typed":
+            ER.erase_text(doc, page_no)
+        else:
+            ER.erase(doc, page_no, lambda L: True)       # a game's page holds no strokes but the player's writing
+    except Exception as ex:
+        _log(log, "  game over: the writing was NOT erased: %s" % str(ex)[:90])
+    talk = _remark(state, 'The game is over: %s The player just said to you: "%s"' % (CH.ended(state), said[:200]),
+                   ask_text, log)
+    spoken = [t[2] for t in talk if t[0] != "narrator" and str(t[2] or "").strip()]
+    _remember_turn(doc, page_id, state, said, spoken, True, log)
+    place_talk(doc, page_no, state, talk, page_id, workdir)
+    CH.save_state(state)
+    return "done", "chess, after the game: you said %r; %s %s" % (
+        said[:60], _short(state), "answered" if spoken else "said nothing")
 
 
 # ------------------------------------------------------------------------------ starting a game

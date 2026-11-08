@@ -21,17 +21,22 @@ tablet's toolbar. A note SHALL never wrap: one too long for its line SHALL be cu
 - **WHEN** the host has reported nine steps
 - **THEN** the note is one line with the latest step, and nothing past the band
 
-### Requirement: The daemon writes as the tablet's own author
-Everything the daemon writes on a page SHALL carry the tablet's own author id (1): the tablet does not open a page
-that holds an item of an author it does not know, and his notes under an author of their own (218) left every page
-they were on unreadable there. His ids SHALL be counted on from the highest of that author on the page with a wide
-gap, so that no other note of his, and nothing the user adds on the tablet while a note goes up, takes the same ids.
-What is his on a page SHALL be the machine-drawn strokes on his layer: every point at one pressure (190) with no
-speed and no direction, which no hand on the tablet makes.
+### Requirement: The daemon writes as the daemon's note
+Everything the daemon writes on a page SHALL carry the author byte of a daemon's note, 134 (see jobs/host,
+"PaperDaemon's strokes say whose they are and what they were"), which the page's author table names; the tablet
+writes as 1. His notes under the author they once had (218) left every page they were on unreadable on the tablet.
+His ids SHALL be counted on from the highest of that author on the page and past the last he laid on any copy of it,
+so that no note of his made from another copy of the page takes the same ids. What is his on a page SHALL be
+everything under that byte and everything on his layer (the maintainer's ruling, 11-07), never judged by how its
+points look.
 
 #### Scenario: Two copies of one page
 - **WHEN** two notes go up as copies made from the same page
-- **THEN** no stroke of the second has an id of the first's, and every stroke of both is of the tablet's author
+- **THEN** no stroke of the second has an id of the first's, and every stroke of both is of author 134
+
+#### Scenario: Notes laid as the tablet's author
+- **WHEN** a page holds a layer of his and notes on it written as the tablet's author (0.1.81 to 0.2.30)
+- **THEN** the next note takes that layer up, never a second one, erases those notes, and goes up as author 134
 
 #### Scenario: A page the old notes made unreadable
 - **WHEN** a note is written on a page that still holds items under the daemon's old author (218)
@@ -40,16 +45,16 @@ speed and no direction, which no hand on the tablet makes.
 
 ### Requirement: Every write erases everything of his first
 Before writing a note the daemon SHALL erase every stroke of his on the page, including strokes of notes
-that went up in copies this page has never seen. He SHALL NOT erase the user's strokes, on any layer, but
-those the user wrote in his retry box.
+that went up in copies this page has never seen. Everything on his layer is his. He SHALL NOT erase the user's
+strokes on any other layer, but those the user wrote in his retry box.
 
 #### Scenario: A copy that never saw the last note
 - **WHEN** a note goes up made from a page that does not have the previous note
 - **THEN** it carries the previous note's strokes erased, and the tablet's merge erases them
 
-#### Scenario: The user wrote on his layer
-- **WHEN** the user's strokes are on the daemon's layer and a new note is written
-- **THEN** the user's strokes stay, and are read as the user's
+#### Scenario: Strokes on his layer
+- **WHEN** strokes the daemon did not write are on his layer and a new note is written
+- **THEN** they are erased with his notes, and never read as the page's: everything on his layer is his
 
 ### Requirement: His layer
 The daemon's notes SHALL be on one layer per page, named as the user chose (Settings: Daemon layer,
@@ -61,9 +66,9 @@ anew for the next note.
 - **THEN** the note is on a new layer
 
 ### Requirement: The renderer leaves his notes out
-The renderer and the fingerprint of a page SHALL leave out every stroke of his: the machine-drawn strokes on a
-layer with his layer's name (or the name his notes once had, "PaperDaemon"), and anything under his old author. What
-a hand wrote on such a layer SHALL be read as the user's. Only the page editor SHALL show his notes.
+The renderer and the fingerprint of a page SHALL leave out every stroke of his: every stroke on a layer with his
+layer's name (or the name his notes once had, "PaperDaemon"), and anything under his old author. Nothing SHALL be
+judged his by how its points look. Only the page editor SHALL show his notes.
 
 #### Scenario: A page with a note
 - **WHEN** a note is written on a page

@@ -781,11 +781,12 @@ def insert(doc, page_no, png_path, box, page_id=None):
             layer = b.group.node_id
     if layer is None:
         raise RuntimeError("no Layer 1 on that page")
-    # PAPERDAEMON'S OWN IDS (render.HOST_AUTHOR), as its strokes and typed text have: never the tablet's, which what the
-    # user adds on the tablet meanwhile takes up. The page's author table is given the author first.
+    # A PICTURE'S AUTHOR BYTE (render.author_of: PaperDaemon's, a placed picture), as its strokes and typed text have
+    # theirs: never the tablet's, which what the user adds on the tablet meanwhile takes up. The page's author table is
+    # given the author first.
     from paperdaemon.pipeline.page import render as _R
-    HOST = _R.HOST_AUTHOR
-    data = _with_author(data, blocks_, HOST, _R.HOST_UUID)
+    HOST = _R.author_of("picture")
+    data = _with_author(data, blocks_, HOST, _R.author_uuid(HOST))
     n = A.next_free_id(blocks_, HOST)
     # rmscene does not see image items, so their ids are not in next_free_id's view: step past
     # every (HOST, k) a picture on this page already took, item or asset, read as the varuints they are
@@ -862,11 +863,11 @@ def to_front(doc, page_no, keys, page_id=None):
     # each picture's box ON THE PAGE (a tied group's stored boxes are offset: _to_page)
     on_page = dict((im["hash"], tuple(im["box"])) for im in
                    _to_page([dict(im) for im in parse(data) if not im["deleted"]], path, d, page_no))
-    # PAPERDAEMON'S OWN IDS (render.HOST_AUTHOR), as insert() gives: never the tablet's
+    # A PICTURE'S AUTHOR BYTE (render.author_of), as insert() gives: never the tablet's
     from paperdaemon.pipeline.page import render as _R
-    HOST = _R.HOST_AUTHOR
     parsed = list(read_blocks(io.BytesIO(data)))
-    data = _with_author(data, parsed, HOST, _R.HOST_UUID)
+    HOST = _R.author_of("picture")
+    data = _with_author(data, parsed, HOST, _R.author_uuid(HOST))
     n = A.next_free_id(parsed, HOST)
     for bt, body in blocks(data):
         if bt == 15:

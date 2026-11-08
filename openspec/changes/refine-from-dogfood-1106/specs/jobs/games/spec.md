@@ -47,12 +47,39 @@ refused, they say why and the game goes on. A fixed line SHALL be the answer onl
 - **THEN** the opponent refuses in their own words and the game goes on
 
 ### Requirement: A finished adventure says so
-The last scene page of an ink adventure that is over (a victory, the hero's death, the hero fallen) SHALL say the
-story has ended, and how, where the ideas for a next move would be; it SHALL offer no next move.
+The last scene page of an ink adventure that is over (a victory, or a story that ended with its hero's death before
+death saves) SHALL say the story has ended, and how, where the ideas for a next move would be; it SHALL offer no next
+move.
 
-#### Scenario: The hero falls
-- **WHEN** the hero drops to no hit points and the adventure ends
-- **THEN** the scene page says "The end:" and that the hero has fallen, and shows no "You could:" ideas
+#### Scenario: A victory
+- **WHEN** the hero wins and the adventure ends
+- **THEN** the scene page says "The end: a victory." and shows no "You could:" ideas
+
+### Requirement: A hero at no hit points makes death saves
+An ink adventure's hero who drops to 0 hit points, or is struck down, SHALL be dying, not dead: the scene page SHALL
+say so, with the death saves failed so far, and SHALL offer two things to do: roll a death save, or give up. A death
+save SHALL be a d20 the engine rolls, 10 or more a success. One success SHALL get the hero back up with 1 hit point;
+the third failure, or giving up, SHALL be the hero's death. A dying hero healed by anyone SHALL be up again. The model
+SHALL read whether the player rolls or gives up; anything but giving up SHALL be a roll.
+
+#### Scenario: A death save that succeeds
+- **WHEN** the hero lies dying and the player writes "roll", and the engine rolls 14
+- **THEN** the hero gets back up with 1 hit point and the story goes on from there
+
+#### Scenario: The third failure
+- **WHEN** the hero has failed two death saves and the engine rolls 4
+- **THEN** the hero dies
+
+### Requirement: A death does not end the adventure
+When the hero dies, the adventure SHALL go on, as the model tells it: in the great beyond, the hero back years later
+as something else, a successor taking up what the hero left behind, or any other way true to the story. A successor
+SHALL be a new hero the engine makes from the model's proposal, the fallen hero kept in the story's record; a hero
+who goes on themselves SHALL have their hit points whole again.
+
+#### Scenario: The hero dies
+- **WHEN** the hero's third death save fails
+- **THEN** the scene page tells the death and what comes after it, offers what to do next, and the next turn goes on
+  with whoever the story now follows
 
 ### Requirement: A move that is not legal is refused out loud
 A move the player writes or types that is read clearly but is not legal SHALL be refused: it SHALL come off the page,
@@ -73,3 +100,35 @@ model, so the next job's text model is still loaded.
 #### Scenario: Talking to someone in the same room
 - **WHEN** the hero asks a question of someone already in the scene, in the same place
 - **THEN** the scene keeps its picture, and the turn takes no picture time
+
+### Requirement: Talk after a match goes to the opponent
+On the page of a chess game that is over, what the player writes or types to the opponent SHALL go to the opponent:
+it SHALL come off the page, and the opponent SHALL answer in their own voice, the table deciding as on any turn, their
+face kept when they say nothing. Anything else written there (a new game, a request, notes of the player's own) SHALL
+be no business of the game's: the page's job SHALL be any page's. The model SHALL tell which it is; no words are
+matched.
+
+#### Scenario: A word after the game
+- **WHEN** the player writes "Good game!" under a finished game
+- **THEN** the writing comes off and the opponent answers it on the page
+
+#### Scenario: A new game asked for on a finished game's page
+- **WHEN** the player writes "start a new game against someone stronger" under a finished game
+- **THEN** the writing is not the old game's, and the page's job goes on as any page's
+
+### Requirement: A strong opponent takes no draw in the opening
+A chess opponent of 1600 or stronger SHALL refuse a draw offered in the first 20 moves unless it stands clearly
+worse, and SHALL say why in its own voice. A 2600 took a draw on move 3 of an even game.
+
+#### Scenario: A draw offered on move 3
+- **WHEN** the player offers a draw on move 3 of an even game against a 2600
+- **THEN** the opponent refuses, saying the game has barely begun, and the game goes on
+
+### Requirement: Every group text gets an answer
+Every member of a group text SHALL have the chance to answer a message, and none SHALL have to; when the dice let
+nobody speak, the member the message names first, else the most talkative, SHALL answer, and the next when that one
+says nothing, so that every message gets at least one reply.
+
+#### Scenario: A greeting to two
+- **WHEN** the player texts "Hi both!" to a group of two and neither would speak on their own
+- **THEN** one of them answers

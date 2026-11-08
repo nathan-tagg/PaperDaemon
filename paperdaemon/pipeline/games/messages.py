@@ -439,15 +439,10 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
         plans.append((0 if named else 1, cid, plan))
     state["rng"] = rng.state()
     order = [x for x in sorted(plans, key=lambda t: t[0])]
-    # A FEW REPLIES A TURN, as in a real group chat: everyone the message names may answer, and a few others who
-    # would chime in -- four at most, however big the group (each reply is a model call)
-    named_n = sum(1 for p in plans if p[0] == 0)
-    limit = 1 if len(members) == 1 else max(named_n, min(4, (len(members) + 1) // 2))
     replies, images = 0, []
-    for _pri, cid, plan in order:
-        if replies >= limit or not plan["speak"]:
-            TB.post_turn(state, cid, plan)
-            continue
+
+    def _reply(cid, plan, pri, forced=False):
+        """One member's reply -> 1 when a message went into the thread, else 0."""
         fr = plan.get("front") or {}
         aid = fr.get("id")
         name = TB.who(state, cid)                  # an alter's own name when one is out
@@ -457,7 +452,8 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
             knows=RS.about_player(doc, cid, aid),
             memory="\n".join("- " + l for l in memory) or "- nothing yet", kind=kind, thread=_thread_text(state),
             addressed=("The player's message is to you." if len(members) == 1 else
-                       "The message names you; answer it." if _pri == 0 else "Chime in only if you would."),
+                       "The message names you; answer it." if pri == 0 else
+                       "Nobody else has answered the group yet: answer it." if forced else "Chime in only if you would."),
             table="\n".join(plan["prompt_lines"]), short=name, emotions=", ".join(CH.EMOTIONS))
         try:
             reply=ask_text(q)
@@ -467,11 +463,11 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
             if log:
                 log("  messages: %s's reply failed: %s" % (name, str(ex)[:100]))
             TB.post_turn(state, cid, plan)
-            continue
+            return 0
         seen = TB.post_turn(state, cid, plan, r["feel"] or None, r["intensity"], r["at"], r["truth"], speech=r['say'], presentation=r['presentation'])
         r['say']=seen.get('speech', r['say'])
         if not r["say"] and not r["image"]:
-            continue
+            return 0
         msg = {"n": len(state["messages"]) + 1, "from": cid, "text": r["say"][:600], "at": int(time.time()), "page": page_id,
                "shows": seen["shows"], "marks": seen["marks"], "acts": seen["acts"],
                "player_id": seen.get("player_id")}
@@ -482,7 +478,6 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
             msg["image_of"] = r.get("image_of") or "other"
             images.append(msg)
         state["messages"].append(msg)
-        replies += 1
         RS.remember(doc, cid, "I texted back: \"%s\"%s" % (r["say"][:300], (" and sent a picture of %s" % r["image"][:120]) if r["image"] else ""),
                     kind="chat", page=page_id, with_=members, weight=0.35, alter=aid)
         if r["remember"]:
@@ -495,6 +490,19 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
             if other != cid:
                 RS.remember(doc, other, "%s said in the chat: \"%s\"" % (RC.get(seen.get('look') or cid)["short"], r["say"][:240]), kind="heard",
                             page=page_id, with_=[cid], weight=0.3, alter=out(other))
+        return 1
+    # EVERY MEMBER MAY ANSWER, NONE MUST, AND A MESSAGE ALWAYS GETS AN ANSWER: whoever the dice let speak replies; when
+    # nobody did, the member the message names first, else the chattiest, answers -- the next if that one says
+    # nothing. The ruling: "a group text with any number of people needs at least 1 reply. Each town member has the
+    # opportunity to reply but doesn't have to." (It was half the group at most: of two, "Hi both!" got one.)
+    silent = [t for t in order if not t[2]["speak"]]
+    for pri, cid, plan in [t for t in order if t[2]["speak"]]:
+        replies += _reply(cid, plan, pri)
+    for pri, cid, plan in sorted(silent, key=lambda t: (t[0], -float(TB.now(state, t[1])["voice"].get("chattiness", 0)))):
+        if replies:
+            TB.post_turn(state, cid, plan)
+            continue
+        replies += _reply(cid, TB.force_speak(state, cid, plan), pri, forced=True)
     _paint_images(doc, state, images, paint, log)
     # the page: the thread, or a new page when it no longer fits
     first = state["first"].get(page_id, 0)

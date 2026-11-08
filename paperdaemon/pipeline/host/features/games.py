@@ -39,6 +39,36 @@ def _game_job(doc_id, page, name, t0):
     H.log("  %s in %ds -- model %.1fs, host %.1fs (pictures and the page included)"
           % (outcome.upper(), int(dt), JOB.model_s, max(0.0, dt - JOB.model_s)))
     H.log("  %s in %ds -- %s" % (outcome.upper(), int(dt), note[:160]))
+    # THE NEXT JOB STARTS WARM: the game's prompts took the text model's memory (and a picture swap saved them)
+    if up:
+        H.keep_prefix_later(doc_id)
+    return outcome, note, int(time.time() - t0), []
+
+
+def _after_game_job(doc_id, page, name, t0):
+    """TALK AFTER A MATCH (rm_games.after_game): on the page of a chess game that is over, what the player says to the
+    opponent is answered by them -> converse()'s (outcome, note, seconds, messages); None when the page holds no
+    finished game or what is written there is not said to the opponent -- then the job is any page's."""
+    from paperdaemon.pipeline import games as GM
+    if not JOB.page_id or GM.finished_game(doc_id, JOB.page_id) is None:
+        return None
+    up = H._llm_up()
+    if not up:
+        return None
+    res = GM.after_game(doc_id, page, JOB.page_id, ask_text=H._ask_text, ask_vision=H._ask_vision, log=H.log,
+                        workdir=H.QUEUE)
+    if res is None:
+        H.log("  game over: what is written is not said to the opponent -- the page's job is any page's")
+        return None
+    outcome, note = res
+    JOB.committed = True
+    try:
+        JOB.sha_commit = S.page_state(doc_id, JOB.page_id)["sha"]
+    except Exception:
+        pass
+    JOB.outcome, JOB.note = outcome, note
+    H.log("  %s in %ds -- %s" % (outcome.upper(), int(time.time() - t0), note[:160]))
+    H.keep_prefix_later(doc_id)                 # the opponent's prompts took the text model's memory
     return outcome, note, int(time.time() - t0), []
 
 

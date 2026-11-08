@@ -18,11 +18,15 @@ HOST, MODEL = "host", "model"
 
 KINDS = {
     "erase": HOST, "search": HOST, "image": HOST, "web_picture": HOST, "coloring": HOST, "posts": HOST,
-    "highlight": HOST, "circle": HOST, "underline": HOST, "strike": HOST,
+    "highlight": HOST, "circle": HOST, "underline": HOST, "strike": HOST, "checkbox": HOST,
     "tag": HOST, "chess": HOST, "adventure": HOST, "messages": HOST,
     "chart": MODEL, "calendar": MODEL, "write": MODEL, "draw": MODEL,
 }
 MARK_UP = ("highlight", "circle", "underline", "strike")
+# WHAT A STEP'S STROKES ARE TO PAPERDAEMON (render.KINDS): the author byte each is written under
+STROKE_KIND = {"write": "written", "draw": "sketch", "chart": "svg", "calendar": "svg", "posts": "svg",
+               "image": "decomp", "web_picture": "decomp", "coloring": "decomp",
+               "highlight": "markup", "circle": "markup", "underline": "markup", "strike": "markup"}
 GAMES = ("chess", "adventure", "messages")
 # what kind of box a content step gets (the layout's vocabulary)
 PLACE_KIND = {"write": "text", "chart": "chart", "calendar": "calendar", "draw": "drawing",
@@ -41,6 +45,7 @@ FIELDS = {
     "posts": ("source", "search", "sort", "period", "count", "pictures"),
     "highlight": ("target", "words"), "circle": ("target", "words"),
     "underline": ("target", "words"), "strike": ("target", "words"),
+    "checkbox": ("targets", "checked"),
     "tag": ("quote",),
     "chess": ("color", "strength", "opponent", "moves"),
     "adventure": (),
@@ -51,6 +56,7 @@ WHAT_IS = {
     "web_picture": "which real picture to find on the web", "coloring": "what the coloring page shows",
     "posts": "the topic", "highlight": "what is highlighted", "circle": "what is circled",
     "underline": "what is underlined", "strike": "what is struck through",
+    "checkbox": "the list made checkboxes",
     "tag": "the tag's name, as the user wrote it", "chess": "the opponent and the game as asked",
     "adventure": "the adventure and the hero asked for", "messages": "who to text, as asked",
     "chart": "what it shows and from which figures", "calendar": "the month as YYYY-MM, or week",
@@ -83,6 +89,9 @@ STEP_BRIEF = [
      '  highlight    target (an id) and words (the exact words to mark, found inside the target); either\n               alone marks that; on a PDF, words from its text'),
     (('circle', 'underline', 'strike'),
      '  circle / underline / strike   the same target and words, or what at points to'),
+    (('checkbox',),
+     "  checkbox     the user's own TYPED paragraphs made the tablet's checkboxes: targets (their ids, para:N),\n"
+     "               checked: true to tick them; a typed list asked to be a checklist, never drawn again"),
     (('tag',),
      "  tag          a tag on this page, named as the user named it, with quote: the user's words that ask\n               for it -- ONLY when this notebook's system prompt or this page tells you to tag it"),
     (('chess',),
@@ -211,6 +220,17 @@ def build(raw):
         mem = s.get("members")
         if isinstance(mem, list):
             step["members"] = [str(m).strip() for m in mem if str(m).strip()][:12]
+        # THE TABLET'S OWN CHECKBOXES: the typed paragraphs (their ids) a checkbox step restyles, ticked when checked
+        tg = s.get("targets")
+        if isinstance(tg, str):
+            tg = re.findall(r"[a-z]+:\d+", tg)
+        if isinstance(tg, list):
+            step["targets"] = [" ".join(str(t).split()).lower() for t in tg if str(t).strip()][:60]
+        if do == "checkbox":
+            step["checked"] = s.get("checked") in (True, "true")
+            if not step.get("targets"):
+                raise StepError("step %d (checkbox) names no paragraphs. Give targets: the ids of the user's typed "
+                                "paragraphs to make checkboxes (para:N)." % (i + 1))
         # WHERE, AS THE MODEL SEES IT: its own grounding on the page picture, [x1, y1, x2, y2] round a thing or
         # [x, y] for a spot, 0-1000 across the picture; or in words, which the host asks it to ground
         at = s.get("at")

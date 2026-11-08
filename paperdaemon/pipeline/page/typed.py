@@ -569,6 +569,77 @@ def _text_block(blocks):
     return best
 
 
+def _para_keys(tb):
+    """Each typed paragraph's (text, style key), in reading order: the first is keyed by (0, 0), every other by the id
+    of the newline that ends the one before it (see _paragraphs_of)."""
+    out, buf, key = [], [], CrdtId(0, 0)
+    for it in tb.value.items.sequence_items():
+        v = it.value
+        if not isinstance(v, str) or it.deleted_length:
+            continue
+        for k, ch in enumerate(v):
+            if ch in ("\n", LS, PS):
+                out.append(("".join(buf), key))
+                buf, key = [], CrdtId(it.item_id.part1, it.item_id.part2 + k)
+            else:
+                buf.append(ch)
+    out.append(("".join(buf), key))
+    return out
+
+
+def restyle_bytes(data, wants):
+    """THE TABLET'S OWN PARAGRAPH STYLES on the user's typed text (a checklist asked of a typed list: its paragraphs
+    made the tablet's checkboxes, never a drawn copy). `wants` [(a paragraph's text, ParagraphStyle)]: every
+    paragraph whose text is that text, spaces aside, takes that style. A style is a last-writer-wins value, stamped
+    as PaperDaemon's typed text (render.author_of) ONE PAST THE STAMP IT REPLACES: newer than that style, and older
+    than whatever the user does on the tablet afterwards -- the tablet stamps a change with the page's next item
+    number (measured 11-07: a tick on a box PaperDaemon had stamped 97 was stamped 97 again, by the tablet), and a
+    stamp of PaperDaemon's that high could win a merge with a tick of the user's made from a copy of the page.
+    -> (the page's bytes, how many paragraphs were restyled)."""
+    from paperdaemon.pipeline import draw as _A
+    allb = list(read_blocks(io.BytesIO(data)))
+    tb = _text_block(allb)
+    if tb is None:
+        return data, 0
+    host = R.author_of("typed")
+    _A.with_author(allb, host, R.author_uuid(host))
+    paras = _para_keys(tb)
+    n = 0
+    for want, style in wants:
+        w = " ".join(str(want).split())
+        for text, key in paras:
+            if w and " ".join(text.split()) == w:
+                old = tb.value.styles.get(key)
+                was = old.timestamp.part2 if old is not None else 0
+                tb.value.styles[key] = LwwValue(timestamp=CrdtId(host, was + 1), value=ParagraphStyle(int(style)))
+                n += 1
+    if not n:
+        return data, 0
+    buf = io.BytesIO()
+    write_blocks(buf, allb)
+    out = buf.getvalue()
+    back = _text_block(list(read_blocks(io.BytesIO(out))))
+    got = {(k.part1, k.part2): int(getattr(v.value, "value", v.value)) for k, v in back.value.styles.items()}
+    for want, style in wants:
+        w = " ".join(str(want).split())
+        for text, key in paras:
+            if w and " ".join(text.split()) == w and got.get((key.part1, key.part2)) != int(style):
+                raise RuntimeError("a paragraph's style did not read back")
+    return out, n
+
+
+@paths.locks_page(lambda doc_name, page_no, *a, **k: R.page_file(
+    R.find_doc(doc_name) if "-" not in doc_name else doc_name,
+    R.live_pages(R.find_doc(doc_name) if "-" not in doc_name else doc_name)[page_no - 1]["id"]))
+def restyle(doc_name, page_no, wants):
+    """restyle_bytes on a page of the library -> how many paragraphs were restyled."""
+    src = _page_path(doc_name, page_no)
+    data, n = restyle_bytes(open(src, "rb").read(), wants)
+    if n:
+        paths.write_atomic(src, data)
+    return n
+
+
 def _end_of(items):
     """Highest CRDT id consumed by the text so far.
 
@@ -633,11 +704,11 @@ def insert(doc_name, page_no, text, dry_run=False):
         left = CrdtId(tail.item_id.part1, tail.item_id.part2 + span - 1)
     else:
         left = CrdtId(0, 0)
-    # PAPERDAEMON'S OWN IDS (render.HOST_AUTHOR), counted on from its own: never the tablet's, which the user's typing
-    # on the tablet meanwhile takes up
+    # PAPERDAEMON'S TYPED TEXT'S AUTHOR BYTE (render.author_of), counted on from its own: never the tablet's, which the
+    # user's typing on the tablet meanwhile takes up
     from paperdaemon.pipeline.page import render as _R
-    HOST = _R.HOST_AUTHOR
-    _A.with_author(allb, HOST, _R.HOST_UUID)
+    HOST = _R.author_of("typed")
+    _A.with_author(allb, HOST, _R.author_uuid(HOST))
     end = _A.next_free_id(allb, HOST) - 1
     body = ("\n" if items else "") + text
     new_id = CrdtId(HOST, end + 1)

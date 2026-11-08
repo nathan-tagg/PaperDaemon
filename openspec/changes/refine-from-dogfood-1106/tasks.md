@@ -68,3 +68,22 @@
 - [x] 9.3 A checklist asked for is written as "- [ ] " lines (boxes to tick)
 - [x] 9.4 The host refuses erasing a typed paragraph with a question mark as a request, and the paragraph a chart's
       numbers come from; checklist boxes a little taller than the capitals (0.2.30)
+
+## 10. His rulings, 11-07
+
+- [x] 10.1 The request paragraph comes off with its numbers (0.2.28-0.2.30's keep reverted); a question answered in
+      words stays, one answered otherwise is the request it reads as
+- [x] 10.2 Every group text gets at least one reply (messages._reply, table.force_speak)
+- [x] 10.3 A strong chess opponent takes no draw in the opening, and says why
+- [x] 10.4 A line chart's key is each line in its color and dash (markers on a field of their own)
+- [x] 10.5 Select-all's counts are the selection's own after an editor reloads (keys unique per editor)
+- [x] 10.6 Talk after a match goes to the opponent (games.after_game); anything else on a finished game's page is
+      any page's job
+- [x] 10.7 Death saves: a dying hero rolls (one success: up with 1 hit point; three failures: dead) or gives up;
+      a death does not end the adventure (after_death: the great beyond, a return, a successor)
+- [x] 10.8 A sketch is shown back once for a fix (RM_HOST_DRAW_LOOKS 1 by default)
+- [x] 10.9 After a game turn the job instructions go back into the text model's memory (keep_prefix), local servers only
+- [ ] 10.10 Measured live: the first job after an adventure turn reads the instructions warm
+- [x] 10.11 Native typed checkboxes: the checkbox step (targets, checked), typed.restyle at commit, the plan checks
+- [x] 10.12 Tablet test: checkboxes PaperDaemon set show, and tick and untick there afterwards (Checkbox test notebook,
+      11-07: both pages ticked and unticked; the tablet stamps with the next item number, so restyles stamp one past the old)

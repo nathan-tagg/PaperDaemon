@@ -26,6 +26,7 @@
           "circle",
           "underline",
           "strike",
+          "checkbox",
           "tag",
           "chess",
           "adventure",
@@ -908,9 +909,6 @@
       },
       "description": "One ruling per thing on the page you rule on, and one for EVERY item listed as NEW: {\"id\": copied from the listing, \"is\": request | command | asked_to_remove | stale_work | question | conversation | note | other, \"then\": erase | keep}. erase only for a request or command this job carries out, what the user asked to have removed, or your own work this job makes stale."
      },
-     "size": {
-      "type": "number"
-     },
      "remember": {
       "type": "array",
       "description": "Your MEMORIES (see YOUR MEMORIES): only a lesson about working for this user -- a complaint, a correction, how they want something done. Each {\"text\"} adds one; {\"text\", \"replaces\": \"mN\"} replaces memory mN; {\"text\": \"\", \"replaces\": \"mN\"} removes it. Leave it out when nothing was learned.",
@@ -977,7 +975,7 @@
   "type": "function",
   "function": {
    "name": "skip",
-   "description": "Your ONE decision when THIS page asks for nothing, or when this notebook's system prompt says to leave it alone: say what is on it and why you are not acting. Nothing changes. What another page answered never answers a request on this one.",
+   "description": "Your ONE decision when THIS page asks for nothing, or when this notebook's system prompt says to leave it alone: say what is on it and why you are not acting, in plain words -- the note is shown on the page, so never an id like line:1 or mark:11. Nothing changes. What another page answered never answers a request on this one.",
    "parameters": {
     "type": "object",
     "properties": {
@@ -1028,6 +1026,7 @@
        "circle",
        "underline",
        "strike",
+       "checkbox",
        "tag",
        "chess",
        "adventure",
@@ -1071,9 +1070,6 @@
       "items": {
        "type": "string"
       }
-     },
-     "size": {
-      "type": "number"
      },
      "place": {
       "type": "string"
@@ -1206,7 +1202,7 @@
       "description": "The parts of the figure, in any order.",
       "items": {
        "type": "object",
-       "description": "kind, then its numbers: line x1 y1 x2 y2; rect x1 y1 x2 y2 (corners); circle cx cy r; ellipse cx cy rx ry; arc cx cy r start end (degrees); polyline points [[x, y], ...]; icon name cx cy r (a shape or icon by name, as element takes it).",
+       "description": "kind, then its numbers: line x1 y1 x2 y2; rect x1 y1 x2 y2 (corners); circle cx cy r; ellipse cx cy rx ry; arc cx cy r start end (degrees); polyline points [[x, y], ...]; icon name cx cy r (a shape or icon by name, as element takes it). Any part may have color: black (the default), gray, blue, red, green, yellow or pink -- the tablet's inks.",
        "properties": {
         "kind": {
          "type": "string",

@@ -6850,6 +6850,9 @@ span.lname { cursor: default; }
   // at its own size.
   let pickMode = "select", pick = null, pickDrag = null, pickLoop = null, lastAt = null;
   let makeUpBox = null, makeUp = null, makeUpTold = "", makeUpKeys = 0;   // (the selection's make-up: paintMakeUp)
+  // (the keys the window knows a make-up by are this editor's own: counted from 1 in every editor, a new one's first
+  // selection had the old one's key, and the window kept showing the counts of the selection before)
+  const makeUpRun = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   const hiddenPics = new Set();
   // the turning handle's pointer: a circling arrow, as the old Office suites showed it
   const TURN_CURSOR = 'url("data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">' +
@@ -7416,7 +7419,7 @@ span.lname { cursor: default; }
   function paintMakeUp() {
     const settled = pick && pick.kind === "strokes" && pick.lines.length && !pickDrag && !dropping && !pickLoop && !live && !VIEW && !THUMB_W;
     if (EMBED) {
-      if (settled && (!makeUp || makeUp.lines !== pick.lines)) makeUp = { lines: pick.lines, rows: rowsOf(pick.lines), key: ++makeUpKeys };
+      if (settled && (!makeUp || makeUp.lines !== pick.lines)) makeUp = { lines: pick.lines, rows: rowsOf(pick.lines), key: makeUpRun + "-" + (++makeUpKeys) };
       tellMakeUp(!!settled);
       return;
     }

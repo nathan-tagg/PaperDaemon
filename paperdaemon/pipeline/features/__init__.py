@@ -40,7 +40,7 @@ def _f(name, summary, requires=Requires(), optional=Requires(), steps=(), tools=
 
 
 FEATURES = (
-    _f("write", "answers in words, lettered on the page", steps=("write",),
+    _f("write", "answers in words, lettered on the page", steps=("write", "checkbox"),
        tools=("answer", "write_paragraph", "write_line"), decisions=("item.ruling", "step.kind")),
     _f("erase", "erasing what the page asked to have removed", optional=Requires(features=("point",)),
        steps=("erase",), decisions=("item.ruling",)),

@@ -231,13 +231,15 @@ def test_a_typed_question_is_never_erased_as_a_request(page):
     assert not any("asks something" in p for p in ok)
 
 
-def test_the_paragraph_a_chart_is_drawn_from_stays(page):
-    # "Mia: Mon 20, Tue 35 ... Make a line chart of both." was ruled a request three rounds running and erased
+def test_a_request_with_its_numbers_comes_off_and_a_question_only_stays_when_answered_in_words(page):
+    # the ruling: "obviously it should erase that paragraph" -- the numbers a chart is made from, with the request in the
+    # same paragraph, are the request; and "Can you draw a cat?" is the request it reads as, done once the cat is drawn
     page.listing["para:1"] = {"owner": "user", "text": "Reading minutes. Mia: Mon 20, Tue 35, Wed 15. Make a line chart."}
-    steps = [{"do": "chart", "what": "Mia's reading minutes", "answers": ["para:1"]}]
-    probs = RU.problems("plan", {"steps": steps, "rulings": [rule("para:1"), rule("line:1", "note", "keep")]})
-    assert any("para:1 holds the numbers the chart is drawn from" in p for p in probs)
-    plain = dict(page.listing["para:1"], text="Make a bar chart of my steps.")
-    page.listing["para:1"] = plain                           # a request with no data of its own still comes off
-    probs = RU.problems("plan", {"steps": steps, "rulings": [rule("para:1"), rule("line:1", "note", "keep")]})
-    assert not any("holds the numbers" in p for p in probs)
+    chart = [{"do": "chart", "what": "Mia's reading minutes", "answers": ["para:1"]}]
+    assert RU.problems("plan", {"steps": chart, "rulings": [rule("para:1"), rule("line:1", "note", "keep")]}) == []
+    page.listing["para:1"] = {"owner": "user", "text": "Can you draw a cat?"}
+    draw = [{"do": "draw", "what": "a cat", "answers": ["para:1"]}]
+    assert RU.problems("plan", {"steps": draw, "rulings": [rule("para:1"), rule("line:1", "note", "keep")]}) == []
+    write = [{"do": "write", "what": "an answer", "answers": ["para:1"]}]
+    probs = RU.problems("plan", {"steps": write, "rulings": [rule("para:1"), rule("line:1", "note", "keep")]})
+    assert any("para:1 asks something" in p for p in probs)

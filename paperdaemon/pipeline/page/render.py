@@ -185,24 +185,59 @@ _LINES = {}          # path -> ((mtime_ns, size), fastrm.page_lines(...))
 # never draws them -- strokes() leaves them out, so nothing that reads a page for the host sees them -- and the page's
 # fingerprint leaves them out too (ledger._content_sha), so a note can neither be read as the user's writing nor start
 # a job. Only the page editor shows them (it reads the page itself: remarkable/local.scene_of).
-# WHAT IS HIS: a stroke on a layer with his layer's name (Settings: daemon.layer) or the name his notes had before
-# ("PaperDaemon") that a machine drew -- every point at the one pressure (190) with no speed and no direction, which no
-# hand on the tablet makes. NOT the user's strokes on his layer: the tablet writes on whatever layer is current, and
-# the user's writing has landed there. HE WRITES AS THE TABLET'S OWN AUTHOR (1): the tablet will not open a page that
-# holds an item of any author it does not know -- his notes under an author of their own (218) left every page they
-# were on unreadable there (measured: those pages opened again once the 218 items were taken out). What is
-# left of 218 on a page is his, and the next note takes it out of the file outright (notes._write).
+# WHAT IS HIS: everything on a layer with his layer's name (Settings: daemon.layer) or the name his notes had before
+# ("PaperDaemon"), and anything left under the author his notes once had (218). Nothing is judged by how its points
+# look.
 DAEMON_LAYER = "Daemon"
 DAEMON_LEGACY = "PaperDaemon"
 DAEMON_AUTHOR = 218                  # the author his notes once had: anything under it is his, and goes
-SYNTH_PRESSURE = 190                 # a machine-drawn point: this pressure, speed 0, direction 0 (notes, the host)
-# WHAT A JOB WRITES (its strokes, typed text and pictures) IS NUMBERED AS THE TABLET'S OWN (author 1), after every id
-# the page holds. An author of its own (219) was tried in 0.1.79 so that what the user adds on the tablet while a job
-# runs could never take the same ids -- and a page of strokes under it would not open on the tablet. Until another
-# author is proven on the device, the writers stay on 1 (the per-author counting stays, ready for one).
-HOST_AUTHOR = 1
+SYNTH_PRESSURE = 190                 # the pressure PaperDaemon draws its points at (speed 0, direction 0); never a test
+# PAPERDAEMON'S STROKES SAY SO THEMSELVES, in their author byte (his design, 11-07). A stroke keeps its author in ONE
+# byte, and the tablet opens a page with 1-159, 175, 191, 207, 212 and 240-255 and no other (measured, a page per
+# number from 1 to 512; past 255 a page went as the byte its strokes carry, and a number the page's author table does
+# not list opens all the same). Everything PaperDaemon puts on a page is numbered 100kkkkk, 128-159, all of which open:
+# the top three bits say it is PaperDaemon's, the low five what it was (KINDS) -- a written answer, a traced picture, a
+# chart, a sketch, a mark-up, the daemon's note, a placed picture, typed text. Nothing is kept beside the page: the
+# byte says it, wherever the page goes, and each kind numbers its own ids, so none meets another's or the tablet's.
+# 218 and 219 (notes and jobs before) fell in what the tablet refuses; 218 is taken out of a page by the next note.
+TABLET_AUTHOR = 1
+TABLET_OPENS = frozenset(range(1, 160)) | {175, 191, 207, 212} | frozenset(range(240, 256))   # measured 11-07
 HOST_UUID = __import__("uuid").uuid5(__import__("uuid").NAMESPACE_DNS, "host.paperdaemon")
+OWN_BASE, OWN_MASK = 0b10000000, 0b11100000
+KINDS = {"other": 0, "written": 1, "decomp": 2, "svg": 3, "sketch": 4, "markup": 5, "notes": 6, "picture": 7,
+         "typed": 8}
+KIND_NAMES = {v: k for k, v in KINDS.items()}
 _NAME = {"key": None, "name": DAEMON_LAYER}
+
+
+def author_of(kind):
+    """The author byte PaperDaemon writes a thing of this kind under: 100 and the kind's five bits."""
+    return OWN_BASE | KINDS.get(kind or "other", 0)
+
+
+def is_own(author):
+    """Did PaperDaemon write it: an author byte of 100kkkkk (128-159)."""
+    return (int(author) & OWN_MASK) == OWN_BASE and int(author) < 256
+
+
+def kind_of_author(author):
+    """What a stroke of PaperDaemon's was (KINDS), or None for an author that is not PaperDaemon's."""
+    return KIND_NAMES.get(int(author) & ~OWN_MASK, "other") if is_own(author) else None
+
+
+def author_table(blocks):
+    """A page's author table, {number: uuid}, from its blocks (rmscene's); {} for a page without one."""
+    for b in blocks:
+        if isinstance(b, ss.AuthorIdsBlock):
+            return dict(b.author_uuids)
+    return {}
+
+
+def author_uuid(author):
+    """The id the page's author table ties a PaperDaemon author byte to, one per kind."""
+    k = kind_of_author(author) or "other"
+    return HOST_UUID if k == "other" else __import__("uuid").uuid5(__import__("uuid").NAMESPACE_DNS,
+                                                                   "%s.host.paperdaemon" % k)
 
 
 def daemon_layer_name():
@@ -245,16 +280,11 @@ def synthetic(points):
 
 
 def daemon_stroke(author, parent, layers, drawn=None):
-    """Is a stroke the daemon's: under his old author, or on one of his layers (daemon_layer_ids) and machine-drawn.
-    `drawn`: whether its points are machine-drawn (synthetic), or a function that says so (asked only for a stroke
-    on his layers); None where the caller cannot tell -- then a stroke on his layers counts as his."""
-    if author == DAEMON_AUTHOR:
-        return True
-    if parent not in layers:
-        return False
-    if drawn is None:
-        return True
-    return bool(drawn() if callable(drawn) else drawn)
+    """Is a stroke the daemon's: written as his notes (author_of("notes")), under his old author, or on one of his
+    layers (daemon_layer_ids). HIS LAYER IS HIS: everything on it is his, and nothing is judged by how its points look
+    -- a stroke told apart by its points (machine-drawn: pressure 190, speed 0) could be the user's, drawn with a mouse,
+    and erased. (`drawn` is no longer asked.)"""
+    return author == DAEMON_AUTHOR or author == author_of("notes") or parent in layers
 
 
 def _lines_of(path):
@@ -560,7 +590,7 @@ def strokes(doc, page_no, arrays=False):
         if isinstance(b, ss.SceneLineItemBlock) and isinstance(getattr(b.item, "value", None), Line))
     daemon = daemon_layer_ids(blocks)
     for n, parent, v, author in found:
-        if daemon_stroke(author, (parent.part1, parent.part2), daemon, lambda v=v: synthetic(v.points)):
+        if daemon_stroke(author, (parent.part1, parent.part2), daemon):
             continue                                      # the daemon's note, never the page's content
         if is_dead(n):
             buried += 1          # the device treats this as erased
