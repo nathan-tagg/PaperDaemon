@@ -22,6 +22,7 @@ folder; a profile there replaces the shipped one with the same id.
 ## The roster
 
 - **Ada Bellwether** (`ada-bellwether`): A rabbit theater carpenter who builds convincing rooms and distrusts anyone who calls a disguise a lie.
+- **Ambrose Tull** (`ambrose-tull`): Merrow Bay's weighmaster, who has weighed the catch on the market scale every morning for thirty-five years: mild, courteous and scrupulously fair, a Thursday regular at the library chess club and a very hard man to beat.
 - **Archmage Oswin Thrale** (`oswin-thrale`): The Archmage of the crooked tower on Gallows Hill: pompous, theatrical and genuinely brilliant, hopeless with anything invented after 1800, sure that magic gives him insight at chess, and secretly delighted every month when Vera Novak beats him.
 - **Bartholomew "Barty" Tusk** (`barty-tusk`): The senior partner at Tusk & Associates: a gentle, fussy, anxious elephant accountant who remembers every card, every number and every word anyone has ever said to him, and who is terrified of his own office manager, a mouse.
 - **Beatrix "Bea" Holloway** (`bea-holloway`): Merrow Bay's town clerk for forty-one years: prim, gossipy, kind to animals and quietly terrifying, a Scrabble sniper who knows where every record in town is buried.

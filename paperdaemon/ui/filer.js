@@ -10,7 +10,9 @@
 // A MIRROR PAGE (the tablet's own): each stroke read keeps the id the file gave it while it is exactly that stroke on
 // that layer, and a stroke the editor wrote takes the id the file gave it once read back (ids, as the editor's knowIds
 // did); its group goes with it. Worked out here at every read, the editor told what changed (it keeps them too: the
-// write as the page is left is its own, at once)
+// write as the page is left is its own, at once). A FALSE MIRROR PAGE'S strokes keep the ids they were read with too
+// (not worked out again): its id's author is what says a stroke is PaperDaemon's (render.author_of), and the page
+// written anew keeps it (local.write_scene)
 (function () {
   "use strict";
   const PDS = [0x50, 0x44, 0x53, 0x31], REC = 14;
@@ -129,7 +131,7 @@
   const factsOf = ln => ({ penCode: ln.penCode, color: ln.color, thicknessScale: ln.thicknessScale, colorRgba: ln.colorRgba || null });
   function partFrom(u8, e) {                                  // a stroke of a file read: its part, its records where they are
     const ln = e.ln;
-    return { n: e.n, rec: u8.subarray(e.at, e.at + e.n * REC), h: e.h, f: factsOf(ln), id: mirror && ln.id || null, group: mirror && ln.group || null,
+    return { n: e.n, rec: u8.subarray(e.at, e.at + e.n * REC), h: e.h, f: factsOf(ln), id: ln.id || null, group: mirror && ln.group || null,
              head: headOf({ pen: ln.pen || "FINELINER_2", penCode: ln.penCode, color: ln.color, colorRgba: ln.colorRgba, thicknessScale: ln.thicknessScale }, e.n) };
   }
   function knownFrom(F, uids) {                               // the file read, its strokes these uids -> what is known of it
@@ -212,9 +214,9 @@
     return { layerIds, hasText: !!sc.text, ids, groups, commit() { for (const [u, [id, group]] of next) { const p = parts.get(u); p.id = id; p.group = group; } } };
   }
   // A LOOK: the file read again unless it is as last read or written (its version); if it changed, what changed since it
-  // was last read or written -- the daemon's layer, if it changed, as the file has it now; on each of the page's own
-  // layers (matched by place among them) the strokes the file has gained (theirs, to be made strokes) and the uids of
-  // those it has lost; the text, the pictures and the page's facts as the file has them, with the hashes they had (the
+  // was last read or written -- on the daemon's layer, if it changed, and on each of the page's own layers (matched by
+  // place among them), the strokes the file has gained (theirs, to be made strokes) and the uids of those it has lost;
+  // the text, the pictures and the page's facts as the file has them, with the hashes they had (the
   // editor takes the file's only where its own are still those). Kept until the editor says whether it took it in. A
   // Mirror page's ids come with every file read, kept once the editor takes the read in
   async function look(m) {
@@ -241,23 +243,16 @@
     const strokes = [], picks = [], add = e => {              // a stroke to be made: its facts (its points: all in one array, after)
       const ln = e.ln;
       strokes.push({ pen: ln.pen, penCode: ln.penCode, color: ln.color, colorRgba: ln.colorRgba, thicknessScale: ln.thicknessScale, n: e.n,
-                     ...(mirror && ln.id ? { id: ln.id, group: ln.group || null } : {}) });
+                     ...(ln.id ? { id: ln.id, group: mirror && ln.group || null } : {}) });
       picks.push(e); total += e.n;
       return strokes.length - 1;
     };
     // (where each stroke the file has now comes from: the uid it keeps, or the stroke to be made -- its place in `strokes`)
     const plan = there.layers.map(() => []);
-    const dT = sc.layers.findIndex(L => L.daemon), dW = was.layers.findIndex(L => L.daemon);
-    if (dT >= 0) {
-      const same = dW >= 0 && there.layers[dT].hs.length === was.layers[dW].hs.length && there.layers[dT].hs.every((h, k) => h === was.layers[dW].hs[k]);
-      if (same) plan[dT] = was.layers[dW].uids.map(u => ({ uid: u }));
-      else { plan[dT] = F.layers[dT].map(e => ({ make: add(e) })); out.daemon = { label: sc.layers[dT].label, visible: sc.layers[dT].visible !== false, made: plan[dT].map(p => p.make) }; }
-    }
-    const mineT = [], mineW = [];
-    there.layers.forEach((L, i) => { if (!L.daemon) mineT.push(i); });
-    was.layers.forEach((L, i) => { if (!L.daemon) mineW.push(i); });
-    mineT.forEach((ti, k) => {
-      const wi = mineW[k], W = wi === undefined ? null : was.layers[wi], left = new Map();   // the file's strokes before, by hash
+    // A LAYER AS THE FILE HAS IT NOW against the same layer as last read or written (W): the strokes it gained (to be
+    // made) and the uids of those it lost
+    const diff = (ti, W) => {
+      const left = new Map();                                 // the file's strokes before, by hash
       if (W) W.hs.forEach((h, j) => { const l = left.get(h); if (l) l.push(W.uids[j]); else left.set(h, [W.uids[j]]); });
       const P = [], gained = [];
       for (const e of F.layers[ti]) {
@@ -268,8 +263,20 @@
       plan[ti] = P;
       const lost = [];
       for (const l of left.values()) for (const u of l) lost.push(u);
-      out.layers.push({ label: sc.layers[ti].label, visible: sc.layers[ti].visible !== false, wasVisible: W ? W.visible : null, gained, lost });
-    });
+      return { label: sc.layers[ti].label, visible: sc.layers[ti].visible !== false, wasVisible: W ? W.visible : null, gained, lost };
+    };
+    // THE DAEMON'S LAYER against the daemon's, as any layer (the user draws there too, and keeps it -- the user's word,
+    // 11-07): his new note is the strokes it gained, his last one those it lost, and what the user drew there and the
+    // file has not had yet stays. Told only when it changed
+    const dT = sc.layers.findIndex(L => L.daemon), dW = was.layers.findIndex(L => L.daemon);
+    if (dT >= 0) {
+      const D = diff(dT, dW >= 0 ? was.layers[dW] : null);
+      if (dW < 0 || D.gained.length || D.lost.length || D.visible !== D.wasVisible) out.daemon = D;
+    }
+    const mineT = [], mineW = [];
+    there.layers.forEach((L, i) => { if (!L.daemon) mineT.push(i); });
+    was.layers.forEach((L, i) => { if (!L.daemon) mineW.push(i); });
+    mineT.forEach((ti, k) => { const wi = mineW[k]; out.layers.push(diff(ti, wi === undefined ? null : was.layers[wi])); });
     const pts = new Float64Array(6 * total), dv = new DataView(F.u8.buffer, F.u8.byteOffset);
     let o = 0;
     for (const e of picks) for (let k = 0, q = e.at; k < e.n; k++, q += REC, o += 6) {
@@ -304,7 +311,7 @@
     let total = 0;
     const heads = m.layers.map(L => {
       const hs = new Array(L.uids.length);
-      for (let j = 0; j < L.uids.length; j++) { const p = parts.get(L.uids[j]); hs[j] = mirror ? headWith(p.head, p.id, p.group) : p.head; total += p.rec.length; }
+      for (let j = 0; j < L.uids.length; j++) { const p = parts.get(L.uids[j]); hs[j] = headWith(p.head, p.id, p.group); total += p.rec.length; }
       return L.prefix + ',"lines":[' + hs.join(",") + "]}";
     });
     const head = new TextEncoder().encode('{"layers":[' + heads.join(",") + "]," + m.tail);

@@ -28,3 +28,11 @@
 ## 5. Retries
 
 - [x] 5.1 A failed job goes back in the queue while the settings allow, told how the last try ended
+
+## 6. The user draws on his layer (11-07)
+
+- [x] 6.1 Notes erase only his own (his byte, his old author); his whole layer only on a page from before his byte
+- [x] 6.2 The editor: his layer chosen and drawn on, kept at the bottom; a note landing keeps the user's strokes there
+- [x] 6.3 False Mirror saves keep every stroke's id; the writer keeps his layer's blocks and writes each stroke as whose it is
+- [x] 6.4 A page from before his byte: the user's first stroke there lays his old note again under the byte (Mirror and False Mirror)
+- [ ] 6.5 A real run: draw on his layer of a tablet page in the Mirror, let a job write a note, and see the stroke stay

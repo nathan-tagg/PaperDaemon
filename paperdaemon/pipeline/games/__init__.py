@@ -743,18 +743,21 @@ def play(doc, page_no, page_id, ask_text=None, ask_vision=None, log=None, workdi
             talk += _refused(state, "The player moved a piece where it cannot go (%s); the piece went back." % r["reason"],
                              ask_text, log)
     # a draw offer: the opponent takes it when it is not ahead -- and a strong one not in the opening, unless it stands
-    # clearly worse (a 2600 took a draw on move 3 of an even game)
+    # clearly worse (a 2600 took a draw on move 3 of an even game). One who takes any draw (CH.takes_draws: the
+    # maintainer's word, 11-07, "if you offer him a draw he'll accept immediately") takes it at once, whatever the board
     if written and written["kind"] == "draw" and state["status"] == "playing":
-        try:
-            with CH.Engine(state["strength"]["elo"]) as eng:
-                c = eng.candidates(state["fen"], multipv=1)
-            board = chess.Board(state["fen"])
-            engine_to_move = ("w" if board.turn == chess.WHITE else "b") == state["colors"]["engine"]
-            ahead = (c[0]["cp"] if engine_to_move else -c[0]["cp"]) if c else 0
-        except Exception:
-            ahead = 0
-        early = (len(state["history"]) < 2 * DRAW_OPENING_MOVES and int(state["strength"]["elo"]) >= DRAW_STRONG_ELO
-                 and ahead > -150)
+        takes, ahead = CH.takes_draws(state), 0
+        if not takes:
+            try:
+                with CH.Engine(state["strength"]["elo"]) as eng:
+                    c = eng.candidates(state["fen"], multipv=1)
+                board = chess.Board(state["fen"])
+                engine_to_move = ("w" if board.turn == chess.WHITE else "b") == state["colors"]["engine"]
+                ahead = (c[0]["cp"] if engine_to_move else -c[0]["cp"]) if c else 0
+            except Exception:
+                ahead = 0
+        early = (not takes and len(state["history"]) < 2 * DRAW_OPENING_MOVES
+                 and int(state["strength"]["elo"]) >= DRAW_STRONG_ELO and ahead > -150)
         why = "the game has barely begun" if early else "you are ahead"
         # IN THEIR OWN VOICE: taken, the game is over and the opponent's last word says so (_farewell, below); refused,
         # they say why. A fixed "A draw? Fine by me." was every character's answer, whoever they were

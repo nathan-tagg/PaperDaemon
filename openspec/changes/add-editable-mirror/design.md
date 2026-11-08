@@ -21,7 +21,9 @@
   in place exactly is refused with its reason, never guessed: a layer deleted or reordered, a new layer below the
   page's own, the text box moved, or typed text the page holds in a form that cannot be read exactly. A picture
   removed is a tombstone; one moved is a tombstone and a new item, as a moved stroke is; one added goes on the page's
-  first layer. The daemon's layer is never written from the save.
+  first layer. The daemon's layer takes the user's strokes as any layer does (the maintainer's word, 11-07: "let me
+  draw on it and keep my strokes"); the layer itself -- its name, its place, whether it shows -- is never written
+  from the save.
 - **D2, as built.** The check is one question to the cloud (`sync.cloud_file`): the page's file in the document's
   index now against the one last pulled or pushed. When the cloud cannot be asked, the page is not saved either. A
   page changed since the editor read it is refused the same way (its stamp). The editor's Ctrl+S and a document

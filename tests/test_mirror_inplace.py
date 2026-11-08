@@ -633,9 +633,8 @@ def test_a_page_the_pipeline_wrote_with_the_daemons_layer_a_picture_and_a_new_la
         res = {"layers": [(L["label"], bool(L.get("daemon"))) for L in scene["layers"]], "pics": len(scene["images"])}
         same = IP.write_in_place(doc, 1, json.loads(json.dumps(scene)), scene["stamp"])
         res["unchanged"] = same["changed"] is False and page_bytes(doc) == before
-        # the save's copy of his layer emptied, and a new layer of the user's with a stroke on it
-        his = next(L for L in scene["layers"] if L.get("daemon"))
-        his["lines"] = []
+        # a new layer of the user's with a stroke on it (his layer as it was read: drawing there is
+        # test_the_user_draws_on_his_layer_of_a_mirror_page_and_keeps_it)
         pt = lambda x, y: [x, y, 0, 0, 24, 128]
         scene["layers"].append({"label": "Notes", "visible": True,
                                 "lines": [{"penCode": 15, "color": 0, "thicknessScale": 2, "points": [pt(-400, 1300), pt(400, 1300)]}]})
@@ -645,7 +644,8 @@ def test_a_page_the_pipeline_wrote_with_the_daemons_layer_a_picture_and_a_new_la
         back = local.scene_of(doc, 1)
         res.update(prefix=after.startswith(before), added=w["added"], erased=w["erased"], new_layers=w["layers"],
                    back=[(L["label"], len(L["lines"]), bool(L.get("daemon"))) for L in back["layers"]], back_pics=len(back["images"]),
-                   rm=len(list(read_blocks(io.BytesIO(after)))))
+                   rm=len(list(read_blocks(io.BytesIO(after)))),
+                   on_his=sorted(ln["id"][0] for L in back["layers"] if L.get("daemon") for ln in L["lines"]))
         # PICTURES: one moved (its item a tombstone, a new item at its corners, its asset listed once), one added from a
         # file put beside the page, then that one erased
         s3 = IP.read_page(doc, 1)
@@ -678,12 +678,93 @@ def test_a_page_the_pipeline_wrote_with_the_daemons_layer_a_picture_and_a_new_la
     assert got["pics"] == 1 and got["unchanged"], got
     assert got["prefix"] and got["added"] == 1 and got["erased"] == 0 and got["new_layers"] == 1, got
     assert [b[1:] for b in got["back"]] == [[1, True], [3, False], [1, False]] and got["back"][2][0] == "Notes", got
+    assert got["on_his"] == [218], got
     assert got["back_pics"] == 1 and got["rm"] > 0
     moved, live, shown, erased, left, dead = got["picture"]
     assert moved == {"erased": 0, "moved": 1, "added": 1} and live == 2, got["picture"]
     assert shown == [[False, [-50, 900], True], [True, [300, 300], True]], got["picture"]
     assert erased == {"erased": 1, "moved": 0, "added": 0} and left == 1 and dead == [0, 1, 1], got["picture"]
     assert got["none"] == ["none", 1, True, False, False] and got["made"] == [1, 1, 1], got
+
+
+def test_the_user_draws_on_his_layer_of_a_mirror_page_and_keeps_it():
+    """The user's word, 11-07: "let me draw on it and keep my strokes". On a Mirror page his layer takes the user's
+    stroke as any layer does (written in place, every other block as it was), and his next note takes only his own. On
+    a page from before his byte -- his old note under the tablet's author, or his layer under his old author (218) --
+    the save that brings the user's first stroke there lays what the layer held again as his (notes.adopt)."""
+    got = _run("""
+        import uuid
+        from rmscene import write_blocks
+        from rmscene import scene_items as si
+        from rmscene.crdt_sequence import CrdtSequenceItem
+        from rmscene.tagged_block_common import LwwValue
+        from paperdaemon.pipeline import TEMPLATES
+        from paperdaemon.pipeline.daemon import notes as N
+        from paperdaemon.pipeline.page import render as R
+
+        def page(build):
+            doc, pid = str(uuid.uuid4()), str(uuid.uuid4())
+            os.makedirs(os.path.join(M, doc))
+            json.dump({"cPages": {"pages": [{"id": pid, "idx": {"timestamp": "1:2", "value": "ba"}}]}, "fileType": "notebook",
+                       "pageCount": 1}, open(os.path.join(M, doc + ".content"), "w"))
+            json.dump({"visibleName": "T", "parent": "", "type": "DocumentType"}, open(os.path.join(M, doc + ".metadata"), "w"))
+            path = os.path.join(M, doc, pid + ".rm")
+            data = build(open(os.path.join(TEMPLATES, "blank-page.rm"), "rb").read())
+            open(path, "wb").write(data)
+            return doc, path
+
+        def old_layer(author, n, ys):                # his layer as an older version left it, strokes on it
+            def build(data):
+                bl = list(read_blocks(io.BytesIO(data)))
+                h = CrdtId(author, n)
+                g = si.Group(node_id=h, label=LwwValue(CrdtId(author, n + 1), R.daemon_layer_name()),
+                             visible=LwwValue(CrdtId(author, n + 2), True))
+                bl += [ss.SceneTreeBlock(tree_id=h, node_id=CrdtId(0, 0), is_update=True, parent_id=CrdtId(0, 1)),
+                       ss.TreeNodeBlock(group=g),
+                       ss.SceneGroupItemBlock(parent_id=CrdtId(0, 1), item=CrdtSequenceItem(CrdtId(author, n + 3), CrdtId(0, 0),
+                                                                                            CrdtId(0, 0), 0, h))]
+                prev = CrdtId(0, 0)
+                for k, y in enumerate(ys):
+                    line = si.Line(si.PenColor.BLACK, si.Pen.FINELINER_2, [si.Point(0, y, 0, 0, 24, 190), si.Point(50, y, 0, 0, 24, 190)],
+                                   3.0, 0.0)
+                    iid = CrdtId(author, n + 10 + k)
+                    bl.append(ss.SceneLineItemBlock(parent_id=h, item=CrdtSequenceItem(iid, prev, CrdtId(0, 0), 0, line)))
+                    prev = iid
+                buf = io.BytesIO(); write_blocks(buf, [b for b in bl if not isinstance(b, ss.UnreadableBlock)])
+                return buf.getvalue()
+            return build
+
+        def a_note(data):
+            strokes, _ = N.letter(["Saw it 1:02 PM."], (1620.0, 2160.0))
+            return N.with_note(data, strokes, {})
+
+        def his(doc, path):
+            bl = list(read_blocks(io.BytesIO(open(path, "rb").read())))
+            back = local.scene_of(doc, 1)
+            return {"on_his": sorted(ln["id"][0] for L in back["layers"] if L.get("daemon") for ln in L["lines"]),
+                    "his_layers": sum(1 for L in back["layers"] if L.get("daemon")), "old_page": bool(R.notes_own_layers(bl))}
+
+        res = {}
+        for name, build in (("byte", a_note), ("tablet", old_layer(1, 900, [40, 70])), ("218", old_layer(R.DAEMON_AUTHOR, 1, [40]))):
+            doc, path = page(build)
+            before = open(path, "rb").read()
+            sc = IP.read_page(doc, 1)
+            next(L for L in sc["layers"] if L.get("daemon"))["lines"].append(
+                {"penCode": 15, "color": 0, "thicknessScale": 2, "points": [[-300, 1700, 0, 0, 24, 128], [300, 1700, 0, 0, 24, 128]]})
+            w = IP.write_in_place(doc, 1, sc, sc["stamp"])
+            drawn = dict(his(doc, path), added=w["added"], erased=w["erased"], prefix=open(path, "rb").read().startswith(before))
+            note, _ = N.letter(["Saw it 1:05 PM."], (1620.0, 2160.0))
+            data = N.with_note(open(path, "rb").read(), note, {}); open(path, "wb").write(data)
+            res[name] = {"drawn": drawn, "noted": his(doc, path), "note": len(note)}
+        out(**res)
+    """)
+    byte, tablet, old = got["byte"], got["tablet"], got["218"]
+    assert byte["drawn"]["prefix"] and byte["drawn"]["added"] == 1 and byte["drawn"]["erased"] == 0, byte
+    assert byte["drawn"]["on_his"][0] == 1 and set(byte["drawn"]["on_his"][1:]) == {134} and not byte["drawn"]["old_page"], byte
+    assert tablet["drawn"] == {"on_his": [1, 134, 134], "his_layers": 1, "old_page": False, "added": 1, "erased": 0, "prefix": False}, tablet
+    assert old["drawn"] == {"on_his": [1, 134], "his_layers": 1, "old_page": False, "added": 1, "erased": 0, "prefix": False}, old
+    for case in (byte, tablet, old):                      # his next note takes his own and leaves the user's stroke
+        assert case["noted"] == {"on_his": [1] + [134] * case["note"], "his_layers": 1, "old_page": False}, case
 
 
 def test_a_page_the_c_reader_does_not_cover_is_written_the_same():

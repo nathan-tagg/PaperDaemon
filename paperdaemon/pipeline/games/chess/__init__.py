@@ -376,6 +376,40 @@ def pool(cands, params, rng):
     return [c for c in cands if c["loss"] <= params["tolerance"]] or cands[:1], ""
 
 
+# ONE WHO PLAYS FOR A LEVEL GAME (a character's games.chess "aims_for": "even", the maintainer's word, 11-07): "always
+# plays the top stockfish engine move that moves the evaluation to even". He looks over this many of the engine's moves
+# -- enough to find the one that gives an advantage back -- and plays the one nearest an even evaluation, the engine's
+# higher-ranked first when two are as near; no blunder, no brilliancy, no model choosing. He never says so.
+LEVEL_PV = 32
+
+
+def level_move(cands):
+    """The move nearest an even evaluation for the side to move, among the engine's candidates (best first); of two as
+    near, the higher-ranked. A mate, either way, is as far from even as a score gets."""
+    return min(enumerate(cands), key=lambda t: (abs(t[1]["cp"]), t[0]))[1] if cands else None
+
+
+def _chess_profile(state):
+    cid = state["persona"].get("character")
+    if not cid:
+        return {}
+    try:
+        from paperdaemon.pipeline.games import table as TB
+        return (TB.now(state, cid).get("games") or {}).get("chess") or {}
+    except Exception:
+        return {}
+
+
+def aims(state):
+    """What the opponent plays chess for: "even" (level_move, every move) or None (to win, at its strength)."""
+    return _chess_profile(state).get("aims_for")
+
+
+def takes_draws(state):
+    """Does the opponent take any draw offered, at once (games.chess "draw_offers": "accepts")."""
+    return _chess_profile(state).get("draw_offers") == "accepts"
+
+
 def handful(moves, rng, n=HANDFUL):
     """At most `n` of the pool for a model to pick from: the pool's best first, the rest drawn with
     the game's randomness -- so a weak player's handful holds the weak moves it might make."""
@@ -1386,8 +1420,9 @@ def engine_turn(doc, page_no, state, page_id=None, pick=None, engine=None, conte
             rm_cast.challenge_input(state,[active],state['cast_input'],pick)
     own = engine is None
     eng = engine or Engine(state["strength"]["elo"])
+    level = aims(state) == "even"
     try:
-        cands = eng.candidates(state["fen"])
+        cands = eng.candidates(state["fen"], multipv=LEVEL_PV if level else None)
     finally:
         if own:
             eng.close()
@@ -1395,7 +1430,9 @@ def engine_turn(doc, page_no, state, page_id=None, pick=None, engine=None, conte
     con = state["persona"].get("consistency") or {}
     params["blunder"] = max(params["blunder"], float(con.get("blunder") or 0))
     params["genius"] = float(con.get("genius") or 0)
-    moves, drew = pool(cands, params, rng)
+    # ONE WHO PLAYS FOR A LEVEL GAME plays the move nearest even, every move (a model playing him says his lines and
+    # is shown that move alone)
+    moves, drew = ([level_move(cands)], "") if level and cands else pool(cands, params, rng)
     blundered = drew == "blunder"
     stands = situation(cands)
     plan, advise = None, False

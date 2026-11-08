@@ -129,6 +129,22 @@ worse, and SHALL say why in its own voice. A 2600 took a draw on move 3 of an ev
 - **WHEN** the player offers a draw on move 3 of an even game against a 2600
 - **THEN** the opponent refuses, saying the game has barely begun, and the game goes on
 
+### Requirement: One of the cast plays for a level game
+The cast SHALL have a chess opponent who plays every move for an even game (the maintainer's word, 11-07: "always
+plays the top stockfish engine move that moves the evaluation to even"): of the engine's moves, the one nearest an
+even evaluation, the higher-ranked of two as near, whoever is ahead, with no blunder or brilliancy drawn for him. He
+SHALL NOT say so; the model playing him knows it as his secret and is shown his move alone. Offered a draw, he SHALL
+take it at once, whatever the board and however early. A profile says it in games.chess: "aims_for": "even" and
+"draw_offers": "accepts" (Ambrose Tull, the harbor's weighmaster).
+
+#### Scenario: He is ahead
+- **WHEN** the engine's best move for him is a pawn better than even and another keeps the game level
+- **THEN** he plays the one that keeps it level
+
+#### Scenario: A draw offered on move 2
+- **WHEN** the player offers him a draw on move 2
+- **THEN** he takes it, and the game ends drawn
+
 ### Requirement: Every group text gets an answer
 Every member of a group text SHALL have the chance to answer a message, and none SHALL have to; when the dice let
 nobody speak, the member the message names first, else the most talkative, SHALL answer, and the next when that one

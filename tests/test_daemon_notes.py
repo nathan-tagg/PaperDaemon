@@ -207,10 +207,10 @@ def test_a_record_file_that_cannot_be_read_is_not_written_over(tmp_path, monkeyp
     assert set(__import__("json").loads(ink.read_text(encoding="utf-8"))) == {"x/1", "x/2"}
 
 
-def test_everything_on_his_layer_is_his_whatever_its_points_look_like(tmp_path, monkeypatch):
-    """HIS LAYER IS HIS (the ruling: "just assume everything in there was machine drawn"): a stroke on his layer is
-    his however it was drawn -- not read as the page's, not in its fingerprint, and gone with his next note. Strokes
-    were told apart by their points (machine-drawn: pressure 190, speed 0), and a mouse's look machine-drawn too."""
+def test_the_users_strokes_on_his_layer_are_the_users_and_stay(tmp_path, monkeypatch):
+    """The user's word (11-07): "let me draw on it and keep my strokes". Once a note of his has gone up under his byte
+    (134), a stroke of the user's on his layer (the tablet's author, 1) is the user's: read as the page's, in its
+    fingerprint, and kept through his next note -- told by its author byte, never by how its points look."""
     from paperdaemon.pipeline.page import render as R
     f = _mirror(tmp_path, monkeypatch)
     state = {}
@@ -218,9 +218,37 @@ def test_everything_on_his_layer_is_his_whatever_its_points_look_like(tmp_path, 
     page = N.with_note(_page([(0.0, 900.0), (60.0, 950.0)]), strokes, state)
     layer = CrdtId(state["layer"][4], state["layer"][0])
     written = _write(_blocks(page) + [_line([(10.0, 600.0), (90.0, 640.0)], layer, CrdtId(1, 5000))])
-    assert _sha(f, page) == _sha(f, written)
-    assert len(R.strokes(DOC, 1)) == 1 and len(R.strokes(DOC, 1, arrays=True)) == 1
-    assert _counts(N.with_note(written, strokes, state)) == (len(strokes), 1, 1)
+    assert _sha(f, page) != _sha(f, written)                    # the user's stroke is part of the page
+    assert len(R.strokes(DOC, 1)) == 2 and len(R.strokes(DOC, 1, arrays=True)) == 2
+    again = N.with_note(written, strokes, state)
+    assert _counts(again) == (len(strokes), 2, 1)               # his next note: the user's stroke on his layer stays
+    assert (1, 5000) not in _dead(again)
+
+
+def test_on_a_page_from_before_everything_on_his_layer_goes_with_the_first_note(tmp_path, monkeypatch):
+    """His notes went up as the tablet's author (1) from 0.1.81 to 0.2.30, on his layer: on a page whose author table
+    does not name his notes' byte yet, everything on his layer is his (render.notes_own_layers) -- not the page's,
+    and gone with the first note under the byte; after it, the user's strokes there are theirs."""
+    from paperdaemon.pipeline.page import render as R
+    f = _mirror(tmp_path, monkeypatch)
+    blocks = _blocks(_page([(0.0, 900.0)]))
+    lay = CrdtId(1, 200_000)
+    first = next(b for b in blocks if isinstance(b, ss.SceneGroupItemBlock) and b.parent_id == CrdtId(0, 1)).item.item_id
+    g = si.Group(node_id=lay)
+    g.label = LwwValue(timestamp=CrdtId(1, 200_001), value="Daemon")
+    g.visible = LwwValue(timestamp=CrdtId(1, 200_002), value=True)
+    blocks += [ss.SceneTreeBlock(tree_id=lay, node_id=CrdtId(0, 0), is_update=True, parent_id=CrdtId(0, 1)),
+               ss.TreeNodeBlock(group=g),
+               ss.SceneGroupItemBlock(parent_id=CrdtId(0, 1), item=CrdtSequenceItem(
+                   item_id=CrdtId(1, 200_003), left_id=CrdtId(0, 0), right_id=first, deleted_length=0, value=lay)),
+               _line([(-500.0, 20.0), (-400.0, 30.0)], lay, CrdtId(1, 200_004), drawn=True)]
+    before = _write(blocks)
+    assert R.notes_own_layers(_blocks(before)) == {(1, 200_000)}
+    f.write_bytes(before)
+    assert len(R.strokes(DOC, 1)) == 1                          # the user's one stroke: the old note is not the page's
+    strokes, _ = N.letter(["On it."], FRAME)
+    after = N.with_note(before, strokes, {})
+    assert (1, 200_004) in _dead(after) and R.notes_own_layers(_blocks(after)) == set()
 
 
 def test_his_old_notes_are_erased_and_the_users_writing_beside_them_stays():

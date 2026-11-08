@@ -6525,11 +6525,14 @@ span.lname { cursor: default; }
       // collapsed in place): only the layers made here move, collapse and go, and they stay above the page's own. Its
       // template is the tablet's to choose.
       const own = j => MIRROR && !!(page.layers[j] && page.layers[j].fileId);
+      // THE DAEMON'S LAYER stays at the bottom, where he keeps it (the page is written with it there): drawn on, never moved
+      const his = j => !!(page.layers[j] && page.layers[j].daemon);
       const rows = page.layers.map((L, i) => ({ L, i })).reverse().map(({ L, i }) => {
         const on = i === activeLayer, small = (op, ic, label, off) => '<button class="lb sm' + (off ? " off" : "") + '" data-lop="' + op + '" aria-label="' + label + '" title="' + label + '">' + ICON[ic] + "</button>";
         return '<div class="lrow' + (on ? " on" : "") + '">' + eye('data-lvis="' + i + '"', L.visible, L.label) +
           '<button class="lname" data-lact="' + i + '">' + L.label + "</button>" +
-          (on ? small("up", "up", "Move the layer up", i === last || own(i) || own(i + 1)) + small("down", "down", "Move the layer down", i === 0 || own(i) || own(i - 1)) +
+          (on ? small("up", "up", "Move the layer up", i === last || own(i) || own(i + 1) || his(i) || his(i + 1)) +
+                small("down", "down", "Move the layer down", i === 0 || own(i) || own(i - 1) || his(i) || his(i - 1)) +
                 small("merge", "mergeDown", "Collapse into the layer below", i === 0 || own(i)) + small("del", "trash", "Delete the layer", !last || own(i)) : "") + "</div>";
       }).join("");
       pop.innerHTML = '<div class="lsec">' + rows +
@@ -6584,7 +6587,7 @@ span.lname { cursor: default; }
     if (b.dataset.erase) { eraseMode = b.dataset.erase; if (eraseMode !== "zone") zoneShape = 0; paintPop(); updateCursor(); }
     if (b.dataset.esize) { eraseSize = Number(b.dataset.esize); updateCursor(); }
     if (b.dataset.pickmode) { if (pickMode !== b.dataset.pickmode) clearPick(); pickMode = b.dataset.pickmode; }
-    if (b.dataset.lact !== undefined) { if (!page.layers[Number(b.dataset.lact)].daemon) activeLayer = Number(b.dataset.lact); paintPop(); return; }
+    if (b.dataset.lact !== undefined) { activeLayer = Number(b.dataset.lact); paintPop(); return; }   // (his too: the user draws there and keeps it)
     if (b.dataset.tvis) { const k = b.dataset.tvis === "text" ? "textVisible" : "templateVisible"; layerEdit(() => { page[k] = !page[k]; }); return; }
     if (b.dataset.tmpl && !MIRROR) { popFor = null; paintPop(); paintControls(); if (tplLocked) whyNoTemplates(); else openTemplates(); return; }
     if (b.dataset.lvis !== undefined) { const i = Number(b.dataset.lvis); layerEdit(() => { page.layers[i].visible = !page.layers[i].visible; }); return; }
@@ -7824,7 +7827,9 @@ span.lname { cursor: default; }
   // itemId's), so a stroke made from it (an erase's piece, a move, a transform, a copy: a new number) never has it and goes
   // back as a new stroke; the group it sits in is on the stroke (fileGroup), so its pieces stay in its group (anchored to the
   // text, they move with it). Sent back with its id and exactly the points it was read with, the engine keeps its block byte
-  // for byte. The worker works out which strokes keep which ids at every read (filer.js, knowIds) and says what changed
+  // for byte. The worker works out which strokes keep which ids at every read (filer.js, knowIds) and says what changed.
+  // A FALSE MIRROR PAGE'S strokes keep the ids they were read with too: the page is written anew, and what PaperDaemon
+  // wrote stays its own by its id's author (local.write_scene)
   const mirrorIds = new Map();
   // THE PAGE'S FILE IN A WORKER (ui/filer.js): it holds each stroke's part of the file, puts a save together and writes it,
   // reads a look and compares it -- the editor sends it the page as read, then only the page's order and the strokes it
@@ -7849,7 +7854,7 @@ span.lname { cursor: default; }
   const uidsOf = Ls => Ls.map(ls => { const u = new Float64Array(ls.length); for (let j = 0; j < ls.length; j++) u[j] = ls[j].itemId[1]; return u; });
   const lineFromFile = ln => {
     const L = lineIn(ln);
-    if (MIRROR && ln.id) { mirrorIds.set(L.itemId[1], ln.id); L.fileGroup = ln.group || null; }
+    if (ln.id) { mirrorIds.set(L.itemId[1], ln.id); L.fileGroup = MIRROR && ln.group || null; }
     return L;
   };
   function textIn(tx) {
@@ -7862,7 +7867,8 @@ span.lname { cursor: default; }
     page.paperSize = sc.paperSize || [1620, 2160];
     page.source = sc.source || null;                           // "pdf" or "epub": a page of a PDF or a book
     page.zoom = sc.zoom || "bestFit";                           // how the tablet fits it on the screen (screenW)
-    // the daemon's layer is shown and marked: it is his, written by him, and never the layer the pens work on
+    // the daemon's layer is shown and marked: his notes are written there, and the user may draw there too and keep it
+    // (the user's word, 11-07); the page opens on the top layer that is not his
     page.layers = (sc.layers || []).map((L, i) => ({ nodeId: [0, 11 + i], label: L.label, visible: L.visible, daemon: !!L.daemon,
                                                      ...(MIRROR ? { fileId: L.id || null } : {}), lines: later ? [] : (L.lines || []).map(ln => lineFromFile(sc.read ? pointsOf(sc.read, ln) : ln)) }));
     if (!page.layers.length) page.layers = [{ nodeId: [0, 11], label: "Layer 1", visible: true, lines: [] }];
@@ -7934,22 +7940,13 @@ span.lname { cursor: default; }
       const st = d.strokes[k];
       const ln = made[k] = lineIn({ pen: st.pen, penCode: st.penCode, color: st.color, colorRgba: st.colorRgba, thicknessScale: st.thicknessScale,
                                     points: new Pts(d.pts.subarray(at[k], at[k] + 6 * st.n), st.n) });
-      if (MIRROR && st.id) { mirrorIds.set(ln.itemId[1], st.id); ln.fileGroup = st.group || null; }
+      if (st.id) { mirrorIds.set(ln.itemId[1], st.id); ln.fileGroup = MIRROR && st.group || null; }
       return ln;
     };
-    if (d.daemon) {
-      let L = page.layers.find(x => x.daemon);
-      if (!L) {
-        L = { nodeId: [2, page.nextId++], label: d.daemon.label, visible: d.daemon.visible, daemon: true, lines: [] };
-        page.layers.unshift(L); activeLayer++;                 // at the bottom, as on the page
-      }
-      L.lines = d.daemon.made.map(lineOf); L.visible = d.daemon.visible; changed = true;
-    }
-    const pageMine = page.layers.filter(x => !x.daemon);
-    d.layers.forEach((TL, i) => {
-      let L = pageMine[i];
-      if (!L) { L = { nodeId: [2, page.nextId++], label: TL.label, visible: TL.visible, lines: [] }; page.layers.push(L); changed = true; }
-      for (const k of TL.gained) { L.lines.push(lineOf(k)); landed = true; }
+    // A LAYER TAKES WHAT THE FILE GAINED AND LOST on it since it was last read; what the editor has there that the file
+    // has not had yet stays (his: a note of his landing is no new content of the user's -- typing goes on)
+    const takeLayer = (L, TL, his) => {
+      for (const k of TL.gained) { L.lines.push(lineOf(k)); if (his) changed = true; else landed = true; }
       if (TL.lost.length) {
         const gone = new Set(TL.lost), ls = L.lines;
         let w = 0;
@@ -7957,6 +7954,22 @@ span.lname { cursor: default; }
         ls.length = w;
       }
       if (TL.wasVisible !== null && TL.visible !== TL.wasVisible) { L.visible = TL.visible; changed = true; }
+    };
+    // THE DAEMON'S LAYER AS ANY LAYER: the user draws there too and keeps it (the user's word, 11-07); his new note comes
+    // in and his last one goes, the user's strokes there staying as they are. Made at the bottom when the page had none
+    if (d.daemon) {
+      let L = page.layers.find(x => x.daemon);
+      if (!L) {
+        L = { nodeId: [2, page.nextId++], label: d.daemon.label, visible: d.daemon.visible, daemon: true, lines: [] };
+        page.layers.unshift(L); activeLayer++; changed = true;   // at the bottom, as on the page
+      }
+      takeLayer(L, d.daemon, true);
+    }
+    const pageMine = page.layers.filter(x => !x.daemon);
+    d.layers.forEach((TL, i) => {
+      let L = pageMine[i];
+      if (!L) { L = { nodeId: [2, page.nextId++], label: TL.label, visible: TL.visible, lines: [] }; page.layers.push(L); changed = true; }
+      takeLayer(L, TL, false);
     });
     if (d.text && PDFile.textHash(page.text) === d.text.was) {
       page.text = d.text.to ? textIn(d.text.to) : { ...page.text, paras: [] };
@@ -8022,13 +8035,14 @@ span.lname { cursor: default; }
     const sc = toScene(true, true), files = page.layers.map(L => L.lines.map(fileOf));
     let total = 0;
     for (const fs of files) for (const f of fs) total += f.rec.length;
-    // a Mirror page's: each layer with its id, each stroke still as read with its id, and every stroke with its group
-    const headOf = MIRROR ? (ln, f) => {
+    // each stroke still as read with its id (a Mirror page's, and a false mirror page's); a Mirror page's layers with
+    // their ids, and every stroke with its group
+    const headOf = (ln, f) => {
       const id = mirrorIds.get(ln.itemId[1]), g = ln.fileGroup;
       return id || g ? f.head.slice(0, -1) + (id ? ',"id":' + JSON.stringify(id) : "") + (g ? ',"group":' + JSON.stringify(g) : "") + "}" : f.head;
-    } : null;
+    };
     const layers = page.layers.map((L, i) => JSON.stringify({ label: L.label, visible: L.visible, daemon: !!L.daemon, ...(MIRROR && L.fileId ? { id: L.fileId } : {}) }).slice(0, -1) +
-                                             ',"lines":[' + (MIRROR ? files[i].map((f, j) => headOf(L.lines[j], f)) : files[i].map(f => f.head)).join(",") + "]}");
+                                             ',"lines":[' + files[i].map((f, j) => headOf(L.lines[j], f)).join(",") + "]}");
     const head = new TextEncoder().encode('{"layers":[' + layers.join(",") + "]," + JSON.stringify(sc).slice(1));
     const buf = new ArrayBuffer(8 + head.length + total), dv = new DataView(buf), u8 = new Uint8Array(buf);
     u8.set(PDS, 0); dv.setUint32(4, head.length, true); u8.set(head, 8);

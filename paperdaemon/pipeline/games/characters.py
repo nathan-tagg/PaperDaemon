@@ -288,7 +288,13 @@ def validate_profile(p, path="profile"):
     for g, e in p["games"].items():
         w = "games.%s" % g
         need(g in games, "%s is not in games/catalog.json" % w)
-        keys(e, ("skill", "elo", "style", "love", "preference", "notes"), w)
+        keys(e, ("skill", "elo", "style", "love", "preference", "notes", "aims_for", "draw_offers"), w)
+        # HOW THEY PLAY CHESS FOR A RESULT, carried out by the game (chess.aims, chess.takes_draws), never said:
+        # "aims_for": "even" -- the engine's move nearest an even evaluation, every move; "draw_offers": "accepts" --
+        # any draw offered is taken at once
+        need(not ("aims_for" in e or "draw_offers" in e) or g == "chess", "%s: aims_for and draw_offers are for chess" % w)
+        need(e.get("aims_for") in (None, "even"), "%s.aims_for is \"even\"" % w)
+        need(e.get("draw_offers") in (None, "accepts"), "%s.draw_offers is \"accepts\"" % w)
         need(not ('love' in e and 'preference' in e), w+': use preference, not both names')
         need('preference' not in e or num(e['preference'],-1,1),w+'.preference is -1..1')
         need(not ("skill" in e and "elo" in e), "%s: skill or elo, not both" % w)

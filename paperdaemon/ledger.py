@@ -324,7 +324,7 @@ def _content_sha(path, data, raw):
         # them is fingerprinted exactly as it always was
         from paperdaemon.pipeline.page import render as _R
         if parts is not None:
-            daemon = _R.daemon_layer_ids(p[1] for p in parts if p[0] == "B")
+            daemon = _R.notes_own_layers(p[1] for p in parts if p[0] == "B")
             parts = [p for p in parts if p[0] != "L" or not _R.daemon_stroke(p[9], (p[7], p[8]), daemon)]
             for p in parts:
                 if p[0] == "L":
@@ -342,7 +342,7 @@ def _content_sha(path, data, raw):
                         txt = ""
                     h.update(b"T" + txt.encode("utf-8", "replace"))
         slow = list(fastrm.read_blocks(data)) if parts is None else []
-        daemon = _R.daemon_layer_ids(slow) if slow else set()
+        daemon = _R.notes_own_layers(slow) if slow else set()
         for b in slow:
             if isinstance(b, ss.SceneLineItemBlock):
                 v = getattr(b.item, "value", None)

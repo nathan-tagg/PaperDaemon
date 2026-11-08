@@ -20,10 +20,12 @@ byte itself says that a stroke is PaperDaemon's and what it was to PaperDaemon, 
   calendar or table, 132 a sketch, 133 a mark-up, 134 the daemon's note, 135 a placed picture, 136 typed text (128:
   of no kind the host knows). Each kind numbers its own ids, so none meets another's or the tablet's.
 - Each step's strokes are told what they are when the step is done; the page's author table names each byte used.
-- The daemon's notes go up as 134: everything under it, or on his layer, is his. Notes laid as the tablet's author
-  (0.1.81 to 0.2.30) are erased like any of his, and a layer of his made then is taken up, never doubled. The gap his
-  ids kept above the host's is gone.
-- The Mirror's whole-page save keeps the daemon's layer by its name, whatever author made it.
+- The daemon's notes go up as 134: everything under it is his, and the user's strokes on his layer are the user's
+  (the maintainer's word, 11-07). Notes laid as the tablet's author (0.1.81 to 0.2.30) are erased like any of his --
+  on such a page all of his layer is his until his first note under the byte -- and a layer of his made then is taken
+  up, never doubled. The gap his ids kept above the host's is gone.
+- The False Mirror's whole-page save keeps the daemon's layer by its name, whatever author made it, and writes each
+  stroke on it as whose it is.
 
 ## Impact
 

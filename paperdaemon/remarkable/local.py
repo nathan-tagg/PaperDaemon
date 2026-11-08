@@ -1021,24 +1021,42 @@ def _write_scene(doc, page_no, scene):
         return CrdtId(1, k)
 
     # WHAT PAPERDAEMON WROTE STAYS ITS OWN (render.author_of): a stroke or a picture whose id said so is written anew
-    # under that same author byte, numbered past everything kept; the rest is the user's (1). Written anew under the
-    # editor's ids, a page's answers, pieces and pictures all became the user's after any edit.
+    # under that same author byte, numbered past everything kept, and the page's author table names it; the rest is the
+    # user's (1). Written anew under the editor's ids, a page's answers, pieces and pictures all became the user's after
+    # any edit. Anything under his notes' old author (218, never written again) is a note of his (`his`: a stroke from
+    # the page on his layer of a page from before his notes had a byte -- see below).
     own_seq = {}
+    notes = R.author_of("notes")
 
-    def oid(of):
+    def oid(of, his=False):
         a = (of or [1])[0] if isinstance(of, (list, tuple)) and of else 1
+        if a == R.DAEMON_AUTHOR or (his and of):
+            a = notes
         if not R.is_own(a):
             return nid()
         own_seq[a] = own_seq.get(a, seq[0] + 100_000) + 1
         return CrdtId(a, own_seq[a])
 
     layers = scene.get("layers") or [{"label": "Layer 1", "visible": True, "lines": []}]
-    # THE DAEMON'S LAYER IS HIS: the editor's copy of it is dropped, and his own blocks are kept from the file as he
-    # wrote them (_daemon_blocks). Written anew under the editor's ids, his notes became the user's strokes: he could
-    # no longer erase them, and made himself another layer.
-    keep_his = any(L.get("daemon") for L in layers)
+    # THE DAEMON'S LAYER IS HIS, AND THE USER DRAWS THERE TOO (the user's word, 11-07: "let me draw on it and keep my
+    # strokes"): the layer itself -- its name, whether it shows, its place at the bottom of the list -- is kept from the
+    # file as he made it (_daemon_blocks), and on it go the strokes the editor has there, each as whose it is: his under
+    # his byte (their ids say so), the user's as the user's. (Written anew under the editor's ids, his notes once became
+    # the user's strokes: he could no longer erase them, and made himself another layer.) His layers go with the save's in
+    # order; one the save no longer has is gone (deleted), and one more than the page has is written as a layer -- as is
+    # one made under his old author, which his next note takes out of the page with everything on it.
+    on_his = [L for L in layers if L.get("daemon")]
     layers = [L for L in layers if not L.get("daemon")] or [{"label": "Layer 1", "visible": True, "lines": []}]
-    his = _daemon_blocks(path) if keep_his else None
+    his = _daemon_blocks(path) if on_his else None
+    pairs = list(zip(his["order"], on_his)) if his else []
+    his_at = [(n, L) for n, L in pairs if n.part1 != R.DAEMON_AUTHOR]
+    layers += [dict(L, daemon=False) for n, L in pairs if n.part1 == R.DAEMON_AUTHOR] + \
+              [dict(L, daemon=False) for L in on_his[len(pairs):]]
+    # A PAGE FROM BEFORE HIS NOTES HAD A BYTE (its author table does not name it): everything on his layer is his until
+    # his first note under it (render.notes_own_layers), so the first stroke of the user's there would go with that note.
+    # The save that brings one makes the page's layer as it would be: what it holds from the page written under his
+    # byte (his old notes, under the tablet's author then), and the table naming it -- the user's stroke stays theirs.
+    old_page = notes not in next((b.author_uuids for b in head if isinstance(b, ss.AuthorIdsBlock)), {})
     nodes = [CrdtId(0, 11)] + [nid() for _ in layers[1:]]
     tree = [ss.SceneTreeBlock(tree_id=n, node_id=CrdtId(0, 0), is_update=True, parent_id=CrdtId(0, 1)) for n in nodes]
     groups = [ss.TreeNodeBlock(group=si.Group(node_id=CrdtId(0, 1)))]
@@ -1053,8 +1071,15 @@ def _write_scene(doc, page_no, scene):
         placed.append(ss.SceneGroupItemBlock(parent_id=CrdtId(0, 1), item=CrdtSequenceItem(
             item_id=gid, left_id=prev, right_id=CrdtId(0, 0), deleted_length=0, value=n)))
         prev = gid
-    strokes, count = [], 0
-    for L, n in zip(layers, nodes):
+    strokes = []
+    # WHOSE A STROKE ON HIS LAYER IS, AS THE PAGE SAYS: one the save carries exactly as the page holds it (its points as
+    # stored) keeps the page's author byte. The editor's ids are as it last read them, and the page may have been
+    # written since with his old notes laid again under his byte (below): taken from the ids, they went back to the user.
+    his_keys = {(n.part1, n.part2) for n, _L in his_at}
+    known = _his_strokes(path, his_keys) if his_keys else {}
+
+    def put(L, n, his=False):
+        on_his_layer = known and (n.part1, n.part2) in his_keys
         prev = CrdtId(0, 0)
         for ln in L.get("lines") or []:
             pts = ln.get("points")
@@ -1065,11 +1090,25 @@ def _write_scene(doc, page_no, scene):
             line = si.Line(color=_enum(si.PenColor, ln.get("color", 0)), tool=_enum(si.Pen, ln.get("penCode", 17)),
                            points=pts, thickness_scale=float(ln.get("thicknessScale") or 1.0), starting_length=0.0,
                            move_id=None, color_rgba=tuple(int(v) for v in rgba) if rgba else None)
-            iid = oid(ln.get("id"))
+            of = ln.get("id")
+            if of and on_his_layer:
+                a = known.get((n.part1, n.part2, pts.tobytes()))
+                of = [a, 0] if a is not None else of
+            iid = oid(of, his)
             strokes.append(ss.SceneLineItemBlock(parent_id=n, item=CrdtSequenceItem(
                 item_id=iid, left_id=prev, right_id=CrdtId(0, 0), deleted_length=0, value=line)))
             prev = iid
-            count += 1
+    for L, n in zip(layers, nodes):
+        put(L, n)
+    for n, L in his_at:                              # his strokes after the editor's, the user's there with them
+        put(L, n, old_page and any(not ln.get("id") for ln in L.get("lines") or []))
+    count = len(strokes)
+    # the pictures' ids now, so the page's author table names every author byte of PaperDaemon's the page is written with
+    pics, npics = _picture_blocks(doc, page_no, scene.get("images"), nodes[0], nid, oid)
+    for k, b in enumerate(head):
+        if isinstance(b, ss.AuthorIdsBlock) and any(a not in b.author_uuids for a in own_seq):
+            head[k] = ss.AuthorIdsBlock(author_uuids={**b.author_uuids,
+                                                      **{a: R.author_uuid(a) for a in own_seq if a not in b.author_uuids}})
     text = _text_block(scene.get("text"), nid)
     if info is not None:
         info.root_document_visible = LwwValue(timestamp=CrdtId(1, 1), value=bool(scene.get("textVisible", True)))
@@ -1080,23 +1119,24 @@ def _write_scene(doc, page_no, scene):
     if kept and was is not None:
         chars, lines = was.text_chars_count, was.text_lines_count          # the kept text's own counts
     blocks = head + [ss.PageInfoBlock(loads_count=1, merges_count=0, text_chars_count=chars, text_lines_count=lines)]
-    if his:
-        # his layer at the bottom of the list again, before the editor's first layer; his strokes after the editor's
-        tree += his["tree"]
-        groups += his["nodes"]
-        for p in his["places"]:
-            placed.insert(0, ss.SceneGroupItemBlock(parent_id=p.parent_id, item=CrdtSequenceItem(
-                item_id=p.item.item_id, left_id=CrdtId(0, 0), right_id=placed[0].item.item_id if placed else CrdtId(0, 0),
-                deleted_length=0, value=p.item.value)))
-        strokes += his["lines"]
-        count += len(his["lines"])
+    if his_at:
+        # his layers at the bottom of the list again, before the editor's first layer, as he made them
+        at = {(n.part1, n.part2) for n, _L in his_at}
+        tree += [b for b in his["tree"] if (b.tree_id.part1, b.tree_id.part2) in at]
+        groups += [b for b in his["nodes"] if (b.group.node_id.part1, b.group.node_id.part2) in at]
+        place_of = {(p.item.value.part1, p.item.value.part2): p for p in his["places"]}
+        hp = [place_of[(n.part1, n.part2)] for n, _L in his_at if (n.part1, n.part2) in place_of]
+        first = placed[0].item.item_id if placed else CrdtId(0, 0)
+        placed[:0] = [ss.SceneGroupItemBlock(parent_id=p.parent_id, item=CrdtSequenceItem(
+            item_id=p.item.item_id, left_id=hp[i - 1].item.item_id if i else CrdtId(0, 0),
+            right_id=hp[i + 1].item.item_id if i + 1 < len(hp) else first, deleted_length=0, value=p.item.value))
+            for i, p in enumerate(hp)]
     blocks += ([info] if info is not None else []) + tree + groups + placed + ([text] if text else [])
     buf = io.BytesIO()
     write_blocks(buf, blocks)
     for f in kept:
         buf.write(f)                                 # the page's text, byte for byte
     fastrm.write_lines(buf, strokes)                 # the strokes last, as rmscene would write them, in bulk (fastrm)
-    pics, npics = _picture_blocks(doc, page_no, scene.get("images"), nodes[0], nid, oid)
     data = buf.getvalue() + pics
     back = _line_blocks_in(data)
     if back != count:
@@ -1110,30 +1150,59 @@ def _write_scene(doc, page_no, scene):
     return count
 
 
+def _his_strokes(path, layers):
+    """The live strokes on these layers of the page file (node ids), by their points exactly as stored -> {(layer part1,
+    part2, points bytes): author byte}."""
+    from paperdaemon.remarkable import fastrm
+    if not layers or not os.path.exists(path):
+        return {}
+    data = open(path, "rb").read()
+    got = fastrm._c_pass(data, rows_only=True)
+    out = {}
+    if got is not None:
+        for r in got[0].tolist():
+            if r[0] == ss.SceneLineItemBlock.BLOCK_TYPE and r[14] and (r[5], r[6]) in layers:
+                out[(r[5], r[6], data[r[19]:r[19] + r[20]])] = r[7]
+        return out
+    for b in fastrm.read_blocks(data):
+        if isinstance(b, ss.SceneLineItemBlock) and isinstance(b.item.value, si.Line) \
+                and (b.parent_id.part1, b.parent_id.part2) in layers:
+            out[(b.parent_id.part1, b.parent_id.part2,
+                 fastrm.points_of(_rows(b.item.value.points, True)).tobytes())] = b.item.item_id.part1
+    return out
+
+
 def _daemon_blocks(path):
-    """The daemon's own blocks in the page file -- his layers (render.daemon_layer_ids: named as his, whoever made
-    them, or under his old author), their tree blocks and nodes, their places in the list of layers, and every stroke
-    block on them (tombstones too, so what he erased stays erased) -> {tree, nodes, places, lines}, or None when the
-    page has none. (Found by his old author alone, his layer made under any other author was lost on a save.)"""
+    """The daemon's own layers in the page file (render.daemon_layer_ids: named as his, whoever made them, or under his
+    old author) as he made them: their tree blocks and nodes, their places in the list of layers, and their node ids in
+    the list's order, as the editor's scene has them (scene_of) -> {tree, nodes, places, order}, or None when the page
+    has none. Their strokes are the save's (write_scene). (Found by his old author alone, his layer made under any other
+    author was lost on a save.)"""
     from paperdaemon.remarkable import fastrm
     from paperdaemon.pipeline.page import render as R
     if not os.path.exists(path):
         return None
-    blocks = list(fastrm.read_blocks(open(path, "rb").read()))
+    blocks = list(fastrm.read_blocks(fastrm.without_strokes(open(path, "rb").read())))
     his = R.daemon_layer_ids(blocks)
-    out = {"tree": [], "nodes": [], "places": [], "lines": []}
+    out = {"tree": [], "nodes": [], "places": [], "order": []}
+    roots = []
     for b in blocks:
         if isinstance(b, ss.SceneTreeBlock) and (b.tree_id.part1, b.tree_id.part2) in his:
             out["tree"].append(b)
         elif isinstance(b, ss.TreeNodeBlock) and (b.group.node_id.part1, b.group.node_id.part2) in his:
             out["nodes"].append(b)
-        elif isinstance(b, ss.SceneGroupItemBlock) and b.item.value is not None and b.item.deleted_length == 0 \
-                and (getattr(b.item.value, "part1", None), getattr(b.item.value, "part2", None)) in his \
-                and b.parent_id == CrdtId(0, 1):
-            out["places"].append(b)
-        elif isinstance(b, ss.SceneLineItemBlock) and (b.parent_id.part1, b.parent_id.part2) in his:
-            out["lines"].append(b)
-    return out if out["nodes"] else None
+        elif isinstance(b, ss.SceneGroupItemBlock) and b.parent_id == CrdtId(0, 1):
+            roots.append(b.item)
+            if b.item.value is not None and b.item.deleted_length == 0 \
+                    and (getattr(b.item.value, "part1", None), getattr(b.item.value, "part2", None)) in his:
+                out["places"].append(b)
+    try:
+        keys = list(CrdtSequence(roots).keys())
+    except Exception:
+        keys = [it.item_id for it in roots]
+    live = {it.item_id: it.value for it in roots if it.value is not None and not it.deleted_length}
+    out["order"] = [live[k] for k in keys if k in live and (live[k].part1, live[k].part2) in his]
+    return out if out["nodes"] and out["order"] else None
 
 
 def _text_block(text, nid):

@@ -15,8 +15,10 @@ the tablet. His ids are counted on from the highest of that author on the page, 
 so no note of his can share an id with another made from a different copy; nothing else is ever numbered as him, the
 host's work and the user's tablet each having authors of their own. Notes go up as copies of a page while the host
 works on the mirror's, and the tablet merges what it receives: two notes with the same ids, made from different
-copies, were once merged into a pile of three notes on top of each other. WHAT IS HIS on a page: everything on his
-layer and everything under his author (render.daemon_stroke), and anything left under his old author.
+copies, were once merged into a pile of three notes on top of each other. WHAT IS HIS on a page: everything under his
+author byte, and anything left under his old author; on a page from before his notes had a byte (its author table does
+not name it), everything on his layer, his old notes being the tablet's author there (render.notes_own_layers). The
+user may draw on his layer and keep it (the user's word, 11-07): their strokes there are theirs.
 
 EVERY WRITE ERASES EVERYTHING OF HIS FIRST: his strokes erased (tombstoned, as the tablet erases), and the same for
 everything he put on this page before that this copy of it has never seen (daemon-ink.json keeps what he laid), so the
@@ -25,7 +27,8 @@ OLD AUTHOR (218) is taken out of the file outright -- strokes, tombstones, its l
 -- so a page it made unreadable opens again once the next note reaches it.
 Then the note. HIS LAYER ITSELF STAYS, ONE PER PAGE: the tablet writes the user's strokes on whatever layer is
 current, and the user's writing has landed on his. It is made once and sent whole with every note, so copies merge into
-one layer; it is made anew only when the user deleted it on the tablet. Only his strokes on it are his.
+one layer; it is made anew only when the user deleted it on the tablet. Only his strokes on it are his; the user's
+there stay.
 
 A RETRY BOX: a job that was skipped or failed ends its note with a small box; anything the user writes in it asks for
 the job again (box_marks).
@@ -48,9 +51,9 @@ from paperdaemon.pipeline.page.render import DAEMON_AUTHOR as LEGACY, author_of
 
 AUTHOR_UUID = uuid.uuid5(uuid.NAMESPACE_DNS, "daemon.paperdaemon")   # his old entry in a page's author table (218)
 # HE WRITES AS HIS NOTES' OWN AUTHOR BYTE (NOTES), which nothing else takes: the gap his ids once kept above the host's
-# (both were one author) is gone. Notes laid as the tablet's author (1, from 0.1.81 to 0.2.30) are erased like any
-# other of his. What is his on a page: everything on his layer and under his author (render.daemon_stroke), and
-# anything left under 218, which goes outright.
+# (both were one author) is gone. Notes laid as the tablet's author (1, from 0.1.81 to 0.2.30) go with the first note
+# under the byte, the page's whole layer being his until then (render.notes_own_layers); anything left under 218 goes
+# outright.
 NOTES = author_of("notes")
 SIZE = 15.0                         # the lettering's cap height, page units on a Paper Pro page
 LEAD = 24.0                         # baseline to baseline
@@ -128,10 +131,17 @@ def _old_layers(blocks):
     return R.daemon_layer_ids(blocks)
 
 
-def _mine(r, old, data):
-    """Is a stroke (a C-pass row) his: under his notes' author or his old one, or on one of his layers (`old`) --
-    everything on his layer is his, never judged by how its points look (render.daemon_stroke)."""
-    return r[7] == NOTES or r[7] == LEGACY or (r[5], r[6]) in old
+def _mine(r, own, data):
+    """Is a stroke (a C-pass row) his: under his notes' author or his old one, or on a layer whose every stroke is his
+    (`own`: render.notes_own_layers -- his layer on a page from before his notes had a byte). On his layer otherwise
+    the user's strokes are the user's (the user's word, 11-07: "let me draw on it and keep my strokes"). Never judged
+    by how its points look (render.daemon_stroke)."""
+    return r[7] == NOTES or r[7] == LEGACY or (r[5], r[6]) in own
+
+
+def _own_layers(blocks):
+    from paperdaemon.pipeline.page import render as R
+    return R.notes_own_layers(blocks)
 
 
 def _live_counts(data):
@@ -140,8 +150,8 @@ def _live_counts(data):
     if got is None:
         return None
     rows, rest = got
-    old = _old_layers(rest)
-    mine = sum(1 for r in rows if r[0] == LINE and r[14] and _mine(r, old, data))
+    own = _own_layers(rest)
+    mine = sum(1 for r in rows if r[0] == LINE and r[14] and _mine(r, own, data))
     return mine, sum(1 for r in rows if r[0] == LINE and r[14]) - mine
 
 
@@ -199,11 +209,12 @@ def _write(data, state, strokes=None, also=()):
     from paperdaemon.pipeline.page import render as R
     data, rows, blocks = _parts(data)
     others = [b for b in blocks if b is not None]
-    old = _old_layers(others)
+    old = _old_layers(others)                        # his layers, by name: where the note goes
+    own = _own_layers(others)                        # the layers whose every stroke is his (a page from before)
     authors = R.author_table(others)
     me = NOTES                                       # his notes' author byte: PaperDaemon's, a note
     also = set(also)
-    theirs0 = sum(1 for r in rows if r[0] == LINE and r[14] and not _mine(r, old, data) and (r[7], r[8]) not in also)
+    theirs0 = sum(1 for r in rows if r[0] == LINE and r[14] and not _mine(r, own, data) and (r[7], r[8]) not in also)
     frames, kinds = [], []
     seen, dead, trees, nodes, places = set(), set(), set(), set(), {}
     top, erased, changed, table = 0, 0, False, None
@@ -220,9 +231,9 @@ def _write(data, state, strokes=None, also=()):
                 changed = True
                 continue
             seen.add(k)
-            if r[14] and not _mine(r, old, data):
+            if r[14] and not _mine(r, own, data):
                 users_on.add((r[5], r[6]))
-            if r[14] and (_mine(r, old, data) or k in also):
+            if r[14] and (_mine(r, own, data) or k in also):
                 raw, erased, changed = _tomb(r), erased + 1, True
             elif not r[14]:
                 dead.add(k)
@@ -337,11 +348,14 @@ def _write(data, state, strokes=None, also=()):
         state["layer"] = lay
         prev, a = CrdtId(0, 0), n
         for st in strokes:
-            pts, widths, tool, color = st[0], st[1], st[2], st[3]
-            P = [si.Point(x=float(x), y=float(y), speed=0, direction=0, width=int(widths[i]), pressure=190)
-                 for i, (x, y) in enumerate(pts)]
-            L = si.Line(color=color, tool=tool, points=P, thickness_scale=3.0, starting_length=0.0, move_id=None,
-                        color_rgba=None)
+            if isinstance(st, si.Line):
+                L = st                                # (laid again exactly as it was: adopt)
+            else:
+                pts, widths, tool, color = st[0], st[1], st[2], st[3]
+                P = [si.Point(x=float(x), y=float(y), speed=0, direction=0, width=int(widths[i]), pressure=190)
+                     for i, (x, y) in enumerate(pts)]
+                L = si.Line(color=color, tool=tool, points=P, thickness_scale=3.0, starting_length=0.0, move_id=None,
+                            color_rgba=None)
             iid = CrdtId(me, n)
             news.append((LINE, _frame(ss.SceneLineItemBlock(parent_id=CrdtId(la, ln), item=CrdtSequenceItem(
                 item_id=iid, left_id=prev, right_id=CrdtId(0, 0), deleted_length=0, value=L)))))
@@ -375,6 +389,36 @@ def with_note(data, strokes, state=None):
     return _write(data, {} if state is None else state, strokes)[0]
 
 
+def adopt(data, state):
+    """A PAGE FROM BEFORE HIS NOTES HAD A BYTE, a stroke of the user's about to go onto his layer (the page editor's
+    save): until his first note under the byte everything on his layer is his (render.notes_own_layers), so that note
+    would take the user's stroke with it. What his layer holds is laid again as his instead -- each stroke erased and
+    the same stroke, exactly, written anew under his byte, in the same order (as a note of his, his ids counted on in
+    `state`) -- and the page's author table names it: the user's strokes there are theirs from then on. A layer of his
+    made under his old author (218) is taken out by any note of his, so his layer is then a new one, the strokes laid
+    there. Only a page with one layer of his. -> (bytes, {old stroke id: new id}, {old layer id: new layer id});
+    (data, {}, {}) when there is nothing to lay again."""
+    from rmscene.tagged_block_common import HEADER_V6
+    data, rows, blocks = _parts(data)
+    own = _own_layers([b for b in blocks if b is not None])
+    if len(own) != 1:
+        return data, {}, {}
+    was = next(iter(own))
+    olds, lines = [], []
+    for r in rows:
+        if r[0] == LINE and r[14] and (r[5], r[6]) == was:
+            b = next(x for x in read_blocks(io.BytesIO(HEADER_V6 + data[r[1] - 8:r[2]]))
+                     if isinstance(x, ss.SceneLineItemBlock))
+            olds.append((r[7], r[8]))
+            lines.append(b.item.value)
+    if not lines and was[0] != LEGACY:
+        return data, {}, {}
+    new, _erased, _changed = _write(data, state, lines)
+    lay = state["layer"]
+    a = int(state["laid"][-1][1]) if lines else 0
+    return new, {old: (NOTES, a + i) for i, old in enumerate(olds)}, {was: (int(lay[4]), int(lay[0]))}
+
+
 def box_marks(data, box, pad=6.0, shifts=None):
     """The user's strokes (not his) with a point inside the retry box `box` (x0, y0, x1, y1, page units) -> their
     item ids [(part1, part2)]: a tick, a cross, a scribble -- anything written in it asks for the job again.
@@ -386,11 +430,11 @@ def box_marks(data, box, pad=6.0, shifts=None):
     import numpy as np
     from paperdaemon.remarkable import fastrm
     data, rows, blocks = _parts(data)
-    old = _old_layers([b for b in blocks if b is not None])
+    own = _own_layers([b for b in blocks if b is not None])
     shifts = shifts or {}
     out = []
     for r in rows:
-        if r[0] == LINE and r[14] and not _mine(r, old, data) and r[20]:
+        if r[0] == LINE and r[14] and not _mine(r, own, data) and r[20]:
             dx, dy = shifts.get((r[5], r[6])) or (0.0, 0.0)
             x0, y0, x1, y1 = box[0] - pad - dx, box[1] - pad - dy, box[2] + pad - dx, box[3] + pad - dy
             P = np.frombuffer(data, dtype=fastrm.POINT, count=r[20] // fastrm.POINT.itemsize, offset=r[19])

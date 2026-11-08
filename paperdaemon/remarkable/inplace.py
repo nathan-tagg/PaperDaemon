@@ -21,7 +21,8 @@ unhook handwriting from the text it follows, so a Mirror page is written from it
 - a picture kept is left as it is; one removed is a tombstone (its asset stays listed, its file beside the page); one
   moved is a tombstone and a new item at its new corners, as a moved stroke is; one added is a new item on the page's
   first layer, its asset listed once (pipeline/page/images.py's own blocks);
-- the daemon's layer is left exactly as it is.
+- the daemon's layer takes the user's strokes as any layer does (drawn there, added; erased there, a tombstone); the
+  layer itself -- its name, its place, whether it shows -- is left exactly as it is.
 
 SAFE TO WRITE (D2, D3): the scene carries a stamp of the page's bytes as read; a page that changed since is not written
 (StalePage). The cloud is asked whether the tablet changed the page since PaperDaemon pulled it (check_cloud, the
@@ -420,10 +421,13 @@ def edit(doc, page_no, data, scene):
     repl, done = {}, {"kept": 0, "erased": 0, "added": 0, "text": None, "layers": 0}
 
     # ---- layers
+    # THE DAEMON'S LAYER TAKES THE USER'S STROKES AS ANY LAYER DOES (the user's word, 11-07: "let me draw on it and keep
+    # my strokes"): what they draw there is added, what they erase there comes off; the layer itself -- its name, its
+    # place, whether it shows -- is his and stays as it is
     daemon = {tuple(L["id"]) for L in before["layers"] if L.get("daemon") and L.get("id")}
-    mine = [L for L in before["layers"] if L.get("id") and not L.get("daemon")]
+    mine = [L for L in before["layers"] if L.get("id")]
     file_layers = [tuple(L["id"]) for L in mine]
-    wanted = [L for L in scene.get("layers") or [] if not L.get("daemon") and not (L.get("id") and tuple(L["id"]) in daemon)]
+    wanted = [L for L in scene.get("layers") or [] if L.get("id") or not L.get("daemon")]
     named = [tuple(L["id"]) for L in wanted if L.get("id")]
     if len(set(named)) != len(named) or any(i not in file_layers for i in named):
         raise CannotWrite("the save names a layer the page does not have")
@@ -446,6 +450,8 @@ def edit(doc, page_no, data, scene):
         if not L.get("id"):
             continue
         lid, old = tuple(L["id"]), was[tuple(L["id"])]
+        if lid in daemon:
+            continue                             # his layer's own settings are his
         label, visible = str(L.get("label") or old["label"]), bool(L.get("visible", True))
         if label == old["label"] and visible == old["visible"]:
             continue
@@ -846,6 +852,37 @@ def _settle_ledger(doc, pid):
 
 
 # ---------------------------------------------------------------- writing and pushing
+def _adopt_his(doc, pid, data, scene):
+    """A PAGE FROM BEFORE THE DAEMON'S NOTES HAD A BYTE, and the save puts a stroke of the user's on his layer: what his
+    layer holds is laid again as his first (notes.adopt: until his first note under the byte all of it is his, and that
+    note would take the user's stroke with it), and the save's ids for it follow. -> (bytes, scene, None or the call that
+    keeps his record once the page is written)."""
+    if not any(L.get("daemon") and any(not ln.get("id") for ln in L.get("lines") or []) for L in scene.get("layers") or []):
+        return data, scene, None
+    from paperdaemon.pipeline import daemon as D
+    from paperdaemon.pipeline.daemon import notes as N
+    state = D._ink(doc, pid)
+    new, moved, layer = N.adopt(data, state)
+    if not layer:
+        return data, scene, None
+    (old, lay), = layer.items()
+
+    def follow(L):
+        if not (L.get("daemon") and L.get("id") and tuple(L["id"]) == old):
+            return L
+        lines = []
+        for ln in L.get("lines") or []:
+            ln = dict(ln)
+            if ln.get("id") and tuple(ln["id"]) in moved:
+                ln["id"] = list(moved[tuple(ln["id"])])
+            if ln.get("group") and tuple(ln["group"]) == old:
+                ln["group"] = list(lay)
+            lines.append(ln)
+        return dict(L, id=list(lay), lines=lines)
+    scene = dict(scene, layers=[follow(L) for L in scene.get("layers") or []])
+    return new, scene, lambda: D._ink_keep(doc, pid, state)
+
+
 @paths.locks_page(lambda doc, page_no, *a, **k: _page(doc, page_no)[1])
 def write_in_place(doc, page_no, scene, stamp):
     """The editor's `scene` of a Mirror page written into the page in place (see the module's note), if the page is still
@@ -859,11 +896,14 @@ def write_in_place(doc, page_no, scene, stamp):
             raise StalePage("the page changed since the editor read it; it was not saved")
         check_cloud("%s/%s.rm" % (doc, pid))
         base = data if data is not None else _blank()
+        base, scene, ink = _adopt_his(doc, pid, base, scene)
         new, done = edit(doc, page_no, base, scene)
-        if new == base:                          # nothing changed: no file written (a page with none yet stays so)
+        if new == base and ink is None:          # nothing changed: no file written (a page with none yet stays so)
             return dict(done, changed=False, stamp=stamp, version=local.page_version(doc, page_no))
         backup(doc)
         paths.write_atomic(path, new)
+        if ink is not None:
+            ink()
     _settle_ledger(doc, pid)
     _record_written(doc)
     return dict(done, changed=True, stamp=stamp_of(new), version=local.page_version(doc, page_no))

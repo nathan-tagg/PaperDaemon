@@ -49,7 +49,11 @@ shows them; the host and the fingerprint never see them, as anywhere. "On it" is
 page and the last note after it is done. A note while the job runs is written only if the page is still as the daemon
 read it: a page the host wrote in between keeps what it wrote, and that note is skipped.
 
-The page editor shows his layer and leaves it to him. It never draws on it, it takes his layer in whole when the
-file changes (matching the user's layers apart from it), and a save keeps his blocks from the file as he wrote
-them. Written anew under the editor's ids, his notes had become the user's strokes: he could not erase them, and
-made himself another layer each time.
+The page editor shows his layer, and the user draws there too and keeps it (the maintainer's word, 11-07). The editor
+takes in what the file gained and lost on his layer as on any other (his new note in, his last one out, the user's
+strokes there staying), and keeps every stroke's id, False Mirror pages included: a save writes his layer's blocks
+(its name, whether it shows, its place at the bottom) as he made them, his strokes under his byte as their ids say,
+and the user's as the user's. Written anew under the editor's ids, his notes had once become the user's strokes: he
+could not erase them, and made himself another layer each time. On a page from before his byte, the save that brings
+the user's first stroke to his layer lays what the layer held again under the byte (notes.adopt on a Mirror page, in
+place; the False Mirror writes those strokes under it), so his first note under it cannot take the user's stroke.

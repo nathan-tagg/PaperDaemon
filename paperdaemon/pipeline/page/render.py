@@ -261,8 +261,7 @@ def daemon_layer_name():
 
 def daemon_layer_ids(blocks, names=None):
     """His layers on the page: named as his (`names`, else his layer's name and the old one), whoever made them, and
-    any under his old author -> {(part1, part2)} of their node ids. Only the machine-drawn strokes on them are his
-    (daemon_stroke)."""
+    any under his old author -> {(part1, part2)} of their node ids. Which strokes on them are his: daemon_stroke."""
     names = {daemon_layer_name(), DAEMON_LEGACY} if names is None else set(names)
     return {(b.group.node_id.part1, b.group.node_id.part2) for b in blocks
             if isinstance(b, ss.TreeNodeBlock) and (b.group.node_id.part1 == DAEMON_AUTHOR
@@ -279,11 +278,20 @@ def synthetic(points):
     return all(p.pressure == SYNTH_PRESSURE and p.speed == 0 and p.direction == 0 for p in points)
 
 
+def notes_own_layers(blocks):
+    """The layers of his whose every stroke is his: his layers (daemon_layer_ids) on a page from before his notes had a
+    byte of their own -- its author table does not name it yet, and his old notes there are the tablet's author (1).
+    Once a note of his has gone up under it, his layer holds his strokes and the user's alike (the user's word, 11-07:
+    "let me draw on it and keep my strokes"), each told by its author byte -> {(part1, part2)}."""
+    blocks = list(blocks)
+    return set() if author_of("notes") in author_table(blocks) else daemon_layer_ids(blocks)
+
+
 def daemon_stroke(author, parent, layers, drawn=None):
-    """Is a stroke the daemon's: written as his notes (author_of("notes")), under his old author, or on one of his
-    layers (daemon_layer_ids). HIS LAYER IS HIS: everything on it is his, and nothing is judged by how its points look
-    -- a stroke told apart by its points (machine-drawn: pressure 190, speed 0) could be the user's, drawn with a mouse,
-    and erased. (`drawn` is no longer asked.)"""
+    """Is a stroke the daemon's: written as his notes (author_of("notes")), under his old author, or on one of the
+    layers whose every stroke is his (`layers`: notes_own_layers -- his layer on a page from before). Nothing is judged
+    by how its points look: a stroke told apart by its points (machine-drawn: pressure 190, speed 0) could be the
+    user's, drawn with a mouse, and erased. (`drawn` is no longer asked.)"""
     return author == DAEMON_AUTHOR or author == author_of("notes") or parent in layers
 
 
@@ -588,7 +596,7 @@ def strokes(doc, page_no, arrays=False):
     found = made if made is not None else (
         (b.item.item_id.part2, b.parent_id, b.item.value, b.item.item_id.part1) for b in blocks
         if isinstance(b, ss.SceneLineItemBlock) and isinstance(getattr(b.item, "value", None), Line))
-    daemon = daemon_layer_ids(blocks)
+    daemon = notes_own_layers(blocks)
     for n, parent, v, author in found:
         if daemon_stroke(author, (parent.part1, parent.part2), daemon):
             continue                                      # the daemon's note, never the page's content

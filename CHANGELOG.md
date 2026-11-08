@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.33
+
+- You can draw on the daemon's layer and keep what you draw. In the page editor its layer can be chosen like any other, and erased and selected on; it stays at the bottom of the list. The daemon's next note erases only its own strokes, its byte 134, and leaves yours. On the tablet, too, what you draw on that layer stays and is read as the page's. Until now everything on that layer went with the next note.
+- On a page whose last note came before 0.2.32, everything on the daemon's layer still counts as the daemon's until its first note under its byte. The first stroke you save there in the editor turns that old note into the daemon's own (the same strokes, under 134), so your stroke stays.
+- A note landing on a page open in the editor replaces the last note and keeps what you drew on that layer, saved or not.
+- A new face in Merrow Bay: Ambrose Tull, the harbor's weighmaster, at the library chess club on Thursdays. Every move, he plays the engine's move nearest an even game, whoever is ahead, and he takes a draw the moment you offer one. He never says so.
+
 ## 0.2.32
 
 - "Make these a checklist" works: every plan with a checkbox step was refused with an error (KeyError) in 0.2.31, and the raw error showed in the page's receipt.

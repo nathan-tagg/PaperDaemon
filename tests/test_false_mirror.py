@@ -469,6 +469,83 @@ def test_the_editor_leaves_the_daemons_layer_to_him():
     assert got["users"] == 2
 
 
+_ON_HIS = textwrap.dedent("""
+    import io, json
+    from rmscene import read_blocks, scene_stream as ss, scene_items as si
+    from paperdaemon.remarkable import local
+    from paperdaemon.pipeline.daemon import notes as N
+    from paperdaemon.pipeline.page import render as R
+
+    def stroke(y, pressure=120):
+        return {"pen": "FINELINER_2", "penCode": 17, "color": 0, "thicknessScale": 1.0,
+                "points": [[-300, y, 0, 0, 16, pressure], [300, y, 0, 0, 16, pressure]]}
+
+    def on_his(path):
+        bl = list(read_blocks(io.BytesIO(open(path, "rb").read())))
+        lay = R.daemon_layer_ids(bl)
+        live = [b for b in bl if isinstance(b, ss.SceneLineItemBlock) and isinstance(b.item.value, si.Line)
+                and (b.parent_id.part1, b.parent_id.part2) in lay]
+        return {"authors": sorted(b.item.item_id.part1 for b in live), "old_page": bool(R.notes_own_layers(bl)),
+                "layers": len(lay)}
+""")
+
+
+def test_the_user_draws_on_his_layer_and_keeps_it():
+    """The user's word, 11-07: "let me draw on it and keep my strokes". A stroke the editor adds on the daemon's layer
+    is saved there as the user's, the daemon's note stays the daemon's, and the next note takes only the daemon's own."""
+    got = _run(_ON_HIS + textwrap.dedent("""
+        a = local.new_notebook("A")
+        path = local._rm(a, 1)
+        local.write_scene(a, 1, local.scene_of(a, 1))
+        state = {}
+        first, _ = N.letter(["Saw it 1:02 PM."], (1620.0, 2160.0))
+        data = N.with_note(open(path, "rb").read(), first, state); open(path, "wb").write(data)
+        sc = local.scene_of(a, 1)
+        next(L for L in sc["layers"] if L.get("daemon"))["lines"].append(stroke(1500))
+        local.write_scene(a, 1, sc)
+        saved = on_his(path)
+        last, _ = N.letter(["Saw it 1:02 PM. Finished 1:04 PM in 2 min: answered"], (1620.0, 2160.0))
+        data = N.with_note(open(path, "rb").read(), last, state); open(path, "wb").write(data)
+        print(json.dumps({"first": len(first), "last": len(last), "saved": saved, "after": on_his(path)}))
+    """))
+    assert got["saved"]["authors"] == [1] + [134] * got["first"] and got["saved"]["layers"] == 1
+    assert got["after"]["authors"] == [1] + [134] * got["last"] and got["after"]["layers"] == 1
+
+
+def test_on_a_page_from_before_his_byte_the_users_first_stroke_there_stays_theirs():
+    """A page whose notes came before his byte (author 1, from 0.1.81 to 0.2.30): everything on his layer is his until
+    his first note under the byte, which would take the user's stroke with it. The save that puts the user's first
+    stroke there writes what the layer held as his (134), and the page's author table names him: his next note takes
+    his old note and leaves the user's stroke. A save that adds nothing there leaves the page as it was."""
+    got = _run(_ON_HIS + textwrap.dedent("""
+        a = local.new_notebook("A")
+        path = local._rm(a, 1)
+        sc = local.scene_of(a, 1)
+        sc["layers"].insert(0, {"label": "Daemon", "visible": True, "daemon": True, "lines": [stroke(40, 190), stroke(70, 190)]})
+        local.write_scene(a, 1, sc)                       # a page as the notes of 0.2.30 left it
+        before = on_his(path)
+        sc = local.scene_of(a, 1)
+        next(L for L in sc["layers"] if not L.get("daemon"))["lines"].append(stroke(900))
+        local.write_scene(a, 1, sc)                       # a save that adds nothing on his layer
+        elsewhere = on_his(path)
+        sc = local.scene_of(a, 1)
+        next(L for L in sc["layers"] if L.get("daemon"))["lines"].append(stroke(1500))
+        local.write_scene(a, 1, sc)
+        adopted = on_his(path)
+        local.write_scene(a, 1, sc)                       # saved again with the ids the editor read before
+        again = on_his(path)
+        note, _ = N.letter(["Saw it 1:02 PM."], (1620.0, 2160.0))
+        data = N.with_note(open(path, "rb").read(), note, {}); open(path, "wb").write(data)
+        print(json.dumps({"before": before, "elsewhere": elsewhere, "adopted": adopted, "again": again, "after": on_his(path),
+                          "note": len(note)}))
+    """))
+    assert got["before"] == {"authors": [1, 1], "old_page": True, "layers": 1}, got
+    assert got["elsewhere"] == {"authors": [1, 1], "old_page": True, "layers": 1}, got
+    assert got["adopted"] == {"authors": [1, 134, 134], "old_page": False, "layers": 1}, got
+    assert got["again"] == got["adopted"], got            # his old note stays his, though the save's ids said the tablet's
+    assert got["after"]["authors"] == [1] + [134] * got["note"] and not got["after"]["old_page"], got
+
+
 def test_what_a_job_writes_is_remembered_as_its_own():
     """The host records the ink it commits as its own, so the next job reads it as this system's work, not the user's.
     (Since 0.1.15 it recorded only with an overflow page: a traced picture of 13,000 strokes was read as the user's,

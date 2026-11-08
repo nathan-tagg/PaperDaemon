@@ -83,10 +83,14 @@
       a death does not end the adventure (after_death: the great beyond, a return, a successor)
 - [x] 10.8 A sketch is shown back once for a fix (RM_HOST_DRAW_LOOKS 1 by default)
 - [x] 10.9 After a game turn the job instructions go back into the text model's memory (keep_prefix), local servers only
-- [ ] 10.10 Measured live: the first job after an adventure turn reads the instructions warm
+- [x] 10.10 Measured live: the first job after an adventure turn reads the instructions warm (round 15: its first
+      turn 2.6 s, against about 15 s cold)
 - [x] 10.11 Native typed checkboxes: the checkbox step (targets, checked), typed.restyle at commit, the plan checks
 - [x] 10.12 Tablet test: checkboxes PaperDaemon set show, and tick and untick there afterwards (Checkbox test notebook,
       11-07: both pages ticked and unticked; the tablet stamps with the next item number, so restyles stamp one past the old)
 - [x] 10.13 Round 15: the checkbox step's description (KeyError crashed every plan), a checkbox-only plan needs no place;
       after a match the words are the player's own and the model only says SAY or OTHER; the closing line always
       spoken; a failed death save is not undone by the story's healing; a tool's own fault logs its traceback
+- [x] 10.14 Ambrose Tull, who plays every move for a level game (the engine's move nearest even, 32 looked over) and
+      takes any draw at once, never saying so (games.chess aims_for / draw_offers; chess.level_move, aims, takes_draws)
+- [ ] 10.15 A real game against him: his moves keep the evaluation near even, and a draw offer is taken at once
