@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.34
+
+- The page editor gives back the graphics memory its work took. Erasing grew the editor's stores on the card and they never shrank while the page stayed open. Now, about a second and a half after you stop, they are laid out again at the size the page needs: on a page of 30,000 strokes, from 76 MB after three heavy swipes to 25 MB; on one of 150,000, from 325 MB to 112 MB. It is done in idle moments, never long enough to be felt, and it stops the moment you touch the page. The page looks exactly as it did, undo works across it, and opening a page is no slower.
+
 ## 0.2.33
 
 - You can draw on the daemon's layer and keep what you draw. In the page editor its layer can be chosen like any other, and erased and selected on; it stays at the bottom of the list. The daemon's next note erases only its own strokes, its byte 134, and leaves yours. On the tablet, too, what you draw on that layer stays and is read as the page's. Until now everything on that layer went with the next note.

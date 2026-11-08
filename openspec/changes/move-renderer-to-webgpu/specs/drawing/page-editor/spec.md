@@ -53,3 +53,21 @@ memory.
 #### Scenario: The largest page
 - **WHEN** the user opens a page of 250,000 strokes and erases across it
 - **THEN** the editor's share of the card's memory stays at or under 200 MB
+
+### Requirement: Graphics memory handed back
+The editor SHALL give back the graphics memory its work on a page took (the maintainer's word, 11-07: "we need to be
+handing that vram back"): once the page is idle -- a moment after the ink last changed, with nothing under the pen and
+no swipe, drag or drop under way -- and its stores hold a fifth more than they need and 16 MB or more, every stroke the
+card holds (the page's, and those an undo would bring back) SHALL be laid out again as a fresh open lays it out, into
+stores as large as what they hold and an eighth, and the erase's own room let go until the next swipe. The laying out
+SHALL be done in idle slices, none a long task, and let go the moment anything is done on the page; the page SHALL look
+exactly as it did, and an undo across it SHALL work as before.
+
+#### Scenario: After a long swipe
+- **WHEN** the user erases hard across a page of 30,000 strokes and stops
+- **THEN** within about two seconds the editor's stores are back near what the page needs (76 MB to 25 MB, measured),
+  and the page looks exactly as before
+
+#### Scenario: Undo across it
+- **WHEN** the stores are packed again after a swipe and a move, and the user undoes them
+- **THEN** the strokes come back exactly as they were, and a whole redraw matches the page pixel for pixel

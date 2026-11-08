@@ -1103,13 +1103,17 @@ span.lname { cursor: default; }
     }
     function stNew(sid, base, n, kind, hw, color, gs, len, lid, p, b, alpha) {   // a placement's number (stTake's), its facts written
       while (sid >= st.cap) stGrow();
-      const o = 8 * sid, m = st.m;
+      rowInto(st, sid, base, n, kind, hw, color, gs, len, lid, p, b, alpha);
+      stDirty(sid);
+      return sid;
+    }
+    function rowInto(T, sid, base, n, kind, hw, color, gs, len, lid, p, b, alpha) {   // a number's row into a table (st, or a packing's)
+      const o = 8 * sid, m = T.m;
       m[o] = base; m[o + 1] = n; m[o + 2] = (kind | (lid & 0x7fffff) << 8) >>> 0; m[o + 3] = fBits(hw);
       m[o + 4] = ((color & 0xffffff) | Math.round((alpha === undefined ? 1 : alpha) * 255) << 24) >>> 0; m[o + 5] = gs; m[o + 6] = NONE; m[o + 7] = fBits(len);
-      stDirty(sid); st.part[sid] = p; st.buf[sid] = b;
-      if (hw > st.hwMax) st.hwMax = hw;
-      if (segLast > st.sgMax) st.sgMax = segLast;             // (its length was just worked out: lenOf)
-      return sid;
+      T.part[sid] = p; T.buf[sid] = b;
+      if (hw > T.hwMax) T.hwMax = hw;
+      if (segLast > T.sgMax) T.sgMax = segLast;               // (its length was just worked out: lenOf)
     }
     function stGrow(least) {                                  // the table grown (to room for `least` numbers, if more), copied on the card
       const cap = Math.max(4096, 2 * st.cap, pow2(least || 0)), at = heapTake(cap * 4, true), m = new Uint32Array(cap * 8), dm = new Uint8Array(cap);
@@ -1158,8 +1162,9 @@ span.lname { cursor: default; }
     let scratchRk = new Uint8Array(1 << 14), scratchW = new Uint32Array(1 << 16), scratchSide = new Uint32Array(1 << 10);
     let fvB = null, fvF = null;                               // (a buffer of parts' records seen as floats: the last one)
     const f32Of = u8 => u8.buffer === fvB ? fvF : (fvF = new Float32Array(fvB = u8.buffer));
-    function place(ps) {                                      // the parts' records put up in a place of their own, each its number
-      const sids = stTake(ps.length), offs = new Array(ps.length);
+    // (T: where they go -- the card's stores (LIVE), or a packing's, laid out there before they are the page's: packBegin)
+    function place(ps, T = LIVE) {                            // the parts' records put up in a place of their own, each its number
+      const sids = T.sids(ps.length), offs = new Array(ps.length);
       let pN = 1, nG = 1;                                     // a record before the points; one after the grain
       // A PART BEGINS THE NEXT BLOCK when its number does not follow the last's (a block's strokes are numbered in a row),
       // or when its first points would not share one corner with the points already in the block (the end of one stroke and
@@ -1219,7 +1224,7 @@ span.lname { cursor: default; }
         const goes = r + k1 + 1 < nB && (rk[r + k1 + 1] & 3) === 1, s0 = u[4 * (r + k0) + 3] >>> 8;
         if (!blockEnc(f, r, k0, k1, st, goes, s0, W, wo)) aside.push(j, k0, k1, st, goes, s0);
       }
-      const nA = aside.length / 6, at0 = heapTake(nB + 2 * BLK * nA, false), gat0 = gr ? heapTake(nGB, true) : -1;
+      const nA = aside.length / 6, at0 = T.take(nB + 2 * BLK * nA, false), gat0 = gr ? T.take(nGB, true) : -1;
       const out = { heap: true, at0, n: nB + 2 * BLK * nA, gat0, gn: nGB, refs: ps.length, sb: [] };
       if (nA) {                                               // (those kept aside: in the place's own room after its blocks)
         if (scratchSide.length < nA * 40) scratchSide = new Uint32Array(Math.max(nA * 40, 2 * scratchSide.length));
@@ -1227,25 +1232,29 @@ span.lname { cursor: default; }
         for (let a = 0; a < nA; a++) {
           const [j, k0, k1, st, goes, s0] = aside.slice(6 * a, 6 * a + 6), sat = at0 + nB + 2 * BLK * a;
           asideEnc(f, BLK * j, k0, k1, st, goes, s0, W, 20 * j, sat, SW, 40 * a);
-          out.sb.push(at0 / BLK + j); asideAt.set(at0 / BLK + j, sat);
+          out.sb.push(at0 / BLK + j); T.aside.set(at0 / BLK + j, sat);
         }
-        device.queue.writeBuffer(heap.rec, recBytes(at0 + nB), SW.buffer, SW.byteOffset, SW.byteLength);
+        T.put(false, recBytes(at0 + nB), SW);
       }
       let gN = 0;
       for (let i = 0; i < ps.length; i++) {
-        const p = ps[i];
-        p.at = at0 + offs[i]; p.gat = p.gr ? gat0 + gN : -1;
+        const p = ps[i], at = at0 + offs[i], gat = p.gr ? gat0 + gN : -1;
         if (p.gr) gr.set(p.gr, gN * 2);
         const len = p.sg !== undefined ? (segLast = p.sg, p.len) : lenOf(p.rec, 0, p.n);   // (made worked it out already)
-        stNew(sids[i], p.at, p.n, kindCode(p), halfWidth(p.line), colorIn(p.rec), p.gr ? gat0 + gN : NONE, len, p.lid, p, out, p.alpha);
-        hold(p, sids[i], out);
+        T.row(sids[i], at, p.n, kindCode(p), halfWidth(p.line), colorIn(p.rec), p.gr ? gat : NONE, len, p.lid, p, out, p.alpha);
+        T.hold(p, sids[i], out, at, gat);
         if (p.gr) gN += p.n;
       }
-      device.queue.writeBuffer(heap.rec, recBytes(at0), W.buffer, W.byteOffset, W.byteLength);
-      if (gr) device.queue.writeBuffer(heap.gr, gat0 * GR, gr.buffer, gr.byteOffset, gr.byteLength);
-      boxSpans.push([at0 / BLK, nB / BLK]);
+      T.put(false, recBytes(at0), W);
+      if (gr) T.put(true, gat0 * GR, gr);
+      T.spans(at0 / BLK, nB / BLK);
       return out;
     }
+    // THE CARD'S STORES as place puts parts there: each its number (stTake), its room (heapTake), its row (stNew), held
+    // (hold), its records written at once, its blocks boxed at the next draw
+    const LIVE = { sids: n => stTake(n), take: (n, grain) => heapTake(n, grain), aside: asideAt, row: stNew,
+                   put: (grain, at, v) => device.queue.writeBuffer(grain ? heap.gr : heap.rec, at, v.buffer, v.byteOffset, v.byteLength),
+                   hold: (p, sid, out, at, gat) => { p.at = at; p.gat = gat; hold(p, sid, out); }, spans: (b0, n) => { boxSpans.push([b0, n]); } };
     function placeAll(fresh, nR, nG) {                        // parts put up 512 at a time, the room for all of them made first
       placeRoom(fresh, nR, nG);
       for (let k = 0; k < fresh.length; k += 512) place(fresh.slice(k, k + 512));
@@ -1260,6 +1269,135 @@ span.lname { cursor: default; }
       if (want > st.cap) stGrow(want);
       const freeR = heap.rec ? largest(heap.free) : 0, freeG = heap.gr ? largest(heap.gfree) : 0;
       if (nR > freeR || nG > freeG) heapGrow(nR > freeR ? nR : 0, nG > freeG ? nG : 0);
+    }
+    // THE CARD'S STORES PACKED AGAIN, ONCE THE PAGE IS IDLE (the user's word, 11-07: "we need to be handing that vram
+    // back"). The records, their boxes, the grain and the table of strokes grow as the page is worked on -- each piece an
+    // erase cuts takes a whole block, its pools room of their own -- and were never made smaller while the page stayed
+    // open: a page of 30,000 strokes held 16 MB opened and 145 MB after a long swipe. Every stroke the card holds a place
+    // for (the page's, in its order, then those an undo would bring back) is laid out again as a fresh open lays it out,
+    // into the packing's own arrays and then into new stores -- as large as what they hold and an eighth -- all of it a
+    // slice at a time in idle moments (packStep: the page is drawn from the stores it has meanwhile, and anything done on
+    // the page lets the packing go: the editor's, packDrop); then, in one step, the new stores are the page's, each
+    // placement held given its new number and place (the same placement: nothing registered again), the old stores given
+    // back, the order made anew and the page drawn whole (packEnd). The erase's own buffers go back to nothing until the
+    // next swipe. What is held is counted as it is held and let go (holding), so whether to pack costs nothing to ask.
+    const packTable = N => Math.max(4096, pow2(2 * N + 4096));   // (the table of strokes twice what it holds: roomStep's)
+    function packWorth() {                                    // -> would packing give back 16 MB or more, and a fifth of the stores?
+      if (!heap.rec || lost) return false;
+      const now = recBytes(heap.cap) + heap.cap / BLK * 8 + heap.gcap * GR;
+      const then = (recBytes(Math.ceil(holding.n / BLK) * BLK) + holding.n / BLK * 8) * 1.25 + (holding.g + 5 * packTable(holding.N)) * GR * 1.15;
+      return now - then > (16 << 20) && now > 1.25 * then;
+    }
+    const packIdle = () => !(lost || er.live || er.fold || er.folding || er.asks || lv || mv.lines || fly.on);
+    let packGen = 0;
+    function packBegin(linesOf) {                             // -> the packing (made by packStep), or null: not now
+      if (!heap.rec || !packIdle()) return null;
+      const room = () => ({ u8: new Uint8Array(1 << 16), n: 0 });
+      const B = { phase: 0, linesOf, lines: null, li: 0, pls: null, pi: 0, owners: [], seen: new Set(), i: 0, top: 0, at: 0, gat: 0, stCap: 0, m: null,
+                  part: [], buf: [], hwMax: 0, sgMax: 0, aside: new Map(), res: [], R: room(), G: room(), up: null };
+      B.add = p => { if (p && p.pl && !p.pl.gone && p.pl.own.deref() === p && !B.seen.has(p)) { B.seen.add(p); B.owners.push(p); } };
+      B.sids = n => { const out = new Array(n); for (let k = 0; k < n; k++) out[k] = B.top++; return out; };
+      B.take = (n, grain) => { let a; if (grain) { a = B.gat; B.gat += n; } else { a = B.at; B.at += n; } return a; };
+      B.put = (grain, at, v) => {                             // (into its arrays, grown as they fill)
+        const S = grain ? B.G : B.R, src = new Uint8Array(v.buffer, v.byteOffset, v.byteLength), end = at + src.length;
+        if (end > S.u8.length) { const u = new Uint8Array(Math.max(end, Math.ceil(S.u8.length * 1.5))); u.set(S.u8.subarray(0, S.n)); S.u8 = u; }
+        S.u8.set(src, at); if (end > S.n) S.n = end;
+      };
+      B.row = (sid, ...a) => rowInto(B, sid, ...a);
+      B.hold = (p, sid, out, at, gat) => { B.res.push([p, sid, out, at, gat]); };
+      B.spans = () => {};                                     // (every block boxed once the stores are the page's)
+      return B;
+    }
+    const PACK_UP = 8 << 20;                                  // (bytes up to the card a slice)
+    function packStep(B, deadline) {                          // a slice of it -> all of it ready (packEnd)?
+      do {
+        if (B.phase === 0) {                                  // the strokes the page has, in its order
+          if (!B.lines) B.lines = B.linesOf ? B.linesOf() : [];
+          const end = Math.min(B.li + 20000, B.lines.length);
+          for (; B.li < end; B.li++) B.add(parts.get(B.lines[B.li]));
+          if (B.li >= B.lines.length) { B.lines = null; B.P = B.owners.length; B.pls = [...placings]; B.phase = 1; }
+        } else if (B.phase === 1) {                           // then every other one a place is held for
+          const end = Math.min(B.pi + 20000, B.pls.length);
+          for (; B.pi < end; B.pi++) { const pl = B.pls[B.pi]; if (!pl.gone) B.add(pl.own.deref()); }
+          if (B.pi >= B.pls.length) {
+            B.pls = null; B.seen = null; B.stCap = packTable(B.owners.length); B.m = new Uint32Array(B.stCap * 8); B.gat = 5 * B.stCap; B.phase = 2;
+            let lvl = 0, prev = 0, any = false;               // (the page's classes, as ordAll counts them from the same walk)
+            for (let i = 0; i < B.P; i++) { const kd = nonPen(B.owners[i]); if (kd === 1 && prev === 2) lvl++; if (kd) { prev = kd; any = true; } }
+            B.nc = any ? 1 + 2 * (lvl + 1) : 1;
+          }
+        } else if (B.phase === 2) {                           // laid out, 512 at a time (as placeAll puts them up)
+          place(B.owners.slice(B.i, B.i + 512), B); B.i += 512;
+          if (B.i >= B.owners.length) {                       // its stores, as large as it holds and an eighth
+            // THE PAGE'S ORDER IS THE PACKING'S: its strokes numbered first, in the page's order (0 .. P-1) -- in it, and the
+            // eraser's to cut; an undo's after them, off the page (as ordAll leaves them)
+            for (let s = 0; s < B.P; s++) B.m[8 * s + 2] = (B.m[8 * s + 2] | 0x80000000) >>> 0;
+            for (let s = B.P; s < B.top; s++) B.part[s] = null;
+            B.ord = new Uint32Array(Math.max(1, B.P)); for (let s = 0; s < B.P; s++) B.ord[s] = s;
+            B.dm = new Uint8Array(B.stCap);
+            const at = Math.ceil(B.at / BLK) * BLK, gat = Math.ceil(B.gat / BLK) * BLK;
+            B.cap = Math.max(1 << 16, Math.ceil((at + at / 8) / BLK) * BLK); B.gcap = Math.max(1 << 14, Math.ceil((gat + gat / 8) / BLK) * BLK);
+            B.at = at; B.gat = gat;
+            B.rec = device.createBuffer({ size: recBytes(B.cap), usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
+            B.boxes = device.createBuffer({ size: B.cap / BLK * 8, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
+            B.gr = device.createBuffer({ size: B.gcap * GR, usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
+            const g0 = 5 * B.stCap * GR;                      // (the grain's records past the table of strokes and the keys)
+            B.up = [[B.rec, B.R.u8, 0, Math.ceil(B.R.n / 4) * 4], [B.gr, B.G.u8, g0, Math.max(g0, Math.ceil(B.G.n / 4) * 4)],
+                    [B.gr, new Uint8Array(B.m.buffer), 0, B.m.byteLength]];
+            B.phase = 3;
+          }
+        } else if (B.phase === 3) {                           // up to the card, PACK_UP bytes a slice (its new stores, not in use yet)
+          const u = B.up[0];
+          if (!u) { B.R = B.G = null; B.phase = 4; break; }
+          const n = Math.min(PACK_UP, u[3] - u[2]);
+          if (n > 0) device.queue.writeBuffer(u[0], u[2], u[1], u[2], n);
+          u[2] += n;
+          if (u[2] >= u[3]) B.up.shift();
+        }
+      } while (B.phase < 4 && deadline && deadline.timeRemaining() > 3);
+      return B.phase === 4;
+    }
+    function packDrop(B) {                                    // a packing let go: its stores, if made, given back
+      if (!B) return;
+      for (const b of [B.rec, B.boxes, B.gr]) if (b) b.destroy();
+      B.rec = B.boxes = B.gr = null; B.phase = -1;
+    }
+    // (tick: the editor's count of its ink's changes, as it was when the packing began and is now: the order's)
+    function packEnd(B, tick) {                               // -> done? (then the page must be drawn whole, now)
+      if (B.phase !== 4 || !packIdle()) return false;
+      const gen = ++packGen;
+      // each placement held: its part's new number and place, the same placement (registered as it was). One whose part
+      // went meanwhile is not laid out: let go when its stroke is, with nothing to give back (letGo: its generation)
+      let n = 0, g = 0;
+      for (const [p, sid, out, a, gat] of B.res) {
+        const pl = p.pl;
+        pl.sid = sid; pl.place = out; pl.gplace = null; pl.side = false; pl.gen = gen;
+        pl.n = p.n; pl.g = p.grain ? p.n : 0; n += pl.n; g += pl.g;
+        p.sid = sid; p.at = a; p.gat = gat;
+      }
+      for (let i = 0; i < B.owners.length; i++) B.owners[i].on = i < B.P;
+      holding.n = n; holding.g = g; holding.N = B.res.length;
+      const old = [heap.rec, heap.boxes, heap.gr], at = B.at, gat = B.gat;
+      heap.rec = B.rec; heap.boxes = B.boxes; heap.gr = B.gr; heap.cap = B.cap; heap.gcap = B.gcap;
+      heap.free = B.cap > at ? [[at, B.cap - at]] : []; heap.gfree = B.gcap > gat ? [[gat, B.gcap - gat]] : [];
+      st.at = 0; st.cap = B.stCap; st.top = B.top; st.free = []; st.m = B.m; st.dirty = []; st.dm = B.dm;
+      st.part = B.part; st.buf = B.buf; st.hwMax = B.hwMax; st.sgMax = B.sgMax;
+      sk.at = 4 * B.stCap; sk.cap = B.stCap; ev.cap = 0;
+      asideAt.clear(); for (const [k, v] of B.aside) asideAt.set(k, v);
+      boxClears = []; boxSpans = at ? [[0, at / BLK]] : [];
+      heap.bg = recGroup(heap.rec, heap.gr); cullGen++;
+      // the order as ordAll writes it: the page's strokes, numbered in its order
+      ordPipes(); ordRoom(B.P);
+      device.queue.writeBuffer(ob.r, 0, B.ord, 0, B.P); device.queue.writeBuffer(ob.lh, 16, new Uint32Array([B.P]));
+      ob.n = B.P; ob.ncKnown = B.nc; ob.pend = []; ob.dirty = true; ob.tick = tick; mk.who = null;
+      B.rec = B.boxes = B.gr = null; B.res = null; B.owners = null; B.ord = null;
+      // the room kept for what is done now and then, back to nothing or its least: made again as it is needed
+      if (er.buf) { er.buf.destroy(); er.buf = null; er.cap = 0; }
+      if (er.ent) { er.ent.destroy(); er.ent = null; er.hitCap = 0; }
+      if (er.pack) { er.pack.destroy(); er.pack = null; }
+      if (mk.buf && mk.cap > 1 << 16) mkMake(1 << 16);
+      if (lb.lst) { lb.lst.destroy(); lb.lst = null; lb.lstCap = 0; }
+      for (const b of old) b.destroy();
+      return true;
     }
     function unref(b) {                                       // one holder of a place fewer: given back with the last
       if (!b || !b.heap || b.gone || --b.refs > 0) return;
@@ -1276,14 +1414,20 @@ span.lname { cursor: default; }
     // handed from stroke to stroke (a selection moved, undone, done again: handOver) is held while any of them is -- each
     // registered once (refs: how many), not taken off and put on again at each hand-over
     const placed = new FinalizationRegistry(pl => { if (--pl.refs <= 0 && !pl.gone) letGo(pl); });
+    // (every placement held, each with the part it is now -- not keeping it: a packing lays out all of them again)
+    // (and what they hold counted: records, grain records, how many -- what a packing would need: packWorth)
+    const placings = new Set(), holding = { n: 0, g: 0, N: 0 };
     function hold(p, sid, place, gplace) {
-      const pl = { sid, place, gplace: gplace || null, gone: false, refs: 1, side: false };
+      const pl = { sid, place, gplace: gplace || null, gone: false, refs: 1, side: false, own: new WeakRef(p), n: p.n, g: p.grain ? p.n : 0, gen: packGen };
       p.pl = pl; p.sid = sid; p.reg = pl;
       placed.register(p.line, pl, pl);
+      placings.add(pl); holding.n += pl.n; holding.g += pl.g; holding.N++;
       return pl;
     }
+    function unhold(pl) { placings.delete(pl); holding.n -= pl.n; holding.g -= pl.g; holding.N--; }
     function letGo(pl) {
-      pl.gone = true;
+      if (pl.gen !== packGen) { pl.gone = true; placings.delete(pl); return; }   // (held before a packing that did not lay it out: its
+      pl.gone = true; unhold(pl);                                               // places were in stores given back)
       if (pl.sid >= 0 && !st.part[pl.sid]) stFree(pl.sid);
       unref(pl.place); if (pl.gplace) unref(pl.gplace);
     }
@@ -1296,6 +1440,8 @@ span.lname { cursor: default; }
       q.pl = pl; q.sid = p.sid; q.at = p.at; q.gat = p.gat; q.lid = p.lid;
     }
     function handNow(p, q) {
+      const pl = q.pl, g = q.grain ? q.n : 0;
+      pl.own = new WeakRef(q); holding.n += q.n - pl.n; holding.g += g - pl.g; pl.n = q.n; pl.g = g;
       q.on = p.on; p.pl = null; p.sid = undefined; p.on = false;
       st.part[q.sid] = q.on ? q : null; st.buf[q.sid] = q.pl.place;
     }
@@ -2598,7 +2744,7 @@ span.lname { cursor: default; }
     function unplan(q) {                                        // a planned piece's number and places given back (never in the order)
       const pl = q && q.pl;
       if (!pl) return;
-      placed.unregister(pl); pl.gone = true;
+      placed.unregister(pl); pl.gone = true; unhold(pl);
       st.buf[pl.sid] = null; st.part[pl.sid] = null; st.free.push(pl.sid);
       unref(pl.place); if (pl.gplace) unref(pl.gplace);
       q.pl = null; q.sid = undefined;
@@ -3344,7 +3490,7 @@ span.lname { cursor: default; }
       return true;
     }
     function inkDone(lines, tick) { ordAll(lines); ob.tick = tick; }   // (the page's whole order, as a whole draw would make it: nothing drawn)
-    return { frameBegin, frameEnd, frameMs, page, region, regions, edit, synced, under, inkWhole,
+    return { frameBegin, frameEnd, frameMs, page, region, regions, edit, synced, under, inkWhole, packWorth, packBegin, packStep, packEnd, packDrop,
              get eraseOn() { return ERASE_OK; }, get erasePending() { return erasePending; }, swap, eStep, ePass, eFrame: () => ePass(true), eRedraw, liveBegin, liveAdd, liveEnd, foldEnd, slotsBusy: () => er.asks > 0 || er.steps.length > 0, cardLive: () => er.live,
              planned: () => !er.live || er.planDone, planAll: () => { if (er.live && !lost) { er.planAll = true; ePlan(true); eRead([], true); } },
              foldStep: () => !er.live || foldStep(), foldMore: () => !!er.fold, onPlan: (fn, un) => { er.onPlan = fn; er.onUnplan = un; }, onRefused: fn => { er.onRefused = fn; },
@@ -4269,8 +4415,48 @@ span.lname { cursor: default; }
     inkTick++;
     if (!Ly) inkFoot = null;
     for (const L of Ly ? [Ly] : page.layers) inkVer.set(L, verOf(L) + 1);
-    gridSoon();
+    gridSoon(); packSoon();
   }
+  // THE CARD'S STORES PACKED AGAIN (GL.packBegin, packStep, packEnd): a moment after the ink last changed, with nothing
+  // under the pen and no swipe, drag or drop under way, if packing would give back enough (GL.packWorth) -- laid out in
+  // idle slices, and let go the moment anything is done on the page; then the page drawn whole, at once, from the new stores
+  let packTimer = 0, packing = null;
+  const idleThen = f => window.requestIdleCallback ? requestIdleCallback(f) : setTimeout(() => f({ timeRemaining: () => 8 }), 50);
+  function packSoon() {
+    if (!GL || THUMB_W) return;
+    clearTimeout(packTimer); packTimer = setTimeout(packGo, 1500);
+  }
+  const packBusy = () => !loaded || gpuFailed || cardWait || !!live || !!erasing || pointer !== null || pickDrag || dropping || !!(pick && pick.held) || thumbHold;
+  function packGo() {
+    packTimer = 0;
+    if (packing || !GL || gpuFailed || !GL.packWorth) return;
+    if (packBusy()) { packSoon(); return; }
+    const T = { worth: 0, begin: 0, steps: [], end: 0, draw: 0 };
+    let t = performance.now();
+    if (!GL.packWorth()) return;
+    T.worth = performance.now() - t; t = performance.now();
+    const B = GL.packBegin(inkList), tick = inkTick;
+    T.begin = performance.now() - t;
+    if (!B) { packSoon(); return; }
+    packing = B;
+    const step = d => {
+      if (packing !== B) return;
+      if (gpuFailed || inkTick !== tick || packBusy()) { packing = null; try { GL.packDrop(B); } catch (e) { /* the card is gone */ } packSoon(); return; }
+      let all = false, t0 = performance.now();
+      try { all = GL.packStep(B, d); } catch (e) { packing = null; gpuDown(e); return; }
+      T.steps.push(performance.now() - t0);
+      if (!all) { idleThen(step); return; }
+      packing = null;
+      try {
+        t0 = performance.now();
+        if (GL.packEnd(B, tick)) { T.end = performance.now() - t0; t0 = performance.now(); packs++; _rebuild(); T.draw = performance.now() - t0; packTimes = T; }
+        else { GL.packDrop(B); packSoon(); }
+      } catch (e) { gpuDown(e); }
+    };
+    idleThen(step);
+  }
+  let packs = 0, packTimes = null;
+  window.pdPacks = () => ({ done: packs, now: !!packing, waiting: !!packTimer, times: packTimes });   // (the packings made, for a look from outside)
   const inkOf = (a, back) => {                                // (back: an undo's)
     if (a.type === "lines") { footMove(back ? a.added : a.removed, back ? a.removed : a.added, back ? a.footA : a.footR, back ? a.footR : a.footA); inkChanged(a.layer); }
     else if (a.type === "layers") inkChanged();

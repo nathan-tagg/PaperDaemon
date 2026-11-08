@@ -40,3 +40,12 @@
 - [x] 5.8 The editor's records a word a point (D11); the engine's pages unchanged, byte for byte
 - [x] 5.9 Shaders that carry only what they draw; an erase's lists in two, the marks cleared after it (D12)
 - [x] 5.10 The screen's shrink: its tables in one go, rows summed in floats (D13)
+
+## 6. Graphics memory handed back (11-07)
+
+- [x] 6.1 The stores packed again once the page is idle: laid out as a fresh open lays them out, in idle slices, the
+      placements kept (nothing registered again), the page's order written from the packing; the erase's room let go
+- [x] 6.2 Checked on the integrated card: in place = whole = fresh after packing, a swipe, its undo, a move undone across
+      it, pen and pencil strokes after it (30,536 and 152,680 strokes); no long task while packing; opening no slower
+- [ ] 6.3 The erase's pieces packed densely as the swipe goes (each piece a whole block now)
+- [ ] 6.4 Pencil grain a byte a point (or worked out in the shader)
