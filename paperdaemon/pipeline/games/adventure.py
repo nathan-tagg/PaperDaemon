@@ -838,122 +838,238 @@ def _wrap(d, text, font, width):
 INK, GRAY, RULE = (24, 24, 26), (100, 100, 106), (205, 205, 210)
 
 
+# ------------------------------------------------------------------------------ ONE DESIGN for every page
+# The user, 11-07, of the pages as they were: "no design language, no consistency, the character pages aren't decoms
+# like the rest, the page numbers sitting by things are nonsensical", and "the ink adventure pages suggest they are links
+# but aren't". Every page of a game is drawn from these parts, and nothing else:
+#   ONE COLUMN, the scene picture's width -- the tablet's own typed-text column (inputarea.COLUMN_X) -- so every title,
+#     line, cell and picture starts and ends where the player's own typing does.
+#   ONE HEADER (_header): the page's title, a line saying what is on the page, and a hairline across the column, each
+#     at the same height on every page, and NOTHING OVER THE TITLE: a kicker naming the adventure and the part of the
+#     book ("THE DROWNING LIGHT · CHARACTER SHEET") was noise, and so is any heading over text that says what it is
+#     ("WHO THEY ARE") -- the user, 11-08. The adventure's own name is the contents page's title, where a book has it.
+#     The scene page's picture is its header: the place's name comes under it, then the turn and the roll in small gray.
+#   ONE TYPE SCALE (STYLES): the title; a name (a place, a person, a quest, a line of the contents); the body; small gray
+#     text (a roll, where and when); a label (small gray capitals: the name of a field or a section).
+#   NOTHING THAT LOOKS LIKE A BUTTON: a notebook page cannot be tapped, so nothing is drawn as one. A cell of numbers is
+#     a hairline box, a picture has a hairline frame.
+#   PAGE NUMBERS WHERE A BOOK PUTS THEM: in the contents, at the right after a dotted leader, and at the right of a
+#     person's name on the characters page, on the name's own line -- never a badge on a box. In a PDF (the book) those
+#     same lines are its links.
+#   EVERY PICTURE IS INK: the scene and every portrait are decomposed into strokes, laid inside their frames.
+_SCENE_SIDE = 1270 - int(CH.TOP)
+SCENE_BOX = ((PAGE_W - _SCENE_SIDE) // 2, int(CH.TOP), (PAGE_W + _SCENE_SIDE) // 2, 1270)
+X0, X1 = SCENE_BOX[0], SCENE_BOX[2]               # the column
+CW = X1 - X0
+TITLE_Y, RULE_Y, BODY_Y = 134, 222, 254              # the title, the hairline under it, the body: the same on every page
+FOOT_Y = PAGE_H - 80                               # the lowest any page's text goes
+STYLES = {                                         # (face, size, line height, color)
+    "title": ("reMarkableSans-Bold.ttf", 56, 70, INK),
+    "name": ("reMarkableSans-Medium.ttf", 34, 46, INK),
+    "sub": ("reMarkableSans-Regular.ttf", 28, 40, GRAY),
+    "body": ("reMarkableSans-Regular.ttf", 28, 40, INK),
+    "italic": ("reMarkableSans-RegularItalic.ttf", 28, 40, INK),
+    "small": ("reMarkableSans-Regular.ttf", 23, 32, GRAY),
+    "label": ("reMarkableSans-Medium.ttf", 20, 32, GRAY),
+}
+TRACK = 2                                          # a label's letter spacing
+
+
+def _style(name, size=None):
+    """A style -> (font, line height, color); `size` scales it."""
+    face, base, lh, col = STYLES[name]
+    size = size or base
+    return _font(face, size), int(round(lh * size / float(base))), col
+
+
+def _fit(d, text, name, width, least=0.7):
+    """The style's font at the largest size, down to `least` of it, that sets `text` on one line in `width`."""
+    face, base = STYLES[name][0], STYLES[name][1]
+    size = base
+    while size > base * least and d.textlength(text, font=_font(face, size)) > width:
+        size -= 1
+    return _font(face, size)
+
+
+def _ellipsis(d, text, font, width):
+    """`text` cut to `width`, with an ellipsis when it had to be."""
+    text = str(text)
+    if d.textlength(text, font=font) <= width:
+        return text
+    while text and d.textlength(text + "…", font=font) > width:
+        text = text[:-1]
+    return text.rstrip() + "…"
+
+
+def _caps_w(d, text, font, track=TRACK):
+    return sum(d.textlength(c, font=font) for c in text) + track * max(0, len(text) - 1)
+
+
+def _caps(d, xy, text, font=None, fill=GRAY, width=None, align="left"):
+    """A LABEL: small gray capitals, letter-spaced. `align`: "left" (xy is its left end), "center" or "right". `width`:
+    the room it has -- a longer one is set smaller, then cut with an ellipsis. -> its width."""
+    font = font or _style("label")[0]
+    text = str(text).upper()
+    if width:
+        while _caps_w(d, text, font) > width and font.size > 15:
+            font = font.font_variant(size=font.size - 1)
+        while _caps_w(d, text, font) > width and len(text) > 2:
+            text = text.rstrip("…")[:-1].rstrip() + "…"
+    w = _caps_w(d, text, font)
+    x = xy[0] - (w if align == "right" else w / 2.0 if align == "center" else 0)
+    for c in text:
+        d.text((x, xy[1]), c, font=font, fill=fill)
+        x += d.textlength(c, font=font) + TRACK
+    return w
+
+
+def _header(d, title, sub=""):
+    """THE HEADER of every page but the scene's: the title and the hairline under it, the same on every page, nothing
+    over the title. `sub`: what a page has to say first (the hero's level, class and background; a person's role), the
+    first line under the hairline -- never a count of what is on the page ("10 things learned", "6 turns played", "1
+    met": the user, 11-08, "this stuff is literally making my stomach turn"). -> where the page's body starts."""
+    d.text((X0, TITLE_Y), title, font=_fit(d, title, "title", CW), fill=INK)
+    d.line((X0, RULE_Y, X1, RULE_Y), fill=RULE, width=2)
+    if not sub:
+        return BODY_Y
+    f, lh, col = _style("sub")
+    d.text((X0, BODY_Y), _ellipsis(d, sub, f, CW), font=f, fill=col)
+    return BODY_Y + lh + 22
+
+
+def _frame(d, box):
+    """A picture's hairline frame, 6 outside its box: the picture's strokes are laid inside the box."""
+    d.rectangle((box[0] - 6, box[1] - 6, box[2] + 6, box[3] + 6), outline=RULE, width=2)
+
+
+def _leader(d, x0, x1, y):
+    """A dotted leader from x0 to x1 at the height y: a contents line's way to its page number. The dots sit on a grid
+    of their own, so the leaders of lines one under the other line up."""
+    x = x0 + (12 - x0 % 12)
+    while x < x1:
+        d.ellipse((x - 1.6, y - 1.6, x + 1.6, y + 1.6), fill=GRAY)
+        x += 12
+
+
 def sheet_png(state, out):
-    """PAGE 1: the character sheet, drawn at the page's own size (1620 x 2160)."""
-    from PIL import Image, ImageDraw
-    h = state["hero"]
+    """THE CHARACTER SHEET, D&D style, drawn at the page's own size (1620 x 2160) in the one design: the header (the
+    hero's name; level, race, class, background, alignment, experience), the six abilities and six numbers in hairline
+    cells across the column, the saving throws and skills at the left, the attack, features and conditions at the
+    right, then the inventory and who the hero is."""
     from paperdaemon.pipeline.draw import scaled as SD
+    h = state["hero"]
     im, d = SD.canvas(PAGE_W, PAGE_H)                 # (laid out in design pixels; sent at twice the tablet's resolution)
-    M, W = 80, PAGE_W - 160
-    big, bold, reg, med, small = (_font("reMarkableSans-Bold.ttf", 60), _font("reMarkableSans-Bold.ttf", 34),
-                                  _font("reMarkableSans-Regular.ttf", 30), _font("reMarkableSans-Medium.ttf", 30),
-                                  _font("reMarkableSans-Regular.ttf", 24))
-    y = int(CH.TOP)                                   # below the tablet's toolbar
-    d.text((M, y), h["name"], font=big, fill=INK)
-    y += 80
-    d.text((M, y), "Level %d %s %s  ·  %s  ·  %s" % (h["level"], h["race"].capitalize(), h["class"].capitalize(),
-                                                            h["background"], h["alignment"]), font=reg, fill=GRAY)
-    y += 44
-    d.text((M, y), "%s  ·  XP %d" % (state["title"], h["xp"]), font=small, fill=GRAY)
-    y += 60
-    # the six abilities: a box each, the modifier big, the score small
-    bw = W // 6
+    y = _header(d, h["name"], "Level %d %s %s  ·  %s  ·  %s  ·  %d XP" % (
+        h["level"], h["race"], h["class"], h["background"], h["alignment"], h["xp"]))
+    big, name_f = _style("title")[0], _style("name")[0]
+    body_f, body_lh, _ = _style("body")
+    small_f = _style("small")[0]
+    G = 14
+    cw = (CW - 5 * G) / 6.0
+    # the six abilities: the modifier large, the score under it
     for i, a in enumerate(ABILITIES):
-        x = M + i * bw
-        d.rounded_rectangle((x + 8, y, x + bw - 8, y + 170), 18, outline=INK, width=3)
-        t = ABILITY_NAMES[a].upper()
-        d.text((x + (bw - d.textlength(t, font=small)) / 2, y + 12), t, font=small, fill=GRAY)
+        x = X0 + i * (cw + G)
+        d.rectangle((x, y, x + cw, y + 158), outline=RULE, width=2)
+        _caps(d, (x + cw / 2.0, y + 16), ABILITY_NAMES[a], width=cw - 16, align="center")
         m = "%+d" % mod(h["abilities"][a])
-        d.text((x + (bw - d.textlength(m, font=big)) / 2, y + 44), m, font=big, fill=INK)
+        d.text((x + (cw - d.textlength(m, font=big)) / 2.0, y + 46), m, font=big, fill=INK)
         s = str(h["abilities"][a])
-        d.text((x + (bw - d.textlength(s, font=reg)) / 2, y + 122), s, font=reg, fill=INK)
-    y += 200
-    # armor, hit points, speed, proficiency, initiative
-    stats = [("ARMOR", str(h["ac"])), ("HIT POINTS", "%d / %d" % (h["hp"]["now"], h["hp"]["max"])),
-             ("SPEED", "%d ft" % h["speed"]), ("PROFICIENCY", "%+d" % prof(h["level"])),
-             ("INITIATIVE", "%+d" % mod(h["abilities"]["DEX"])), ("GOLD", str(h["gold"]))]
-    bw = W // len(stats)
+        d.text((x + (cw - d.textlength(s, font=small_f)) / 2.0, y + 118), s, font=small_f, fill=GRAY)
+    y += 158 + G
+    stats = [("Armor", str(h["ac"])), ("Hit points", "%d / %d" % (h["hp"]["now"], h["hp"]["max"])),
+             ("Speed", "%d ft" % h["speed"]), ("Proficiency", "%+d" % prof(h["level"])),
+             ("Initiative", "%+d" % mod(h["abilities"]["DEX"])), ("Gold", str(h["gold"]))]
     for i, (k, v) in enumerate(stats):
-        x = M + i * bw
-        d.rounded_rectangle((x + 8, y, x + bw - 8, y + 120), 14, outline=INK, width=3)
-        d.text((x + (bw - d.textlength(k, font=small)) / 2, y + 12), k, font=small, fill=GRAY)
-        d.text((x + (bw - d.textlength(v, font=bold)) / 2, y + 54), v, font=bold, fill=INK)
-    y += 150
-    col = W // 2 - 20
-    # left: saves and skills; right: attack, features, spells, conditions
+        x = X0 + i * (cw + G)
+        d.rectangle((x, y, x + cw, y + 108), outline=RULE, width=2)
+        _caps(d, (x + cw / 2.0, y + 16), k, width=cw - 16, align="center")
+        d.text((x + (cw - d.textlength(v, font=name_f)) / 2.0, y + 50), v, font=name_f, fill=INK)
+    y += 108 + 50
+    col = (CW - 48) / 2.0
+    # left: the saving throws, then the skills
     ly = y
-    d.text((M, ly), "Saving throws", font=med, fill=INK)
-    ly += 44
+    _caps(d, (X0, ly), "Saving throws")
+    ly += 40
     for a in ABILITIES:
         on = a in h["saves"]
-        d.ellipse((M, ly + 8, M + 16, ly + 24), fill=INK if on else None, outline=INK, width=2)
-        d.text((M + 28, ly), "%+d  %s" % (bonus(h, "save", a), ABILITY_NAMES[a]), font=small, fill=INK)
-        ly += 34
-    ly += 16
+        d.ellipse((X0, ly + 12, X0 + 16, ly + 28), fill=INK if on else None, outline=INK, width=2)
+        d.text((X0 + 32, ly), "%+d  %s" % (bonus(h, "save", a), ABILITY_NAMES[a]), font=body_f, fill=INK)
+        ly += body_lh
+    ly += 24
     # WHAT THE HERO CAN DO, ONLY WHAT THEY HAVE, each once: the trained skills from the rules' list (SKILLS) with
     # their bonus, then the hero's own skills and spells, each with what it does. The story adds to it as it goes
     # (apply: skills_gain, talents_gain), like the inventory.
     mine = sorted(s for s in set(h["skills"]) if s in SKILLS)
     own = [{"name": s, "kind": "spell", "effect": "", "mods": {}} for s in h.get("spells") or []] + list(h.get("talents") or [])
-    d.text((M, ly), "Skills and spells" if any(t["kind"] == "spell" for t in own) else "Skills", font=med, fill=INK)
-    ly += 44
+    _caps(d, (X0, ly), "Skills and spells" if any(t["kind"] == "spell" for t in own) else "Skills")
+    ly += 40
     for s in mine:
-        d.text((M, ly), "%+d  %s (%s)" % (bonus(h, "skill", s), s.capitalize(), SKILLS[s]), font=small, fill=INK)
-        ly += 32
+        d.text((X0, ly), "%+d  %s (%s)" % (bonus(h, "skill", s), s.capitalize(), SKILLS[s]), font=body_f, fill=INK)
+        ly += body_lh
     for t in own:
         nums = ", ".join("%+d %s" % (v, k if k in ABILITIES else k.capitalize()) for k, v in (t.get("mods") or {}).items())
-        line = "• %s%s%s%s" % (t["name"][:1].upper() + t["name"][1:], " (spell)" if t["kind"] == "spell" else "",
-                               ": " + t["effect"] if t.get("effect") else "", " (%s)" % nums if nums else "")
-        for l in _wrap(d, line, small, col)[:2]:
-            d.text((M, ly), l, font=small, fill=INK)
-            ly += 32
+        line = "%s%s%s%s" % (t["name"][:1].upper() + t["name"][1:], " (spell)" if t["kind"] == "spell" else "",
+                             ": " + t["effect"] if t.get("effect") else "", " (%s)" % nums if nums else "")
+        for l in _wrap(d, line, body_f, col)[:2]:
+            d.text((X0, ly), l, font=body_f, fill=INK)
+            ly += body_lh
     if not mine and not own:
-        d.text((M, ly), "None yet", font=small, fill=GRAY)
-        ly += 32
-    rx, ry = M + col + 40, y
-    d.text((rx, ry), "Attack", font=med, fill=INK)
-    ry += 44
+        d.text((X0, ly), "None yet", font=body_f, fill=GRAY)
+        ly += body_lh
+    # right: the attack, the features, the conditions
+    rx, ry = X0 + col + 48, y
     w = h["weapon"]
-    d.text((rx, ry), "%s: %+d to hit, %s%+d" % (w["name"].capitalize(), bonus(h, "attack", None), w["die"],
-                                               mod(h["abilities"][w["ability"]])), font=small, fill=INK)
-    ry += 48
+    _caps(d, (rx, ry), "Attack")
+    ry += 40
+    for l in _wrap(d, "%s: %+d to hit, %s%+d" % (w["name"].capitalize(), bonus(h, "attack", None), w["die"],
+                                                mod(h["abilities"][w["ability"]])), body_f, col):
+        d.text((rx, ry), l, font=body_f, fill=INK)
+        ry += body_lh
+    ry += 24
     for title, items in (("Features", h["features"]), ("Conditions", h["conditions"])):
         if not items:
             continue
-        d.text((rx, ry), title, font=med, fill=INK)
-        ry += 44
-        for line in _wrap(d, ", ".join(items), small, col):
-            d.text((rx, ry), line, font=small, fill=INK)
-            ry += 32
-        ry += 16
-    y = max(ly, ry) + 20
-    d.line((M, y, M + W, y), fill=RULE, width=2)
-    y += 20
-    d.text((M, y), "Inventory", font=med, fill=INK)
-    y += 46
+        _caps(d, (rx, ry), title)
+        ry += 40
+        for line in _wrap(d, ", ".join(items), body_f, col):
+            d.text((rx, ry), line, font=body_f, fill=INK)
+            ry += body_lh
+        ry += 24
+    y = max(ly, ry) + 24
+    d.line((X0, y, X1, y), fill=RULE, width=2)
+    y += 32
+    _caps(d, (X0, y), "Inventory")
+    y += 40
     inv = ["%s%s" % (it["name"], (" x%d" % it["qty"]) if it["qty"] > 1 else "") for it in h["inventory"]]
+    half = -(-len(inv) // 2)                           # down the left column, then the right
     for i, line in enumerate(inv):
-        x = M + (i % 2) * (W // 2)
-        d.text((x, y + (i // 2) * 34), "• " + line, font=small, fill=INK)
-    y += ((len(inv) + 1) // 2) * 34 + 24
-    if h.get("personality") and y < PAGE_H - 200:
-        d.text((M, y), "Who they are", font=med, fill=INK)
-        y += 44
-        for line in _wrap(d, h["personality"] + " " + h.get("backstory", ""), small, W)[:8]:
-            d.text((M, y), line, font=small, fill=INK)
-            y += 32
+        d.text((X0 + (i // half) * (col + 48), y + (i % half) * body_lh), "•  " + _ellipsis(d, line, body_f, col - 30),
+               font=body_f, fill=INK)
+    if not inv:
+        d.text((X0, y), "Nothing", font=body_f, fill=GRAY)
+    y += max(1, half) * body_lh + 32
+    # the hero's personality and story: a paragraph of its own under a hairline, with no heading over it (a heading
+    # over text that says what it is, "WHO THEY ARE", is noise -- the user, 11-08)
+    who = " ".join(x for x in (h.get("personality"), h.get("backstory")) if x)
+    if who and y < FOOT_Y - 120:
+        d.line((X0, y, X1, y), fill=RULE, width=2)
+        y += 32
+        for line in _wrap(d, who, body_f, CW):
+            if y + body_lh > FOOT_Y:
+                break
+            d.text((X0, y), line, font=body_f, fill=INK)
+            y += body_lh
     im.save(out)
     return out
 
 
-# the turn page: where each part goes, in page pixels (1620 x 2160, y from the top)
-# the square the picture is converted into: from the top of the page's safe area (below the tablet's
-# toolbar) down to 1270, centered
-_SCENE_SIDE = 1270 - int(CH.TOP)
-SCENE_BOX = ((PAGE_W - _SCENE_SIDE) // 2, int(CH.TOP), (PAGE_W + _SCENE_SIDE) // 2, 1270)
-TEXT_TOP, WRITE_TOP = 1300, 1810            # the story, then the player's space: the turn page's picture ends there,
+# the turn page: where each part goes, in page pixels (1620 x 2160, y from the top). The square the picture is
+# converted into (SCENE_BOX, above): from the top of the page's safe area (below the tablet's toolbar) down to 1270,
+# centered; its sides are the column every page keeps to.
+TEXT_TOP, WRITE_TOP = 1304, 1810            # the story, then the player's space: the turn page's picture ends there,
                                             # and under it is the page itself, to type or write in (inputarea.py)
-CELL_PAD = 24                               # the story's cell is as wide as the picture's frame; its text inset this much
+
+
 def scene_frame_page(s=1.0):
     """The picture's box in the page's own coordinates (x from the center), for the strokes; `s` scales the designed
     page to the page's own tablet (tablets.picture_page)."""
@@ -961,73 +1077,84 @@ def scene_frame_page(s=1.0):
     return ((x0 - PAGE_W / 2.0) * s, y0 * s, (x1 - PAGE_W / 2.0) * s, y1 * s)
 
 
+def _idea_lines(d, opts, font, width):
+    """The loose ideas, "You could: a  ·  b  ·  c", broken into lines BETWEEN ideas only: the separator ends a line,
+    and the next one starts with an idea (a line that began with a dot read as a stray mark). An idea too long for a
+    line of its own is wrapped."""
+    lines, cur = [], "You could: " + opts[0]
+    for o in opts[1:]:
+        if d.textlength(cur + "  ·  " + o, font=font) <= width:
+            cur += "  ·  " + o
+        else:
+            lines.append(cur + "  ·")
+            cur = o
+    lines.append(cur)
+    return [w for l in lines for w in _wrap(d, l, font, width)]
+
+
 def turn_png(state, scene, out, roll_line="", n=None):
-    """A TURN PAGE's picture: a frame where the scene goes (its strokes are laid over it), under it a cell as wide
-    as the frame with what happened, what is around and a few loose options, then a rule as wide as the cells, the
-    top of the player's space -- no line over it (where to write is plain to see). `n`: the turn's number (the next one). On the page
-    it is cut at WRITE_TOP."""
-    from PIL import Image, ImageDraw
+    """A TURN PAGE's picture, in the one design: the scene's frame at the top (its strokes are laid inside it), the
+    picture being the page's header; under it the place's name, the turn and the roll in small gray, what happened,
+    what is around and a few loose options; then a hairline across the column, the top of the player's space (where to
+    write is plain to see). `n`: the turn's number (the next one). On the page it is cut at WRITE_TOP."""
     from paperdaemon.pipeline.draw import scaled as SD
     im, d = SD.canvas(PAGE_W, PAGE_H)                 # (laid out in design pixels; sent at twice the tablet's resolution)
-    x0, y0, x1, y1 = SCENE_BOX
-    cx0, cx1 = x0 - 6, x1 + 6                         # the cells' outer edges: the picture's frame
-    tx, tw = cx0 + CELL_PAD, (cx1 - cx0) - 2 * CELL_PAD
-    cell_top, cell_bot = TEXT_TOP - 6, WRITE_TOP - 18
+    _frame(d, SCENE_BOX)
     n = n or len(state["turns"]) + 1
-    small, med = _font("reMarkableSans-Regular.ttf", 24), _font("reMarkableSans-Medium.ttf", 30)
-    # A STORY TOLD IN FULL (a character's tale is three to six sentences) must fit in its cell: the largest type
-    # that holds it all
-    for size, LH in ((30, 40), (26, 35), (23, 31), (21, 28)):
-        reg, ital = _font("reMarkableSans-Regular.ttf", size), _font("reMarkableSans-RegularItalic.ttf", size - 2)
-        need = cell_top + CELL_PAD + 46 + (36 if roll_line else 0) + 64 + (46 if state.get("status") == "dying" else 0)
-        for part, font in ((scene.get("what_happened"), reg), (scene.get("around"), ital)):
-            need += len(_wrap(d, part or "", font, tw)) * LH + 10
-        if need <= cell_bot - CELL_PAD:
-            break
-    d.rounded_rectangle((cx0, y0 - 6, cx1, y1 + 6), 16, outline=RULE, width=3)
-    d.rounded_rectangle((cx0, cell_top, cx1, cell_bot), 16, outline=RULE, width=3)
-    bottom = cell_bot - CELL_PAD
-    y = cell_top + CELL_PAD
-    head = "%s  ·  turn %d" % (scene.get("place") or state["place"] or state["title"], n)
-    d.text((tx, y), head, font=med, fill=INK)
-    y += 46
-    if roll_line:
-        d.text((tx, y), roll_line, font=small, fill=GRAY)
-        y += 36
-    for part, font in ((scene.get("what_happened"), reg), (scene.get("around"), ital)):
-        if part:
-            for line in _wrap(d, part, font, tw):
-                if y + LH > bottom:
-                    break
-                d.text((tx, y), line, font=font, fill=INK)
-                y += LH
-            y += 10
+    name_f, name_lh, _ = _style("name")
+    small_f, small_lh, _ = _style("small")
+    place = scene.get("place") or state["place"] or state["title"]
     # THE END SAYS SO, where the next move's ideas would be: a story that is over showed "You could: ..." for a turn
     # no game would take (a finished game gives its page back, and what is written there next is a new request)
     end = {"victory": "The end: a victory.", "death": "The end: %s has died.",
            "down": "The end: %s has fallen."}.get(state.get("status"))
-    if end:
-        d.text((tx, y), end % state["hero"]["name"] if "%s" in end else end, font=med, fill=INK)
     # A DYING HERO: the death saves failed so far, and the two things to do -- roll one, or give up
-    dying = state.get("status") == "dying"
-    if dying and not end:
+    dying = state.get("status") == "dying" and not end
+    top, bottom = TEXT_TOP, WRITE_TOP - 26
+    # A STORY TOLD IN FULL (a character's tale is three to six sentences) must fit: the largest body type that holds it
+    for size in (28, 26, 24, 22, 20):
+        body, lh, _ = _style("body", size)
+        ital = _style("italic", size)[0]
+        told = [(l, body) for l in _wrap(d, scene.get("what_happened") or "", body, CW)]
+        around = [(l, ital) for l in _wrap(d, scene.get("around") or "", ital, CW)]
+        need = (name_lh + small_lh + 8 + (len(told) + len(around)) * lh + 24
+                + (name_lh if end or dying else 0) + 2 * small_lh)
+        if top + need <= bottom:
+            break
+    y = top
+    d.text((X0, y), place, font=_fit(d, place, "name", CW), fill=INK)
+    y += name_lh
+    meta = "Turn %d" % n + ("  ·  " + roll_line if roll_line else "")
+    d.text((X0, y), _ellipsis(d, meta, small_f, CW), font=small_f, fill=GRAY)
+    y += small_lh + 8
+    for group in (told, around):
+        for line, font in group:
+            if y + lh > bottom:
+                break
+            d.text((X0, y), line, font=font, fill=INK)
+            y += lh
+        if group:
+            y += 12
+    if end:
+        d.text((X0, y), end % state["hero"]["name"] if "%s" in end else end, font=name_f, fill=INK)
+    if dying:
         failed = int((state.get("death_saves") or {}).get("failed", 0))
-        d.text((tx, y), "%s is dying: %d of %d death saves failed." % (state["hero"]["name"], failed, DEATH_SAVES),
-               font=med, fill=INK)
-        y += 46
-    # the loose ideas: as many WHOLE ones as two lines and the cell hold, never one cut off mid-phrase
+        d.text((X0, y), "%s is dying: %d of %d death saves failed." % (state["hero"]["name"], failed, DEATH_SAVES),
+               font=name_f, fill=INK)
+        y += name_lh
+    # the loose ideas: as many WHOLE ones as two lines and the room hold, never one cut off mid-phrase
     opts = [] if end else (["Roll a death save", "Give up"] if dying else
                            [str(o).strip() for o in (scene.get("options") or []) if str(o).strip()][:4])
     while opts:
-        lines = _wrap(d, "You could: " + "  ·  ".join(opts), small, tw)
-        if len(lines) <= 2 and y + 32 * len(lines) <= bottom:
+        lines = _idea_lines(d, opts, small_f, CW)
+        if len(lines) <= 2 and y + small_lh * len(lines) <= bottom:
             for l in lines:
-                d.text((tx, y), l, font=small, fill=GRAY)
-                y += 32
+                d.text((X0, y), l, font=small_f, fill=GRAY)
+                y += small_lh
             break
         opts = opts[:-1]
-    # the player's space: under a rule as wide as the cells
-    d.line((cx0, WRITE_TOP - 2, cx1, WRITE_TOP - 2), fill=RULE, width=3)
+    # the player's space: under a hairline across the column
+    d.line((X0, WRITE_TOP - 2, X1, WRITE_TOP - 2), fill=RULE, width=2)
     im.save(out)
     return out
 
@@ -1176,7 +1303,9 @@ def edit_prompt(state, change, present, new_people, setting=""):
 
 
 def portrait_prompt(state, p):
-    return ("Portrait of %s, head and shoulders, facing the viewer, plain light background. %s" % (
+    """A cast member's portrait, for the journal. ON PLAIN WHITE: it is decomposed onto the page, and white is the
+    page's own -- "light" came back cream, sage or gray, a colored square round one person and none round the next."""
+    return ("Portrait of %s, head and shoulders, facing the viewer, on a plain white background. %s" % (
         person_look(p, state["hero"].get("height_cm")), STYLE))
 
 
@@ -1240,6 +1369,64 @@ def _draw_scene(doc, page_no, scene_png):
     d.strokes = list(strokes)
     d.write_rm(doc, page_no, keep_existing=True)
     return len(strokes), secs
+
+
+def _load_ink(path):
+    """Strokes kept by decompose.save_strokes -> [(pts, widths, tool, color, rgb)]. Each array is read ONCE: the
+    corpus reader takes them from the file per stroke, and a portrait's 10,000 strokes took it 20 s."""
+    import numpy as np
+    from paperdaemon.pipeline.draw import Pen, PenColor
+    with np.load(path) as z:
+        counts, pts, wid = z["counts"].tolist(), z["points"].tolist(), z["widths"].tolist()
+        tools, colors, rgba = z["tools"].tolist(), z["colors"].tolist(), z["rgba"].tolist()
+    out, i = [], 0
+    for n, tool, color, rgb in zip(counts, tools, colors, rgba):
+        out.append(([tuple(p) for p in pts[i:i + n]], wid[i:i + n], Pen(tool), PenColor(color),
+                    None if rgb[0] < 0 else tuple(rgb)))
+        i += n
+    return out
+
+
+def _portrait_strokes(png, box, s):
+    """A portrait decomposed into its box (design pixels) on a page `s` page units a design pixel -> its strokes, in
+    the page's units (x from the center). KEPT beside the portrait (<portrait>.<w>x<h>.npz, at the box's top left): a
+    portrait never changes once painted, and a journal page is drawn again whenever what it says changes."""
+    from paperdaemon.pipeline import decompose as M
+    x0, y0, x1, y1 = box
+    w, h = int(round((x1 - x0) * s)), int(round((y1 - y0) * s))
+    ox, oy = (x0 - PAGE_W / 2.0) * s, y0 * s
+    kept = "%s.%dx%d.npz" % (os.path.splitext(png)[0], w, h)
+    strokes = None
+    if os.path.exists(kept) and os.path.getmtime(kept) >= os.path.getmtime(png):
+        try:
+            strokes = _load_ink(kept)
+        except Exception:
+            strokes = None
+    if strokes is None:
+        strokes = M.decompose_into(png, w, h, origin=(0.0, 0.0))[0]
+        try:
+            M.save_strokes(kept, strokes)
+            strokes = _load_ink(kept)                 # (the first drawing as every later one: the kept numbers)
+        except Exception:
+            pass
+    return [tuple([[(px + ox, py + oy) for px, py in st[0]]] + list(st[1:5])) for st in strokes]
+
+
+def _ink_pictures(doc, page_no, items, s, frame):
+    """PICTURES AS INK: each (picture, box in design pixels) decomposed into strokes inside its box and written onto the
+    page, over the frame the page's picture drew round it. `s`: page units a design pixel on this page; `frame`: the
+    page's (width, height). -> the strokes written."""
+    from paperdaemon.pipeline import draw as A
+    strokes = []
+    for png, box in items:
+        if png and os.path.exists(png):
+            strokes += _portrait_strokes(png, box, s)
+    if strokes:
+        d = A.Drawing(*[int(round(v)) for v in frame])
+        d.kind = "decomp"                             # a picture traced into strokes (render.author_of)
+        d.strokes = strokes
+        d.write_rm(doc, page_no, keep_existing=True)
+    return len(strokes)
 
 
 def _keep(state, turn_no, png):
@@ -1378,42 +1565,44 @@ def _draw_play_page(doc, state, scene, roll_line, scene_png, workdir, log=None, 
 
 
 def log_png(state, out):
-    """PAGE 3: the adventure log, the newest entry at the bottom; what does not fit leaves the page (the state
-    keeps every entry)."""
-    from PIL import Image, ImageDraw
+    """THE LOG, "Story", in the one design: an entry a turn, the newest at the bottom -- the turn and the
+    place as a label, what happened, the roll; what does not fit leaves the page, the oldest first (the state keeps
+    every entry)."""
     from paperdaemon.pipeline.draw import scaled as SD
     im, d = SD.canvas(PAGE_W, PAGE_H)                 # (laid out in design pixels; sent at twice the tablet's resolution)
-    M, W, LH = 80, PAGE_W - 160, 40
-    reg, med, small = (_font("reMarkableSans-Regular.ttf", 30), _font("reMarkableSans-Medium.ttf", 30),
-                       _font("reMarkableSans-Regular.ttf", 24))
-    t0 = int(CH.TOP)                                  # below the tablet's toolbar
-    d.text((M, t0), "%s  ·  the story so far" % state["title"], font=med, fill=INK)
-    d.line((M, t0 + 52, M + W, t0 + 52), fill=RULE, width=3)
+    ev = state.get("events") or []
+    top = _header(d, "Story")
+    body_f, body_lh, _ = _style("body")
+    small_f, small_lh, _ = _style("small")
+    label_lh = _style("label")[1]
     blocks = []
-    for e in state.get("events") or []:
+    for e in ev:
         head = ("Turn %d" % e["n"]) if e["n"] else "The beginning"
-        lines = [("%s  ·  %s" % (head, e.get("place") or ""), med, INK)]
-        lines += [(l, reg, INK) for l in _wrap(d, e.get("text") or "", reg, W)]
-        lines += [(l, small, GRAY) for l in _wrap(d, e.get("roll") or "", small, W)]
-        blocks.append(lines)
-    top, bottom = t0 + 80, PAGE_H - 60
-    room = bottom - top - LH                     # one line kept for the note on earlier turns
+        rows = [("label", "%s  ·  %s" % (head, e["place"]) if e.get("place") else head, label_lh)]
+        rows += [("body", l, body_lh) for l in _wrap(d, e.get("text") or "", body_f, CW)]
+        rows += [("small", l, small_lh) for l in _wrap(d, e.get("roll") or "", small_f, CW)]
+        blocks.append(rows)
+    gap = 30
+    room = FOOT_Y - top - small_lh - gap              # a line kept for the note on earlier turns
     fit = []
     for b in reversed(blocks):
-        need = len(b) * LH + LH // 2
+        need = sum(r[2] for r in b) + gap
         if need > room:
             break
         fit.insert(0, b)
         room -= need
     y = top
     if len(fit) < len(blocks):
-        d.text((M, y), "Earlier turns are kept in the game's notes.", font=small, fill=GRAY)
-        y += LH
+        d.text((X0, y), "Earlier turns are kept in the game's notes.", font=small_f, fill=GRAY)
+        y += small_lh + gap
     for b in fit:
-        for text, font, col in b:
-            d.text((M, y), text, font=font, fill=col)
-            y += LH
-        y += LH // 2
+        for kind, text, lh in b:
+            if kind == "label":
+                _caps(d, (X0, y), text, width=CW)
+            else:
+                d.text((X0, y), text, font=body_f if kind == "body" else small_f, fill=INK if kind == "body" else GRAY)
+            y += lh
+        y += gap
     im.save(out)
     return out
 
@@ -1427,15 +1616,6 @@ def _redraw_log(doc, state, workdir):
     png = os.path.join(workdir, "_adv_log_%d.png" % int(time.time() * 1000))
     try:
         log_png(state, png)
-        jp = (state.get("journal_pages") or [None])[0] if is_inline(state) else None
-        if jp and _page_no(doc, jp):
-            # a notebook page holds no link: the journal's page number where the book had its Journal button
-            from PIL import Image
-            with Image.open(png) as im:
-                im = im.convert("RGB")
-                s = im.width / float(BOOK_W)
-                _button(im, tuple(int(v * s) for v in JOURNAL_BTN), "Journal: p. %d" % _page_no(doc, jp), IM_K())
-                im.save(png)
         _put_full(doc, pno, pid, png, "adventure-log", state)
     finally:
         try:
@@ -1455,187 +1635,277 @@ def journal_name(state):
     return "Ink Adventure: %s - Journal" % state["title"]
 
 
-def _jr_fonts():
-    return dict(title=_font("reMarkableSans-Bold.ttf", 52), head=_font("reMarkableSans-Medium.ttf", 34),
-                reg=_font("reMarkableSans-Regular.ttf", 28), small=_font("reMarkableSans-Regular.ttf", 23),
-                label=_font("reMarkableSans-Medium.ttf", 24))
+def _people(state):
+    return sorted((state.get("cast") or {}).values(), key=lambda p: (p["met"]["turn"], p["name"]))
 
 
-def _portrait_img(state, p, side):
-    """A cast member's portrait at side x side, or their initials when none was painted."""
+def _quest_list(state):
+    return sorted(state.get("quests") or [], key=lambda q: (q["status"] != "open", q.get("turn", 0)))
+
+
+def _measure():
+    """A drawing to measure text with, in design pixels (the faces as they are laid out)."""
     from PIL import Image, ImageDraw
-    path = os.path.join(pictures_dir(state), p["portrait"]) if p.get("portrait") else None
-    if path and os.path.exists(path):
-        with Image.open(path) as im:
-            return im.convert("RGB").resize((side, side), Image.LANCZOS)
-    im = Image.new("RGB", (side, side), (236, 236, 239))
-    d = ImageDraw.Draw(im)
-    ini = "".join(w[0] for w in p["name"].split()[:2]).upper() or "?"
-    f = _font("reMarkableSans-Medium.ttf", max(20, side // 3))
-    d.text(((side - d.textlength(ini, font=f)) / 2, side / 3), ini, font=f, fill=GRAY)
-    return im
+    return ImageDraw.Draw(Image.new("RGB", (8, 8)))
 
 
-def _jr_wrap_rows(rows, F, width):
-    """[(label or None, text, font key)] -> wrapped lines [(text, font key, color, x offset)] for laying out pages."""
-    from PIL import Image, ImageDraw
-    d = ImageDraw.Draw(Image.new("RGB", (8, 8)))
+def _standing(p):
+    """Who a person is to the hero, in a few words: their role, and how they stand (their state when it is not
+    "alive", else their disposition)."""
+    how = p["status"] if p["status"] != "alive" else p["disposition"]
+    return "  ·  ".join(x for x in (p.get("role") or "", how) if x)
+
+
+def _quest_blocks(d, state):
+    """Each quest as rows [(kind, text, height, aside)]: its name with its state at the right, its goal, its last
+    updates."""
+    body_f, body_lh, _ = _style("body")
+    small_f, small_lh, _ = _style("small")
     out = []
-    for label, text, fk in rows:
-        if label:
-            out.append((label, "label", GRAY, 0))
-        for line in _wrap(d, text, F[fk], width) or [""]:
-            out.append((line, fk, INK if fk != "small" else GRAY, 0))
-        out.append(("", "gap", INK, 0))
+    for q in _quest_list(state):
+        rows = [("name", q["name"], _style("name")[1], q["status"])]
+        rows += [("body", l, body_lh, None) for l in _wrap(d, q.get("goal") or "", body_f, CW)]
+        for u in (q.get("updates") or [])[-4:]:
+            rows += [("small", l, small_lh, None) for l in _wrap(d, u[:1].upper() + u[1:], small_f, CW)]
+        out.append(rows)
     return out
 
 
-LINE_H = {"title": 64, "head": 46, "reg": 38, "small": 32, "label": 32, "gap": 14}
+def _lore_blocks(d, state):
+    """The things learned as rows, a block a turn: the turn as a label, then each thing learned on it."""
+    body_f, body_lh, _ = _style("body")
+    out, turn = [], object()
+    for x in state.get("lore") or []:
+        if x.get("turn") != turn or not out:
+            turn = x.get("turn")
+            out.append([("label", "Turn %d" % turn, _style("label")[1], None)] if turn else [])
+        else:
+            out[-1].append(("gap", "", 8, None))
+        out[-1] += [("body", l, body_lh, None) for l in _wrap(d, x["text"], body_f, CW)]
+    return out
 
 
-def _paginate(lines, top, bottom):
-    pages, cur, y = [], [], top
-    for ln in lines:
-        h = LINE_H[ln[1]]
-        if y + h > bottom and cur:
+ENTRY_GAP = 30                                   # between two entries: a quest, a thing learned, a turn of the log
+
+
+def _entry_pages(blocks):
+    """Blocks of rows onto pages, each block whole on one page -> [[block]]."""
+    pages, cur, y = [], [], BODY_Y
+    for b in blocks:
+        need = sum(r[2] for r in b)
+        if cur and y + need > FOOT_Y:
             pages.append(cur)
-            cur, y = [], top
-        cur.append(ln)
+            cur, y = [], BODY_Y
+        cur.append(b)
+        y += need + ENTRY_GAP
+    return pages + ([cur] if cur else [])
+
+
+def _draw_rows(d, rows, y):
+    """Rows [(kind, text, height, aside)] down the column from y -> the y under them. A name's `aside` (a quest's
+    state) is a label at the right, on the name's own line."""
+    name_f = _style("name")[0]
+    for kind, text, h, aside in rows:
+        if kind == "gap":
+            pass
+        elif kind == "label":
+            _caps(d, (X0, y), text, width=CW)
+        elif kind == "name":
+            room = CW - (_caps_w(d, aside.upper(), _style("label")[0]) + 24 if aside else 0)
+            d.text((X0, y), _ellipsis(d, text, name_f, room), font=name_f, fill=INK)
+            if aside:
+                _caps(d, (X1, y + 12), aside, align="right")
+        else:
+            f, _lh, col = _style(kind)
+            d.text((X0, y), text, font=f, fill=col)
         y += h
-    return pages + [cur] if cur or not pages else pages
+    return y
 
 
-def _journal_pages(state):
-    """-> (the pages as images, {page index: [(box, target page index)]})."""
-    from paperdaemon.pipeline.page import pdf as PD
-    from PIL import Image, ImageDraw
-    W, H = PD.PAGE_W, PD.PAGE_H
-    F = _jr_fonts()
-    M = 70
-    # EVERY PAGE STARTS BELOW THE TABLET'S TOOLBAR: the layout below was drawn from y 58; it moves down
-    # by DY to the top of this page's safe area
-    try:
-        from paperdaemon.pipeline import page as P_
-        DY = max(0, int(round(P_.safe_area((W, H))[1])) - 58)
-    except Exception:
-        DY = 81
-    hcm = state["hero"].get("height_cm")
-    people = sorted((state.get("cast") or {}).values(), key=lambda p: (p["met"]["turn"], p["name"]))
-    quests = sorted(state.get("quests") or [], key=lambda q: (q["status"] != "open", q.get("turn", 0)))
-    lore = state.get("lore") or []
-    PER = 9
-    n_grid = max(1, -(-len(people) // PER))
-    q_rows = []
-    for q in quests:
-        q_rows.append((None, "%s  ·  %s" % (q["name"], q["status"]), "head"))
-        if q.get("goal"):
-            q_rows.append((None, q["goal"], "reg"))
-        for u in q.get("updates", [])[-4:]:
-            q_rows.append((None, u, "small"))
-    q_pages = _paginate(_jr_wrap_rows(q_rows or [(None, "No quests yet.", "reg")], F, W - 2 * M), 180 + DY, H - 80)
-    l_pages = _paginate(_jr_wrap_rows([(None, ("Turn %d: " % x["turn"] if x.get("turn") else "") + x["text"], "reg")
-                                       for x in lore] or [(None, "Nothing learned yet.", "reg")], F, W - 2 * M), 180 + DY, H - 80)
-    i_grid, i_person = 1, 1 + n_grid
-    i_quests = i_person + len(people)
-    i_lore = i_quests + len(q_pages)
-    pages, links = [], {}
+# PEOPLE ON A CHARACTERS PAGE: two rows of three. A portrait in ink is about 9,700 strokes at a third of the column
+# (its size sets that; the decomposer's region budget barely changes it), so six keep the page near one scene's
+# (about 42,000) -- nine made it twice that.
+JOURNAL_PER = 6
 
+
+def _journal_plan(state):
+    """THE JOURNAL'S PAGES, in order, before any is drawn (an inline game makes its pages first, so it needs their
+    count): ("contents",); ("characters", first, end) for each JOURNAL_PER people; ("person", k) for each; ("quests",
+    blocks) and ("lore", blocks) for each page of them. A section with nothing in it has no page: the contents says
+    so."""
+    d = _measure()
+    people = _people(state)
+    plan = [("contents",)]
+    plan += [("characters", g, min(len(people), g + JOURNAL_PER)) for g in range(0, len(people), JOURNAL_PER)]
+    plan += [("person", k) for k in range(len(people))]
+    plan += [("quests", chunk) for chunk in _entry_pages(_quest_blocks(d, state))]
+    plan += [("lore", chunk) for chunk in _entry_pages(_lore_blocks(d, state))]
+    return plan
+
+
+def _journal_pages(state, plan=None, number=None, link=None):
+    """The journal's pages as pictures, in the one design -> (pages, links, portraits).
+
+    `number(key)`: the page number shown for `key` -- "scene", "sheet" or "log" (the game's own pages) or a journal
+    page's index -- or None: no number (the page is not in this document, or not there at all). `link(key)`: the page
+    index a PDF's link goes to, or None (a notebook page holds no link). links: {page index: [(box, target)]};
+    portraits: {page index: [(the portrait's picture, its box)]}, laid on the page as ink (_ink_pictures). Boxes in
+    design pixels."""
     from paperdaemon.pipeline.draw import scaled as SD
-    K = IM_K()
+    plan = plan or _journal_plan(state)
+    number = number or (lambda key: None)
+    link = link or (lambda key: None)
+    h = state["hero"]
+    hcm = h.get("height_cm")
+    people = _people(state)
+    first = {}
+    for i, e in enumerate(plan):
+        first.setdefault(e[0], i)
+    person_at = {e[1]: i for i, e in enumerate(plan) if e[0] == "person"}
+    grid_at = {k: i for i, e in enumerate(plan) if e[0] == "characters" for k in range(e[1], e[2])}
+    name_f, name_lh, _ = _style("name")
+    body_f, body_lh, _ = _style("body")
+    small_f, small_lh, _ = _style("small")
+    label_lh = _style("label")[1]
+    pages, links, pics = [], {}, {}
 
-    def page(title, back=True):                           # (laid out in the book's pixels, drawn K a pixel)
-        im, d = SD.canvas(W, H, k=K)
-        d.text((M, 58 + DY), title, font=F["title"], fill=INK)
-        d.line((M, 138 + DY, W - M, 138 + DY), fill=RULE, width=3)
-        idx = len(pages)
-        links[idx] = []
-        if back:
-            box = (W - 300, 60 + DY, W - M, 122 + DY)
-            d.rounded_rectangle(box, 14, outline=INK, width=3)
-            d.text((box[0] + 30, box[1] + 12), "Contents", font=F["head"], fill=INK)
-            links[idx].append((box, 0))
-        return im, d, idx
+    def numbered(d, key, x, y, room):
+        """The page number for `key` at the right end of a line (x + room), gray, in the name face -> its width."""
+        n = number(key) if key is not None else None
+        if not n:
+            return 0
+        w = d.textlength(str(n), font=name_f)
+        d.text((x + room - w, y), str(n), font=name_f, fill=GRAY)
+        return w
 
-    def draw_lines(d, lines, y):
-        for text, fk, col, dx in lines:
-            if fk != "gap":
-                d.text((M + dx, y), text, font=F[fk], fill=col)
-            y += LINE_H[fk]
-        return y
+    def go(i, box, key):
+        t = link(key) if key is not None else None
+        if t is not None:
+            links.setdefault(i, []).append((box, t))
 
-    # 0 -- contents
-    im, d, idx = page(state["title"], back=False)
-    d.text((M, 170 + DY), "%s's journal: %s." % (state["hero"]["name"], "each heading's page is beside it" if is_inline(state)
-                                                  else "tap a heading"), font=F["reg"], fill=GRAY)
-    y = 250 + DY
-    for name, sub, target in (("Characters", "%d met" % len(people), i_grid),
-                              ("Quests", "%d open, %d in all" % (sum(q["status"] == "open" for q in quests), len(quests)), i_quests),
-                              ("Lore", "%d thing%s learned" % (len(lore), "" if len(lore) == 1 else "s"), i_lore)):
-        box = (M, y, W - M, y + 210)
-        d.rounded_rectangle(box, 26, outline=INK, width=4)
-        d.text((M + 44, y + 42), name, font=F["title"], fill=INK)
-        d.text((M + 44, y + 124), sub, font=F["reg"], fill=GRAY)
-        links[idx].append((box, target))
-        y += 260
-    pages.append(im)
-    # the characters, nine to a page, each portrait a link to that person's page
-    tile = (W - 2 * M) // 3
-    side = tile - 40
-    for g in range(n_grid):
-        im, d, idx = page("Characters" + ("  (%d of %d)" % (g + 1, n_grid) if n_grid > 1 else ""))
-        chunk = people[g * PER:(g + 1) * PER]
-        if not chunk:
-            d.text((M, 180 + DY), "Nobody yet.", font=F["reg"], fill=GRAY)
-        for k, p in enumerate(chunk):
-            r, c = divmod(k, 3)
-            x0, y0 = M + c * tile + 20, 175 + DY + r * (side + 110)
-            SD.paste(im, _portrait_img(state, p, side * K), (x0, y0), (side, side), k=K)
-            d.rectangle((x0, y0, x0 + side, y0 + side), outline=RULE, width=2)
-            tw = d.textlength(p["name"], font=F["head"])
-            d.text((x0 + (side - tw) / 2, y0 + side + 10), p["name"], font=F["head"], fill=INK)
-            sub = p["status"] if p["status"] != "alive" else p["disposition"]
-            sw = d.textlength(sub, font=F["small"])
-            d.text((x0 + (side - sw) / 2, y0 + side + 56), sub, font=F["small"], fill=GRAY)
-            links[idx].append(((x0, y0, x0 + side, y0 + side + 90), i_person + g * PER + k))
+    def picture(d, i, p, box):
+        """A person's portrait in its box: as ink over the page, or their initials when none was painted."""
+        path = os.path.join(pictures_dir(state), p["portrait"]) if p.get("portrait") else None
+        if path and os.path.exists(path):
+            pics.setdefault(i, []).append((path, tuple(int(round(v)) for v in box)))
+            return
+        ini = "".join(w[0] for w in p["name"].split()[:2]).upper() or "?"
+        f = _font(STYLES["title"][0], max(24, int((box[2] - box[0]) / 3)))
+        d.text(((box[0] + box[2] - d.textlength(ini, font=f)) / 2.0, (box[1] + box[3]) / 2.0 - f.size * 0.62), ini,
+               font=f, fill=RULE)
+
+    for i, e in enumerate(plan):
+        im, d = SD.canvas(PAGE_W, PAGE_H)             # (laid out in design pixels; sent at twice the tablet's resolution)
+        kind = e[0]
+        if kind != "contents":                        # in a PDF, the title of every journal page leads to the contents
+            go(i, (X0, TITLE_Y - 10, X1, RULE_Y - 4), 0)
+        if kind == "contents":
+            # EVERY PAGE OF THE ADVENTURE, in page order, as a book's contents is: each page's name, a dotted leader,
+            # its number -- the game's own pages when they are in this document, then, after a space, the journal's
+            # sections that have a page. Its title is the adventure's own name. Nothing else: no headings over the
+            # groups, no counts under the names ("10 things learned", "1 met"), no "None yet" for a section with no page.
+            y = _header(d, state["title"])
+            groups = []
+            if number("scene") or link("scene") is not None:
+                # in page order: a notebook's game starts at the scene, the book at the sheet
+                groups.append(sorted([("Scene", "scene"), ("Character sheet", "sheet"), ("Story", "log")],
+                                     key=lambda r: number(r[1]) or 0))
+            groups.append([(t, first[k]) for t, k in (("Characters", "characters"), ("Quests", "quests"), ("Lore", "lore"))
+                           if k in first])
+            asc = name_f.getmetrics()[0]
+            for g, rows in enumerate(groups):
+                y += 36 if g else 0
+                for title, key in rows:
+                    d.text((X0, y), title, font=name_f, fill=INK)
+                    nw = numbered(d, key, X0, y, CW)
+                    if nw:
+                        _leader(d, X0 + d.textlength(title, font=name_f) + 20, X1 - nw - 20, y + asc - 3)
+                    go(i, (X0, y - 14, X1, y + name_lh + 14), key)
+                    y += name_lh + 28
+        elif kind == "characters":
+            # THE CHARACTERS, six to a page: each portrait in its frame, the name under it, the page about them at the
+            # right of the name, on its line; who they are under that
+            _k, g0, g1 = e
+            y0 = _header(d, "Characters")
+            G = 36
+            side = int((CW - 2 * G) / 3)
+            for k in range(g0, g1):
+                p = people[k]
+                r, c = divmod(k - g0, 3)
+                x, y = X0 + c * (side + G), y0 + r * (side + 146)
+                box = (x + 6, y + 6, x + side - 6, y + side - 6)
+                _frame(d, box)
+                picture(d, i, p, box)
+                ny = y + side + 16
+                nw = numbered(d, person_at.get(k), x, ny, side)
+                d.text((x, ny), _ellipsis(d, p["name"], name_f, side - (nw + 16 if nw else 0)), font=name_f, fill=INK)
+                d.text((x, ny + name_lh), _ellipsis(d, _standing(p), small_f, side), font=small_f, fill=GRAY)
+                go(i, (x, y, x + side, ny + name_lh + small_lh), person_at.get(k))
+        elif kind == "person":
+            # A PERSON: what the hero has seen and learned of them, nothing more -- the portrait, and at its right
+            # their standing and what is on record (a field not known yet is not there at all); under both, with no
+            # heading over them (the text says what it is), how they look, their personality and story once known,
+            # and what the hero has learned of them, a bullet each
+            p = people[e[1]]
+            kn = p.get("known") or {"fields": [], "facts": []}
+            f = set(kn.get("fields") or [])
+            y0 = _header(d, p["name"], p.get("role") or "")
+            ps = 470
+            box = (X0 + 6, y0 + 6, X0 + ps - 6, y0 + ps - 6)
+            _frame(d, box)
+            picture(d, i, p, box)
+            go(i, (X0, y0, X0 + ps, y0 + ps), grid_at.get(e[1]))     # (in a PDF, the portrait leads back to them all)
+            facts = [("Status", "%s, %s%s" % (p["status"], p["disposition"],
+                                               ("; " + ", ".join(p["conditions"])) if p["conditions"] else ""))]
+            for field, label, value in (
+                    ("class", "Class", lambda: p["class"] + ((", level %d" % p["level"]) if "level" in f else "")),
+                    ("alignment", "Alignment", lambda: p["alignment"]),
+                    ("record", "Record", lambda: "; ".join(p["criminal_record"]) or "none")):
+                if field in f:
+                    facts.append((label, value()))
+            facts.append(("Met", "Turn %d, %s" % (p["met"]["turn"], p["met"]["place"] or "somewhere")))
+            if (p["last_seen"]["turn"], p["last_seen"]["place"]) != (p["met"]["turn"], p["met"]["place"]):
+                facts.append(("Last seen", "Turn %d, %s" % (p["last_seen"]["turn"], p["last_seen"]["place"] or "somewhere")))
+            rx = X0 + ps + 44
+            ry = y0
+            for label, value in facts:
+                _caps(d, (rx, ry), label)
+                ry += label_lh
+                for l in _wrap(d, value[:1].upper() + value[1:], body_f, X1 - rx)[:3]:
+                    d.text((rx, ry), l, font=body_f, fill=INK)
+                    ry += body_lh
+                ry += 18
+            y = max(y0 + ps, ry) + 44
+            rows = [person_look(p, hcm).split(": ", 1)[-1]]
+            rows += [p[k] for k in ("personality", "backstory") if k in f and p.get(k)]
+            # what the hero knows of them: each thing on its own, a bullet and a hanging indent (joined into one line,
+            # "footprints.; The stasis..." read as one broken sentence)
+            known = [str(x).strip() for x in kn.get("facts") or [] if str(x).strip()]
+            if known:
+                rows.append(known)
+            for value in rows:
+                if y + body_lh > FOOT_Y:
+                    break
+                items = value if isinstance(value, list) else [value]
+                for item in items:
+                    bullet = isinstance(value, list) and len(items) > 1
+                    dx = 30 if bullet else 0
+                    for j, l in enumerate(_wrap(d, item[:1].upper() + item[1:], body_f, CW - dx)):
+                        if y + body_lh > FOOT_Y:
+                            break
+                        if bullet and not j:
+                            d.text((X0, y), "•", font=body_f, fill=INK)
+                        d.text((X0 + dx, y), l, font=body_f, fill=INK)
+                        y += body_lh
+                    y += 6 if bullet else 0
+                y += 24
+        else:
+            # QUESTS and LORE: their entries, each whole on one page
+            y = _header(d, "Quests" if kind == "quests" else "Lore")
+            for b in e[1]:
+                y = _draw_rows(d, b, y) + ENTRY_GAP
         pages.append(im)
-    # a page per person: what the hero has seen and learned, nothing more
-    for k, p in enumerate(people):
-        im, d, idx = page(p["name"])
-        ps = 560
-        SD.paste(im, _portrait_img(state, p, ps * K), ((W - ps) // 2, 165 + DY), (ps, ps), k=K)
-        d.rectangle(((W - ps) // 2, 165 + DY, (W + ps) // 2, 165 + DY + ps), outline=RULE, width=2)
-        kn = p.get("known") or {"fields": [], "facts": []}
-        f = set(kn.get("fields") or [])
-        cls = "unknown"
-        if "class" in f:
-            cls = p["class"] + ((", level %d" % p["level"]) if "level" in f else "")
-        rows = [("Who", p["role"] or "a stranger", "reg"),
-                ("Looks", person_look(p, hcm).split(": ", 1)[-1], "reg"),
-                ("Now", "%s, %s%s" % (p["status"], p["disposition"], ("; " + ", ".join(p["conditions"])) if p["conditions"] else ""), "reg"),
-                ("Class", cls, "reg"),
-                ("Alignment", p["alignment"] if "alignment" in f else "unknown", "reg")]
-        if "personality" in f:
-            rows.append(("Personality", p["personality"] or "-", "reg"))
-        if "backstory" in f:
-            rows.append(("Backstory", p["backstory"] or "-", "reg"))
-        rows.append(("Record", ("; ".join(p["criminal_record"]) or "none") if "record" in f else "unknown", "reg"))
-        rows.append(("What you know", "; ".join(kn.get("facts") or []) or "nothing yet", "reg"))
-        rows.append(("Met", "turn %d at %s; last seen turn %d at %s" % (p["met"]["turn"], p["met"]["place"] or "?",
-                                                                       p["last_seen"]["turn"], p["last_seen"]["place"] or "?"), "small"))
-        lines = _jr_wrap_rows(rows, F, W - 2 * M)
-        fit = _paginate(lines, 165 + DY + ps + 30, H - 140)[0]
-        draw_lines(d, fit, 165 + DY + ps + 30)
-        back = (M, H - 115, M + 420, H - 50)
-        d.rounded_rectangle(back, 14, outline=INK, width=3)
-        d.text((back[0] + 30, back[1] + 14), "All characters", font=F["head"], fill=INK)
-        links[idx].append((back, i_grid + k // PER))
-        pages.append(im)
-    for title, chunks in (("Quests", q_pages), ("Lore", l_pages)):
-        for t, chunk in enumerate(chunks):
-            im, d, idx = page(title + ("  (%d of %d)" % (t + 1, len(chunks)) if len(chunks) > 1 else ""))
-            draw_lines(d, chunk, 180 + DY)
-            pages.append(im)
-    return pages, links
+    return pages, links, pics
 
 
 def update_journal(state, log=None):
@@ -1649,14 +1919,19 @@ def update_journal(state, log=None):
         jr = state.get("journal") or {}
         if jr.get("sig") == sig and jr.get("doc"):
             return
-        pages, links = _journal_pages(state)
+        # the journal alone in its document: its own pages numbered and linked, the game's pages are elsewhere
+        pages, links, pics = _journal_pages(state, _journal_plan(state), number=lambda k: None if isinstance(k, str) else k + 1,
+                                            link=lambda k: None if isinstance(k, str) else k)
         out_dir = os.path.join(paths.state_dir(), "rm-pdfdoc")
         os.makedirs(out_dir, exist_ok=True)
-        pdf = PD.write_pdf(pages, os.path.join(out_dir, "journal-%s.pdf" % state["id"]), links=links)
+        pdf = PD.write_pdf([_bk(im) for im in pages], os.path.join(out_dir, "journal-%s.pdf" % state["id"]),
+                           links=_bk_links(links))
         meta = json.load(open(os.path.join(PD.MIRROR, state["doc"] + ".metadata"), encoding="utf-8"))
         # staged in the mirror only: it reaches the tablet with the job's own push (sync.push_pending)
         doc, page_ids = PD.stage(journal_name(state), pdf, folder=meta.get("parent") or "", doc=jr.get("doc"),
                                  page_ids=jr.get("page_ids"))
+        for i, items in pics.items():                 # (a restage starts from blank pages: the portraits go on as ink)
+            _ink_pictures(doc, i + 1, items, BK, (BOOK_W, BOOK_H))
         state["journal"] = {"doc": doc, "page_ids": {str(k): v for k, v in page_ids.items()}, "sig": sig, "pages": len(pages)}
         _log(log, "  adventure: the journal is %d pages" % len(pages))
     except Exception as ex:
@@ -1667,13 +1942,14 @@ def update_journal(state, log=None):
 # The journal belongs in the same document as the adventure, and is maintained there too. A link lives only in a
 # PDF, and a notebook cannot hold PDF pages -- so a game is ONE PDF-backed document: page 1 the sheet, 2 the scene
 # (its frame and text the PDF page, the scene's strokes and the player's writing the page's ink), 3 the log, 4+ the
-# journal, its pages linked to each other, the log's "Journal" button to the journal and the journal's "The story"
-# button back to the scene. Every turn rebuilds the PDF IN PLACE (page ids kept); only page 2's ink is cleared and
-# drawn again. A PDF page is 1404 x 1872 page units, the notebook's 1620 x 2160 at 0.8667 (both 3:4, x centered), so
-# every picture and stroke is the notebook's, scaled.
+# journal. Its links are the lines a book would have anyway: every line of the contents (the game's own pages
+# among them) goes to its page, each person on the characters page to theirs, a person's portrait back to them all,
+# and every journal page's title back to the contents. Every turn rebuilds the PDF IN PLACE (page ids kept); page
+# 2's ink is cleared and drawn again, and so is each journal page whose picture changed (its portraits are ink). A
+# PDF page is 1404 x 1872 page units, the notebook's 1620 x 2160 at 0.8667 (both 3:4, x centered), so every picture
+# and stroke is the notebook's, scaled.
 BOOK_W, BOOK_H = 1404, 1872
 BK = BOOK_W / float(PAGE_W)
-JOURNAL_BTN = (BOOK_W - 300, 22, BOOK_W - 50, 82)      # the log page's way into the journal, above its title rule
 
 
 def is_book(state):
@@ -1685,24 +1961,25 @@ def IM_K():
     return PICTURE_K
 
 
-def _bk(png):                                           # (a book page: the book's pixels, PICTURE_K a pixel)
+def _bk(src):                                           # (a book page: the book's pixels, PICTURE_K a pixel)
+    """A page's picture (a file, or a picture) at the book's size."""
     from PIL import Image
-    with Image.open(png) as im:
+    im = Image.open(src) if isinstance(src, str) else src
+    try:
         return im.convert("RGB").resize((BOOK_W * IM_K(), BOOK_H * IM_K()), Image.LANCZOS)
+    finally:
+        if isinstance(src, str):
+            im.close()
 
 
-def _button(im, box, text, k=None):
-    """A button at `box` (the picture's pixels), its face and lines k times the book's (PICTURE_K)."""
-    from PIL import ImageDraw
-    k = IM_K() if k is None else k
-    d = ImageDraw.Draw(im)
-    d.rounded_rectangle(box, 14 * k, fill="white", outline=INK, width=3 * k)
-    f = _font("reMarkableSans-Medium.ttf", 32 * k)
-    d.text((box[0] + (box[2] - box[0] - d.textlength(text, font=f)) / 2, box[1] + 12 * k), text, font=f, fill=INK)
+def _bk_links(links):
+    """Links laid out in design pixels -> in the book's."""
+    return {i: [(tuple(v * BK for v in box), t) for box, t in ls] for i, ls in links.items()}
 
 
 def _book_pages(state, scene, roll_line, workdir, n=None):
-    """Every page of the book as pictures, and its links: 1 sheet, 2 scene, 3 log, 4+ the journal."""
+    """Every page of the book as pictures, its links and the journal's portraits: 1 sheet, 2 scene, 3 log, 4+ the
+    journal."""
     out = []
     for name, draw in (("sheet", lambda p: sheet_png(state, p)), ("turn", lambda p: turn_png(state, scene, p, roll_line, n)),
                        ("log", lambda p: log_png(state, p))):
@@ -1715,15 +1992,12 @@ def _book_pages(state, scene, roll_line, workdir, n=None):
                 os.remove(png)
             except OSError:
                 pass
-    jr, jr_links = _journal_pages(state)
-    links = {i + 3: [(box, t + 3) for box, t in ls] for i, ls in jr_links.items()}
-    journal_btn = JOURNAL_BTN
-    _button(out[2], tuple(v * IM_K() for v in journal_btn), "Journal")   # (the links: the book's pixels)
-    links[2] = [(journal_btn, 3)]
-    story_btn = (BOOK_W - 330, 60, BOOK_W - 70, 122)
-    _button(jr[0], tuple(v * IM_K() for v in story_btn), "The story")
-    links.setdefault(3, []).append((story_btn, 1))
-    return out + jr, links
+    own = {"sheet": 0, "scene": 1, "log": 2}                 # (page indexes: the book's page numbers less one)
+    jr, jr_links, pics = _journal_pages(state, _journal_plan(state),
+                                        number=lambda k: own[k] + 1 if isinstance(k, str) else k + 4,
+                                        link=lambda k: own[k] if isinstance(k, str) else k + 3)
+    links = {i + 3: ls for i, ls in _bk_links(jr_links).items()}
+    return out + [_bk(im) for im in jr], links, {i + 3: v for i, v in pics.items()}
 
 
 def _write_book(doc, state, pages, links, name=None, parent=None, reset=()):
@@ -1795,14 +2069,25 @@ def _draw_scene_book(doc, scene_png):
 
 
 def _render_book(doc, state, scene, roll_line, scene_png, workdir, log=None, name=None, parent=None, n=None):
-    """The whole book again: every page's picture rebuilt in place, page 2's ink cleared and the scene drawn."""
-    pages, links = _book_pages(state, scene, roll_line, workdir, n)
+    """The whole book again: every page's picture rebuilt in place, page 2's ink cleared and the scene drawn, and
+    each journal page whose picture changed cleared and its portraits drawn as ink."""
+    import hashlib
+    pages, links, pics = _book_pages(state, scene, roll_line, workdir, n)
+    was, drawn = list(state.get("book_pages") or []), dict(state.get("book_drawn") or {})
+    sigs = {i: hashlib.sha1(pages[i].tobytes() + json.dumps(pics.get(i) or []).encode()).hexdigest()
+            for i in range(3, len(pages))}
+    redo = [i for i in sigs if i >= len(was) or drawn.get(was[i]) != sigs[i]]
     _write_book(doc, state, pages, links, name=name, parent=parent,
-                reset=[state["page_id"]] if state.get("book_pages") else ())
+                reset=([state["page_id"]] if was else []) + [was[i] for i in redo if i < len(was)])
     if scene_png:
         k, secs = _draw_scene_book(doc, scene_png)
         _log(log, "  adventure: the scene is %d strokes (%.0fs)" % (k, secs))
-    _log(log, "  adventure: the book is %d pages (journal %d)" % (len(pages), len(pages) - 3))
+    for i in redo:
+        if pics.get(i):
+            _ink_pictures(doc, i + 1, pics[i], BK, (BOOK_W, BOOK_H))
+    ids = state["book_pages"]
+    state["book_drawn"] = {ids[i]: sigs[i] for i in sigs}
+    _log(log, "  adventure: the book is %d pages (journal %d, %d drawn again)" % (len(pages), len(pages) - 3, len(redo)))
 
 
 def _fixed(doc, state, log=None):
@@ -1853,57 +2138,42 @@ def _redraw_sheet(doc, state, workdir):
 # Where a game is asked for, it is played: the scene on the page that asked (start(here=True)), its other pages RIGHT
 # AFTER it, in the same notebook (or PDF), and the pages behind move down. Each new page gets an ordering key between its neighbors'
 # (library.insert_pages), so no other page changes -- a PDF's own pages keep their place in its file, and its links
-# still land where they did. Page 1 the sheet, 2 the scene, 3 the log, 4+ the journal, each a page picture (the
-# scene's strokes over its frame), drawn again in place turn after turn. A notebook page cannot hold a link, so the
-# journal's links become page numbers ("p. 12") beside what was tappable in the book.
+# still land where they did. The scene, the sheet, the log, then the journal, each a page picture (the scene's and the
+# portraits' strokes over their frames), drawn again in place turn after turn. A notebook page cannot hold a link, so
+# nothing on these pages is drawn as one: the contents gives each page's number, as a printed book's does, and the
+# characters page gives each person's at the right of their name.
 def is_inline(state):
     return state.get("format") == "inline"
 
 
-def _label(im, box, text):
-    """A page number beside a box that was a link in the book: inside a big box at its bottom right; to the right
-    of a small one (a button), or under it when the page has no room there. `box`: the book's pixels."""
-    from paperdaemon.pipeline.draw import scaled as SD
-    d = SD.Draw(im, im.width / float(BOOK_W))
-    f = _font("reMarkableSans-Medium.ttf", 26)
-    w = d.textlength(text, font=f)
-    if box[3] - box[1] >= 120:
-        x0, y0 = box[2] - w - 22, box[3] - 42
-    elif box[2] + w + 34 <= d.width - 20:
-        x0, y0 = box[2] + 12, (box[1] + box[3]) / 2.0 - 18
-    else:
-        x0, y0 = box[2] - w - 16, box[3] + 8
-    d.rounded_rectangle((x0, y0, x0 + w + 16, y0 + 36), 8, fill="white", outline=INK, width=2)
-    d.text((x0 + 8, y0 + 3), text, font=f, fill=INK)
-
-
 def _inline_journal(doc, state, workdir, log=None, force=False):
     """The journal's pages, after the log page: as many as it needs (pages added after the last of them, or taken
-    back), each drawn again when what the journal shows changed."""
+    back), each drawn again only when its picture changed -- what it says, or a page number it gives (pages put in
+    before the game's move them) -- its portraits as ink. `force`: every page drawn again."""
     import hashlib
     from paperdaemon.remarkable import library as PG
     try:
-        sig = hashlib.sha1(json.dumps([state.get("title"), state.get("cast"), state.get("quests"), state.get("lore")],
-                                      sort_keys=True, default=str).encode()).hexdigest()
-        if not force and state.get("journal_sig") == sig:
-            return
-        pages, links = _journal_pages(state)
+        plan = _journal_plan(state)
         ids = [p for p in (state.get("journal_pages") or []) if _page_no(doc, p)]
-        if len(ids) < len(pages):
+        if len(ids) < len(plan):
             after = ids[-1] if ids else state["log_page"]
-            ids += [pid for pid, _ in PG.insert_pages(doc, after, len(pages) - len(ids))]
-        elif len(ids) > len(pages):
-            PG.delete_pages(doc, ids[len(pages):])
-            ids = ids[:len(pages)]
+            ids += [pid for pid, _ in PG.insert_pages(doc, after, len(plan) - len(ids))]
+        elif len(ids) > len(plan):
+            PG.delete_pages(doc, ids[len(plan):])
+            ids = ids[:len(plan)]
         state["journal_pages"] = ids
         state["pages"] = [state["sheet"]["page_id"], state["page_id"], state["log_page"]] + ids
         CH.save_state(state)
+        own = {"scene": _page_no(doc, state["page_id"]), "sheet": _page_no(doc, state["sheet"]["page_id"]),
+               "log": _page_no(doc, state["log_page"])}
         nums = [_page_no(doc, p) for p in ids]
+        pages, _links, pics = _journal_pages(state, plan, number=lambda k: own.get(k) if isinstance(k, str) else nums[k])
+        drawn = {} if force else dict(state.get("journal_drawn") or {})
+        again = 0
         for i, (im, pid) in enumerate(zip(pages, ids)):
-            im = im.convert("RGB")
-            for box, target in links.get(i) or []:
-                if 0 <= target < len(nums) and nums[target]:
-                    _label(im, box, "p. %d" % nums[target])
+            sig = hashlib.sha1(im.tobytes() + json.dumps(pics.get(i) or []).encode()).hexdigest()
+            if drawn.get(pid) == sig:
+                continue
             pno = _clear_page(doc, pid)
             png = os.path.join(workdir, "_adv_journal_%d_%d.png" % (i, int(time.time() * 1000)))
             try:
@@ -1914,8 +2184,14 @@ def _inline_journal(doc, state, workdir, log=None, force=False):
                     os.remove(png)
                 except OSError:
                     pass
-        state["journal_sig"] = sig
-        _log(log, "  adventure: the journal is %d pages, from page %d" % (len(ids), nums[0] if nums else 0))
+            if pics.get(i):
+                frame = TB.frame_of(doc, pno)
+                _ink_pictures(doc, pno, pics[i], TB.picture_page(frame)[1], frame)
+            drawn[pid] = sig
+            again += 1
+        state["journal_drawn"] = {pid: drawn[pid] for pid in ids if pid in drawn}
+        _log(log, "  adventure: the journal is %d pages, from page %d (%d drawn again)" % (
+            len(ids), nums[0] if nums else 0, again))
     except Exception as ex:
         _log(log, "  adventure: the journal was not updated: %s: %s" % (type(ex).__name__, str(ex)[:160]))
 

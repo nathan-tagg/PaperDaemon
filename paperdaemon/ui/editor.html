@@ -71,6 +71,7 @@ canvas { display: block; }
 .pd-links { position: absolute; inset: 0; pointer-events: none; z-index: 2; overflow: hidden; }
 .pd-link { position: absolute; pointer-events: auto; padding: 0; border: 0; background: transparent; cursor: pointer; border-radius: 2px; }
 .pd-link:hover, .pd-link:focus-visible { background: rgba(255, 213, 0, 0.18); outline: 1px solid rgba(160, 120, 0, 0.45); }
+.pd-link:active { background: rgba(255, 213, 0, 0.32); }
 .vscroll i { position: absolute; right: 3px; width: 5px; border-radius: 3px; background: rgba(0, 0, 0, 0.30);
              box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55); transition: width 0.12s ease, right 0.12s ease, background 0.12s ease; }
 .vscroll:hover i, .vscroll.drag i { right: 2px; width: 8px; border-radius: 4px; background: rgba(0, 0, 0, 0.46); }
@@ -4204,7 +4205,7 @@ span.lname { cursor: default; }
     }
     drawPendingErase();
     ctx.save(); ctx.scale(dpr, dpr);
-    drawScreenEdges(); drawSelection(); drawDocSel(); drawCaret(); drawEraser(); drawShaping(); drawPick(); drawDecomposing();
+    drawScreenEdges(); drawSelection(); drawDocSel(); drawLinkLit(); drawCaret(); drawEraser(); drawShaping(); drawPick(); drawDecomposing();
     ctx.restore();
     placeLinks();
   }
@@ -4338,6 +4339,26 @@ span.lname { cursor: default; }
       if (b > a) out.push(docText.text.slice(a, b));
     }
     return out.map((t, i) => i < out.length - 1 ? t.replace(/\s+$/, "") : t).join("\n");
+  }
+  // THE LINK A CLICK WOULD FOLLOW, LIT as the view's links light under the pointer (.pd-link:hover): its box tinted and
+  // outlined while the hand is shown -- the text tool over it, or Ctrl held with any other -- and a little more while it is
+  // pressed. A page opened to edit has no layer of links over it (a press there draws), so it is drawn here, over the page
+  let linkLit = { link: null, pressed: false };
+  function linkLitNow() {
+    const pressed = !!(linkPress && !linkPress.moved) || !!(docDrag && docDrag.link && !docDrag.moved);
+    const link = linkOver && vp.classList.contains("linkhand") ? linkOver : pressed ? (linkPress ? linkPress.link : docDrag.link) : null;
+    return { link, pressed: !!link && pressed };
+  }
+  function drawLinkLit() {
+    const l = linkLit.link;
+    if (!l || !links || VIEW) return;                        // (the view's own buttons light themselves)
+    const W = page.paperSize[0], H = links.aspect ? W * links.aspect : page.paperSize[1];
+    const [x0, y0, x1, y1] = l.box;
+    const [a, c] = toScreen(-W / 2 + x0 * W, y0 * H), [d, f] = toScreen(-W / 2 + x1 * W, y1 * H);
+    ctx.fillStyle = linkLit.pressed ? "rgba(255, 213, 0, 0.32)" : "rgba(255, 213, 0, 0.18)";
+    ctx.fillRect(a, c, d - a, f - c);
+    ctx.strokeStyle = "rgba(160, 120, 0, 0.45)"; ctx.lineWidth = 1;
+    ctx.strokeRect(a + 0.5, c + 0.5, Math.max(0, d - a - 1), Math.max(0, f - c - 1));
   }
   function drawDocSel() {
     if (!docSel || !docText || tool !== "text") return;
@@ -6222,6 +6243,8 @@ span.lname { cursor: default; }
     const textLink = tool === "text" && !!page.source && !held.ctrlKey && !held.shiftKey && !held.altKey &&
       (pointer === null || (!!docDrag && !!docDrag.link && !docDrag.moved));
     vp.classList.toggle("linkhand", !!linkOver && (textLink || (held.ctrlKey && !held.shiftKey && !held.altKey && !poly && !shapeAt && (pointer === null || !!linkPress))));
+    const lit = linkLitNow();
+    if (lit.link !== linkLit.link || lit.pressed !== linkLit.pressed) { linkLit = lit; paint(); }   // (the link a click follows, lit: drawLinkLit)
   }
   function heldKeys(e) {                                      // the keys as this event has them -> did the eraser change?
     const was = keyErase(held);
@@ -6280,7 +6303,7 @@ span.lname { cursor: default; }
     if (lk) {
       e.preventDefault();
       linkPress = { link: lk, at: local(e), moved: false };
-      pointer = e.pointerId; vp.setPointerCapture(e.pointerId); return;
+      pointer = e.pointerId; vp.setPointerCapture(e.pointerId); updateCursor(); return;   // (lit pressed at once)
     }
     const byKeys = tool === "eraser" ? null : keyErase(e);      // the eraser in hand is its own: the keys change nothing
     if (byKeys) {
@@ -6313,6 +6336,7 @@ span.lname { cursor: default; }
       const D = docDrag = { pt: [x, y], at: local(e), anchor: -1, moved: false, last: null,
                             link: e.button === 0 && !e.ctrlKey && !e.shiftKey && !e.altKey ? linkAt(x, y) : null };
       pointer = e.pointerId; vp.setPointerCapture(e.pointerId);
+      if (D.link) updateCursor();                              // (the link lit pressed at once)
       docLoad().then(() => { if (docDrag === D) docAnchor(); });
       return;
     }
@@ -6470,7 +6494,8 @@ span.lname { cursor: default; }
     }
     if (docDrag) {                                            // the selection stays, drawn, to be copied; a click on a link
       const D = docDrag; docDrag = null;                      // (let go without a drag) follows it instead
-      if (D.link && !D.moved && e.type === "pointerup") { docSel = null; paint(); followLink(D.link); updateCursor(); }
+      if (D.link && !D.moved && e.type === "pointerup") { docSel = null; paint(); followLink(D.link); }
+      if (D.link) updateCursor();                              // (the press's light goes with it, a cancel's too)
       return;
     }
     if (pending) { const p = pending; pending = null; if (p.mode === "area" && e.type === "pointerup") extendTo(...p.pt); return; }

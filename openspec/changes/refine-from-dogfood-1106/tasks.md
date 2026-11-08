@@ -94,3 +94,11 @@
 - [x] 10.14 Ambrose Tull, who plays every move for a level game (the engine's move nearest even, 32 looked over) and
       takes any draw at once, never saying so (games.chess aims_for / draw_offers; chess.level_move, aims, takes_draws)
 - [ ] 10.15 A real game against him: his moves keep the evaluation near even, and a draw offer is taken at once
+- [x] 10.16 One design for every adventure page (the user, 11-07: "no design language, no consistency"): the column,
+      the header, the type scale; no buttons, no page badges; page numbers in the contents and beside a person's
+      name; no page for an empty section; portraits as strokes (each kept beside its picture, read back in one pass);
+      six to a characters page; a journal page drawn again only when its picture changed; "Status" for "Now"; the
+      loose ideas break between ideas; no kicker over a title and no heading over text that says what it is (the
+      user, 11-08: "WHO THEY ARE" is "so cringe"; over-labeling is "the biggest obvious giveaway that something is AI")
+- [x] 10.17 Portraits asked for on plain white ("light" came back cream, sage or gray)
+- [ ] 10.18 On the tablet with him: a new adventure's pages, and an older one's after its next turn

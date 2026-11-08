@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.35
+
+- An Ink Adventure's pages share one design. Every page keeps to one column, the width of the scene's picture and of the tablet's own typed text; each has its title and a thin rule under it at the same height; one set of type sizes runs through them all. Nothing is drawn as a button any more (a notebook page can't be tapped), no "p. 5" badges hang off boxes, and nothing carries a label for what it already says.
+- The journal opens with a contents under the adventure's own name: every page of the game by name, the scene, the sheet and the story among them, each with its page number after a dotted line. On the characters page each person's page number is at the right of their name. In a game played as its own PDF those same lines are its links.
+- Portraits are drawn in ink, decomposed like the scene, on the characters page and on each person's own page. A characters page holds six people, which keeps it about as heavy as a scene. New portraits are asked for on plain white.
+- Quests and Lore get a page, and a line in the contents, once there is something on them. No page counts what is on it. What the hero knows of a person is a list, a line each, and a person's page shows only what is known.
+- In the page editor, the PDF link under the pointer is lit light yellow again, and darker while it is pressed, both in the view and while editing.
+
 ## 0.2.34
 
 - The page editor gives back the graphics memory its work took. Erasing grew the editor's stores on the card and they never shrank while the page stayed open. Now, about a second and a half after you stop, they are laid out again at the size the page needs: on a page of 30,000 strokes, from 76 MB after three heavy swipes to 25 MB; on one of 150,000, from 325 MB to 112 MB. It is done in idle moments, never long enough to be felt, and it stops the moment you touch the page. The page looks exactly as it did, undo works across it, and opening a page is no slower.

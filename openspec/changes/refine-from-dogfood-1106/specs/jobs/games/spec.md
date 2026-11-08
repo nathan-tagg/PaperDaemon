@@ -153,3 +153,26 @@ says nothing, so that every message gets at least one reply.
 #### Scenario: A greeting to two
 - **WHEN** the player texts "Hi both!" to a group of two and neither would speak on their own
 - **THEN** one of them answers
+
+### Requirement: An adventure's pages share one design
+Every page of an ink adventure (the scene, the character sheet, the story, and the journal: its contents, the
+characters, each person, the quests and the lore) SHALL be drawn in one design: one column, the scene picture's width,
+for every title, line, cell and picture; one header at the same height on every page (the page's title and a hairline
+under it) with nothing over the title; one type scale. No heading SHALL stand over text that says what it is, and no
+page SHALL count what is on it ("10 things learned", "6 turns played"), since over-labeling is what gives a made thing
+away. Nothing on a notebook page SHALL be drawn as a button, since nothing there can be tapped: cells and pictures
+have hairline frames, and no page carries a page-number badge. The adventure's own name SHALL title its contents
+page, which SHALL list each page's name and number, nothing more. A page number SHALL stand only where a printed book
+puts one: in the contents, after a dotted leader, and at the right of a person's name on the characters page; in a
+PDF those same lines SHALL be its links. A journal section with nothing in it SHALL have no page and no line in the
+contents. Every portrait SHALL be decomposed into strokes inside its frame, as the scene is, and asked for on plain
+white. A characters page SHALL hold six people.
+
+#### Scenario: A new adventure in a notebook
+- **WHEN** an adventure starts in the user's notebook with one person met and no quests or lore yet
+- **THEN** its pages are the scene, the sheet, the story, the contents, the characters and that person's page; the
+  contents lists those pages with their numbers and nothing for quests or lore; nothing looks like a button
+
+#### Scenario: A person's portrait
+- **WHEN** a person met has a portrait
+- **THEN** it is on the characters page and on their own page as strokes inside a hairline frame, not a pasted picture
