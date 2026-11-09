@@ -33,7 +33,7 @@ use std::sync::Mutex;
 
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{AppHandle, Manager, RunEvent, Wry, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Manager, PhysicalPosition, PhysicalSize, RunEvent, WindowEvent, Wry, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 use tauri_plugin_updater::UpdaterExt;
 
@@ -63,6 +63,75 @@ struct Win {
     made: u32,
     alt: bool,
     moving: Option<String>,
+}
+
+/// WHERE THE WINDOW STOOD: its position and size (physical pixels) and whether it was maximized, kept in
+/// placement.json beside the shell's own data whenever the user moves or sizes it, and opened there next time -- an
+/// update's restart included. A place on no screen any more (a monitor unplugged) is ignored.
+#[derive(Clone, Copy, PartialEq)]
+struct Place {
+    x: i32,
+    y: i32,
+    w: u32,
+    h: u32,
+    max: bool,
+}
+
+fn place_file(app: &AppHandle) -> Option<PathBuf> {
+    app.path().app_local_data_dir().ok().map(|d| d.join("placement.json"))
+}
+
+fn read_place(app: &AppHandle) -> Option<Place> {
+    let text = std::fs::read_to_string(place_file(app)?).ok()?;
+    let v: serde_json::Value = serde_json::from_str(&text).ok()?;
+    Some(Place {
+        x: v.get("x")?.as_i64()? as i32,
+        y: v.get("y")?.as_i64()? as i32,
+        w: v.get("w")?.as_u64()? as u32,
+        h: v.get("h")?.as_u64()? as u32,
+        max: v.get("max").and_then(|m| m.as_bool()).unwrap_or(false),
+    })
+}
+
+/// The window's place as it is now -> written when it changed. Maximized, the place kept is the one it would come
+/// back to, with the flag; minimized, nothing is written (the window is off at -32000).
+fn keep_place(app: &AppHandle, w: &tauri::WebviewWindow) {
+    if w.is_minimized().unwrap_or(false) {
+        return;
+    }
+    let was = read_place(app);
+    let max = w.is_maximized().unwrap_or(false);
+    let now = if max {
+        match was {
+            Some(p) => Place { max: true, ..p },
+            None => return,
+        }
+    } else {
+        let (Ok(p), Ok(s)) = (w.outer_position(), w.inner_size()) else { return };
+        if s.width < 200 || s.height < 200 {
+            return;
+        }
+        Place { x: p.x, y: p.y, w: s.width, h: s.height, max: false }
+    };
+    if was == Some(now) {
+        return;
+    }
+    if let Some(f) = place_file(app) {
+        if let Some(dir) = f.parent() {
+            let _ = std::fs::create_dir_all(dir);
+        }
+        let text = serde_json::json!({ "x": now.x, "y": now.y, "w": now.w, "h": now.h, "max": now.max }).to_string();
+        let _ = std::fs::write(f, text);
+    }
+}
+
+/// Whether a remembered place still lies on a screen: the middle of its title bar inside some monitor.
+fn on_screen(app: &AppHandle, p: &Place) -> bool {
+    let (cx, cy) = (p.x as i64 + p.w as i64 / 2, p.y as i64 + 20);
+    app.available_monitors().unwrap_or_default().iter().any(|m| {
+        let (mp, ms) = (m.position(), m.size());
+        cx >= mp.x as i64 && cx < mp.x as i64 + ms.width as i64 && cy >= mp.y as i64 && cy < mp.y as i64 + ms.height as i64
+    })
 }
 
 fn engine_path() -> PathBuf {
@@ -223,7 +292,9 @@ fn build_window(app: &AppHandle, label: &str, hash: &str, alt: bool, made: u32, 
             builder = builder.data_directory(dir.join("webview-alt"));
         }
     }
-    builder
+    // WHERE IT STOOD LAST TIME: made hidden, put there, then shown, so it never flashes at the default place first
+    let place = read_place(app).filter(|p| on_screen(app, p));
+    let w = builder
         .title("PaperDaemon")
         .inner_size(1160.0, 780.0)
         .min_inner_size(900.0, 620.0)
@@ -231,9 +302,28 @@ fn build_window(app: &AppHandle, label: &str, hash: &str, alt: bool, made: u32, 
         .background_color(tauri::window::Color(0x1E, 0x21, 0x20, 0xFF))
         // drops go to the page (Decompose takes files and pictures dragged from a browser), not to the shell
         .disable_drag_drop_handler()
-        .visible(visible)
+        .visible(visible && place.is_none())
         .build()
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+    if let Some(p) = place {
+        let _ = w.set_size(PhysicalSize::new(p.w, p.h));
+        let _ = w.set_position(PhysicalPosition::new(p.x, p.y));
+        if p.max {
+            let _ = w.maximize();
+        }
+        if visible {
+            let _ = w.show();
+        }
+    }
+    let (keep_app, keep_label) = (app.clone(), label.to_string());
+    w.on_window_event(move |e| {
+        if matches!(e, WindowEvent::Moved(_) | WindowEvent::Resized(_)) {
+            if let Some(win) = keep_app.get_webview_window(&keep_label) {
+                keep_place(&keep_app, &win);
+            }
+        }
+    });
+    Ok(w)
 }
 
 /// THE WINDOW ON A NEW CARD, at the next document opened: a fresh web view (the arguments `args`, the document open

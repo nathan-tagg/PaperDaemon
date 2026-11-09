@@ -269,7 +269,7 @@ POWERS = {
              "the step comes with the facts for its dates. News or world events of the week are EVENTS (short); "
              "anniversaries and 'on this day' facts are CARDS"),
     "agenda": "a day's schedule as a list -- items:[{start, end, text}], times like \"09:00\" (no end: an hour)",
-    "timeline": "dated events along a line -- events:[{date or year, text}]",
+    "timeline": "dated events along a line -- events:[{date (year-month-day, or a month and a day) or year or at (a number), text}]",
     "gantt": "tasks over time -- tasks:[{name, start, end}] (end after start)",
     "clock": "a day as a 24-hour dial -- blocks:[{start, end, label}] (hours 0-24)",
     "habit": "a habit tracker grid -- habits:[{name, done:[days done]}], days:[the columns, e.g. 6..30 for the rest "
@@ -3422,13 +3422,53 @@ def _yearmap_vl(spec, cfg, schema):
                               "text": {"field": "t", "type": "nominal"}}}],
             "config": cfg}
 
+_MONTHS = {m: i + 1 for i, m in enumerate(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"])}
+
+
+def _when(e):
+    """WHERE AN EVENT STANDS ON THE LINE, and what its tick says: `at` a number, kept as it is; else `year`; else `date`,
+    as ISO (year-month-day, or year-month) or in words (a month and a day, in either order, with or without a year),
+    a date with no year in this year -> (a number to place it by, the tick's words). A timeline asked for by dates was
+    refused twice (the date string would not become a number) and drawn empty the third time: the type's own
+    description says "date or year", so dates are read."""
+    import datetime
+    if e.get("at") is not None and str(e.get("at")).strip() != "":
+        return float(e["at"]), str(e.get("label", e["at"]))
+    if e.get("year") is not None and str(e.get("year")).strip() != "":
+        y = int(float(e["year"]))
+        return float(datetime.date(y, 1, 1).toordinal()), str(e.get("label", y))
+    s = str(e.get("date") or e.get("when") or "").strip()
+    if not s:
+        raise ValueError("an event needs at (a number), year or date")
+    today = datetime.date.today()
+    m = re.match(r"^(\d{4})-(\d{1,2})(?:-(\d{1,2}))?", s)
+    if m:
+        d = datetime.date(int(m.group(1)), int(m.group(2)), int(m.group(3) or 1))
+        short = d.strftime("%b %-d" if os.name != "nt" else "%b %d").replace(" 0", " ") if m.group(3) else d.strftime("%b %Y")
+    else:
+        words = re.findall(r"[A-Za-z]+|\d+", s)
+        mon = next((_MONTHS[w[:3].lower()] for w in words if w[:3].lower() in _MONTHS and w.isalpha()), None)
+        nums = [int(w) for w in words if w.isdigit()]
+        if mon is None:
+            raise ValueError("a date I cannot read: %r" % s)
+        year = next((n for n in nums if n >= 1000), today.year)
+        day = next((n for n in nums if 1 <= n <= 31 and n < 1000), 1)
+        d = datetime.date(year, mon, day)
+        short = "%s %d" % (d.strftime("%b"), d.day) if any(1 <= n <= 31 and n < 1000 for n in nums) else d.strftime("%b %Y")
+    return float(d.toordinal()), str(e.get("label", short))
+
+
 def _timeline_vl(spec, cfg, schema):
     """Events on one line, alternating above and below so labels never collide.
 
     Pixels again. The Vega-Lite version put a "side" axis on the page labeled -1.0 to 1.0, drew
     every stem upwards whatever side its label was on, and hung the last label off the right edge.
     """
-    evs = sorted(spec.get("events") or [], key=lambda e: float(e["at"]))
+    evs = []
+    for e in spec.get("events") or []:
+        at, tick = _when(e)
+        evs.append(dict(e, at=at, label=tick))
+    evs.sort(key=lambda e: float(e["at"]))
     W, H = _page(spec, 1080.0, 340.0)
     H = H or 340.0
     M, MID = 110.0, H / 2 - 2

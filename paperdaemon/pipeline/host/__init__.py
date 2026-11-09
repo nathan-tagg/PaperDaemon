@@ -190,10 +190,13 @@ PART_SCHEMA = {
     "items": {"type": "object", "description":
               "kind, then its numbers: line x1 y1 x2 y2; rect x1 y1 x2 y2 (corners); circle cx cy r; "
               "ellipse cx cy rx ry; arc cx cy r start end (degrees); polyline points [[x, y], ...]; "
-              "icon name cx cy r (a shape or icon by name, as element takes it). Any part may have color: "
-              "black (the default), gray, blue, red, green, yellow or pink -- the tablet's inks.",
+              "icon name cx cy r (a shape or icon by name, as element takes it); text text x y size "
+              "(a label, lettered: x y its baseline's left end, size its capital height, 28 if unsaid; "
+              "anchor center or right puts the middle or the right end at x; angle in degrees turns it). "
+              "Any part may have color: black (the default), gray, blue, red, green, yellow or pink -- the "
+              "tablet's inks.",
               "properties": {"kind": {"type": "string", "enum": ["line", "circle", "ellipse", "arc",
-                                                                   "polyline", "rect", "icon"]}},
+                                                                   "polyline", "rect", "icon", "text"]}},
               "required": ["kind"], "additionalProperties": True},
 }
 

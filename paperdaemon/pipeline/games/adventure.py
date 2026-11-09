@@ -1,7 +1,8 @@
 r"""Ink Adventure: a text adventure on the tablet, game-mastered by the model.
 
-  PAGE 1   the hero's character sheet, D&D style: abilities, saves, skills, hit points, armor, the
-           inventory, features -- drawn again whenever it changes
+  PAGE 1   the hero's character sheet, D&D style: abilities, saves, hit points, armor, magic, the skills
+           (one list, every entry with a proper name: trained skills, special abilities, spells with their
+           cost in magic points), the inventory -- drawn again whenever it changes
   PAGE 2   THE SCENE, drawn again IN PLACE every turn: a square picture of what the hero sees (rendered by
            the picture model, converted to strokes and laid over the page's frame), what happened, what is
            around, a few loose options, and a space at the bottom to write what you do
@@ -53,45 +54,45 @@ SKILLS = {"acrobatics": "DEX", "animal handling": "WIS", "arcana": "INT", "athle
           "stealth": "DEX", "survival": "WIS"}
 # class -> hit die, the order the rolled scores go into, saving throws, how many skills and from what,
 # armor (name, base AC, dexterity counted: None | "full" | "max2"), shield, weapon (name, die, ability),
-# kit, gold, spells (names only), features
+# kit, gold, spells (SPELLS keys), features (FEATS keys: the class's special abilities)
 CLASSES = {
     "barbarian": dict(die=12, order=("STR", "CON", "DEX", "WIS", "CHA", "INT"), saves=("STR", "CON"), n=2,
                       skills=("animal handling", "athletics", "intimidation", "nature", "perception", "survival"),
                       armor=("unarmored (10 + DEX + CON)", 10, "unarmored"), shield=False, weapon=("greataxe", "1d12", "STR"),
                       kit=["greataxe", "two handaxes", "explorer's pack", "four javelins"], gold=10, spells=[],
-                      features=["Rage (2 a day)", "Unarmored Defense"]),
+                      features=["Rage", "Unarmored Defense"]),
     "bard": dict(die=8, order=("CHA", "DEX", "CON", "WIS", "INT", "STR"), saves=("DEX", "CHA"), n=3, skills=tuple(SKILLS),
                  armor=("leather armor", 11, "full"), shield=False, weapon=("rapier", "1d8", "DEX"),
                  kit=["rapier", "lute", "leather armor", "dagger", "entertainer's pack"], gold=15,
                  spells=["vicious mockery", "minor illusion", "healing word", "charm person", "sleep"],
-                 features=["Bardic Inspiration (d6)", "Spellcasting"]),
+                 features=["Bardic Inspiration"]),
     "cleric": dict(die=8, order=("WIS", "CON", "STR", "CHA", "INT", "DEX"), saves=("WIS", "CHA"), n=2,
                    skills=("history", "insight", "medicine", "persuasion", "religion"),
                    armor=("scale mail", 14, "max2"), shield=True, weapon=("mace", "1d6", "STR"),
                    kit=["mace", "scale mail", "shield", "holy symbol", "priest's pack"], gold=15,
                    spells=["sacred flame", "guidance", "cure wounds", "bless", "guiding bolt"],
-                   features=["Spellcasting", "Divine Domain"]),
+                   features=[]),
     "druid": dict(die=8, order=("WIS", "CON", "DEX", "INT", "CHA", "STR"), saves=("INT", "WIS"), n=2,
                   skills=("arcana", "animal handling", "insight", "medicine", "nature", "perception", "religion", "survival"),
                   armor=("leather armor", 11, "full"), shield=True, weapon=("scimitar", "1d6", "DEX"),
                   kit=["scimitar", "wooden shield", "leather armor", "druidic focus", "explorer's pack"], gold=10,
                   spells=["druidcraft", "produce flame", "entangle", "healing word", "speak with animals"],
-                  features=["Druidic", "Spellcasting"]),
+                  features=["Druidic"]),
     "fighter": dict(die=10, order=("STR", "CON", "DEX", "WIS", "CHA", "INT"), saves=("STR", "CON"), n=2,
                     skills=("acrobatics", "animal handling", "athletics", "history", "insight", "intimidation", "perception", "survival"),
                     armor=("chain mail", 16, None), shield=True, weapon=("longsword", "1d8", "STR"),
                     kit=["longsword", "shield", "chain mail", "light crossbow and 20 bolts", "dungeoneer's pack"], gold=10,
-                    spells=[], features=["Fighting Style: Defense", "Second Wind"]),
+                    spells=[], features=["Defensive Style", "Second Wind"]),
     "monk": dict(die=8, order=("DEX", "WIS", "CON", "STR", "INT", "CHA"), saves=("STR", "DEX"), n=2,
                  skills=("acrobatics", "athletics", "history", "insight", "religion", "stealth"),
                  armor=("unarmored (10 + DEX + WIS)", 10, "monk"), shield=False, weapon=("shortsword", "1d6", "DEX"),
                  kit=["shortsword", "ten darts", "explorer's pack"], gold=5, spells=[],
-                 features=["Unarmored Defense", "Martial Arts (d4)"]),
+                 features=["Unarmored Defense", "Martial Arts"]),
     "paladin": dict(die=10, order=("STR", "CHA", "CON", "WIS", "DEX", "INT"), saves=("WIS", "CHA"), n=2,
                     skills=("athletics", "insight", "intimidation", "medicine", "persuasion", "religion"),
                     armor=("chain mail", 16, None), shield=True, weapon=("longsword", "1d8", "STR"),
                     kit=["longsword", "shield", "chain mail", "five javelins", "holy symbol", "priest's pack"], gold=10,
-                    spells=[], features=["Divine Sense", "Lay on Hands (5 hit points)"]),
+                    spells=[], features=["Divine Sense", "Lay on Hands"]),
     "ranger": dict(die=10, order=("DEX", "WIS", "CON", "STR", "INT", "CHA"), saves=("STR", "DEX"), n=3,
                    skills=("animal handling", "athletics", "insight", "investigation", "nature", "perception", "stealth", "survival"),
                    armor=("scale mail", 14, "max2"), shield=False, weapon=("longbow", "1d8", "DEX"),
@@ -102,23 +103,23 @@ CLASSES = {
                           "performance", "persuasion", "sleight of hand", "stealth"),
                   armor=("leather armor", 11, "full"), shield=False, weapon=("rapier", "1d8", "DEX"),
                   kit=["rapier", "shortbow and 20 arrows", "leather armor", "two daggers", "thieves' tools", "burglar's pack"],
-                  gold=15, spells=[], features=["Sneak Attack (1d6)", "Thieves' Cant", "Expertise"]),
+                  gold=15, spells=[], features=["Sneak Attack", "Thieves' Cant", "Expertise"]),
     "sorcerer": dict(die=6, order=("CHA", "CON", "DEX", "WIS", "INT", "STR"), saves=("CON", "CHA"), n=2,
                      skills=("arcana", "deception", "insight", "intimidation", "persuasion", "religion"),
                      armor=("unarmored (10 + DEX)", 10, "full"), shield=False, weapon=("light crossbow", "1d8", "DEX"),
                      kit=["light crossbow and 20 bolts", "arcane focus", "two daggers", "dungeoneer's pack"], gold=10,
-                     spells=["fire bolt", "light", "prestidigitation", "magic missile", "shield"], features=["Spellcasting", "Sorcerous Origin"]),
+                     spells=["fire bolt", "light", "prestidigitation", "magic missile", "shield"], features=[]),
     "warlock": dict(die=8, order=("CHA", "CON", "DEX", "WIS", "INT", "STR"), saves=("WIS", "CHA"), n=2,
                     skills=("arcana", "deception", "history", "intimidation", "investigation", "nature", "religion"),
                     armor=("leather armor", 11, "full"), shield=False, weapon=("light crossbow", "1d8", "DEX"),
                     kit=["light crossbow and 20 bolts", "arcane focus", "leather armor", "two daggers", "scholar's pack"], gold=10,
-                    spells=["eldritch blast", "minor illusion", "chill touch", "charm person"], features=["Otherworldly Patron", "Pact Magic"]),
+                    spells=["eldritch blast", "minor illusion", "chill touch", "charm person"], features=[]),
     "wizard": dict(die=6, order=("INT", "CON", "DEX", "WIS", "CHA", "STR"), saves=("INT", "WIS"), n=2,
                    skills=("arcana", "history", "insight", "investigation", "medicine", "religion"),
                    armor=("unarmored (10 + DEX)", 10, "full"), shield=False, weapon=("quarterstaff", "1d6", "STR"),
                    kit=["quarterstaff", "spellbook", "component pouch", "scholar's pack"], gold=10,
                    spells=["fire bolt", "mage hand", "light", "magic missile", "shield", "sleep", "detect magic"],
-                   features=["Spellcasting", "Arcane Recovery"]),
+                   features=["Arcane Recovery"]),
 }
 RACES = {
     "human": dict(bonus={a: 1 for a in ABILITIES}, speed=30, traits=[]),
@@ -132,6 +133,97 @@ RACES = {
     "dragonborn": dict(bonus={"STR": 2, "CHA": 1}, speed=30, traits=["Breath Weapon", "Damage Resistance"]),
 }
 XP_LEVELS = (0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000)
+
+# THE HERO'S SKILLS ARE ONE LIST (the user, 11-09: "skills, spells, special abilities, everything, should be 'skills'
+# in ink adventure -- to keep things simple", and each "should have a proper name, not just '+3 perception'"). Every
+# entry has a proper name and says what it lets the hero do; a trained skill of the rules carries the check it trains
+# ("trains", its proficiency), a spell its cost in magic points ("cost") and the dice of an attack ("die"), a few a
+# small bonus ("mods"). The rules' eighteen skills, each with its proper name and what it lets the hero do:
+SKILL_NAMES = {
+    "acrobatics": ("Cat's Balance", "tumbles, balances, lands on their feet"),
+    "animal handling": ("Gentle Hand", "calms a beast and reads its mood"),
+    "arcana": ("Arcane Lore", "knows magic, its signs and its makers"),
+    "athletics": ("Iron Limbs", "climbs, jumps, swims and grapples"),
+    "deception": ("Silver Tongue", "tells a lie that holds"),
+    "history": ("Old Chronicles", "knows what happened, and who did it"),
+    "insight": ("Reader of Faces", "tells the truth from a lie"),
+    "intimidation": ("Cold Stare", "frightens with a look or a word"),
+    "investigation": ("Sharp Reasoning", "finds what is hidden and how it fits"),
+    "medicine": ("Healer's Hands", "stops bleeding, judges a wound"),
+    "nature": ("Woodcraft", "knows plants, beasts and weather"),
+    "perception": ("Keen Eye", "notices what others miss"),
+    "performance": ("Stage Presence", "holds a crowd with a song or a tale"),
+    "persuasion": ("Honest Appeal", "wins people over"),
+    "religion": ("Sacred Lore", "knows the gods and their rites"),
+    "sleight of hand": ("Quick Fingers", "picks a pocket, palms a coin"),
+    "stealth": ("Shadow Step", "moves unseen and unheard"),
+    "survival": ("Wayfinder", "tracks, forages and finds the way"),
+}
+# the spells a class starts with: what each does, its cost in magic points (1 a small one, 2 a real one), and the dice
+# it rolls when it is an attack
+SPELLS = {
+    "vicious mockery": ("a barbed insult that wounds, 1d4; the target falters", 1, "1d4"),
+    "minor illusion": ("a sound or a small image, for a minute", 1, None),
+    "healing word": ("a word of healing from across the room, 1d4+2", 2, None),
+    "charm person": ("a person takes the hero for a friend, for an hour", 2, None),
+    "sleep": ("those nearby fall asleep, the weakest first", 2, None),
+    "sacred flame": ("radiant fire falls on one target, 1d8", 1, "1d8"),
+    "guidance": ("a touch adds 1d4 to one check", 1, None),
+    "cure wounds": ("a touch that heals 1d8+3", 2, None),
+    "bless": ("three allies add 1d4 to attacks and saves", 2, None),
+    "guiding bolt": ("a bolt of light, 4d6, that leaves the target easy to hit", 2, "4d6"),
+    "druidcraft": ("a small trick of nature: a flower opens, a flame lights", 1, None),
+    "produce flame": ("a flame in the hand for light, or thrown for 1d8", 1, "1d8"),
+    "entangle": ("grasping weeds hold everyone on a patch of ground", 2, None),
+    "speak with animals": ("talks with beasts for ten minutes", 2, None),
+    "fire bolt": ("a dart of flame, 1d10, at range", 1, "1d10"),
+    "light": ("an object shines like a torch for an hour", 1, None),
+    "prestidigitation": ("a small magical trick: a spark, a clean, a mark", 1, None),
+    "magic missile": ("three darts of force that never miss, 1d4+1 each", 2, "3d4+3"),
+    "shield": ("a wall of force in an instant: +5 armor for a round", 2, None),
+    "mage hand": ("a spectral hand lifts ten pounds at thirty feet", 1, None),
+    "detect magic": ("sees magic and its kind, for ten minutes", 2, None),
+    "eldritch blast": ("a beam of crackling force, 1d10", 1, "1d10"),
+    "chill touch": ("a ghostly hand, 1d8; the target cannot heal this turn", 1, "1d8"),
+}
+# the classes' features and the races' traits, each a skill with its proper name: what it lets the hero do (a string),
+# or that and more -- "trains" a proficiency, "die" and "ability" the dice of an attack, a spell's "kind" and "cost"
+FEATS = {
+    "Rage": "a fury: +2 damage, half from blows; twice a day",
+    "Unarmored Defense": "armor from toughness alone, nothing worn",
+    "Bardic Inspiration": "a word or a tune gives an ally a d6 for one roll",
+    "Druidic": "speaks the secret tongue of druids, reads its signs",
+    "Defensive Style": "+1 armor while wearing armor",
+    "Second Wind": "a breath that heals 1d10 + level, once between rests",
+    "Martial Arts": "fists and feet strike for 1d4, and a second blow follows",
+    "Divine Sense": "feels the holy and the unholy nearby",
+    "Lay on Hands": "a touch that heals, five hit points a day in all",
+    "Favored Enemy": "knows one kind of foe: tracks and reads them with ease",
+    "Natural Explorer": "never lost in the wild, and finds twice the food",
+    "Sneak Attack": "+1d6 on a hit when the target is distracted or flanked",
+    "Thieves' Cant": "the secret jargon and signs of thieves",
+    "Expertise": "proficiency counted twice in two skills",
+    "Arcane Recovery": "an hour's rest brings back 2 MP, once a day",
+    "Darkvision": "sees sixty feet in the dark, in gray",
+    "Keen Senses": {"effect": "an elf's sharp eye and ear", "trains": "perception"},
+    "Fey Ancestry": "cannot be put to sleep by magic; charms slide off",
+    "Dwarven Resilience": "poison does half, and saves against it have advantage",
+    "Stonecunning": "reads stonework and its history like a book",
+    "Lucky": "a 1 on the die is rolled again",
+    "Brave": "advantage on saves against fear",
+    "Nimble": "slips through the space of anyone larger",
+    "Gnome Cunning": "advantage on saves of the mind against magic",
+    "Relentless Endurance": "drops to 1 hit point instead of 0, once a day",
+    "Savage Attacks": "a critical hit rolls one more damage die",
+    "Hellish Resistance": "fire does half",
+    "Infernal Legacy": {"effect": "a devil's small tricks: a booming voice, a flaring flame", "kind": "spell", "cost": 1},
+    "Breath Weapon": {"effect": "a breath of fire in a line, 2d6; once between rests", "die": "2d6", "ability": "CON"},
+    "Damage Resistance": "the breath's own element does half",
+}
+_OLD_FEATS = {"Fighting Style: Defense": "Defensive Style"}    # an older sheet's name for one
+# the ability a class's magic runs on; anyone else's, the best of mind
+CASTING = {"bard": "CHA", "cleric": "WIS", "druid": "WIS", "paladin": "CHA", "ranger": "WIS", "sorcerer": "CHA",
+           "warlock": "CHA", "wizard": "INT"}
 
 
 # ------------------------------------------------------------------------------ dice
@@ -187,12 +279,22 @@ def make_hero(spec, rng):
     ab = {a: v for a, v in zip(order, rolls)}
     for a, b in Rc["bonus"].items():
         ab[a] = ab[a] + b
-    want = list(dict.fromkeys(s for s in (str(x).strip().lower() for x in (spec.get("skills") or [])) if s in C["skills"]))
+    traits = [e for e in (feat_skill(t) for t in Rc["traits"]) if e]
+    given = {e["trains"] for e in traits if e.get("trains")}         # a race's own proficiency (an elf's Keen Senses)
+    want = list(dict.fromkeys(s for s in (str(x).strip().lower() for x in (spec.get("skills") or []))
+                              if s in C["skills"] and s not in given))
     for s in C["skills"]:
         if len(want) >= C["n"]:
             break
-        if s not in want:
+        if s not in want and s not in given:
             want.append(s)
+    # ONE LIST OF SKILLS, each with a proper name: the trained skills of the rules (a rogue an expert in the first two),
+    # the class's special abilities, the race's, then the spells with their cost in magic points
+    skills = [trained_skill(s, expert=cls == "rogue" and i < 2) for i, s in enumerate(want[:C["n"]])]
+    skills += [e for e in (feat_skill(f) for f in C["features"]) if e] + traits + [spell_skill(s) for s in C["spells"]]
+    for e in skills:
+        if e["name"] == "Expertise" and len(skills) > 1 and skills[0].get("trains") and skills[1].get("trains"):
+            e["effect"] = "proficiency counted twice in %s and %s" % (skills[0]["name"], skills[1]["name"])
     hp = C["die"] + mod(ab["CON"])
     hero = {"name": str(spec.get("name") or "the hero")[:40], "race": race, "class": cls, "level": 1, "xp": 0,
             "background": str(spec.get("background") or "wanderer")[:40],
@@ -201,11 +303,12 @@ def make_hero(spec, rng):
             "personality": str(spec.get("personality") or "")[:240],
             "backstory": str(spec.get("backstory") or "")[:600],
             "abilities": ab, "rolls": rolls, "hp": {"now": max(1, hp), "max": max(1, hp)},
-            "speed": Rc["speed"], "saves": list(C["saves"]), "skills": want[:C["n"]],
+            "speed": Rc["speed"], "saves": list(C["saves"]), "skills": skills,
             "weapon": {"name": C["weapon"][0], "die": C["weapon"][1], "ability": C["weapon"][2]},
-            "inventory": [{"name": k, "qty": 1} for k in C["kit"]], "gold": C["gold"],
-            "features": list(C["features"]) + list(Rc["traits"]), "spells": list(C["spells"]), "conditions": []}
+            "inventory": [{"name": k, "qty": 1} for k in C["kit"]], "gold": C["gold"], "conditions": []}
     hero["ac"] = armor_class(hero)
+    if any(e.get("cost") for e in skills):
+        hero["mp"] = {"now": magic_max(hero), "max": magic_max(hero)}
     return hero
 
 
@@ -222,57 +325,218 @@ def armor_class(h):
     return ac
 
 
-def add_talent(h, t):
-    """A UNIQUE SKILL OR SPELL the story grants -> a note, or '' when there is nothing to take. Each is the hero's
-    own: a name nobody else's list has twice, what it lets the hero do (the game master is told it every turn), and
-    at most two small numbers ("mods": +-1 or +-2 to a skill's or an ability's checks), which most have none of."""
+def _proper(key):
+    """'speak with animals' -> 'Speak with Animals': a spell's proper name from the rules' key."""
+    small = {"with", "of", "the", "a", "an", "and", "on", "in"}
+    return " ".join(w if (i and w in small) else w[:1].upper() + w[1:] for i, w in enumerate(str(key).split()))
+
+
+def trained_skill(key, expert=False):
+    """The rules' skill `key`, trained: a skill with its proper name, what it does, and the check it trains."""
+    name, effect = SKILL_NAMES[key]
+    e = {"name": name, "kind": "skill", "effect": effect, "trains": key}
+    if expert:
+        e["expert"] = True
+    return e
+
+
+def spell_skill(key):
+    """A spell by its rules' name -> a skill: its proper name, what it does, its cost, and the dice of an attack."""
+    effect, cost, die = SPELLS.get(str(key).lower(), ("", 2, None))
+    e = {"name": _proper(key), "kind": "spell", "effect": effect, "cost": cost}
+    if die:
+        e["die"] = die
+    return e
+
+
+def feat_skill(key):
+    """A class feature or a race trait by name -> a skill, or None for one the rules give no ability for ("Spellcasting"
+    is the spells themselves). An older sheet's "Rage (2 a day)" and "Fighting Style: Defense" are found too."""
+    k = str(key).strip()
+    k = _OLD_FEATS.get(k) or re.sub(r"\s*\(.*\)$", "", k)
+    v = FEATS.get(k)
+    if v is None:
+        return None
+    return {"name": k, "kind": "ability", "effect": v} if isinstance(v, str) else dict({"name": k, "kind": "ability"}, **v)
+
+
+def unify(h):
+    """An older hero's trained skills (names), spells, features and talents -> the one skills list, in place. -> h"""
+    old = [k for k in ("spells", "features", "talents") if k in h]
+    if not old and all(isinstance(s, dict) for s in h.get("skills") or []):
+        return h
+    out = []
+    for s in h.get("skills") or []:
+        if isinstance(s, dict):
+            out.append(s)
+        elif str(s).lower() in SKILLS:
+            out.append(trained_skill(str(s).lower()))
+    out += [e for e in (feat_skill(f) for f in h.pop("features", None) or []) if e]
+    out += [spell_skill(s) for s in h.pop("spells", None) or []]
+    for t in h.pop("talents", None) or []:
+        if isinstance(t, dict) and t.get("name"):
+            e = {"name": str(t["name"]), "kind": "spell" if t.get("kind") == "spell" else "ability",
+                 "effect": str(t.get("effect") or "")}
+            if t.get("mods"):
+                e["mods"] = dict(t["mods"])
+            if e["kind"] == "spell":
+                e["cost"] = 2
+            out.append(e)
+    seen, h["skills"] = set(), []
+    for e in out:
+        if e["name"].lower() not in seen:
+            seen.add(e["name"].lower())
+            h["skills"].append(e)
+    if any(e.get("cost") for e in h["skills"]) and not h.get("mp"):
+        h["mp"] = {"now": magic_max(h), "max": magic_max(h)}
+    return h
+
+
+def skills_of(h):
+    """The hero's skills, one list (an older hero's made one first)."""
+    unify(h)
+    return h.setdefault("skills", [])
+
+
+def trained(h):
+    """The rules' skills the hero is trained in -> {key: the skill that trains it}."""
+    return {s["trains"]: s for s in skills_of(h) if s.get("trains")}
+
+
+def casting_ability(h):
+    """The ability the hero's magic runs on: the class's, else the best of mind."""
+    a = h["abilities"]
+    return CASTING.get(h["class"]) or max(("INT", "WIS", "CHA"), key=lambda k: a[k])
+
+
+def magic_max(h):
+    """Magic points at full: 4 + the casting ability's modifier (never less than 4), and 2 more a level."""
+    return 4 + max(0, mod(h["abilities"][casting_ability(h)])) + 2 * (max(1, int(h["level"])) - 1)
+
+
+def find_skill(h, name):
+    """The hero's skill called `name` -- or the one that trains the rules' skill of that name -- or None."""
+    key = " ".join(str(name or "").split()).lower()
+    if not key:
+        return None
+    for s in skills_of(h):
+        if s["name"].lower() == key or s.get("trains") == key:
+            return s
+    if len(key) >= 4:
+        return next((s for s in skills_of(h) if key in s["name"].lower() or s["name"].lower() in key), None)
+    return None
+
+
+def spend(h, used):
+    """A cast: the spell's magic points come off. -> a note; None when the hero cannot pay for it."""
+    cost = int(used.get("cost") or 0)
+    if not cost:
+        return ""
+    mp = h.get("mp") or h.setdefault("mp", {"now": magic_max(h), "max": magic_max(h)})
+    if mp["now"] < cost:
+        return None
+    mp["now"] -= cost
+    return "%s cast for %d MP (%d left)" % (used["name"], cost, mp["now"])
+
+
+def add_skill(h, t):
+    """A SKILL the story grants -> a note, or '' when there is nothing to take. Each is the hero's own: a proper name
+    nobody's list has twice, what it lets the hero do (the game master is told it every turn), for a spell its cost in
+    magic points (1 or 2), and at most two small numbers ("mods": +-1 or +-2 to a skill's or an ability's checks),
+    which most have none of. A name from the rules' list (or its proper name) trains that skill instead."""
+    if isinstance(t, str):
+        t = {"name": t}
     if not isinstance(t, dict):
         return ""
     name = " ".join(str(t.get("name") or "").split())[:40]
     if not name:
         return ""
-    have = {s.lower() for s in h["skills"]} | {s.lower() for s in h.get("spells") or []} | \
-        {x["name"].lower() for x in h.setdefault("talents", [])}
-    if name.lower() in have or name.lower() in SKILLS:
+    key = name.lower()
+    by_name = {v[0].lower(): k for k, v in SKILL_NAMES.items()}
+    if key in SKILLS or key in by_name:
+        key = by_name.get(key, key)
+        if key in trained(h):
+            return "already trained: %s" % SKILL_NAMES[key][0]
+        skills_of(h).append(trained_skill(key))
+        return "trained in %s (%s)" % (SKILL_NAMES[key][0], key)
+    if key in {s["name"].lower() for s in skills_of(h)}:
         return "already known: %s" % name
     mods = {}
     raw = t.get("mods") if isinstance(t.get("mods"), dict) else {}
     for k, v in list(raw.items())[:2]:
         k = str(k).strip()
         ab = next((a for a in ABILITIES if k.upper() == a or k.lower() == ABILITY_NAMES[a].lower()), None)
-        key = ab or k.lower()
+        mk = ab or k.lower()
         try:
             v = max(-2, min(2, int(v)))
         except (TypeError, ValueError):
             continue
-        if v and (key in ABILITIES or key in SKILLS):
-            mods[key] = v
-    kind = "spell" if str(t.get("kind") or "").strip().lower() == "spell" else "talent"
-    h["talents"].append({"name": name, "kind": kind, "effect": " ".join(str(t.get("effect") or "").split())[:140],
-                         "mods": mods})
-    return "learned %s%s" % ("the spell " if kind == "spell" else "", name)
+        if v and (mk in ABILITIES or mk in SKILLS):
+            mods[mk] = v
+    try:
+        cost = max(0, min(3, int(str(t.get("cost") or 0).strip().split()[0])))
+    except (TypeError, ValueError, IndexError):
+        cost = 0
+    spell = str(t.get("kind") or "").strip().lower() == "spell" or cost > 0
+    cost = cost or (1 if spell else 0)
+    e = {"name": name, "kind": "spell" if spell else "ability", "effect": " ".join(str(t.get("effect") or "").split())[:140]}
+    if mods:
+        e["mods"] = mods
+    if cost:
+        e["cost"] = cost
+        if not h.get("mp"):
+            h["mp"] = {"now": magic_max(h), "max": magic_max(h)}
+    skills_of(h).append(e)
+    return "learned %s%s" % (name, (" (%d MP)" % cost) if cost else "")
 
 
-def talent_mod(h, key):
-    """What the hero's own skills and spells add to checks with `key` (a skill, or an ability)."""
-    return sum(int((t.get("mods") or {}).get(key, 0)) for t in h.get("talents") or [])
+def skill_mod(h, key):
+    """What the hero's skills add to checks with `key` (a skill, or an ability)."""
+    return sum(int((s.get("mods") or {}).get(key, 0)) for s in skills_of(h))
 
 
-def bonus(h, kind, key):
-    """The bonus a check adds: a skill, an ability, a saving throw, or an attack with their weapon."""
+def attack_ability(h, used=None):
+    """The ability behind an attack: the weapon's, or for a skill with dice of its own (a spell, a breath) its own."""
+    if used and used.get("die"):
+        return used.get("ability") or (casting_ability(h) if used.get("kind") == "spell" else h["weapon"]["ability"])
+    return h["weapon"]["ability"]
+
+
+def bonus(h, kind, key, used=None):
+    """The bonus a check adds: a skill, an ability, a saving throw, or an attack with their weapon (or with `used`, a
+    skill with dice of its own)."""
     a, p = h["abilities"], prof(h["level"])
     if kind == "skill":
-        return mod(a[SKILLS[key]]) + (p if key in h["skills"] else 0) + talent_mod(h, key) + talent_mod(h, SKILLS[key])
+        t = trained(h).get(key)
+        return mod(a[SKILLS[key]]) + (p * (2 if t.get("expert") else 1) if t else 0) + skill_mod(h, key) + skill_mod(h, SKILLS[key])
     if kind == "save":
-        return mod(a[key]) + (p if key in h["saves"] else 0) + talent_mod(h, key)
+        return mod(a[key]) + (p if key in h["saves"] else 0) + skill_mod(h, key)
     if kind == "attack":
-        return mod(a[h["weapon"]["ability"]]) + p
-    return mod(a[key]) + talent_mod(h, key)
+        return mod(a[attack_ability(h, used)]) + p
+    return mod(a[key]) + skill_mod(h, key)
 
 
-def check(state, kind, key, dc, adv=0):
+def skill_figure(h, s):
+    """What stands at the right of a skill on the sheet, and after it for the game master: a trained skill's check
+    and bonus ("Perception +5"), a spell's cost ("1 MP"), a bonus the skill carries ("+1 Stealth"), or nothing."""
+    if s.get("trains"):
+        return "%s %+d" % (s["trains"].capitalize(), bonus(h, "skill", s["trains"]))
+    if s.get("cost"):
+        return "%d MP" % int(s["cost"])
+    mods = s.get("mods") or {}
+    return ", ".join("%+d %s" % (v, k if k in ABILITIES else k.capitalize()) for k, v in list(mods.items())[:2])
+
+
+def skill_words(h):
+    """Every skill of the hero's in words, for the game master: its name, what it does, and its number or cost."""
+    return ["%s (%s)" % (s["name"], "; ".join(x for x in (s.get("effect"), skill_figure(h, s)) if x) or "no effect given")
+            for s in skills_of(h)]
+
+
+def check(state, kind, key, dc, adv=0, used=None):
     """Roll a check for the hero: d20 (twice, best or worst, with advantage or disadvantage) + the bonus
-    against the DC. An attack that hits also rolls the weapon's damage. -> the result, also logged."""
+    against the DC. An attack that hits also rolls the damage: the weapon's, or `used`'s when the skill used has dice
+    of its own (a spell, a breath). -> the result, also logged."""
     h = state["hero"]
     rng = CH.Rng(**state["rng"])
     kind = kind if kind in ("skill", "ability", "save", "attack") else "ability"
@@ -284,17 +548,22 @@ def check(state, kind, key, dc, adv=0):
     if adv:
         d.append(rng.randint(1, 20))
     nat = max(d) if adv > 0 else min(d) if adv < 0 else d[0]
-    b = bonus(h, kind, key)
+    b = bonus(h, kind, key, used)
     total = nat + b
     ok = nat == 20 or (nat != 1 and total >= int(dc))
     out = {"kind": kind, "key": key, "dc": int(dc), "dice": d, "natural": nat, "bonus": b, "total": total,
            "success": ok, "critical": nat == 20, "fumble": nat == 1}
+    own = used if kind == "attack" and used and used.get("die") else None
+    if own:
+        out["with"] = own["name"]
     if kind == "attack" and ok:
-        dmg, dd = roll(h["weapon"]["die"], rng)
+        die = own["die"] if own else h["weapon"]["die"]
+        dmg, dd = roll(die, rng)
         if nat == 20:
-            extra, ed = roll(h["weapon"]["die"], rng)
+            extra, ed = roll(die, rng)
             dmg, dd = dmg + extra, dd + ed
-        dmg += mod(h["abilities"][h["weapon"]["ability"]])
+        if not own:
+            dmg += mod(h["abilities"][h["weapon"]["ability"]])
         out["damage"] = max(1, dmg)
         out["damage_dice"] = dd
     state["rng"] = rng.state()
@@ -304,7 +573,7 @@ def check(state, kind, key, dc, adv=0):
 def describe_check(r):
     """'Stealth: rolled 14 +5 = 19 against 15, a success' -- for the page and the notepad."""
     name = r["key"] if r["kind"] in ("skill",) else ("%s save" % r["key"] if r["kind"] == "save" else
-                                                     "attack" if r["kind"] == "attack" else r["key"])
+                                                     (r.get("with") or "attack") if r["kind"] == "attack" else r["key"])
     s = "%s: rolled %d %+d = %d against %d, %s" % (name.capitalize() if r["kind"] == "skill" else name, r["natural"], r["bonus"],
                                                   r["total"], r["dc"], "a critical success" if r["critical"] else
                                                   "a critical failure" if r["fumble"] else "a success" if r["success"] else "a failure")
@@ -317,13 +586,14 @@ def describe_check(r):
 def apply(state, ch, allowed_items=()):
     """What the story says changed -> what the ENGINE accepts, and why not the rest.
 
-    ch = {hp: "+3" | "-1d6" | int, gain: [{name, qty}], lose: [names], gold: int, xp: int,
-          skills_gain: [names], conditions_add: [...], conditions_remove: [...], flags_add: [...]}
+    ch = {hp: "+3" | "-1d6" | int, mp: "+2" | "all" | int, gain: [{name, qty}], lose: [names], gold: int, xp: int,
+          skills_gain: [{name, effect, cost, mods} or a rules' skill's name], conditions_add: [...],
+          conditions_remove: [...], flags_add: [...]}
     An item GAINED must be one the action was ruled to use from the picture (allowed_items) or be
     explicitly granted by a success the engine rolled (the caller passes it in allowed_items too).
-    An item LOST must be one the hero has. Hit points stay in 0..max. A SKILL the story teaches is taken
-    only from the rules' list (SKILLS) and only once: the hero's skills grow like the inventory."""
-    h = state["hero"]
+    An item LOST must be one the hero has. Hit points stay in 0..max, magic points too. A SKILL the story
+    teaches is taken once, by its proper name (add_skill): the hero's skills grow like the inventory."""
+    h = unify(state["hero"])
     rng = CH.Rng(**state["rng"])
     notes = []
     if ch.get("hp") not in (None, "", 0, "0", "+0"):
@@ -360,17 +630,23 @@ def apply(state, ch, allowed_items=()):
         if hit["qty"] <= 0:
             h["inventory"].remove(hit)
         notes.append("lost %s" % hit["name"])
-    for s in ch.get("skills_gain") or []:
-        s = str(s).strip().lower()
-        if s not in SKILLS:
-            notes.append("not learned: %s (not a skill)" % s[:40])
-        elif s not in h["skills"]:
-            h["skills"].append(s)
-            notes.append("learned %s" % s)
-    for t in ch.get("talents_gain") or []:
-        note = add_talent(h, t)
+    for s in list(ch.get("skills_gain") or []) + list(ch.get("talents_gain") or []):
+        note = add_skill(h, s)
         if note:
             notes.append(note)
+    if ch.get("mp") not in (None, "", 0, "0", "+0"):
+        # MAGIC COMES BACK BY REST, as the story tells it: "+2" for an hour's, "all" after a night's sleep
+        if not h.get("mp"):
+            notes.append("no magic to restore")
+        else:
+            try:
+                v = h["mp"]["max"] if str(ch["mp"]).strip().lower() in ("all", "full") else int(str(ch["mp"]).replace("+", ""))
+                before = h["mp"]["now"]
+                h["mp"]["now"] = max(0, min(h["mp"]["max"], before + v))
+                if h["mp"]["now"] != before:
+                    notes.append("magic %+d (%d/%d)" % (h["mp"]["now"] - before, h["mp"]["now"], h["mp"]["max"]))
+            except ValueError:
+                notes.append("magic: %r not understood" % ch["mp"])
     if ch.get("gold"):
         g = int(ch["gold"])
         h["gold"] = max(0, h["gold"] + g)
@@ -381,7 +657,9 @@ def apply(state, ch, allowed_items=()):
         if lvl > h["level"]:
             gain = max(1, CLASSES[h["class"]]["die"] // 2 + 1 + mod(h["abilities"]["CON"]))
             h["level"], h["hp"]["max"], h["hp"]["now"] = lvl, h["hp"]["max"] + gain, h["hp"]["now"] + gain
-            notes.append("level %d (+%d hit points)" % (lvl, gain))
+            if h.get("mp"):
+                h["mp"]["max"], h["mp"]["now"] = h["mp"]["max"] + 2, h["mp"]["now"] + 2
+            notes.append("level %d (+%d hit points%s)" % (lvl, gain, ", +2 MP" if h.get("mp") else ""))
     for c in ch.get("conditions_add") or []:
         if c not in h["conditions"]:
             h["conditions"].append(str(c)[:30])
@@ -792,9 +1070,10 @@ def new_state(doc, title, premise, tone, hero, seed=None):
 def summary_lines(state):
     h = state["hero"]
     return ["ink adventure %s: %s" % (state["id"], state["title"]),
-            "%s, a level %d %s %s; %d/%d hit points; %d turns; %s" % (h["name"], h["level"], h["race"], h["class"],
-                                                                      h["hp"]["now"], h["hp"]["max"], len(state["turns"]),
-                                                                      state["place"] or "no place yet"),
+            "%s, a level %d %s %s; %d/%d hit points%s; %d turns; %s" % (
+                h["name"], h["level"], h["race"], h["class"], h["hp"]["now"], h["hp"]["max"],
+                ("; %d/%d MP" % (h["mp"]["now"], h["mp"]["max"])) if h.get("mp") else "", len(state["turns"]),
+                state["place"] or "no place yet"),
             "inventory: %s" % ", ".join("%s%s" % (it["name"], (" x%d" % it["qty"]) if it["qty"] > 1 else "") for it in h["inventory"])]
 
 
@@ -819,6 +1098,20 @@ def pictures_dir(state):
 def _font(name, size):
     from paperdaemon import paths
     return paths.pil_font(name, size)
+
+
+def _wrap2(d, text, font, first, rest):
+    """Words on at most two lines: the first `first` wide (room left for a figure at its right), the second `rest`,
+    cut with an ellipsis when they do not fit."""
+    words = str(text).split()
+    if not words:
+        return []
+    line = ""
+    while words and (not line or d.textlength(line + " " + words[0], font=font) <= first):
+        line = (line + " " + words.pop(0)).strip()
+    if not words:
+        return [line]
+    return [line, _ellipsis(d, " ".join(words), font, rest)]
 
 
 def _wrap(d, text, font, width):
@@ -953,11 +1246,12 @@ def _leader(d, x0, x1, y):
 
 def sheet_png(state, out):
     """THE CHARACTER SHEET, D&D style, drawn at the page's own size (1620 x 2160) in the one design: the header (the
-    hero's name; level, race, class, background, alignment, experience), the six abilities and six numbers in hairline
-    cells across the column, the saving throws and skills at the left, the attack, features and conditions at the
-    right, then the inventory and who the hero is."""
+    hero's name; level, race, class, background, alignment, experience), the six abilities and the numbers (armor, hit
+    points, magic for a caster, speed, proficiency, initiative, gold) in hairline cells across the column, the saving
+    throws at the left and the attack and conditions at the right, the skills in one list, then the inventory and who
+    the hero is."""
     from paperdaemon.pipeline.draw import scaled as SD
-    h = state["hero"]
+    h = unify(state["hero"])
     im, d = SD.canvas(PAGE_W, PAGE_H)                 # (laid out in design pixels; sent at twice the tablet's resolution)
     y = _header(d, h["name"], "Level %d %s %s  ·  %s  ·  %s  ·  %d XP" % (
         h["level"], h["race"], h["class"], h["background"], h["alignment"], h["xp"]))
@@ -976,17 +1270,23 @@ def sheet_png(state, out):
         s = str(h["abilities"][a])
         d.text((x + (cw - d.textlength(s, font=small_f)) / 2.0, y + 118), s, font=small_f, fill=GRAY)
     y += 158 + G
-    stats = [("Armor", str(h["ac"])), ("Hit points", "%d / %d" % (h["hp"]["now"], h["hp"]["max"])),
-             ("Speed", "%d ft" % h["speed"]), ("Proficiency", "%+d" % prof(h["level"])),
-             ("Initiative", "%+d" % mod(h["abilities"]["DEX"])), ("Gold", str(h["gold"]))]
+    stats = [("Armor", str(h["ac"])), ("Hit points", "%d / %d" % (h["hp"]["now"], h["hp"]["max"]))]
+    if h.get("mp"):
+        stats.append(("Magic", "%d / %d" % (h["mp"]["now"], h["mp"]["max"])))
+    stats += [("Speed", "%d ft" % h["speed"]), ("Proficiency", "%+d" % prof(h["level"])),
+              ("Initiative", "%+d" % mod(h["abilities"]["DEX"])), ("Gold", str(h["gold"]))]
+    sw = (CW - (len(stats) - 1) * G) / float(len(stats))
+    lab = _style("label")[0]
+    while lab.size > 15 and any(_caps_w(d, k.upper(), lab) > sw - 16 for k, _ in stats):
+        lab = lab.font_variant(size=lab.size - 1)       # one size for the whole row: its longest label sets it
     for i, (k, v) in enumerate(stats):
-        x = X0 + i * (cw + G)
-        d.rectangle((x, y, x + cw, y + 108), outline=RULE, width=2)
-        _caps(d, (x + cw / 2.0, y + 16), k, width=cw - 16, align="center")
-        d.text((x + (cw - d.textlength(v, font=name_f)) / 2.0, y + 50), v, font=name_f, fill=INK)
+        x = X0 + i * (sw + G)
+        d.rectangle((x, y, x + sw, y + 108), outline=RULE, width=2)
+        _caps(d, (x + sw / 2.0, y + 16), k, font=lab, width=sw - 16, align="center")
+        d.text((x + (sw - d.textlength(v, font=name_f)) / 2.0, y + 50), v, font=name_f, fill=INK)
     y += 108 + 50
     col = (CW - 48) / 2.0
-    # left: the saving throws, then the skills
+    # left: the saving throws; right: the attack, and the conditions when there are any
     ly = y
     _caps(d, (X0, ly), "Saving throws")
     ly += 40
@@ -995,28 +1295,6 @@ def sheet_png(state, out):
         d.ellipse((X0, ly + 12, X0 + 16, ly + 28), fill=INK if on else None, outline=INK, width=2)
         d.text((X0 + 32, ly), "%+d  %s" % (bonus(h, "save", a), ABILITY_NAMES[a]), font=body_f, fill=INK)
         ly += body_lh
-    ly += 24
-    # WHAT THE HERO CAN DO, ONLY WHAT THEY HAVE, each once: the trained skills from the rules' list (SKILLS) with
-    # their bonus, then the hero's own skills and spells, each with what it does. The story adds to it as it goes
-    # (apply: skills_gain, talents_gain), like the inventory.
-    mine = sorted(s for s in set(h["skills"]) if s in SKILLS)
-    own = [{"name": s, "kind": "spell", "effect": "", "mods": {}} for s in h.get("spells") or []] + list(h.get("talents") or [])
-    _caps(d, (X0, ly), "Skills and spells" if any(t["kind"] == "spell" for t in own) else "Skills")
-    ly += 40
-    for s in mine:
-        d.text((X0, ly), "%+d  %s (%s)" % (bonus(h, "skill", s), s.capitalize(), SKILLS[s]), font=body_f, fill=INK)
-        ly += body_lh
-    for t in own:
-        nums = ", ".join("%+d %s" % (v, k if k in ABILITIES else k.capitalize()) for k, v in (t.get("mods") or {}).items())
-        line = "%s%s%s%s" % (t["name"][:1].upper() + t["name"][1:], " (spell)" if t["kind"] == "spell" else "",
-                             ": " + t["effect"] if t.get("effect") else "", " (%s)" % nums if nums else "")
-        for l in _wrap(d, line, body_f, col)[:2]:
-            d.text((X0, ly), l, font=body_f, fill=INK)
-            ly += body_lh
-    if not mine and not own:
-        d.text((X0, ly), "None yet", font=body_f, fill=GRAY)
-        ly += body_lh
-    # right: the attack, the features, the conditions
     rx, ry = X0 + col + 48, y
     w = h["weapon"]
     _caps(d, (rx, ry), "Attack")
@@ -1025,17 +1303,37 @@ def sheet_png(state, out):
                                                 mod(h["abilities"][w["ability"]])), body_f, col):
         d.text((rx, ry), l, font=body_f, fill=INK)
         ry += body_lh
-    ry += 24
-    for title, items in (("Features", h["features"]), ("Conditions", h["conditions"])):
-        if not items:
-            continue
-        _caps(d, (rx, ry), title)
+    if h["conditions"]:
+        ry += 24
+        _caps(d, (rx, ry), "Conditions")
         ry += 40
-        for line in _wrap(d, ", ".join(items), body_f, col):
+        for line in _wrap(d, ", ".join(h["conditions"]), body_f, col):
             d.text((rx, ry), line, font=body_f, fill=INK)
             ry += body_lh
-        ry += 24
     y = max(ly, ry) + 24
+    # THE SKILLS, one list (the user, 11-09: skills, spells and special abilities are all "skills", each with "a proper
+    # name, not just '+3 perception'"): the name; what it lets the hero do; and at the right its figure -- the check a
+    # trained skill is good at with its bonus, or a spell's cost in magic points. The story adds to it as it goes
+    # (apply: skills_gain), like the inventory.
+    _caps(d, (X0, y), "Skills")
+    y += 40
+    sub_f = _style("sub")[0]
+    ex0 = X0 + 300
+    for s in skills_of(h):
+        d.text((X0, y), _ellipsis(d, s["name"], body_f, 276), font=body_f, fill=INK)
+        fig = skill_figure(h, s)
+        if fig:
+            d.text((X1 - d.textlength(fig, font=body_f), y), fig, font=body_f, fill=INK)
+        room = X1 - ex0 - ((d.textlength(fig, font=body_f) + 24) if fig else 0)
+        lines = _wrap2(d, s.get("effect") or "", sub_f, room, X1 - ex0) or [""]
+        for l in lines:
+            if l:
+                d.text((ex0, y), l, font=sub_f, fill=GRAY)
+            y += body_lh
+    if not skills_of(h):
+        d.text((X0, y), "None yet", font=body_f, fill=GRAY)
+        y += body_lh
+    y += 24
     d.line((X0, y, X1, y), fill=RULE, width=2)
     y += 32
     _caps(d, (X0, y), "Inventory")
@@ -1188,9 +1486,11 @@ The player wrote: "{action}"
 Rule on it. Answer with JSON only:
 {{"understood": "what the player means, one sentence", "possible": true or false, "why_not": "if impossible, why, in one sentence",
  "uses": ["each object or person FROM THE PICTURE the action relies on, as you see it there -- only what is visible"],
+ "skill": "the hero's skill the action uses, by its name from the hero's list above (a spell, a special ability, a trained skill), or null",
  "check": null or {{"kind": "skill" | "ability" | "save" | "attack", "key": a skill ({skills}) or an ability ({abilities}),
                   "dc": 5 to 25, "advantage": -1, 0 or 1, "why": "why this check", "target": "for an attack, the name of the person attacked"}}}}
-Ask for a check only when the outcome is uncertain and matters; an attack's dc is the target's armor class."""
+Ask for a check only when the outcome is uncertain and matters; an attack's dc is the target's armor class. A spell
+costs the magic points its entry names: the engine takes them, and a cast the hero cannot pay for does not happen."""
 
 TELL_PROMPT = """You are the game master of a text adventure. The adventure: {title} (tone: {tone}).
 FOR THE GAME MASTER ONLY -- the hero knows none of this until the story reveals it in what_happened: the premise
@@ -1236,17 +1536,19 @@ Answer with JSON only:
              same_place and the scene only changed a little (say the change: "remove the lantern from the table, keep
              everything else") else "new", "prompt": "the change, or for a new scene what the hero SEES in front of them:
              the place, the objects, where each person stands. Never describe the hero."}},
- "changes": {{"hp": "0", "gain": [{{"name": "...", "qty": 1}}], "lose": ["..."], "gold": 0, "xp": 0,
-             "skills_gain": [], "talents_gain": [{{"name": "...", "kind": "talent or spell",
-                                                  "effect": "one short line: what it lets the hero do", "mods": {{}}}}],
+ "changes": {{"hp": "0", "mp": "0", "gain": [{{"name": "...", "qty": 1}}], "lose": ["..."], "gold": 0, "xp": 0,
+             "skills_gain": [{{"name": "a proper name", "effect": "one short line: what it lets the hero do",
+                               "cost": "a spell's magic points, 1 or 2; 0 for anything else", "mods": {{}}}}],
              "conditions_add": [], "conditions_remove": [], "flags_add": []}},
  "over": null, or "death" when the hero is struck down (they drop to 0 hit points and make death saves), or "victory"}}
 Only give items the hero actually took or was given; hit point loss can be dice like "-1d6". Leave out what did not change.
-Skills and spells are earned, and rare: only when the story truly teaches, grants or awakens one. A trained skill goes in
-skills_gain by its name from: {skills}. Anything else -- a unique skill of the hero's own or a spell -- goes in
-talents_gain: a creative name, and what it lets the hero do (sense a storm coming, speak with gulls, call light from
-the sea). Most change what the hero can do, not a number; a few may carry one small number in "mods", as
-{{"perception": 1}} or {{"DEX": 2}} (a skill or an ability, at most +2)."""
+Skills are earned, and rare: only when the story truly teaches, grants or awakens one. Every skill has a proper name
+of its own (Harbor Watch, Gull-Speech, Saltlight), never a bare number, and says what it lets the hero do (sense a
+storm coming, speak with gulls, call light from the sea); a spell costs magic points, 1 for a small one and 2 for a real
+one. A trained skill of the rules may be learned too, by its name from: {skills}. Most change what the hero can do,
+not a number; a few may carry one small number in "mods", as {{"perception": 1}} or {{"DEX": 2}} (a skill or an
+ability, at most +2). Magic spent comes back only by rest: "mp" is "+2" for an hour's rest, "all" after a night's
+sleep."""
 
 READ_PROMPT = """This is the player's handwriting from the bottom of a page of a text adventure on a tablet, alone:
 what they do next (or the rest of it, after what they typed). Answer with one line:
@@ -2325,9 +2627,10 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
     last = state["turns"][-1]
     scene = last["scene"]
     shot = os.path.join(pictures_dir(state), last["picture"]) if last.get("picture") else None
-    h = state["hero"]
+    h = unify(state["hero"])
     here = [n for n in (state.get("present") or []) if n in (state.get("cast") or {})]
     dying, died, how, saved = state["status"] == "dying", False, "", None
+    cast, used = "", None
     if dying:
         # A DYING HERO'S TURN: a death save the engine rolls, or giving up -- nothing else is ruled on
         rule, possible, result, ck = {"understood": "a death save"}, True, None, None
@@ -2347,13 +2650,25 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
         rule = parse_json(ask_vision(rule_q, shot) if shot and os.path.exists(shot) else ask_text(rule_q)) or {}
         possible = rule.get("possible", True) is not False
         result, roll_line = None, ""
+        # THE SKILL USED: a spell costs its magic points, taken here; a cast the hero cannot pay for cannot be done
+        used = find_skill(h, rule.get("skill")) if possible else None
+        if used and used.get("cost"):
+            cast = spend(h, used)
+            if cast is None:
+                possible, cast = False, ""
+                rule["why_not"] = "%s costs %d MP and %s has %d" % (used["name"], used["cost"], h["name"], h["mp"]["now"])
         ck = rule.get("check") if possible else None
     if isinstance(ck, dict) and ck.get("key"):
         try:
             # AN ATTACK ON SOMEONE THE STORY KNOWS: their armor is the DC, and the damage is theirs (the engine's)
-            target = find_person(state, ck.get("target")) if str(ck.get("kind")) == "attack" else None
-            result = check(state, str(ck.get("kind") or "skill"), str(ck["key"]).lower() if ck.get("kind") == "skill" else str(ck["key"]).upper(),
-                           target["ac"] if target else int(ck.get("dc") or 12), int(ck.get("advantage") or 0))
+            kind = str(ck.get("kind") or "skill")
+            key = str(ck["key"]).lower() if kind == "skill" else str(ck["key"]).upper()
+            if kind == "skill" and key not in SKILLS:
+                s = find_skill(h, key)                           # a skill by its proper name -> the check it trains
+                key = s["trains"] if s and s.get("trains") else key
+            target = find_person(state, ck.get("target")) if kind == "attack" else None
+            result = check(state, kind, key, target["ac"] if target else int(ck.get("dc") or 12),
+                           int(ck.get("advantage") or 0), used=used)
             roll_line = describe_check(result)
             if target and result.get("damage"):
                 hurt(target, result["damage"])
@@ -2372,9 +2687,9 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
     elif not possible:
         roll = "It cannot be done: %s" % (rule.get("why_not") or "the scene does not allow it")
     elif result:
-        roll = "The engine rolled: %s." % roll_line
+        roll = "The engine rolled: %s.%s" % (roll_line, (" %s." % cast) if cast else "")
     else:
-        roll = "No roll was needed: it simply happens."
+        roll = "No roll was needed: it simply happens.%s" % ((" %s." % cast) if cast else "")
     if died:
         # THE HERO HAS DIED, AND THE STORY GOES ON (after_death): how, the model's to tell
         tell = parse_json(ask_text(AFTER_DEATH_PROMPT.format(
@@ -2403,6 +2718,8 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
         changes = dict(changes)
         changes.pop("hp", None)
     notes = apply(state, changes, allowed)
+    if cast:
+        notes.insert(0, cast)
     if death_note:
         notes.insert(0, death_note)
     if result and result.get("damage"):
@@ -2477,11 +2794,11 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
 
 
 def hero_line(h):
-    own = ["%s (spell)" % s for s in h.get("spells") or []] + [
-        "%s (%s%s)" % (t["name"], "spell: " if t["kind"] == "spell" else "", t.get("effect") or "no effect given")
-        for t in h.get("talents") or []]
-    return ("%s, a level %d %s %s (%s); %d/%d hit points, armor %d; carries %s; trained in %s%s; %s" % (
-        h["name"], h["level"], h["race"], h["class"], h["background"], h["hp"]["now"], h["hp"]["max"], h["ac"],
-        ", ".join(it["name"] for it in h["inventory"]) or "nothing", ", ".join(h["skills"]) or "nothing",
-        ("; can also: " + "; ".join(own)) if own else "",
+    """The hero for the game master: who they are, their numbers, what they carry, every skill by its proper name with
+    what it does and its figure (a trained check's bonus, a spell's cost), their conditions."""
+    unify(h)
+    magic = ("; magic %d/%d MP" % (h["mp"]["now"], h["mp"]["max"])) if h.get("mp") else ""
+    return ("%s, a level %d %s %s (%s); %d/%d hit points, armor %d%s; carries %s; skills: %s; %s" % (
+        h["name"], h["level"], h["race"], h["class"], h["background"], h["hp"]["now"], h["hp"]["max"], h["ac"], magic,
+        ", ".join(it["name"] for it in h["inventory"]) or "nothing", "; ".join(skill_words(h)) or "none",
         ("conditions: " + ", ".join(h["conditions"])) if h["conditions"] else "no conditions"))

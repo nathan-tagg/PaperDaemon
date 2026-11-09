@@ -152,8 +152,13 @@
     return el;
   }
 
+  // THE SCREEN SHOWN IS REMEMBERED (and, on the library screens, the folder: tablet.js), and the window opens there
+  // next time when its address names nothing -- an update's restart included. Setup and pairing are never remembered
+  const LAST = "pd-last-screen";
+  const remembered = () => { try { const s = localStorage.getItem(LAST); return s && PD.screens[s] && RAIL.includes(s) ? s : ""; } catch (e) { return ""; } };
   function route(focus) {
     const h = location.hash, id = (h.match(/pane=([a-z-]+)/) || h.match(/^#\/?([a-z-]+)$/) || [])[1] || "overview";
+    if (PD.screens[id] && RAIL.includes(id)) { try { localStorage.setItem(LAST, id); } catch (e) { /* kept for this run only */ } }
     const el = show(PD.screens[id] ? id : "overview");
     if (focus) { const h = $("h1", el); if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); } }
     window.scrollTo(0, 0);
@@ -174,7 +179,10 @@
     root.innerHTML = railHtml();
     PD.paintRail();
     if (go) location.hash = go;
-    else if (!location.hash.replace(/^#\/?/, "") && PD.firstPane) location.hash = PD.firstPane;
+    else if (!location.hash.replace(/^#\/?/, "")) {
+      if (!PD.firstPane && !PD.firstOpen && remembered()) PD.firstPane = remembered();   // (the folder follows: tablet.js)
+      if (PD.firstPane) location.hash = PD.firstPane;
+    }
     route(false);
     window.removeEventListener("hashchange", onHash);
     window.addEventListener("hashchange", onHash);

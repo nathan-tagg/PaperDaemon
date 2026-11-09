@@ -93,7 +93,8 @@
       spoken; a failed death save is not undone by the story's healing; a tool's own fault logs its traceback
 - [x] 10.14 Ambrose Tull, who plays every move for a level game (the engine's move nearest even, 32 looked over) and
       takes any draw at once, never saying so (games.chess aims_for / draw_offers; chess.level_move, aims, takes_draws)
-- [ ] 10.15 A real game against him: his moves keep the evaluation near even, and a draw offer is taken at once
+- [x] 10.15 A real game against him: his moves keep the evaluation near even, and a draw offer is taken at once
+      (11-09, DF200 on 0.2.35: 1.e4 e5 2.Nf3 Nf6, "Draw?" on move 3 -> a draw by agreement in 21 s)
 - [x] 10.16 One design for every adventure page (the user, 11-07: "no design language, no consistency"): the column,
       the header, the type scale; no buttons, no page badges; page numbers in the contents and beside a person's
       name; no page for an empty section; portraits as strokes (each kept beside its picture, read back in one pass);
@@ -102,3 +103,15 @@
       user, 11-08: "WHO THEY ARE" is "so cringe"; over-labeling is "the biggest obvious giveaway that something is AI")
 - [x] 10.17 Portraits asked for on plain white ("light" came back cream, sage or gray)
 - [ ] 10.18 On the tablet with him: a new adventure's pages, and an older one's after its next turn
+- [x] 10.19 A figure carries words: a text part (text, x, y, size, anchor, angle) lettered on the figure's grid; the
+      tool and the draw step say so (round 16, DF201: a "labeled diagram of the water cycle" came out with no word)
+- [x] 10.20 A timeline takes dates (ISO, words, a year) and labels its ticks with the day (round 16, DF203: refused
+      twice on a date string, then drawn empty)
+- [x] 10.21 read_page: a look tool that reads another page of the notebook in words (typed exact, handwriting as read)
+      while the model rules and plans (round 16, DF208: "my budget on page 1" got "I can't see page 1 from here")
+- [x] 10.22 The write tool says an empty line is a blank line, for room to write by hand (round 16, DF206: a worksheet
+      that promised room under each problem and left none)
+- [x] 10.23 One list of named skills (the user, 11-09: "a proper name, not just '+3 perception'"; "spells should have an
+      mp cost"; "skills, spells, special abilities, everything, should be 'skills'"): SKILL_NAMES, SPELLS and FEATS;
+      magic points for a hero with a spell (a Magic cell); the engine takes a cast's points and refuses one unpaid for;
+      the story's grants named with a cost; unify() reads an older hero's lists as one

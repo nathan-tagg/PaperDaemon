@@ -176,3 +176,28 @@ white. A characters page SHALL hold six people.
 #### Scenario: A person's portrait
 - **WHEN** a person met has a portrait
 - **THEN** it is on the characters page and on their own page as strokes inside a hairline frame, not a pasted picture
+
+### Requirement: A hero's skills are one list of named skills
+Everything a hero can do beyond the plain checks -- the rules' skills they are trained in, their class's and their
+race's special abilities, and their spells -- SHALL be one list on the sheet, titled Skills, and every entry SHALL
+have a proper name of its own ("Keen Eye", "Sneak Attack", "Fire Bolt"), what it lets the hero do, and its figure at
+the right: the check a trained skill is good at with its bonus, or a spell's cost in magic points. No entry SHALL be a
+bare number and a check ("+3 perception"), and no other list of features, spells or talents SHALL stand beside it. A
+hero with a spell SHALL have magic points (full: 4 plus the casting ability's modifier, 2 more a level), shown beside
+the hit points; a cast SHALL cost the spell's points, taken by the engine, and a cast the hero cannot pay for SHALL
+not happen; spent points SHALL come back only by rest, as the story tells it. A skill the story grants SHALL carry a
+proper name, what it does and, for a spell, its cost; the game master SHALL be told every skill by name each turn. An
+older hero's trained skills, features, spells and talents SHALL be read as one list.
+
+#### Scenario: A wizard's sheet
+- **WHEN** a new wizard's sheet is drawn
+- **THEN** its Skills list names each trained skill, Arcane Recovery and each spell with its cost in MP, a Magic
+  cell stands beside Hit points, and nowhere does a bare bonus stand for a skill's name
+
+#### Scenario: A cast the hero cannot pay for
+- **WHEN** the hero, 1 MP left, casts a spell that costs 2
+- **THEN** the engine refuses it, the page says why, and no points are taken
+
+#### Scenario: A fighter
+- **WHEN** a new fighter's sheet is drawn
+- **THEN** there is no Magic cell, and the Skills list holds the trained skills, Defensive Style and Second Wind

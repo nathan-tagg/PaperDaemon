@@ -2,6 +2,7 @@
 import json
 import math
 from paperdaemon.pipeline import draw as A
+from paperdaemon.pipeline.draw import lettering as LT
 from paperdaemon.pipeline.draw import shapes as E
 from paperdaemon.pipeline.host.job import JOB
 from paperdaemon.pipeline import host as H
@@ -104,6 +105,24 @@ def _part_paths(part):
         if not paths:
             raise ValueError("no icon named %r" % name)
         return [list(p) for p in paths]
+    if k == "text":
+        # A LABEL, lettered in the pipeline's own face on the figure's grid, like every other part (a "labeled diagram
+        # of the water cycle" came out mute: the figure had no part that could carry a word). x, y: the baseline's
+        # left end; anchor center or right puts the middle or the right end there; size: the capital height
+        words = " ".join(str(part.get("text") or "").split())
+        if not words:
+            raise ValueError("a text part needs text")
+        size = max(12.0, min(120.0, g("size", 28.0) or 28.0))
+        anchor = str(part.get("anchor") or "left").lower()
+        d = A.Drawing()
+        kw = dict(size=size, seed=7, angle=g("angle", 0.0))
+        if anchor == "center":
+            LT.center(d, words, g("x"), g("y"), **kw)
+        elif anchor == "right":
+            LT.right(d, words, g("x"), g("y"), **kw)
+        else:
+            LT.text(d, words, g("x"), g("y"), **kw)
+        return [[(float(px), float(py)) for px, py in s[0]] for s in d.strokes if len(s[0]) >= 2]
     if k == "line":
         return [[(g("x1"), g("y1")), (g("x2"), g("y2"))]]
     if k == "rect":
@@ -351,9 +370,11 @@ TOOLS = [
              + ", ".join(E.icon_names()),
   {"name": "string", "cx": "number", "cy": "number", "r": "number"}, t_element),
  ("draw_figure", "DRAW something yourself by listing the parts it is made of: lines, circles, "
-  "ellipses, arcs, rectangles, polylines, and icons by name (a sun, a star) as parts like the others. "
+  "ellipses, arcs, rectangles, polylines, icons by name (a sun, a star) as parts like the others, and text "
+  "for the words a diagram carries (a label by each part it names, a title). "
   "One call for the whole figure, every part of it, inside your box. A house is a box and a triangle; "
-  "a bicycle is two circles and a frame. Coordinates are page coordinates: x from the page's center "
+  "a bicycle is two circles and a frame; a labeled diagram is its shapes, its arrows, and a text part by each. "
+  "Coordinates are page coordinates: x from the page's center "
   "(0), y from its top (larger y is further DOWN), within the page's size as the page states it.",
   {"parts": H.PART_SCHEMA}, t_draw_figure),
  ("edit_figure", "Change SOME parts of the figure you drew, leaving the rest alone -- e.g. "

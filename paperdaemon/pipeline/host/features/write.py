@@ -393,7 +393,9 @@ def t_write_paragraph(lines, start_y=None, size=None, place=None):
 TOOLS = [
  ("write_paragraph", "The words for a write step: lines in reading order, at the length the step "
   "deserves. The host puts them in the step's box and wraps any line that is too long; words that "
-  "run past the first screen extend the page below (it scrolls).",
+  "run past the first screen extend the page below (it scrolls). An empty string is a blank line: "
+  "leave several where the user is to write by hand (room under each problem of a worksheet, the "
+  "answer space of a form), five or six for a sum worked out.",
   {"lines": "array", "place": {"type": "string", "optional": True}}, t_write_paragraph),
  ("write_line", "ONE line of lettering when a single line is the whole step (a title, a label, a "
   "date). align left|center|right within the step's box.",

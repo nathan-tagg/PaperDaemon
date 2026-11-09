@@ -36,6 +36,10 @@
     const api = (m, p, b) => PD.api(m, base + p, b);
     const byId = x => (S.list || []).find(d => d.id === x);
     const VIEWER = id + "-viewer";
+    // THE FOLDER SHOWN IS REMEMBERED, this screen's own, and opened again when the window starts with no address
+    const AT = "pd-last-at:" + id;
+    const remember = () => { try { localStorage.setItem(AT, S.at || ""); } catch (e) { /* kept for this run only */ } };
+    const lastAt = () => { try { return localStorage.getItem(AT) || ""; } catch (e) { return ""; } };
 
     function path(x) {
       const out = [];
@@ -782,11 +786,14 @@
       const same = seen === S.libSeen;
       S.libSeen = seen;
       S.err = e ? PD.errText(e) : ""; S.list = list || [];
-      if (S.at && !byId(S.at)) S.at = "";
+      if (S.at && !byId(S.at)) { S.at = ""; remember(); }
       if ((S.picked || []).length) { S.picked = S.picked.filter(byId); if (!S.picked.length) unpick(); }
-      // (a window made on a new card opens in the folder the window it replaces was showing)
+      // (a window made on a new card opens in the folder the window it replaces was showing; a window opened with no
+      // address, in the folder this screen last showed)
+      if (!PD.firstAt && !PD.firstOpen && PD.firstPane === id && !S.restored) PD.firstAt = lastAt();
+      S.restored = true;
       const into = PD.firstAt && byId(PD.firstAt) && PD.firstPane === id;
-      if (into) { S.at = PD.firstAt; PD.firstAt = ""; }
+      if (into) { S.at = PD.firstAt; PD.firstAt = ""; remember(); }
       if (!same || into) paint();
       if (PD.firstOpen && byId(PD.firstOpen) && (!PD.firstPane || PD.firstPane === id)) {
         const x = PD.firstOpen; PD.firstOpen = ""; openDoc(x);
@@ -1133,7 +1140,7 @@
           if (S.held) { S.held = false; return; }
           if (choosing() && el.dataset.item) { pick(el.dataset.item); return; }
           if (choosing()) unpick();
-          S.at = el.dataset.at; paint();
+          S.at = el.dataset.at; remember(); paint();
           if (moving()) paintPickMenu();
         });
         PD.on(root, "click", "[data-open]", (e, el) => {

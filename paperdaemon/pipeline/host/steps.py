@@ -76,7 +76,7 @@ STEP_BRIEF = [
     (('calendar',),
      '  calendar     what = the month as YYYY-MM, or week (the seven days from today); it takes the page'),
     (('draw',),
-     '  draw         a sketch: lines from simple shapes, a figure or an icon'),
+     '  draw         a sketch: lines from simple shapes, a figure or an icon, with the words a diagram\n               needs (labels, a title) lettered as parts of it'),
     (('image',),
      '  image        a picture generated from one sentence (subject, light, style), drawn onto the page\n               in strokes, or pasted as it is with paste: true; steps and seed only when the user asked\n               for them, with quote: their words. A creature, a person or a scene asked to be DRAWN is an\n               image ("draw a fox asleep in the snow"); draw is for simple shapes and additions'),
     (('web_picture',),

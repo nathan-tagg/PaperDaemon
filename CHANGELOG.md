@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.36
+
+- Ink Adventure's skills are one list. Every entry has a proper name (Keen Eye, Sneak Attack, Fire Bolt), says what it lets the hero do, and shows its figure at the right: the check a trained skill is good at with its bonus, or a spell's cost in magic points. A hero with a spell has magic points beside their hit points; a cast costs its points, one the hero cannot pay for does not happen, and magic comes back by rest. An older adventure's hero is read the same way.
+- The window opens where you left it: its position, size and whether it was maximized are remembered, and so are the screen it showed and, on the Mirror and the False Mirror, the folder it was in. An update's restart puts it all back. A remembered place on a monitor that is gone is ignored.
+- A sketch can carry words. A diagram asked for with labels used to come out mute, because the figure had no part that could hold text; now a text part is lettered on the figure like any other, at the size and anchor the model names.
+- A timeline takes dates. "Kickoff January 5, design review February 2" was refused twice and then drawn as an empty axis; events are now placed by their dates, by a year or by a number, and each tick says the day.
+- The model can read another page of the notebook while it rules and plans: its typed text, exact, and its handwriting as read. "Using my budget on page 1" is answered from page 1, not with a request to type it again.
+- A worksheet leaves room to work: the model is told that an empty line is a blank line, so "room under each problem" is real space.
+
 ## 0.2.35
 
 - An Ink Adventure's pages share one design. Every page keeps to one column, the width of the scene's picture and of the tablet's own typed text; each has its title and a thin rule under it at the same height; one set of type sizes runs through them all. Nothing is drawn as a button any more (a notebook page can't be tapped), no "p. 5" badges hang off boxes, and nothing carries a label for what it already says.

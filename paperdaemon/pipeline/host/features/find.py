@@ -111,11 +111,49 @@ def _serve_look(fn, args, cid, msgs, doc, page):
     if fn == "notepad_read":
         msgs.append({"role": "tool", "tool_call_id": cid, "content": json.dumps(_notepad_read(args, doc))[:6500]})
         return
+    if fn == "read_page":
+        msgs.append({"role": "tool", "tool_call_id": cid, "content": json.dumps(_read_page(args, doc, page))[:6500]})
+        return
     # render
     JOB.unseen = False
     JOB.looks = JOB.looks + 1
     msgs.append({"role": "tool", "tool_call_id": cid, "content": '{"ok":true}'})
     msgs.append(H.page_image(doc, page, "The page as it now stands, with your draft drawn on it."))
+
+
+def _read_page(args, doc, page):
+    """ANOTHER PAGE OF THIS NOTEBOOK, in words: its typed text, exact, and its handwriting as the reader reads it, line
+    by line. A request that names another page ("my budget on page 1") had the host ask the user to type the list
+    again: it saw only the page it was on. Pages are counted as the tablet counts them."""
+    try:
+        want = int(args.get("page"))
+    except Exception:
+        return {"error": "give the page's number"}
+    pages = R.live_pages(doc)
+    if not (1 <= want <= len(pages)):
+        return {"error": "this notebook has %d page%s" % (len(pages), "" if len(pages) == 1 else "s")}
+    if want == page:
+        return {"error": "that is this page: you have it in front of you"}
+    out = {"page": want, "typed": [], "written": []}
+    try:
+        from paperdaemon.pipeline.page import typed as TY
+        _tb, paras = TY.paragraphs(doc, want)
+        out["typed"] = [str(p.get("text", "")).strip()[:400] for p in (paras or []) if str(p.get("text", "")).strip()]
+    except Exception as ex:
+        H._warn("reading page %d's typed text" % want, ex)
+    try:
+        from paperdaemon import reader
+        png = os.path.join(H.QUEUE, "_host_read_page.png")
+        R.render(doc, want, png, typed=False, hide=H._hide(), blank_ok=True)
+        lines = {}
+        for w in reader.read_picture(png, scale=2):
+            lines.setdefault(w.get("line", 0), []).append((w["x"], w["text"]))
+        out["written"] = [" ".join(t for _x, t in sorted(ws)) for _k, ws in sorted(lines.items())][:80]
+    except Exception as ex:
+        H._warn("reading page %d's handwriting" % want, ex)
+    if not out["typed"] and not out["written"]:
+        out["note"] = "nothing in words on that page (a picture, a drawing, or blank)"
+    return out
 
 
 def _snapshot(doc, page, back=1):
@@ -219,4 +257,8 @@ TOOLS = [
  ("changes", "What was added to the page and what was erased since this system last worked on it.", {}, None),
  ("notepad_read", "Read this notebook's notepad beyond what the listing shows: scope = 'page' (this page's "
   "entries) or 'notebook' (all of them).", {"scope": "string"}, None),
+ ("read_page", "Read ANOTHER page of this notebook in words -- its typed text, exact, and its handwriting as read -- "
+  "when the request points at one ('my list on page 1', 'the budget on the last page'). page: its number as the "
+  "tablet counts pages. Then rule and plan with what it says; never ask the user to type it again.",
+  {"page": "number"}, None),
 ]
