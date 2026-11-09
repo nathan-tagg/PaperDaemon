@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.38
+
+- The window comes back on the screen and in the folder it showed, every time. What the window remembers for itself (the screen, the folder of a library screen, the Decompose page size, a note seen) is now kept by PaperDaemon in its data folder instead of the web view's own storage, which in some installs forgets everything at a restart: on the maintainer's machine every update brought the window back on the Overview.
+
 ## 0.2.37
 
 - A cast costs its magic points once. The engine takes a spell's cost when it is cast; the story used to take it a second time, so Light at 1 MP cost 2. The sheet's Magic cell now shows what is really left.
