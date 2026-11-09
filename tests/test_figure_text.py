@@ -35,3 +35,21 @@ def test_text_is_a_known_part_kind_and_needs_words():
     except ValueError:
         pass
     assert LT.measure("Precipitation", 28) > 0
+
+def test_a_leader_that_ends_in_its_label_stops_short_of_the_words():
+    # round 17, DF211: "Chloroplast" was struck through by the line that pointed at it
+    from paperdaemon.pipeline.host.features import draw as D
+    label = H._part_paths({"kind": "text", "text": "Chloroplast", "x": 430, "y": 170, "size": 28})
+    x0, y0, x1, y1 = _extent(label)
+    box = D._word_box(label, 28.0)
+    assert box[0] < x0 and box[2] > x1 and box[1] < y0 and box[3] > y1
+    leader = [(345.0, 180.0), (x0 + 40.0, y0 + 10.0)]            # from the shape into the middle of the word
+    out = D._off_the_words([list(leader), list(label[0])], ["line", "text"], [box])
+    end = out[0][-1]
+    assert out[0][0] == leader[0] and end[0] < x0 and abs(end[0] - box[0]) < 1e-6   # cut at the label's left edge
+    assert out[1] == list(label[0])                                              # the words are left alone
+    # a line that only passes by, or ends well clear of the words, is unchanged
+    clear = [(0.0, 0.0), (100.0, 100.0)]
+    assert D._off_the_words([clear], ["line"], [box])[0] == clear
+    assert D._off_the_words([clear], ["line"], [])[0] == clear
+

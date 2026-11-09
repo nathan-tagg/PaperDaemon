@@ -115,3 +115,5 @@
       mp cost"; "skills, spells, special abilities, everything, should be 'skills'"): SKILL_NAMES, SPELLS and FEATS;
       magic points for a hero with a spell (a Magic cell); the engine takes a cast's points and refuses one unpaid for;
       the story's grants named with a cost; unify() reads an older hero's lists as one
+- [x] 10.24 A leader line that ends inside its label's words is cut at the label's edge (round 17, DF211: "Chloroplast"
+      struck through by the line that pointed at it)

@@ -145,6 +145,47 @@ def _part_paths(part):
     return []
 
 
+def _word_box(paths, size):
+    """The box a label's strokes fill, grown by a gap of the capital height's third: the room its words need."""
+    xs = [p[0] for pth in paths for p in pth]
+    ys = [p[1] for pth in paths for p in pth]
+    gap = max(6.0, 0.35 * size)
+    return (min(xs) - gap, min(ys) - gap, max(xs) + gap, max(ys) + gap)
+
+
+def _exit(p, q, boxes):
+    """`p` inside one of the boxes and `q` beyond it -> the point on the way from p to q just outside that box; None
+    when p is in no box, or q is inside it too."""
+    for x0, y0, x1, y1 in boxes:
+        if not (x0 <= p[0] <= x1 and y0 <= p[1] <= y1):
+            continue
+        if x0 <= q[0] <= x1 and y0 <= q[1] <= y1:
+            return None
+        dx, dy = q[0] - p[0], q[1] - p[1]
+        ts = [(e - p[0]) / dx for e in (x0, x1) if dx] + [(e - p[1]) / dy for e in (y0, y1) if dy]
+        ts = [t for t in ts if 0 < t <= 1]
+        return (p[0] + dx * min(ts), p[1] + dy * min(ts)) if ts else None
+    return None
+
+
+def _off_the_words(paths, kinds, boxes):
+    """A line or polyline that ends inside a label's words is cut at the label's edge, a little short of it: a leader
+    drawn through its own label ("Chloroplast" struck through by the line that pointed at it) stops where the word
+    begins. The words themselves and the shapes are left alone."""
+    if not boxes:
+        return paths
+    out = []
+    for pth, kind in zip(paths, kinds):
+        if kind in ("line", "polyline") and len(pth) >= 2:
+            pth = list(pth)
+            for end, nxt in ((0, 1), (-1, -2)):
+                hit = _exit(pth[end], pth[nxt], boxes)
+                if hit:
+                    pth[end] = hit
+        out.append(pth)
+    return out
+
+
 def _fit_paths(paths, box, fill=0.9):
     """Scale (aspect kept) and center a figure's paths into `box`. None if there is nothing to fit
     or the figure is degenerate (a point). A figure already inside the box and at least a third of
@@ -247,7 +288,7 @@ def _draw_figure(parts, place):
     H._mark()
     JOB.figure = {"parts": [dict(p) for p in parts if isinstance(p, dict)],
                      "at": len(JOB.draw.strokes), "op": None, "place": place, "turn": JOB.turns}
-    drawn, bad, paths_all, inks = 0, [], [], []
+    drawn, bad, paths_all, inks, kinds, words = 0, [], [], [], [], []
     for i, part in enumerate(parts):
         if not isinstance(part, dict):
             bad.append("part %d is not an object" % i)
@@ -262,6 +303,11 @@ def _draw_figure(parts, place):
             continue
         paths_all += [list(pth) for pth in paths]
         inks += [_ink(part.get("color"))] * len(paths)
+        kind = str(part.get("kind") or "").lower()
+        kinds += [kind] * len(paths)
+        if kind == "text":
+            words.append(_word_box(paths, float(part.get("size") or 28.0)))
+    paths_all = _off_the_words(paths_all, kinds, words)
     # THE HOST FITS THE FIGURE TO ITS BOX. The numbers the model sends are taken as a sketch on its own grid:
     # the whole figure is scaled (aspect kept) and centered into the box the plan gave this step, so its
     # coordinates need only be consistent with each other. Without a box the page's safe area is the box.
