@@ -10,8 +10,9 @@
 
 - [x] 2.1 The UI keeps the screen shown (never setup or pairing) and the folder of each library screen, and opens there
       when the address names nothing (0.2.36)
-- [ ] 2.2 On his machine after the next update: the window back on his monitor at his size, the False Mirror open in
-      the Dogfood folder, with no hand (0.2.37 came back on the Overview: 2.3)
+- [x] 2.2 On his machine after the next update: the window back on his monitor at his size, the False Mirror open in
+      the Dogfood folder, with no hand (0.2.37 came back on the Overview: 2.3; the 0.2.38 update, 11-09 12:3x: the
+      window at -1447,-1063 1454x1727, the False Mirror inside Dogfood, nothing touched)
 - [x] 2.3 The UI's memory lives on the engine (ui_memory.py, GET/PUT /ui/memory; PD.memory, PD.remember), not in the
       web view's storage: on his machine that store's log drops its tail at every restart ("Corruption: checksum
       mismatch ... dropping 8247 bytes", then "Reusing old log") and so forgets everything written since; the screen,
