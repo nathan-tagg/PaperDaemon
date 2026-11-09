@@ -19,7 +19,7 @@ HOST, MODEL = "host", "model"
 KINDS = {
     "erase": HOST, "search": HOST, "image": HOST, "web_picture": HOST, "coloring": HOST, "posts": HOST,
     "highlight": HOST, "circle": HOST, "underline": HOST, "strike": HOST, "checkbox": HOST,
-    "tag": HOST, "chess": HOST, "adventure": HOST, "messages": HOST,
+    "tag": HOST, "chess": HOST, "adventure": HOST, "messages": HOST, "concord": HOST,
     "chart": MODEL, "calendar": MODEL, "write": MODEL, "draw": MODEL,
 }
 MARK_UP = ("highlight", "circle", "underline", "strike")
@@ -27,7 +27,7 @@ MARK_UP = ("highlight", "circle", "underline", "strike")
 STROKE_KIND = {"write": "written", "draw": "sketch", "chart": "svg", "calendar": "svg", "posts": "svg",
                "image": "decomp", "web_picture": "decomp", "coloring": "decomp",
                "highlight": "markup", "circle": "markup", "underline": "markup", "strike": "markup"}
-GAMES = ("chess", "adventure", "messages")
+GAMES = ("chess", "adventure", "messages", "concord")
 # what kind of box a content step gets (the layout's vocabulary)
 PLACE_KIND = {"write": "text", "chart": "chart", "calendar": "calendar", "draw": "drawing",
               "image": "image", "web_picture": "image", "coloring": "coloring", "posts": "chart"}
@@ -50,6 +50,7 @@ FIELDS = {
     "chess": ("color", "strength", "opponent", "moves"),
     "adventure": (),
     "messages": ("members",),
+    "concord": (),
 }
 WHAT_IS = {
     "erase": "what you point at, with at", "search": "the query", "image": "a sentence describing the picture",
@@ -59,6 +60,7 @@ WHAT_IS = {
     "checkbox": "the list made checkboxes",
     "tag": "the tag's name, as the user wrote it", "chess": "the opponent and the game as asked",
     "adventure": "the adventure and the hero asked for", "messages": "who to text, as asked",
+    "concord": "the family the user plays, as asked (or nothing)",
     "chart": "what it shows and from which figures", "calendar": "the month as YYYY-MM, or week",
     "write": "what the words are about", "draw": "the thing to draw",
 }
@@ -98,6 +100,8 @@ STEP_BRIEF = [
      '  chess        a chess game played on THIS page, which it takes whole (nothing else goes on it): color (the\n               side the USER plays: white, black or either), strength (a rating the user named), opponent (a\n               resident the user named), moves (the moves the request already makes, in order, as written:\n               ["e4"])'),
     (('adventure',),
      '  adventure    an ink adventure (what = the adventure and the hero asked for): its scene takes THIS\n               page whole (nothing else goes on it), its sheet and log right after'),
+    (('concord',),
+     '  concord      the Concord of Merrow Bay, a game of letters and orders among seven old families (what =\n               the family the user plays, if named): its map takes THIS page whole, its orders, letters and\n               seasons pages go right after'),
     (('messages',),
      "  messages     texting the game's residents: members (who, one or several for a group chat); it\n               takes THIS page whole (nothing else goes on it). A picture OF a board is a chart, not a game"),
 ]
@@ -418,6 +422,7 @@ def describe(step):
         "coloring": "make a coloring page of %s", "posts": "clip posts: %s",
         "tag": "tag this page %r", "chart": "chart %s", "calendar": "calendar: %s", "write": "write %s",
         "chess": "start a chess game: %s", "adventure": "start an adventure: %s", "messages": "start messages: %s",
+        "concord": "start the Concord: %s",
         "draw": "draw %s",
     }[d] % ((step.get("source") or w) if d == "posts" else w)
 

@@ -74,6 +74,8 @@ FEATURES = (
        steps=("adventure",)),
     _f("messages", "a chat with the town's residents", requires=Requires(content=("characters",)),
        optional=Requires(features=("image", "picture_edit"), text={"vision": True}), steps=("messages",)),
+    _f("concord", "the Concord of Merrow Bay, a game of letters", requires=Requires(content=("characters",)),
+       optional=Requires(text={"vision": True}), steps=("concord",)),
     _f("notepad", "the notebook's notepad", tools=("notepad",)),
     _f("tag", "tagging the page when the user asked for it", steps=("tag",)),
 )

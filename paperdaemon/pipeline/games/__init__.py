@@ -658,6 +658,9 @@ def play(doc, page_no, page_id, ask_text=None, ask_vision=None, log=None, workdi
     if state.get("game") == "messages":
         from paperdaemon.pipeline.games import messages as MS
         return MS.turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=paint, log=log, workdir=workdir)
+    if state.get("game") == "concord":
+        from paperdaemon.pipeline.games.concord import game as CO
+        return CO.turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=paint, log=log, workdir=workdir)
     talk, notes, context = [], [], ""
     try:
         P.record(doc, page_no, note="before a %s turn" % state.get("game", "game"))

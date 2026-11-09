@@ -45,7 +45,8 @@ with the writer and the orders it has already decided for the coming season, and
 attack, a shire left empty, a convoy); a promise the family means to keep SHALL bind its orders for the seasons named,
 and a promise it means to break SHALL be broken by its orders and remembered against it when it comes out. A family
 MAY write unasked, at most once a season, when it wants something or was attacked. Letters SHALL be drawn on the
-letters page with the family's name and the season over each, the user's own letters left where they were written.
+letters page with the family's name and the season over each, the user's own letters among them as they were read,
+their ink taken off the page once read, as the orders are.
 
 #### Scenario: A promise kept
 - **WHEN** Judge Shellby answers a letter with a promise to support the user's move into Fogwater next season and means

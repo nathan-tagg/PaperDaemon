@@ -88,7 +88,8 @@ the order-writer (D7), to answer with `{say: the letter back, in their voice; pr
 | demilitarize | convoy, shire, unit, seasons}; keep: true or false}`. A promise the character means to keep becomes a
 constraint on the order-writer for those seasons; one they mean to break is remembered as such, and the accord falls
 when it comes out. Letters are drawn on the letters page in the one design, the family's name and the season over each,
-the user's own letter left where it was written.
+the user's own letter among them as it was read (in italics), its ink taken off once read: the page stays a clean
+record with room to write, as the orders page does.
 
 A family also writes unasked when the order-writer wants something it cannot do alone (a support into a shire the user
 borders) or when the user attacked it: one short letter a season at most, asking or warning, in voice.
@@ -99,8 +100,9 @@ The request page becomes the **map**: the shires drawn as strokes from the map d
 names lettered, harbors marked with an anchor), each unit a counter with the family's mark (a letter: Q, O, G, H, B, S,
 and the user's initial), fleets as boats and militias as towers, the season and year under the title. The **orders**
 page follows: the user's orders of the season before as the engine read them with each one's result, then the writing
-space. The **letters** page(s): every letter of the game so far, newest last, with room to write. The **log**: one
-line a season a family. Pages are redrawn only when their content changed (the map every season; the letters page when
+space. The **letters** page(s): every letter of the game so far, newest last, seven to a page, with room to write on
+the last. The **seasons** page: every family's orders and what came of them, a season at a time, the newest seasons
+that fit; retreats, harbors taken, builds and disbands under each autumn. Pages are redrawn only when their content changed (the map every season; the letters page when
 a letter arrived). Everything is one column, header and hairline, no buttons, no counts, as the adventure's spec says.
 
 ## D7. The cast's orders (`concord/minds.py`)

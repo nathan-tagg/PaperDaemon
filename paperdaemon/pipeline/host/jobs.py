@@ -64,7 +64,7 @@ PROTOCOLS = {
                         ("element", "draw_figure", "edit_figure")),
     "image": _HOST, "coloring": _HOST, "web_picture": _HOST,
     "highlight": _HOST, "circle": _HOST, "underline": _HOST, "strike": _HOST, "checkbox": _HOST,
-    "chess": _HOST, "adventure": _HOST, "messages": _HOST, "posts": _HOST, "tag": _HOST,
+    "chess": _HOST, "adventure": _HOST, "messages": _HOST, "concord": _HOST, "posts": _HOST, "tag": _HOST,
     "game_turn": JobProtocol(True), "note": _HOST, "remember": _HOST,
     "conflict": JobProtocol(True),
 }
@@ -78,7 +78,7 @@ def kind_of(step):
     do = step.get("do")
     if do == "image" and step.get("source"):
         return JobKind.PICTURE_EDIT
-    if do in ("chess", "adventure", "messages"):
+    if do in ("chess", "adventure", "messages", "concord"):
         return JobKind.GAME_START
     return JobKind(do)
 
