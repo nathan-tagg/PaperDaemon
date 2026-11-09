@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.37
+
+- A cast costs its magic points once. The engine takes a spell's cost when it is cast; the story used to take it a second time, so Light at 1 MP cost 2. The sheet's Magic cell now shows what is really left.
+- A leader line stops at its label. In a labeled sketch, a line that ended among the letters of the word it pointed at struck the word through; it now ends just before the word.
+- A loose idea under an adventure's scene is never cut mid-word: a long one ends at a whole word, and the game master is asked for a few words each.
+
 ## 0.2.36
 
 - Ink Adventure's skills are one list. Every entry has a proper name (Keen Eye, Sneak Attack, Fire Bolt), says what it lets the hero do, and shows its figure at the right: the check a trained skill is good at with its bonus, or a spell's cost in magic points. A hero with a spell has magic points beside their hit points; a cast costs its points, one the hero cannot pay for does not happen, and magic comes back by rest. An older adventure's hero is read the same way.
