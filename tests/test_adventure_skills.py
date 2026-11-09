@@ -93,6 +93,8 @@ def test_the_story_grants_named_skills_and_rest_brings_magic_back():
     assert AD.apply(st, {"mp": "+2"}) == ["magic +2 (3/%d)" % f["mp"]["max"]]
     assert AD.apply(st, {"mp": "all"}) == ["magic +%d (%d/%d)" % (f["mp"]["max"] - 3, f["mp"]["max"], f["mp"]["max"])]
     assert AD.apply(st, {"mp": "+2"}) == []                               # full stays full
+    assert AD.apply(st, {"mp": "-1"}) == ["magic: a cast's cost is taken by the engine, not the story"]
+    assert f["mp"]["now"] == f["mp"]["max"]                              # the story cannot spend it (DF215 took a cast twice)
     assert AD.apply(_state(_hero("fighter")), {"mp": "all"}) == ["no magic to restore"]
 
 

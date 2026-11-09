@@ -642,9 +642,13 @@ def apply(state, ch, allowed_items=()):
             try:
                 v = h["mp"]["max"] if str(ch["mp"]).strip().lower() in ("all", "full") else int(str(ch["mp"]).replace("+", ""))
                 before = h["mp"]["now"]
-                h["mp"]["now"] = max(0, min(h["mp"]["max"], before + v))
-                if h["mp"]["now"] != before:
-                    notes.append("magic %+d (%d/%d)" % (h["mp"]["now"] - before, h["mp"]["now"], h["mp"]["max"]))
+                if v < 0:
+                    # THE ENGINE CHARGES A CAST (spend), the story does not: "mp": "-1" after a cast took it twice (DF215)
+                    notes.append("magic: a cast's cost is taken by the engine, not the story")
+                else:
+                    h["mp"]["now"] = max(0, min(h["mp"]["max"], before + v))
+                    if h["mp"]["now"] != before:
+                        notes.append("magic %+d (%d/%d)" % (h["mp"]["now"] - before, h["mp"]["now"], h["mp"]["max"]))
             except ValueError:
                 notes.append("magic: %r not understood" % ch["mp"])
     if ch.get("gold"):
@@ -1547,8 +1551,8 @@ of its own (Harbor Watch, Gull-Speech, Saltlight), never a bare number, and says
 storm coming, speak with gulls, call light from the sea); a spell costs magic points, 1 for a small one and 2 for a real
 one. A trained skill of the rules may be learned too, by its name from: {skills}. Most change what the hero can do,
 not a number; a few may carry one small number in "mods", as {{"perception": 1}} or {{"DEX": 2}} (a skill or an
-ability, at most +2). Magic spent comes back only by rest: "mp" is "+2" for an hour's rest, "all" after a night's
-sleep."""
+ability, at most +2). A cast's cost in magic points is already taken by the engine: "mp" is only for rest, "+2" for an
+hour's and "all" after a night's sleep, else 0."""
 
 READ_PROMPT = """This is the player's handwriting from the bottom of a page of a text adventure on a tablet, alone:
 what they do next (or the rest of it, after what they typed). Answer with one line:

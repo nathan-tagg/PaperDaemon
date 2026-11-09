@@ -119,3 +119,5 @@
       struck through by the line that pointed at it)
 - [x] 10.25 A loose idea under the scene is cut at a whole word with an ellipsis, never mid-word, and the prompts ask
       for a few words each (round 17, DF215: "pretending to be a c")
+- [x] 10.26 A cast's magic points are taken once, by the engine: a negative "mp" from the story is refused with a note,
+      and the prompt says the cost is already taken (round 17, DF215: Light cost 1 MP and the story took 1 more)
