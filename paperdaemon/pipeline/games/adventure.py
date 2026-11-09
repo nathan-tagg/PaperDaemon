@@ -710,7 +710,7 @@ Answer with JSON only:
  "what_happened": "three to six sentences, second person: the death, then what comes after",
  "log": "one line for the adventure log, past tense",
  "place": "where the story is now, a few words", "around": "two sentences: what can be seen now",
- "options": ["three or four loose ideas"],
+ "options": ["three or four loose ideas, a few words each"],
  "present": ["the name of each person listed above who is in the next scene"],
  "new_people": [every named person appearing for the FIRST time, each {person}],
  "picture": {{"mode": "new", "prompt": "what the one the story now follows SEES: the place, the objects, where each
@@ -1469,7 +1469,7 @@ Answer with JSON only:
           "personality": "two sentences", "backstory": "three sentences",
           "skills": ["up to four skills from: {skills}"]}},
  "opening": {{"place": "where the story begins, a few words", "what_happened": "two to four sentences, second person",
-             "around": "two sentences: what the hero can see around them", "options": ["three or four loose ideas"],
+             "around": "two sentences: what the hero can see around them", "options": ["three or four loose ideas, a few words each"],
              "people": [every named person in the opening scene, each {person}],
              "picture": "what the hero SEES in front of them: the place, the objects in it, where each person stands. Never describe the hero."}}}}
 "around" and "options" name only what the hero can see: never the premise, a secret or a hidden place."""
@@ -1521,7 +1521,7 @@ Answer with JSON only:
  "log": "one line for the adventure log, past tense: what the hero did and what came of it",
  "place": "where the hero is now, a few words", "same_place": true if the hero is still looking at the same scene,
  "around": "two sentences: what the hero can see now",
- "options": ["three or four loose ideas, not the only choices"],
+ "options": ["three or four loose ideas, a few words each, not the only choices"],
  "present": ["the name of each person listed above who is in the next scene"],
  "new_people": [every named person appearing for the FIRST time, each {person}],
  "people_changes": [{{"name": "...", "status": one of {statuses}, "disposition": one of {dispositions}, "hp": "0",
@@ -2567,7 +2567,7 @@ def start(what, ask_text, paint=None, log=None, workdir=None, parent=None, doc=N
         state["format"], state["book_pages"] = "book", []
     op = spec.get("opening") or {}
     scene = {"place": str(op.get("place") or "")[:80], "what_happened": str(op.get("what_happened") or "")[:1200],
-             "around": str(op.get("around") or "")[:500], "options": [str(o)[:80] for o in (op.get("options") or [])][:4]}
+             "around": str(op.get("around") or "")[:500], "options": [_clip(o, 96) for o in (op.get("options") or [])][:4]}
     rng = CH.Rng(**state["rng"])
     present = add_people(state, op.get("people"), rng, 1, scene["place"])
     state["rng"] = rng.state()
@@ -2733,7 +2733,7 @@ def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=Non
     new_scene = {"place": str(tell.get("place") or state["place"])[:80],
                  "what_happened": str(tell.get("what_happened") or "")[:1200],
                  "around": str(tell.get("around") or "")[:500],
-                 "options": [str(o)[:80] for o in (tell.get("options") or [])][:4]}
+                 "options": [_clip(o, 96) for o in (tell.get("options") or [])][:4]}
     n = len(state["turns"]) + 1
     # THE CAST, through the engine: newcomers rolled and recorded once, changes checked, looks never touched
     rng = CH.Rng(**state["rng"])

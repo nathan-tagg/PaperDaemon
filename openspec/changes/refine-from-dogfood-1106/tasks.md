@@ -117,3 +117,5 @@
       the story's grants named with a cost; unify() reads an older hero's lists as one
 - [x] 10.24 A leader line that ends inside its label's words is cut at the label's edge (round 17, DF211: "Chloroplast"
       struck through by the line that pointed at it)
+- [x] 10.25 A loose idea under the scene is cut at a whole word with an ellipsis, never mid-word, and the prompts ask
+      for a few words each (round 17, DF215: "pretending to be a c")
