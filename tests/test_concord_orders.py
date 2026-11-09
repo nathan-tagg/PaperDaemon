@@ -24,7 +24,7 @@ def test_names_by_prefix_and_by_spelling_and_small_words_left_alone():
     assert O.find_shire(["kettle"]) == "kettle-isle" and O.find_shire(["Kettel", "Isle"]) == "kettle-isle"
     assert O.find_shire(["to"]) is None and O.find_shire(["the"]) is None and O.find_shire(["the", "tower"]) == "the-tower"
     assert O.parse_line("Kettel Isle to Gul Reach")["to"] == "gull-reach"
-    assert O.parse_line("Harbour Row holds")["unit"] == "harbor-row"
+    assert O.parse_line("Habor Row holds")["unit"] == "harbor-row"
 
 
 def test_builds_disbands_and_what_cannot_be_placed():

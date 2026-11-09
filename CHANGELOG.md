@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.39
+
+- A new game: the Concord of Merrow Bay. Ask for it on a page ("start the Concord", or "start the Concord as the Hales") and the page becomes a map of the bay's twenty-eight shires, with the orders, letters and seasons pages right after it. Seven families hold the bay; you play one, six of the cast play the others. Each season you write an order for each of your fleets and militias in plain words under the rule of the orders page (hold, move, support, convoy), and every family's orders resolve at once by the rules when the page syncs: a support cut by an attack, a move won by the greater strength and stood off by an equal one, no family dislodging its own. Harbors count at each autumn; eleven win, or the most after the tenth autumn.
+- The whole game is letters. Write to a family on the letters page, its name first, and it answers in its own voice, knowing its standing and the orders it has already decided; it may promise support, peace or a shire left empty, and it keeps or breaks its word by character. A promise kept binds its orders; one broken is remembered against it. A family also writes unasked when you attacked it or when it wants your hand.
+
 ## 0.2.38
 
 - The window comes back on the screen and in the folder it showed, every time. What the window remembers for itself (the screen, the folder of a library screen, the Decompose page size, a note seen) is now kept by PaperDaemon in its data folder instead of the web view's own storage, which in some installs forgets everything at a restart: on the maintainer's machine every update brought the window back on the Overview.

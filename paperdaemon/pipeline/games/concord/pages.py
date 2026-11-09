@@ -54,7 +54,7 @@ def _counter(d, x, y, kind, letter, mine, font):
 
 def map_png(state, out):
     """THE MAP: the shires as the data draws them, water shaded, names in small type, each harbor a ring (filled
-    with its owner's mark when held), each unit a counter with its family's letter; under it the families, their
+    with its holder's mark when held), each unit a counter with its family's letter; under it the families, their
     marks and their harbors, and the season."""
     from paperdaemon.pipeline.draw import scaled as SD
     im, d = SD.canvas(PAGE_W, PAGE_H)
