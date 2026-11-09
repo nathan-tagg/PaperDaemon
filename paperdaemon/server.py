@@ -349,6 +349,24 @@ def get_render_window():
             "current": _window["args"] is None or _window["args"] == gpus.window_for(s)}
 
 
+@app.get(API + "/ui/memory")
+def get_ui_memory():
+    """What the window keeps for itself between starts (the screen it showed, the folder of each library screen, and
+    the like), kept by the engine: the web view's own storage does not survive a restart in every install."""
+    from . import ui_memory
+    return ui_memory.load()
+
+
+@app.put(API + "/ui/memory")
+def put_ui_memory(body: dict = Body(...)):
+    """{name: value} to remember (null forgets one) -> everything remembered."""
+    from . import ui_memory
+    try:
+        return ui_memory.remember(body)
+    except ValueError as ex:
+        return _bad(str(ex))
+
+
 @app.post(API + "/render/window/move")
 def post_render_window_move(body: dict = Body(default={})):
     """A document opened while the window is on another card than Settings names: the shell makes a fresh web view on

@@ -192,9 +192,9 @@
   // the page a note asking for a moment. THE NOTE EXPIRES: a bar along its bottom edge runs down over 20 seconds while
   // the screen is open; when it is gone, so is the note (and the lightbulb, for good). Leaving the screen takes the
   // note away, so the next visit starts the 20 seconds again.
-  const NOTE_SEEN = "pd.prefs-note-seen";
+  const NOTE_SEEN = "prefs-note-seen";
   function noteSeen() {
-    try { return localStorage.getItem(NOTE_SEEN) === "1"; } catch (e) { return !!PD.prefsNoteSeen; }
+    return PD.memory[NOTE_SEEN] === true || !!PD.prefsNoteSeen;
   }
   PD.needsPrefs = (st, settings) => {
     const p = (settings || S.s || PD.settings || {}).prefs || {};
@@ -210,7 +210,7 @@
     box.innerHTML = '<div class="notice soft" role="status"><span class="bulb draw">' + BULB + "</span><span>" + esc(t("settings.note")) +
       '</span><i class="notice-timer" aria-hidden="true"></i></div>';
     box.querySelector(".notice-timer").addEventListener("animationend", () => {
-      try { localStorage.setItem(NOTE_SEEN, "1"); } catch (e) { PD.prefsNoteSeen = true; }
+      PD.prefsNoteSeen = true; PD.remember(NOTE_SEEN, true);
       paintNote(); PD.paintRail();
     });
   }

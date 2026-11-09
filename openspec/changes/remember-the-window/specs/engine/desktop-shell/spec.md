@@ -17,6 +17,13 @@ no screen any more SHALL be ignored, and the window SHALL open as it would witho
 The UI SHALL remember the screen it was showing and, on the Mirror and False Mirror screens, the folder it was in, and
 SHALL open there next time when nothing in the window's address says where to open. An address that names a screen,
 a folder or a document SHALL win over what is remembered. The setup and pairing screens SHALL never be remembered.
+What the window keeps for itself between starts (the screen, the folder, a list's page size, a note seen) SHALL be
+kept by the engine in its data folder, read once as the window boots and written as it changes, never in the web
+view's own storage: that storage does not survive a restart in every install.
+
+#### Scenario: The web view's storage comes back empty
+- **WHEN** the web view's own storage has lost everything over a restart
+- **THEN** the window still opens on the remembered screen and in the remembered folder
 
 #### Scenario: The False Mirror's Dogfood folder
 - **WHEN** the window last showed the False Mirror inside the Dogfood folder and PaperDaemon restarts

@@ -61,7 +61,8 @@
   const PER = [10, 50, 100];
   const chevron = d => '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="' + d + '"/></svg>';
   const PREV = chevron("M10 3L5 8l5 5"), NEXT = chevron("M6 3l5 5-5 5");
-  try { const v = Number(localStorage.getItem("pd-decomps-per")); if (PER.includes(v)) S.per = v; } catch (e) { /* the default */ }
+  const PER_KEY = "decomps-per";
+  const perRemembered = () => { const v = Number(PD.memory[PER_KEY]); if (PER.includes(v)) S.per = v; };
 
   function itemHtml(it) {
     const act = S.sent.has(it.id) ? '<span class="sent">' + esc(PD.t("dc.sent")) + "</span>"
@@ -245,7 +246,7 @@
       PD.on(R, "click", "[data-per]", (e, el) => {
         const n = Number(el.dataset.per); if (n === S.per) return;
         S.page = Math.floor(S.page * S.per / n); S.per = n;  // the first decomp in view stays in view
-        try { localStorage.setItem("pd-decomps-per", String(n)); } catch (err) { /* this session only */ }
+        PD.remember(PER_KEY, n);
         loadItems();
       });
       document.addEventListener("paste", e => {
@@ -256,6 +257,7 @@
       renderZone(); renderItems();
     },
     async show() {
+      perRemembered();                                 // the page size kept on the engine
       // SEND IS ALWAYS ON: the engine lands it in every inbox (the inbox tag, else Quick sheets), or says why not
       loadItems();
     },

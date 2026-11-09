@@ -37,9 +37,9 @@
     const byId = x => (S.list || []).find(d => d.id === x);
     const VIEWER = id + "-viewer";
     // THE FOLDER SHOWN IS REMEMBERED, this screen's own, and opened again when the window starts with no address
-    const AT = "pd-last-at:" + id;
-    const remember = () => { try { localStorage.setItem(AT, S.at || ""); } catch (e) { /* kept for this run only */ } };
-    const lastAt = () => { try { return localStorage.getItem(AT) || ""; } catch (e) { return ""; } };
+    const AT = "last-at:" + id;
+    const remember = () => { if ((PD.memory[AT] || "") !== (S.at || "")) PD.remember(AT, S.at || ""); };
+    const lastAt = () => PD.memory[AT] || "";
 
     function path(x) {
       const out = [];

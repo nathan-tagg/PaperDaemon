@@ -154,11 +154,11 @@
 
   // THE SCREEN SHOWN IS REMEMBERED (and, on the library screens, the folder: tablet.js), and the window opens there
   // next time when its address names nothing -- an update's restart included. Setup and pairing are never remembered
-  const LAST = "pd-last-screen";
-  const remembered = () => { try { const s = localStorage.getItem(LAST); return s && PD.screens[s] && RAIL.includes(s) ? s : ""; } catch (e) { return ""; } };
+  const LAST = "last-screen";
+  const remembered = () => { const s = PD.memory[LAST]; return s && PD.screens[s] && RAIL.includes(s) ? s : ""; };
   function route(focus) {
     const h = location.hash, id = (h.match(/pane=([a-z-]+)/) || h.match(/^#\/?([a-z-]+)$/) || [])[1] || "overview";
-    if (PD.screens[id] && RAIL.includes(id)) { try { localStorage.setItem(LAST, id); } catch (e) { /* kept for this run only */ } }
+    if (PD.screens[id] && RAIL.includes(id) && PD.memory[LAST] !== id) PD.remember(LAST, id);
     const el = show(PD.screens[id] ? id : "overview");
     if (focus) { const h = $("h1", el); if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); } }
     window.scrollTo(0, 0);
@@ -209,6 +209,7 @@
     const at = ((PD.firstPane || "").match(/^setup([1-4])$/) || [])[1];       // a link straight to a setup step
     if (at) return PD.setup.start(Number(at));
     if (st.first_run && !skipped()) return PD.setup.start();
+    await PD.loadMemory();                                                    // the screen and folder to open on
     startApp();
   }
   PD.boot = boot;

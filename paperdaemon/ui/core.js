@@ -218,6 +218,20 @@
   // ---- settings, fetched when a screen needs them and saved whole (the engine merges over its defaults)
 
   const unwrap = d => (d && d.settings) || d || {};
+  // WHAT THE WINDOW KEEPS FOR ITSELF between starts -- the screen shown, the folder of a library screen, a list's page
+  // size, a note seen -- lives on the engine (GET/PUT /ui/memory), not in the web view's storage: that storage does not
+  // survive a restart in every install (its store drops the tail of its log after a hard stop and writes on after it).
+  // Read once as the app boots; a change is sent as it happens.
+  PD.memory = {};
+  PD.loadMemory = async () => {
+    const [m] = await PD.safe(PD.api("GET", "/ui/memory"));
+    if (m && typeof m === "object") PD.memory = m;
+    return PD.memory;
+  };
+  PD.remember = (name, value) => {
+    if (value === null || value === undefined || value === "") delete PD.memory[name]; else PD.memory[name] = value;
+    PD.safe(PD.api("PUT", "/ui/memory", { [name]: value === undefined || value === "" ? null : value }));
+  };
   PD.loadSettings = async () => {
     const d = await PD.api("GET", "/settings");
     PD.regionDefaults = (d && d.defaults) || {};               // what the computer's region settings say
