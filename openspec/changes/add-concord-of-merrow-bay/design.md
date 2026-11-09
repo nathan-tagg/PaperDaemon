@@ -29,7 +29,7 @@ The user is one family (the request names one, or the engine gives them the Quil
 each the head of a family named after them, chosen for the game at the start from those rated at the Concord in
 `catalog.json` (the ratings follow the cast's abilities: negotiation, bluff, read, ruthlessness, nerve). The shipped
 six: Harriet Oakes (counts every vote first), Ottoline Graves (plays the player, never the board), Augustus Hale
-(grasping, remembered), Bea Holloway (polite, and knows everything), Judge Shellby (by the rules, and keeps his word),
+(grasping, remembered), Bea Holloway (polite, and knows everything), Judge Shellby (by the rules, and a promise of his is kept),
 Lenora Quill when the user is not a Quill, else Eben Stroud (patient, unreadable). A private cast pack may offer more;
 the choice is by rating and by relationship (two who are enemies in their profiles are both taken when possible).
 

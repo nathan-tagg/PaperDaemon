@@ -2,7 +2,7 @@
 
 ## Why
 
-The maintainer asked for more games on the tablet (2026-11-09): "monopoly, risk, diplomacy, catan, more". Of the four,
+The maintainer asked for more games on the tablet: "monopoly, risk, diplomacy, catan, more". Of the four,
 a game of negotiation fits a pen tablet best: the tablet is for writing letters, and the cast of Merrow Bay already has
 voices, agendas, secrets and tells written for exactly this. The engine owns the rules, the dice-free resolution and
 the map; the model owns the letters.
