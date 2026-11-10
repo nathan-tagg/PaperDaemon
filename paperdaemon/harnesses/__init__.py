@@ -1,7 +1,7 @@
 """Harnesses: what each model family works with, as data.
 
-A harness is a JSON file. PaperDaemon ships six in shipped/ (a default per kind, Qwen 3.6 27B, Qwen 3.8 27B,
-FLUX.2 Klein 9B and Z-Image Turbo), and the user adds their own in <data>/harnesses/; both are read by the
+A harness is a JSON file. PaperDaemon ships its own in shipped/ (a default per kind, Lean Default for stronger
+models, one for each model it is tuned for, and what a command-line program shares), and the user adds their own in <data>/harnesses/; both are read by the
 same loader and checked by the same rules (schema.py). A harness extends another and names only what
 differs; every field it leaves out keeps the value of the harness it extends.
 
@@ -45,7 +45,7 @@ from .text import TextProtocols
 COLORING_BOOK = "childrensColoringBook"
 HERE = os.path.dirname(os.path.abspath(__file__))
 SHIPPED_FOLDER = os.path.join(HERE, "shipped")
-META = ("id", "name", "extends", "kind", "patterns", "refuse", "notes", "server", "models")
+META = ("id", "name", "extends", "kind", "patterns", "refuse", "notes", "server", "models", "offered")
 # what every harness file says about itself, for the people who read it; never used, never inherited
 DECLARED = ("server", "models", "notes")
 HINT_LABEL = {"model": "the model name", "server": "the model the server reports", "launch": "the start script"}
@@ -81,6 +81,7 @@ class Harness:
     server = ""
     models = ()
     notes = ""
+    offered = True                      # listed where a harness is picked (false: it holds what others share)
     CAPABILITIES = ()
     FIELDS = ()
 
@@ -110,9 +111,10 @@ class Harness:
 class TextHarness(Harness, TextProtocols):
     kind = "text"
     CAPABILITIES = ("vision", "forced_tool", "max_output")
-    FIELDS = CAPABILITIES + ("brief_additions", "request", "features", "assists", "inspect_tokens", "cli")
+    FIELDS = CAPABILITIES + ("brief_additions", "request", "features", "assists", "inspect_tokens", "cli", "lean")
     request = {}
     cli = {}                            # how a command-line program is spoken to (models/cli.py), when it is one
+    lean = False                        # the lean way of working, for a model that needs little telling (GUIDE-llm.md)
     features = {}                       # {"off": [feature names]}: a harness may narrow what is offered
 
     def tune(self, request, caps):
@@ -283,6 +285,9 @@ def _attrs(d, parent, source):
             attrs[k] = _merge(parent.request or {}, v)
         else:
             attrs[k] = tuple(v) if isinstance(v, list) else v
+    if not isinstance(d.get("offered", True), bool):
+        problems.append("offered must be true or false")
+    attrs["offered"] = d.get("offered", True) is not False     # its own word, never the one it extends
     attrs["patterns"] = ()                       # a harness is picked by name unless it says what names it
     for key in ("patterns", "refuse"):           # a refuse list it leaves out is the one it extends
         if key not in d:
@@ -469,8 +474,8 @@ def get(harness_id):
 
 
 def for_kind(kind):
-    """The harnesses a slot of this kind may use, the default first."""
-    return [DEFAULT[kind]] + [p for p in SHIPPED + user_harnesses() if p.kind == kind]
+    """The harnesses offered for a slot of this kind, the default first."""
+    return [DEFAULT[kind]] + [p for p in SHIPPED + user_harnesses() if p.kind == kind and p.offered]
 
 
 def launch_models(script):
@@ -493,7 +498,8 @@ def guess(kind, model="", server=(), launch=""):
 def describe(p):
     """A harness as the API lists it."""
     return {"id": p.id, "name": p.name, "kind": p.kind, "extends": p.extends, "source": p.source,
-            "server": p.server, "models": list(p.models), "notes": p.notes, "fields": p.fields()}
+            "server": p.server, "models": list(p.models), "notes": p.notes, "offered": bool(p.offered),
+            "fields": p.fields()}
 
 
 __all__ = ["ABILITIES", "BUILT_IN", "COLORING_BOOK", "DEFAULT", "EDIT_ABILITY", "SHIPPED", "HINT_LABEL",

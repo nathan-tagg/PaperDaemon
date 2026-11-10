@@ -1,0 +1,11 @@
+{
+  "id": "lean-default",
+  "name": "Lean Default (stronger models only)",
+  "server": "Any OpenAI- or Anthropic-compatible server, or a command line",
+  "models": [
+    "Any model strong enough to do a whole job from one look at the page"
+  ],
+  "extends": "default-text",
+  "notes": "For a model that needs little telling and is dear to call. It gets a short job description, only the calls a turn may make (not the whole tool list), a typed page as its text with no picture, and gives a job's words or sketch in the plan itself, so most jobs are one call. A weaker model on this harness will plan badly: use Built in for those.",
+  "lean": true
+}

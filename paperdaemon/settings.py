@@ -230,6 +230,10 @@ def upgrade_slot(m):
     if m.get("api") == "claude-cli":
         # 0.2.39 to 0.2.41 had a source of its own for one program; it is the command line now, the command `claude`
         m.update(api="cli", location="claude")
+    if m.get("api") == "cli" and str(m.get("model") or "").strip():
+        # 0.2.42 to 0.2.47 kept a command line's model in a field beside the command: the command is whole now
+        from .models.cli import with_model
+        m.update(location=with_model(m.get("location") or "", m["model"]), model="")
     return m
 
 

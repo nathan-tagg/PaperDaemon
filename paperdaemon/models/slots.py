@@ -77,6 +77,11 @@ def pick(role, s=None, m=None):
         p = harnesses.get(chosen)
         if p is not None and p.kind == role:
             return p, "user", None, None
+    if m.get("api") == "cli":
+        # a command line names its model in the command itself; no server reports one and there is no start script
+        from .cli import model_of
+        p, source, hint = harnesses.guess(role, model_of(m.get("location") or ""))
+        return p, "guess", source, hint
     p, source, hint = harnesses.guess(role, m.get("model"), _reported.get(role), script_text(m))
     return p, "guess", source, hint
 

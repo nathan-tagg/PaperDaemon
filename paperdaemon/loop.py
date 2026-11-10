@@ -84,7 +84,8 @@ def harness_values(s=None, name=None):
     return {"id": p.id, "name": p.name, "lineup": lu["name"], "capabilities": caps,
             "text_location": lu["text"].get("location") or "",
             "model": str(lu["text"].get("model") or "PaperDaemon"),
-            "brief_additions": getattr(p, "brief_additions", "") or "", "image": image}
+            "brief_additions": getattr(p, "brief_additions", "") or "", "lean": bool(getattr(p, "lean", False)),
+            "image": image}
 
 
 def run_content(s=None):

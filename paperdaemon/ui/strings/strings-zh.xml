@@ -739,5 +739,5 @@
   <string name="settings.mirror_edit.warn_on">开启</string>
   <string name="slot.cli">命令行</string>
   <string name="slot.command">命令</string>
-  <string name="slot.command.help">要运行的程序，按您在终端里输入的方式填写：程序名或完整路径，后面可加您自己的参数。每次请求所需的内容由 harness 补上。</string>
+  <string name="slot.command.help">完整的命令，就像你在终端里输入的那样：程序的名称或完整路径，后面是你自己的参数，包括模型和努力程度。PaperDaemon 会自行启动该程序，只添加每个请求所需的内容。</string>
 </resources>

@@ -739,5 +739,5 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="settings.mirror_edit.warn_on">Bật</string>
   <string name="slot.cli">Dòng lệnh</string>
   <string name="slot.command">Lệnh</string>
-  <string name="slot.command.help">Chương trình cần chạy, như bạn gõ trong cửa sổ dòng lệnh: tên hoặc đường dẫn đầy đủ, rồi đến các đối số của riêng bạn. Harness thêm những gì mỗi yêu cầu cần.</string>
+  <string name="slot.command.help">Toàn bộ lệnh, như khi bạn gõ trong terminal: tên chương trình hoặc đường dẫn đầy đủ, sau đó là các đối số của riêng bạn, trong đó có mô hình và mức nỗ lực. PaperDaemon tự khởi chạy chương trình và chỉ thêm những gì mỗi yêu cầu cần.</string>
 </resources>

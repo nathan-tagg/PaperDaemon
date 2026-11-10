@@ -591,11 +591,81 @@ def t_ask(lines):
     return H._reply(lines, task="asked the user for what the request needs")
 
 
-def tool_schema():
-    """The tools, rendered ONCE: the tool list is part of the cached prompt prefix, so it is byte-identical from
-    call to call and from job to job. A step's `do` is an enum of the step kinds this lineup's features offer."""
+LEAN_SAID = {
+    "plan": "The decision for a page that asks for work: its steps, in order, and your rulings.",
+    "answer": "The decision when the whole job is words that need no looking up: answers = the ids it answers, "
+              "lines = the reply, and your rulings. It is written under what is on the page.",
+    "ask": "The decision when the request cannot be done without something only the user can tell you: lines = "
+           "your question. It is written under the request and nothing comes off.",
+    "skip": "The decision when this page asks for nothing: note = what is on it and why you are not acting, in plain "
+            "words with no ids (it is shown on the page). Nothing changes.",
+}
+LEAN_REMEMBER = ("A lesson about working for this user (YOUR MEMORIES), only when one was learned: {\"text\"} adds "
+                 "one, {\"text\", \"replaces\": \"mN\"} replaces mN, {\"text\": \"\", \"replaces\": \"mN\"} removes it.")
+
+
+def _lean_tools(allowed):
+    """A LEAN HARNESS'S TURN IS SENT ONLY THE CALLS IT MAY MAKE (the decision's four and the looks; a step's own),
+    where every turn of the default carries all of them: the list is most of what a call costs, and a model dear to
+    call is not kept warm by a constant prefix. An id is a string, checked by the host as ever, not a list of every id
+    there could be; a step may carry its content (lines, parts, spec)."""
+    key = frozenset(allowed)
+    made = H._SCHEMA if isinstance(H._SCHEMA, dict) else {}
+    if key in made:
+        return made[key]
+    names = set(allowed)
+    if names == set(H.PLAN_TOOLS):
+        names |= set(H.LOOK_TOOLS) - {"find"}
+    ids = list(ST.ERASE_IDS)
+
+    def lean(v):
+        if isinstance(v, dict):
+            if v.get("enum") == ids:
+                return {k: x for k, x in v.items() if k != "enum"}
+            return {k: lean(x) for k, x in v.items()}
+        if isinstance(v, list):
+            return [lean(x) for x in v]
+        return v
+    out = []
+    for t in _full_tools():
+        f = t["function"]
+        if f["name"] not in names:
+            continue
+        t = lean(t)
+        if f["name"] in LEAN_SAID:
+            # the decision's four are told in the brief: here a line each, and nothing the brief says is said again
+            t["function"]["description"] = LEAN_SAID[f["name"]]
+            for k, said in (("rulings", "Your RULINGS on the page."), ("remember", LEAN_REMEMBER),
+                            ("answers", "The ids this carries out.")):
+                if k in t["function"]["parameters"]["properties"]:
+                    t["function"]["parameters"]["properties"][k]["description"] = said
+        if f["name"] == "plan":
+            item = t["function"]["parameters"]["properties"]["steps"]["items"]
+            item["description"] = "One step: do, what and answers, then its kind's fields, in any order."
+            item["properties"].update(
+                lines={"type": "array", "items": {"type": "string"}, "description": "a write step's words"},
+                parts=dict(H.PART_SCHEMA, description="a draw step's sketch, every part of it"))
+        out.append(t)
+    made[key] = out
+    H._SCHEMA = made
+    return out
+
+
+def tool_schema(allowed=None):
+    """The tools. For the default, rendered ONCE and all of them: the tool list is part of the cached prompt prefix,
+    so it is byte-identical from call to call and from job to job. For a lean harness, only the calls the turn may
+    make (`allowed`). A step's `do` is an enum of the step kinds this lineup's features offer."""
+    if H.LEAN and allowed:
+        return _lean_tools(allowed)
+    if H.LEAN:
+        return _full_tools()
     if H._SCHEMA is not None:
         return H._SCHEMA
+    H._SCHEMA = _full_tools()
+    return H._SCHEMA
+
+
+def _full_tools():
     out = []
     off_steps, off_tools = H._off_steps_and_tools()
     kinds = [k for k in ST.KINDS if k not in off_steps]
@@ -624,7 +694,6 @@ def tool_schema():
             "name": name, "description": desc,
             "parameters": {"type": "object", "properties": props,
                            "required": [k for k in params if k not in optional]}}})
-    H._SCHEMA = out
     return out
 
 
@@ -650,7 +719,7 @@ def system_brief():
     The date and the time are said in the first user message instead, after the cached part.
     """
     if H._BRIEF is None:
-        H._BRIEF = (H.BRIEF.replace("<<CALENDAR>>", CAL_BRIEF["page"])
+        H._BRIEF = ((H.BRIEF_LEAN if H.LEAN else H.BRIEF).replace("<<CALENDAR>>", CAL_BRIEF["page"])
                        .replace("<<PICTURES>>", H.pictures_brief(H._image_offer()))
                        .replace("<<HOME>>", ((" The user lives in %s." % H.HOME_PLACE) if H.HOME_PLACE
                                 else " The user's place is not set.") + H._prefs_sentence())
@@ -660,7 +729,7 @@ def system_brief():
         if extra:
             H._BRIEF += "\n\n" + extra
         off = H._off_steps_and_tools()[0]
-        H._BRIEF = H._BRIEF.replace("<<STEPS>>", ST.brief_list([k for k in ST.KINDS if k not in off]))
+        H._BRIEF = H._BRIEF.replace("<<STEPS>>", ST.brief_list([k for k in ST.KINDS if k not in off], lean=H.LEAN))
     return H._BRIEF
 
 
@@ -745,7 +814,7 @@ def _turn(msgs, allowed, tries=3, choice="required", accept_prose=False, final=N
     start_tokens, spent, asked = None, 0, set()
     for _ in range(tries + 4):
         try:
-            m, usage, cut = H.chat(msgs, tool_choice=choice, temperature=temperature)
+            m, usage, cut = H.chat(msgs, tool_choice=choice, temperature=temperature, allowed=allowed)
         except Exception as ex:
             H.log("  model error: %s" % str(ex)[:120])
             return None, None, {"error": "model: %s" % str(ex)[:100]}
@@ -865,7 +934,7 @@ def step_message(cur):
     box = ((JOB.plan or {}).get("places") or {}).get(cur.get("place"))
     L = ["STEP %d OF %d: %s." % (cur["id"], len(steps), ST.describe(cur))]
     if cur.get("plan_spec_error"):
-        L.append("The spec your plan gave this chart did not draw: %s. Give the chart with chart()." % cur["plan_spec_error"])
+        L.append("What your plan gave this step could not be made: %s. Give it with the call below." % cur["plan_spec_error"])
     mk = onto_mark(cur) if cur.get("do") == "draw" else None
     if mk:
         # AN ADDITION TO A DRAWING is told the drawing's parts, and is drawn where it belongs on them: told only the

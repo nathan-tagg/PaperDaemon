@@ -5,12 +5,10 @@
   "models": [
     "Claude Haiku 5.5"
   ],
-  "extends": "claude-code",
-  "notes": "Claude Haiku 5.5 at the effort the program or the API gives it when none is asked for. To set one on the command line, type it in the Command: `claude --effort low`.",
+  "extends": "lean-default",
+  "notes": "Claude Haiku 5.5. It works the lean way (see Lean Default). The effort is not the harness's to say: on the command line it is an argument of the command, `claude --model claude-haiku-5-5 --effort medium`.",
   "patterns": [
     "claude-haiku-5[.-]5",
     "^haiku$"
-  ],
-  "vision": true,
-  "forced_tool": true
+  ]
 }

@@ -739,5 +739,5 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="settings.mirror_edit.warn_on">Aç</string>
   <string name="slot.cli">Komut satırı</string>
   <string name="slot.command">Komut</string>
-  <string name="slot.command.help">Çalıştırılacak program, bir terminale yazacağınız gibi: adı ya da tam yolu, ardından kendi argümanlarınız. Her isteğin gerektirdiğini harness ekler.</string>
+  <string name="slot.command.help">Komutun tamamı, bir terminale yazacağınız gibi: programın adı veya tam yolu, ardından model ve çaba dahil kendi argümanlarınız. PaperDaemon programı kendisi başlatır ve yalnızca her isteğin gerektirdiğini ekler.</string>
 </resources>

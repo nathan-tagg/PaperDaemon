@@ -739,5 +739,5 @@
   <string name="settings.mirror_edit.warn_on">آن کریں</string>
   <string name="slot.cli">کمانڈ لائن</string>
   <string name="slot.command">کمانڈ</string>
-  <string name="slot.command.help">چلایا جانے والا پروگرام، جیسے آپ اسے ٹرمینل میں لکھتے: اس کا نام یا پورا پاتھ، پھر آپ کے اپنے آرگیومنٹس۔ ہر درخواست کو جو درکار ہو وہ ہارنس شامل کرتا ہے۔</string>
+  <string name="slot.command.help">پوری کمانڈ، جیسے آپ اسے ٹرمینل میں لکھتے: پروگرام کا نام یا اس کا مکمل راستہ، پھر آپ کے اپنے آرگیومنٹس، جن میں ماڈل اور کوشش کی سطح شامل ہیں۔ PaperDaemon پروگرام کو خود چلاتا ہے اور صرف وہی شامل کرتا ہے جس کی ہر درخواست کو ضرورت ہو۔</string>
 </resources>

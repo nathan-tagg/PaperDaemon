@@ -315,6 +315,14 @@ def _run_reading(run, words):
     return " ".join(words[m["id"]] for m in run if words.get(m["id"]))
 
 
+def _only_typed():
+    """The page as this job found it holds typed paragraphs and nothing else: no ink, no picture, no PDF under it,
+    and nothing the job has put on it yet."""
+    listing = JOB.listing or {}
+    return (bool(listing) and all(k.startswith("para:") for k in listing) and not JOB.ops and not JOB.images
+            and not (JOB.draw and JOB.draw.strokes) and _pdf_page() is None)
+
+
 def page_image(doc, page, note):
     """The page as it stands, with the pending draft composited on top."""
     out = os.path.join(H.QUEUE, "_host_view.png")
@@ -378,6 +386,10 @@ def page_image(doc, page, note):
         note = render_failed + "\n\n" + note
     if not H.VISION:
         return {"role": "user", "content": note + "\n\n" + text}
+    if H.LEAN and not render_failed and _only_typed():
+        # A PAGE OF TYPED TEXT ALONE is in the listing word for word: a lean harness is sent no picture of it
+        return {"role": "user", "content": note + "\n\n(This page holds typed text only, all of it above: no "
+                                                  "picture of it is sent.)"}
     buf = io.BytesIO()
     base.save(buf, "PNG")
     return {"role": "user", "content": [

@@ -13,8 +13,9 @@
   };
   const LOCAL_API = { text: "openai", image: "sdapi" };
   // A COMMAND LINE is a source of its own for a text model: a program on this computer, run once a turn. Its slot's
-  // location is the command as typed; there is no provider, address or key, and nothing here names a program -- how
-  // one is spoken to is its harness's to say (models/cli.py).
+  // location is the command, WHOLE, as typed: the program and the user's own arguments, the model among them. There is
+  // no provider, address, key or model field (how a model is named is the program's own syntax), and nothing here
+  // names a program -- how one is spoken to is data (models/cli.py).
   const CLI_API = "cli";
   // AN API KEY BELONGS TO A SERVER (or a search service), not to a lineup: every lineup that uses it shares it, and
   // lineups on different servers never overwrite each other's. Its name in the credential store, as the engine makes it
@@ -35,7 +36,7 @@
   function formOf(role, slot) {
     slot = slot || {};
     const loc = slot.location || "", harness = slot.harness || "auto";
-    if (role === "text" && slot.api === CLI_API) return { kind: "cli", provider: HOSTED[role][0].id, at: loc, model: slot.model || "", harness };
+    if (role === "text" && slot.api === CLI_API) return { kind: "cli", provider: HOSTED[role][0].id, at: loc, model: "", harness };
     if (!loc) return { kind: role === "image" ? "none" : "hosted", provider: HOSTED[role][0].id, at: "", model: slot.model || "", harness };
     const p = HOSTED[role].filter(h => h.at && loc.startsWith(h.at)).sort((a, b) => b.at.length - a.at.length)[0];   // (the longest address that fits)
     if (p || !PD.isLocal(loc)) return { kind: "hosted", provider: p ? p.id : "other", at: loc, model: slot.model || "", harness };
@@ -56,7 +57,7 @@
     esc(PD.t(key)) + PD.helpTip(PD.t(help)) + "</span>";
 
   function harnessRow(p, role, f, harnesses) {
-    const list = (harnesses || []).filter(h => h.kind === role);
+    const list = (harnesses || []).filter(h => h.kind === role && h.offered !== false);   // (one that only holds what others share is not offered)
     const cur = f.harness && f.harness !== "auto" ? ((list.find(h => h.id === f.harness) || {}).name || f.harness) : "";
     const id = p + "-" + role + "-harness";
     return '<div class="grid2"><div class="field-col"><div class="label-row">' + lab(id, "slot.harness", "slot.harness.help") + "</label>" +
@@ -89,8 +90,7 @@
         harnessRow(p, role, f, harnesses) +
         '<div class="actions"><button type="button" class="btn small" data-act="test" data-role="' + role + '">' + esc(PD.t("common.test")) + '</button><span id="' + id + '-test">' + (test || "") + "</span></div>";
     } else if (f.kind === "cli") {
-      out += '<div class="grid2">' + lab(id + "-at", "slot.command", "slot.command.help") + '<input class="field" id="' + id + '-at" value="' + esc(f.at) + '" spellcheck="false"></label>' +
-        lab(id + "-model", "slot.model", "slot.model.help") + '<input class="field" id="' + id + '-model" value="' + esc(f.model) + '" spellcheck="false"></label></div>' +
+      out += '<div class="grid2">' + lab(id + "-at", "slot.command", "slot.command.help", "wide") + '<input class="field mono" id="' + id + '-at" value="' + esc(f.at) + '" spellcheck="false" autocomplete="off"></label></div>' +
         harnessRow(p, role, f, harnesses) +
         '<div class="actions"><button type="button" class="btn small" data-act="test" data-role="' + role + '">' + esc(PD.t("common.test")) + '</button><span id="' + id + '-test">' + (test || "") + "</span></div>";
     } else if (f.kind === "local") {
@@ -124,7 +124,7 @@
     const o = Object.assign({}, base || {}, { harness: f.harness || "auto" });
     if (f.kind === "none") return Object.assign(o, { location: "", script: "", script_text: "", model: "" });
     if (f.kind === "local") return Object.assign(o, { location: f.at, script: "", script_text: (f.scriptText || "").replace(/\r?\n/g, "\r\n"), api: LOCAL_API[role], model: f.model || "" });
-    if (f.kind === "cli") return Object.assign(o, { location: f.at || "", script: "", script_text: "", api: CLI_API, model: f.model || "" });
+    if (f.kind === "cli") return Object.assign(o, { location: f.at || "", script: "", script_text: "", api: CLI_API, model: "" });
     const pr = HOSTED[role].find(h => h.id === f.provider) || HOSTED[role][0];
     return Object.assign(o, { location: pr.id === "other" ? f.at : pr.at, script: "", script_text: "", api: pr.api, model: f.model });
   }

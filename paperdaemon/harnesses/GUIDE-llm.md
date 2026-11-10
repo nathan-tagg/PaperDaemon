@@ -56,6 +56,8 @@ pictures) its own way.
 | `inspect_tokens` | How many tokens the model may spend looking at the page (zooming in, reading its history) before it decides. Optional: 12000. |
 | `assists` | Keyword assists for a model that needs help with one decision (see below). Optional: none. |
 | `cli` | How a command-line program is spoken to, when the model's source is a command line (see below). Optional: none. |
+| `lean` | `true` for a model strong enough to do a whole job from one look at the page, and dear to call (see below). Optional: `false`. |
+| `offered` | `false` for a harness that only holds what others share, such as a program's `cli`: it is not listed in the Harness box. Optional: `true`. |
 
 A model that sees pictures, is matched by name, and is never asked to draw:
 
@@ -76,10 +78,21 @@ A model that sees pictures, is matched by name, and is never asked to draw:
 Save it here as `my-model.json`, then choose it in the Text / Reasoning tab's Harness box, or leave the box empty and
 let the pattern pick it.
 
+### The lean way
+
+PaperDaemon's own "Lean Default (stronger models only)" has `lean: true`, and its harnesses for Claude Opus 5.5,
+Sonnet 5.5 and Haiku 5.5 build on it. Extend it (`"extends": "lean-default"`) for any other strong model. A lean
+lineup is worked with far fewer tokens: a short job description; each turn sent only the calls it may make, not the
+whole tool list; a page of typed text sent as its text, with no picture; and a job's words or sketch given in the
+plan itself, so most jobs are one call. Every rule PaperDaemon enforces is checked all the same. A weaker model on a
+lean harness plans badly: leave those on the built-in default.
+
 ### A command-line program
 
-A lineup's text model can be a command: Source "Command line", then the command as you would type it in a terminal.
-PaperDaemon runs it once for each turn, hands it the request and reads what it prints. With no harness for the
+A lineup's text model can be a command: Source "Command line", then the WHOLE command as you would type it in a
+terminal, your own arguments included: `my-program --model big-one --effort high`. There is no other field: which
+model and how much effort are the command's to say, in the program's own way. PaperDaemon starts the program itself
+(no shell), once for each turn, hands it the request and reads what it prints. With no harness for the
 program, the system text and the conversation go on its input and what it prints is the answer. A program that wants
 more than that gets a harness with a `cli` field, which says how it is spoken to:
 
@@ -87,21 +100,21 @@ more than that gets a harness with a `cli` field, which says how it is spoken to
 | --- | --- |
 | `program` | The program's usual name. A command that runs this program uses this harness's `cli`, whatever model it names. |
 | `places` | Where the program is installed, tried when the command is not on the PATH. `~` and `%NAMES%` are filled in. |
-| `args` | What is added to the command for every request (see the placeholders). A list inside the list is left out whole when a placeholder in it has nothing to give, and when it begins with an argument the command itself already gives: with the command `my-program --effort high`, a `["--effort", ...]` list is left out and the typed effort stands. `{"each_picture": [...]}` is repeated for every picture. |
+| `args` | What is added after the user's own arguments for every request (see the placeholders): only what carries the request in and the answer out, never a model or an effort. A list inside the list is left out whole when a placeholder in it has nothing to give, and when it begins with an argument the command itself already gives: with the command `my-program --effort high`, a `["--effort", ...]` list is left out and the typed effort stands. `{"each_picture": [...]}` is repeated for every picture. |
 | `input` | What goes on the program's input: text with placeholders, or `{"json": ..., "text": ..., "picture": ...}`, a JSON value written on one line in which `"{parts}"` becomes the list of the conversation's turns, each written as `text` says and each picture as `picture` says. Optional: the system text, then the conversation. |
 | `output` | Where the answer is in what the program prints: `format` (`text`, `json`, or `json-lines` with `where`, the fields of the line to read), `text` (the answer's words), `answer` (a structured answer the program checked against the schema), `error` and `error_text`, `usage` (`input`, `output`, `cached`). Each is a dotted path such as `usage.output_tokens`; a count may be a list of paths added up. Optional: what it prints is the answer. |
 | `ready` | `{"args": [...], "json": "a.path", "else": "what to tell the user"}`: a run of the program that says whether it is ready (signed in). Optional: a program that is found is ready. |
 | `sends_to` | The host the program sends a page to, for the notice that pages leave this computer. Optional: they stay here. |
 | `answer_rule` | One sentence on how this program wants a structured answer given. Optional. |
-| `models` | The names the program takes for its models. Optional. |
+| `model_arg` | The argument after which a command names its model (`--model`). Nothing is added for it: it lets PaperDaemon read the model out of the command, to pick that model's harness. Optional. |
 
-Placeholders: `{model}`; `{system}` or `{system_file}` (the system text, or a file holding it); `{prompt}` or
+Placeholders: `{system}` or `{system_file}` (the system text, or a file holding it); `{prompt}` or
 `{prompt_file}` (the conversation as plain text); `{schema}` or `{schema_file}` (the tools as one JSON schema for the
 answer); `{picture_file}`, and in `input`'s `picture` also `{base64}` and `{media_type}`; `{text}` in `input`'s
 `text`; and `{request.a.b}`, any field of the request as this harness's `request` tuned it, such as an effort.
 Files are made in a folder of the run's own and removed after it.
 
-A program that takes its prompt on its input, a picture as a file and the model by name:
+A program that takes its prompt on its input and a picture as a file:
 
 ```json
 {
@@ -110,17 +123,21 @@ A program that takes its prompt on its input, a picture as a file and the model 
   "server": "my-program, a command-line program",
   "models": ["The models it takes by name"],
   "notes": "Prompt on the input, one --image for each picture, plain text out.",
+  "offered": false,
   "vision": true,
   "cli": {
     "program": "my-program",
-    "args": [["--model", "{model}"], ["--system", "{system_file}"], {"each_picture": ["--image", "{picture_file}"]}],
+    "model_arg": "--model",
+    "args": [["--system", "{system_file}"], {"each_picture": ["--image", "{picture_file}"]}],
     "input": "{prompt}"
   }
 }
 ```
 
 PaperDaemon's own `claude-code` harness is a fuller one: a JSON message on the input with pictures in it, the answer
-read from the last result line of what the program prints, a readiness check, and where pages go.
+read from the last result line of what the program prints, a readiness check, and where pages go. A program that
+checks an answer against a schema can be handed it (`["--its-argument", "{schema}"]`), but look at what that costs:
+`claude` makes a second request for every answer checked that way, so its data leaves the checking to PaperDaemon.
 
 ### Keyword assists
 

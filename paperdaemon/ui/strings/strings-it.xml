@@ -739,5 +739,5 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="settings.mirror_edit.warn_on">Attiva</string>
   <string name="slot.cli">Riga di comando</string>
   <string name="slot.command">Comando</string>
-  <string name="slot.command.help">Il programma da eseguire, come lo scriveresti in un terminale: il nome o il percorso completo, poi eventuali argomenti tuoi. L'harness aggiunge ciò che serve a ogni richiesta.</string>
+  <string name="slot.command.help">Il comando intero, come lo scriveresti in un terminale: il nome del programma o il suo percorso completo, poi i tuoi argomenti, tra cui il modello e lo sforzo. PaperDaemon avvia il programma da sé e aggiunge solo ciò che serve a ogni richiesta.</string>
 </resources>

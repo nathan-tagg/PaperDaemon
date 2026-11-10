@@ -25,3 +25,16 @@
 - [x] 3.1 A real call through the real program by the general adapter (11-10: a forced tool call answered in 2.4 s)
 - [x] 3.2 A real job in the False Mirror on the maintainer's lineup after the update, the slot read from his saved
       settings (11-10 on 0.2.42: a handwritten request, a labeled compass rose drawn in 21 s, three turns)
+
+## 4. The command is whole (the maintainer's rulings on using it, 11-10)
+
+- [x] 4.1 No model field on a command-line slot: the form is Command and Harness; a slot saved with a model beside
+      its command is read as the command naming it (`cli.model_arg`); the harness is guessed from the model the
+      command names
+- [x] 4.2 No effort in any harness and no model added by the program's data: both are the user's arguments
+- [x] 4.3 The program's data not offered where a harness is picked (`offered: false`); one harness a model: Claude
+      Opus 5.5, Claude Sonnet 5.5, Claude Haiku 5.5
+- [x] 4.4 The calls read from the answer's words, not checked by the program against a schema (one request an
+      answer where there were two; a real call 11-10: 5,978 tokens in, 6.6 s, against 15,109 and 8.7 s)
+- [ ] 4.5 A real job in the False Mirror on the maintainer's lineup after the update, the command read from his
+      saved settings

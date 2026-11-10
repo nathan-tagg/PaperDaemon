@@ -249,6 +249,7 @@ dialog.sheet fieldset.field-row legend { padding: 0; margin-bottom: var(--s1); }
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--s4) var(--s5); margin-top: var(--s4); }
 .grid2 > label { display: grid; gap: var(--s1); color: var(--ink-2); }
 .grid2 .field, .grid2 .select { width: 100%; }
+.grid2 > label.wide { grid-column: 1 / -1; }   /* a field that takes the row: a command is long */
 .slot .actions { margin-top: var(--s4); display: flex; align-items: center; gap: var(--s3); }
 .done { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: var(--s5); align-items: start; margin-top: var(--s5); }
 .done .pg { width: 120px; }

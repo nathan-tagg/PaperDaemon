@@ -739,5 +739,5 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="settings.mirror_edit.warn_on">Einschalten</string>
   <string name="slot.cli">Befehlszeile</string>
   <string name="slot.command">Befehl</string>
-  <string name="slot.command.help">Das auszuführende Programm, wie du es in einem Terminal eingeben würdest: sein Name oder sein vollständiger Pfad, danach eigene Argumente. Das Harness ergänzt, was jede Anfrage braucht.</string>
+  <string name="slot.command.help">Der ganze Befehl, wie du ihn in einem Terminal eingeben würdest: der Name des Programms oder sein vollständiger Pfad, danach deine eigenen Argumente, darunter das Modell und der Aufwand. PaperDaemon startet das Programm selbst und ergänzt nur, was jede Anfrage braucht.</string>
 </resources>

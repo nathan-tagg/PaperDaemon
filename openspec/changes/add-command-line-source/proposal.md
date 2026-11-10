@@ -18,7 +18,8 @@ to that ruling.
   PaperDaemon runs the command once for each turn of a job, hands it the request and reads what it prints.
 - The adapter knows no program. How a program is spoken to is data, the `cli` field of a text harness: its usual
   name and where it is installed, the arguments a request adds, what goes on its input, where its answer is in what
-  it prints, how to ask whether it is ready, where it sends a page, and the names it takes for its models. A program
+  it prints, how to ask whether it is ready, where it sends a page, and the argument its commands name a model
+  with. A program
   with no such harness is spoken to the plainest way: the system text and the conversation on its input, its answer
   what it prints.
 - The harness that speaks for a command is the slot's own when that harness has a `cli` field, else the harness
@@ -29,11 +30,19 @@ to that ruling.
   against a schema is handed it; for any other the schema's shape is said in the system text and the JSON object in
   what the program prints is read. A schema too long for a command line is sent with unchecked arguments, each
   tool's own schema in the system text.
-- An argument may take any field of the request the harness tuned (`{request.output_config.effort}`): an effort is
-  the harness's to set in its `request`, as for a server.
-- Two shipped harnesses carry the maintainer's case as data: "Claude Code (command line)", the `cli` field for the
-  command `claude`, and "Claude Opus 5.5, medium effort", which extends it and serves that model on the command line
-  and on the API alike.
+- THE COMMAND IS WHOLE (the maintainer's ruling, 11-10, on using it: "its stupid to have both a Command field and a
+  Model field", "the effort should be specified in the command not the harness", "today claude is defining that
+  standard for us, but in the future who knows"). The model and the effort are arguments the user types:
+  `claude --model claude-opus-5-5 --effort medium`. There is no model field, and no harness sets an effort or adds a
+  model. PaperDaemon starts the program itself, with no shell, and adds only what carries a request in and its answer
+  out.
+- The program's data for the command `claude` ships as a harness that is not offered where a harness is picked
+  ("WHY do I have two opus harnesses in the drop down"): it holds what every lineup running that program shares.
+  The harnesses offered are tied to a model's name: Claude Opus 5.5, Claude Sonnet 5.5, Claude Haiku 5.5, each
+  building on Lean Default (the change `add-lean-harness`).
+- The calls come back as one JSON object in the program's answer, checked by PaperDaemon. Asked to check them
+  against a schema itself, `claude` makes a second request for every answer: measured 11-10, 15,109 tokens in where
+  5,978 do.
 - A slot saved by 0.2.39 to 0.2.41 (API family `claude-cli`) is read as a command-line slot with the command
   `claude`.
 

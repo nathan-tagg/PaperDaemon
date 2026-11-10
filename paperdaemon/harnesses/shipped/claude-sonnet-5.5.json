@@ -1,25 +1,14 @@
 {
   "id": "claude-sonnet-5.5",
-  "name": "Claude Sonnet 5.5, medium effort",
+  "name": "Claude Sonnet 5.5",
   "server": "The Anthropic API, or the command line `claude`",
   "models": [
     "Claude Sonnet 5.5"
   ],
-  "extends": "claude-code",
-  "notes": "Claude Sonnet 5.5 at medium effort. The effort is a request field (output_config.effort), the one the Messages API takes; on the command line the harness it extends hands the same field to the program as an argument.",
+  "extends": "lean-default",
+  "notes": "Claude Sonnet 5.5. It works the lean way (see Lean Default). The effort is not the harness's to say: on the command line it is an argument of the command, `claude --model claude-sonnet-5-5 --effort medium`.",
   "patterns": [
     "claude-sonnet-5[.-]5",
     "^sonnet$"
-  ],
-  "vision": true,
-  "forced_tool": true,
-  "request": {
-    "vision": {
-      "true": {
-        "output_config": {
-          "effort": "medium"
-        }
-      }
-    }
-  }
+  ]
 }

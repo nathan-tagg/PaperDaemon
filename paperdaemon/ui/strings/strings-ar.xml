@@ -761,5 +761,5 @@
   <string name="settings.mirror_edit.warn_on">تشغيل</string>
   <string name="slot.cli">سطر الأوامر</string>
   <string name="slot.command">الأمر</string>
-  <string name="slot.command.help">البرنامج المراد تشغيله، كما تكتبه في الطرفية: اسمه أو مساره الكامل، ثم أي وسائط تضيفها أنت. ويضيف الحزام ما يحتاجه كل طلب.</string>
+  <string name="slot.command.help">الأمر كاملاً كما تكتبه في الطرفية: اسم البرنامج أو مساره الكامل، ثم معطياتك الخاصة، ومنها النموذج ومقدار الجهد. يشغّل PaperDaemon البرنامج بنفسه ويضيف فقط ما يحتاجه كل طلب.</string>
 </resources>

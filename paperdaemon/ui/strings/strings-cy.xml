@@ -739,5 +739,5 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="settings.mirror_edit.warn_on">Troi ymlaen</string>
   <string name="slot.cli">Llinell orchymyn</string>
   <string name="slot.command">Gorchymyn</string>
-  <string name="slot.command.help">Y rhaglen i'w rhedeg, fel y byddech yn ei theipio mewn terfynell: ei henw neu ei llwybr llawn, yna unrhyw ymresymiadau o'ch eiddo chi. Mae'r harnais yn ychwanegu'r hyn sydd ei angen ar bob cais.</string>
+  <string name="slot.command.help">Y gorchymyn cyfan, fel y byddech yn ei deipio mewn terfynell: enw'r rhaglen neu ei llwybr llawn, yna eich dadleuon eich hun, y model a'r ymdrech yn eu plith. Mae PaperDaemon yn cychwyn y rhaglen ei hun ac yn ychwanegu dim ond yr hyn sydd ei angen ar bob cais.</string>
 </resources>

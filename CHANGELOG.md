@@ -2,7 +2,10 @@
 
 ## 0.2.48
 
-- Harnesses for Claude Sonnet 5.5 (medium effort) and Claude Haiku 5.5, for a lineup whose text model is the command `claude` or the Anthropic API. They are picked by the model's name, as the Opus one is.
+- A command-line lineup has one box, Command, and it holds the whole command: `claude --model claude-opus-5-5 --effort medium`. The Model box is gone, because how a model is named is the program's own syntax, and no harness sets an effort or adds a model any more: both are yours to type. PaperDaemon starts the program itself, with no shell, and adds only what carries a request in and its answer out. A lineup saved with a model beside its command becomes the command naming that model. If your lineup relied on its harness for medium effort, add `--effort medium` to the command.
+- One harness a model. The Harness box offers "Claude Opus 5.5", "Claude Sonnet 5.5" and "Claude Haiku 5.5", each picked by the model the command names, and no longer lists the `claude` program's own data beside them.
+- "Lean Default (stronger models only)", a harness for a model that needs little telling and is dear to call; the three Claude harnesses build on it. A lean lineup gets a short job description, each turn carries only the calls it may make instead of the whole tool list, a page of typed text is sent as its text with no picture, and a job's words or sketch come back in the plan itself, so most jobs are one call where they were three or four. A chart or a calendar still takes a second call, and a sketch is still shown back once.
+- A call to `claude` is one request where it was two. Asked to check its answer against a schema, the program made a second request for every answer; PaperDaemon now reads the answer's JSON and checks it itself.
 - A job's log says, for each call to a hosted or command-line model, how many tokens the model read anew, how many came from the provider's cache, and how many it wrote, as it already did for a local model.
 
 ## 0.2.47

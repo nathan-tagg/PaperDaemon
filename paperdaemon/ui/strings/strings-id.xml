@@ -739,5 +739,5 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="settings.mirror_edit.warn_on">Nyalakan</string>
   <string name="slot.cli">Baris perintah</string>
   <string name="slot.command">Perintah</string>
-  <string name="slot.command.help">Program yang dijalankan, seperti yang Anda ketik di terminal: namanya atau path lengkapnya, lalu argumen Anda sendiri. Harness menambahkan apa yang dibutuhkan setiap permintaan.</string>
+  <string name="slot.command.help">Perintah selengkapnya, seperti yang Anda ketik di terminal: nama program atau jalur lengkapnya, lalu argumen Anda sendiri, termasuk model dan tingkat usahanya. PaperDaemon menjalankan program itu sendiri dan hanya menambahkan apa yang dibutuhkan setiap permintaan.</string>
 </resources>

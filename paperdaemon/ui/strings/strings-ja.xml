@@ -739,5 +739,5 @@
   <string name="settings.mirror_edit.warn_on">オンにする</string>
   <string name="slot.cli">コマンドライン</string>
   <string name="slot.command">コマンド</string>
-  <string name="slot.command.help">実行するプログラムを、ターミナルに入力するとおりに書きます。名前またはフルパスのあとに、必要なら独自の引数を続けます。各リクエストに必要なものはハーネスが追加します。</string>
+  <string name="slot.command.help">コマンド全体を、ターミナルに入力するとおりに書きます。プログラムの名前またはフルパスのあとに、モデルや労力の指定を含む独自の引数を続けます。PaperDaemon がプログラムを直接起動し、各リクエストに必要なものだけを追加します。</string>
 </resources>

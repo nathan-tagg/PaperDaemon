@@ -1,12 +1,13 @@
 {
   "id": "claude-code",
-  "name": "Claude Code (command line)",
+  "name": "The command line `claude`",
   "server": "Claude Code, the command-line program, as the command `claude`",
   "models": [
-    "Any model the program takes by name: opus, sonnet, haiku, or a full model name"
+    "Any model the program takes by name"
   ],
   "extends": "default-text",
-  "notes": "How the program is spoken to when a text model's source is the command line and the command is `claude`. Each request is one run with none of the program's own tools, settings, hooks or connected services and no session kept: the system text from a file, the conversation and its pictures on the input as one JSON message, the answer read from the last result line the program prints, a structured answer checked by the program against the tools' schema. The program is run as installed and signed in by you; where it sends a page is its own business with its maker.",
+  "offered": false,
+  "notes": "How the program is spoken to when a text model's source is the command line and the command is `claude`. It is not a harness to pick: it holds what every lineup that runs this program shares. Each request is one run with none of the program's own tools, settings, hooks or connected services and no session kept: the system text from a file, the conversation and its pictures on the input as one JSON message, the answer read from the last result line the program prints. The calls come back as one JSON object in the answer's words, which PaperDaemon checks itself: asked to check them against a schema, the program makes a second request for every answer and the tokens double. The model and the effort are the command's own arguments, typed by you. The program is run as installed and signed in by you; where it sends a page is its own business with its maker.",
   "vision": true,
   "forced_tool": true,
   "cli": {
@@ -17,11 +18,6 @@
       "%APPDATA%/npm/claude.cmd",
       "/usr/local/bin/claude",
       "/opt/homebrew/bin/claude"
-    ],
-    "models": [
-      "opus",
-      "sonnet",
-      "haiku"
     ],
     "sends_to": "api.anthropic.com",
     "ready": {
@@ -45,18 +41,6 @@
       "--output-format",
       "stream-json",
       "--verbose",
-      [
-        "--model",
-        "{model}"
-      ],
-      [
-        "--effort",
-        "{request.output_config.effort}"
-      ],
-      [
-        "--json-schema",
-        "{schema}"
-      ],
       [
         "--system-prompt-file",
         "{system_file}"
@@ -89,7 +73,6 @@
         "type": "result"
       },
       "text": "result",
-      "answer": "structured_output",
       "error": "is_error",
       "error_text": "result",
       "usage": {
@@ -102,6 +85,6 @@
         "cached": "usage.cache_read_input_tokens"
       }
     },
-    "answer_rule": "Give it through StructuredOutput."
+    "model_arg": "--model"
   }
 }

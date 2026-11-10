@@ -37,7 +37,8 @@ TIER = {"erase": 0, "search": 1}
 # refused with the list (validity rule 4).
 COMMON = ("do", "what", "answers", "size", "near", "side", "at", "replaces")
 FIELDS = {
-    "erase": (), "search": (), "write": (), "draw": (), "chart": ("spec",),        # a spec given here is drawn from
+    # CONTENT GIVEN WITH THE PLAN is made from, with no turn of its own: a chart's spec, a write's lines, a sketch's parts
+    "erase": (), "search": (), "write": ("lines",), "draw": ("parts",), "chart": ("spec",),
     "calendar": (),                                          # what: YYYY-MM or week
     "image": ("workflow", "source", "steps", "seed", "quote", "paste"),
     "coloring": ("workflow", "steps", "seed", "quote"),
@@ -107,15 +108,64 @@ STEP_BRIEF = [
 ]
 
 
+# THE SAME LIST FOR A LEAN HARNESS (a model that needs little telling): what each kind is and its fields, a line each
+LEAN_STEP_BRIEF = [
+    (('write',),
+     '  write        lines: the words, one string a paragraph'),
+    (('draw',),
+     '  draw         parts: a sketch from simple shapes, its labels lettered as parts -- diagrams, figures, icons,\n'
+     '               additions to a drawing on the page'),
+    (('chart',),
+     '  chart        numbers, dates, plans, tables, maps and lists drawn as one of 56 chart types; you are asked for\n'
+     '               its spec, with the types and their fields, when the step runs'),
+    (('calendar',),
+     '  calendar     what = the month as YYYY-MM, or week; it takes the page; you are asked for its spec with the facts'),
+    (('search',),
+     '  search       what = the query; the results come with the step after it'),
+    (('erase',),
+     '  erase        only what you point at with at; whatever has an id comes off by its ruling instead'),
+    (('image',),
+     '  image        what = one sentence (subject, light, style): generated, then drawn in strokes, or pasted as it\n'
+     '               is with paste: true. source: "picture:N" starts from a picture on the page; workflow; steps or\n'
+     '               seed the user named go with quote: their words. A creature, a person or a scene asked to\n'
+     '               be drawn is an image, not a draw'),
+    (('web_picture',),
+     '  web_picture  what = a real picture that exists, found by image search; site: a domain the request names; paste'),
+    (('coloring',),
+     '  coloring     what = what the coloring page shows; it takes the page; workflow, steps, seed, quote'),
+    (('posts',),
+     "  posts        social posts as cards: source ('reddit', 'r/<sub>', 'hn', 'bsky', 'bsky/<handle>', '4chan/<board>',\n"
+     "               'mastodon/<server>', 'x/<post link>', or another site by name), search (the topic's words), sort\n"
+     "               (hot, new, top, rising, relevance), period (hour, day, week, month, year, all), count\n"
+     "               (1-4), pictures: true"),
+    (('highlight', 'circle', 'underline', 'strike'),
+     '  highlight / circle / underline / strike   target: the id it is in, words: the exact words to mark; or at'),
+    (('checkbox',),
+     "  checkbox     targets: the user's own typed paragraphs (para:N) made the tablet's checkboxes; checked: true"),
+    (('tag',),
+     "  tag          what = the tag as the user named it, quote: their words that ask for it; only when this notebook's\n"
+     "               system prompt or this page says to tag"),
+    (('chess',),
+     '  chess        a game on this page, which it takes whole: color (the side the user plays), strength, opponent,\n'
+     '               moves (those the request already makes)'),
+    (('adventure',),
+     '  adventure    an ink adventure (what = the adventure and the hero asked for); it takes this page whole'),
+    (('concord',),
+     '  concord      the Concord of Merrow Bay (what = the family the user plays, if named); it takes this page whole'),
+    (('messages',),
+     "  messages     texting the game's residents: members; it takes this page whole"),
+]
+
+
 POST_SORTS = ("hot", "new", "top", "rising", "relevance")
 POST_PERIODS = ("hour", "day", "week", "month", "year", "all")
 
 
-def brief_list(offered):
+def brief_list(offered, lean=False):
     """The PLAN STEPS list for the kinds offered: each entry whose kinds are all offered (a shared line names
-    only the ones offered)."""
+    only the ones offered). `lean`: the short list, for a harness that works the lean way."""
     out = []
-    for ks, text in STEP_BRIEF:
+    for ks, text in (LEAN_STEP_BRIEF if lean else STEP_BRIEF):
         have = [k for k in ks if k in offered]
         if not have:
             continue
@@ -212,6 +262,10 @@ def build(raw):
             step["pictures"] = bool(s["pictures"])
         if do == "chart" and isinstance(s.get("spec"), dict):
             step["spec"] = s["spec"]                     # drawn from as it is, no turn of its own (host)
+        if do == "write" and isinstance(s.get("lines"), list) and any(str(x).strip() for x in s["lines"]):
+            step["lines"] = [str(x) for x in s["lines"]]            # written as they are, the same way
+        if do == "draw" and isinstance(s.get("parts"), list) and s["parts"]:
+            step["parts"] = s["parts"]
         # PASTED: the picture itself goes on the page, not strokes drawn from it (only a plain true says so)
         if s.get("paste") in (True, "true"):
             step["paste"] = True

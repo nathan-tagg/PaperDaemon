@@ -79,7 +79,7 @@ def _harness():
     return H.RUN
 
 
-def chat(messages, tool_choice="required", temperature=None):
+def chat(messages, tool_choice="required", temperature=None, allowed=None):
     """One turn, STREAMED. Returns (message, usage, truncated).
 
     Every token is watched as it arrives: a reply that starts repeating itself is cut off here, at once, by
@@ -87,9 +87,9 @@ def chat(messages, tool_choice="required", temperature=None):
     That is the runaway guard -- tokens and loops, never seconds. There is no clock on the call.
 
     tool_choice="required" makes the reply a tool call, always; "auto" is used for the one turn where prose
-    means "ok".
+    means "ok". `allowed`: the calls this turn may make, which is all a lean harness's turn is sent.
     """
-    body = {"model": H.MODEL, "max_tokens": H.MAX_TOKENS, "tools": H.tool_schema(),
+    body = {"model": H.MODEL, "max_tokens": H.MAX_TOKENS, "tools": H.tool_schema(allowed),
             "tool_choice": tool_choice if H.TOOL_CHOICE_OK else "auto", "messages": messages,
             "stream": True, "stream_options": {"include_usage": True}}
     if temperature is not None:
@@ -110,7 +110,7 @@ def chat(messages, tool_choice="required", temperature=None):
         if ex.code == 400 and "tool_choice" in txt and H.TOOL_CHOICE_OK:
             H.TOOL_CHOICE_OK = False
             H.log("  this server does not take tool_choice=%r (%s) -- using auto" % (tool_choice, txt[:80]))
-            return chat(messages, "auto")
+            return chat(messages, "auto", temperature, allowed)
         raise RuntimeError("HTTP %d: %s" % (ex.code, txt))
     content, reasoning, calls = [], [], {}
     finish, usage, timings, runaway, n = None, {}, {}, False, 0

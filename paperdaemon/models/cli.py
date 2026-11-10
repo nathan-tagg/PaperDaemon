@@ -1,8 +1,9 @@
 """A text slot served by a COMMAND-LINE PROGRAM on this computer.
 
-The slot's source is a command: the program's name or path, with any arguments of the user's own after it.
-PaperDaemon runs it once for each turn of a job, hands it the request and reads what it prints. Nothing here knows
-any one program. What is particular to a program is DATA, the `cli` field of the slot's harness:
+The slot's source is a command, WHOLE, as the user types it: the program's name or path, then the user's own
+arguments -- which model, how much effort, whatever the program takes. There is no other field. PaperDaemon starts
+the program itself (no shell), once for each turn of a job, hands it the request and reads what it prints. Nothing
+here knows any one program. What is particular to a program is DATA, the `cli` field of a harness:
 
     program, places   the program's usual name, and where its installers put it (tried when the command is not on
                       the PATH); a harness whose `program` is the command's is the one that speaks for it
@@ -22,9 +23,9 @@ any one program. What is particular to a program is DATA, the `cli` field of the
                       tell the user when it is not} -- without it, a program that is found is ready
     sends_to          the host the program sends a page to, for the notices; without it the page stays here
     answer_rule       one sentence on how this program wants a structured answer given
-    models            the names the program takes for its models, offered where a model is picked
+    model_arg         the argument after which the command names its model (`--model`): how PaperDaemon knows which
+                      model a command runs, to guess its harness; nothing is added for it
 
-    {model}                       the slot's model
     {system}  {system_file}       the system text, or a file holding it
     {prompt}  {prompt_file}       the conversation as plain text, or a file holding it
     {schema}  {schema_file}       the host's tools as one JSON schema for the answer, or a file holding it
@@ -80,17 +81,38 @@ def name_of(command):
 
 def cli_of(harness, command):
     """How the command's program is spoken to: the harness's own `cli`, else that of the harness made for the
-    program (by its `program`), else the plainest way."""
+    program (by its `program`; the user's before PaperDaemon's own), else the plainest way."""
     own = getattr(harness, "cli", None) if harness is not None else None
     if own:
         return own
     from .. import harnesses
     name = name_of(command)
-    for h in harnesses.for_kind("text"):
+    for h in harnesses.user_harnesses() + harnesses.BUILT_IN:
         c = getattr(h, "cli", None) or {}
-        if name and str(c.get("program") or "").lower() == name:
+        if h.kind == "text" and name and str(c.get("program") or "").lower() == name:
             return c
     return PLAIN
+
+
+def model_of(command, cli=None):
+    """The model the command names, by the program's `model_arg` (`prog --model x` and `prog --model=x`), else ""."""
+    arg = str((cli if cli is not None else cli_of(None, command)).get("model_arg") or "").strip()
+    own = split(command)[1:]
+    for i, a in enumerate(own):
+        if arg and a == arg and i + 1 < len(own):
+            return own[i + 1]
+        if arg and a.startswith(arg + "="):
+            return a[len(arg) + 1:]
+    return ""
+
+
+def with_model(command, model, cli=None):
+    """A command and a model name kept beside it by an earlier version -> the command naming that model itself."""
+    cli = cli if cli is not None else cli_of(None, command)
+    arg = str(cli.get("model_arg") or "").strip()
+    if not (arg and str(model or "").strip() and str(command or "").strip()) or model_of(command, cli):
+        return str(command or "").strip()
+    return "%s %s %s" % (str(command).strip(), arg, str(model).strip())
 
 
 def find(command, cli=None):
@@ -157,8 +179,8 @@ def schema_of(tools, force, loose=False):
     calls = []
     for t in tools:
         params = t.get("parameters") or {"type": "object", "properties": {}}
-        calls.append({"type": "object", "description": (t.get("description") or "")[:1000 if not loose else 200],
-                      "properties": {"name": {"const": t["name"]}, "arguments": {"type": "object"} if loose else params},
+        # (what each call is for is said once, in the system text's list of them, not again here)
+        calls.append({"type": "object", "properties": {"name": {"const": t["name"]}, "arguments": {"type": "object"} if loose else params},
                       "required": ["name", "arguments"]})
     arr = {"type": "array", "items": {"anyOf": calls} if len(calls) > 1 else calls[0]}
     if force:
@@ -221,10 +243,11 @@ class CommandLine(Adapter):
     """A command-line program on this computer, run once a call."""
     family = "cli"
 
-    def __init__(self, url=None, key=None, model="", harness=None):
+    def __init__(self, url=None, key=None, harness=None):
         self.command = str(url or "").strip()
         self.base = self.api = self.command
-        self.key, self.model, self.harness = None, model or "", harness
+        self.key, self.harness = None, harness
+        self.model = model_of(self.command, self.cli())          # the one the command names; no other is kept
 
     def cli(self, harness=None):
         return cli_of(harness if harness is not None else self.harness, self.command)
@@ -233,7 +256,7 @@ class CommandLine(Adapter):
         cli = self.cli()
         if not find(self.command, cli)[0]:
             raise AdapterError("the program `%s` was not found on this computer" % (split(self.command) or ["?"])[0])
-        return list(cli.get("models") or [])
+        return [self.model] if self.model else []
 
     def health(self):
         return ready(self.command, self.cli())[0]
@@ -289,7 +312,7 @@ class CommandLine(Adapter):
                         f.write(content)
                 return made[key]
             return give
-        values = {"model": self.model, "system": system, "prompt": prompt, "schema": schema}
+        values = {"system": system, "prompt": prompt, "schema": schema}
         values.update({k: file_of(k) for k in FILES})
         for k in used:
             if k.startswith("request."):
@@ -418,4 +441,5 @@ def _json_in(text):
     return {}
 
 
-__all__ = ["CommandLine", "cli_of", "find", "ready", "split", "name_of", "schema_of", "turns_of", "PLAIN"]
+__all__ = ["CommandLine", "cli_of", "find", "ready", "split", "name_of", "model_of", "with_model", "schema_of",
+           "turns_of", "PLAIN"]

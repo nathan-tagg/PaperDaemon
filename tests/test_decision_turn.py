@@ -14,7 +14,7 @@ def _run(monkeypatch, replies, step_tokens=100):
     sent, served = [], []
     state = {"prompt": 1000}
 
-    def chat(msgs, tool_choice="required", temperature=None):
+    def chat(msgs, tool_choice="required", temperature=None, allowed=None):
         sent.append([dict(m) for m in msgs])
         m = replies.pop(0)
         state["prompt"] += step_tokens

@@ -739,5 +739,5 @@
   <string name="settings.mirror_edit.warn_on">चालू करें</string>
   <string name="slot.cli">कमांड लाइन</string>
   <string name="slot.command">कमांड</string>
-  <string name="slot.command.help">चलाया जाने वाला प्रोग्राम, जैसा आप टर्मिनल में लिखते: उसका नाम या पूरा पाथ, फिर आपके अपने आर्ग्युमेंट। हर अनुरोध के लिए जो चाहिए, वह हार्नेस जोड़ता है।</string>
+  <string name="slot.command.help">पूरा कमांड, जैसा आप टर्मिनल में लिखते: प्रोग्राम का नाम या उसका पूरा पथ, फिर आपके अपने आर्ग्युमेंट, जिनमें मॉडल और प्रयास का स्तर शामिल हैं। PaperDaemon प्रोग्राम को खुद शुरू करता है और केवल वही जोड़ता है जो हर अनुरोध को चाहिए।</string>
 </resources>

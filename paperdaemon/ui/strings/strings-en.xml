@@ -739,5 +739,5 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="settings.mirror_edit.warn_on">Turn on</string>
   <string name="slot.cli">Command line</string>
   <string name="slot.command">Command</string>
-  <string name="slot.command.help">The program to run, as you would type it in a terminal: its name or its full path, then any arguments of your own. The harness adds what each request needs.</string>
+  <string name="slot.command.help">The whole command, as you would type it in a terminal: the program's name or its full path, then your own arguments, the model and the effort among them. PaperDaemon starts the program itself and adds only what each request needs.</string>
 </resources>

@@ -266,7 +266,7 @@ def test_shipped_harnesses_are_data_loaded_by_the_users_loader():
     folder = os.path.join(os.path.dirname(harnesses.__file__), "shipped")
     assert sorted(os.listdir(folder)) == ["claude-code.json", "claude-haiku-5.5.json", "claude-opus-5.5.json",
                                           "claude-sonnet-5.5.json", "default-image.json", "default-text.json",
-                                          "flux.2-klein-9b.json", "qwen3.6-27b.json", "qwen3.8-27b.json",
+                                          "flux.2-klein-9b.json", "lean-default.json", "qwen3.6-27b.json", "qwen3.8-27b.json",
                                           "z-image-turbo.json"]
     assert all(p.source == "shipped" and p.file for p in harnesses.BUILT_IN)
     assert not [n for n in os.listdir(os.path.dirname(harnesses.__file__)) if n.endswith(".py")

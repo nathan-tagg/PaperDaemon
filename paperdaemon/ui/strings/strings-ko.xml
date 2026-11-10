@@ -739,5 +739,5 @@
   <string name="settings.mirror_edit.warn_on">켜기</string>
   <string name="slot.cli">명령줄</string>
   <string name="slot.command">명령</string>
-  <string name="slot.command.help">실행할 프로그램을 터미널에 입력하듯이 적습니다. 이름이나 전체 경로를 쓰고, 그 뒤에 내가 넣을 인수를 붙입니다. 요청마다 필요한 것은 하네스가 추가합니다.</string>
+  <string name="slot.command.help">터미널에 입력하는 그대로의 전체 명령입니다. 프로그램 이름이나 전체 경로를 쓰고, 이어서 모델과 노력 수준을 포함한 자신의 인수를 적습니다. PaperDaemon이 프로그램을 직접 시작하고 각 요청에 필요한 것만 덧붙입니다.</string>
 </resources>

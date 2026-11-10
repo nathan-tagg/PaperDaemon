@@ -447,5 +447,5 @@ def for_slot(role, s=None, m=None):
     cls = _chat_class(api) if role == "text" else IMAGE[api]
     if role == "text" and api == "cli":
         # a command, not a server: no key is PaperDaemon's to hold, and its harness says how the program is spoken to
-        return cls(m.get("location") or "", None, m.get("model") or "", harness=slots.pick(role, s, m)[0])
+        return cls(m.get("location") or "", None, harness=slots.pick(role, s, m)[0])
     return cls(m.get("location") or "", vault.get(slots.key_of(role, m)), m.get("model") or "")

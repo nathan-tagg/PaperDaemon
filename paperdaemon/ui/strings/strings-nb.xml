@@ -739,5 +739,5 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="settings.mirror_edit.warn_on">Slå på</string>
   <string name="slot.cli">Kommandolinje</string>
   <string name="slot.command">Kommando</string>
-  <string name="slot.command.help">Programmet som skal kjøres, slik du ville skrevet det i en terminal: navnet eller hele banen, deretter dine egne argumenter. Harnessen legger til det hver forespørsel trenger.</string>
+  <string name="slot.command.help">Hele kommandoen, slik du ville skrevet den i en terminal: programmets navn eller fulle bane, deretter dine egne argumenter, blant dem modellen og innsatsen. PaperDaemon starter programmet selv og legger bare til det hver forespørsel trenger.</string>
 </resources>
