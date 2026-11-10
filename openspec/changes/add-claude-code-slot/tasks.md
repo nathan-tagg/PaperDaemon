@@ -17,4 +17,6 @@
 
 - [x] 3.1 Real calls through the program: a reply, a forced tool call, a picture read, a second turn, the host's own
       23 tools (11-10: 2 to 4 s each on Claude Opus 5.5 at medium effort)
-- [ ] 3.2 A real job in the False Mirror on a lineup served by Claude Code, in the maintainer's running app
+- [x] 3.2 A real job in the False Mirror on a lineup served by Claude Code, in the maintainer's running app (11-10 on
+      0.2.39, lineup "Opus 5.5": a typed question answered in 6 s; a handwritten request read and a labeled sketch
+      drawn in 23 s, three turns)
