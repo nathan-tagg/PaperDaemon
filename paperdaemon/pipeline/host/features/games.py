@@ -124,6 +124,18 @@ def _clear_page(doc, pno):
     H.log("  the game takes the page: %d stroke(s), %d typed item(s) and %d picture(s) came off" % (ink, text, pics or 0))
 
 
+def _put_back(doc, pno):
+    """The page as it was recorded before a game took it (_clear_page), put back."""
+    from paperdaemon.pipeline import page as P
+    try:
+        ent = next((e for e in P.entries(doc, pno) if e.get("note") == "before a game took the page"), None)
+        if ent:
+            P.restore(ent["path"], doc, pno)
+            H.log("  the game did not start: the page is put back as it was")
+    except Exception as ex:
+        H._warn("putting the page back after a game that did not start", ex)
+
+
 def _own_writes():
     """What the game put on the page that asked is the job's own work, written: the job has changed the page (so it
     is done, not skipped, though the commit has nothing left to write), and the page as it is now is the job's, not
@@ -155,8 +167,15 @@ def _run_game(step):
                                       [i + 1 for i, q in enumerate(R.live_pages(doc)) if q["id"] == st["page_id"]][0]))
     if kind == "concord":
         from paperdaemon.pipeline.games.concord import game as CO
-        _clear_page(doc, [i + 1 for i, q in enumerate(R.live_pages(doc)) if q["id"] == JOB.page_id][0])
-        st = CO.start(what, H._ask_text if H._llm_up() else None, doc=doc, after=JOB.page_id, log=H.log, workdir=H.QUEUE)
+        pno = [i + 1 for i, q in enumerate(R.live_pages(doc)) if q["id"] == JOB.page_id][0]
+        _clear_page(doc, pno)
+        try:
+            st = CO.start(what, H._ask_text if H._llm_up() else None, doc=doc, after=JOB.page_id, log=H.log, workdir=H.QUEUE)
+        except Exception:
+            # THE GAME DID NOT START: the page goes back as it was before the game took it (its request with it), so
+            # nothing the user wrote is lost to a fault of ours
+            _put_back(doc, pno)
+            raise
         _own_writes()
         nums = [i + 1 for i, q in enumerate(R.live_pages(doc)) if q["id"] in (st.get("pages") or [])]
         return True, ("The Concord of Merrow Bay is on pages %d to %d of this notebook: you play %s; your orders and letters go "

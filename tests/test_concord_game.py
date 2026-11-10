@@ -64,3 +64,18 @@ def test_letters_are_addressed_by_name_and_promises_are_settled_by_deeds():
     assert "The Graves broke their word (support)" in notes
     assert st["accords"][G.MI.pair("graves", "quill")] == round(before[G.MI.pair("graves", "quill")] - 0.3, 3)
     assert st["words"]["graves"] == {"kept": 0, "broken": 1}
+
+
+def test_the_state_is_kept_in_the_notepad_like_any_game_s():
+    # the first real start failed here: the notepad's entry was written with chess's summary (KeyError: 'fen')
+    import json
+    st = G.new_state("doc", "quill", seed="56" * 16)
+    st["page_id"] = "pid"
+    mine, wants, problems = O.parse(["Harbor Row to Fogwater"], st["units"], "quill")
+    G.season(st, mine, wants, problems, ask_text=None)
+    entry = CH._entry(st)
+    assert "the Concord of Merrow Bay con-" in entry and "the user plays The Quills" in entry
+    body = entry.split("<!-- game-state concord %s" % st["id"])[1].split("-->")[0].strip()
+    back = json.loads(body)
+    assert back["game"] == "concord" and back["season_no"] == 1 and back["units"] == json.loads(json.dumps(st["units"]))
+

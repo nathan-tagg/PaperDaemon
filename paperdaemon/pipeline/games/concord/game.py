@@ -96,6 +96,19 @@ def plan(state):
     return planned
 
 
+def summary_lines(state):
+    """The game in the notepad's own words, over its stored state."""
+    st = R.standing(state["owners"])
+    me = state["user"]
+    return ["the Concord of Merrow Bay %s: %s, the user plays %s" % (state["id"], PG.season_words(state), state["families"][me]["name"]),
+            "harbors: %s" % ", ".join("%s %d" % (state["families"][f]["name"], st.get(f, 0)) for f in M.FAMILIES
+                                      if not state["families"][f]["out"]),
+            "status: %s%s" % (state.get("status"), (" (%s)" % ", ".join(state["families"][f]["name"] for f in state.get("winner") or [])) if state.get("winner") else "")]
+
+
+CH.SUMMARIES["concord"] = summary_lines
+
+
 # ------------------------------------------------------------------------------ the pages
 def _page_no(doc, page_id):
     return AD._page_no(doc, page_id)

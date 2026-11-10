@@ -89,10 +89,23 @@ def map_png(state, out):
     d.rectangle((X0, _TOP[0], X0 + M.MAP_W * SCALE, map_bottom), outline=RULE, width=2)
     for sid, sh in M.SHIRES.items():
         lx, ly = _to_page(*sh["label"])
-        name = sh["name"]
-        w = d.textlength(name, font=small_f)
-        lx = min(max(lx, X0 + w / 2.0 + 8), X1 - w / 2.0 - 8)        # a label near the edge stays inside the map
-        d.text((lx - w / 2.0, ly - small_lh - 6), name, font=small_f, fill=GRAY if M.is_sea(sid) else INK)
+        # THE NAME STAYS INSIDE ITS SHIRE: centered in the room the cell has at the name's height, on two lines when
+        # one is too long for it ("Gull Reach" and "Drowned Bell Deep" ran over their own shores)
+        x0, x1 = _room(sh["poly"], ly - small_lh / 2.0 - 6)
+        x0, x1 = max(x0, X0) + 10, min(x1, X1) - 10
+        names = [sh["name"]]
+        words = sh["name"].split()
+        if d.textlength(sh["name"], font=small_f) > x1 - x0 and len(words) > 1:
+            cut = min(range(1, len(words)), key=lambda k: abs(d.textlength(" ".join(words[:k]), font=small_f)
+                                                               - d.textlength(" ".join(words[k:]), font=small_f)))
+            names = [" ".join(words[:cut]), " ".join(words[cut:])]
+        w = max(d.textlength(n, font=small_f) for n in names)
+        if w <= x1 - x0:
+            lx = min(max(lx, x0 + w / 2.0), x1 - w / 2.0)
+        top = ly - small_lh * len(names) - 6
+        for k, n in enumerate(names):
+            d.text((lx - d.textlength(n, font=small_f) / 2.0, top + k * small_lh), n, font=small_f,
+                   fill=GRAY if M.is_sea(sid) else INK)
         # under the name: the harbor's ring at the left (filled when held), the unit's counter and its family's mark;
         # a held harbor with nobody on it names its holder beside the ring
         cy = ly + 10
@@ -120,6 +133,18 @@ def map_png(state, out):
         d.text((x + col - d.textlength(hs, font=small_f), yy + 4), hs, font=small_f, fill=GRAY)
     im.save(out)
     return out
+
+
+def _room(poly, y):
+    """The cell's extent, left to right, at the height y (page pixels) -> (x0, x1); the whole column when the height
+    misses the cell."""
+    pts = [_to_page(px, py) for px, py in poly]
+    xs = []
+    for i in range(len(pts)):
+        (ax, ay), (bx, by) = pts[i], pts[(i + 1) % len(pts)]
+        if (ay <= y < by) or (by <= y < ay):
+            xs.append(ax + (bx - ax) * (y - ay) / (by - ay))
+    return (min(xs), max(xs)) if len(xs) >= 2 else (X0, X1)
 
 
 def _on_edge(pt, poly, eps=0.6):

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.40
+
+- The Concord of Merrow Bay starts. Its first real start failed while saving the game and left the page blank; the game is now kept in the notepad like the others.
+- A game that fails to start puts the page back as it was, request and all.
+- On the Concord's map every shire's name stays inside its own borders, on two lines where one is too long.
+
 ## 0.2.39
 
 - A lineup's text model can be Claude Code, the command-line program installed on this computer. Pick "Claude Code" as the provider and name the model (claude-opus-5-5, or opus, sonnet, haiku): PaperDaemon starts the program as it is, hands it the page and reads its answer. It never touches the program's sign-in: Claude Code signs in by itself, as you, and the use is yours under your own plan. Each run has none of the program's own tools and none of your Claude Code settings, hooks or connected services, and keeps no session. A new harness, "Claude Opus 5.5, medium effort", is picked for that model by itself; the effort is a field of the harness, so another harness can set another.
