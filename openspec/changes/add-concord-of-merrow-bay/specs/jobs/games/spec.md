@@ -4,7 +4,8 @@
 PaperDaemon SHALL play the Concord of Merrow Bay from a request on a page: seven families hold the twenty-eight shires
 of the bay, the user plays one and six of the cast play the others. Each season every family SHALL give one order to
 each of its units -- hold, move, support a hold or a move, or convoy a militia by sea -- and the engine SHALL resolve
-every order at once by the game's rules: a support cut by an attack from any shire but the one it is directed into, a
+every order at once by the game's rules: a support cut by an attack from any shire but the one it is directed into,
+and cut from any shire when its unit is dislodged, a
 move won by the greater strength and stood off by an equal one, no family dislodging its own unit, a dislodged unit
 retreated by the engine to the nearest shire that is free, a convoy broken when its fleet is dislodged. Nothing SHALL
 move on a word alone: a promise of support counts only when the order is written. After each autumn every harbor SHALL
@@ -25,6 +26,10 @@ tie shared; a family with no harbor is out of the game.
 - **WHEN** the unit giving a support is attacked from a third shire
 - **THEN** the support does not count, whether or not the attack dislodges it
 
+#### Scenario: A supporter dislodged from the shire it supported into
+- **WHEN** a fleet supports a move into Harbor Row, and the unit leaving Harbor Row dislodges that fleet
+- **THEN** the fleet's support does not count, and the move it backed goes in with its own strength alone
+
 ### Requirement: The user's orders are read from the orders page in plain words
 The user SHALL write their orders on the orders page in plain words, one a line, naming shires by name ("Kettle Isle to
 Gull Reach", "the Spit holds", "Ash Hill supports Kettle Isle to Gull Reach", "the Sound convoys Ash Hill to Pearl
@@ -39,14 +44,19 @@ fresh space to write.
   it again next season
 
 ### Requirement: Letters are answered in the family's own voice, and weigh on the game
-The user SHALL write letters on the letters page, each addressed to a family; a sync on that page SHALL deliver them
-without advancing the season. Each family written to SHALL answer in its own voice, knowing its standing, its accord
+The user SHALL write letters on the game's first page, under its rule, each opening with the family's name ("To
+Harriet, ..."); a sync on that page SHALL deliver them, and SHALL resolve the season only when orders were written
+too. Each family written to SHALL answer in its own voice, knowing its standing, its accord
 with the writer and the orders it has already decided for the coming season, and MAY promise something (a support, no
 attack, a shire left empty, a convoy); a promise the family means to keep SHALL bind its orders for the seasons named,
 and a promise it means to break SHALL be broken by its orders and remembered against it when it comes out. A family
-MAY write unasked, at most once a season, when it wants something or was attacked. Letters SHALL be drawn on the
-letters page with the family's name and the season over each, the user's own letters among them as they were read,
-their ink taken off the page once read, as the orders are.
+MAY write unasked, at most once a season, when it wants something or was attacked: such a letter SHALL be written
+after the coming season's orders are decided and speak of those, SHALL name the order it wants from the user, and
+SHALL never ask the user's help toward a harbor of the user's own or a shire the user's unit stands on. A family
+SHALL be given the map as it stands and SHALL address the user by the family's name, never by a given name or a title
+it made up. Letters SHALL be drawn on the letters pages with the family's name and the season over each, the user's
+own letters among them as they were read, their ink taken off the page once read, as the orders are; every letter
+SHALL stand whole on one page, a new letters page added when the last is full.
 
 #### Scenario: A promise kept
 - **WHEN** Judge Shellby answers a letter with a promise to support the user's move into Fogwater next season and means
@@ -57,11 +67,19 @@ their ink taken off the page once read, as the orders are.
 - **WHEN** a family promises no attack and means to break it
 - **THEN** its orders next season may attack, and the game's record of that family's word to the user falls
 
+#### Scenario: A family wants a hand
+- **WHEN** the Graves' fleet at The Tower is ordered to Merrow Point for the coming season and the user's fleet at
+  Fogwater could support it
+- **THEN** the Graves may write, and what they are told to ask for is "Fogwater supports The Tower to Merrow Point"
+
 ### Requirement: The Concord's pages share the adventure's design
 The game's pages SHALL be the map (the shires drawn as strokes from the game's own map data, harbors marked, every
 unit a counter with its family's mark, the season and year under the title), the orders page, the letters pages and
 the season log, in one column with one header and one type scale, no buttons and no counts, each drawn again only
-when it changed. The families SHALL be told apart by marks and hatching, never by color alone.
+when it changed. The families SHALL be told apart by marks and hatching, never by color alone. A shire's name and
+the ring, counter and mark under it SHALL stand inside the shire's own borders, on two lines or at another height of
+the shire when its label's own place is too narrow; a held harbor with another family's unit on it SHALL show its
+holder's mark before the ring and the unit's after the counter.
 
 #### Scenario: A new season
 - **WHEN** a season resolves

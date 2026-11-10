@@ -129,13 +129,19 @@ def resolve(units, orders):
             why[s] = reason
             o = hold(s)
         done[s] = dict(o, unit=s)
-    broken, result = set(), None
-    for _ in range(8):
-        result = _once(units, done, broken)
+    # A DISLODGED UNIT GIVES NOTHING: a convoy it carried is broken, and a support it gave is cut -- also when the blow
+    # came from the very shire it was supporting into, which alone does not cut a support. Found by passes: each pass
+    # resolves with what is known broken and fallen, and whatever it dislodges joins them.
+    broken, fallen, result = set(), {}, None
+    for _ in range(12):
+        result = _once(units, done, broken, fallen)
         now_broken = {f for f in result["carriers"] if f in result["dislodged"]}
-        if now_broken <= broken:
+        now_fallen = {s: d["from"] for s, d in result["dislodged"].items()
+                      if done[s]["kind"] == SUPPORT and s not in result["cut"]}
+        if now_broken <= broken and not now_fallen:
             break
         broken |= now_broken
+        fallen.update(now_fallen)
     result["illegal"] = why
     result["orders"] = done
     # THE UNITS AFTERWARDS: movers moved, the dislodged gone from where they stood
@@ -163,8 +169,10 @@ def resolve(units, orders):
     return result
 
 
-def _once(units, orders, broken):
-    """One pass of the resolution with the convoys in `broken` carrying nothing (the loop in `resolve` finds them)."""
+def _once(units, orders, broken, fallen=None):
+    """One pass of the resolution with the convoys in `broken` carrying nothing and the supports in `fallen` (unit ->
+    the shire that dislodged it) giving nothing (the loop in `resolve` finds both)."""
+    fallen = fallen or {}
     fam = lambda s: units[s]["family"]
     movers = {s for s, o in orders.items() if o["kind"] == MOVE}
     carriers = set()
@@ -192,7 +200,7 @@ def _once(units, orders, broken):
         o = orders[s]
         target = o.get("to") or o["of"]
         attacker = next((x for x in attacks.get(s, []) if x != target and fam(x) != fam(s)), None)
-        cut[s] = attacker
+        cut[s] = attacker or fallen.get(s)
     # a support counts for a move only if the supported unit really makes that move; for a hold only if it stays
     def backing(x, kind, against=None):
         n = 0
@@ -293,7 +301,7 @@ def _once(units, orders, broken):
             elif orders[s]["to"] in contested:
                 fates[s] = ("failed", "stood off")
             else:
-                fates[s] = ("failed", "held back")
+                fates[s] = ("failed", "turned back")
         elif o["kind"] == SUPPORT:
             fates[s] = ("cut", "attacked from %s" % M.NAMES[cut[s]]) if cut.get(s) else ("gave", "")
         elif o["kind"] == CONVOY:

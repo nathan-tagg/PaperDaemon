@@ -19,6 +19,9 @@ once by the rules, and the only way to get help is to be believed. You are writi
 YOUR STANDING: {standing}
 HOW YOU STAND WITH {writer_name}: {accord_words} ({accord:+.2f}; their word to you so far: {their_word}).
 THE MAP NOW: {board}
+YOU WRITE TO the head of {writer_name}, surname {surname}. You do not know their given name: call them by the
+surname or a plain courtesy, never by a name you made up, and neither Mr. nor Mrs. (you do not know which). Speak of
+units and harbors only as THE MAP NOW gives them.
 YOUR ORDERS THIS COMING SEASON, ALREADY DECIDED (they may promise what agrees with these, or lie): {orders}
 {writer_name} wrote to you:
 "{letter}"
@@ -37,6 +40,9 @@ the bay's seven old families; orders resolve at once by the rules, and help come
 YOUR STANDING: {standing}
 HOW YOU STAND WITH {writer_name}: {accord_words} ({accord:+.2f}).
 THE MAP NOW: {board}
+YOU WRITE TO the head of {writer_name}, surname {surname}. You do not know their given name: call them by the
+surname or a plain courtesy, never by a name you made up, and neither Mr. nor Mrs. (you do not know which). Speak of
+units and harbors only as THE MAP NOW gives them.
 WHY YOU WRITE: {why}
 Write {writer_name} a short letter, two to four sentences, in your own voice, signed as you would sign. Answer with JSON
 only: {{"say": "the letter"}}"""
@@ -141,7 +147,7 @@ def answer(state, fid, letter, ask_text, rng, log=None):
     q = LETTER_PROMPT.format(brief=_brief(cid, [g.get("cast") for g in state["families"].values()]),
                              standing=_standing(state, fid), writer_name=state["families"][me]["name"],
                              accord_words=accord_words(MI.accord(state["accords"], fid, me)),
-                             accord=MI.accord(state["accords"], fid, me), their_word=their_word(state, fid),
+                             accord=MI.accord(state["accords"], fid, me), their_word=their_word(state, fid), surname=me.capitalize(),
                              board=board_words(state), orders=orders_words, letter=letter[:1200], kinds=", ".join(PROMISES))
     reply = AD.parse_json(ask_text(q)) if ask_text else {}
     say = " ".join(str((reply or {}).get("say") or "").split())
@@ -177,6 +183,35 @@ def _standing(state, fid):
     return "%d harbor(s); units: %s" % (st.get(fid, 0), ", ".join("%s at %s" % (state["units"][s]["kind"], M.NAMES[s]) for s in units) or "none")
 
 
+def reason(state, fid, last=None):
+    """Why the family would write unasked, in the facts of the board -> a sentence, or "". The user moved on a unit
+    of theirs last season (the move is named); or an order of theirs for the season TO COME is a move the user could
+    support -- a unit of the user's stands beside where it goes and could go there itself, and the place is neither the
+    user's harbor nor under a unit of theirs: nobody is asked to help take what is their own."""
+    me = state["user"]
+    whose = state["families"][me]["name"]
+    whose_s = whose + ("'" if whose.endswith("s") else "'s")
+    units, before = state["units"], (last or {}).get("units_before") or {}
+    for s, o in ((last or {}).get("orders") or {}).items():
+        if (o["kind"] == R.MOVE and before.get(s, {}).get("family") == me and before.get(o["to"], {}).get("family") == fid):
+            return "last season %s %s at %s moved on your %s at %s" % (whose_s, before[s]["kind"], M.NAMES[s],
+                                                                         before[o["to"]]["kind"], M.NAMES[o["to"]])
+    for s, o in ((state.get("planned") or {}).get(fid) or {}).items():
+        if o["kind"] != R.MOVE or s not in units:
+            continue
+        to = o["to"]
+        if units.get(to, {}).get("family") == me or state["owners"].get(to) == me:
+            continue
+        for n in M.SHIRES[to]["neighbors"]:
+            u = units.get(n)
+            if n != s and u and u["family"] == me and M.can_stand(u["kind"], to):
+                return ("your %s at %s is ordered to %s this coming season. %s %s at %s stands beside %s and could support "
+                        "the move; the order you want from them reads \"%s supports %s to %s\"" % (
+                            units[s]["kind"], M.NAMES[s], M.NAMES[to], whose_s, u["kind"], M.NAMES[n], M.NAMES[to],
+                            M.NAMES[n], M.NAMES[s], M.NAMES[to]))
+    return ""
+
+
 def unasked(state, fid, ask_text, rng, last):
     """A letter the family writes on its own after a season: when the user attacked it (a warning, or an appeal), or
     when its coming orders want the user's hand (a request) -- at most one a season, more likely from a talker.
@@ -185,26 +220,14 @@ def unasked(state, fid, ask_text, rng, last):
     f = state["families"][fid]
     cid = f.get("cast")
     t = MI.temperament(cid)
-    why = ""
-    if last:
-        attacked = any(o["kind"] == R.MOVE and o["to"] in (last.get("units_before") or {}) and
-                       (last["units_before"][o["to"]]["family"] == fid) and (last["units_before"].get(s, {}).get("family") == me)
-                       for s, o in (last.get("orders") or {}).items())
-        if attacked:
-            why = "%s moved against you last season" % state["families"][me]["name"]
-    if not why:
-        planned = (state.get("planned") or {}).get(fid) or {}
-        for s, o in planned.items():
-            if o["kind"] == R.MOVE and any(state["units"].get(n, {}).get("family") == me for n in M.SHIRES[o["to"]]["neighbors"]):
-                why = "you mean to move on %s, and a unit of %s stands beside it: their support would carry it" % (
-                    M.NAMES[o["to"]], state["families"][me]["name"])
-                break
+    why = reason(state, fid, last)
     if not why or rng.random() > 0.35 + 0.5 * t["negotiation"]:
         return "", ""
     from paperdaemon.pipeline.games import adventure as AD
     q = UNASKED_PROMPT.format(brief=_brief(cid, [g.get("cast") for g in state["families"].values()]), standing=_standing(state, fid),
                               writer_name=state["families"][me]["name"], accord_words=accord_words(MI.accord(state["accords"], fid, me)),
-                              accord=MI.accord(state["accords"], fid, me), board=board_words(state), why=why)
+                              accord=MI.accord(state["accords"], fid, me), board=board_words(state), why=why,
+                              surname=me.capitalize())
     reply = AD.parse_json(ask_text(q)) if ask_text else {}
     say = " ".join(str((reply or {}).get("say") or "").split())
     return say[:900], why
@@ -248,4 +271,4 @@ def settle(state, result):
     return notes
 
 
-__all__ = ["address", "families_named", "answer", "unasked", "settle", "board_words", "PROMISES"]
+__all__ = ["address", "families_named", "answer", "unasked", "reason", "settle", "board_words", "PROMISES"]

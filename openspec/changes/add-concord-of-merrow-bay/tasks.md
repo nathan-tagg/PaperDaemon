@@ -28,4 +28,8 @@
 - [x] 4.2 State in the notepad (`game: "concord"`), `games.play` dispatch, the host's `concord` step; the request page
       becomes the map
 - [ ] 4.3 A real game on the False Mirror: a season's orders read from handwriting, a letter answered in voice, a
-      promise kept and one broken; then his tablet
+      promise kept and one broken; then his tablet (year 1 played by handwriting: orders read, letters answered)
+- [x] 4.4 What year 1 of the real game showed: a dislodged unit's support is cut; unasked letters are written after
+      the coming season is planned, name the order wanted, never ask toward the user's own harbor, and use no made-up
+      name; letters pages by measured height; names and markers inside their shires; the holder's mark on a visited
+      harbor; a long result set from its right end

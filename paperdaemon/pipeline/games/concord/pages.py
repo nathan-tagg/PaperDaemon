@@ -89,19 +89,10 @@ def map_png(state, out):
     d.rectangle((X0, _TOP[0], X0 + M.MAP_W * SCALE, map_bottom), outline=RULE, width=2)
     for sid, sh in M.SHIRES.items():
         lx, ly = _to_page(*sh["label"])
-        # THE NAME STAYS INSIDE ITS SHIRE: centered in the room the cell has at the name's height, on two lines when
-        # one is too long for it ("Gull Reach" and "Drowned Bell Deep" ran over their own shores)
-        x0, x1 = _room(sh["poly"], ly - small_lh / 2.0 - 6)
-        x0, x1 = max(x0, X0) + 10, min(x1, X1) - 10
-        names = [sh["name"]]
-        words = sh["name"].split()
-        if d.textlength(sh["name"], font=small_f) > x1 - x0 and len(words) > 1:
-            cut = min(range(1, len(words)), key=lambda k: abs(d.textlength(" ".join(words[:k]), font=small_f)
-                                                               - d.textlength(" ".join(words[k:]), font=small_f)))
-            names = [" ".join(words[:cut]), " ".join(words[cut:])]
-        w = max(d.textlength(n, font=small_f) for n in names)
-        if w <= x1 - x0:
-            lx = min(max(lx, x0 + w / 2.0), x1 - w / 2.0)
+        # THE NAME AND WHAT STANDS UNDER IT STAY INSIDE THEIR SHIRE: at the label's own height when the cell has the
+        # room there, on two lines when one is too long, else at the nearest height where it has ("Gull Reach" and
+        # "Drowned Bell Deep" ran over their shores, "Tanglewood" out of the map, "The Senate Steps" across a border)
+        lx, ly, names = _fit(d, sh, lx, ly, small_f, small_lh)
         top = ly - small_lh * len(names) - 6
         for k, n in enumerate(names):
             d.text((lx - d.textlength(n, font=small_f) / 2.0, top + k * small_lh), n, font=small_f,
@@ -115,6 +106,10 @@ def map_png(state, out):
             d.ellipse((cx - 9, cy - 9, cx + 9, cy + 9), fill=GRAY if own else (255, 255, 255), outline=INK, width=2)
             if own and sid not in units:
                 d.text((cx + 15, cy - 12), mark(state, own), font=label_f, fill=GRAY)
+            elif own and units[sid]["family"] != own:
+                # another family's unit on it: the holder's mark stands before the ring, the unit's after its counter
+                m = mark(state, own)
+                d.text((cx - 15 - d.textlength(m, font=label_f), cy - 12), m, font=label_f, fill=GRAY)
         if sid in units:
             u = units[sid]
             _counter(d, lx, cy, u["kind"], mark(state, u["family"]), u["family"] == me, label_f)
@@ -136,15 +131,54 @@ def map_png(state, out):
 
 
 def _room(poly, y):
-    """The cell's extent, left to right, at the height y (page pixels) -> (x0, x1); the whole column when the height
-    misses the cell."""
+    """The cell's extent, left to right, at the height y (page pixels) -> (x0, x1), or None when the height misses
+    the cell."""
     pts = [_to_page(px, py) for px, py in poly]
     xs = []
     for i in range(len(pts)):
         (ax, ay), (bx, by) = pts[i], pts[(i + 1) % len(pts)]
         if (ay <= y < by) or (by <= y < ay):
             xs.append(ax + (bx - ax) * (y - ay) / (by - ay))
-    return (min(xs), max(xs)) if len(xs) >= 2 else (X0, X1)
+    return (min(xs), max(xs)) if len(xs) >= 2 else None
+
+
+MARK_L, MARK_R = 52, 58                        # what stands under a name reaches this far left and right of its middle
+
+
+def _fit(d, sh, lx, ly, font, lh):
+    """Where a shire's name and the row under it (ring, counter, mark) go -> (x, y, the name's lines): the label's own
+    point when both fit inside the cell there, else the nearest height where they do, the name on one line or two;
+    when the cell has no such height, the place where the least of them runs over. The room is taken over the whole
+    height of the lines and of the row, so a slanted border counts where it is nearest."""
+    name = sh["name"]
+    words = name.split()
+    ways = [[name]]
+    if len(words) > 1:
+        cut = min(range(1, len(words)), key=lambda k: abs(d.textlength(" ".join(words[:k]), font=font)
+                                                           - d.textlength(" ".join(words[k:]), font=font)))
+        ways.append([" ".join(words[:cut]), " ".join(words[cut:])])
+    best = None
+    for step in range(0, 9):
+        for dy in ((0,) if step == 0 else (12 * step, -12 * step)):
+            y = ly + dy
+            for names in ways:
+                top = y - lh * len(names) - 6
+                rows = [_room(sh["poly"], v) for v in (top + 2, top + lh * len(names) / 2.0, top + lh * len(names) - 2)]
+                under = [_room(sh["poly"], v) for v in (y - 6, y + 10, y + 26)]
+                if any(r is None for r in rows + under):
+                    continue
+                w = max(d.textlength(n, font=font) for n in names)
+                lo = max(max(max(r[0] for r in rows), X0) + 10 + w / 2.0, max(max(r[0] for r in under), X0) + 6 + MARK_L)
+                hi = min(min(min(r[1] for r in rows), X1) - 10 - w / 2.0, min(min(r[1] for r in under), X1) - 6 - MARK_R)
+                over = max(0.0, lo - hi)
+                x = min(max(lx, lo), hi) if lo <= hi else (lo + hi) / 2.0
+                if over == 0:
+                    return x, y, names
+                if best is None or over < best[0]:
+                    best = (over, x, y, names)
+    if best is None:
+        return lx, ly, ways[0]
+    return best[1], best[2], best[3]
 
 
 def _on_edge(pt, poly, eps=0.6):
@@ -199,7 +233,7 @@ def orders_png(state, out):
             tw, fw = d.textlength(text, font=body_f), d.textlength(fate, font=small_f)
             if tw + fw + 40 <= CW:
                 d.text((X0, y), text, font=body_f, fill=col)
-                d.text((X1 - fw, y + 5), fate, font=small_f, fill=GRAY)
+                d.text((X1, y + 5), fate, font=small_f, fill=GRAY, anchor="ra")    # set from its right end: exact
                 y += body_lh
             else:
                 # what came of it on its own line when the order and its fate do not share one
@@ -234,7 +268,6 @@ def letters_png(state, out, first, last_index):
     name_f, name_lh, _ = AD._style("name")
     italic_f = AD._style("italic")[0]
     letters = (state.get("letters") or [])[first:last_index + 1]
-    bottom = AD.FOOT_Y
     for L in letters:
         who = "You, to %s" % family_name(state, L["to"]) if L.get("from") == state.get("user") else family_name(state, L["from"])
         AD._caps(d, (X0, y), season_label(L.get("season_no", 0)))
@@ -242,16 +275,28 @@ def letters_png(state, out, first, last_index):
         d.text((X0, y), who, font=name_f, fill=INK)
         y += name_lh + 4
         f = italic_f if L.get("from") == state.get("user") else body_f
-        for line in AD._wrap(d, L.get("text") or "", f, CW):
-            if y + body_lh > bottom:
-                break
+        for line in AD._wrap(d, L.get("text") or "", f, CW)[:_letter_room(y, body_lh)]:
             d.text((X0, y), line, font=f, fill=INK)
             y += body_lh
-        y += 28
-        if y > bottom:
-            break
+        y += LETTER_GAP
     im.save(out)
     return out
+
+
+LETTER_GAP = 28
+
+
+def _letter_room(y, body_lh):
+    """How many more lines fit from y down to the page's foot (a letter longer than a whole page ends there)."""
+    return max(0, int((AD.FOOT_Y - y) // body_lh))
+
+
+def _letter_height(d, state, L):
+    """A letter's height on the page as letters_png draws it, without the gap under it."""
+    body_f, body_lh, _ = AD._style("body")
+    name_lh = AD._style("name")[1]
+    f = AD._style("italic")[0] if L.get("from") == state.get("user") else body_f
+    return 30 + name_lh + 4 + len(AD._wrap(d, L.get("text") or "", f, CW)) * body_lh
 
 
 def season_label(n):
@@ -259,13 +304,24 @@ def season_label(n):
 
 
 def letters_plan(state):
-    """Which letters go on which letters page: as many as fit, by a rough count (nine lines a letter) -> [(first,
-    last_index)], at least one page."""
+    """Which letters go on which letters page: each page takes the letters that fit WHOLE, measured as they are
+    drawn (seven to a page by count cut the seventh off mid-sentence at the foot) -> [(first, last_index)], at least
+    one page. Letters are only ever added, so a page once full keeps its letters."""
+    from paperdaemon.pipeline.draw import scaled as SD
     letters = state.get("letters") or []
-    per = 7
     if not letters:
         return [(0, -1)]
-    return [(i, min(i + per - 1, len(letters) - 1)) for i in range(0, len(letters), per)]
+    d = SD.canvas(PAGE_W, 200)[1]
+    top = AD._header(d, "Letters", "Spring of year 1")
+    out, first, y = [], 0, top
+    for i, L in enumerate(letters):
+        h = _letter_height(d, state, L)
+        if i > first and y + h > AD.FOOT_Y:
+            out.append((first, i - 1))
+            first, y = i, top
+        y += h + LETTER_GAP
+    out.append((first, len(letters) - 1))
+    return out
 
 
 def log_png(state, out):

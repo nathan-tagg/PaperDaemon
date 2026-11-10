@@ -57,7 +57,30 @@ def test_a_support_cut_from_a_third_shire_does_not_count():
                           "the-narrows": R.move("the-narrows", "fogwater")})
     assert r["cut"] == {"fogwater": "the-narrows"} and r["fates"]["fogwater"][0] == "cut"
     assert r["moved"] == {} and r["dislodged"] == {}                          # 1 against 1: the militia holds
-    assert r["fates"]["the-narrows"] == ("failed", "held back")              # and the cutter bounced off the fleet
+    assert r["fates"]["the-narrows"] == ("failed", "turned back")              # and the cutter bounced off the fleet
+
+
+def test_a_dislodged_unit_s_support_is_cut_even_by_the_shire_it_supported_into():
+    # the first real game's autumn: the Oakes left Harbor Row for The Ferry Landing with a support and dislodged the
+    # Holloways' fleet there, whose support for the Graves INTO Harbor Row still counted -- a stand-off where the
+    # user's supported move should have gone in
+    units = U(harbor_row=("oakes", F), city_hall=("oakes", Mi), the_ferry_landing=("holloway", F),
+              merrow_point=("graves", F), fogwater=("quill", F), the_archive=("quill", Mi))
+    r = R.resolve(units, {"harbor-row": R.move("harbor-row", "the-ferry-landing"),
+                          "city-hall": R.support("city-hall", "harbor-row", "the-ferry-landing"),
+                          "the-ferry-landing": R.support("the-ferry-landing", "merrow-point", "harbor-row"),
+                          "merrow-point": R.move("merrow-point", "harbor-row"),
+                          "fogwater": R.move("fogwater", "harbor-row"),
+                          "the-archive": R.support("the-archive", "fogwater", "harbor-row")})
+    assert "the-ferry-landing" in r["dislodged"] and r["cut"]["the-ferry-landing"] == "harbor-row"
+    assert r["fates"]["the-ferry-landing"] == ("cut", "attacked from Harbor Row; dislodged from The Ferry Landing")
+    assert r["moved"] == {"harbor-row": "the-ferry-landing", "fogwater": "harbor-row"}
+    assert r["fates"]["merrow-point"] == ("failed", "turned back") and "harbor-row" not in r["contested"]
+    # an attack from that shire that does NOT dislodge leaves the support standing
+    r = R.resolve(units, {"harbor-row": R.move("harbor-row", "the-ferry-landing"),
+                          "the-ferry-landing": R.support("the-ferry-landing", "merrow-point", "harbor-row"),
+                          "merrow-point": R.move("merrow-point", "harbor-row")})
+    assert r["cut"] == {} and r["fates"]["the-ferry-landing"] == ("gave", "")
 
 
 def test_head_to_head_the_stronger_wins_and_equals_both_stay():

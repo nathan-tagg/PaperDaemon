@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.41
+
+- The Concord: a unit that is dislodged gives no support. A fleet driven out of its shire still counted its support for another family's move, even when the blow came from the shire it was supporting into; in the first real game that turned a move that should have gone in into a stand-off.
+- A family's unasked letter is about the season to come. They were written from the orders just played, so one spoke of "your fleet at Harbor Row" after taking Harbor Row itself, and another asked for help toward one of your own harbors. A family now writes after its next orders are decided, is told the order it wants from you ("Fogwater supports The Tower to Merrow Point"), never asks for your own harbor, and addresses you by your family's name instead of a name it made up.
+- A letter is never cut at the foot of the letters page: each page takes the letters that fit whole, and a new page is added for the rest.
+- On the map every name, ring and counter stays inside its own shire, moved to where the shire has room; a harbor you hold with another family's unit on it shows your mark before the ring. A move that met a unit that stayed is "turned back".
+
 ## 0.2.40
 
 - The Concord of Merrow Bay starts. Its first real start failed while saving the game and left the page blank; the game is now kept in the notepad like the others.

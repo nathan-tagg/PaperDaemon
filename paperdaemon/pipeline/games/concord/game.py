@@ -271,7 +271,10 @@ def season(state, my_orders, wants, problems, ask_text, log=None):
     if autumn_notes:
         note += ". " + "; ".join(autumn_notes[:4])
     if state["status"] == "playing":
-        # the families write unasked, one letter a season at most each, then the next season is planned
+        # the next season is planned, THEN the families write unasked (one letter a season at most each): a letter
+        # speaks of the orders to come -- written first, they spoke of the season just played ("your fleet at
+        # Harbor Row", a shire that fleet had left)
+        plan(state)
         rng = CH.Rng(**state["rng"])
         for f in M.FAMILIES:
             if f == me or state["families"][f]["out"] or ask_text is None:
@@ -284,7 +287,6 @@ def season(state, my_orders, wants, problems, ask_text, log=None):
             if text:
                 state["letters"].append({"from": f, "to": me, "text": text, "season_no": state["season_no"], "why": why})
         state["rng"] = rng.state()
-        plan(state)
     return note
 
 
