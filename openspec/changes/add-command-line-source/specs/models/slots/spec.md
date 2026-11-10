@@ -8,7 +8,8 @@ to one program: no adapter, setting, label or string names a vendor's program. W
 be data in a text harness's `cli` field: the program's usual name and the places it is installed, the arguments a
 request adds (with placeholders for the model, the system text, the conversation, the tools' schema, a picture's
 file and any field of the request the harness tuned; a group of arguments left out whole when a placeholder in it has
-nothing to give), what goes on the program's input, where the answer, an error and the token counts are in what it
+nothing to give, or when it begins with an argument the user's own command already gives), what goes on the program's
+input, where the answer, an error and the token counts are in what it
 prints, a command that says whether the program is ready and what to tell the user when it is not, the host it sends
 a page to, and the names it takes for its models. The harness that speaks for a command SHALL be the slot's harness
 when it has a `cli` field, else the harness whose `cli.program` is the command's program; a program with neither
@@ -35,6 +36,10 @@ slot saved with the API family `claude-cli` SHALL be read as a command-line slot
 - **WHEN** the program is installed and its harness's readiness check says nobody is signed in
 - **THEN** the slot's test and the job's note say what the harness says to do, and nothing is asked of the user
   inside PaperDaemon
+
+#### Scenario: An argument typed in the command
+- **WHEN** the command is `claude --effort high` and the harness would add `--effort medium`
+- **THEN** the program is run with the effort the user typed, and the harness's is left out
 
 #### Scenario: The source is not an API key
 - **WHEN** the user opens a lineup whose text model is a command

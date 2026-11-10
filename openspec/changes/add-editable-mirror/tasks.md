@@ -24,6 +24,8 @@
   numbering as author 1, merged two edits under one id; words landed inside the user's line, its first letters went,
   and the text's items were left in a ring): `inplace.AUTHOR` 127, ids past every author's highest, the author table
   left alone; a text in a ring said (`textUnread`) and emptied by a save with no paragraphs
+- [x] 3.6 A value set in place of another stamped one past the stamp it replaces (`_newer`), not past every id on
+  the page
 - [x] 3.5 A text in a ring is shown (typed.loose_order, the text marked `inexact`), refused for editing, emptied by
   deleting all of it in the editor
 - [x] 3.3 A warning each time Edit the Mirror is turned on; canceling leaves it off (`ui/settings.js`)

@@ -33,6 +33,9 @@ marked deleted as the tablet marks it, not removed. Everything new (a stroke, a 
 set) SHALL be numbered by an author of the editor's own: never the tablet's, so an edit made here and writing the
 tablet has not yet synced cannot take the same ids; one the tablet opens; and not one of PaperDaemon's own, because
 what is written here is the user's hand. Its ids SHALL be counted past the highest id any author holds on the page.
+A value it sets in place of another (a paragraph's style, a layer's name or whether it shows, the text or the
+template shown or hidden) SHALL be stamped one past the stamp it replaces: newer than that value, and no newer than
+that, so the user's next change on the tablet is the newer one.
 The page's author table SHALL be left as it is. A page whose typed text cannot be read in its exact order (its items
 pointing at each other, as two edits under one author's ids left them) SHALL still show its words, read in a loose
 order and marked as not exact; it SHALL refuse an edit of that text, saying that deleting all of it is the one change

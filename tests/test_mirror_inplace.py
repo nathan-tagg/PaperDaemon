@@ -853,3 +853,26 @@ def test_a_text_whose_items_point_at_each_other_is_shown_and_can_only_be_emptied
     assert "cannot be read exactly" in got["refused"] and got["same"] is False, got
     assert got["report"] == {"kept": 0, "deleted": got["report"]["deleted"], "inserted": 0} and got["report"]["deleted"] >= got["live_before"], got
     assert got["live_after"] == 0 and got["unread_after"] is False and got["after"] == [] and got["strokes"], got
+
+
+def test_a_value_the_editor_sets_is_stamped_one_past_the_one_it_replaces():
+    """A paragraph's style, set here: newer than the style it replaces and no newer than that, under the editor's own
+    author. Stamped past every id on the page, it could win a merge against a change the user made on the tablet
+    afterwards (the tablet stamps with the page's next item number)."""
+    got = _run("""
+        doc = fixture("typed-question")
+        path = os.path.join(M, doc, local.page_id(doc, 1) + ".rm")
+        styles = lambda: {(k.part1, k.part2): (v.timestamp.part1, v.timestamp.part2, int(getattr(v.value, "value", v.value)))
+                          for b in read_blocks(io.BytesIO(open(path, "rb").read())) if isinstance(b, ss.RootTextBlock)
+                          for k, v in b.value.styles.items()}
+        before = styles()
+        sc = IP.read_page(doc, 1)
+        sc["text"]["paras"][0]["style"] = "header" if sc["text"]["paras"][0]["style"] != "header" else "body"
+        IP.write_in_place(doc, 1, sc, sc["stamp"])
+        after = styles()
+        changed = {k: v for k, v in after.items() if before.get(k) != v}
+        out(changed=[[list(k), list(v), list(before.get(k) or [0, 0, 0])] for k, v in changed.items()])
+    """)
+    assert len(got["changed"]) == 1, got
+    key, new, old = got["changed"][0]
+    assert key == [0, 0] and new[0] == IP_AUTHOR and new[1] == old[1] + 1, got

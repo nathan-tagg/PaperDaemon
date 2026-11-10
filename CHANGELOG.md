@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.47
+
+- An argument you type in a command-line lineup's Command stands over what the harness would add: with the command `claude --effort high`, the model runs at high effort though its harness says medium. The same goes for any argument a harness adds as an option.
+- Editing a Mirror page: a setting changed in the editor (a paragraph's style, a layer's name, the typed text shown or hidden) is marked only just newer than the one it replaces. Since 0.2.43 it was marked newer than everything on the page, which on a page holding a large drawing could have made it win over a change you made on the tablet afterwards.
+
 ## 0.2.46
 
 - A checklist with one item ticked is no longer reported as failed. 0.2.45 made the checkboxes, then counted the ticked paragraph twice, said one paragraph was not found and left a retry box on the page.

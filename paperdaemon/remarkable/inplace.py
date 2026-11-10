@@ -59,8 +59,16 @@ NONE = CrdtId(0, 0)
 # reader orders. So the editor has a number of its own: one the tablet opens (render.TABLET_OPENS), that is not the
 # tablet's (1), not a number a second or third device is given (2, 3, ...), and not PaperDaemon's own (100kkkkk,
 # render.is_own: what is written here is the USER's hand, in the app). Its ids are counted past the highest id ANY
-# author holds on the page, so a value it sets is the newest (a layer's name, a paragraph's style), as before.
+# author holds on the page. A VALUE it sets in place of another (a paragraph's style, a layer's name, the text shown
+# or hidden) is stamped ONE PAST THE STAMP IT REPLACES (_newer): newer than that value, and older than the user's next
+# change on the tablet, which the tablet stamps with the page's next item number -- a stamp past every id on a page
+# that holds a decomp's tens of thousands could win a merge against a change the user made afterwards.
 AUTHOR = 127
+
+
+def _newer(old):
+    """The stamp of a value that replaces `old` (a LwwValue, or None): the editor's, one past old's."""
+    return CrdtId(AUTHOR, (old.timestamp.part2 if isinstance(old, LwwValue) else 0) + 1)
 ITEM_TYPES = (3, 4, 5, 6, 8, 15)                 # glyph, group, stroke, text, tombstone and picture items
 LINE_TYPE = ss.SceneLineItemBlock.BLOCK_TYPE
 TEXT_TYPE = ss.RootTextBlock.BLOCK_TYPE
@@ -385,7 +393,7 @@ def _edit_text(text, paras, nid):
         code = int(old.value) if old is not None else None
         if (local.STYLE_OF.get(code, ("body", None)) if old is not None else ("body", None)) == style:
             continue
-        text.styles[key] = LwwValue(timestamp=nid(1), value=local.CODE_OF.get(style, 1))
+        text.styles[key] = LwwValue(timestamp=_newer(old), value=local.CODE_OF.get(style, 1))
     return {"kept": sum(1 for i, _v in seq if i in expanded), "deleted": len(dead),
             "inserted": sum(1 for i, _v in seq if i not in expanded)}
 
@@ -483,9 +491,9 @@ def edit(doc, page_no, data, scene):
         k = nodes[lid][-1]
         nb = copy.deepcopy(blocks[k])
         if label != old["label"]:
-            nb.group.label = LwwValue(timestamp=nid(), value=label)
+            nb.group.label = LwwValue(timestamp=_newer(nb.group.label), value=label)
         if visible != old["visible"]:
-            nb.group.visible = LwwValue(timestamp=nid(), value=visible)
+            nb.group.visible = LwwValue(timestamp=_newer(nb.group.visible), value=visible)
         repl[k] = _one(nb)
         done["layers"] += 1
 
@@ -556,7 +564,7 @@ def edit(doc, page_no, data, scene):
             raise CannotWrite("the page has no settings block to show or hide its text or template")
         nb = copy.deepcopy(blocks[info_k])
         for f, a in flags:
-            setattr(nb, a, LwwValue(timestamp=nid(), value=bool(scene[f])))
+            setattr(nb, a, LwwValue(timestamp=_newer(getattr(nb, a, None)), value=bool(scene[f])))
         repl[info_k] = _one(nb)
 
     # ---- pictures: one kept as it is; one gone a tombstone, as the pipeline erases one (images._remove); one moved, or
