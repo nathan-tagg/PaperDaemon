@@ -72,6 +72,16 @@ def test_a_request_is_built_from_the_harness_s_data(tmp_path):
     assert [b["type"] for b in json.loads(stdin)["message"]["content"]] == ["text"]
 
 
+def test_an_argument_typed_in_the_command_stands_over_the_harness_s(tmp_path):
+    # "Can the cli have a parameter, maybe?" -- the command is typed as in a terminal, its own arguments included
+    a = C.CommandLine("claude --effort high --model sonnet", None, "claude-opus-5-5")
+    hp = harnesses.get("claude-opus-5.5")()
+    args, stdin, system, dropped = a.request("sys", [{"role": "user", "text": "hi"}], caps={"vision": True}, harness=hp,
+                                             folder=str(tmp_path))
+    assert "--effort" not in args and "--model" not in args and "--system-prompt-file" in args
+    assert C.find("claude --effort high --model sonnet", hp.cli)[1] == ["--effort", "high", "--model", "sonnet"]
+
+
 def test_a_conversation_goes_as_turns_a_later_request_begins_with():
     msgs = [{"role": "user", "text": "Record apple."},
             {"role": "assistant", "text": "", "tool_calls": [{"id": "c1", "name": "record", "arguments": {"word": "apple"}}]},

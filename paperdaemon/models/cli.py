@@ -7,8 +7,9 @@ any one program. What is particular to a program is DATA, the `cli` field of the
     program, places   the program's usual name, and where its installers put it (tried when the command is not on
                       the PATH); a harness whose `program` is the command's is the one that speaks for it
     args              added to the command for every request: text with {placeholders}. A LIST inside the list is left
-                      out whole when a placeholder in it has nothing to give; {"each_picture": [...]} is repeated for
-                      every picture of the request
+                      out whole when a placeholder in it has nothing to give, and when it begins with an argument
+                      the user's own command already gives (`program --effort high` keeps the user's effort);
+                      {"each_picture": [...]} is repeated for every picture of the request
     input             what goes on the program's input: text with placeholders, or {"json": a JSON value written on
                       one line, "text": how a turn's words are written in it, "picture": how a picture is} -- the
                       value "{parts}" in `json` becomes the list of them
@@ -242,6 +243,7 @@ class CommandLine(Adapter):
         """-> (the program's arguments after the user's own, what goes on its input, the system text, pictures
         dropped). `folder`: where the request's files are made; without one a file's placeholder gives nothing."""
         caps = caps or {}
+        own = set(split(self.command)[1:])                        # what the user typed after the program's name
         cli = self.cli(harness)
         body = {"model": self.model}
         if temperature is not None:
@@ -313,6 +315,8 @@ class CommandLine(Adapter):
                 for path, _png in pictures:
                     args += [_fill(x, dict(values, picture_file=path))[0] for x in a.get("each_picture") or []]
             elif isinstance(a, list):
+                if a and a[0] in own:
+                    continue                                      # the user's own argument stands; the harness's is left out
                 filled = [_fill(x, values) for x in a]
                 if all(ok for _t, ok in filled):
                     args += [t for t, _ok in filled]
