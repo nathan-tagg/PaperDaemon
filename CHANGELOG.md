@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.45
+
+- "Make these checkboxes, and tick the plants one" works. When two steps of a job named the same typed paragraph (a checkbox, then a ticked one), the whole checklist failed with "a paragraph's style did not read back"; the paragraph now takes the last style named for it.
+- A job's receipt, the line at the top of the page and in the Jobs list, says what was erased in plain words: "erase 11 ink marks" instead of every mark by its number, twice over.
+- The Concord: an order the rules do not allow is shown back with the rules' own reason ("not allowed: no militia on a coast at The Archive") instead of "no unit of yours" at a shire where your unit stands. A unit of yours that is driven out says by whom and where it went.
+
 ## 0.2.44
 
 - A page whose typed text was left tangled by the collision fixed in 0.2.43 shows its words again. They are read in an order that may not be the tablet's own, so the editor refuses to change them; deleting all of the page's text is taken, and clears the tangle for good.
