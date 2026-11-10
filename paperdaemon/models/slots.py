@@ -45,8 +45,19 @@ def configured(role, s=None):
 
 def off_machine(role, s=None):
     """The host a slot sends pages to when it is not this computer, else None."""
-    url = location(role, s)
-    return S.host_of(url) if url and not S.loopback(url) else None
+    return pages_go_to(role, s, slot(role, s))
+
+
+def pages_go_to(role, s, m):
+    """Where the slot `m` sends a page: a server's host when it is not this computer; for a command line, the host
+    its harness says the program sends to (`cli.sends_to`), a program that says none keeping the page here."""
+    loc = str(m.get("location") or "").strip()
+    if not loc:
+        return None
+    if m.get("api") == "cli":
+        from .cli import cli_of
+        return str(cli_of(pick(role, s, m)[0], loc).get("sends_to") or "").strip().lower() or None
+    return S.host_of(loc) if not S.loopback(loc) else None
 
 
 def script_text(m):
@@ -119,7 +130,7 @@ def describe(role, s=None, lineup=None):
         "script": m.get("script") or "",
         "harness": {"id": p.id, "name": p.name, "how": how, "why": why},
         "capabilities": capabilities(role, s, m),
-        "off_machine": S.host_of(loc) if loc and not S.loopback(loc) else None,
+        "off_machine": pages_go_to(role, s, m),
         "harnesses": [{"id": q.id, "name": q.name} for q in harnesses.for_kind(role)],
         "reported": list(_reported.get(role) or []),
     }

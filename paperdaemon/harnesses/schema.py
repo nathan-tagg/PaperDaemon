@@ -91,7 +91,33 @@ def _assist(a):
     return bool(fires and acts and known and isinstance(a.get("when", ""), str))
 
 
+def _cli(v):
+    """How a command-line program is spoken to (models/cli.py reads it)."""
+    if not isinstance(v, dict) or set(v) - {"program", "places", "args", "input", "output", "ready", "sends_to",
+                                             "answer_rule", "models"}:
+        return False
+    texts = lambda x: isinstance(x, list) and all(isinstance(t, str) for t in x)
+    arg = lambda a: (isinstance(a, str) or texts(a)
+                     or (isinstance(a, dict) and set(a) == {"each_picture"} and texts(a["each_picture"])))
+    inp = v.get("input", "")
+    out = v.get("output", {})
+    chk = v.get("ready", {})
+    return (isinstance(v.get("program", ""), str) and texts(v.get("places", [])) and texts(v.get("models", []))
+            and isinstance(v.get("args", []), list) and all(arg(a) for a in v.get("args", []))
+            and (isinstance(inp, str) or (isinstance(inp, dict) and set(inp) <= {"json", "text", "picture"}))
+            and isinstance(out, dict) and set(out) <= {"format", "where", "text", "answer", "error", "error_text", "usage"}
+            and out.get("format", "text") in ("text", "json", "json-lines") and isinstance(out.get("where", {}), dict)
+            and isinstance(out.get("usage", {}), dict)
+            and isinstance(chk, dict) and set(chk) <= {"args", "json", "else"} and texts(chk.get("args", []))
+            and isinstance(v.get("sends_to", ""), str) and isinstance(v.get("answer_rule", ""), str))
+
+
 RULES = {
+    "cli": (_cli, "how a command-line program is spoken to: {\"program\": its name, \"places\": [where it is installed], "
+                  "\"args\": [text, [a group left out when it has nothing to give], {\"each_picture\": [...]}], "
+                  "\"input\": text or {\"json\", \"text\", \"picture\"}, \"output\": {\"format\": text, json or json-lines, "
+                  "\"where\", \"text\", \"answer\", \"error\", \"error_text\", \"usage\"}, \"ready\": {\"args\", \"json\", "
+                  "\"else\"}, \"sends_to\": a host, \"answer_rule\": a sentence, \"models\": [names]} (see the guide)"),
     "assists": (lambda v: isinstance(v, list) and all(_assist(a) for a in v),
                 "a list of assists, each {\"decision\": one the features declare, \"reads\": one of step.what, step.words, "
                 "step.source, step.search, item.text, \"keywords\": [words] or \"ends_with\": text, optionally \"when\": "

@@ -609,7 +609,7 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="issue.loop_gave_up">Sebagian PaperDaemon berhenti {n} kali berturut-turut dan dibiarkan berhenti; log-nya menjelaskan alasannya.</string>
   <string name="issue.loop_supervisor">Supervisor PaperDaemon mengalami galat: {why}</string>
   <string name="slot.key_where">Isi alamat server terlebih dahulu: kuncinya disimpan untuk server itu.</string>
-  <string name="slot.source.help">Kunci API: sebuah perusahaan menjalankan modelnya, dan PaperDaemon menjangkaunya dengan kunci Anda. Jalankan secara lokal: server model yang Anda jalankan sendiri, di komputer ini atau di jaringan Anda.</string>
+  <string name="slot.source.help">Kunci API: sebuah perusahaan menjalankan modelnya, dan PaperDaemon menjangkaunya dengan kunci Anda. Jalankan secara lokal: server model yang Anda jalankan sendiri, di komputer ini atau di jaringan Anda. Baris perintah: program di komputer ini yang menerima permintaan dan mencetak jawaban model. PaperDaemon menjalankannya sekali untuk setiap giliran; harness menentukan cara berbicara dengannya.</string>
   <string name="slot.provider.help">Siapa yang menjalankan model. Lainnya: layanan apa pun yang memakai API OpenAI, di alamat yang Anda berikan.</string>
   <string name="slot.address.help_hosted">Alamat API layanan, misalnya https://api.example.com/v1.</string>
   <string name="slot.model.help">Nama model persis seperti yang ditulis penyedia.</string>
@@ -737,4 +737,7 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="settings.mirror_edit.warn_q">Edit halaman tablet?</string>
   <string name="settings.mirror_edit.warn_body">Mengedit file Anda dengan PaperDaemon meningkatkan risiko kerusakannya. Fitur ini sudah diuji, tetapi lanjutkan dengan hati-hati.</string>
   <string name="settings.mirror_edit.warn_on">Nyalakan</string>
+  <string name="slot.cli">Baris perintah</string>
+  <string name="slot.command">Perintah</string>
+  <string name="slot.command.help">Program yang dijalankan, seperti yang Anda ketik di terminal: namanya atau path lengkapnya, lalu argumen Anda sendiri. Harness menambahkan apa yang dibutuhkan setiap permintaan.</string>
 </resources>

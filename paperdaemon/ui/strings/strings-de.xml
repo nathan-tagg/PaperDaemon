@@ -609,7 +609,7 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="issue.loop_supervisor">Die Überwachung von PaperDaemon hatte einen Fehler: {why}</string>
   <string name="slot.key_where">Gib zuerst die Adresse des Servers ein: Der Schlüssel wird für diesen Server gespeichert.</string>
   <string name="day.saturday">Samstag</string>
-  <string name="slot.source.help">API-Schlüssel: Ein Unternehmen betreibt das Modell, und PaperDaemon erreicht es mit deinem Schlüssel. Lokal hosten: ein Modellserver, den du betreibst, auf diesem Computer oder in deinem Netzwerk.</string>
+  <string name="slot.source.help">API-Schlüssel: Ein Unternehmen betreibt das Modell, und PaperDaemon erreicht es mit deinem Schlüssel. Lokal hosten: ein Modellserver, den du betreibst, auf diesem Computer oder in deinem Netzwerk. Befehlszeile: ein Programm auf diesem Computer, das eine Anfrage entgegennimmt und die Antwort des Modells ausgibt. PaperDaemon startet es einmal pro Zug; das Harness legt fest, wie es angesprochen wird.</string>
   <string name="slot.provider.help">Wer das Modell betreibt. Andere: jeder Dienst, der die OpenAI-API spricht, unter der Adresse, die du angibst.</string>
   <string name="slot.address.help_hosted">Die API-Adresse des Dienstes, zum Beispiel https://api.example.com/v1.</string>
   <string name="slot.model.help">Der Name des Modells, genau so, wie der Anbieter ihn schreibt.</string>
@@ -737,4 +737,7 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="settings.mirror_edit.warn_q">Die Seiten des Tablets bearbeiten?</string>
   <string name="settings.mirror_edit.warn_body">Wenn du deine Dateien mit PaperDaemon bearbeitest, steigt das Risiko, sie zu beschädigen. Es wurde getestet, aber sei vorsichtig.</string>
   <string name="settings.mirror_edit.warn_on">Einschalten</string>
+  <string name="slot.cli">Befehlszeile</string>
+  <string name="slot.command">Befehl</string>
+  <string name="slot.command.help">Das auszuführende Programm, wie du es in einem Terminal eingeben würdest: sein Name oder sein vollständiger Pfad, danach eigene Argumente. Das Harness ergänzt, was jede Anfrage braucht.</string>
 </resources>

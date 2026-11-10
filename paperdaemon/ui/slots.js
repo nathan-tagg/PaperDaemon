@@ -1,19 +1,21 @@
 "use strict";
-/* One model slot's form, shared by setup and the Models screen: where the model runs (hosted with an API key, or
-   hosted locally with an optional start script), its harness, and a lineup's web search. */
+/* One model slot's form, shared by setup and the Models screen: where the model runs (hosted with an API key,
+   hosted locally with an optional start script, or -- a text model -- a command-line program on this computer), its
+   harness, and a lineup's web search. */
 (() => {
   const { $, esc, mk } = PD;
   const HOSTED = {
     text: [{ id: "anthropic", label: "Anthropic", api: "anthropic", at: "https://api.anthropic.com" },
            { id: "openai", label: "OpenAI", api: "openai", at: "https://api.openai.com" },
-           // CLAUDE CODE, the program installed on this computer, run as it is and signed in by its user: no key is
-           // PaperDaemon's to hold (models/claude_cli.py)
-           { id: "claude-code", label: "Claude Code", api: "claude-cli", at: "https://api.anthropic.com/claude-code", nokey: true },
            { id: "other", label: PD.t("slot.other_provider"), api: "openai", at: "" }],
     image: [{ id: "openai", label: "OpenAI", api: "openai-images", at: "https://api.openai.com" },
             { id: "other", label: PD.t("slot.other_provider"), api: "openai-images", at: "" }],
   };
   const LOCAL_API = { text: "openai", image: "sdapi" };
+  // A COMMAND LINE is a source of its own for a text model: a program on this computer, run once a turn. Its slot's
+  // location is the command as typed; there is no provider, address or key, and nothing here names a program -- how
+  // one is spoken to is its harness's to say (models/cli.py).
+  const CLI_API = "cli";
   // AN API KEY BELONGS TO A SERVER (or a search service), not to a lineup: every lineup that uses it shares it, and
   // lineups on different servers never overwrite each other's. Its name in the credential store, as the engine makes it
   const keyName = (role, where) => {
@@ -33,6 +35,7 @@
   function formOf(role, slot) {
     slot = slot || {};
     const loc = slot.location || "", harness = slot.harness || "auto";
+    if (role === "text" && slot.api === CLI_API) return { kind: "cli", provider: HOSTED[role][0].id, at: loc, model: slot.model || "", harness };
     if (!loc) return { kind: role === "image" ? "none" : "hosted", provider: HOSTED[role][0].id, at: "", model: slot.model || "", harness };
     const p = HOSTED[role].filter(h => h.at && loc.startsWith(h.at)).sort((a, b) => b.at.length - a.at.length)[0];   // (the longest address that fits)
     if (p || !PD.isLocal(loc)) return { kind: "hosted", provider: p ? p.id : "other", at: loc, model: slot.model || "", harness };
@@ -74,14 +77,20 @@
       the link to its LoRA folder under the image model's start script (none in the first-run setup). */
   function html(p, role, f, harnesses, test, lineup) {
     const id = p + "-" + role;
-    const kinds = (role === "image" ? [["none", PD.t("slot.none")]] : []).concat([["hosted", PD.t("slot.api_key")], ["local", PD.t("slot.local")]]);
+    const kinds = (role === "image" ? [["none", PD.t("slot.none")]] : []).concat([["hosted", PD.t("slot.api_key")], ["local", PD.t("slot.local")]])
+      .concat(role === "text" ? [["cli", PD.t("slot.cli")]] : []);
     let out = '<div class="grid2">' + lab(id + "-kind", "slot.source", "slot.source.help") + select(id + "-kind", kinds, f.kind) + "</label><span></span></div>";
     if (f.kind === "hosted") {
       const pr = HOSTED[role].find(h => h.id === f.provider) || HOSTED[role][0];
       out += '<div class="grid2">' + lab(id + "-provider", "slot.provider", "slot.provider.help") + select(id + "-provider", HOSTED[role].map(h => [h.id, h.label]), pr.id) + "</label>" +
         (pr.id === "other" ? lab(id + "-at", "slot.address", "slot.address.help_hosted") + '<input class="field" id="' + id + '-at" value="' + esc(f.at) + '" placeholder="https://…"></label>' : "") +
         lab(id + "-model", "slot.model", "slot.model.help") + '<input class="field" id="' + id + '-model" value="' + esc(f.model) + '"></label>' +
-        (pr.nokey ? "" : lab(id + "-key", "slot.api_key", "slot.api_key.help") + '<input class="field" type="password" id="' + id + '-key" autocomplete="off" value="' + esc(f.key || "") + '" placeholder="' + (keyKept(role, keyWhere(role, f)) ? esc(PD.t("slot.saved")) : "") + '"></label>') + "</div>" +
+        lab(id + "-key", "slot.api_key", "slot.api_key.help") + '<input class="field" type="password" id="' + id + '-key" autocomplete="off" value="' + esc(f.key || "") + '" placeholder="' + (keyKept(role, keyWhere(role, f)) ? esc(PD.t("slot.saved")) : "") + '"></label>' + "</div>" +
+        harnessRow(p, role, f, harnesses) +
+        '<div class="actions"><button type="button" class="btn small" data-act="test" data-role="' + role + '">' + esc(PD.t("common.test")) + '</button><span id="' + id + '-test">' + (test || "") + "</span></div>";
+    } else if (f.kind === "cli") {
+      out += '<div class="grid2">' + lab(id + "-at", "slot.command", "slot.command.help") + '<input class="field" id="' + id + '-at" value="' + esc(f.at) + '" spellcheck="false"></label>' +
+        lab(id + "-model", "slot.model", "slot.model.help") + '<input class="field" id="' + id + '-model" value="' + esc(f.model) + '" spellcheck="false"></label></div>' +
         harnessRow(p, role, f, harnesses) +
         '<div class="actions"><button type="button" class="btn small" data-act="test" data-role="' + role + '">' + esc(PD.t("common.test")) + '</button><span id="' + id + '-test">' + (test || "") + "</span></div>";
     } else if (f.kind === "local") {
@@ -115,6 +124,7 @@
     const o = Object.assign({}, base || {}, { harness: f.harness || "auto" });
     if (f.kind === "none") return Object.assign(o, { location: "", script: "", script_text: "", model: "" });
     if (f.kind === "local") return Object.assign(o, { location: f.at, script: "", script_text: (f.scriptText || "").replace(/\r?\n/g, "\r\n"), api: LOCAL_API[role], model: f.model || "" });
+    if (f.kind === "cli") return Object.assign(o, { location: f.at || "", script: "", script_text: "", api: CLI_API, model: f.model || "" });
     const pr = HOSTED[role].find(h => h.id === f.provider) || HOSTED[role][0];
     return Object.assign(o, { location: pr.id === "other" ? f.at : pr.at, script: "", script_text: "", api: pr.api, model: f.model });
   }

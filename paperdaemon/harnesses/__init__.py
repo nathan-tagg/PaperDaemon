@@ -110,8 +110,9 @@ class Harness:
 class TextHarness(Harness, TextProtocols):
     kind = "text"
     CAPABILITIES = ("vision", "forced_tool", "max_output")
-    FIELDS = CAPABILITIES + ("brief_additions", "request", "features", "assists", "inspect_tokens")
+    FIELDS = CAPABILITIES + ("brief_additions", "request", "features", "assists", "inspect_tokens", "cli")
     request = {}
+    cli = {}                            # how a command-line program is spoken to (models/cli.py), when it is one
     features = {}                       # {"off": [feature names]}: a harness may narrow what is offered
 
     def tune(self, request, caps):

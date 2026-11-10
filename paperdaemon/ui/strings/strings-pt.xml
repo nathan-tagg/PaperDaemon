@@ -609,7 +609,7 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="issue.loop_supervisor">O supervisor do PaperDaemon teve um erro: {why}</string>
   <string name="slot.key_where">Preencha primeiro o endereço do servidor: a chave é guardada para esse servidor.</string>
   <string name="day.saturday">Sábado</string>
-  <string name="slot.source.help">Chave de API: uma empresa executa o modelo e o PaperDaemon o acessa com a sua chave. Hospedar localmente: um servidor de modelos que você executa, neste computador ou na sua rede.</string>
+  <string name="slot.source.help">Chave de API: uma empresa executa o modelo e o PaperDaemon o acessa com a sua chave. Hospedar localmente: um servidor de modelos que você executa, neste computador ou na sua rede. Linha de comando: um programa neste computador que recebe uma solicitação e imprime a resposta do modelo. O PaperDaemon o executa uma vez a cada turno; o harness diz como falar com ele.</string>
   <string name="slot.provider.help">Quem executa o modelo. Outro: qualquer serviço que fale a API da OpenAI, no endereço que você informar.</string>
   <string name="slot.address.help_hosted">O endereço da API do serviço, por exemplo https://api.example.com/v1.</string>
   <string name="slot.model.help">O nome do modelo exatamente como o provedor o escreve.</string>
@@ -737,4 +737,7 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="settings.mirror_edit.warn_q">Editar as páginas do tablet?</string>
   <string name="settings.mirror_edit.warn_body">Editar seus arquivos com o PaperDaemon aumenta o risco de danificá-los. Isso foi testado, mas prossiga com cautela.</string>
   <string name="settings.mirror_edit.warn_on">Ativar</string>
+  <string name="slot.cli">Linha de comando</string>
+  <string name="slot.command">Comando</string>
+  <string name="slot.command.help">O programa a executar, como você o digitaria em um terminal: o nome ou o caminho completo e, depois, os seus próprios argumentos. O harness acrescenta o que cada solicitação precisa.</string>
 </resources>

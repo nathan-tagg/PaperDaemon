@@ -32,7 +32,7 @@ TEXT_PORT = 8790
 IMAGE_PORT = 8791
 
 ROLES = ("text", "image")
-APIS = {"text": ("openai", "anthropic", "claude-cli"), "image": ("sdapi", "openai-images")}
+APIS = {"text": ("openai", "anthropic", "cli"), "image": ("sdapi", "openai-images")}
 
 # TWO TAG NAMES ARE UNIVERSAL, not settings: the same for every user, matched without regard to case.
 # "ignore" on a folder, a notebook or a page means nothing there is ever worked on; "sprompt" on a PAGE
@@ -227,6 +227,9 @@ def upgrade_slot(m):
     for layer in ("overrides", "tested"):
         if isinstance(m.get(layer), dict) and "coloring_steps" in m[layer]:
             m[layer] = {k: v for k, v in m[layer].items() if k != "coloring_steps"}
+    if m.get("api") == "claude-cli":
+        # 0.2.39 to 0.2.41 had a source of its own for one program; it is the command line now, the command `claude`
+        m.update(api="cli", location="claude")
     return m
 
 
@@ -492,7 +495,11 @@ def check_slot(role, m, where="slot"):
     if m.get("api") not in APIS[role]:
         errs.append("%s: api is one of %s" % (where, ", ".join(APIS[role])))
     url = str(m.get("location") or "").strip()
-    if url and urllib.parse.urlsplit(url).scheme not in ("http", "https"):
+    if m.get("api") == "cli":
+        # a command line: the program's name or path and the user's own arguments, on one line
+        if len(url) > 1000 or "\n" in url or "\r" in url:
+            errs.append("%s: the command is one line of at most 1,000 characters" % where)
+    elif url and urllib.parse.urlsplit(url).scheme not in ("http", "https"):
         errs.append("%s: the location must start with http:// or https://" % where)
     for k in ("script", "script_text", "model"):
         if not isinstance(m.get(k), str):

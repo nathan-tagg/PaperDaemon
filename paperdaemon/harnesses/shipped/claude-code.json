@@ -1,0 +1,107 @@
+{
+  "id": "claude-code",
+  "name": "Claude Code (command line)",
+  "server": "Claude Code, the command-line program, as the command `claude`",
+  "models": [
+    "Any model the program takes by name: opus, sonnet, haiku, or a full model name"
+  ],
+  "extends": "default-text",
+  "notes": "How the program is spoken to when a text model's source is the command line and the command is `claude`. Each request is one run with none of the program's own tools, settings, hooks or connected services and no session kept: the system text from a file, the conversation and its pictures on the input as one JSON message, the answer read from the last result line the program prints, a structured answer checked by the program against the tools' schema. The program is run as installed and signed in by you; where it sends a page is its own business with its maker.",
+  "vision": true,
+  "forced_tool": true,
+  "cli": {
+    "program": "claude",
+    "places": [
+      "~/.local/bin/claude.exe",
+      "~/.local/bin/claude",
+      "%APPDATA%/npm/claude.cmd",
+      "/usr/local/bin/claude",
+      "/opt/homebrew/bin/claude"
+    ],
+    "models": [
+      "opus",
+      "sonnet",
+      "haiku"
+    ],
+    "sends_to": "api.anthropic.com",
+    "ready": {
+      "args": [
+        "auth",
+        "status"
+      ],
+      "json": "loggedIn",
+      "else": "claude is not signed in on this computer: run `claude` once and sign in"
+    },
+    "args": [
+      "-p",
+      "--tools",
+      "",
+      "--strict-mcp-config",
+      "--setting-sources",
+      "",
+      "--no-session-persistence",
+      "--input-format",
+      "stream-json",
+      "--output-format",
+      "stream-json",
+      "--verbose",
+      [
+        "--model",
+        "{model}"
+      ],
+      [
+        "--effort",
+        "{request.output_config.effort}"
+      ],
+      [
+        "--json-schema",
+        "{schema}"
+      ],
+      [
+        "--system-prompt-file",
+        "{system_file}"
+      ]
+    ],
+    "input": {
+      "json": {
+        "type": "user",
+        "message": {
+          "role": "user",
+          "content": "{parts}"
+        }
+      },
+      "text": {
+        "type": "text",
+        "text": "{text}"
+      },
+      "picture": {
+        "type": "image",
+        "source": {
+          "type": "base64",
+          "media_type": "{media_type}",
+          "data": "{base64}"
+        }
+      }
+    },
+    "output": {
+      "format": "json-lines",
+      "where": {
+        "type": "result"
+      },
+      "text": "result",
+      "answer": "structured_output",
+      "error": "is_error",
+      "error_text": "result",
+      "usage": {
+        "input": [
+          "usage.input_tokens",
+          "usage.cache_creation_input_tokens",
+          "usage.cache_read_input_tokens"
+        ],
+        "output": "usage.output_tokens",
+        "cached": "usage.cache_read_input_tokens"
+      }
+    },
+    "answer_rule": "Give it through StructuredOutput."
+  }
+}

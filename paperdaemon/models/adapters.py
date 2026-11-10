@@ -428,10 +428,10 @@ IMAGE = {"sdapi": SDAPI, "openai-images": OpenAIImages}
 
 
 def _chat_class(api):
-    """The adapter class of a text API family; Claude Code's is loaded when asked for (it imports this module)."""
-    if api == "claude-cli":
-        from .claude_cli import ClaudeCLI
-        return ClaudeCLI
+    """The adapter class of a text API family; the command line's is loaded when asked for (it imports this module)."""
+    if api == "cli":
+        from .cli import CommandLine
+        return CommandLine
     return CHAT[api]
 
 
@@ -440,4 +440,7 @@ def for_slot(role, s=None, m=None):
     m = m if m is not None else slots.slot(role, s)
     api = m.get("api") or ("openai" if role == "text" else "sdapi")
     cls = _chat_class(api) if role == "text" else IMAGE[api]
+    if role == "text" and api == "cli":
+        # a command, not a server: no key is PaperDaemon's to hold, and its harness says how the program is spoken to
+        return cls(m.get("location") or "", None, m.get("model") or "", harness=slots.pick(role, s, m)[0])
     return cls(m.get("location") or "", vault.get(slots.key_of(role, m)), m.get("model") or "")

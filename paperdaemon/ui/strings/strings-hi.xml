@@ -609,7 +609,7 @@
   <string name="issue.loop_supervisor">PaperDaemon के सुपरवाइज़र में त्रुटि हुई: {why}</string>
   <string name="slot.key_where">पहले सर्वर का पता भरें: कुंजी उसी सर्वर के लिए रखी जाती है।</string>
   <string name="day.saturday">शनिवार</string>
-  <string name="slot.source.help">API कुंजी: कोई कंपनी मॉडल चलाती है, और PaperDaemon आपकी कुंजी से उस तक पहुँचता है। स्थानीय रूप से होस्ट करें: एक मॉडल सर्वर जिसे आप खुद इस कंप्यूटर या अपने नेटवर्क पर चलाते हैं।</string>
+  <string name="slot.source.help">API कुंजी: कोई कंपनी मॉडल चलाती है, और PaperDaemon आपकी कुंजी से उस तक पहुँचता है। स्थानीय रूप से होस्ट करें: एक मॉडल सर्वर जिसे आप खुद इस कंप्यूटर या अपने नेटवर्क पर चलाते हैं। कमांड लाइन: इस कंप्यूटर का एक प्रोग्राम, जो अनुरोध लेता है और मॉडल का उत्तर छापता है। PaperDaemon इसे हर बारी के लिए एक बार चलाता है; इससे कैसे बात करनी है, यह हार्नेस बताता है।</string>
   <string name="slot.provider.help">मॉडल कौन चलाता है। अन्य: कोई भी सेवा जो आपके दिए पते पर OpenAI API बोलती हो।</string>
   <string name="slot.address.help_hosted">सेवा का API पता, उदाहरण के लिए https://api.example.com/v1.</string>
   <string name="slot.model.help">मॉडल का नाम ठीक वैसा ही जैसा प्रदाता लिखता है।</string>
@@ -737,4 +737,7 @@
   <string name="settings.mirror_edit.warn_q">टैबलेट के पेज संपादित करें?</string>
   <string name="settings.mirror_edit.warn_body">PaperDaemon से अपनी फ़ाइलें संपादित करने पर उनके ख़राब होने का जोखिम बढ़ जाता है। इसका परीक्षण किया गया है, लेकिन सावधानी से आगे बढ़ें।</string>
   <string name="settings.mirror_edit.warn_on">चालू करें</string>
+  <string name="slot.cli">कमांड लाइन</string>
+  <string name="slot.command">कमांड</string>
+  <string name="slot.command.help">चलाया जाने वाला प्रोग्राम, जैसा आप टर्मिनल में लिखते: उसका नाम या पूरा पाथ, फिर आपके अपने आर्ग्युमेंट। हर अनुरोध के लिए जो चाहिए, वह हार्नेस जोड़ता है।</string>
 </resources>

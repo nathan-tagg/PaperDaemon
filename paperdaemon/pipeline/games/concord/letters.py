@@ -22,14 +22,15 @@ THE MAP NOW: {board}
 YOU WRITE TO the head of {writer_name}, surname {surname}. You do not know their given name: call them by the
 surname or a plain courtesy, never by a name you made up, and neither Mr. nor Mrs. (you do not know which). Speak of
 units and harbors only as THE MAP NOW gives them.
-YOUR ORDERS THIS COMING SEASON, ALREADY DECIDED (they may promise what agrees with these, or lie): {orders}
+YOUR ORDERS FOR THIS SEASON AS THEY STAND (a promise you mean to keep changes them to match, this very season; one
+you do not mean leaves them as they are): {orders}
 {writer_name} wrote to you:
 "{letter}"
 Answer with JSON only:
 {{"say": "your letter back, in your own voice, three to six sentences, signed as you would sign",
  "promise": null or {{"kind": one of {kinds}, "unit": "the shire of THEIR unit you will support or convoy, if any",
                       "to": "where that unit is going, if any", "shire": "the shire you will stay out of, for demilitarize",
-                      "seasons": 1 or 2}},
+                      "seasons": 1 (this season) or 2 (this one and the next)}},
  "keep": true if you mean to keep the promise, false if you are lying -- by your own truthfulness and your interest}}
 Promise only what you could do: a support needs a unit of yours next to the shire. A refusal is an answer too: promise
 null, and say why in your own way."""
@@ -171,7 +172,7 @@ def answer(state, fid, letter, ask_text, rng, log=None):
             if keep and t["honest"] < 0.35 and rng.random() > t["honest"] + 0.3:
                 keep = False
             promise = {"by": fid, "to_family": me, "kind": kind, "unit": unit, "to": to, "shire": shire,
-                       "keep": keep, "until": int(state.get("season_no", 0)) + seasons, "season_no": int(state.get("season_no", 0)),
+                       "keep": keep, "until": int(state.get("season_no", 0)) + seasons - 1, "season_no": int(state.get("season_no", 0)),
                        "said": say[:200]}
             state.setdefault("promises", []).append(promise)
     return say[:1200], promise
@@ -235,12 +236,13 @@ def unasked(state, fid, ask_text, rng, last):
 
 def settle(state, result):
     """After a season: which promises to the user were kept or broken by the orders given -> notes. A kept promise
-    warms the accord; a broken one, found out, cools it and counts against the family's word."""
+    warms the accord; a broken one, found out, cools it and counts against the family's word. A promise binds from
+    the season its letter was written in (the cast's orders are written again once it is made: game.deliver)."""
     notes = []
     n = int(state.get("season_no", 0))
     me = state["user"]
     for p in list(state.get("promises") or []):
-        if p.get("season_no", 0) >= n or p.get("settled"):
+        if p.get("season_no", 0) > n or p.get("settled"):
             continue
         fid = p["by"]
         given = result["orders"]
@@ -252,7 +254,10 @@ def settle(state, result):
             kept = any(o["kind"] == R.CONVOY and o.get("of") == p.get("unit") and o.get("to") == p.get("to")
                        for s, o in given.items() if state["units_before"].get(s, {}).get("family") == fid)
         elif p["kind"] == "no_attack":
-            kept = not any(o["kind"] == R.MOVE and state["units_before"].get(o["to"], {}).get("family") == me
+            # no move on a unit of the user's, on a harbor of theirs, or on the shire the promise named
+            kept = not any(o["kind"] == R.MOVE and (state["units_before"].get(o["to"], {}).get("family") == me
+                                                    or (state.get("owners_before") or state["owners"]).get(o["to"]) == me
+                                                    or (p.get("shire") and o["to"] == p["shire"]))
                            for s, o in given.items() if state["units_before"].get(s, {}).get("family") == fid)
         elif p["kind"] == "demilitarize":
             kept = not any(o["kind"] == R.MOVE and o["to"] == p.get("shire")

@@ -109,6 +109,33 @@ def test_a_family_writes_unasked_about_the_season_to_come_and_never_asks_for_the
                        for d in planned.values() for s, o in d.items() if o["kind"] == R.MOVE)
 
 
+def test_a_promise_binds_the_season_its_letter_came_in():
+    # the first real game: the Graves promised to keep clear of Harbor Row "for this single season" and moved on it
+    # that same season, on orders written before the letter
+    st = G.new_state("doc", "quill", seed="bc" * 16)
+    row, fog, tower = (M.find(n) for n in ("Harbor Row", "Fogwater", "The Tower"))
+    assert st["units"][tower]["family"] == "graves" and R.legal(st["units"], R.support(tower, row, fog))[0]
+
+    def ask(q):
+        assert "AS THEY STAND" in q
+        return ('{"say": "Quill, you shall have it. Ottoline", "promise": {"kind": "support", "unit": "Harbor Row", '
+                '"to": "Fogwater", "seasons": 1}, "keep": true}')
+    answered = G.deliver(st, [("graves", "Back my fleet into Fogwater this season.")], ask)
+    assert answered == ["The Graves"] and st["promises"][0]["until"] == 0 == st["promises"][0]["season_no"]
+    mine_ = st["planned"]["graves"][tower]
+    assert (mine_["kind"], mine_["of"], mine_["to"]) == (R.SUPPORT, row, fog)       # written again, with the promise
+    mine, wants, problems = O.parse(["Harbor Row to Fogwater"], st["units"], "quill")
+    note = G.season(st, mine, wants, problems, ask_text=None)
+    assert "moved" in note and st["words"]["graves"] == {"kept": 1, "broken": 0}
+    assert any("The Graves kept their word (support)" in ln for ln in st["log"][0]["lines"])
+    # a promise of no attack covers the user's harbors and the shire it names
+    st = G.new_state("doc", "quill", seed="bc" * 16)
+    st["promises"] = [{"by": "graves", "to_family": "quill", "kind": "no_attack", "shire": fog, "keep": True, "until": 0, "season_no": 0}]
+    G.plan(st)
+    assert not any(o["kind"] == R.MOVE and (o["to"] == fog or st["owners"].get(o["to"]) == "quill")
+                   for o in st["planned"]["graves"].values())
+
+
 def test_a_letters_page_takes_the_letters_that_fit_whole():
     # the first real game: seven letters to a page by count, and the seventh ended mid-sentence at the page's foot
     from paperdaemon.pipeline.draw import scaled as SD

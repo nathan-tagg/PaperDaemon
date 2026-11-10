@@ -1,12 +1,12 @@
 {
   "id": "claude-opus-5.5",
   "name": "Claude Opus 5.5, medium effort",
-  "server": "Claude Code on this computer, or the Anthropic API",
+  "server": "The Anthropic API, or the command line `claude`",
   "models": [
     "Claude Opus 5.5"
   ],
-  "extends": "default-text",
-  "notes": "Claude Opus 5.5 at medium effort. The effort is a request field (output_config.effort), the one the Messages API takes; a slot served by Claude Code hands it to the program as its effort.",
+  "extends": "claude-code",
+  "notes": "Claude Opus 5.5 at medium effort. The effort is a request field (output_config.effort), the one the Messages API takes; on the command line the harness it extends hands the same field to the program as an argument.",
   "patterns": [
     "claude-opus-5[.-]5",
     "^opus$"

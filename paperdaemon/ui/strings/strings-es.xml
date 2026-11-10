@@ -609,7 +609,7 @@ Luego guíame para instalar SearXNG si hace falta, escribe el archivo .bat con u
   <string name="issue.loop_supervisor">El supervisor de PaperDaemon tuvo un error: {why}</string>
   <string name="slot.key_where">Escribe primero la dirección del servidor: la clave se guarda para ese servidor.</string>
   <string name="day.saturday">Sábado</string>
-  <string name="slot.source.help">Clave de API: una empresa ejecuta el modelo y PaperDaemon accede a él con tu clave. Alojar localmente: un servidor de modelos que tú ejecutas, en este equipo o en tu red.</string>
+  <string name="slot.source.help">Clave de API: una empresa ejecuta el modelo y PaperDaemon accede a él con tu clave. Alojar localmente: un servidor de modelos que tú ejecutas, en este equipo o en tu red. Línea de comandos: un programa de este equipo que recibe una solicitud e imprime la respuesta del modelo. PaperDaemon lo ejecuta una vez por turno; el arnés indica cómo hablarle.</string>
   <string name="slot.provider.help">Quién ejecuta el modelo. Otro: cualquier servicio que hable la API de OpenAI, en la dirección que indiques.</string>
   <string name="slot.address.help_hosted">La dirección de la API del servicio, por ejemplo https://api.example.com/v1.</string>
   <string name="slot.model.help">El nombre del modelo, tal como lo escribe el proveedor.</string>
@@ -737,4 +737,7 @@ Luego guíame para instalar SearXNG si hace falta, escribe el archivo .bat con u
   <string name="settings.mirror_edit.warn_q">¿Editar las páginas de la tableta?</string>
   <string name="settings.mirror_edit.warn_body">Editar tus archivos con PaperDaemon aumenta el riesgo de dañarlos. Se ha probado, pero procede con precaución.</string>
   <string name="settings.mirror_edit.warn_on">Activar</string>
+  <string name="slot.cli">Línea de comandos</string>
+  <string name="slot.command">Comando</string>
+  <string name="slot.command.help">El programa que se ejecuta, tal como lo escribirías en una terminal: su nombre o su ruta completa y, después, los argumentos que quieras añadir. El arnés añade lo que necesita cada solicitud.</string>
 </resources>

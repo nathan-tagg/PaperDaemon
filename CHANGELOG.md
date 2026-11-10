@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.42
+
+- A lineup's text model can be a command line. Source now offers "Command line" beside "API key" and "Host locally": you give the command as you would type it in a terminal, and PaperDaemon runs it once for each turn, hands it the request and reads what it prints. It replaces the "Claude Code" provider of 0.2.39, which sat under "API key" though no key was involved; a lineup that used it becomes a command-line lineup with the command `claude` and works as before.
+- Nothing in the application is made for one program. How a program is spoken to (its arguments, how it takes a picture, where its answer is in what it prints, how to ask whether it is signed in, where it sends a page) is written in a harness, in its new `cli` field, like everything else a harness says; the harness guide explains it with an example. A program with no harness is given the request on its input and its printed text is the answer. Two harnesses ship for the command `claude`.
+- The Concord: a promise made in a letter counts from that same season. A family that promised to keep clear of a harbor "this season" moved on it anyway, because its orders had been written before the letter arrived; its orders are now written again once it promises. A promise of no attack also covers your harbors and the shire it names.
+
 ## 0.2.41
 
 - The Concord: a unit that is dislodged gives no support. A fleet driven out of its shire still counted its support for another family's move, even when the blow came from the shire it was supporting into; in the first real game that turned a move that should have gone in into a stand-off.

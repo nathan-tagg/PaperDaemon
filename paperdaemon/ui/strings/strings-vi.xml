@@ -609,7 +609,7 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="issue.loop_gave_up">Một phần của PaperDaemon đã dừng {n} lần liên tiếp và được để ở trạng thái dừng; nhật ký của nó cho biết lý do.</string>
   <string name="issue.loop_supervisor">Bộ giám sát của PaperDaemon gặp lỗi: {why}</string>
   <string name="slot.key_where">Hãy điền địa chỉ máy chủ trước: khóa được lưu cho máy chủ đó.</string>
-  <string name="slot.source.help">Khóa API: một công ty chạy mô hình, và PaperDaemon truy cập nó bằng khóa của bạn. Chạy trên máy: một máy chủ mô hình do bạn tự chạy, trên máy tính này hoặc trong mạng của bạn.</string>
+  <string name="slot.source.help">Khóa API: một công ty chạy mô hình, và PaperDaemon truy cập nó bằng khóa của bạn. Chạy trên máy: một máy chủ mô hình do bạn tự chạy, trên máy tính này hoặc trong mạng của bạn. Dòng lệnh: một chương trình trên máy tính này nhận yêu cầu và in ra câu trả lời của mô hình. PaperDaemon chạy nó một lần cho mỗi lượt; harness quy định cách trao đổi với nó.</string>
   <string name="slot.provider.help">Ai chạy mô hình. Khác: bất kỳ dịch vụ nào dùng API của OpenAI, tại địa chỉ bạn nhập.</string>
   <string name="slot.address.help_hosted">Địa chỉ API của dịch vụ, ví dụ https://api.example.com/v1.</string>
   <string name="slot.model.help">Tên mô hình đúng như nhà cung cấp viết.</string>
@@ -737,4 +737,7 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="settings.mirror_edit.warn_q">Sửa các trang của máy tính bảng?</string>
   <string name="settings.mirror_edit.warn_body">Sửa tệp của bạn bằng PaperDaemon làm tăng nguy cơ làm hỏng chúng. Tính năng này đã được kiểm thử, nhưng hãy thận trọng.</string>
   <string name="settings.mirror_edit.warn_on">Bật</string>
+  <string name="slot.cli">Dòng lệnh</string>
+  <string name="slot.command">Lệnh</string>
+  <string name="slot.command.help">Chương trình cần chạy, như bạn gõ trong cửa sổ dòng lệnh: tên hoặc đường dẫn đầy đủ, rồi đến các đối số của riêng bạn. Harness thêm những gì mỗi yêu cầu cần.</string>
 </resources>

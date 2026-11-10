@@ -609,7 +609,7 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="issue.loop_gave_up">Una parte di PaperDaemon si è fermata {n} volte di fila ed è stata lasciata ferma; il suo log dice perché.</string>
   <string name="issue.loop_supervisor">Il supervisore di PaperDaemon ha incontrato un errore: {why}</string>
   <string name="slot.key_where">Compila prima l'indirizzo del server: la chiave si conserva per quel server.</string>
-  <string name="slot.source.help">Chiave API: un'azienda esegue il modello e PaperDaemon lo raggiunge con la tua chiave. Ospita in locale: un server di modelli che esegui tu, su questo computer o nella tua rete.</string>
+  <string name="slot.source.help">Chiave API: un'azienda esegue il modello e PaperDaemon lo raggiunge con la tua chiave. Ospita in locale: un server di modelli che esegui tu, su questo computer o nella tua rete. Riga di comando: un programma su questo computer che riceve una richiesta e stampa la risposta del modello. PaperDaemon lo esegue una volta per turno; l'harness dice come rivolgersi a esso.</string>
   <string name="slot.provider.help">Chi esegue il modello. Altro: qualsiasi servizio che parli l'API di OpenAI, all'indirizzo che indichi.</string>
   <string name="slot.address.help_hosted">L'indirizzo API del servizio, per esempio https://api.example.com/v1.</string>
   <string name="slot.model.help">Il nome del modello esattamente come lo scrive il fornitore.</string>
@@ -737,4 +737,7 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="settings.mirror_edit.warn_q">Modificare le pagine del tablet?</string>
   <string name="settings.mirror_edit.warn_body">Modificare i tuoi file con PaperDaemon aumenta il rischio di danneggiarli. È stato testato, ma procedi con cautela.</string>
   <string name="settings.mirror_edit.warn_on">Attiva</string>
+  <string name="slot.cli">Riga di comando</string>
+  <string name="slot.command">Comando</string>
+  <string name="slot.command.help">Il programma da eseguire, come lo scriveresti in un terminale: il nome o il percorso completo, poi eventuali argomenti tuoi. L'harness aggiunge ciò che serve a ogni richiesta.</string>
 </resources>

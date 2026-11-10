@@ -609,7 +609,7 @@
   <string name="issue.loop_supervisor">PaperDaemon-এর তত্ত্বাবধায়কে একটি ত্রুটি হয়েছে: {why}</string>
   <string name="slot.key_where">আগে সার্ভারের ঠিকানা লিখুন: চাবিটি সেই সার্ভারের জন্য রাখা হয়।</string>
   <string name="day.saturday">শনিবার</string>
-  <string name="slot.source.help">API কী: কোনো কোম্পানি মডেলটি চালায়, আর PaperDaemon আপনার কী দিয়ে সেখানে পৌঁছায়। স্থানীয়ভাবে হোস্ট: আপনি নিজে এই কম্পিউটারে বা আপনার নেটওয়ার্কে যে মডেল সার্ভার চালান।</string>
+  <string name="slot.source.help">API কী: কোনো কোম্পানি মডেলটি চালায়, আর PaperDaemon আপনার কী দিয়ে সেখানে পৌঁছায়। স্থানীয়ভাবে হোস্ট: আপনি নিজে এই কম্পিউটারে বা আপনার নেটওয়ার্কে যে মডেল সার্ভার চালান। কমান্ড লাইন: এই কম্পিউটারের একটি প্রোগ্রাম, যা একটি অনুরোধ নেয় এবং মডেলের উত্তর ছাপে। PaperDaemon প্রতিটি পালায় একবার এটি চালায়; কীভাবে এর সঙ্গে কথা বলতে হয় তা হারনেস বলে দেয়।</string>
   <string name="slot.provider.help">মডেলটি কে চালায়। অন্যান্য: আপনার দেওয়া ঠিকানায় OpenAI API বলে এমন যেকোনো পরিষেবা।</string>
   <string name="slot.address.help_hosted">পরিষেবার API ঠিকানা, যেমন https://api.example.com/v1।</string>
   <string name="slot.model.help">মডেলের নাম, ঠিক যেভাবে সরবরাহকারী লেখে।</string>
@@ -737,4 +737,7 @@
   <string name="settings.mirror_edit.warn_q">ট্যাবলেটের পৃষ্ঠা সম্পাদনা করবেন?</string>
   <string name="settings.mirror_edit.warn_body">PaperDaemon দিয়ে আপনার ফাইল সম্পাদনা করলে সেগুলোর ক্ষতি হওয়ার ঝুঁকি বাড়ে। এটি পরীক্ষা করা হয়েছে, তবে সাবধানে এগোন।</string>
   <string name="settings.mirror_edit.warn_on">চালু করুন</string>
+  <string name="slot.cli">কমান্ড লাইন</string>
+  <string name="slot.command">কমান্ড</string>
+  <string name="slot.command.help">যে প্রোগ্রামটি চালানো হবে, টার্মিনালে যেভাবে লিখতেন: তার নাম বা পুরো পাথ, তারপর আপনার নিজের আর্গুমেন্ট। প্রতিটি অনুরোধে যা লাগে তা হারনেস যোগ করে।</string>
 </resources>

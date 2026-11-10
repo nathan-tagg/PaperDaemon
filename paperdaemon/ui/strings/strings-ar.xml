@@ -630,7 +630,7 @@
   <string name="issue.loop_supervisor">واجه مشرف PaperDaemon خطأ: {why}</string>
   <string name="slot.key_where">اكتب عنوان الخادم أولًا: يُحفظ المفتاح لذلك الخادم.</string>
   <string name="day.saturday">السبت</string>
-  <string name="slot.source.help">مفتاح API: تشغّل شركةٌ النموذج، ويصل إليه PaperDaemon بمفتاحك. استضافة محلية: خادم نماذج تشغّله بنفسك، على هذا الحاسوب أو على شبكتك.</string>
+  <string name="slot.source.help">مفتاح API: تشغّل شركةٌ النموذج، ويصل إليه PaperDaemon بمفتاحك. استضافة محلية: خادم نماذج تشغّله بنفسك، على هذا الحاسوب أو على شبكتك. سطر الأوامر: برنامج على هذا الحاسوب يأخذ طلبًا ويطبع إجابة النموذج. يشغّله PaperDaemon مرة لكل دور، والحزام يحدد كيفية مخاطبته.</string>
   <string name="slot.provider.help">الجهة التي تشغّل النموذج. أخرى: أي خدمة تتحدث واجهة OpenAI البرمجية، على العنوان الذي تعطيه.</string>
   <string name="slot.address.help_hosted">عنوان واجهة الخدمة البرمجية، مثلًا https://api.example.com/v1.</string>
   <string name="slot.model.help">اسم النموذج كما يكتبه المزوّد تمامًا.</string>
@@ -759,4 +759,7 @@
   <string name="settings.mirror_edit.warn_q">تحرير صفحات الجهاز اللوحي؟</string>
   <string name="settings.mirror_edit.warn_body">تحرير ملفاتك باستخدام PaperDaemon يزيد خطر إتلافها. لقد اختُبر، لكن تابع بحذر.</string>
   <string name="settings.mirror_edit.warn_on">تشغيل</string>
+  <string name="slot.cli">سطر الأوامر</string>
+  <string name="slot.command">الأمر</string>
+  <string name="slot.command.help">البرنامج المراد تشغيله، كما تكتبه في الطرفية: اسمه أو مساره الكامل، ثم أي وسائط تضيفها أنت. ويضيف الحزام ما يحتاجه كل طلب.</string>
 </resources>

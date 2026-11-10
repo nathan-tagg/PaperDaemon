@@ -609,7 +609,7 @@
   <string name="issue.loop_gave_up">PaperDaemon کا ایک حصہ لگاتار {n} بار رکا اور اسے رکا ہی چھوڑ دیا گیا؛ اس کا لاگ وجہ بتاتا ہے۔</string>
   <string name="issue.loop_supervisor">PaperDaemon کے نگران کو ایک خرابی پیش آئی: {why}</string>
   <string name="slot.key_where">پہلے سرور کا پتا بھریں: کلید اسی سرور کے لیے رکھی جاتی ہے۔</string>
-  <string name="slot.source.help">API کلید: کوئی کمپنی ماڈل چلاتی ہے، اور PaperDaemon آپ کی کلید سے اس تک پہنچتا ہے۔ مقامی طور پر چلائیں: ایک ماڈل سرور جو آپ خود اس کمپیوٹر یا اپنے نیٹ ورک پر چلاتے ہیں۔</string>
+  <string name="slot.source.help">API کلید: کوئی کمپنی ماڈل چلاتی ہے، اور PaperDaemon آپ کی کلید سے اس تک پہنچتا ہے۔ مقامی طور پر چلائیں: ایک ماڈل سرور جو آپ خود اس کمپیوٹر یا اپنے نیٹ ورک پر چلاتے ہیں۔ کمانڈ لائن: اس کمپیوٹر کا ایک پروگرام جو درخواست لیتا ہے اور ماڈل کا جواب چھاپتا ہے۔ PaperDaemon اسے ہر باری کے لیے ایک بار چلاتا ہے؛ اس سے بات کیسے کرنی ہے، یہ ہارنس بتاتا ہے۔</string>
   <string name="slot.provider.help">ماڈل کون چلاتا ہے۔ دیگر: کوئی بھی سروس جو آپ کے دیے پتے پر OpenAI API بولتی ہو۔</string>
   <string name="slot.address.help_hosted">سروس کی API کا پتا، مثلاً https://api.example.com/v1۔</string>
   <string name="slot.model.help">ماڈل کا نام بالکل ویسا جیسا فراہم کنندہ لکھتا ہے۔</string>
@@ -737,4 +737,7 @@
   <string name="settings.mirror_edit.warn_q">ٹیبلیٹ کے صفحات میں ترمیم کریں؟</string>
   <string name="settings.mirror_edit.warn_body">PaperDaemon سے اپنی فائلوں میں ترمیم کرنے سے انہیں نقصان پہنچنے کا خطرہ بڑھ جاتا ہے۔ اسے جانچا گیا ہے، لیکن احتیاط سے آگے بڑھیں۔</string>
   <string name="settings.mirror_edit.warn_on">آن کریں</string>
+  <string name="slot.cli">کمانڈ لائن</string>
+  <string name="slot.command">کمانڈ</string>
+  <string name="slot.command.help">چلایا جانے والا پروگرام، جیسے آپ اسے ٹرمینل میں لکھتے: اس کا نام یا پورا پاتھ، پھر آپ کے اپنے آرگیومنٹس۔ ہر درخواست کو جو درکار ہو وہ ہارنس شامل کرتا ہے۔</string>
 </resources>

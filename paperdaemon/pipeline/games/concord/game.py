@@ -204,6 +204,7 @@ def season(state, my_orders, wants, problems, ask_text, log=None):
     n = int(state["season_no"])
     me = state["user"]
     units_before = {s: dict(u) for s, u in state["units"].items()}
+    state["owners_before"] = dict(state["owners"])
     orders = {}
     for f, o in (state.get("planned") or {}).items():
         orders.update(o)
@@ -344,6 +345,7 @@ def deliver(state, letters, ask_text, log=None):
     me = state["user"]
     rng = CH.Rng(**state["rng"])
     answered = []
+    had = len(state.get("promises") or [])
     for fid, body in letters:
         if state["families"][fid]["out"]:
             continue
@@ -359,6 +361,11 @@ def deliver(state, letters, ask_text, log=None):
                                      "promise": promise["kind"] if promise else None})
             answered.append(state["families"][fid]["name"])
     state["rng"] = rng.state()
+    if len(state.get("promises") or []) > had:
+        # A PROMISE BINDS THE SEASON ITS LETTER CAME IN: the cast's orders are written again with it, so a support
+        # promised is given in the orders that resolve next (the first real game: the Graves promised to keep clear of
+        # Harbor Row "this season" and moved on it the same season, on orders written before the letter)
+        plan(state)
     return answered
 
 

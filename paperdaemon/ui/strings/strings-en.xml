@@ -609,7 +609,7 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="issue.loop_supervisor">PaperDaemon's supervisor hit an error: {why}</string>
   <string name="slot.key_where">Fill in the server's address first: the key is kept for that server.</string>
   <string name="day.saturday">Saturday</string>
-  <string name="slot.source.help">API key: a company runs the model, and PaperDaemon reaches it with your key. Host locally: a model server you run, on this computer or your network.</string>
+  <string name="slot.source.help">API key: a company runs the model, and PaperDaemon reaches it with your key. Host locally: a model server you run, on this computer or your network. Command line: a program on this computer that takes a request and prints the model's answer. PaperDaemon runs it once for each turn; the harness says how it is spoken to.</string>
   <string name="slot.provider.help">Who runs the model. Other: any service that speaks the OpenAI API, at the address you give.</string>
   <string name="slot.address.help_hosted">The service's API address, for example https://api.example.com/v1.</string>
   <string name="slot.model.help">The model's name exactly as the provider writes it.</string>
@@ -737,4 +737,7 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="settings.mirror_edit.warn_q">Edit the tablet's pages?</string>
   <string name="settings.mirror_edit.warn_body">Editing your files with PaperDaemon increases the risk of damaging them. It has been tested, but proceed with caution.</string>
   <string name="settings.mirror_edit.warn_on">Turn on</string>
+  <string name="slot.cli">Command line</string>
+  <string name="slot.command">Command</string>
+  <string name="slot.command.help">The program to run, as you would type it in a terminal: its name or its full path, then any arguments of your own. The harness adds what each request needs.</string>
 </resources>

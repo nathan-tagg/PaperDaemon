@@ -117,7 +117,7 @@ def write_orders(fid, units, owners, accords, families, rng, promises=(), season
     others = others or {}
     bind = _promises_for(promises, fid, season_no)
     no_attack = {p.get("to_family") for p in bind if p.get("kind") == "no_attack"}
-    keep_empty = {p.get("shire") for p in bind if p.get("kind") == "demilitarize"}
+    keep_empty = {p.get("shire") for p in bind if p.get("kind") in ("demilitarize", "no_attack") and p.get("shire")}
     contested_before = set((last or {}).get("contested") or ())
     tempers = {g: temperament(c) for g, c in families.items()}
     my_harbors = {s for s, f in owners.items() if f == fid}

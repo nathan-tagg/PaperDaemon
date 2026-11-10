@@ -609,7 +609,7 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="issue.loop_supervisor">PaperDaemons tilsyn fikk en feil: {why}</string>
   <string name="slot.key_where">Fyll inn serverens adresse først: nøkkelen lagres for den serveren.</string>
   <string name="day.saturday">Lørdag</string>
-  <string name="slot.source.help">API-nøkkel: et selskap kjører modellen, og PaperDaemon når den med nøkkelen din. Kjør lokalt: en modellserver du kjører selv, på denne datamaskinen eller i nettverket ditt.</string>
+  <string name="slot.source.help">API-nøkkel: et selskap kjører modellen, og PaperDaemon når den med nøkkelen din. Kjør lokalt: en modellserver du kjører selv, på denne datamaskinen eller i nettverket ditt. Kommandolinje: et program på denne datamaskinen som tar imot en forespørsel og skriver ut modellens svar. PaperDaemon kjører det én gang for hver tur; harnessen sier hvordan det skal tiltales.</string>
   <string name="slot.provider.help">Hvem som kjører modellen. Annen: enhver tjeneste som snakker OpenAI-API-et, på adressen du oppgir.</string>
   <string name="slot.address.help_hosted">Tjenestens API-adresse, for eksempel https://api.example.com/v1.</string>
   <string name="slot.model.help">Modellens navn nøyaktig slik leverandøren skriver det.</string>
@@ -737,4 +737,7 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="settings.mirror_edit.warn_q">Redigere nettbrettets sider?</string>
   <string name="settings.mirror_edit.warn_body">Å redigere filene dine med PaperDaemon øker risikoen for å skade dem. Det er testet, men vær forsiktig.</string>
   <string name="settings.mirror_edit.warn_on">Slå på</string>
+  <string name="slot.cli">Kommandolinje</string>
+  <string name="slot.command">Kommando</string>
+  <string name="slot.command.help">Programmet som skal kjøres, slik du ville skrevet det i en terminal: navnet eller hele banen, deretter dine egne argumenter. Harnessen legger til det hver forespørsel trenger.</string>
 </resources>

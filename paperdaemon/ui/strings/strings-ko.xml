@@ -609,7 +609,7 @@
   <string name="issue.loop_supervisor">PaperDaemon 감독 기능에 오류가 났습니다: {why}</string>
   <string name="slot.key_where">먼저 서버 주소를 입력하세요. 키는 그 서버용으로 보관됩니다.</string>
   <string name="day.saturday">토요일</string>
-  <string name="slot.source.help">API 키: 회사가 모델을 운영하고, PaperDaemon은 내 키로 접속합니다. 로컬 호스팅: 이 컴퓨터나 내 네트워크에서 내가 직접 실행하는 모델 서버입니다.</string>
+  <string name="slot.source.help">API 키: 회사가 모델을 운영하고, PaperDaemon은 내 키로 접속합니다. 로컬 호스팅: 이 컴퓨터나 내 네트워크에서 내가 직접 실행하는 모델 서버입니다. 명령줄: 요청을 받아 모델의 응답을 출력하는, 이 컴퓨터의 프로그램입니다. PaperDaemon은 턴마다 한 번씩 실행하며, 프로그램과 주고받는 방식은 하네스가 정합니다.</string>
   <string name="slot.provider.help">모델을 운영하는 곳입니다. 기타: 입력한 주소에서 OpenAI API를 사용하는 모든 서비스입니다.</string>
   <string name="slot.address.help_hosted">서비스의 API 주소입니다. 예: https://api.example.com/v1</string>
   <string name="slot.model.help">제공업체가 표기한 그대로의 모델 이름입니다.</string>
@@ -737,4 +737,7 @@
   <string name="settings.mirror_edit.warn_q">태블릿 페이지를 편집할까요?</string>
   <string name="settings.mirror_edit.warn_body">PaperDaemon으로 파일을 편집하면 파일이 손상될 위험이 커집니다. 테스트를 거쳤지만 주의해서 진행하세요.</string>
   <string name="settings.mirror_edit.warn_on">켜기</string>
+  <string name="slot.cli">명령줄</string>
+  <string name="slot.command">명령</string>
+  <string name="slot.command.help">실행할 프로그램을 터미널에 입력하듯이 적습니다. 이름이나 전체 경로를 쓰고, 그 뒤에 내가 넣을 인수를 붙입니다. 요청마다 필요한 것은 하네스가 추가합니다.</string>
 </resources>

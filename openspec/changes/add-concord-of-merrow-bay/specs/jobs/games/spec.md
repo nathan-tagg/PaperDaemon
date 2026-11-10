@@ -49,7 +49,9 @@ Harriet, ..."); a sync on that page SHALL deliver them, and SHALL resolve the se
 too. Each family written to SHALL answer in its own voice, knowing its standing, its accord
 with the writer and the orders it has already decided for the coming season, and MAY promise something (a support, no
 attack, a shire left empty, a convoy); a promise the family means to keep SHALL bind its orders for the seasons named,
-and a promise it means to break SHALL be broken by its orders and remembered against it when it comes out. A family
+and a promise it means to break SHALL be broken by its orders and remembered against it when it comes out. A promise
+SHALL bind from the season its letter was written in: the cast's orders are written again once it is made, so a
+support promised in answer to a letter is given in the orders that resolve with it. A family
 MAY write unasked, at most once a season, when it wants something or was attacked: such a letter SHALL be written
 after the coming season's orders are decided and speak of those, SHALL name the order it wants from the user, and
 SHALL never ask the user's help toward a harbor of the user's own or a shire the user's unit stands on. A family

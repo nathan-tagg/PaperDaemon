@@ -33,3 +33,5 @@
       the coming season is planned, name the order wanted, never ask toward the user's own harbor, and use no made-up
       name; letters pages by measured height; names and markers inside their shires; the holder's mark on a visited
       harbor; a long result set from its right end
+- [x] 4.5 What year 2's spring showed: a promise binds the season its letter came in (the cast's orders written
+      again once it is made); "no attack" covers the user's harbors and the shire it names

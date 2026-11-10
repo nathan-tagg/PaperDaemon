@@ -609,7 +609,7 @@
   <string name="issue.loop_supervisor">PaperDaemon 的监控出错：{why}</string>
   <string name="slot.key_where">请先填写服务器地址：密钥会为该服务器保存。</string>
   <string name="day.saturday">星期六</string>
-  <string name="slot.source.help">API 密钥：由公司运行模型，PaperDaemon 用您的密钥访问它。本地托管：您自己在这台电脑或您的网络上运行的模型服务器。</string>
+  <string name="slot.source.help">API 密钥：由公司运行模型，PaperDaemon 用您的密钥访问它。本地托管：您自己在这台电脑或您的网络上运行的模型服务器。命令行：这台电脑上的一个程序，接收请求并输出模型的回答。PaperDaemon 每一轮运行它一次；如何与它交互由 harness 决定。</string>
   <string name="slot.provider.help">运行模型的服务商。其他：任何在您给出的地址上使用 OpenAI API 的服务。</string>
   <string name="slot.address.help_hosted">该服务的 API 地址，例如 https://api.example.com/v1。</string>
   <string name="slot.model.help">模型名称，与服务商的写法完全一致。</string>
@@ -737,4 +737,7 @@
   <string name="settings.mirror_edit.warn_q">编辑平板的页面？</string>
   <string name="settings.mirror_edit.warn_body">用 PaperDaemon 编辑你的文件会增加损坏它们的风险。它已经过测试，但请谨慎操作。</string>
   <string name="settings.mirror_edit.warn_on">开启</string>
+  <string name="slot.cli">命令行</string>
+  <string name="slot.command">命令</string>
+  <string name="slot.command.help">要运行的程序，按您在终端里输入的方式填写：程序名或完整路径，后面可加您自己的参数。每次请求所需的内容由 harness 补上。</string>
 </resources>

@@ -609,7 +609,7 @@ Ensuite, guide-moi pour installer SearXNG si besoin, écris le fichier .bat avec
   <string name="issue.loop_supervisor">Le superviseur de PaperDaemon a rencontré une erreur : {why}</string>
   <string name="slot.key_where">Saisissez d'abord l'adresse du serveur : la clé est gardée pour ce serveur.</string>
   <string name="day.saturday">Samedi</string>
-  <string name="slot.source.help">Clé d'API : une entreprise fait tourner le modèle et PaperDaemon y accède avec votre clé. Héberger en local : un serveur de modèles que vous faites tourner, sur cet ordinateur ou votre réseau.</string>
+  <string name="slot.source.help">Clé d'API : une entreprise fait tourner le modèle et PaperDaemon y accède avec votre clé. Héberger en local : un serveur de modèles que vous faites tourner, sur cet ordinateur ou votre réseau. Ligne de commande : un programme de cet ordinateur qui reçoit une requête et affiche la réponse du modèle. PaperDaemon le lance une fois par tour ; le harnais indique comment s'adresser à lui.</string>
   <string name="slot.provider.help">Qui fait tourner le modèle. Autre : tout service qui parle l'API d'OpenAI, à l'adresse que vous indiquez.</string>
   <string name="slot.address.help_hosted">L'adresse de l'API du service, par exemple https://api.example.com/v1.</string>
   <string name="slot.model.help">Le nom du modèle, exactement comme le fournisseur l'écrit.</string>
@@ -737,4 +737,7 @@ Ensuite, guide-moi pour installer SearXNG si besoin, écris le fichier .bat avec
   <string name="settings.mirror_edit.warn_q">Modifier les pages de la tablette ?</string>
   <string name="settings.mirror_edit.warn_body">Modifier vos fichiers avec PaperDaemon augmente le risque de les endommager. Cela a été testé, mais procédez avec prudence.</string>
   <string name="settings.mirror_edit.warn_on">Activer</string>
+  <string name="slot.cli">Ligne de commande</string>
+  <string name="slot.command">Commande</string>
+  <string name="slot.command.help">Le programme à lancer, comme vous le taperiez dans un terminal : son nom ou son chemin complet, puis vos propres arguments. Le harnais ajoute ce dont chaque requête a besoin.</string>
 </resources>

@@ -609,7 +609,7 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="issue.loop_supervisor">Cafodd goruchwyliwr PaperDaemon wall: {why}</string>
   <string name="slot.key_where">Rhowch gyfeiriad y gweinydd yn gyntaf: cedwir yr allwedd ar gyfer y gweinydd hwnnw.</string>
   <string name="day.saturday">Dydd Sadwrn</string>
-  <string name="slot.source.help">Allwedd API: mae cwmni'n rhedeg y model, ac mae PaperDaemon yn ei gyrraedd gyda'ch allwedd. Gwesteio'n lleol: gweinydd model rydych chi'n ei redeg, ar y cyfrifiadur hwn neu ar eich rhwydwaith.</string>
+  <string name="slot.source.help">Allwedd API: mae cwmni'n rhedeg y model, ac mae PaperDaemon yn ei gyrraedd gyda'ch allwedd. Gwesteio'n lleol: gweinydd model rydych chi'n ei redeg, ar y cyfrifiadur hwn neu ar eich rhwydwaith. Llinell orchymyn: rhaglen ar y cyfrifiadur hwn sy'n cymryd cais ac yn argraffu ateb y model. Mae PaperDaemon yn ei rhedeg unwaith ar gyfer pob tro; yr harnais sy'n dweud sut i siarad â hi.</string>
   <string name="slot.provider.help">Pwy sy'n rhedeg y model. Arall: unrhyw wasanaeth sy'n siarad API OpenAI, yn y cyfeiriad a roddwch.</string>
   <string name="slot.address.help_hosted">Cyfeiriad API y gwasanaeth, er enghraifft https://api.example.com/v1.</string>
   <string name="slot.model.help">Enw'r model yn union fel mae'r darparwr yn ei ysgrifennu.</string>
@@ -737,4 +737,7 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="settings.mirror_edit.warn_q">Golygu tudalennau'r llechen?</string>
   <string name="settings.mirror_edit.warn_body">Mae golygu dy ffeiliau gyda PaperDaemon yn cynyddu'r risg o'u difrodi. Mae wedi'i brofi, ond bydd yn ofalus.</string>
   <string name="settings.mirror_edit.warn_on">Troi ymlaen</string>
+  <string name="slot.cli">Llinell orchymyn</string>
+  <string name="slot.command">Gorchymyn</string>
+  <string name="slot.command.help">Y rhaglen i'w rhedeg, fel y byddech yn ei theipio mewn terfynell: ei henw neu ei llwybr llawn, yna unrhyw ymresymiadau o'ch eiddo chi. Mae'r harnais yn ychwanegu'r hyn sydd ei angen ar bob cais.</string>
 </resources>

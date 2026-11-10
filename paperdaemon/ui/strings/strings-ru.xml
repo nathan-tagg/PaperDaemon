@@ -623,7 +623,7 @@
   <string name="issue.loop_supervisor">В надзоре PaperDaemon произошла ошибка: {why}</string>
   <string name="slot.key_where">Сначала укажите адрес сервера: ключ хранится для этого сервера.</string>
   <string name="day.saturday">Суббота</string>
-  <string name="slot.source.help">Ключ API: модель запускает компания, а PaperDaemon обращается к ней с вашим ключом. Запуск на своём компьютере: сервер модели, который вы запускаете сами, на этом компьютере или в своей сети.</string>
+  <string name="slot.source.help">Ключ API: модель запускает компания, а PaperDaemon обращается к ней с вашим ключом. Запуск на своём компьютере: сервер модели, который вы запускаете сами, на этом компьютере или в своей сети. Командная строка: программа на этом компьютере, которая принимает запрос и выводит ответ модели. PaperDaemon запускает её один раз на каждый ход; как с ней общаться, определяет обвязка.</string>
   <string name="slot.provider.help">Кто запускает модель. Другой: любой сервис, говорящий на API OpenAI, по указанному вами адресу.</string>
   <string name="slot.address.help_hosted">Адрес API сервиса, например https://api.example.com/v1.</string>
   <string name="slot.model.help">Название модели в точности так, как его пишет поставщик.</string>
@@ -751,4 +751,7 @@
   <string name="settings.mirror_edit.warn_q">Редактировать страницы планшета?</string>
   <string name="settings.mirror_edit.warn_body">Редактирование ваших файлов в PaperDaemon повышает риск их повреждения. Это проверено, но действуйте осторожно.</string>
   <string name="settings.mirror_edit.warn_on">Включить</string>
+  <string name="slot.cli">Командная строка</string>
+  <string name="slot.command">Команда</string>
+  <string name="slot.command.help">Программа, которую нужно запустить, как вы набрали бы её в терминале: имя или полный путь, затем ваши собственные аргументы. Обвязка добавляет то, что нужно для каждого запроса.</string>
 </resources>

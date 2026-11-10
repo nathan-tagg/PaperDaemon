@@ -609,7 +609,7 @@
   <string name="issue.loop_supervisor">PaperDaemon の監視でエラーが起きました: {why}</string>
   <string name="slot.key_where">先にサーバーのアドレスを入力してください。キーはそのサーバー用に保存されます。</string>
   <string name="day.saturday">土曜日</string>
-  <string name="slot.source.help">API キー: 企業がモデルを動かし、PaperDaemon はあなたのキーでそこにつなぎます。ローカルでホスト: あなたがこのコンピューターかネットワーク上で動かすモデルサーバーです。</string>
+  <string name="slot.source.help">API キー: 企業がモデルを動かし、PaperDaemon はあなたのキーでそこにつなぎます。ローカルでホスト: あなたがこのコンピューターかネットワーク上で動かすモデルサーバーです。コマンドライン: リクエストを受け取ってモデルの応答を出力する、このコンピューター上のプログラムです。PaperDaemon は各ターンに一度それを実行し、やり取りの方法はハーネスが決めます。</string>
   <string name="slot.provider.help">モデルを動かしている事業者です。その他: 指定したアドレスで OpenAI API を話す任意のサービスです。</string>
   <string name="slot.address.help_hosted">サービスの API アドレス。例: https://api.example.com/v1</string>
   <string name="slot.model.help">事業者が表記しているとおりのモデル名です。</string>
@@ -737,4 +737,7 @@
   <string name="settings.mirror_edit.warn_q">タブレットのページを編集しますか？</string>
   <string name="settings.mirror_edit.warn_body">PaperDaemon でファイルを編集すると、ファイルを損傷するリスクが高まります。テスト済みですが、慎重に進めてください。</string>
   <string name="settings.mirror_edit.warn_on">オンにする</string>
+  <string name="slot.cli">コマンドライン</string>
+  <string name="slot.command">コマンド</string>
+  <string name="slot.command.help">実行するプログラムを、ターミナルに入力するとおりに書きます。名前またはフルパスのあとに、必要なら独自の引数を続けます。各リクエストに必要なものはハーネスが追加します。</string>
 </resources>

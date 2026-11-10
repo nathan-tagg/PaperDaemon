@@ -609,7 +609,7 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="issue.loop_gave_up">PaperDaemon'ın bir parçası arka arkaya {n} kez durdu ve durmuş halde bırakıldı; nedenini günlüğü söylüyor.</string>
   <string name="issue.loop_supervisor">PaperDaemon'ın denetleyicisi bir hatayla karşılaştı: {why}</string>
   <string name="slot.key_where">Önce sunucunun adresini doldurun: anahtar o sunucu için saklanır.</string>
-  <string name="slot.source.help">API anahtarı: modeli bir şirket çalıştırır ve PaperDaemon ona anahtarınızla ulaşır. Yerelde barındır: bu bilgisayarda ya da ağınızda kendi çalıştırdığınız bir model sunucusu.</string>
+  <string name="slot.source.help">API anahtarı: modeli bir şirket çalıştırır ve PaperDaemon ona anahtarınızla ulaşır. Yerelde barındır: bu bilgisayarda ya da ağınızda kendi çalıştırdığınız bir model sunucusu. Komut satırı: bu bilgisayarda bir isteği alıp modelin yanıtını yazdıran bir program. PaperDaemon onu her tur için bir kez çalıştırır; onunla nasıl konuşulacağını harness belirler.</string>
   <string name="slot.provider.help">Modeli kimin çalıştırdığı. Diğer: verdiğiniz adreste OpenAI API'sini konuşan herhangi bir hizmet.</string>
   <string name="slot.address.help_hosted">Hizmetin API adresi, örneğin https://api.example.com/v1.</string>
   <string name="slot.model.help">Modelin adı, tam olarak sağlayıcının yazdığı gibi.</string>
@@ -737,4 +737,7 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="settings.mirror_edit.warn_q">Tabletin sayfaları düzenlensin mi?</string>
   <string name="settings.mirror_edit.warn_body">Dosyalarını PaperDaemon ile düzenlemek onlara zarar verme riskini artırır. Test edildi, ama dikkatli ilerle.</string>
   <string name="settings.mirror_edit.warn_on">Aç</string>
+  <string name="slot.cli">Komut satırı</string>
+  <string name="slot.command">Komut</string>
+  <string name="slot.command.help">Çalıştırılacak program, bir terminale yazacağınız gibi: adı ya da tam yolu, ardından kendi argümanlarınız. Her isteğin gerektirdiğini harness ekler.</string>
 </resources>
