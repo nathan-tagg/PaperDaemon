@@ -1002,6 +1002,38 @@ def read_preserved(data):
 
 def cid(value):return f'{value.part1}:{value.part2}'
 
+def loose_order(items):
+    """The ids of a text's items in order when its items point at each other in a ring (rmscene's order refuses:
+    "cyclic dependency"). The same walk -- an item after its left neighbor and before its right, the higher author
+    first among items ready together -- and, where the walk stalls on a ring, the lowest item still waiting is let
+    through. NOT THE TABLET'S ORDER FOR CERTAIN: good for showing the words, never for editing them in place."""
+    import heapq
+    from collections import defaultdict
+    by_id={i.item_id:i for i in items}
+    side=lambda it,s:(getattr(it,s+'_id') if getattr(it,s+'_id') in by_id else ('__start' if s=='left' else '__end'))
+    need=defaultdict(int); after=defaultdict(list); nodes={'__start','__end'}
+    for it in by_id.values():
+        l,r=side(it,'left'),side(it,'right'); nodes.update((it.item_id,l,r))
+        need[it.item_id]+=1; after[l].append(it.item_id)
+        need[r]+=1; after[it.item_id].append(r)
+    key=lambda n:(0,0,0) if n=='__start' else (2,0,0) if n=='__end' else (1,-n.part1,n.part2)
+    ready=[(key(n),n) for n in nodes if need[n]==0]; heapq.heapify(ready)
+    out,done=[],set()
+    while len(out)<len(by_id):
+        if not ready or ready[0][1]=='__end':
+            waiting=[n for n in by_id if n not in done and n not in {x for _k,x in ready}]
+            if not waiting:break
+            n=min(waiting,key=key); need[n]=0; heapq.heappush(ready,(key(n),n)); continue
+        _k,n=heapq.heappop(ready)
+        if n in done:continue
+        done.add(n)
+        if n in by_id:out.append(n)
+        for d in after[n]:
+            need[d]-=1
+            if need[d]==0 and d not in done:heapq.heappush(ready,(key(d),d))
+    return out
+
+
 def extract_text(tb):
     raw=list(tb.items.sequence_items())
     if sum(max(len(i.value) if isinstance(i.value,str) else 1,i.deleted_length) for i in raw)>250000:
@@ -1010,11 +1042,16 @@ def extract_text(tb):
     if len({i.item_id for i in expanded})!=len(expanded):raise ValueError('Overlapping text CRDT IDs')
     seq=CrdtSequence(expanded); by_id={i.item_id:i for i in expanded}
     key=CrdtId(0,0); paragraphs=[]; runs=[]; text=[]; props={'bold':False,'italic':False}; warnings=[]
+    try:order=list(seq)
+    except ValueError:
+        # ITS ITEMS IN A RING (two edits merged under one id: Mirror editing before 0.2.43 numbered as the tablet):
+        # read in the loose order, and SAID, so the words show and nothing edits them in place by this reading
+        order=loose_order(expanded); warnings.append({'text_order':'ring','status':'Shown in an order that may not be the tablet\'s'})
     def flush():
         code=int(tb.styles[key].value) if key in tb.styles else 1
         paragraphs.append({'id':'T'+str(len(paragraphs)+1).zfill(3),'style_key':cid(key),'style_code':code,'style_name':STYLE_NAMES.get(code,'UNRECOGNIZED'), 'text':''.join(text),'runs':list(runs),'layout_status':'unmeasured','bbox':None})
         text.clear(); runs.clear()
-    for ident in seq:
+    for ident in order:
         it=by_id[ident]
         if it.deleted_length:continue
         value=it.value

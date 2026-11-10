@@ -809,11 +809,11 @@ def test_text_typed_on_a_page_without_any_is_a_new_text_block_and_the_ink_is_kep
     assert got["text"] == [["title", [["Answer", False]]], ["body", [["four ", False], ["moons", True]]]]
 
 
-def test_a_text_whose_items_point_at_each_other_is_said_and_can_only_be_emptied():
+def test_a_text_whose_items_point_at_each_other_is_shown_and_can_only_be_emptied():
     """The first real collision (a notebook typed in from the app and the tablet within a minute, both numbering as
-    author 1) left the text's items in a ring: no reader orders them. The page says it holds text it cannot read (so
-    nobody takes it for a page without words), refuses an edit of that text, and takes the one edit that needs no
-    order: every character deleted where it stands."""
+    author 1) left the text's items in a ring: rmscene's order refuses them. The page's words are still shown, read
+    in a loose order and marked as not exact (so nobody takes the page for one without words); an edit of that text
+    is refused; and the one edit that needs no order is taken: every character deleted where it stands."""
     got = _run("""
         from rmscene import write_blocks
         from rmscene.crdt_sequence import CrdtSequence, CrdtSequenceItem
@@ -832,19 +832,24 @@ def test_a_text_whose_items_point_at_each_other_is_said_and_can_only_be_emptied(
         sc = IP.read_page(doc, 1)
         live = lambda: sum(len(i.value) for b in read_blocks(io.BytesIO(open(path, "rb").read())) if isinstance(b, ss.RootTextBlock)
                            for i in b.value.items._items.values() if isinstance(i.value, str) and not i.deleted_length)
-        res = dict(text=sc["text"], unread=sc["textUnread"], live_before=live())
+        words = "".join(r["text"] for p in sc["text"]["paras"] for r in p["runs"])
+        res = dict(inexact=sc["text"].get("inexact"), words=len(words), unread=sc["textUnread"], live_before=live())
         try:
-            IP.write_in_place(doc, 1, dict(sc, text={"x": -468, "y": 234, "width": 936, "paras": [
-                {"style": "body", "list": None, "runs": [{"text": "hello", "bold": False, "italic": False}]}]}), sc["stamp"])
+            IP.write_in_place(doc, 1, dict(sc, text=dict(sc["text"], paras=[
+                {"style": "body", "list": None, "runs": [{"text": "hello", "bold": False, "italic": False}]}])), sc["stamp"])
             res["refused"] = False
         except IP.CannotWrite as ex:
             res["refused"] = str(ex)
-        w = IP.write_in_place(doc, 1, dict(sc, text={"x": -468, "y": 234, "width": 936, "paras": []}), sc["stamp"])
+        same = IP.write_in_place(doc, 1, json.loads(json.dumps(sc)), sc["stamp"])          # nothing changed: nothing refused
+        w = IP.write_in_place(doc, 1, dict(sc, text=dict(sc["text"], paras=[])), sc["stamp"])
         back = IP.read_page(doc, 1)
-        res.update(report=w["text"], live_after=live(), unread_after=back["textUnread"], strokes=w["kept"] == len(sc["layers"][0]["lines"]))
+        res.update(same=same["changed"], report=w["text"], live_after=live(), unread_after=back["textUnread"],
+                   after=[p for p in (back["text"] or {}).get("paras", []) if p["runs"]],
+                   strokes=w["kept"] == len(sc["layers"][0]["lines"]))
         out(**res)
     """)
-    assert got["text"] is None and got["unread"] is True and got["live_before"] > 20, got
-    assert "cannot be read exactly" in got["refused"], got
+    assert got["inexact"] is True and got["unread"] is False and got["live_before"] > 20, got
+    assert got["words"] >= got["live_before"] - 3, got                    # every word is there to be read
+    assert "cannot be read exactly" in got["refused"] and got["same"] is False, got
     assert got["report"] == {"kept": 0, "deleted": got["report"]["deleted"], "inserted": 0} and got["report"]["deleted"] >= got["live_before"], got
-    assert got["live_after"] == 0 and got["unread_after"] is False and got["strokes"], got
+    assert got["live_after"] == 0 and got["unread_after"] is False and got["after"] == [] and got["strokes"], got

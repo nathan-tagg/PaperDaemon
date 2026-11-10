@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.44
+
+- A page whose typed text was left tangled by the collision fixed in 0.2.43 shows its words again. They are read in an order that may not be the tablet's own, so the editor refuses to change them; deleting all of the page's text is taken, and clears the tangle for good.
+- A job that erased the request it was written for no longer reports a failed page render. The emptied page was refused by the renderer, the job noted a quiet failure, and the model was told the page could not be seen; an empty page is now drawn as an empty sheet.
+- The Jobs list reads well in a narrow place. As a tab of the Lineup screen in a window of middling width its note column shrank to a word a line; it now lays each job out as a short block whenever the list itself is narrow.
+- The Concord: a build or disband you write is shown on your page with what came of it, and the season's news about you comes first. On the Seasons page the later rows of a long line no longer run past the right margin.
+
 ## 0.2.43
 
 - Editing a Mirror page no longer collides with the tablet. What PaperDaemon wrote on a tablet page was numbered as if the tablet had written it, so when a page was written on here and on the tablet within the same minute, before the tablet had synced, two different things took the same number: typed words landed inside another line, a line lost its first letters, and the text could be left in a state nothing could edit. The editor now numbers what it writes under a number of its own, which the tablet opens like any other and can never hand out itself. Your strokes drawn in the editor are still yours, not the daemon's.

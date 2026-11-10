@@ -69,9 +69,11 @@
         '<td class="r jd">' + esc(took) + "</td></tr>";
     }
     // FIXED COLUMNS: set by the table, not by what is in them, so nothing moves as a job runs or a note fills in
-    PD.html(box, '<table class="list jobs"><colgroup><col class="c-time"><col class="c-nb"><col class="c-page"><col>' +
+    // IN A BOX THAT KNOWS ITS OWN WIDTH (.jobs-box): the list is also a tab of the Lineup screen, far narrower than the
+    // window, where the fixed columns left the note a word a line
+    PD.html(box, '<div class="jobs-box"><table class="list jobs"><colgroup><col class="c-time"><col class="c-nb"><col class="c-page"><col>' +
       '<col class="c-took">' +
-      "</colgroup><tbody>" + rows + "</tbody></table>");
+      "</colgroup><tbody>" + rows + "</tbody></table></div>");
   }
 
   async function load() {

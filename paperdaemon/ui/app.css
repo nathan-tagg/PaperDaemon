@@ -260,8 +260,10 @@ dialog.sheet fieldset.field-row legend { padding: 0; margin-bottom: var(--s1); }
 .pair .actions { margin-top: var(--s4); }
 .pair p { margin-top: var(--s3); }
 
-/* a phone on the tunnel: each job becomes a short block instead of a squeezed row */
-@media (max-width: 600px) {
+/* a phone on the tunnel, or the list in a narrow place (a tab of the Lineup screen in a window of middling width):
+   each job becomes a short block instead of a squeezed row. By the list's own width, not the window's. */
+.jobs-box { container-type: inline-size; }
+@container (max-width: 760px) {
   .jobs, .jobs tbody { display: block; }
   .jobs colgroup { display: none; }
   .jobs tbody tr:not(.dayrow) {

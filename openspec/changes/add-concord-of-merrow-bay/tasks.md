@@ -35,3 +35,5 @@
       harbor; a long result set from its right end
 - [x] 4.5 What year 2's spring showed: a promise binds the season its letter came in (the cast's orders written
       again once it is made); "no attack" covers the user's harbors and the shire it names
+- [x] 4.6 What year 2's autumn showed (the promise bound its season; the build was carried out): a build or disband
+      asked for is shown with what came of it, the user's news first; a season line's later rows inside the margin

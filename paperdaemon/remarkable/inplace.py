@@ -528,9 +528,11 @@ def edit(doc, page_no, data, scene):
     if not _same_text(want_text, had_text):
         if want_text is None:
             raise CannotWrite("the save has no typed text where the page has some; to delete it all, send no paragraphs")
-        wipe = len(roots) == 1 and had_text is None and not _tokens(want_text.get("paras"))
-        if (len(roots) > 1 or (roots and had_text is None)) and not wipe:
-            raise CannotWrite("the page's typed text cannot be read exactly, so it is not written in place")
+        unread = had_text is None or bool(had_text.get("inexact"))      # not read, or read in an order not sure to be the tablet's
+        wipe = len(roots) == 1 and unread and not _tokens(want_text.get("paras"))
+        if (len(roots) > 1 or (roots and unread)) and not wipe:
+            raise CannotWrite("the page's typed text cannot be read exactly, so it is not written in place; "
+                              "deleting all of it is the one change it takes")
         if had_text is not None and any(float(want_text.get(k, had_text[k])) != float(had_text[k]) for k in ("x", "y", "width")):
             raise CannotWrite("moving or resizing the typed text of a tablet page is not written in place")
         if roots:
@@ -766,7 +768,7 @@ def _check(new, nblocks, strokes, text):
         raise RuntimeError("the page's stroke blocks do not add up")
     if text is not None:
         back = local.scene_text(new)
-        if back is None and not _tokens(text.get("paras")) and not local.has_text(new):
+        if not _tokens(text.get("paras")) and not local.has_text(new):
             return                               # emptied without its order read (_wipe_text): no character is left
         if back is None or _read_as(back.get("paras")) != _read_as(text.get("paras")):
             raise RuntimeError("the page's typed text did not read back as written")

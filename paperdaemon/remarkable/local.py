@@ -827,7 +827,10 @@ def scene_text(data):
                                                                   "italic": bool(r["format"].get("italic"))}
                                                                  for r in p.get("runs") or []]})
         col = rec["column"]
-        return {"x": col["x"], "y": col["y"], "width": col["width"], "paras": paras}
+        out = {"x": col["x"], "y": col["y"], "width": col["width"], "paras": paras}
+        if any(w.get("text_order") for w in rec.get("warnings") or []):
+            out["inexact"] = True                # its items in a ring: shown, and only ever emptied (inplace.edit)
+        return out
     except Exception:
         return None
 
