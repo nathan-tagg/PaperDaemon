@@ -187,6 +187,21 @@ def test_an_order_the_rules_do_not_allow_is_shown_with_the_rules_reason():
     assert why["Gull Reach holds"] == "no unit of yours at Gull Reach"
 
 
+def test_a_unit_driven_out_says_by_whom_and_where_it_went():
+    # the first real game: "Lantern Spit holds -- held: dislodged from Lantern Spit" for a fleet the Strouds drove off
+    st = G.new_state("doc", "quill", seed="ab" * 16)
+    spit, pearl, banks = (M.find(n) for n in ("Lantern Spit", "Pearl Shoal", "The Outer Banks"))
+    st["units"] = {spit: {"family": "quill", "kind": R.FLEET}, pearl: {"family": "stroud", "kind": R.FLEET},
+                   banks: {"family": "stroud", "kind": R.FLEET}}
+    assert R.legal(st["units"], R.move(pearl, spit))[0] and R.legal(st["units"], R.support(banks, pearl, spit))[0]
+    st["planned"] = {"stroud": {pearl: R.move(pearl, spit), banks: R.support(banks, pearl, spit)}}
+    mine, wants, problems = O.parse(["Lantern Spit holds"], st["units"], "quill")
+    G.season(st, mine, wants, problems, ask_text=None)
+    fate = dict(st["last"]["mine"])["Lantern Spit holds"]
+    assert fate.startswith("dislodged by The Strouds, ") and ("retreated to " in fate or fate.endswith("disbanded")), fate
+    assert "held" not in fate and "dislodged from" not in fate
+
+
 def test_a_letters_page_takes_the_letters_that_fit_whole():
     # the first real game: seven letters to a page by count, and the seventh ended mid-sentence at the page's foot
     from paperdaemon.pipeline.draw import scaled as SD

@@ -216,13 +216,25 @@ def season(state, my_orders, wants, problems, ask_text, log=None):
     units = result["after"]
     # THE RECORD of the user's orders as read, each with what came of it
     mine_rows = []
+
+    def came_of(s, fate):
+        """What came of the user's unit at s, in their page's words: a unit driven out says by whom and where it went
+        (the first real game: "held: dislodged from Lantern Spit" for a fleet the Strouds had driven to Gull Reach)."""
+        d = result["dislodged"].get(s)
+        if not d:
+            return (fate[0] + ((": " + fate[1]) if fate[1] else "")).strip()
+        why = fate[1].split("; dislodged from")[0].split("dislodged from")[0].strip()
+        base = "" if fate[0] == "held" else fate[0] + ((": " + why) if why else "")
+        to = result["retreats"].get(s)
+        out = "dislodged by %s, %s" % (state["families"][d["by"]]["name"], ("retreated to " + M.NAMES[to]) if to else "disbanded")
+        return (base + "; " + out) if base else out
     for s, o in my_orders.items():
         fate = result["fates"].get(s, ("", ""))
         text = o.get("text") or R.words(o, units_before)
-        mine_rows.append((text, (fate[0] + ((": " + fate[1]) if fate[1] else "")).strip()))
+        mine_rows.append((text, came_of(s, fate)))
     for s in sorted(s for s, u in units_before.items() if u["family"] == me and s not in my_orders):
         fate = result["fates"].get(s, ("held", ""))
-        mine_rows.append((R.words(R.hold(s), units_before) + " (no order)", fate[0]))
+        mine_rows.append((R.words(R.hold(s), units_before) + " (no order)", came_of(s, (fate[0], ""))))
     retreat_notes = []
     for s, to in result["retreats"].items():
         u = units_before[s]
