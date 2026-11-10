@@ -171,6 +171,22 @@ def test_a_season_line_s_later_rows_stay_inside_the_margin(tmp_path):
     assert right.getextrema()[0] > 200                                    # nothing drawn past the right margin
 
 
+def test_an_order_the_rules_do_not_allow_is_shown_with_the_rules_reason():
+    # the first real game: "Fogwater convoys The Archive to Kettle Isle" (The Archive is inland) came back as
+    # "no unit of yours at Fogwater", where the user's fleet stood
+    st = G.new_state("doc", "quill", seed="aa" * 16)
+    fog, archive = M.find("Fogwater"), M.find("The Archive")
+    st["units"] = {u: v for u, v in st["units"].items() if v["family"] != "quill"}
+    st["units"].update({fog: {"family": "quill", "kind": R.FLEET}, archive: {"family": "quill", "kind": R.MILITIA}})
+    letters, orders, problems = G.sort_lines(st, ["Fogwater convoys The Archive to Kettle Isle", "The Archive to Kettle Isle",
+                                                 "Gull Reach holds", "Fogwater holds"])
+    why = dict(problems)
+    assert orders == ["Fogwater holds"] and letters == []
+    assert why["Fogwater convoys The Archive to Kettle Isle"] == "not allowed: no militia on a coast at The Archive"
+    assert why["The Archive to Kettle Isle"] == "not allowed: The Archive does not touch Kettle Isle"
+    assert why["Gull Reach holds"] == "no unit of yours at Gull Reach"
+
+
 def test_a_letters_page_takes_the_letters_that_fit_whole():
     # the first real game: seven letters to a page by count, and the seventh ended mid-sentence at the page's foot
     from paperdaemon.pipeline.draw import scaled as SD

@@ -215,7 +215,7 @@ def orders_png(state, out):
     for text, fate in last.get("mine") or []:
         rows.append((text, fate, INK))
     for text, why in last.get("problems") or []:
-        rows.append((text, "not understood: %s" % why, GRAY))
+        rows.append((text, why if str(why).startswith("not allowed") else "not understood: %s" % why, GRAY))
     for text in last.get("others") or []:
         rows.append((text, "", GRAY))
     if rows:

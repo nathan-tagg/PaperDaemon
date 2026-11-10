@@ -352,9 +352,14 @@ def sort_lines(state, lines):
             continue
         o = O.parse_line(line)
         is_order = bool(o.get("want"))
+        cannot = ""
         if not is_order and o.get("kind") != "unknown":
             u = state["units"].get(o["unit"])
-            is_order = bool(u and u["family"] == me and R.legal(state["units"], o)[0])
+            if u and u["family"] == me:
+                # THEIR OWN UNIT, an order the rules do not allow: said with the rules' own reason (the first real
+                # game: a convoy from an inland shire came back as "no unit of yours at Fogwater", where their fleet stood)
+                is_order, cannot = R.legal(state["units"], o)
+                cannot = ("not allowed: " + cannot) if cannot else ""       # read rightly; the rules' no, not the reader's
         if is_order and not (open_ and o.get("kind") == R.HOLD and "text" in o and len(line.split()) > 4):
             order_lines.append(line)
             open_ = False
@@ -362,7 +367,7 @@ def sort_lines(state, lines):
         if open_:
             letters[-1][1] = (letters[-1][1] + " " + line).strip()
             continue
-        problems.append((line, o.get("why") or ("no unit of yours at %s" % M.NAMES.get(o.get("unit"), "there"))))
+        problems.append((line, o.get("why") or cannot or ("no unit of yours at %s" % M.NAMES.get(o.get("unit"), "there"))))
     return [(f, t) for f, t in letters if t], order_lines, problems
 
 
