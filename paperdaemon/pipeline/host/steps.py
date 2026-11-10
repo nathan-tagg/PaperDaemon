@@ -427,6 +427,31 @@ def describe(step):
     }[d] % ((step.get("source") or w) if d == "posts" else w)
 
 
+def erased_words(steps):
+    """What a job's erase steps took off, in a phrase for the person reading the receipt: "erase 11 ink marks",
+    "erase typed paragraph 1 and 2 pictures". The plan's own wording names every id ("erase ink mark 1, ink mark 2,
+    ... ink mark 11"), which the model needs and a reader does not. -> "" when nothing was erased."""
+    seen = []
+    for q in steps or ():
+        for t in erase_targets(q.get("what")) if q.get("do") == "erase" else ():
+            if t not in seen:
+                seen.append(t)
+    if not seen:
+        return ""
+    count = lambda k: sum(1 for kind, _v in seen if kind == k)
+    parts = []
+    for kind, one, many in (("para", "typed paragraph %d", "%d typed paragraphs"), ("line", "a line of handwriting", "%d lines of handwriting"),
+                            ("mark", "an ink mark", "%d ink marks"), ("picture", "a picture", "%d pictures")):
+        n = count(kind)
+        if n == 1:
+            parts.append(one % next(v for k, v in seen if k == kind) if "%d" in one else one)
+        elif n > 1:
+            parts.append(many % n)
+    if count("at"):
+        parts.append("the ink pointed at")
+    return "erase " + (", ".join(parts[:-1]) + " and " + parts[-1] if len(parts) > 1 else parts[0])
+
+
 def brief(steps, extra=None):
     """The whole list with the current step marked -- the shape of the job in a few lines."""
     cur = current(steps)

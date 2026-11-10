@@ -897,6 +897,12 @@ DECIDE_TEMP = float(os.environ.get("RM_DECIDE_TEMP", "0.3"))
 PAGE_STROKE_LIMIT = 250000
 
 
+def _kept_out(q, kept):
+    """An erase step the host carried out (not one it declined: every target a typed paragraph it kept)."""
+    t = ST.erase_targets(q["what"])
+    return not (t and all(k == "para" and int(v) in kept for k, v in t))
+
+
 def _host_note(problems):
     steps = JOB.steps or []
     kept = JOB.kept_paras or set()
@@ -911,8 +917,16 @@ def _host_note(problems):
         # note on the page quoted it beside the honest "I couldn't look that up"
         if q["do"] == "write":
             return "write"
+        if q["do"] == "erase":
+            return ERASED                         # every erase of the job said once, in a reader's words (below)
         return ST.describe(q)
+    ERASED = "\0erased"
     did = [d for d in (_said(q) for q in steps if q["status"] == "done") if d]
+    words = ST.erased_words([q for q in steps if q["status"] == "done" and q["do"] == "erase" and _kept_out(q, kept)])
+    first = did.index(ERASED) if ERASED in did else None
+    did = [d for d in did if d != ERASED]
+    if first is not None and words:
+        did.insert(first, words)
     note = "; ".join(did) if did else "nothing"
     if JOB.written and JOB.committed:
         note += ". Wrote: " + " ".join(JOB.written)[:300]          # the lines as one passage, for the job list
