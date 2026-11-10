@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.43
+
+- Editing a Mirror page no longer collides with the tablet. What PaperDaemon wrote on a tablet page was numbered as if the tablet had written it, so when a page was written on here and on the tablet within the same minute, before the tablet had synced, two different things took the same number: typed words landed inside another line, a line lost its first letters, and the text could be left in a state nothing could edit. The editor now numbers what it writes under a number of its own, which the tablet opens like any other and can never hand out itself. Your strokes drawn in the editor are still yours, not the daemon's.
+- A page whose typed text was already left tangled by this is told apart from a page with no text: the engine says it holds text it cannot read, refuses to edit that text, and takes the one edit that is still exact, all of its typed text deleted. The window does not show this yet.
+
 ## 0.2.42
 
 - A lineup's text model can be a command line. Source now offers "Command line" beside "API key" and "Host locally": you give the command as you would type it in a terminal, and PaperDaemon runs it once for each turn, hands it the request and reads what it prints. It replaces the "Claude Code" provider of 0.2.39, which sat under "API key" though no key was involved; a lineup that used it becomes a command-line lineup with the command `claude` and works as before.

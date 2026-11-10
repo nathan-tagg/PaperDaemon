@@ -788,7 +788,25 @@ def scene_of(doc, page_no, arrays=False, data=None, columns=False):
             "templateVisible": bool(lww(getattr(info, "background_visible", None), True)),
             "template": page_template(doc, page_no), "source": source, "images": pictures_of(doc, page_no, data),
             "zoom": _content(doc).get("zoomMode") or "bestFit",
-            "shifts": [{"group": [k.part1, k.part2], "by": [float(v[0]), float(v[1])]} for k, v in offs.items() if v[0] or v[1]]}
+            "shifts": [{"group": [k.part1, k.part2], "by": [float(v[0]), float(v[1])]} for k, v in offs.items() if v[0] or v[1]],
+            # typed text that is on the page and could not be read (text None): said, so nobody takes the page for one
+            # without words. It can be emptied in place (a save with no paragraphs), nothing else
+            "textUnread": bool(typed_here and text is None and has_text(data))}
+
+
+def has_text(data):
+    """Whether the page's bytes hold typed characters that show (a text block with a live character in it), read
+    without ordering them."""
+    from paperdaemon.remarkable import fastrm
+    from paperdaemon.pipeline.page import typed as TY
+    try:
+        for b in TY.read_preserved(fastrm.without_strokes(data)):
+            items = getattr(getattr(getattr(b, "value", None), "items", None), "_items", None)
+            if items and any(isinstance(i.value, str) and i.value.strip() and not i.deleted_length for i in items.values()):
+                return True
+    except Exception:
+        return True                              # not even its blocks read: there is something
+    return False
 
 
 def scene_text(data):

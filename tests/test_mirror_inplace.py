@@ -1,5 +1,6 @@
 """A Mirror page written in place (remarkable/inplace.py), as the tablet writes one: what the edit did not touch byte for
-byte, an erased stroke a tombstone, new strokes appended under author 1, typed text edited by its CRDT, anchored ink
+byte, an erased stroke a tombstone, new strokes appended under the editor's own author (never the tablet's: an edit
+made here and writing the tablet has not yet synced must not take the same ids), typed text edited by its CRDT, anchored ink
 left anchored; a stale page and a page the tablet changed refused; each document backed up once.
 
 Every check works on COPIES of the benchmark's fixture pages (and pages the pipeline's own writers make) in a mirror of
@@ -12,6 +13,7 @@ import sys
 import textwrap
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+IP_AUTHOR = 127                               # inplace.AUTHOR: the editor's own, not the tablet's 1, not PaperDaemon's 100kkkkk
 CASES = os.path.join(ROOT, "tests", "benchmark", "cases")
 
 PRELUDE = """
@@ -116,7 +118,7 @@ def test_an_erased_stroke_is_a_tombstone_and_every_other_block_is_as_it_was():
     assert got["id"] and got["tomb"] and got["as_rmscene"] and got["lines"] == 69 and got["backup"]
 
 
-def test_new_strokes_go_at_the_end_of_their_layer_under_author_1():
+def test_new_strokes_go_at_the_end_of_their_layer_under_the_editor_s_own_author():
     got = _run("""
         doc = fixture("ink-question")
         before = page_bytes(doc)
@@ -142,7 +144,7 @@ def test_new_strokes_go_at_the_end_of_their_layer_under_author_1():
             n=len(bl2), pts=[p[:2] for p in bl2[-1]["points"]], rgba=bl2[-1]["colorRgba"], pen=bl2[-2]["penCode"],
             table=1 in next(b for b in bl if isinstance(b, ss.AuthorIdsBlock)).author_uuids)
     """)
-    assert got["prefix"] and got["added"] == 2 and got["authors"] == [1, 1] and got["after_highest"], got
+    assert got["prefix"] and got["added"] == 2 and got["authors"] == [IP_AUTHOR, IP_AUTHOR] and got["after_highest"], got
     assert got["chain"] and got["right"] == [True, True] and got["parent"] == [True, True] and got["table"]
     assert got["n"] == 72 and got["pts"] == [[-200, 1000], [0, 1010], [200, 1000]] and got["rgba"] == [255, 195, 140, 255]
     assert got["pen"] == 17
@@ -203,7 +205,7 @@ def test_typed_text_is_edited_by_its_crdt_and_kept_characters_keep_their_ids():
             gone=gone)
     """)
     assert got["text"] == got["want"] and got["rest"] and got["kept_ids"], got
-    assert got["new_ids"] == ["1"] and got["report"]["inserted"] == len("really ") and got["report"]["deleted"] == len(got["gone"]) + 1
+    assert got["new_ids"] == [str(IP_AUTHOR)] and got["report"]["inserted"] == len("really ") and got["report"]["deleted"] == len(got["gone"]) + 1
     assert got["changed"] == ["RootTextBlock"] and got["same_count"]
 
 
@@ -684,7 +686,7 @@ def test_a_page_the_pipeline_wrote_with_the_daemons_layer_a_picture_and_a_new_la
     assert moved == {"erased": 0, "moved": 1, "added": 1} and live == 2, got["picture"]
     assert shown == [[False, [-50, 900], True], [True, [300, 300], True]], got["picture"]
     assert erased == {"erased": 1, "moved": 0, "added": 0} and left == 1 and dead == [0, 1, 1], got["picture"]
-    assert got["none"] == ["none", 1, True, False, False] and got["made"] == [1, 1, 1], got
+    assert got["none"] == ["none", 1, True, False, False] and got["made"] == [1, 1, IP_AUTHOR], got
 
 
 def test_the_user_draws_on_his_layer_of_a_mirror_page_and_keeps_it():
@@ -760,11 +762,11 @@ def test_the_user_draws_on_his_layer_of_a_mirror_page_and_keeps_it():
     """)
     byte, tablet, old = got["byte"], got["tablet"], got["218"]
     assert byte["drawn"]["prefix"] and byte["drawn"]["added"] == 1 and byte["drawn"]["erased"] == 0, byte
-    assert byte["drawn"]["on_his"][0] == 1 and set(byte["drawn"]["on_his"][1:]) == {134} and not byte["drawn"]["old_page"], byte
-    assert tablet["drawn"] == {"on_his": [1, 134, 134], "his_layers": 1, "old_page": False, "added": 1, "erased": 0, "prefix": False}, tablet
-    assert old["drawn"] == {"on_his": [1, 134], "his_layers": 1, "old_page": False, "added": 1, "erased": 0, "prefix": False}, old
+    assert byte["drawn"]["on_his"][0] == IP_AUTHOR and set(byte["drawn"]["on_his"][1:]) == {134} and not byte["drawn"]["old_page"], byte
+    assert tablet["drawn"] == {"on_his": [IP_AUTHOR, 134, 134], "his_layers": 1, "old_page": False, "added": 1, "erased": 0, "prefix": False}, tablet
+    assert old["drawn"] == {"on_his": [IP_AUTHOR, 134], "his_layers": 1, "old_page": False, "added": 1, "erased": 0, "prefix": False}, old
     for case in (byte, tablet, old):                      # his next note takes his own and leaves the user's stroke
-        assert case["noted"] == {"on_his": [1] + [134] * case["note"], "his_layers": 1, "old_page": False}, case
+        assert case["noted"] == {"on_his": [IP_AUTHOR] + [134] * case["note"], "his_layers": 1, "old_page": False}, case
 
 
 def test_a_page_the_c_reader_does_not_cover_is_written_the_same():
@@ -805,3 +807,44 @@ def test_text_typed_on_a_page_without_any_is_a_new_text_block_and_the_ink_is_kep
     """)
     assert got["kinds"] == ["RootTextBlock"] and got["kept"] and got["n"] == 70, got
     assert got["text"] == [["title", [["Answer", False]]], ["body", [["four ", False], ["moons", True]]]]
+
+
+def test_a_text_whose_items_point_at_each_other_is_said_and_can_only_be_emptied():
+    """The first real collision (a notebook typed in from the app and the tablet within a minute, both numbering as
+    author 1) left the text's items in a ring: no reader orders them. The page says it holds text it cannot read (so
+    nobody takes it for a page without words), refuses an edit of that text, and takes the one edit that needs no
+    order: every character deleted where it stands."""
+    got = _run("""
+        from rmscene import write_blocks
+        from rmscene.crdt_sequence import CrdtSequence, CrdtSequenceItem
+        from paperdaemon.pipeline.page import typed as TY
+        doc = fixture("typed-question")
+        path = os.path.join(M, doc, local.page_id(doc, 1) + ".rm")
+        bl = list(read_blocks(io.BytesIO(open(path, "rb").read())))
+        tb = next(b for b in bl if isinstance(b, ss.RootTextBlock))
+        from rmscene.text import expand_text_item
+        items = [e for it in tb.value.items._items.values() for e in expand_text_item(it)]     # a character an item
+        a, b = items[0], items[1]
+        ring = [CrdtSequenceItem(a.item_id, b.item_id, a.right_id, a.deleted_length, a.value),
+                CrdtSequenceItem(b.item_id, a.item_id, b.right_id, b.deleted_length, b.value)] + items[2:]
+        tb.value.items = CrdtSequence(ring)
+        buf = io.BytesIO(); write_blocks(buf, bl); open(path, "wb").write(buf.getvalue())
+        sc = IP.read_page(doc, 1)
+        live = lambda: sum(len(i.value) for b in read_blocks(io.BytesIO(open(path, "rb").read())) if isinstance(b, ss.RootTextBlock)
+                           for i in b.value.items._items.values() if isinstance(i.value, str) and not i.deleted_length)
+        res = dict(text=sc["text"], unread=sc["textUnread"], live_before=live())
+        try:
+            IP.write_in_place(doc, 1, dict(sc, text={"x": -468, "y": 234, "width": 936, "paras": [
+                {"style": "body", "list": None, "runs": [{"text": "hello", "bold": False, "italic": False}]}]}), sc["stamp"])
+            res["refused"] = False
+        except IP.CannotWrite as ex:
+            res["refused"] = str(ex)
+        w = IP.write_in_place(doc, 1, dict(sc, text={"x": -468, "y": 234, "width": 936, "paras": []}), sc["stamp"])
+        back = IP.read_page(doc, 1)
+        res.update(report=w["text"], live_after=live(), unread_after=back["textUnread"], strokes=w["kept"] == len(sc["layers"][0]["lines"]))
+        out(**res)
+    """)
+    assert got["text"] is None and got["unread"] is True and got["live_before"] > 20, got
+    assert "cannot be read exactly" in got["refused"], got
+    assert got["report"] == {"kept": 0, "deleted": got["report"]["deleted"], "inserted": 0} and got["report"]["deleted"] >= got["live_before"], got
+    assert got["live_after"] == 0 and got["unread_after"] is False and got["strokes"], got

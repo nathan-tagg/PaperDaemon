@@ -9,9 +9,8 @@ unhook handwriting from the text it follows, so a Mirror page is written from it
 - a stroke no longer in the scene stays in the file as the tablet's tombstone: its item id and its neighbors' ids kept,
   `deleted_length` 1, no value, so the links of the strokes around it hold;
 - a stroke with no id (new, a piece of a cut stroke, a stroke moved or changed) is added at the end of its group's
-  sequence (after the last item, before nothing), under an id after the page's highest, by author 1 -- the tablet
-  refuses a page with items of another author (render.HOST_AUTHOR); a stroke whose points, pen or color changed is a
-  tombstone and a new stroke;
+  sequence (after the last item, before nothing), under an id of the editor's OWN author (AUTHOR), counted past the
+  highest id anyone holds on the page; a stroke whose points, pen or color changed is a tombstone and a new stroke;
 - typed text is edited by its CRDT: characters kept keep their ids, deleted ones are marked deleted where they are,
   inserted ones are new items between their neighbors; a paragraph's style is keyed by its newline's id;
 - ink in a group anchored to the text stays in that group, and a new stroke that names that group goes into it;
@@ -52,7 +51,16 @@ from . import fastrm, local
 
 ROOT = CrdtId(0, 1)
 NONE = CrdtId(0, 0)
-AUTHOR = 1                                       # the tablet's own author: every item written here is numbered as its
+# THE EDITOR'S OWN AUTHOR. Everything written here was numbered as the tablet's own author (1), after the page's
+# highest id. The tablet numbers what the user writes on it the same way, so an edit made here while the tablet held
+# writing it had not yet synced took THE SAME IDS as that writing: the tablet merged two different things under one id.
+# The first real case (11-10, a notebook typed in from both sides within a minute): words landed inside a line of the
+# user's, the line lost its first letters, and the text's items were left pointing at each other in a ring, which no
+# reader orders. So the editor has a number of its own: one the tablet opens (render.TABLET_OPENS), that is not the
+# tablet's (1), not a number a second or third device is given (2, 3, ...), and not PaperDaemon's own (100kkkkk,
+# render.is_own: what is written here is the USER's hand, in the app). Its ids are counted past the highest id ANY
+# author holds on the page, so a value it sets is the newest (a layer's name, a paragraph's style), as before.
+AUTHOR = 127
 ITEM_TYPES = (3, 4, 5, 6, 8, 15)                 # glyph, group, stroke, text, tombstone and picture items
 LINE_TYPE = ss.SceneLineItemBlock.BLOCK_TYPE
 TEXT_TYPE = ss.RootTextBlock.BLOCK_TYPE
@@ -175,14 +183,14 @@ def _tombstone(head):
 
 
 def _highest(blocks):
-    """The highest id author 1 holds on the page: its items, its typed characters, its pictures, its nodes and the
-    timestamps of its values (they are counted on the same clock)."""
+    """The highest id anyone holds on the page: every author's items, typed characters, pictures, nodes and the
+    timestamps of values (they are counted on the same clock). The editor's next id is the one after it."""
     from paperdaemon.pipeline import draw as A
-    hi = A.next_free_id(blocks, AUTHOR) - 1
+    hi = A.next_free_id(blocks, None) - 1
 
     def see(c):
         nonlocal hi
-        if isinstance(c, CrdtId) and c.part1 == AUTHOR:
+        if isinstance(c, CrdtId):
             hi = max(hi, c.part2)
 
     def lww(v):
@@ -382,6 +390,22 @@ def _edit_text(text, paras, nid):
             "inserted": sum(1 for i, _v in seq if i not in expanded)}
 
 
+def _wipe_text(text):
+    """Every character of the text deleted where it stands, each item a tombstone of its own length. No order is
+    read, so a text whose order cannot be read (its items in a ring) can still be emptied: the one edit a page in that
+    state takes. -> the counts _edit_text gives."""
+    out, n = [], 0
+    for it in text.items._items.values():
+        if it.deleted_length:
+            out.append(it)
+            continue
+        size = len(it.value) if isinstance(it.value, str) else 1
+        n += size
+        out.append(CrdtSequenceItem(item_id=it.item_id, left_id=it.left_id, right_id=it.right_id, deleted_length=size, value=""))
+    text.items = CrdtSequence(out)
+    return {"kept": 0, "deleted": n, "inserted": 0}
+
+
 # ---------------------------------------------------------------- the edit
 def edit(doc, page_no, data, scene):
     """The page's bytes `data` with the editor's `scene` written into them in place (see the module's note). -> (the new
@@ -409,8 +433,7 @@ def edit(doc, page_no, data, scene):
                                                              deleted_length=head[4], value=0))
     highest = _highest(blocks)
     for head in heads.values():                  # the items' own ids too, strokes among them (not in `blocks`)
-        if head[1].part1 == AUTHOR:
-            highest = max(highest, head[1].part2 + max(head[4], 1) - 1)
+        highest = max(highest, head[1].part2 + max(head[4], 1) - 1)
     ids = [highest]
 
     def nid(n=1):
@@ -505,7 +528,8 @@ def edit(doc, page_no, data, scene):
     if not _same_text(want_text, had_text):
         if want_text is None:
             raise CannotWrite("the save has no typed text where the page has some; to delete it all, send no paragraphs")
-        if len(roots) > 1 or (roots and had_text is None):
+        wipe = len(roots) == 1 and had_text is None and not _tokens(want_text.get("paras"))
+        if (len(roots) > 1 or (roots and had_text is None)) and not wipe:
             raise CannotWrite("the page's typed text cannot be read exactly, so it is not written in place")
         if had_text is not None and any(float(want_text.get(k, had_text[k])) != float(had_text[k]) for k in ("x", "y", "width")):
             raise CannotWrite("moving or resizing the typed text of a tablet page is not written in place")
@@ -513,7 +537,7 @@ def edit(doc, page_no, data, scene):
             k = roots[0]
             t, s, e = frames[k]
             tb = TY.read_preserved(HEADER_V6 + data[s:e])[0]
-            done["text"] = _edit_text(tb.value, want_text.get("paras"), nid)
+            done["text"] = _wipe_text(tb.value) if wipe else _edit_text(tb.value, want_text.get("paras"), nid)
             repl[k] = _one(tb)
         elif _runs(want_text.get("paras")) and any(r for _s, r in _runs(want_text.get("paras"))):
             tb = local._text_block(want_text, nid)
@@ -632,14 +656,8 @@ def edit(doc, page_no, data, scene):
         last[target] = iid
         done["added"] += 1
 
-    # ---- the author table names author 1 when anything new is numbered as it
-    if ids[0] > highest:
-        k = next((k for k, b in enumerate(blocks) if isinstance(b, ss.AuthorIdsBlock)), None)
-        if k is None:
-            raise CannotWrite("the page has no author table")
-        if AUTHOR not in blocks[k].author_uuids:
-            from paperdaemon.pipeline.page import render as R
-            repl[k] = _one(ss.AuthorIdsBlock(author_uuids={**blocks[k].author_uuids, AUTHOR: R.HOST_UUID}))
+    # ---- the page's author table is left as it is: the tablet opens a page whose items are numbered by an author the
+    # table does not list (measured, render.TABLET_OPENS), as it does every page PaperDaemon's own numbers are on
 
     out = [HEADER_V6]
     for k, (t, s, e) in enumerate(frames):
@@ -748,6 +766,8 @@ def _check(new, nblocks, strokes, text):
         raise RuntimeError("the page's stroke blocks do not add up")
     if text is not None:
         back = local.scene_text(new)
+        if back is None and not _tokens(text.get("paras")) and not local.has_text(new):
+            return                               # emptied without its order read (_wipe_text): no character is left
         if back is None or _read_as(back.get("paras")) != _read_as(text.get("paras")):
             raise RuntimeError("the page's typed text did not read back as written")
 

@@ -20,4 +20,8 @@
   pushes on Ctrl+S and close; what cannot be written in place is off there: the template, the page's own layers
   deleted or moved, typed text moved to another column)
 - [ ] 3.2 Check on the real tablet with the maintainer (D4)
+- [x] 3.4 The editor's own author (found 11-10: a notebook typed in from the app and the tablet within a minute, both
+  numbering as author 1, merged two edits under one id; words landed inside the user's line, its first letters went,
+  and the text's items were left in a ring): `inplace.AUTHOR` 127, ids past every author's highest, the author table
+  left alone; a text in a ring said (`textUnread`) and emptied by a save with no paragraphs
 - [x] 3.3 A warning each time Edit the Mirror is turned on; canceling leaves it off (`ui/settings.js`)
