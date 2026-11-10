@@ -320,8 +320,13 @@ def page_image(doc, page, note):
     out = os.path.join(H.QUEUE, "_host_view.png")
     try:
         _t = time.time()
-        ox, oy = R.render(doc, page, out, typed=True, hide=H._hide(),
-                          hide_typed=JOB.hide_typed, hide_images=JOB.hide_images)[4]   # its top-left, in page units
+        # A PAGE WITH NOTHING LEFT ON IT IS AN EMPTY SHEET, and is drawn as one (blank_ok): once a job had erased the
+        # request it was written for, the render refused the bare page, every such job noted "page render: no strokes
+        # and no typed text" as a quiet failure, and the model was told the picture was blank BECAUSE OF A FAILURE and
+        # to place nothing by it -- on a page that really was empty. A render that fails for any other reason still
+        # says so below.
+        ox, oy = R.render(doc, page, out, typed=True, hide=H._hide(), hide_typed=JOB.hide_typed,
+                          hide_images=JOB.hide_images, blank_ok=True)[4]              # its top-left, in page units
         H.log("  render: %.1fs" % (time.time() - _t))
         base = Image.open(out).convert("RGB")
         render_failed = None

@@ -23,5 +23,5 @@
 ## 3. Proof
 
 - [x] 3.1 A real call through the real program by the general adapter (11-10: a forced tool call answered in 2.4 s)
-- [ ] 3.2 A real job in the False Mirror on the maintainer's lineup after the update, the slot read from his saved
-      settings
+- [x] 3.2 A real job in the False Mirror on the maintainer's lineup after the update, the slot read from his saved
+      settings (11-10 on 0.2.42: a handwritten request, a labeled compass rose drawn in 21 s, three turns)
