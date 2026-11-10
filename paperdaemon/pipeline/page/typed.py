@@ -604,15 +604,20 @@ def restyle_bytes(data, wants):
     host = R.author_of("typed")
     _A.with_author(allb, host, R.author_uuid(host))
     paras = _para_keys(tb)
-    n = 0
+    # A PARAGRAPH NAMED TWICE TAKES THE LAST STYLE NAMED FOR IT, set once ("make these checkboxes, and tick the plants
+    # one": the list's four paragraphs checkboxes, then one of them a ticked one -- each asked for its own style back
+    # and the first never read back, so the whole checklist failed)
+    final = {}
     for want, style in wants:
         w = " ".join(str(want).split())
         for text, key in paras:
             if w and " ".join(text.split()) == w:
-                old = tb.value.styles.get(key)
-                was = old.timestamp.part2 if old is not None else 0
-                tb.value.styles[key] = LwwValue(timestamp=CrdtId(host, was + 1), value=ParagraphStyle(int(style)))
-                n += 1
+                final[(key.part1, key.part2)] = (key, int(style))
+    for key, style in final.values():
+        old = tb.value.styles.get(key)
+        was = old.timestamp.part2 if old is not None else 0
+        tb.value.styles[key] = LwwValue(timestamp=CrdtId(host, was + 1), value=ParagraphStyle(style))
+    n = len(final)
     if not n:
         return data, 0
     buf = io.BytesIO()
@@ -620,11 +625,8 @@ def restyle_bytes(data, wants):
     out = buf.getvalue()
     back = _text_block(list(read_blocks(io.BytesIO(out))))
     got = {(k.part1, k.part2): int(getattr(v.value, "value", v.value)) for k, v in back.value.styles.items()}
-    for want, style in wants:
-        w = " ".join(str(want).split())
-        for text, key in paras:
-            if w and " ".join(text.split()) == w and got.get((key.part1, key.part2)) != int(style):
-                raise RuntimeError("a paragraph's style did not read back")
+    if any(got.get(k) != style for k, (_key, style) in final.items()):
+        raise RuntimeError("a paragraph's style did not read back")
     return out, n
 
 
