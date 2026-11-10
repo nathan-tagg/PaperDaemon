@@ -136,6 +136,41 @@ def test_a_promise_binds_the_season_its_letter_came_in():
                    for o in st["planned"]["graves"].values())
 
 
+def test_a_build_asked_for_is_shown_with_what_came_of_it_and_the_user_s_news_first():
+    # the first real game: "build fleet at Harbor Row" was carried out and the orders page never said so
+    st = G.new_state("doc", "quill", seed="de" * 16)
+    row, kettle, archive = (M.find(n) for n in ("Harbor Row", "Kettle Isle", "The Archive"))
+    st["season_no"] = 1                                                   # an autumn
+    st["units"] = {u: v for u, v in st["units"].items() if v["family"] != "quill"}
+    st["units"].update({kettle: {"family": "quill", "kind": R.FLEET}, archive: {"family": "quill", "kind": R.MILITIA}})
+    st["planned"] = {f: {s: R.hold(s) for s in o} for f, o in st["planned"].items()}
+    mine, wants, problems = O.parse(["Kettle Isle holds", "build fleet at Harbor Row", "build fleet at Kettle Isle"], st["units"], "quill")
+    G.season(st, mine, wants, problems, ask_text=None)
+    rows = dict(st["last"]["mine"])
+    assert rows["build fleet at Harbor Row"] == "built" and st["units"][row] == {"family": "quill", "kind": R.FLEET}
+    assert rows["build fleet at Kettle Isle"].startswith("not built")
+    assert st["last"]["others"][0].startswith("The Quills")             # their own news leads the season's
+    # in spring a build is said to wait, not dropped
+    st2 = G.new_state("doc", "quill", seed="de" * 16)
+    G.season(st2, {row: R.hold(row)}, {"build": [(R.FLEET, kettle)], "disband": []}, [], ask_text=None)
+    assert dict(st2["last"]["mine"])["build fleet at Kettle Isle"].startswith("not built: harbors are counted in autumn")
+
+
+def test_a_season_line_s_later_rows_stay_inside_the_margin(tmp_path):
+    from PIL import Image
+    from paperdaemon.pipeline.games.concord import pages as PG
+    st = G.new_state("doc", "quill", seed="ef" * 16)
+    long = ("The Shellbys: Militia Tanglewood supports The Senate Steps to Hale's Landing (gave); Fleet The Courthouse supports "
+            "The Senate Steps to Hale's Landing (gave); Fleet The Strip holds (held); Militia Hale's Landing to Clerk's Row (failed)")
+    st["log"] = [{"season_no": 0, "lines": [long, long]}]
+    out = str(tmp_path / "log.png")
+    PG.log_png(st, out)
+    im = Image.open(out).convert("L")
+    k = im.width / float(PG.PAGE_W)
+    right = im.crop((int((PG.X1 + 4) * k), 0, im.width, im.height))
+    assert right.getextrema()[0] > 200                                    # nothing drawn past the right margin
+
+
 def test_a_letters_page_takes_the_letters_that_fit_whole():
     # the first real game: seven letters to a page by count, and the seventh ended mid-sentence at the page's foot
     from paperdaemon.pipeline.draw import scaled as SD

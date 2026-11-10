@@ -259,13 +259,25 @@ def season(state, my_orders, wants, problems, ask_text, log=None):
                 continue
             units, notes = R.adjust(units, owners, f, wants if f == me else None)
             autumn_notes += ["%s %s" % (state["families"][f]["name"], x) for x in notes]
+            if f == me:
+                mine_rows += _asked_rows(wants, notes)
         win = R.winner(owners, n // 2 + 1)
         if win:
             state["status"], state["winner"] = "won", win
             autumn_notes.append("THE CONCORD IS WON by %s" % " and ".join(state["families"][f]["name"] for f in win))
+    if n % 2 == 0:
+        # a build or a disband written in spring: said, not dropped without a word
+        mine_rows += [("build %s at %s" % (k, M.NAMES[s]), "not built: harbors are counted in autumn") for k, s in wants.get("build") or []]
+        mine_rows += [("disband %s" % M.NAMES[s], "not disbanded: harbors are counted in autumn") for s in wants.get("disband") or []]
     state["units"] = units
+    lines = list(dict.fromkeys(lines))                    # a word kept twice in one season is said once
     state["log"].append({"season_no": n, "lines": lines + autumn_notes})
-    state["last"] = {"mine": mine_rows, "problems": list(problems), "others": [x for x in retreat_notes + autumn_notes][:6]}
+    # WHAT TOUCHED THE USER COMES FIRST among the season's other news on their page (six lines of it)
+    news = retreat_notes + autumn_notes
+    own = _whose(state["families"][me]["name"])
+    news = [x for x in news if x.startswith(state["families"][me]["name"]) or x.startswith(own)] + \
+           [x for x in news if not (x.startswith(state["families"][me]["name"]) or x.startswith(own))]
+    state["last"] = {"mine": mine_rows, "problems": list(problems), "others": news[:6]}
     state["last_result"] = {"contested": sorted(result["contested"]), "orders": result["orders"], "units_before": units_before}
     state["season_no"] = n + 1
     note = "%s resolved: %s" % (PG.season_label(n), "; ".join(r[0] + " -- " + r[1] for r in mine_rows) or "no orders of yours")
@@ -289,6 +301,20 @@ def season(state, my_orders, wants, problems, ask_text, log=None):
                 state["letters"].append({"from": f, "to": me, "text": text, "season_no": state["season_no"], "why": why})
         state["rng"] = rng.state()
     return note
+
+
+def _asked_rows(wants, notes):
+    """The user's builds and disbands as they asked for them, each with what came of it, for their page (the first
+    real game: "build fleet at Harbor Row" was carried out and the orders page never said so)."""
+    rows = []
+    for kind, s in (wants or {}).get("build") or []:
+        done = ("built a %s at %s" % (kind, M.NAMES[s])) in notes
+        rows.append(("build %s at %s" % (kind, M.NAMES[s]),
+                     "built" if done else "not built: a build takes an empty home harbor of yours, and more harbors than units"))
+    for s in (wants or {}).get("disband") or []:
+        done = any(x.startswith("disbanded") and x.endswith("at " + M.NAMES[s]) for x in notes)
+        rows.append(("disband %s" % M.NAMES[s], "disbanded" if done else "not disbanded: you hold a harbor for every unit"))
+    return rows
 
 
 # ------------------------------------------------------------------------------ a turn

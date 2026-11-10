@@ -324,6 +324,9 @@ def letters_plan(state):
     return out
 
 
+HANG = 36                                   # how far a season line's later rows hang in
+
+
 def log_png(state, out):
     """THE SEASONS: one line a family a season, the newest last; the oldest leave when the page is full."""
     from paperdaemon.pipeline.draw import scaled as SD
@@ -336,7 +339,12 @@ def log_png(state, out):
     for e in state.get("log") or []:
         lines = [("caps", season_label(e["season_no"]))]
         for ln in e.get("lines") or []:
+            # a line's later rows hang indented, so they are wrapped to the room that leaves (wrapped to the full
+            # width, they ran past the right margin by the indent)
+            ln = " ".join(str(ln).split())
             wrapped = AD._wrap(d, ln, body_f, CW)
+            if len(wrapped) > 1:
+                wrapped = [wrapped[0]] + AD._wrap(d, ln[len(wrapped[0]):].strip(), body_f, CW - HANG)
             lines += [("body", wrapped[0])] + [("more", w) for w in wrapped[1:]]
         blocks.append(lines)
     room = int((AD.FOOT_Y - y) / body_lh)
@@ -352,7 +360,7 @@ def log_png(state, out):
             if kind == "caps":
                 AD._caps(d, (X0, y + 8), text)
             else:
-                d.text((X0 + (36 if kind == "more" else 0), y), text, font=body_f, fill=INK)
+                d.text((X0 + (HANG if kind == "more" else 0), y), text, font=body_f, fill=INK)
             y += body_lh
         y += 18
     im.save(out)
