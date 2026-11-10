@@ -159,11 +159,12 @@ def _run_game(step):
         st = CO.start(what, H._ask_text if H._llm_up() else None, doc=doc, after=JOB.page_id, log=H.log, workdir=H.QUEUE)
         _own_writes()
         nums = [i + 1 for i, q in enumerate(R.live_pages(doc)) if q["id"] in (st.get("pages") or [])]
-        return True, ("The Concord of Merrow Bay is on pages %d to %d of this notebook: you play %s; the map is this page, "
-                      "your orders go on page %d under the rule, letters on page %d"
+        return True, ("The Concord of Merrow Bay is on pages %d to %d of this notebook: you play %s; your orders and letters go "
+                      "on this page under the rule, the map is page %d, the letters page %d, the seasons page %d"
                       % (min(nums), max(nums), st["families"][st["user"]]["name"],
-                         [i + 1 for i, q in enumerate(R.live_pages(doc)) if q["id"] == st["orders_page"]][0],
-                         [i + 1 for i, q in enumerate(R.live_pages(doc)) if q["id"] == st["letters_pages"][0]][0]))
+                         [i + 1 for i, q in enumerate(R.live_pages(doc)) if q["id"] == st["map_page"]][0],
+                         [i + 1 for i, q in enumerate(R.live_pages(doc)) if q["id"] == st["letters_pages"][0]][0],
+                         [i + 1 for i, q in enumerate(R.live_pages(doc)) if q["id"] == st["log_page"]][0]))
     from paperdaemon import paths as CT_
     if not CT_.games_installed():
         # chess opponents and chat partners are characters from installed content

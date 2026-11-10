@@ -22,14 +22,11 @@ NAMES = {"quill": "The Quills", "oakes": "The Oakes", "holloway": "The Holloways
          "shellby": "The Shellbys", "graves": "The Graves", "stroud": "The Strouds"}
 MARKS = {"quill": "Qu", "oakes": "Oa", "holloway": "Ho", "hale": "Ha", "shellby": "Sh", "graves": "Gr", "stroud": "St"}
 
-ORDERS_READ_PROMPT = """This is a player's handwriting under the rule on the orders page of a game of the Concord of Merrow Bay: one order
-a line, naming the shires of the bay's map. The shires are: {names}.
+READ_PROMPT = """This is a player's handwriting under the rule on their page of the Concord of Merrow Bay, a game of orders and letters.
+Orders are one a line and name the shires of the bay's map: {names}. A letter to one of the families ({families}) begins
+with who it is to and may run on for several lines.
 Copy every line exactly as written, in order, each line separated from the next by " / ". Read a shire's name as the
-nearest of the names above. Answer with one line: ORDERS: <first line> / <second line> / ..."""
-
-LETTER_READ_PROMPT = """This is a player's handwriting under the rule on the letters page of a game of the Concord of Merrow Bay: a letter, or
-letters, to one of the bay's families: {families}. A letter begins with who it is to.
-Copy everything exactly as written, each line separated from the next by " / ". Answer with one line: LETTER: <text>"""
+nearest of the names above. Answer with one line: WRITING: <first line> / <second line> / ..."""
 
 
 def _log(log, msg):
@@ -151,7 +148,7 @@ def _draw_letters(state, doc, workdir, log=None):
     while len(pages) < len(plan_):
         new = [pid for pid, _ in LIB.insert_pages(doc, pages[-1], 1)]
         pages.extend(new)
-        state["pages"] = [state["map_page"], state["orders_page"]] + pages + [state["log_page"]]
+        state["pages"] = [state["orders_page"], state["map_page"]] + pages + [state["log_page"]]
         _log(log, "  concord: a letters page added (%d)" % len(pages))
     stamp = int(time.time() * 1000)
     for i, (first, last) in enumerate(plan_):
@@ -168,14 +165,15 @@ def _draw_letters(state, doc, workdir, log=None):
 
 # ------------------------------------------------------------------------------ the start
 def start(what, ask_text=None, doc=None, after=None, log=None, workdir=None):
-    """A new Concord in the notebook `doc`: the page `after` (cleared by the caller) becomes the map, and the orders,
-    letters and seasons pages go right after it. -> state."""
+    """A new Concord in the notebook `doc`: the page `after` (cleared by the caller) becomes the user's page -- their
+    orders and letters are written there, under the rule, and it carries the tag they gave it, so a sync on it is a
+    turn -- and the map, the letters and the seasons pages go right after it. -> state."""
     from paperdaemon.remarkable import library as LIB
     workdir = workdir or os.path.join(paths.state_dir(), "rm-queue")
     user = family_from(what)
     state = new_state(doc, user)
     ids = [pid for pid, _ in LIB.insert_pages(doc, after, 3)]
-    state["map_page"], state["orders_page"], state["letters_pages"], state["log_page"] = after, ids[0], [ids[1]], ids[2]
+    state["orders_page"], state["map_page"], state["letters_pages"], state["log_page"] = after, ids[0], [ids[1]], ids[2]
     state["page_id"] = state["orders_page"]
     state["pages"] = [after, ids[0], ids[1], ids[2]]
     CH.save_state(state)                                  # saved before its pages are drawn: a job on one finds it
@@ -297,62 +295,93 @@ def _lines(typed, written):
     return out
 
 
+def sort_lines(state, lines):
+    """The user's lines -> (letters [(family, text)], order lines, problems [(line, why)]). A line that addresses a
+    family opens a letter, and every line after it is that letter's until the next address or the next order of
+    theirs; a line that reads as an order of theirs (or a build or disband) is an order; a line that is neither,
+    with no letter open, is a problem."""
+    me = state["user"]
+    letters, order_lines, problems, open_ = [], [], [], False
+    for line in lines:
+        a = LT.address(state, line)
+        if a:
+            letters.append([a[0], a[1]])
+            open_ = True
+            continue
+        o = O.parse_line(line)
+        is_order = bool(o.get("want"))
+        if not is_order and o.get("kind") != "unknown":
+            u = state["units"].get(o["unit"])
+            is_order = bool(u and u["family"] == me and R.legal(state["units"], o)[0])
+        if is_order and not (open_ and o.get("kind") == R.HOLD and "text" in o and len(line.split()) > 4):
+            order_lines.append(line)
+            open_ = False
+            continue
+        if open_:
+            letters[-1][1] = (letters[-1][1] + " " + line).strip()
+            continue
+        problems.append((line, o.get("why") or ("no unit of yours at %s" % M.NAMES.get(o.get("unit"), "there"))))
+    return [(f, t) for f, t in letters if t], order_lines, problems
+
+
+def deliver(state, letters, ask_text, log=None):
+    """The user's letters go out and the families answer -> the names of those who answered."""
+    me = state["user"]
+    rng = CH.Rng(**state["rng"])
+    answered = []
+    for fid, body in letters:
+        if state["families"][fid]["out"]:
+            continue
+        state["letters"].append({"from": me, "to": fid, "text": body, "season_no": int(state["season_no"])})
+        say, promise = "", None
+        if ask_text is not None:
+            try:
+                say, promise = LT.answer(state, fid, body, ask_text, rng, log)
+            except Exception as ex:
+                _log(log, "  concord: %s's answer failed: %s" % (fid, str(ex)[:80]))
+        if say:
+            state["letters"].append({"from": fid, "to": me, "text": say, "season_no": int(state["season_no"]),
+                                     "promise": promise["kind"] if promise else None})
+            answered.append(state["families"][fid]["name"])
+    state["rng"] = rng.state()
+    return answered
+
+
 def turn(doc, page_no, page_id, state, ask_text, ask_vision, paint=None, log=None, workdir=None):
-    """A job on one of the game's pages: the orders page resolves a season; the letters page delivers letters; the
-    map and the seasons take nothing. -> (outcome, note)."""
+    """A job on the user's page: their letters go out and are answered first; then, when they wrote orders, the season
+    resolves. The other pages take nothing. -> (outcome, note)."""
     from paperdaemon.pipeline.games import inputarea as IA
     workdir = workdir or os.path.join(paths.state_dir(), "rm-queue")
     if state.get("status") != "playing":
         return "skipped", "the Concord is over: %s" % (" and ".join(state["families"][f]["name"] for f in state.get("winner") or []) or "finished")
+    if page_id != state.get("orders_page"):
+        return "skipped", "concord: orders and letters go on the game's first page, under the rule"
     me = state["user"]
-    if page_id == state.get("orders_page"):
-        typed, written, top = _read(doc, page_no, ask_vision, workdir,
-                                    ORDERS_READ_PROMPT.format(names=", ".join(M.NAMES[s] for s in M.SHIRES)), "ORDERS")
-        lines = _lines(typed, written)
-        if not lines:
-            return "skipped", "concord: no orders written under the rule yet"
-        my_orders, wants, problems = O.parse(lines, state["units"], me)
-        if not my_orders and not wants["build"] and not wants["disband"] and not problems:
-            return "skipped", "concord: nothing read as an order"
-        note = season(state, my_orders, wants, problems, ask_text, log)
-        IA.clear(doc, page_no, top)
-        _draw(state, doc, workdir, log=log)
-        CH.save_state(state)
-        _log(log, "  concord: %s" % note[:200])
-        return "done", "concord: " + note
-    if page_id in (state.get("letters_pages") or []):
-        typed, written, top = _read(doc, page_no, ask_vision, workdir,
-                                    LETTER_READ_PROMPT.format(families=", ".join("%s (%s)" % (d["name"], d["player"]) for f, d in state["families"].items() if f != me)),
-                                    "LETTER")
-        text = "\n".join(_lines(typed, written))
-        if not text.strip():
-            return "skipped", "concord: no letter written under the rule yet"
-        posted = LT.families_named(state, text)
-        if not posted:
-            return "skipped", "concord: the letter names no family: begin it with who it is to"
-        rng = CH.Rng(**state["rng"])
-        answered = []
-        for fid, body in posted:
-            if state["families"][fid]["out"]:
-                continue
-            state["letters"].append({"from": me, "to": fid, "text": body, "season_no": int(state["season_no"])})
-            say, promise = ("", None)
-            if ask_text is not None:
-                try:
-                    say, promise = LT.answer(state, fid, body, ask_text, rng, log)
-                except Exception as ex:
-                    _log(log, "  concord: %s's answer failed: %s" % (fid, str(ex)[:80]))
-            if say:
-                state["letters"].append({"from": fid, "to": me, "text": say, "season_no": int(state["season_no"]),
-                                         "promise": promise["kind"] if promise else None})
-                answered.append(state["families"][fid]["name"])
-        state["rng"] = rng.state()
-        IA.clear(doc, page_no, top)
-        _draw(state, doc, workdir, which=("letters",), log=log)
-        CH.save_state(state)
-        return "done", "concord: letters delivered to %s%s" % (", ".join(state["families"][f]["name"] for f, _ in posted),
-                                                               ("; answered by " + ", ".join(answered)) if answered else "; no answer came")
-    return "skipped", "concord: write your orders on the orders page, or a letter on the letters page"
+    typed, written, top = _read(doc, page_no, ask_vision, workdir, READ_PROMPT.format(
+        names=", ".join(M.NAMES[s] for s in M.SHIRES),
+        families=", ".join("%s (%s)" % (d["name"], d["player"]) for f, d in state["families"].items() if f != me)), "WRITING")
+    lines = _lines(typed, written)
+    if not lines:
+        return "skipped", "concord: nothing written under the rule yet"
+    letters, order_lines, problems = sort_lines(state, lines)
+    notes = []
+    if letters:
+        answered = deliver(state, letters, ask_text, log)
+        notes.append("letters to %s%s" % (", ".join(state["families"][f]["name"] for f, _ in letters),
+                                          (", answered by " + ", ".join(answered)) if answered else ", no answer came"))
+    my_orders, wants, more = O.parse(order_lines, state["units"], me)
+    problems += more
+    if my_orders or wants["build"] or wants["disband"]:
+        notes.append(season(state, my_orders, wants, problems, ask_text, log))
+    elif problems and not letters:
+        notes.append("nothing read as an order: " + "; ".join("%s (%s)" % p for p in problems[:3]))
+        state["last"] = dict(state.get("last") or {}, problems=list(problems))
+    IA.clear(doc, page_no, top)
+    _draw(state, doc, workdir, log=log)
+    CH.save_state(state)
+    note = "concord: " + "; ".join(notes)
+    _log(log, "  " + note[:240])
+    return "done", note
 
 
-__all__ = ["TITLE", "CAST", "NAMES", "MARKS", "family_from", "new_state", "plan", "start", "season", "turn"]
+__all__ = ["TITLE", "CAST", "NAMES", "MARKS", "family_from", "new_state", "plan", "start", "season", "sort_lines", "deliver", "turn"]

@@ -42,10 +42,8 @@ Write {writer_name} a short letter, two to four sentences, in your own voice, si
 only: {{"say": "the letter"}}"""
 
 
-def families_named(state, text):
-    """The families a letter addresses: 'To Harriet,' / 'Harriet:' / 'Dear Judge Shellby,' / 'Oakes --' at the start of
-    a line -> [(family id, the letter's text)], in order; text before any address goes to the first family named, or
-    to nobody."""
+def _names(state):
+    """Every word a family answers to (its id, its name, who plays it) -> family id."""
     names = {}
     for fid, f in (state.get("families") or {}).items():
         if fid == state.get("user"):
@@ -55,31 +53,41 @@ def families_named(state, text):
                 part = part.strip("'\".:;()")
                 if len(part) >= 3 and part not in ("the", "and", "judge", "mayor", "senator", "family", "families"):
                     names[part] = fid
-    out, cur = [], None
+                    if part.endswith("s") and len(part) > 4:
+                        names[part[:-1]] = fid                 # "Hales" and "Hale"
+    return names
+
+
+def address(state, line):
+    """A line that opens a letter -- "To Harriet,", "Harriet:", "Dear Judge Shellby, a fair season to you", "Hales --
+    stay out" -> (family id, the rest of the line); else None. The address stands at the line's start and ends with a
+    mark (a comma, a colon, a dash), or is the whole line."""
+    names = _names(state)
+    m = re.match(r"^(?:to|dear|for)?\s*([A-Za-z'][A-Za-z' .]{1,40}?)\s*(?:[,:;\-—]+\s*(.*))?$", line.strip(), re.I)
+    if not m:
+        return None
+    words = [w.strip("'") for w in re.split(r"[\s.]+", m.group(1).lower()) if w.strip("'")]
+    hit = next((names[w] for w in words if w in names), None)
+    # every word of the address is a name, a title or a greeting: "the Hales", "Judge Shellby", never "leave the Hales"
+    extra = [w for w in words if w not in names and w not in ("the", "judge", "mayor", "senator", "family", "my", "dear", "to", "for", "mr", "mrs", "ms", "miss")]
+    if not hit or extra:
+        return None
+    return hit, (m.group(2) or "").strip()
+
+
+def families_named(state, text):
+    """The letters in a text: each begins with a line that addresses a family (address), and the lines after it are
+    its words until the next address -> [(family id, the letter's text)], in order; lines before any address go to
+    nobody."""
+    out = []
     for raw in str(text or "").splitlines():
         line = raw.strip()
         if not line:
             continue
-        m = re.match(r"^(?:to|dear|for)?\s*([A-Za-z'][A-Za-z' .]{1,40}?)\s*[,:;\-—]+\s*(.*)$", line, re.I)
-        fid = None
-        if m:
-            for word in re.split(r"[\s.]+", m.group(1).lower()):
-                if word.strip("'") in names:
-                    fid = names[word.strip("'")]
-            if fid:
-                cur = fid
-                out.append([fid, []])
-                if m.group(2).strip():
-                    out[-1][1].append(m.group(2).strip())
-                continue
-        if cur is None:
-            # the first line of all: a family's name anywhere in it starts a letter to them
-            hit = next((names[w.strip("'\".:;")] for w in line.lower().split() if w.strip("'\".:;") in names), None)
-            if hit:
-                cur = hit
-                out.append([hit, [line]])
-                continue
-        if out:
+        a = address(state, line)
+        if a:
+            out.append([a[0], [a[1]] if a[1] else []])
+        elif out:
             out[-1][1].append(line)
     return [(fid, " ".join(lines)) for fid, lines in out if lines]
 
@@ -240,4 +248,4 @@ def settle(state, result):
     return notes
 
 
-__all__ = ["families_named", "answer", "unasked", "settle", "board_words", "PROMISES"]
+__all__ = ["address", "families_named", "answer", "unasked", "settle", "board_words", "PROMISES"]

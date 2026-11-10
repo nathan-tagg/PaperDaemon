@@ -148,7 +148,7 @@ def orders_png(state, out):
     could not be read, and the cast's moves that touched them; then a hairline and the space to write this season's."""
     from paperdaemon.pipeline.draw import scaled as SD
     im, d = SD.canvas(PAGE_W, PAGE_H)
-    y = AD._header(d, "Orders", "%s  ·  one order a line, under the rule" % season_words(state))
+    y = AD._header(d, "Orders and letters", "%s  ·  write under the rule" % season_words(state))
     body_f, body_lh, _ = AD._style("body")
     small_f, small_lh, _ = AD._style("small")
     last = state.get("last") or {}
@@ -187,8 +187,10 @@ def orders_png(state, out):
         for line in AD._wrap(d, "Your units stand on your home harbors. Write an order for each under the rule, one a "
                                 "line: 'Harbor Row to Fogwater' moves, 'Harbor Row holds' holds, 'the Archive supports "
                                 "Harbor Row to Fogwater' backs a move, 'Fogwater convoys Harbor Row to Kettle Isle' "
-                                "carries a militia by sea. A unit with no order holds. The season resolves when the "
-                                "page syncs; in autumn, 'build fleet at Harbor Row' and 'disband Fogwater' are heard too.",
+                                "carries a militia by sea. A unit with no order holds. In autumn, 'build fleet at Harbor "
+                                "Row' and 'disband Fogwater' are heard too. A letter to a family starts with its name "
+                                "('To Harriet, ...') and may run on; letters are answered first, and the season resolves "
+                                "when there are orders. Everything written is read when the page syncs.",
                             body_f, CW):
             d.text((X0, y), line, font=body_f, fill=GRAY)
             y += body_lh
@@ -202,13 +204,12 @@ def letters_png(state, out, first, last_index):
     the user's own as they were read; the last page keeps the space to write under a hairline."""
     from paperdaemon.pipeline.draw import scaled as SD
     im, d = SD.canvas(PAGE_W, PAGE_H)
-    y = AD._header(d, "Letters", "%s  ·  write to a family under the rule, its name first" % season_words(state)
-                   if last_index >= len(state.get("letters") or []) - 1 else "")
+    y = AD._header(d, "Letters", season_words(state) if last_index >= len(state.get("letters") or []) - 1 else "")
     body_f, body_lh, _ = AD._style("body")
     name_f, name_lh, _ = AD._style("name")
     italic_f = AD._style("italic")[0]
     letters = (state.get("letters") or [])[first:last_index + 1]
-    bottom = ORDERS_TOP - 40 if last_index >= len(state.get("letters") or []) - 1 else AD.FOOT_Y
+    bottom = AD.FOOT_Y
     for L in letters:
         who = "You, to %s" % family_name(state, L["to"]) if L.get("from") == state.get("user") else family_name(state, L["from"])
         AD._caps(d, (X0, y), season_label(L.get("season_no", 0)))
@@ -224,8 +225,6 @@ def letters_png(state, out, first, last_index):
         y += 28
         if y > bottom:
             break
-    if last_index >= len(state.get("letters") or []) - 1:
-        d.line((X0, ORDERS_TOP - 2, X1, ORDERS_TOP - 2), fill=RULE, width=2)
     im.save(out)
     return out
 
