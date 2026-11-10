@@ -1,0 +1,16 @@
+{
+  "id": "claude-haiku-5.5",
+  "name": "Claude Haiku 5.5",
+  "server": "The Anthropic API, or the command line `claude`",
+  "models": [
+    "Claude Haiku 5.5"
+  ],
+  "extends": "claude-code",
+  "notes": "Claude Haiku 5.5 at the effort the program or the API gives it when none is asked for. To set one on the command line, type it in the Command: `claude --effort low`.",
+  "patterns": [
+    "claude-haiku-5[.-]5",
+    "^haiku$"
+  ],
+  "vision": true,
+  "forced_tool": true
+}

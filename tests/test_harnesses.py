@@ -25,7 +25,9 @@ ClaudeOpus55 = harnesses.get("claude-opus-5.5")
     ("text", "qwen3-14b-q4_k_m.gguf", DefaultText),
     ("text", "Qwen3.6-27B-Base-Q8_0.gguf", DefaultText),
     ("text", "claude-opus-5-5", ClaudeOpus55),
-    ("text", "claude-sonnet-5-5", DefaultText),
+    ("text", "claude-sonnet-5-5", harnesses.get("claude-sonnet-5.5")),
+    ("text", "haiku", harnesses.get("claude-haiku-5.5")),
+    ("text", "claude-sonnet-4-6", DefaultText),
     ("image", "flux-2-klein-9b-Q8_0.gguf", Flux2Klein9B),
     ("image", "FLUX.2-klein-9B-BF16.gguf", Flux2Klein9B),
     ("image", "flux-2-klein-base-9b.gguf", DefaultImage),     # undistilled: different parameters
@@ -262,7 +264,8 @@ def test_the_shipped_example_harnesses_are_valid_and_not_active():
 
 def test_shipped_harnesses_are_data_loaded_by_the_users_loader():
     folder = os.path.join(os.path.dirname(harnesses.__file__), "shipped")
-    assert sorted(os.listdir(folder)) == ["claude-code.json", "claude-opus-5.5.json", "default-image.json", "default-text.json",
+    assert sorted(os.listdir(folder)) == ["claude-code.json", "claude-haiku-5.5.json", "claude-opus-5.5.json",
+                                          "claude-sonnet-5.5.json", "default-image.json", "default-text.json",
                                           "flux.2-klein-9b.json", "qwen3.6-27b.json", "qwen3.8-27b.json",
                                           "z-image-turbo.json"]
     assert all(p.source == "shipped" and p.file for p in harnesses.BUILT_IN)

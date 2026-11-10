@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.48
+
+- Harnesses for Claude Sonnet 5.5 (medium effort) and Claude Haiku 5.5, for a lineup whose text model is the command `claude` or the Anthropic API. They are picked by the model's name, as the Opus one is.
+- A job's log says, for each call to a hosted or command-line model, how many tokens the model read anew, how many came from the provider's cache, and how many it wrote, as it already did for a local model.
+
 ## 0.2.47
 
 - An argument you type in a command-line lineup's Command stands over what the harness would add: with the command `claude --effort high`, the model runs at high effort though its harness says medium. The same goes for any argument a harness adds as an option.

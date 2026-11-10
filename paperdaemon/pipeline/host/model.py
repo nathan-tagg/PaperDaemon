@@ -181,7 +181,11 @@ def chat(messages, tool_choice="required", temperature=None):
         H.log("  RUNAWAY cut off after %d chunks (%d chars of reasoning, %d of content, %d calls); "
             "it ended: %r" % (n, usage["reasoning_chars"], sum(len(c) for c in content), len(calls), _tail))
         msg["tool_calls"] = None                # whatever was mid-way is not a call
-    if timings:
+    if timings and timings.get("prompt_ms") is None and timings.get("predicted_ms") is None:
+        # a model reached through an adapter that reports no times of its own (a hosted API, a command line)
+        H.log("  turn: %s prompt tok (%s cached), %s out in %.1fs"
+            % (timings.get("prompt_n"), timings.get("cache_n", "?"), timings.get("predicted_n"), time.time() - _t0))
+    elif timings:
         H.log("  turn: %s prompt tok (%s cached) in %.1fs, %s out in %.1fs"
             % (timings.get("prompt_n"), timings.get("cache_n", "?"),
                (timings.get("prompt_ms") or 0) / 1000.0, timings.get("predicted_n"),

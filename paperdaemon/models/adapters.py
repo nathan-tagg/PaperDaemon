@@ -348,8 +348,13 @@ def openai_stream(reply):
                                for i, c in enumerate(reply["tool_calls"])]
     stop = {"tool_use": "tool_calls", "end_turn": "stop", "max_tokens": "length"}.get(reply.get("stop"), reply.get("stop"))
     usage = reply.get("usage") or {}
-    events = [{"choices": [{"index": 0, "delta": delta, "finish_reason": stop or "stop"}]},
-              {"choices": [], "usage": {"prompt_tokens": usage.get("input"), "completion_tokens": usage.get("output")}}]
+    last = {"choices": [], "usage": {"prompt_tokens": usage.get("input"), "completion_tokens": usage.get("output")}}
+    if usage.get("cached") is not None and usage.get("input") is not None:
+        # how much of what the model read came from the provider's cache, for the job's log (the host's "turn:" line,
+        # as a local server's own timings give it): read anew, read from the cache, written
+        last["timings"] = {"prompt_n": max(0, int(usage["input"]) - int(usage["cached"])), "cache_n": int(usage["cached"]),
+                           "predicted_n": usage.get("output")}
+    events = [{"choices": [{"index": 0, "delta": delta, "finish_reason": stop or "stop"}]}, last]
     return b"".join(b"data: " + json.dumps(e).encode() + b"\n\n" for e in events) + b"data: [DONE]\n\n"
 
 
