@@ -452,6 +452,23 @@ def erased_words(steps):
     return "erase " + (", ".join(parts[:-1]) + " and " + parts[-1] if len(parts) > 1 else parts[0])
 
 
+def checkbox_words(steps):
+    """What a job's checkbox steps made, in a reader's words: "make 4 checkboxes, 1 of them ticked". The plan's own
+    wording names each paragraph by its id ("make para:2, para:3 the tablet's checkboxes"). A paragraph two steps
+    named (a checkbox, then a ticked one) is one box. -> "" when there was no such step."""
+    box = {}
+    for q in steps or ():
+        if q.get("do") == "checkbox":
+            for t in q.get("targets") or []:
+                box[t] = bool(q.get("checked"))
+    if not box:
+        return ""
+    n, ticked = len(box), sum(1 for v in box.values() if v)
+    if ticked == n:
+        return "make %s" % ("a ticked checkbox" if n == 1 else "%d ticked checkboxes" % n)
+    return "make %s%s" % ("a checkbox" if n == 1 else "%d checkboxes" % n, (", %d of them ticked" % ticked) if ticked else "")
+
+
 def brief(steps, extra=None):
     """The whole list with the current step marked -- the shape of the job in a few lines."""
     cur = current(steps)

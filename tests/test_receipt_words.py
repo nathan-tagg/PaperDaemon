@@ -19,3 +19,12 @@ def test_what_was_erased_is_counted_not_listed():
     assert ST.erased_words([{"do": "draw", "what": "a house", "status": "done"}]) == "" and ST.erased_words([]) == ""
     # the plan's own wording, for the model, still names each
     assert ST.describe(_erase("mark:1..3")) == "erase ink mark 1, ink mark 2, ink mark 3"
+
+
+def test_checkboxes_made_are_counted_not_named_by_id():
+    box = lambda targets, checked=False: {"do": "checkbox", "what": "", "targets": targets, "checked": checked, "status": "done"}
+    # a real receipt read "make para:2, para:3, para:4, para:5 the tablet's checkboxes; make para:3 the tablet's ticked checkboxes"
+    assert ST.checkbox_words([box(["para:2", "para:3", "para:4", "para:5"]), box(["para:3"], True)]) == "make 4 checkboxes, 1 of them ticked"
+    assert ST.checkbox_words([box(["para:2"])]) == "make a checkbox"
+    assert ST.checkbox_words([box(["para:2", "para:3"], True)]) == "make 2 ticked checkboxes"
+    assert ST.checkbox_words([_erase("mark:1")]) == ""

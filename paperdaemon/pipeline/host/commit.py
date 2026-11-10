@@ -287,10 +287,10 @@ def t_commit():
             from paperdaemon.pipeline.page import typed as _TY
             H._snap("commit: restyle typed text")
             n_ = _TY.restyle(doc, page, list(JOB.restyle_typed))
-            H.log("  typed paragraphs restyled at commit: %d of %d" % (n_, len(JOB.restyle_typed)))
-            if n_ < len(JOB.restyle_typed):
-                erase_failed.append("typed: %d paragraph(s) to make checkboxes were not found"
-                                    % (len(JOB.restyle_typed) - n_))
+            asked_ = _TY.asked_paragraphs(JOB.restyle_typed)       # a paragraph two steps named is one paragraph
+            H.log("  typed paragraphs restyled at commit: %d of %d" % (n_, asked_))
+            if n_ < asked_:
+                erase_failed.append("typed: %d paragraph(s) to make checkboxes were not found" % (asked_ - n_))
         except Exception as ex:
             H._warn("restyling typed text at commit", ex)
             erase_failed.append("typed restyle: %s: %s" % (type(ex).__name__, str(ex)[:90]))

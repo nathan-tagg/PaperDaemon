@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.46
+
+- A checklist with one item ticked is no longer reported as failed. 0.2.45 made the checkboxes, then counted the ticked paragraph twice, said one paragraph was not found and left a retry box on the page.
+- Receipts are in plain words throughout: "make 4 checkboxes, 1 of them ticked" and "highlight 'The harbor master rings a bell at noon.'" instead of paragraphs named by their ids.
+
 ## 0.2.45
 
 - "Make these checkboxes, and tick the plants one" works. When two steps of a job named the same typed paragraph (a checkbox, then a ticked one), the whole checklist failed with "a paragraph's style did not read back"; the paragraph now takes the last style named for it.

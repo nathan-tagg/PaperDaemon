@@ -919,14 +919,21 @@ def _host_note(problems):
             return "write"
         if q["do"] == "erase":
             return ERASED                         # every erase of the job said once, in a reader's words (below)
+        if q["do"] == "checkbox":
+            return BOXES                          # and every checkbox step, the same way
+        if q["do"] in ST.MARK_UP and q.get("words"):
+            # a mark-up by the words it marked, without the paragraph's id ("... in para:1")
+            return "%s %r" % ("strike through" if q["do"] == "strike" else q["do"], q["words"])
         return ST.describe(q)
-    ERASED = "\0erased"
+    ERASED, BOXES = "\0erased", "\0boxes"
     did = [d for d in (_said(q) for q in steps if q["status"] == "done") if d]
-    words = ST.erased_words([q for q in steps if q["status"] == "done" and q["do"] == "erase" and _kept_out(q, kept)])
-    first = did.index(ERASED) if ERASED in did else None
-    did = [d for d in did if d != ERASED]
-    if first is not None and words:
-        did.insert(first, words)
+    done_ = [q for q in steps if q["status"] == "done"]
+    for mark, words in ((ERASED, ST.erased_words([q for q in done_ if q["do"] == "erase" and _kept_out(q, kept)])),
+                        (BOXES, ST.checkbox_words(done_))):
+        first = did.index(mark) if mark in did else None
+        did = [d for d in did if d != mark]
+        if first is not None and words:
+            did.insert(first, words)
     note = "; ".join(did) if did else "nothing"
     if JOB.written and JOB.committed:
         note += ". Wrote: " + " ".join(JOB.written)[:300]          # the lines as one passage, for the job list

@@ -63,6 +63,8 @@ def test_typed_paragraphs_take_the_tablets_own_checkboxes_stamped_newest():
                                      ("bread", ParagraphStyle.CHECKBOX), ("eggs", ParagraphStyle.CHECKBOX_CHECKED)])
     st = _styles(out)
     assert n == 3 and (st["milk"][0], st["eggs"][0], st["bread"][0]) == (6, 7, 6) and st["eggs"][1].part2 == 302
+    # and the count it is held against is of paragraphs, not of mentions (the job said "1 paragraph not found")
+    assert TY.asked_paragraphs([("milk", 6), ("eggs", 6), ("bread", 6), (" eggs ", 7)]) == 3 == n
 
 
 def test_a_checkbox_step_names_its_paragraphs():

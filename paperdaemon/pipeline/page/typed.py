@@ -587,6 +587,12 @@ def _para_keys(tb):
     return out
 
 
+def asked_paragraphs(wants):
+    """How many different paragraphs `wants` names (a paragraph named twice, for a checkbox and then a ticked one,
+    is one): what a restyle's count is held against."""
+    return len({" ".join(str(w).split()) for w, _style in wants if " ".join(str(w).split())})
+
+
 def restyle_bytes(data, wants):
     """THE TABLET'S OWN PARAGRAPH STYLES on the user's typed text (a checklist asked of a typed list: its paragraphs
     made the tablet's checkboxes, never a drawn copy). `wants` [(a paragraph's text, ParagraphStyle)]: every
