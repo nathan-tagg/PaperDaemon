@@ -10,6 +10,7 @@ from paperdaemon.harnesses import COLORING_BOOK
 DefaultText, DefaultImage = harnesses.DEFAULT["text"], harnesses.DEFAULT["image"]
 Qwen36_27B, Qwen38_27B = harnesses.get("qwen3.6-27b"), harnesses.get("qwen3.8-27b")
 Flux2Klein9B, ZImageTurbo = harnesses.get("flux.2-klein-9b"), harnesses.get("z-image-turbo")
+ClaudeOpus55 = harnesses.get("claude-opus-5.5")
 
 
 @pytest.mark.parametrize("kind,hint,want", [
@@ -23,7 +24,8 @@ Flux2Klein9B, ZImageTurbo = harnesses.get("flux.2-klein-9b"), harnesses.get("z-i
     ("text", "Qwen3.8-27B-Base-Q8_0.gguf", DefaultText),     # pretrained, not instruction-tuned
     ("text", "qwen3-14b-q4_k_m.gguf", DefaultText),
     ("text", "Qwen3.6-27B-Base-Q8_0.gguf", DefaultText),
-    ("text", "claude-opus-5-5", DefaultText),
+    ("text", "claude-opus-5-5", ClaudeOpus55),
+    ("text", "claude-sonnet-5-5", DefaultText),
     ("image", "flux-2-klein-9b-Q8_0.gguf", Flux2Klein9B),
     ("image", "FLUX.2-klein-9B-BF16.gguf", Flux2Klein9B),
     ("image", "flux-2-klein-base-9b.gguf", DefaultImage),     # undistilled: different parameters
@@ -260,8 +262,9 @@ def test_the_shipped_example_harnesses_are_valid_and_not_active():
 
 def test_shipped_harnesses_are_data_loaded_by_the_users_loader():
     folder = os.path.join(os.path.dirname(harnesses.__file__), "shipped")
-    assert sorted(os.listdir(folder)) == ["default-image.json", "default-text.json", "flux.2-klein-9b.json",
-                                          "qwen3.6-27b.json", "qwen3.8-27b.json", "z-image-turbo.json"]
+    assert sorted(os.listdir(folder)) == ["claude-opus-5.5.json", "default-image.json", "default-text.json",
+                                          "flux.2-klein-9b.json", "qwen3.6-27b.json", "qwen3.8-27b.json",
+                                          "z-image-turbo.json"]
     assert all(p.source == "shipped" and p.file for p in harnesses.BUILT_IN)
     assert not [n for n in os.listdir(os.path.dirname(harnesses.__file__)) if n.endswith(".py")
                 and n not in ("__init__.py", "schema.py", "text.py")]     # the interface; shipped harnesses are data

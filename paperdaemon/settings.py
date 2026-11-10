@@ -32,7 +32,7 @@ TEXT_PORT = 8790
 IMAGE_PORT = 8791
 
 ROLES = ("text", "image")
-APIS = {"text": ("openai", "anthropic"), "image": ("sdapi", "openai-images")}
+APIS = {"text": ("openai", "anthropic", "claude-cli"), "image": ("sdapi", "openai-images")}
 
 # TWO TAG NAMES ARE UNIVERSAL, not settings: the same for every user, matched without regard to case.
 # "ignore" on a folder, a notebook or a page means nothing there is ever worked on; "sprompt" on a PAGE

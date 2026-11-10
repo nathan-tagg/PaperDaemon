@@ -427,8 +427,17 @@ CHAT = {"openai": OpenAIChat, "anthropic": AnthropicChat}
 IMAGE = {"sdapi": SDAPI, "openai-images": OpenAIImages}
 
 
+def _chat_class(api):
+    """The adapter class of a text API family; Claude Code's is loaded when asked for (it imports this module)."""
+    if api == "claude-cli":
+        from .claude_cli import ClaudeCLI
+        return ClaudeCLI
+    return CHAT[api]
+
+
 def for_slot(role, s=None, m=None):
     """The adapter for a slot as configured, with its key from the credential store."""
     m = m if m is not None else slots.slot(role, s)
-    cls = (CHAT if role == "text" else IMAGE)[m.get("api") or ("openai" if role == "text" else "sdapi")]
+    api = m.get("api") or ("openai" if role == "text" else "sdapi")
+    cls = _chat_class(api) if role == "text" else IMAGE[api]
     return cls(m.get("location") or "", vault.get(slots.key_of(role, m)), m.get("model") or "")
