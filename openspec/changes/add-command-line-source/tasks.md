@@ -36,5 +36,5 @@
       Opus 5.5, Claude Sonnet 5.5, Claude Haiku 5.5
 - [x] 4.4 The calls read from the answer's words, not checked by the program against a schema (one request an
       answer where there were two; a real call 11-10: 5,978 tokens in, 6.6 s, against 15,109 and 8.7 s)
-- [ ] 4.5 A real job in the False Mirror on the maintainer's lineup after the update, the command read from his
-      saved settings
+- [x] 4.5 Real jobs in the False Mirror on the maintainer's lineup after the update (11-10 on 0.2.48): his saved
+      command and model read as `claude --model claude-opus-5-5`, the effort typed into it, three pages worked

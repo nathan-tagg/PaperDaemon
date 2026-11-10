@@ -14,5 +14,9 @@
 
 - [x] 2.1 A real call the lean way through the real program (11-10, Haiku 5.5, a made-up typed page: the plan came
       back with its lines and its sketch's parts in one call, 5,978 tokens in, 6.6 s)
-- [ ] 2.2 Real jobs in the False Mirror on the maintainer's Opus lineup after the update: the calls a job and the
-      tokens a call, read from the job's log, against the same pages before
+- [x] 2.2 Real jobs in the False Mirror on the maintainer's Opus lineup after the update (11-10 on 0.2.48), from
+      the job's log: a typed question, one call, 6,625 tokens in, 4 s; two sentences and a labeled sketch, two calls
+      (the plan with its lines and parts, 7,052; the look back, 9,015), 15 s; a handwritten chart request, two calls
+      (9,285 and 11,212), 7 s. On 0.2.47 a sketch was three calls with about 24,000 tokens read in each
+- [x] 2.3 A sketch fitted from the plan's parts sits at the top of a stacked place, not its middle (seen on the
+      sundial page: half a page of empty paper above it)

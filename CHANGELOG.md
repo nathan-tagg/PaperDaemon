@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.49
+
+- A sketch that comes with a lean lineup's plan sits right under what it follows. It was fitted into the middle of its place, and under a few sentences that place is the rest of the page, so the drawing landed half a page down.
+
 ## 0.2.48
 
 - A command-line lineup has one box, Command, and it holds the whole command: `claude --model claude-opus-5-5 --effort medium`. The Model box is gone, because how a model is named is the program's own syntax, and no harness sets an effort or adds a model any more: both are yours to type. PaperDaemon starts the program itself, with no shell, and adds only what carries a request in and its answer out. A lineup saved with a model beside its command becomes the command naming that model. If your lineup relied on its harness for medium effort, add `--effort medium` to the command.

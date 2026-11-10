@@ -98,3 +98,19 @@ def test_a_page_of_typed_text_alone_is_sent_without_its_picture(monkeypatch):
         assert intake._only_typed() is False                # and an empty page is shown as it is
     finally:
         H.JOB.clear()
+
+
+def test_a_sketch_on_its_own_grid_follows_on_from_the_top_of_a_stacked_box(monkeypatch):
+    """Parts given with the plan are drawn before the model knows its box; the host fits them. Centered in a box that
+    is the rest of the page, a wide sundial sat half a page below the two sentences it was asked to go under."""
+    monkeypatch.setattr(H, "log", lambda msg: None)
+    box = {"x0": -500.0, "x1": 500.0, "y0": 400.0, "y1": 2000.0}
+    wide = [[(0.0, 0.0), (200.0, 0.0), (200.0, 50.0), (0.0, 50.0)]]          # four to one: the width decides its size
+    ys = lambda paths: [p[1] for pth in paths for p in pth]
+    middle = H._fit_paths(wide, box)
+    assert abs((min(ys(middle)) + max(ys(middle))) / 2.0 - 1200.0) < 1e-6    # as before: the box's middle
+    top = H._fit_paths(wide, box, top=True)
+    assert 400.0 < min(ys(top)) <= 440.0 and max(ys(top)) - min(ys(top)) == max(ys(middle)) - min(ys(middle))
+    tall = [[(0.0, 0.0), (50.0, 0.0), (50.0, 400.0), (0.0, 400.0)]]          # one that fills the box's height stays inside it
+    filled = ys(H._fit_paths(tall, box, top=True))
+    assert min(filled) == 440.0 and max(filled) <= 2000.0

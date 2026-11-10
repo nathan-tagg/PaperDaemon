@@ -186,10 +186,12 @@ def _off_the_words(paths, kinds, boxes):
     return out
 
 
-def _fit_paths(paths, box, fill=0.9):
+def _fit_paths(paths, box, fill=0.9, top=False):
     """Scale (aspect kept) and center a figure's paths into `box`. None if there is nothing to fit
     or the figure is degenerate (a point). A figure already inside the box and at least a third of
-    its size is left alone -- the model may have meant exactly that."""
+    its size is left alone -- the model may have meant exactly that. `top`: a figure shorter than its
+    box sits at the box's top, not its middle (a stacked box is the rest of the page: centered in it,
+    a wide sundial sat half a page below the sentences it followed)."""
     pts = [p for pth in paths for p in pth]
     if not pts or box is None:
         return None
@@ -207,6 +209,8 @@ def _fit_paths(paths, box, fill=0.9):
         k = min(k, 1.0) if (w >= bw / 3.0 or h >= bh / 3.0) else k
     cx, cy = (x0 + x1) / 2.0, (y0 + y1) / 2.0
     tx, ty = (box["x0"] + box["x1"]) / 2.0, (box["y0"] + box["y1"]) / 2.0
+    if top and h * k < bh:
+        ty = box["y0"] + min((bh - h * k) / 2.0, 40.0) + h * k / 2.0
     out = []
     for pth in paths:
         out.append([(tx + (p[0] - cx) * k, ty + (p[1] - cy) * k) for p in pth])
@@ -329,7 +333,9 @@ def _draw_figure(parts, place):
         paths_all = _onto_page(paths_all)
         H.log("  figure kept where it was drawn, onto %s" % step.get("near"))
     else:
-        fitted = H._fit_paths(paths_all, box)
+        # in a box stacked under what is on the page (or beside its pair), the figure follows on from the top
+        stacked = step is None or str(step.get("near") or "stack").lower() in ("stack", "left", "right")
+        fitted = H._fit_paths(paths_all, box, top=stacked)
         if fitted is not None:
             paths_all = fitted
     for pth, ink in zip(paths_all, inks):
