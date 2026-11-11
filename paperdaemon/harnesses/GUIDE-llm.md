@@ -5,8 +5,8 @@ told, how its replies are read, how it is asked small questions about a page (wh
 picture says), and what it can do. PaperDaemon reads every harness in this folder, checks it, and lists every
 one that passes in the Harness box of the Text / Reasoning tab. One that fails is listed with what is wrong with it.
 
-PaperDaemon's own harnesses are part of the app, not kept here: Default, Lean Default (stronger models only), and
-llama.cpp - Qwen 3.6 27B and llama.cpp - Qwen 3.8 27B. A harness here builds on one of them (`extends`, or Default
+PaperDaemon's own harnesses are part of the app, not kept here: Default (designed for Qwen 3 models running in
+llama.cpp, and right for most models) and Lean Default (stronger models only). A harness here builds on one of them (`extends`, or Default
 when it names none) and changes only what it names. A lineup uses the harness you pick in its Harness box, Default
 until you pick another: PaperDaemon never chooses one from a model's name.
 
@@ -29,7 +29,7 @@ Every harness also says, for the people who read it:
 | --- | --- |
 | `server` | Required. The server it is made for: `"llama.cpp (llama-server)"`. |
 | `models` | Required. The models it is made for: `["Qwen 3.8 27B"]`. |
-| `notes` | What anyone choosing it should know: what it was tested with, what it does well, what to avoid. |
+| `notes` | Its description, shown under the Harness box when it is picked: what it is for, what the model must be able to do (and what goes wrong with one that cannot), and what it costs to run. |
 
 PaperDaemon shows these and never acts on them. A harness you build on another still says its own.
 
@@ -182,7 +182,7 @@ A `.py` file defines one class that builds on a harness and overrides only the m
 from paperdaemon import harnesses
 
 
-class MyModel(harnesses.get("qwen3.8-27b")):
+class MyModel(harnesses.DEFAULT["text"]):
     id = "my-model"
     name = "llama.cpp - My model 14B"
     server = "llama.cpp (llama-server)"

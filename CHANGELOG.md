@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.53
+
+- Under a lineup's Harness box is the picked harness's own description: what it is for, what the model must be able to do on it and what goes wrong with one that cannot, and what it costs to run (Default on a strong model uses several times the tokens Lean Default does). The text is the harness file's `notes`, so a harness of your own shows yours.
+- "llama.cpp - Qwen 3.6 27B" and "llama.cpp - Qwen 3.8 27B" are folded into "Default": they were the same thing under two more names. Default's description says it was designed for Qwen 3 models running in llama.cpp. A lineup, or a harness of your own, that named one of them now names Default, and works as it did.
+
 ## 0.2.52
 
 - An update removes the earlier version's engine files before it writes the new ones. Until now it wrote over them and left behind any file the new version no longer has, so after updating to 0.2.51 the Harness box still listed "Claude Opus 5.5", "Claude Sonnet 5.5" and "Claude Haiku 5.5", which that version had removed. Your settings and data are in their own folder and are not touched.

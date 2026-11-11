@@ -8,19 +8,18 @@ from paperdaemon.models import slots
 from paperdaemon.harnesses import COLORING_BOOK
 
 DefaultText, DefaultImage = harnesses.DEFAULT["text"], harnesses.DEFAULT["image"]
-Qwen36_27B, Qwen38_27B = harnesses.get("qwen3.6-27b"), harnesses.get("qwen3.8-27b")
 Flux2Klein9B, ZImageTurbo = harnesses.get("flux.2-klein-9b"), harnesses.get("z-image-turbo")
 LeanDefault = harnesses.get("lean-default")
 
 
 @pytest.mark.parametrize("kind,hint,want", [
-    ("text", "Qwen3.6-27B", Qwen36_27B),
-    ("text", "qwen3.6-27b-Q8_0.gguf", Qwen36_27B),
-    ("text", "Qwen_Qwen3.6-27B-Instruct", Qwen36_27B),
-    ("text", "Qwen3.6 27B", Qwen36_27B),
-    ("text", "qwen3.8-27b-q4km.gguf", Qwen38_27B),
-    ("text", "Qwen3.8-27B-Q5_K_S.gguf", Qwen38_27B),
-    ("text", "Qwen3.8 27B", Qwen38_27B),
+    ("text", "Qwen3.6-27B", DefaultText),
+    ("text", "qwen3.6-27b-Q8_0.gguf", DefaultText),
+    ("text", "Qwen_Qwen3.6-27B-Instruct", DefaultText),
+    ("text", "Qwen3.6 27B", DefaultText),
+    ("text", "qwen3.8-27b-q4km.gguf", DefaultText),
+    ("text", "Qwen3.8-27B-Q5_K_S.gguf", DefaultText),
+    ("text", "Qwen3.8 27B", DefaultText),
     ("text", "Qwen3.8-27B-Base-Q8_0.gguf", DefaultText),     # pretrained, not instruction-tuned
     ("text", "qwen3-14b-q4_k_m.gguf", DefaultText),
     ("text", "Qwen3.6-27B-Base-Q8_0.gguf", DefaultText),
@@ -50,21 +49,21 @@ def test_the_start_script_s_model_file_counted_after_the_model_s_name():
                                                    r'--vae C:\m\ae.safetensors') == "flux.2-klein-9b"
     assert harnesses.was_automatic("image", model="z_image_turbo.gguf",
                                    launch=r"sd-server.exe --diffusion-model C:\m\flux-2-klein-9b-Q8_0.gguf") == "z-image-turbo"
-    script = 'set "MODEL=%MODELS%\\qwen3.8-27b-q4km.gguf"\r\n"%SERVER%" -m "%MODEL%"\r\n'
-    assert harnesses.was_automatic("text", launch=script) == "qwen3.8-27b"
+    script = 'set "MODEL=%MODELS%\\flux-2-klein-9b-Q8_0.gguf"\r\n"%SERVER%" --diffusion-model "%MODEL%"\r\n'
+    assert harnesses.was_automatic("image", launch=script) == "flux.2-klein-9b"       # a batch file's variable
 
 
 def test_nothing_chooses_a_harness_any_more():
     """The slot's harness is the one it names; one that is gone, or none, is the default of its kind. No model name,
     reported model or start script changes that."""
     assert not hasattr(harnesses, "guess")
-    for model in ("qwen3.6-27b", "claude-opus-5-5", "anything"):
+    for model in ("lean-default", "claude-opus-5-5", "anything"):
         m = dict(settings.slot_defaults("text"), location="http://127.0.0.1:9000", model=model)
         assert m["harness"] == "default-text" and slots.pick("text", None, m)[0] is DefaultText
         assert slots.pick("text", None, dict(m, harness="lean-default"))[0] is LeanDefault
         assert slots.pick("text", None, dict(m, harness="a-file-since-removed"))[0] is DefaultText
         assert slots.pick("text", None, dict(m, harness="auto"))[0] is DefaultText       # (unread by any upgrade: still no guess)
-    slots.report_models("text", ["qwen3.6-27b"])
+    slots.report_models("text", ["lean-default"])
     try:
         assert slots.pick("text", None, dict(settings.slot_defaults("text"), location="http://127.0.0.1:9000"))[0] is DefaultText
     finally:
@@ -79,14 +78,26 @@ def test_nothing_chooses_a_harness_any_more():
 def test_model_harnesses_override_only_what_differs():
     # the default carries everything; a model harness names only its differences
     assert DefaultText.vision is True and DefaultText.forced_tool is True
-    assert Qwen38_27B.vision and Qwen38_27B.forced_tool
-    assert Qwen38_27B.extends == Qwen36_27B.extends == "default-text"
+    assert LeanDefault.vision and LeanDefault.forced_tool and LeanDefault.extends == "default-text"
+    assert set(json.load(open(os.path.join(os.path.dirname(harnesses.__file__), "shipped", "lean-default.json"),
+                              encoding="utf-8"))) == {"id", "name", "server", "models", "extends", "notes", "lean"}
+
+
+def test_the_default_says_what_it_was_designed_for_and_the_harnesses_folded_into_it_name_it():
+    """'fold them in, but in their header state that they were designed for qwen 3 models running in llama.cpp'."""
+    assert DefaultText.notes.startswith("Designed for Qwen 3 models running in llama.cpp")
+    assert DefaultText.server.startswith("llama.cpp") and DefaultText.models[:2] == ("Qwen 3.6 27B", "Qwen 3.8 27B")
+    for gone in ("qwen3.6-27b", "qwen3.8-27b"):
+        assert harnesses.get(gone) is None
+        assert settings.upgrade_slot({"location": "http://127.0.0.1:8080", "harness": gone}, "text")["harness"] == "default-text"
+    _user_harness("small.json", {"extends": "qwen3.6-27b", "max_output": 16384})    # a user's file written for one of them
+    assert harnesses.user_errors() == [] and harnesses.get("small").extends == "default-text"
 
 
 def test_no_harness_sets_thinking_or_context():
     for h in harnesses.BUILT_IN:
         assert not hasattr(h, "thinking") and not hasattr(h, "context"), h.id
-    assert Qwen38_27B().tune({}, {}) == {}
+    assert LeanDefault().tune({}, {}) == {}
 
 
 # the coloring prompt as the pipeline host wrote it before the image harness owned it, word for word
@@ -153,14 +164,14 @@ def _user_harness(name, d, declared=True):
 
 
 def test_user_harnesses_override_what_they_name():
-    _user_harness("small.json", {"name": "Qwen 3.6, small context", "extends": "qwen3.6-27b", "max_output": 16384,
+    _user_harness("small.json", {"name": "Qwen 3.6, small context", "extends": "lean-default", "max_output": 16384,
                                  "brief_additions": "Answer in one sentence."})
     _user_harness("textonly.json", {"id": "text-only", "kind": "text", "vision": False})
     _user_harness("chain.json", {"id": "chain", "extends": "small", "max_output": 2048})
     p = harnesses.get("small")
-    assert p.name == "Qwen 3.6, small context" and p.source == "user" and p.extends == "qwen3.6-27b"
+    assert p.name == "Qwen 3.6, small context" and p.source == "user" and p.extends == "lean-default"
     assert p.max_output == 16384 and p.vision is True and p.brief_additions == "Answer in one sentence."
-    assert issubclass(p, Qwen36_27B)
+    assert issubclass(p, LeanDefault)
     t = harnesses.get("text-only")
     assert t.vision is False and t.extends == "default-text"
     c = harnesses.get("chain")
@@ -170,11 +181,11 @@ def test_user_harnesses_override_what_they_name():
 
 
 @pytest.mark.parametrize("body,message", [
-    ({"extends": "qwen3.6-27b", "max_output": 0}, "max_output must be"),
-    ({"extends": "qwen3.6-27b", "steps": 4}, "not a field of a text harness"),
+    ({"extends": "lean-default", "max_output": 0}, "max_output must be"),
+    ({"extends": "lean-default", "steps": 4}, "not a field of a text harness"),
     ({"extends": "nothing-like-this"}, "not a harness"),
     ({"extends": "flux.2-klein-9b", "kind": "text"}, "cannot extend"),
-    ({"id": "qwen3.6-27b"}, "already taken"),
+    ({"id": "lean-default"}, "already taken"),
 ])
 def test_a_broken_user_harness_is_listed_and_skipped(body, message):
     _user_harness("broken.json", body)
@@ -185,7 +196,7 @@ def test_a_broken_user_harness_is_listed_and_skipped(body, message):
 
 
 def test_a_user_pattern_still_counts_for_a_slot_saved_as_automatic():
-    _user_harness("mine.json", {"extends": "qwen3.8-27b", "patterns": ["q4km"], "max_output": 100000})
+    _user_harness("mine.json", {"extends": "lean-default", "patterns": ["q4km"], "max_output": 100000})
     assert harnesses.was_automatic("text", model="qwen3.8-27b-q4km.gguf") == "mine"
     m = dict(settings.slot_defaults("text"), location="http://127.0.0.1:9000", model="qwen3.8-27b-q4km.gguf")
     assert slots.pick("text", None, m)[0] is DefaultText               # ...and for nothing else
@@ -198,11 +209,11 @@ def _s(**text):
 
 
 def test_capabilities_resolve_in_layers():
-    s = _s(model="qwen3.6-27b", script="", harness="qwen3.6-27b")
+    s = _s(model="lean-default", script="", harness="lean-default")
     caps = slots.capabilities("text", s)
     assert caps["vision"] == {"value": True, "source": "default"}
     assert caps["max_output"] == {"value": None, "source": "default"}
-    s = _s(model="qwen3.6-27b", script="", harness="qwen3.6-27b", tested={"vision": False, "max_output": 16384},
+    s = _s(model="lean-default", script="", harness="lean-default", tested={"vision": False, "max_output": 16384},
            overrides={"max_output": 8000})
     caps = slots.capabilities("text", s)
     assert caps["vision"] == {"value": False, "source": "test"}
@@ -210,16 +221,16 @@ def test_capabilities_resolve_in_layers():
 
 
 def test_the_harness_is_the_user_s_pick():
-    s = _s(model="qwen3.6-27b", harness="default-text")
+    s = _s(model="lean-default", harness="default-text")
     assert slots.pick("text", s)[0] is DefaultText
     assert slots.describe("text", s)["harness"] == {"id": "default-text", "name": "Default"}
 
 
 def test_the_shipped_lineups_pick_their_harnesses():
     s = settings.load()
-    assert slots.pick("text", s)[0] is Qwen38_27B and slots.pick("image", s)[0] is Flux2Klein9B
+    assert slots.pick("text", s)[0] is DefaultText and slots.pick("image", s)[0] is Flux2Klein9B
     s["lineup"] = "Qwen 3.6 + Klein"
-    assert slots.pick("text", s)[0] is Qwen36_27B
+    assert slots.pick("text", s)[0] is LeanDefault
 
 
 def test_picture_steps():
@@ -283,7 +294,7 @@ def test_the_shipped_example_harnesses_are_valid_and_not_active():
 def test_shipped_harnesses_are_data_loaded_by_the_users_loader():
     folder = os.path.join(os.path.dirname(harnesses.__file__), "shipped")
     assert sorted(os.listdir(folder)) == ["claude-code.json", "default-image.json", "default-text.json",
-                                          "flux.2-klein-9b.json", "lean-default.json", "qwen3.6-27b.json", "qwen3.8-27b.json",
+                                          "flux.2-klein-9b.json", "lean-default.json",
                                           "z-image-turbo.json"]
     assert all(p.source == "shipped" and p.file for p in harnesses.BUILT_IN)
     assert not [n for n in os.listdir(os.path.dirname(harnesses.__file__)) if n.endswith(".py")
@@ -315,7 +326,7 @@ def test_a_python_harness_overrides_what_it_changes():
 from paperdaemon import harnesses
 
 
-class Terse(harnesses.get("qwen3.8-27b")):
+class Terse(harnesses.get("lean-default")):
     id = "terse"
     name = "llama.cpp - Qwen 3.8 27B, terse"
     server = "llama.cpp (llama-server)"
@@ -329,7 +340,7 @@ class Terse(harnesses.get("qwen3.8-27b")):
     with open(os.path.join(folder, "nameless.py"), "w", encoding="utf-8") as f:
         f.write("from paperdaemon import harnesses\nclass X(harnesses.DEFAULT['text']):\n    pass\n")
     t = harnesses.get("terse")
-    assert t is not None and t.extends == "qwen3.8-27b" and t.source == "user"
+    assert t is not None and t.extends == "lean-default" and t.source == "user"
     assert t().nudge_no_call("", ("plan",)) == [{"role": "user", "content": "Call plan."}]
     assert t.vision is True and t().locate_one is not None             # the rest is inherited
     errs = {e["file"]: e["error"] for e in harnesses.user_errors()}
@@ -341,23 +352,38 @@ def test_a_skills_only_harness_changes_only_its_skills():
     base = os.path.join(harnesses.user_folder(), "llm", "plain-words")
     os.makedirs(os.path.join(base, "skills"))
     with open(os.path.join(base, "harness.json"), "w", encoding="utf-8") as f:
-        json.dump({"name": "llama.cpp - Qwen 3.8 27B, plain words", "extends": "qwen3.8-27b",
+        json.dump({"name": "llama.cpp - Qwen 3.8 27B, plain words", "extends": "lean-default",
                    "server": "llama.cpp (llama-server)", "models": ["Qwen 3.8 27B"]}, f)
     with open(os.path.join(base, "skills", "write.md"), "w", encoding="utf-8") as f:
         f.write("Use plain words.")
     h = harnesses.get("plain-words")
-    assert h is not None and h.extends == "qwen3.8-27b"
+    assert h is not None and h.extends == "lean-default"
     assert h().skill("write", "default") == "Use plain words." and h().skill("draw", "default") == "default"
 
 def test_every_harness_file_says_its_server_and_models():
-    _user_harness("bare.json", {"extends": "qwen3.8-27b", "max_output": 1000}, declared=False)
+    _user_harness("bare.json", {"extends": "lean-default", "max_output": 1000}, declared=False)
     errs = {e["file"]: e["error"] for e in harnesses.user_errors()}
     assert "server" in errs[os.path.join("llm", "bare.json")] and "models" in errs[os.path.join("llm", "bare.json")]
     for p in harnesses.BUILT_IN:                                     # the shipped ones say theirs
         assert p.server and p.models
     named = {p.id: p.name for p in harnesses.SHIPPED}
-    assert named["qwen3.8-27b"] == "llama.cpp - Qwen 3.8 27B"
-    _user_harness("mine.json", {"extends": "qwen3.8-27b"})
+    assert named["lean-default"] == "Lean Default (stronger models only)"
+    _user_harness("mine.json", {"extends": "lean-default"})
     mine = harnesses.get("mine")
     assert mine.server == "a test server" and mine.models == ("a test model",)
-    assert harnesses.get("qwen3.8-27b").server.startswith("llama.cpp")      # never inherited the other way
+    assert harnesses.get("lean-default").server.startswith("Any ")           # never inherited the other way
+
+
+def test_every_harness_to_pick_describes_itself_for_the_lineup_screen():
+    """'the header block should be in code on the harness, and should be pulled into the lineup': what it is for, what a
+    model must be able to do on it, and what a heavier harness costs a stronger model."""
+    for kind in ("text", "image"):
+        for h in harnesses.for_kind(kind):
+            said = harnesses.describe(h)["notes"]
+            assert len(said) > 80 and said == h.notes, h.id          # the file's own words, as the API lists them
+    d, lean = DefaultText.notes, LeanDefault.notes
+    assert "must be able to see a picture of the page" in d and "tool call" in d and "misread pages or fail jobs" in d
+    assert "several times the tokens Lean Default does" in d
+    assert "a weaker model plans badly on this harness" in lean and "use Default for those" in lean
+    assert "guess" not in (d + lean + Flux2Klein9B.notes + ZImageTurbo.notes + DefaultImage.notes).lower()
+    assert "refused" not in Flux2Klein9B.notes                     # (it spoke of a hint a guess refused; nothing guesses)

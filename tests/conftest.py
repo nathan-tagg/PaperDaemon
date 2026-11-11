@@ -59,8 +59,8 @@ def fresh(tmp_path, monkeypatch):
     settings.force(None)
     # the tests work on two local lineups of their own; PaperDaemon itself ships one blank lineup
     # (test_settings checks that)
-    test_lineups = [_test_lineup("Qwen 3.8 + Klein", "qwen3.8-27b.bat", "qwen3.8-27b", "flux2-klein-9b.bat", "flux.2-klein-9b"),
-                    _test_lineup("Qwen 3.6 + Klein", "qwen3.6-27b.bat", "qwen3.6-27b", "flux2-klein-9b.bat", "flux.2-klein-9b")]
+    test_lineups = [_test_lineup("Qwen 3.8 + Klein", "qwen3.8-27b.bat", "default-text", "flux2-klein-9b.bat", "flux.2-klein-9b"),
+                    _test_lineup("Qwen 3.6 + Klein", "qwen3.6-27b.bat", "lean-default", "flux2-klein-9b.bat", "flux.2-klein-9b")]
     monkeypatch.setattr(settings, "SHIPPED_LINEUPS", test_lineups)
     monkeypatch.setattr(settings, "DEFAULT_LINEUP", "Qwen 3.8 + Klein")
     monkeypatch.setitem(settings.DEFAULTS, "lineups", test_lineups)

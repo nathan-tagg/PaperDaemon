@@ -140,7 +140,7 @@ def test_the_children_are_told_the_harness_and_the_engine():
     assert "RM_HOST_TURNS" not in env              # no hidden turn cap: tokens and repetition bound a job
     with open(env["RM_RUN"], encoding="utf-8") as f:
         har = json.load(f)
-    assert har["id"] == "qwen3.8-27b" and "context" not in har["capabilities"] and "brief_additions" in har
+    assert har["id"] == "default-text" and "context" not in har["capabilities"] and "brief_additions" in har
     # what the image harness offers, for the brief: its workflows and abilities
     assert har["image"]["name"] == "stable-diffusion.cpp - FLUX.2 Klein 9B" and "edit_reference" in har["image"]["abilities"]
     assert har["image"]["workflows"]["childrensColoringBook"]["about"]

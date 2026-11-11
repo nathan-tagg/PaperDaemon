@@ -18,7 +18,7 @@ file also says, for the people who read it:
 | --- | --- |
 | `server` | Required. The server it is made for: `"stable-diffusion.cpp (sd-server)"`. |
 | `models` | Required. The models it is made for: `["FLUX.2 Klein 9B"]`. |
-| `notes` | What anyone choosing it should know: what it was tested with, what it does well, what to avoid. |
+| `notes` | Its description, shown under the Harness box when it is picked: what it is for, what the model must be able to do (and what goes wrong with one that cannot), and what it costs to run. |
 
 PaperDaemon shows these and never acts on them. A harness you build on another still says its own.
 

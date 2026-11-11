@@ -275,7 +275,7 @@
         PD.slots.wireTagSort(R, "su", () => (S.step === 3 && S.tab === "tags" ? S.tags : null), i => paintModels(i));
         R.addEventListener("change", e => {
           if (S.step !== 3 || !$("#su-step", R)) return;
-          if (/^su-(text|image|search)-(kind|provider)$/.test(e.target.id)) { readForm(); S.test[S.tab] = ""; paintModels(); }
+          if (/^su-(text|image|search)-(kind|provider|harness)$/.test(e.target.id)) { readForm(); S.test[S.tab] = ""; paintModels(); }
         });
         document.addEventListener("pd:status", () => { if (alive()) frame(); });
         // back from the harnesses folder: list what is there now

@@ -6,7 +6,7 @@
     "Any image model"
   ],
   "kind": "image",
-  "notes": "Step counts and guidance most image servers accept.",
+  "notes": "For any image server that speaks the Stable Diffusion web UI API or OpenAI's image API. It uses step counts and guidance most models accept. A model that needs its own (a distilled model's few steps, another sampler) renders badly on it: pick the harness made for that model, or add one.",
   "steps": 20,
   "steps_range": [
     10,

@@ -6,7 +6,7 @@
     "FLUX.2 Klein 9B (distilled)"
   ],
   "extends": "default-image",
-  "notes": "The distilled 4-step model. A coloring page needs 12 steps for clean closed outlines. It edits a picture handed to it as a reference. The undistilled base model shares the family name but needs many more steps, so a hint naming base is refused.",
+  "notes": "For FLUX.2 Klein 9B, the distilled 4-step model, in stable-diffusion.cpp. A coloring page takes 12 steps for clean closed outlines, and it can edit a picture handed to it as a reference. The undistilled base model shares the name but needs many more steps: it renders badly on this harness.",
   "patterns": [
     "klein"
   ],

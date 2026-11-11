@@ -87,7 +87,7 @@ def test_lineups_create_update_delete_and_every_one_is_live():
     small = [lu for lu in d["lineups"] if lu["name"] == "Small"][0]
     assert small["text"]["harness"] == "default-text" and small["text"]["script"] == "my-text.bat"
     assert small["tags"] == [{"name": "Small", "prompt": "Be brief."}]          # tags kept when not sent
-    r = c.put("/api/v1/lineups/Small", json={"image": {"harness": "qwen3.6-27b"}})
+    r = c.put("/api/v1/lineups/Small", json={"image": {"harness": "lean-default"}})
     assert r.status_code == 400 and "not a image harness" in r.json()["error"]
     r = c.put("/api/v1/lineups/Qwen 3.6 + Klein", json={"tags": [{"name": "small", "prompt": ""}]})
     assert r.status_code == 400 and "already" in r.json()["error"]            # a tag is one lineup's only
@@ -133,8 +133,9 @@ def test_harnesses_are_listed_with_their_fields():
         f.write("{not json")
     d = client().get("/api/v1/harnesses").json()
     by = {p["id"]: p for p in d if p.get("id")}
-    assert by["qwen3.8-27b"]["kind"] == "text" and by["qwen3.8-27b"]["extends"] == "default-text"
-    assert "context" not in by["qwen3.8-27b"]["fields"] and "thinking" not in by["qwen3.8-27b"]["fields"]
+    assert by["lean-default"]["kind"] == "text" and by["lean-default"]["extends"] == "default-text"
+    assert "context" not in by["lean-default"]["fields"] and "thinking" not in by["lean-default"]["fields"]
+    assert "qwen3.8-27b" not in by and "qwen3.6-27b" not in by
     assert by["flux.2-klein-9b"]["fields"]["steps"] == 4
     assert by["flux.2-klein-9b"]["fields"]["workflows"]["childrensColoringBook"]["steps"] == 12
     assert "edit_reference" in by["flux.2-klein-9b"]["fields"]["abilities"]
@@ -155,7 +156,7 @@ def test_models_describe_the_active_lineup():
     c = client()
     d = c.get("/api/v1/models").json()
     assert d["lineup"] == "Qwen 3.8 + Klein"
-    assert d["text"]["harness"] == {"id": "qwen3.8-27b", "name": "llama.cpp - Qwen 3.8 27B"}
+    assert d["text"]["harness"] == {"id": "default-text", "name": "Default"}
     assert d["text"]["capabilities"]["vision"]["value"] is True
     assert d["image"]["harness"]["name"] == "stable-diffusion.cpp - FLUX.2 Klein 9B"
     assert d["text"]["server"]["answering"] is False and d["text"]["server"]["started_by_paperdaemon"] is False

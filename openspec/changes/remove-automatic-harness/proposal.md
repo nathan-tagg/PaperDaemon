@@ -21,6 +21,15 @@ names are one ("lets just condense the harnesses into the lean default").
 - The base harnesses are named "Default". "Lean Default (stronger models only)" stays. The harnesses "Claude Opus
   5.5", "Claude Sonnet 5.5" and "Claude Haiku 5.5" are removed; a slot that named one names Lean Default.
 - Nothing reads a model out of a command-line slot's command.
+- The harnesses "llama.cpp - Qwen 3.6 27B" and "llama.cpp - Qwen 3.8 27B" are removed as well (0.2.53, "I say fold
+  them in, but in their header state that they were designed for qwen 3 models running in llama.cpp"): they set
+  nothing the default does not. Default's own header says what it was designed for; a slot, or a user's harness, that
+  named one of them names Default.
+- Each harness's header (`notes`) is its description, and the Lineup screen shows the picked harness's in a block
+  under the Harness box ("the header block should be in code on the harness, and should be pulled into the lineup
+  giving a description of what each harness is capable of - as well as warnings that using models without those
+  capabilities will result in issues, and using a heavier harness on a stronger model will result in more token
+  usage").
 
 ## Impact
 

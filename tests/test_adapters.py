@@ -44,7 +44,7 @@ def test_forcing_needs_the_capability():
 
 def test_thinking_is_the_servers_own_setting_never_the_request():
     a = adapters.OpenAIChat("http://x")
-    body, _ = a.request("", CHAT[:1], caps={}, harness=harnesses.get("qwen3.6-27b")())
+    body, _ = a.request("", CHAT[:1], caps={}, harness=harnesses.DEFAULT["text"]())
     assert "chat_template_kwargs" not in body
 
 

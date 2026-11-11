@@ -6,7 +6,7 @@
     "Z-Image Turbo"
   ],
   "extends": "default-image",
-  "notes": "8 steps, and nothing gained from more. It follows a prompt better when the style comes after the subject, so its coloring book leads with the subject. It has no reference editing.",
+  "notes": "For Z-Image Turbo in stable-diffusion.cpp: 8 steps, and nothing gained from more. It follows a prompt better when the style comes after the subject, so its coloring book leads with the subject. It cannot edit a picture from a reference.",
   "patterns": [
     "(^|-)z-?image"
   ],

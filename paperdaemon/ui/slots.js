@@ -49,7 +49,8 @@
   }
 
   /** The harness: a list of every harness of the kind that is offered, the default first. It always holds the one the
-      user picked; PaperDaemon never chooses one (no "automatic"). */
+      user picked; PaperDaemon never chooses one (no "automatic"). Under it, the picked harness's own description (its
+      file's `notes`): what it is for, what the model must be able to do, and what it costs. */
   /** A field's label, opened (the caller closes it after the field): its text and, to its right, a "?" with the
       help. Tied to the field by `for`, so the "?" inside it does not take the label's clicks. */
   const lab = (forId, key, help, cls) => '<label for="' + forId + '"' + (cls ? ' class="' + cls + '"' : "") + '><span class="lab">' +
@@ -61,6 +62,7 @@
     return '<div class="grid2"><div class="field-col"><div class="label-row">' + lab(id, "slot.harness", "slot.harness.help") + "</label>" +
       '<button type="button" class="link-btn" data-act="addharness" data-kind="' + esc(role) + '">' + esc(PD.t("slot.add_harness")) + "</button></div>" +
       select(id, list.map(h => [h.id, h.name]), f.harness) +
+      '<p class="harness-note">' + esc(((list.find(h => h.id === f.harness) || list[0] || {}).notes) || "") + "</p>" +
       "</div><span></span></div>";
   }
 

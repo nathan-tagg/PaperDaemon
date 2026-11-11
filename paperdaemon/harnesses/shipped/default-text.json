@@ -1,12 +1,14 @@
 {
   "id": "default-text",
   "name": "Default",
-  "server": "Any OpenAI- or Anthropic-compatible server",
+  "server": "llama.cpp (llama-server), and any other OpenAI- or Anthropic-compatible server",
   "models": [
+    "Qwen 3.6 27B",
+    "Qwen 3.8 27B",
     "Any model that sees the page and can be made to call a tool"
   ],
   "kind": "text",
-  "notes": "Every ability PaperDaemon has, for a model that sees the page and can be made to call a tool.",
+  "notes": "Designed for Qwen 3 models running in llama.cpp (Qwen 3.6 27B and Qwen 3.8 27B), and right for most models. The model must be able to see a picture of the page and be made to answer with a tool call: one that cannot will misread pages or fail jobs. Every call carries the full job description and every tool, and a job takes one call for its plan and one more for each step. On a strong model that uses several times the tokens Lean Default does.",
   "vision": true,
   "forced_tool": true,
   "max_output": null,

@@ -6,9 +6,9 @@ same loader and checked by the same rules (schema.py). A harness extends another
 differs; every field it leaves out keeps the value of the harness it extends.
 
     {
-      "id": "qwen-small-context",          optional; the file name without .json when left out
-      "name": "Qwen 3.6, small context",   optional; the id when left out
-      "extends": "qwen3.6-27b",            the harness it extends; a kind's default when left out
+      "id": "my-model-short-answers",      optional; the file name without .json when left out
+      "name": "My model, short answers",   optional; the id when left out
+      "extends": "lean-default",           the harness it extends; a kind's default when left out
       "kind": "text",                      needed only when "extends" is left out
       "max_output": 4096,                  any field of its kind (schema.FIELDS), with the value it takes
       "request": {"vision": {"off": {"cache_prompt": true}}}
@@ -45,6 +45,10 @@ COLORING_BOOK = "childrensColoringBook"
 HERE = os.path.dirname(os.path.abspath(__file__))
 SHIPPED_FOLDER = os.path.join(HERE, "shipped")
 META = ("id", "name", "extends", "kind", "patterns", "refuse", "notes", "server", "models", "offered")
+# HARNESSES OF EARLIER VERSIONS THAT ARE NO MORE, each the same thing as the one named here: a slot, or a user's
+# harness, that names one of them names this one
+REMOVED = {"claude-opus-5.5": "lean-default", "claude-sonnet-5.5": "lean-default", "claude-haiku-5.5": "lean-default",
+           "qwen3.6-27b": "default-text", "qwen3.8-27b": "default-text"}
 # what every harness file says about itself, for the people who read it; never used, never inherited
 DECLARED = ("server", "models", "notes")
 # a model file in a start script: the argument of -m / --model / --diffusion-model, or any path to a model file
@@ -212,6 +216,7 @@ def load(folder, known, source="user", kind=None, entries=None):
             kind, parent_id = d.get("kind"), d.get("extends")
             if parent_id in ("default",):
                 parent_id = "default-" + (kind or "text")
+            parent_id = REMOVED.get(parent_id, parent_id)
             if not parent_id and kind in ROOTS and defaults.get(kind) is not None:
                 parent_id = defaults[kind].id
             if not parent_id:
@@ -481,8 +486,6 @@ def launch_models(script):
     return [m.group(1) for m in _FILE.finditer(script or "")]
 
 
-# harnesses of earlier versions that are no more, and the one a slot that named them has now
-REMOVED = {"claude-opus-5.5": "lean-default", "claude-sonnet-5.5": "lean-default", "claude-haiku-5.5": "lean-default"}
 # model names those harnesses were the automatic pick for
 _WAS_LEAN = re.compile(r"claude-(opus|sonnet|haiku)-5[.-]5|^(opus|sonnet|haiku)$")
 

@@ -80,7 +80,7 @@ def _first(s):
     (lambda s: s["location"].update(lat=123), "location.lat"),
     (lambda s: _first(s)["text"].update(location="ftp://x"), "must start with http"),
     (lambda s: _first(s)["text"].update(api="sdapi"), "api is one of"),
-    (lambda s: _first(s)["image"].update(harness="qwen3.6-27b"), "is not a image harness"),
+    (lambda s: _first(s)["image"].update(harness="lean-default"), "is not a image harness"),
     (lambda s: _first(s)["text"].update(overrides={"steps": 4}), "not a capability of a text model"),
     (lambda s: _first(s)["image"].update(overrides={"steps": 0}), "from 1 to 150"),
     (lambda s: s.update(lineups=[]), "at least one lineup"),
@@ -129,25 +129,25 @@ def test_keys_never_reach_the_settings_file():
 def test_a_file_from_before_the_rename_upgrades_on_load():
     # slots once named their harness "profile", and an image slot could override coloring_steps
     old = {"lineups": [{"name": "Mine",
-                        "text": {"location": "http://127.0.0.1:8790", "profile": "qwen3.8-27b"},
+                        "text": {"location": "http://127.0.0.1:8790", "profile": "lean-default"},
                         "image": {"location": "http://127.0.0.1:8791", "profile": "flux.2-klein-9b",
                                   "overrides": {"coloring_steps": 10, "steps": 6}}}],
            "lineup": "Mine"}
     with open(paths.settings_file(), "w", encoding="utf-8") as f:
         json.dump(old, f)
     lu = settings.active()
-    assert lu["text"]["harness"] == "qwen3.8-27b" and "profile" not in lu["text"]
+    assert lu["text"]["harness"] == "lean-default" and "profile" not in lu["text"]
     assert lu["image"]["harness"] == "flux.2-klein-9b" and lu["image"]["overrides"] == {"steps": 6}
     saved = settings.save(settings.load())                 # valid as it is, and written in the new shape
     with open(paths.settings_file(), encoding="utf-8") as f:
         text = f.read()
     assert '"profile"' not in text and "coloring_steps" not in text
-    assert saved["lineups"][0]["text"]["harness"] == "qwen3.8-27b"
+    assert saved["lineups"][0]["text"]["harness"] == "lean-default"
 
 
 def test_a_slot_naming_both_keeps_its_harness():
-    lu = settings.normalize_lineup({"name": "X", "text": {"profile": "qwen3.6-27b", "harness": "qwen3.8-27b"}})
-    assert lu["text"]["harness"] == "qwen3.8-27b" and "profile" not in lu["text"]
+    lu = settings.normalize_lineup({"name": "X", "text": {"profile": "default-text", "harness": "lean-default"}})
+    assert lu["text"]["harness"] == "lean-default" and "profile" not in lu["text"]
 
 
 def test_the_ignore_and_sprompt_settings_are_dropped_on_load():

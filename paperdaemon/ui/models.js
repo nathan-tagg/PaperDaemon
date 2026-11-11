@@ -191,7 +191,7 @@
         const t = e.target;
         if (t.id === "md-pick" && t.value === "__new__") { t.value = S.show; act("new", t); }
         else if (t.id === "md-pick") { S.show = t.value; S.msg = ""; fill(); paint(); }
-        else if (/^md-(text|image|search)-(kind|provider)$/.test(t.id)) { readAll(); S.test[S.tab] = ""; paint(); autosave(); }
+        else if (/^md-(text|image|search)-(kind|provider|harness)$/.test(t.id)) { readAll(); S.test[S.tab] = ""; paint(); autosave(); }
         else if (/^md-mem-/.test(t.id)) memAct("memsave", t.id.slice(7));
         else if (/^md-/.test(t.id) && ["text", "image", "search", "tags"].includes(S.tab)) autosave();
       });

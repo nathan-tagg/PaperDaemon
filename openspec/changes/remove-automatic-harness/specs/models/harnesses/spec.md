@@ -24,8 +24,9 @@ the user's; a slot whose user has picked none SHALL use the default harness of i
 PaperDaemon SHALL NOT choose a harness from a model's name, from what a server reports, from a start script or from
 a command, and SHALL offer no automatic choice. A slot that names a harness which is no longer there SHALL use the
 default of its kind. A slot saved as automatic by an earlier version SHALL be read, once, as naming the harness that
-version ran it on, and a slot that named a harness since removed (Claude Opus 5.5, Claude Sonnet 5.5, Claude Haiku
-5.5) as naming Lean Default.
+version ran it on. A slot, or a user's harness, that names a harness since removed SHALL be read as naming the one
+it was the same as: Lean Default for Claude Opus 5.5, Claude Sonnet 5.5 and Claude Haiku 5.5, Default for Qwen 3.6
+27B and Qwen 3.8 27B.
 
 #### Scenario: A new lineup
 - **WHEN** the user makes a lineup and types a model's name that an earlier version had a harness for
@@ -36,16 +37,33 @@ version ran it on, and a slot that named a harness since removed (Claude Opus 5.
 - **THEN** jobs use the Z-Image Turbo harness until the user changes it
 
 #### Scenario: A lineup saved as automatic
-- **WHEN** settings saved by an earlier version hold a slot whose harness is automatic and whose start script names
-  a Qwen 3.8 27B file
-- **THEN** the slot's Harness box reads "llama.cpp - Qwen 3.8 27B", the harness it had been running on, and nothing
-  chooses for it again
+- **WHEN** settings saved by an earlier version hold an image slot whose harness is automatic and whose start script
+  names a FLUX.2 Klein 9B file
+- **THEN** the slot's Harness box reads "stable-diffusion.cpp - FLUX.2 Klein 9B", the harness it had been running on,
+  and nothing chooses for it again
 
 ### Requirement: PaperDaemon's own harnesses
 PaperDaemon SHALL ship, as data files, the default text and image harnesses, each named "Default"; "Lean Default
-(stronger models only)" for text; and harnesses for Qwen 3.6 27B (text), Qwen 3.8 27B (text), FLUX.2 Klein 9B
-(image) and Z-Image Turbo (image). Each harness SHALL state the capabilities and parameters it sets.
+(stronger models only)" for text; and harnesses for FLUX.2 Klein 9B (image) and Z-Image Turbo (image). Each harness
+SHALL state the capabilities and parameters it sets. The default text harness SHALL say in its header that it was
+designed for Qwen 3 models running in llama.cpp.
 
 #### Scenario: Klein's steps
 - **WHEN** the image slot uses the FLUX.2 Klein 9B harness
 - **THEN** a picture defaults to 4 steps, the model may choose from 4 to 12, and a coloring page uses 12
+
+### Requirement: The lineup shows what its harness is for
+Every harness file SHALL carry its own description (`notes`): what it is for, what a model must be able to do on
+it and what goes wrong with a model that cannot, and what it costs to run. The Lineup screen SHALL show the picked
+harness's description in a block of text under the Harness box, for PaperDaemon's own harnesses and the user's
+alike, and SHALL show the newly picked one's when the pick changes.
+
+#### Scenario: Picking the default for a strong model
+- **WHEN** the user picks "Default" for a text slot
+- **THEN** the block under the box says it was designed for Qwen 3 models running in llama.cpp, that the model must
+  see the page and answer with a tool call, and that on a strong model it uses several times the tokens Lean Default
+  does
+
+#### Scenario: A harness of the user's own
+- **WHEN** the user picks a harness from their own folder
+- **THEN** the block under the box shows that file's `notes`
