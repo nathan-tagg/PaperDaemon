@@ -254,8 +254,10 @@ class AnthropicChat(Adapter):
                     last["content"].append(result)
                 else:
                     out.append({"role": "user", "content": [result]})
+        # ASKED TO CACHE: Anthropic caches only a request that asks. The marker caches the request up to its last block,
+        # so the next call of the job, which begins the same way, reads that part at a fraction of the price
         body = {"model": self.model, "max_tokens": int(max_tokens or caps.get("max_output") or 4096),
-                "messages": out}
+                "messages": out, "cache_control": {"type": "ephemeral"}}
         if system:
             body["system"] = system
         thinking = False                         # thinking is the model's and its server's own setting
@@ -279,8 +281,10 @@ class AnthropicChat(Adapter):
         calls = [{"id": b.get("id") or "", "name": b.get("name") or "", "arguments": b.get("input") or {}}
                  for b in blocks if b.get("type") == "tool_use"]
         u = d.get("usage") or {}
+        new, made, cached = (int(u.get(k) or 0) for k in ("input_tokens", "cache_creation_input_tokens",
+                                                          "cache_read_input_tokens"))
         return {"text": text, "tool_calls": calls, "stop": d.get("stop_reason") or "",
-                "usage": {"input": u.get("input_tokens"), "output": u.get("output_tokens")}}
+                "usage": {"input": new + made + cached, "output": u.get("output_tokens"), "cached": cached}}
 
     def chat(self, system, messages, tools=(), force_tool=False, caps=None, harness=None,
              temperature=None, max_tokens=None):

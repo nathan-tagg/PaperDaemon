@@ -386,8 +386,9 @@ def page_image(doc, page, note):
         note = render_failed + "\n\n" + note
     if not H.VISION:
         return {"role": "user", "content": note + "\n\n" + text}
-    if H.LEAN and not render_failed and _only_typed():
-        # A PAGE OF TYPED TEXT ALONE is in the listing word for word: a lean harness is sent no picture of it
+    if not render_failed and _only_typed():
+        # A PAGE OF TYPED TEXT ALONE is in the listing word for word, so no picture of it is sent: on Lean Default since
+        # 0.2.48, on every harness since 0.2.55 (the maintainer's pick, 11-11; a local model skips encoding a picture)
         return {"role": "user", "content": note + "\n\n(This page holds typed text only, all of it above: no "
                                                   "picture of it is sent.)"}
     buf = io.BytesIO()

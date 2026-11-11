@@ -96,7 +96,7 @@ def test_a_request_is_built_from_the_harness_s_data(tmp_path):
     assert calls["minItems"] == 1 and [c["properties"]["name"]["const"] for c in calls["items"]["anyOf"]] == ["answer", "skip"]
     assert "Give it through the answer tool." in system_c and "arguments (JSON schema):" not in system_c
     sent = json.loads(stdin)["message"]["content"]
-    assert [b["type"] for b in sent] == ["image", "text"] and sent[1]["text"] == "hi" and dropped == 0
+    assert [b["type"] for b in sent] == ["image", "text"] and sent[1]["text"] == "[THE USER'S SIDE]\nhi" and dropped == 0
     assert sent[0]["source"] == {"type": "base64", "media_type": "image/png", "data": adapters._b64(b"png")}
     # a group whose placeholder has nothing to give is left out whole: no schema without tools
     args, stdin, system, dropped = a.request("", [{"role": "user", "text": "hi", "images": [b"a", b"b"]}], caps={"vision": False},
@@ -121,7 +121,8 @@ def test_a_conversation_goes_as_turns_a_later_request_begins_with():
             {"role": "tool", "tool_call_id": "c1", "name": "record", "text": "recorded"}]
     first, _ = C.turns_of(msgs[:2], True)
     later, _ = C.turns_of(msgs, True)
-    assert later[:2] == first[:2]
+    assert later[:2] == first[:2]            # every turn worded as in the call before, so the provider's cache holds
+    assert C.turns_of(msgs[:1], True)[0][0][1].startswith("[THE USER'S SIDE]")
     assert later[1][1] == '[YOUR EARLIER TURN]\ncalled record({"word": "apple"})'
     assert later[2][1] == "[RESULT OF record]\nrecorded" and later[-1][1].startswith("[NOW]")
 
@@ -200,3 +201,16 @@ def test_a_schema_too_long_for_a_command_line_goes_loose_with_the_tools_schemas_
     sch = json.loads(args[args.index("--json-schema") + 1])
     assert sch["properties"]["tool_calls"]["items"]["anyOf"][0]["properties"]["arguments"] == {"type": "object"}
     assert "arguments (JSON schema):" in system
+
+
+def test_a_job_s_later_call_begins_exactly_as_its_first():
+    """The provider reads a call's beginning from its cache only when it matches the call before byte for byte: the
+    page, its first turn, is written the same way alone and with turns after it."""
+    a = C.CommandLine("claude --model opus")
+    page = {"role": "user", "text": "THE PAGE", "images": [b"png"]}
+    later = [page, {"role": "assistant", "text": "", "tool_calls": [{"id": "c1", "name": "answer", "arguments": {}}]},
+             {"role": "tool", "tool_call_id": "c1", "name": "answer", "text": "ok"}]
+    one = json.loads(a.request("sys", [page], caps={"vision": True}, harness=harnesses.DEFAULT["text"]())[1])
+    two = json.loads(a.request("sys", later, caps={"vision": True}, harness=harnesses.DEFAULT["text"]())[1])
+    n = len(one["message"]["content"])
+    assert two["message"]["content"][:n] == one["message"]["content"]

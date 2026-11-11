@@ -8,7 +8,7 @@
     "Any model that sees the page and can be made to call a tool"
   ],
   "kind": "text",
-  "notes": "Designed for Qwen 3 models running in llama.cpp (Qwen 3.6 27B and Qwen 3.8 27B), and right for most models. The model must be able to see a picture of the page and be made to answer with a tool call: one that cannot will misread pages or fail jobs. Every call carries the full job description and every tool, and a job takes one call for its plan and one more for each step. On a strong model that uses several times the tokens Lean Default does.",
+  "notes": "Built for Qwen 3 models running in llama.cpp. Works with most models.\nRequires a model that can see images and can be forced to call a tool. Other models will misread pages or fail jobs.\nSends full instructions and every tool on each call, with one call per step. On a strong paid model, Lean Default uses far fewer tokens.",
   "vision": true,
   "forced_tool": true,
   "max_output": null,

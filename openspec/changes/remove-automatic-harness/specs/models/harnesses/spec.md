@@ -46,7 +46,7 @@ it was the same as: Lean Default for Claude Opus 5.5, Claude Sonnet 5.5 and Clau
 PaperDaemon SHALL ship, as data files, the default text and image harnesses, each named "Default"; "Lean Default
 (stronger models only)" for text; and harnesses for FLUX.2 Klein 9B (image) and Z-Image Turbo (image). Each harness
 SHALL state the capabilities and parameters it sets. The default text harness SHALL say in its header that it was
-designed for Qwen 3 models running in llama.cpp.
+built for Qwen 3 models running in llama.cpp.
 
 #### Scenario: Klein's steps
 - **WHEN** the image slot uses the FLUX.2 Klein 9B harness
@@ -60,9 +60,8 @@ alike, and SHALL show the newly picked one's when the pick changes.
 
 #### Scenario: Picking the default for a strong model
 - **WHEN** the user picks "Default" for a text slot
-- **THEN** the block under the box says it was designed for Qwen 3 models running in llama.cpp, that the model must
-  see the page and answer with a tool call, and that on a strong model it uses several times the tokens Lean Default
-  does
+- **THEN** the block under the box says it was built for Qwen 3 models running in llama.cpp, that the model must see
+  images and be forced to call a tool, and that on a strong paid model Lean Default uses far fewer tokens
 
 #### Scenario: A harness of the user's own
 - **WHEN** the user picks a harness from their own folder

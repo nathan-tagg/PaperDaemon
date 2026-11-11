@@ -193,8 +193,9 @@ def schema_of(tools, force, loose=False):
 
 
 def turns_of(messages, vision):
-    """The conversation as turns, each its pictures and its words; an earlier turn is headed by whose it was, so a
-    later request begins with the same turns. -> ([(pictures, words)], pictures dropped)."""
+    """The conversation as turns, each its pictures and its words, every turn headed by whose it is. A turn is written
+    the same way in every call of a job, so a later call begins exactly as the one before did and the provider reads
+    that part from its cache. -> ([(pictures, words)], pictures dropped)."""
     out, dropped = [], 0
     alone = len(messages) == 1 and messages[0]["role"] == "user"
     for m in messages:
@@ -203,7 +204,7 @@ def turns_of(messages, vision):
             imgs = list(m.get("images") or [])
             if imgs and not vision:
                 dropped, imgs = dropped + len(imgs), []
-            out.append((imgs, (m.get("text") or "") if alone else "[THE USER'S SIDE]\n" + (m.get("text") or "")))
+            out.append((imgs, "[THE USER'S SIDE]\n" + (m.get("text") or "")))
         elif role == "assistant":
             said = [m["text"]] if m.get("text") else []
             said += ["called %s(%s)" % (c["name"], json.dumps(c.get("arguments") or {}, ensure_ascii=False))

@@ -6,6 +6,6 @@
     "Any model strong enough to do a whole job from one look at the page"
   ],
   "extends": "default-text",
-  "notes": "For a strong model that is dear to call, hosted or on a command line. The model must be able to see a picture of the page, be made to answer with a tool call, and do a whole job from one look at it: a weaker model plans badly on this harness and leaves work undone, so use Default for those. It gets a short job description and only the calls a turn can make, a typed page as its text with no picture, and gives a job's words or sketch in the plan itself, so most jobs are one call and a fraction of the tokens Default uses.",
+  "notes": "Built for strong paid models, such as the Claude, GPT and Gemini Pro models.\nRequires a model that can see images, can be forced to call a tool, and can plan a whole job in one call. Weaker models will skip work or plan badly; use Default for them.\nSends short instructions and only the tools each call needs. Most jobs finish in one call.",
   "lean": true
 }

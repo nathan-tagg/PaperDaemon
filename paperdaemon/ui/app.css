@@ -522,7 +522,7 @@ textarea.field { height: auto; padding: 8px 10px; }
 .memory-card textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 0; }
 /* what a tab is for, where the user must know it to use the tab (the Tagging and Memories tabs); unlike help text, shown */
 .tab-note { color: var(--ink-2); font-size: 14px; line-height: 20px; margin: 0 0 var(--s4); }
-.harness-note { color: var(--ink-2); font-size: 14px; line-height: 20px; margin: var(--s2) 0 0; }   /* what the picked harness is for */
+.harness-note { color: var(--ink-2); font-size: 14px; line-height: 20px; margin: var(--s2) 0 0; white-space: pre-line; }   /* what the picked harness is for */
 .harness-note:empty { display: none; }
 .tag-card textarea, .custom-tag.tag-card textarea { min-height: 96px; }
 /* a picture still coming from the engine: a spinner, never a broken image (PD.loadImage) */

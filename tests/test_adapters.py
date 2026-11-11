@@ -116,3 +116,14 @@ def test_an_api_base_is_the_servers_v1_or_the_path_the_location_names():
     assert api_base("https://api.anthropic.com") == "https://api.anthropic.com/v1"
     assert api_base("https://generativelanguage.googleapis.com/v1beta/openai/") == \
         "https://generativelanguage.googleapis.com/v1beta/openai"
+
+
+def test_the_anthropic_api_is_asked_to_cache_and_its_cache_counts_are_read():
+    from paperdaemon.models import adapters as AD
+    a = AD.AnthropicChat("https://api.anthropic.com/v1", "k", "claude-opus-5-5")
+    body, _ = a.request("sys", [{"role": "user", "text": "hi"}], caps={})
+    assert body["cache_control"] == {"type": "ephemeral"}
+    r = AD.AnthropicChat.parse({"content": [{"type": "text", "text": "ok"}], "stop_reason": "end_turn",
+                                "usage": {"input_tokens": 100, "cache_creation_input_tokens": 50,
+                                          "cache_read_input_tokens": 5000, "output_tokens": 7}})
+    assert r["usage"] == {"input": 5150, "output": 7, "cached": 5000}

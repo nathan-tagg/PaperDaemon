@@ -85,7 +85,7 @@ def test_model_harnesses_override_only_what_differs():
 
 def test_the_default_says_what_it_was_designed_for_and_the_harnesses_folded_into_it_name_it():
     """'fold them in, but in their header state that they were designed for qwen 3 models running in llama.cpp'."""
-    assert DefaultText.notes.startswith("Designed for Qwen 3 models running in llama.cpp")
+    assert DefaultText.notes.startswith("Built for Qwen 3 models running in llama.cpp.")
     assert DefaultText.server.startswith("llama.cpp") and DefaultText.models[:2] == ("Qwen 3.6 27B", "Qwen 3.8 27B")
     for gone in ("qwen3.6-27b", "qwen3.8-27b"):
         assert harnesses.get(gone) is None
@@ -382,8 +382,8 @@ def test_every_harness_to_pick_describes_itself_for_the_lineup_screen():
             said = harnesses.describe(h)["notes"]
             assert len(said) > 80 and said == h.notes, h.id          # the file's own words, as the API lists them
     d, lean = DefaultText.notes, LeanDefault.notes
-    assert "must be able to see a picture of the page" in d and "tool call" in d and "misread pages or fail jobs" in d
-    assert "several times the tokens Lean Default does" in d
-    assert "a weaker model plans badly on this harness" in lean and "use Default for those" in lean
+    assert "Requires a model that can see images and can be forced to call a tool" in d and "fail jobs" in d
+    assert "Lean Default uses far fewer tokens" in d
+    assert "Weaker models will skip work or plan badly; use Default for them." in lean
     assert "guess" not in (d + lean + Flux2Klein9B.notes + ZImageTurbo.notes + DefaultImage.notes).lower()
     assert "refused" not in Flux2Klein9B.notes                     # (it spoke of a hint a guess refused; nothing guesses)

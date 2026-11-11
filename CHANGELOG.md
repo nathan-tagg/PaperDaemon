@@ -2,7 +2,11 @@
 
 ## 0.2.54
 
-- PaperDaemon can make a notebook on the tablet itself, not only in the False Mirror, when "Edit the Mirror" is on in Settings: the engine takes a new notebook for the tablet's own library (its name, folder and tags) and sends it to the tablet at once. The window has no button for it yet.
+- PaperDaemon can make a notebook on the tablet itself, not only in the False Mirror, when "Edit the Mirror" is on in Settings. The notebook gets its name, folder and tags and is sent to the tablet at once. There is no button for it in the window yet.
+- The descriptions under the Harness box are rewritten in plain words: what the harness is built for, what the model must be able to do, and what it costs.
+- A page with only typed text on it is sent to the model as text, with no picture, on every harness. Lean Default already did this; now Default does too, so a local model skips encoding an image it doesn't need.
+- A lineup on the Anthropic API asks Anthropic to cache. Until now it paid full price for every token on every call. The job log shows how many tokens came from the cache.
+- On the command line, the page is worded the same way on every call of a job, so the start of a later call can match the call before and come from the provider's cache.
 
 ## 0.2.53
 
