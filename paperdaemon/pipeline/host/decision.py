@@ -186,7 +186,8 @@ def _plan(plan_steps, rulings=(), places=None):
     # AN ID IS NOT WORDS: `at` naming an id (para:1, mark:3, picture:2, line:4) is that thing, so it is
     # what an erase takes off and what any other step sits beside; grounded as words it is found nowhere
     for q in plan_steps:
-        id_ = str(q.get("at") or "").strip().lower() if isinstance(q.get("at"), str) else ""
+        # (in quote marks too: "'para:1'" was looked for as words, found nowhere, and the request kept, 11-11)
+        id_ = str(q.get("at") or "").strip().strip("'\"`").strip().lower() if isinstance(q.get("at"), str) else ""
         if re.fullmatch(r"(para|mark|picture|line):\d+", id_):
             q.pop("at")
             if q["do"] == "erase":

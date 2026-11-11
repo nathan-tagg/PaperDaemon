@@ -278,6 +278,19 @@ def numbers(permalink):
 
 
 # ------------------------------------------------------------------ what the host calls
+def _why(ex):
+    """What went wrong, in words the user reads on the page: Reddit's answer when it gave one (11-11: a 429, shown as
+    "HTTPError", read as a broken job)."""
+    code = getattr(ex, "code", None)
+    if code == 429:
+        return "Reddit is limiting requests from this computer right now; try again in a few minutes"
+    if code in (403, 404):
+        return "Reddit says that subreddit is private, banned or doesn't exist (%d)" % code
+    if code:
+        return "Reddit answered %d %s" % (code, getattr(ex, "reason", "") or "")
+    return type(ex).__name__
+
+
 def posts(sub, sort="hot", period="day", limit=12):
     """The posts on r/<sub> -> {"sub", "sort", "votes": bool, "posts": [...]} or {"error"}. Each post:
     title, author, score, comments (None without a key), posted (UTC), url, link, image, text."""
@@ -291,7 +304,7 @@ def posts(sub, sort="hot", period="day", limit=12):
     try:
         got, votes = _cached(("posts", sub, sort, period, limit), go)
     except Exception as ex:
-        return {"error": "reddit unavailable for r/%s: %s" % (sub, type(ex).__name__)}
+        return {"error": "reddit unavailable for r/%s: %s" % (sub, _why(ex))}
     return {"sub": sub, "sort": sort + (" of the " + period if sort == "top" else ""), "votes": votes,
             "posts": got}
 
@@ -303,7 +316,7 @@ def search(query, sub=None, sort="relevance", period="all", limit=12):
         got = _cached(("search", query, sub, sort, period, limit),
                       lambda: _feed_search(query, sub, sort, period, limit))
     except Exception as ex:
-        return {"error": "reddit search unavailable for %r: %s" % (query, type(ex).__name__)}
+        return {"error": "reddit search unavailable for %r: %s" % (query, _why(ex))}
     # A CROSS-POST is one story in several communities: it gets one card, the first Reddit ranks.
     # Otherwise the same story can fill two of four cards, one from each community.
     seen, uniq = set(), []

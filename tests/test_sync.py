@@ -310,13 +310,16 @@ def test_nothing_but_the_one_push_talks_to_the_cloud():
     # push_doc, push_new_doc and touch are called from sync.push_pending only: a job that pushed mid-way could not
     # be taken back when the user abandoned it. Two exceptions, neither a job's work: convert.py sends a false-mirror
     # book to the tablet to be converted (the user's setting), and deletes it again (add-epub-reading, D5); the daemon's
-    # notes go up as copies of a page as it was handed over, that page's file alone (only=True)
+    # notes go up as copies of a page as it was handed over, that page's file alone (only=True); and a notebook the user
+    # makes on the tablet's own library from the window (local.new_notebook with tablet=True, Mirror editing on: the
+    # user's ask, 11-11) goes up as a new document, nothing else
     import pathlib, re
     root = pathlib.Path(__file__).resolve().parents[1] / "paperdaemon"
-    hits = [str(p.relative_to(root)) for p in root.rglob("*.py")
-            if p.name not in ("sync.py", "convert.py")
-            and re.search(r"\b(push_doc|push_new_doc)\(|\.touch\(", p.read_text(encoding="utf-8"))]
-    assert hits == [str(pathlib.Path("pipeline", "daemon", "__init__.py"))]
+    pat = r"\b(push_doc|push_new_doc)\(|\.touch\("
+    hits = sorted(str(p.relative_to(root)) for p in root.rglob("*.py")
+                  if p.name not in ("sync.py", "convert.py") and re.search(pat, p.read_text(encoding="utf-8")))
+    assert hits == sorted([str(pathlib.Path("pipeline", "daemon", "__init__.py")), str(pathlib.Path("remarkable", "local.py"))])
+    assert re.findall(pat, (root / "remarkable" / "local.py").read_text(encoding="utf-8")) == ["push_new_doc"]
     calls = re.findall(r"push_doc\((.*)", (root / "pipeline" / "daemon" / "__init__.py").read_text(encoding="utf-8"))
     assert calls and all("replace=" in c and "only=True" in c for c in calls)
 

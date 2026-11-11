@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.65
+
+- When Reddit refuses a request, the Daemon's note says why in plain words. A 429 shows as "Reddit is limiting requests from this computer right now; try again in a few minutes" instead of "HTTPError". A private, banned or missing subreddit says so.
+
 ## 0.2.64
 
 - Answers show on the tablet after the Daemon's notes. PaperDaemon numbered each author's strokes on their own, so an answer took counters the Daemon's earlier notes had used and erased, and the tablet hides a stroke whose counter falls inside an erased range, whatever its author. Everything PaperDaemon writes (answers, notes, pictures, typed text, editor saves) is now numbered past every counter on the page, as the tablet numbers its own.
