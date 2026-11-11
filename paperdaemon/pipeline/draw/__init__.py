@@ -635,6 +635,7 @@ class Drawing:
         # inside an erased range of any author (the Sonnet and Haiku pages, 11-11)
         top = next_free_id(blocks) - 1
         seqs = set(authors)
+        wrote = []
         prev = CrdtId(0, 0)
         if kept:
             # Never reuse an id that is already on the page, and hang the new
@@ -675,6 +676,7 @@ class Drawing:
                      color_rgba=(tuple(rgba[:3]) + (tuple(rgba[3:4]) or (255,)) if rgba else None))
             top += 1
             iid = CrdtId(a, top)
+            wrote.append((a, top))
             blocks.append(ss.SceneLineItemBlock(
                 parent_id=layer,
                 item=CrdtSequenceItem(item_id=iid, left_id=prev,
@@ -705,9 +707,11 @@ class Drawing:
         # hours precisely because every local check passes. Belt and braces on
         # top of next_free_id(): if the allocator is ever wrong again, this
         # stops the file reaching the page instead of letting it look fine.
-        rng = dead_ranges(rb_all)                     # every author's: the tablet does not tell them apart
-        buried = [b.item.item_id.part2 for b in rb if b.item.item_id.part1 in seqs
-                  and any(a <= b.item.item_id.part2 <= z for a, z in rng)]
+        # THE STROKES WRITTEN NOW, each against its own author's ranges: a range buries only its author's ids (the
+        # tablet drew answers under counters another author had erased, 11-11), and strokes already on the page are
+        # not this write's to refuse (0.2.64 refused Haiku page 3's answer for the one before it)
+        rng = dict((au, dead_ranges(rb_all, au)) for au in seqs)
+        buried = [c for au, c in wrote if any(a <= c <= z for a, z in rng[au])]
         if buried:
             raise RuntimeError(
                 "REFUSING TO WRITE: %d stroke id(s) fall inside a deleted "

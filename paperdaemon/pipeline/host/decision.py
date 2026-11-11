@@ -987,6 +987,12 @@ def step_message(cur):
         elif q["do"] == "search" and q["status"] == "failed":
             L.append("The search for %r found nothing (%s). Write that you could not look it up just now -- never "
                      "its facts from memory." % (q["what"][:60], str(q.get("note") or "")[:160]))
+    for f in cur.get("explains") or ():
+        L.append("A STEP FAILED: %s -- %s. Tell the user in a few lines what could not be done and the most likely "
+                 "reason. Weigh what this job found (any search results above) and what the request itself says, a "
+                 "doubt the user wrote about it included. Never say it worked, and never make up what it would have "
+                 "shown. Say what to change for it to work, a corrected name for instance. The request stays on "
+                 "the page for them to try again." % (f["what"], f["note"]))
     if cur.get("posts_found"):
         f = cur["posts_found"]
         try:

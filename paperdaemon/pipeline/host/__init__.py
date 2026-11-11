@@ -388,9 +388,35 @@ def _drain_host_steps(limit=8, kinds=None):
         JOB.draw.tag(s0, ST.STROKE_KIND.get(cur["do"]))     # what this step drew, as what it is
         ran.append("%d %s -> %s%s" % (cur["id"], cur["do"], cur["status"],
                                       (" (%s)" % cur.get("note")) if cur["status"] == "failed" else ""))
+        if cur["status"] == "failed":
+            _say_why_it_failed(steps, cur)
     if ran:
         log("  host steps: %s" % "; ".join(ran))
     return ran
+
+
+def _say_why_it_failed(steps, cur):
+    """A STEP THAT CARRIES OUT THE REQUEST AND FAILS IS SAID IN WORDS: the failure, and why, go to the plan's next
+    write step, or to one added at the end, and the model tells the user what could not be done, the likely reason
+    and what to change. Before, the job only skipped, with the bare error in the Daemon's note (11-11: a subreddit
+    the user doubted the name of, refused by Reddit, came back as "HTTPError"). The request stays on the page."""
+    if cur["do"] in ("erase", "search", "write") or not cur.get("answers") or cur.get("said_why"):
+        return
+    if "write" in _off_steps_and_tools()[0]:
+        return
+    cur["said_why"] = True
+    failed = {"what": ST.describe(cur), "note": str(cur.get("note") or "it did not work")}
+    later = [q for q in steps[steps.index(cur) + 1:] if q["do"] == "write" and q["status"] in ("todo", "doing")]
+    if later:
+        later[0].setdefault("explains", []).append(failed)
+        return
+    try:
+        added = _add_step({"do": "write", "what": "say why it did not work: %s" % failed["what"]})
+    except Exception as ex:
+        log("  no room to say why step %d failed: %s" % (cur["id"], str(ex)[:80]))
+        return
+    added["answers"] = []
+    added["explains"] = [failed]
 
 
 STEP_TOOLS = JB.CLOSES             # the call that does each kind of step (host/jobs.py)

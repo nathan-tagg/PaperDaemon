@@ -215,3 +215,55 @@ def test_an_answer_after_the_daemons_notes_takes_counters_past_every_author(tmp_
     answer = [c for a, c in live if a != 8]                # everything but the note (8)
     erased_before = [c for _a, c in d["dead"] if c < min(answer)]
     assert len(answer) == 3 and erased_before and min(answer) > max(erased_before)
+
+
+def test_a_range_erased_by_one_author_never_buries_another_authors_strokes(tmp_path):
+    """11-11, Haiku page 3: an earlier answer (author 3) sat under counters the Daemon's notes (author 2) had erased as
+    one range. The tablet draws such strokes (the Sonnet page showed them), but 0.2.64 refused the next answer for
+    them and the renderer left them out of the page the model is shown. A range buries only its own author's ids."""
+    code = textwrap.dedent("""
+        import io, json, os, shutil, sys, uuid
+        sys.path.insert(0, %r)
+        import paperdaemon.pipeline  # noqa: F401
+        from paperdaemon import paths
+        from paperdaemon.pipeline import TEMPLATES, draw as A
+        from paperdaemon.pipeline.page import render as R
+        from rmscene import read_blocks, write_blocks
+        from rmscene import scene_stream as ss
+        from rmscene.crdt_sequence import CrdtSequenceItem
+        from rmscene.tagged_block_common import CrdtId
+        M = paths.mirror_dir()
+        doc, pid = str(uuid.uuid4()), str(uuid.uuid4())
+        os.makedirs(os.path.join(M, doc))
+        path = os.path.join(M, doc, pid + ".rm")
+        shutil.copyfile(os.path.join(TEMPLATES, "blank-page.rm"), path)
+        json.dump({"cPages": {"pages": [{"id": pid, "idx": {"timestamp": "1:2", "value": "ba"}}]}, "fileType": "notebook",
+                   "pageCount": 1}, open(os.path.join(M, doc + ".content"), "w"))
+        json.dump({"visibleName": "T", "parent": "", "type": "DocumentType"}, open(os.path.join(M, doc + ".metadata"), "w"))
+        d = A.Drawing(1620, 2160)
+        for x in (-300, 0, 300):
+            d.stroke([(x, 400), (x + 100, 500)])
+        d.write_rm(doc, 1, keep_existing=True)
+        bl = list(read_blocks(io.BytesIO(open(path, "rb").read())))
+        lines = [b for b in bl if isinstance(b, ss.SceneLineItemBlock)]
+        au, layer = lines[0].item.item_id.part1, lines[0].parent_id
+        # the earlier answer renumbered to counters 5..7, and another author's range erasing 1..100 on the same layer
+        prev = CrdtId(0, 0)
+        for i, b in enumerate(lines):
+            b.item.item_id = CrdtId(au, 5 + i); b.item.left_id = prev; prev = b.item.item_id
+        bl.append(ss.SceneLineItemBlock(parent_id=layer, item=CrdtSequenceItem(
+            item_id=CrdtId(au + 1, 1), left_id=CrdtId(0, 0), right_id=CrdtId(0, 0), deleted_length=100, value=None)))
+        buf = io.BytesIO(); write_blocks(buf, bl); open(path, "wb").write(buf.getvalue())
+        seen_before = len(R.strokes(doc, 1))
+        d2 = A.Drawing(1620, 2160)
+        d2.stroke([(-300, 900), (-100, 1000)])
+        d2.write_rm(doc, 1, keep_existing=True)                      # 0.2.64 refused this
+        print(json.dumps({"before": seen_before, "after": len(R.strokes(doc, 1)), "fast": len(R.strokes(doc, 1, arrays=True))}))
+    """) % ROOT
+    env = dict(os.environ, PAPERDAEMON_HOME=str(tmp_path / "home"), PYTHON_KEYRING_BACKEND="keyring.backends.null.Keyring")
+    for k in ("RM_STATE", "RM_MIRROR", "RM_CACHE", "RM_RUN"):
+        env.pop(k, None)
+    out = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True, timeout=300)
+    assert out.returncode == 0, out.stderr[-3000:]
+    d = json.loads(out.stdout.strip().splitlines()[-1])
+    assert d == {"before": 3, "after": 4, "fast": 4}, d

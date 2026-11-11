@@ -650,7 +650,8 @@ def strokes(doc, page_no, arrays=False):
         blocks, dead, made = fast
     else:
         blocks = blocks_of(path, arrays)
-        dead = dead_ranges(blocks)
+        dead = [(b.item.item_id.part1, b.item.item_id.part2, b.item.item_id.part2 + b.item.deleted_length - 1)
+                for b in blocks if (getattr(getattr(b, "item", None), "deleted_length", 0) or 0) > 1]
         made = None
     # WHERE THE TABLET DRAWS EACH STROKE, always: a group the tablet anchored to the typed text is stored offset
     # from the page, and read at its stored place it was drawn, ruled on, collided with and pointed at somewhere
@@ -660,18 +661,24 @@ def strokes(doc, page_no, arrays=False):
     out, buried = [], 0
     # the erased ranges merged and sorted, each stroke's id looked up by bisection (a page with many tombstones and many
     # strokes was hundreds of millions of comparisons, one range at a time)
+    # EACH AUTHOR'S OWN: a range buries only its author's ids (the tablet drew answers under counters the Daemon's
+    # notes, another author, had erased: the Sonnet page, 11-11)
     import bisect
-    spans = []
-    for a, z in sorted(dead):
-        if spans and a <= spans[-1][1] + 1:
-            spans[-1][1] = max(spans[-1][1], z)
+    spans = {}
+    for au, a, z in sorted(dead):
+        sp = spans.setdefault(au, [])
+        if sp and a <= sp[-1][1] + 1:
+            sp[-1][1] = max(sp[-1][1], z)
         else:
-            spans.append([a, z])
-    lows = [a for a, _z in spans]
+            sp.append([a, z])
+    lows = dict((au, [a for a, _z in sp]) for au, sp in spans.items())
 
-    def is_dead(n):
-        i = bisect.bisect_right(lows, n) - 1
-        return i >= 0 and n <= spans[i][1]
+    def is_dead(n, author):
+        sp = spans.get(author)
+        if not sp:
+            return False
+        i = bisect.bisect_right(lows[author], n) - 1
+        return i >= 0 and n <= sp[i][1]
     found = made if made is not None else (
         (b.item.item_id.part2, b.parent_id, b.item.value, b.item.item_id.part1) for b in blocks
         if isinstance(b, ss.SceneLineItemBlock) and isinstance(getattr(b.item, "value", None), Line))
@@ -679,7 +686,7 @@ def strokes(doc, page_no, arrays=False):
     for n, parent, v, author in found:
         if daemon_stroke(author, (parent.part1, parent.part2), daemon):
             continue                                      # the daemon's note, never the page's content
-        if is_dead(n):
+        if is_dead(n, author):
             buried += 1          # the device treats this as erased
         else:
             d = shifts.get(parent)

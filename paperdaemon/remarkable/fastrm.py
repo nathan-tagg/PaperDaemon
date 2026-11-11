@@ -310,7 +310,8 @@ def page_lines(data):
         return None
     rows, rest = got
     L = rows[rows[:, 0] == LINE.BLOCK_TYPE]
-    dead = [(int(a), int(a) + int(n) - 1) for a, n in L[L[:, 13] > 1][:, [8, 13]].tolist()]
+    # (author, first, last): a range buries only its own author's ids
+    dead = [(int(au), int(a), int(a) + int(n) - 1) for au, a, n in L[L[:, 13] > 1][:, [7, 8, 13]].tolist()]
     V = L[L[:, 14] != 0]
     thick = V[:, 17].copy().view(np.float64).tolist()
     start = (V[:, 18] & 0xFFFFFFFF).astype(np.uint32).view(np.float32).astype(np.float64).tolist()

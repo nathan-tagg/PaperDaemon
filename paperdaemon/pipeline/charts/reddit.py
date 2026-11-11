@@ -283,7 +283,10 @@ def _why(ex):
     "HTTPError", read as a broken job)."""
     code = getattr(ex, "code", None)
     if code == 429:
-        return "Reddit is limiting requests from this computer right now; try again in a few minutes"
+        # Reddit answers 429 both to requests that come too fast and, read without an account, to a subreddit that
+        # does not exist or is private (11-11: r/popular answered, r/PHAPrinting was refused a full minute later)
+        return ("Reddit refused it (429). It does that when requests come too fast, and also for a subreddit that "
+                "doesn't exist or is private")
     if code in (403, 404):
         return "Reddit says that subreddit is private, banned or doesn't exist (%d)" % code
     if code:

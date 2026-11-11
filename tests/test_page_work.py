@@ -231,3 +231,27 @@ def test_a_game_takes_its_page_whole(work):
     assert "diameters" not in d["text"]             # the request and the page's typed text are gone
     assert d["ink"] == 0                            # the user's ink came off (the page was recorded first)
     assert d["pictures"] >= 2                       # the board and the player's pieces are on it
+
+
+def test_a_step_that_fails_is_said_in_words_and_the_request_stays(work):
+    # 11-11, a posts step for a subreddit the user doubted the name of was refused, and the job only skipped,
+    # "HTTPError" in its note. A step that carries out the request and fails now goes to the model, which writes why;
+    # the request stays for a retry. (A highlight of a word not on the page fails the same way, with no network.)
+    replay.run_case("prep", {"fixture": "typed-question", "replies": [("skip", {"note": "first look"})]}, work=str(work))
+    _look(work, PAGE + """
+    from paperdaemon.pipeline.page import typed as TY
+    TY.insert(doc, page, "Highlight the word zebra in my note, if it's there.")
+    TY.insert(doc, page, "Note: satellites orbit their planets.")
+    print("{}")
+    """)
+    r = _job(work, "typed-question", [
+        ("plan", {"steps": [{"do": "highlight", "what": "zebra", "target": "para:3", "words": "zebra", "answers": ["para:2"]}],
+                  "rulings": [{"id": "para:1", "is": "question", "then": "keep"},
+                              {"id": "para:2", "is": "request", "then": "erase"},
+                              {"id": "para:3", "is": "note", "then": "keep"}]}),
+        ("write_paragraph", {"lines": ["There is no word zebra in your note, so nothing was highlighted."]})])
+    assert r["unused_replies"] == [], r                                  # the model was asked to say why, and did
+    d = _look(work, MARKS.replace("WORD", repr("zebra")))
+    texts = [p["text"] for p in d["paras"]]
+    assert "Highlight the word zebra in my note, if it's there." in texts           # the request stays
+    assert not d["marks"]                                                         # nothing was highlighted

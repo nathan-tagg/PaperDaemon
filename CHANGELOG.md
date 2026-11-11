@@ -1,8 +1,10 @@
 # Changelog
 
-## 0.2.65
+## 0.2.66
 
-- When Reddit refuses a request, the Daemon's note says why in plain words. A 429 shows as "Reddit is limiting requests from this computer right now; try again in a few minutes" instead of "HTTPError". A private, banned or missing subreddit says so.
+- When a step that carries out your request fails, the model is told what failed and why, and writes you a few lines: what could not be done, the likely reason (weighing what the job found and any doubt you wrote on the page), and what to change. Your request stays for a retry. Before, the job only skipped, with the bare error in the Daemon's note: "Give me the latest top posts from r/PHAPrinting, not sure if that's the actual name" came back as "HTTPError".
+- When Reddit refuses a feed (429), the reason says it does that both when requests come too fast and for a subreddit that doesn't exist or is private. A private, banned or missing subreddit that Reddit names as such says so.
+- 0.2.64 refused to write an answer on a page that already had an earlier answer under counters the Daemon's notes had erased (Haiku page 3). An erased range now counts only for its own author's strokes, both when writing and when showing the page to the model. Your tablet draws such strokes, as the Sonnet page showed.
 - A request line is taken off when the model names it in quote marks (`'para:1'`). The quotes made PaperDaemon look for those words on the page, so the request was kept and the note said "NOT DONE" though the job had worked.
 
 ## 0.2.64
