@@ -689,11 +689,10 @@ def test_a_page_the_pipeline_wrote_with_the_daemons_layer_a_picture_and_a_new_la
     assert got["none"] == ["none", 1, True, False, False] and got["made"] == [1, 1, IP_AUTHOR], got
 
 
-def test_the_user_draws_on_his_layer_of_a_mirror_page_and_keeps_it():
-    """The user's word, 11-07: "let me draw on it and keep my strokes". On a Mirror page his layer takes the user's
-    stroke as any layer does (written in place, every other block as it was), and his next note takes only his own. On
-    a page from before his byte -- his old note under the tablet's author, or his layer under his old author (218) --
-    the save that brings the user's first stroke there lays what the layer held again as his (notes.adopt)."""
+def test_the_user_draws_on_his_layer_of_a_mirror_page_and_his_next_note_wipes_it():
+    """On a Mirror page his layer takes the user's stroke as any layer does, and his next note wipes the layer, the
+    user's stroke with it (the user's word, 11-11: "it should wipe it EVERY time"), on any page: one with his note under
+    its number, his old note under the tablet's author, or his layer under his old author (218)."""
     got = _run("""
         import uuid
         from rmscene import write_blocks
@@ -761,12 +760,10 @@ def test_the_user_draws_on_his_layer_of_a_mirror_page_and_keeps_it():
         out(**res)
     """)
     byte, tablet, old = got["byte"], got["tablet"], got["218"]
-    assert byte["drawn"]["prefix"] and byte["drawn"]["added"] == 1 and byte["drawn"]["erased"] == 0, byte
-    assert byte["drawn"]["on_his"][-1] == IP_AUTHOR and set(byte["drawn"]["on_his"][:-1]) == {8} and not byte["drawn"]["old_page"], byte
-    assert tablet["drawn"] == {"on_his": [8, 8, IP_AUTHOR], "his_layers": 1, "old_page": False, "added": 1, "erased": 0, "prefix": False}, tablet
-    assert old["drawn"] == {"on_his": [8, IP_AUTHOR], "his_layers": 1, "old_page": False, "added": 1, "erased": 0, "prefix": False}, old
-    for case in (byte, tablet, old):                      # his next note takes his own and leaves the user's stroke
-        assert case["noted"] == {"on_his": [8] * case["note"] + [IP_AUTHOR], "his_layers": 1, "old_page": False}, case
+    assert byte["drawn"]["prefix"] and byte["drawn"]["erased"] == 0, byte
+    for case in (byte, tablet, old):                      # the stroke saved on his layer as the user's
+        assert case["drawn"]["added"] == 1 and IP_AUTHOR in case["drawn"]["on_his"], case
+        assert case["noted"]["on_his"] == [8] * case["note"] and case["noted"]["his_layers"] == 1, case   # all wiped
 
 
 def test_a_page_the_c_reader_does_not_cover_is_written_the_same():

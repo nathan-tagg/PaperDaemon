@@ -55,8 +55,8 @@ def _blocks(data):
 
 def test_notes_laid_as_the_tablets_author_are_erased_and_the_next_goes_up_as_paperdaemons_note():
     """From 0.1.81 to 0.2.30 his notes went up as the tablet's author (1), on a layer of his made under it. The next note
-    takes that layer up (never a second one), erases what is on it, and goes up under the notes' byte (134); a record
-    of what was laid then (four numbers, no layer author) still erases strokes a copy of the page never showed."""
+    takes that layer up (never a second one), erases what is on it, and goes up under the notes' number (8). Nothing is
+    kept beside the page (the user's word, 11-11)."""
     import os
     from paperdaemon import studio
     from paperdaemon.pipeline import TEMPLATES
@@ -75,15 +75,12 @@ def test_notes_laid_as_the_tablets_author_are_erased_and_the_next_goes_up_as_pap
                _line([(0.0, 900.0), (60.0, 950.0)], CrdtId(0, 11), CrdtId(1, 1000))]
     page = _write(blocks)
     assert _counts(page) == (1, 1, 1)
-    state = {"author": 1, "next": 200_010, "layer": [200_000, first.part1, first.part2, "Daemon", 1],
-             "laid": [[200_000, 200_005, 200_006, 1]]}
     strokes, _ = N.letter(["On it."], FRAME)
-    after = N.with_note(page, strokes, state)
+    after = N.with_note(page, strokes)
     assert _counts(after) == (len(strokes), 1, 1)                 # his old layer taken up: still one layer
     bl = _blocks(after)
     new = [b for b in bl if isinstance(b, ss.SceneLineItemBlock) and b.item.value is not None and b.parent_id == lay]
     assert len(new) == len(strokes) and {b.item.item_id.part1 for b in new} == {8}
-    assert {(1, 200_004), (1, 200_005), (1, 200_006)} <= _dead(after)
+    assert (1, 200_004) in _dead(after)
     table = next(b for b in bl if isinstance(b, ss.AuthorIdsBlock)).author_uuids
     assert table[8] == R.uuid_of("notes") and table[1] != R.uuid_of("notes")
-    assert state["author"] == 8 and state["layer"][4] == 1 and state["laid"][-1][3:] == [8, 1]

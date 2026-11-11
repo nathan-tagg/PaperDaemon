@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.67
+
+- Every time the Daemon writes to a page, it wipes the Daemon layer first: everything on it, whoever drew it. Nothing about what it wrote is kept beside the page any more. The record it kept (daemon-ink.json) hung erase marks on layers some pages no longer had, and the tablet drew nothing on those pages.
+- The retry box sits on the Daemon's line, right-aligned after the signature. Under the line, at the left, it sat under the tablet's always-on dot. A tick in it counts on any layer.
+
 ## 0.2.66
 
 - When a step that carries out your request fails, the model is told what failed and why, and writes you a few lines: what could not be done, the likely reason (weighing what the job found and any doubt you wrote on the page), and what to change. Your request stays for a retry. Before, the job only skipped, with the bare error in the Daemon's note: "Give me the latest top posts from r/PHAPrinting, not sure if that's the actual name" came back as "HTTPError".

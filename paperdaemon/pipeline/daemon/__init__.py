@@ -412,53 +412,6 @@ def _letter(lines, frame, box=False, latest=False):
     return N.letter(lines, frame, box=box, latest=latest)
 
 
-# WHAT HE HAS PUT ON EACH PAGE, and his next id there (notes._write's state), in a file only the daemon writes: the
-# host saves the ledger as it works, and a count lost there would let a note reuse ids the tablet already has.
-INK = os.path.join(_STATE, "daemon-ink.json")
-# ONE WRITER AT A TIME, AND A READ THAT FAILED IS NOT AN EMPTY FILE: the notes are written from more than one thread
-# (the progress note runs beside the job), and on Windows a read while the file is being replaced fails. Taken for
-# empty, the next write kept only its own page and every other page's record was lost -- and a page without its record
-# made a second layer of his. Reads are retried; a file that still cannot be read is not written over.
-_INK_LOCK = threading.Lock()
-
-
-class _InkUnread(Exception):
-    pass
-
-
-def _ink_all():
-    if not os.path.exists(INK):
-        return {}
-    for k in range(8):
-        try:
-            with open(INK, encoding="utf-8") as f:
-                d = json.load(f)
-            return d if isinstance(d, dict) else {}
-        except (OSError, ValueError):
-            time.sleep(0.05 * (k + 1))
-    raise _InkUnread("daemon-ink.json could not be read")
-
-
-def _ink(doc, pid):
-    with _INK_LOCK:
-        try:
-            st = _ink_all().get("%s/%s" % (doc, pid))
-        except _InkUnread:
-            st = None
-    return st if isinstance(st, dict) else {}
-
-
-def _ink_keep(doc, pid, state):
-    with _INK_LOCK:
-        try:
-            d = _ink_all()
-        except _InkUnread as ex:
-            log("  %s: this page's record is not kept (the page's own layer is found again next time)" % ex)
-            return
-        d["%s/%s" % (doc, pid)] = state
-        paths.write_atomic(INK, json.dumps(d))
-
-
 def _note_copy(doc, pid, base, lines, what):
     """A copy of the page as it was handed over, his layer deleted and a new one with `lines` on it, up to the tablet;
     the page in the mirror, which the host works on, is not touched. THE FALSE MIRROR has no tablet to send a copy to:
@@ -469,10 +422,8 @@ def _note_copy(doc, pid, base, lines, what):
     if paths.local_only():
         _note_in_place(doc, pid, lines, what)
         return
-    state = _ink(doc, pid)
     strokes, _box = _letter(lines, _frame_of(doc, pid), latest=True)
-    data = N.with_note(base, strokes, state)
-    _ink_keep(doc, pid, state)
+    data = N.with_note(base, strokes)
     _push_copy(doc, pid, data, what)
 
 
@@ -490,9 +441,7 @@ def _note_in_place(doc, pid, lines, what):
             data = open(path, "rb").read()
         except OSError:
             return
-        state = _ink(doc, pid)
-        paths.write_atomic(path, N.with_note(data, strokes, state))
-        _ink_keep(doc, pid, state)
+        paths.write_atomic(path, N.with_note(data, strokes))
     log("  the %s note is on the page" % what)
 
 
@@ -513,11 +462,9 @@ def prepare_page(job):
     with paths.page_lock(path):                               # (one writer of the page at a time)
         data = open(path, "rb").read()
         ticks = N.box_marks(data, ent.get("note_box"), shifts=_shifts_of(doc, pid, path)) if ent.get("note_box") else []
-        state = _ink(doc, pid)
-        clean, n = N.erase(data, state, also=ticks)
+        clean, n = N.erase(data, also=ticks)
         if clean is not data:
             paths.write_atomic(path, clean)
-            _ink_keep(doc, pid, state)
     if clean is not data:
         log("  erased the daemon's notes%s" % (" and the tick in its retry box" if ticks else ""))
     if ticks:
@@ -576,9 +523,7 @@ def final_note(job, since):
     box = not again and (failed or st != "done")
     strokes, b = _letter(lines, _frame_of(doc, pid), box=box)
     with paths.page_lock(path):                               # (one writer of the page at a time)
-        state = _ink(doc, pid)
-        paths.write_atomic(path, N.with_note(open(path, "rb").read(), strokes, state))
-        _ink_keep(doc, pid, state)
+        paths.write_atomic(path, N.with_note(open(path, "rb").read(), strokes))
     with rm_scan.locked():
         led = rm_scan.load()
         e = led["entries"].get(key)

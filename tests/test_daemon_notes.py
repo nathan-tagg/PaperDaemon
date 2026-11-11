@@ -73,7 +73,7 @@ def _his_strokes(data):
     """His live strokes' ids: on his layer, under PaperDaemon's author (the page's author table ties it to PaperDaemon)."""
     from paperdaemon.pipeline.page import render as R
     blocks = _blocks(data)
-    his, own = _his_layers(blocks), {R.author_of("notes")}
+    his, own = _his_layers(blocks), N._notes_of(R.author_table(blocks))
     return {N._key(b.item.item_id) for b in blocks if isinstance(b, ss.SceneLineItemBlock) and b.item.value is not None
             and N._key(b.parent_id) in his and b.item.item_id.part1 in own}
 
@@ -140,38 +140,28 @@ def test_a_note_is_his_own_and_every_write_erases_everything_of_his_first():
     assert N.erase(c, state) == (c, 0)                          # nothing of his left: the page as it is
 
 
-def test_copies_of_one_page_never_share_ids_and_a_later_one_erases_what_the_earlier_carried():
-    """Notes go up as copies made from the page as it was handed over; the tablet merges them. Each has stroke ids
-    of its own and the same one layer, and each erases what the ones before it put up, though its base never had it."""
+def test_every_note_wipes_his_layer_and_keeps_one_layer():
+    """The user's word (11-11): wipe the Daemon layer EVERY time a note is written. Each note erases everything the
+    one before put there, and the page keeps one layer of his, the same one."""
     base = _page([(0.0, 900.0), (60.0, 950.0)])
-    state = {}
     s1, _ = N.letter(["On it"], FRAME, latest=True)
     s2, _ = N.letter(["On it", "Read: wrote 'hello'"], FRAME, latest=True)
-    c1 = N.with_note(base, s1, state)
-    c2 = N.with_note(base, s2, state)
-    assert not (_his_strokes(c1) & (_his_strokes(c2) - _dead(c2)))
-    assert _his_strokes(c1) <= _dead(c2)
-    layers = [{N._key(b.tree_id) for b in _blocks(c) if isinstance(b, ss.SceneTreeBlock) and N._key(b.tree_id) in _his_layers(_blocks(c))}
-              for c in (c1, c2)]
-    assert layers[0] == layers[1] and len(layers[0]) == 1         # one layer, the same blocks in every copy
+    c1 = N.with_note(base, s1)
+    c2 = N.with_note(c1, s2)
+    assert _his_strokes(c1) and _his_strokes(c1) <= _dead(c2)
     assert _counts(c2) == (len(s2), 1, 1)
-    final = N.with_note(base, s1, state)                         # the last note, on the host's page
-    assert (_his_strokes(c1) | _his_strokes(c2)) <= _dead(final) and _counts(final) == (len(s1), 1, 1)
-    # what the page showed erased when it came is forgotten; what is erased only now is kept
-    back = N.with_note(final, s1, state)
-    assert len(state["laid"]) == 2 and _counts(back) == (len(s1), 1, 1)
+    assert _his_place(_blocks(c1)).item.value == _his_place(_blocks(c2)).item.value
 
 
 def test_a_layer_the_user_deleted_is_made_anew():
-    state = {}
     strokes, _ = N.letter(["On it."], FRAME)
-    blocks = _blocks(N.with_note(_page([(0.0, 900.0)]), strokes, state))
-    first = state["layer"][0]
+    blocks = _blocks(N.with_note(_page([(0.0, 900.0)]), strokes))
     place = _his_place(blocks)
+    first = place.item.value
     blocks = [ss.SceneGroupItemBlock(parent_id=b.parent_id, item=dataclasses.replace(b.item, deleted_length=1, value=None))
               if b is place else b for b in blocks]
-    again = N.with_note(_write(blocks), strokes, state)
-    assert state["layer"][0] != first and _counts(again) == (len(strokes), 1, 1)
+    again = N.with_note(_write(blocks), strokes)
+    assert _his_place(_blocks(again)).item.value != first and _counts(again) == (len(strokes), 1, 1)
 
 
 def test_a_record_lost_never_makes_a_second_layer_and_two_become_one():
@@ -194,35 +184,20 @@ def test_a_record_lost_never_makes_a_second_layer_and_two_become_one():
     assert _counts(one) == (len(strokes), 1, 1)
 
 
-def test_a_record_file_that_cannot_be_read_is_not_written_over(tmp_path, monkeypatch):
-    from paperdaemon.pipeline import daemon as D
-    ink = tmp_path / "daemon-ink.json"
-    ink.write_text('{"x/1": {"next": 5}, "x/2": {"next": 9}}', encoding="utf-8")
-    monkeypatch.setattr(D, "INK", str(ink))
-    monkeypatch.setattr(D.time, "sleep", lambda s: None)
-    real = open
-    monkeypatch.setattr("builtins.open", lambda f, *a, **k: (_ for _ in ()).throw(PermissionError("busy")) if str(f) == str(ink) else real(f, *a, **k))
-    D._ink_keep("x", "3", {"next": 1})
-    monkeypatch.setattr("builtins.open", real)
-    assert set(__import__("json").loads(ink.read_text(encoding="utf-8"))) == {"x/1", "x/2"}
-
-
-def test_the_users_strokes_on_his_layer_are_the_users_and_stay(tmp_path, monkeypatch):
-    """The user's word (11-07): "let me draw on it and keep my strokes". Once a note of his has gone up under his byte
-    (134), a stroke of the user's on his layer (the tablet's author, 1) is the user's: read as the page's, in its
-    fingerprint, and kept through his next note -- told by its author byte, never by how its points look."""
+def test_whatever_is_on_his_layer_goes_with_his_next_note(tmp_path, monkeypatch):
+    """The user's word (11-11): "It should not care what is on that layer, it should wipe it EVERY time". A stroke of
+    the user's on his layer (the tablet's author, 1) is read as the page's until then, and erased by his next note."""
     from paperdaemon.pipeline.page import render as R
     f = _mirror(tmp_path, monkeypatch)
-    state = {}
     strokes, _ = N.letter(["On it."], FRAME)
-    page = N.with_note(_page([(0.0, 900.0), (60.0, 950.0)]), strokes, state)
-    layer = CrdtId(state["layer"][4], state["layer"][0])
+    page = N.with_note(_page([(0.0, 900.0), (60.0, 950.0)]), strokes)
+    layer = _his_place(_blocks(page)).item.value
     written = _write(_blocks(page) + [_line([(10.0, 600.0), (90.0, 640.0)], layer, CrdtId(1, 5000))])
-    assert _sha(f, page) != _sha(f, written)                    # the user's stroke is part of the page
+    assert _sha(f, page) != _sha(f, written)                    # the user's stroke is part of the page until then
     assert len(R.strokes(DOC, 1)) == 2 and len(R.strokes(DOC, 1, arrays=True)) == 2
-    again = N.with_note(written, strokes, state)
-    assert _counts(again) == (len(strokes), 2, 1)               # his next note: the user's stroke on his layer stays
-    assert (1, 5000) not in _dead(again)
+    again = N.with_note(written, strokes)
+    assert _counts(again) == (len(strokes), 1, 1)               # his next note: everything on his layer erased
+    assert (1, 5000) in _dead(again)
 
 
 def test_on_a_page_from_before_everything_on_his_layer_goes_with_the_first_note(tmp_path, monkeypatch):
@@ -370,7 +345,6 @@ def test_in_the_false_mirror_the_note_goes_into_the_page_as_it_is_now(tmp_path, 
     before = _sha(f, page)
     monkeypatch.setattr(D.paths, "local_only", lambda: True)
     monkeypatch.setattr(N, "page_file", lambda d, p: str(f))
-    monkeypatch.setattr(D, "INK", str(tmp_path / "daemon-ink.json"))
     monkeypatch.setattr(D, "log", lambda *a, **k: None)
     monkeypatch.setattr(D, "_frame_of", lambda d, p: FRAME)
     D._note_copy(DOC, PID, page, ["On it"], "start")
@@ -448,3 +422,16 @@ def test_handwriting_is_read_where_the_render_puts_it(monkeypatch, tmp_path):
     marks = [{"id": 1, "owner": "yours", "count": 5, "bbox": (230, 2610, 300, 2650)},     # where the word is
              {"id": 2, "owner": "yours", "count": 5, "bbox": (-100, 1850, 300, 1950)}]   # where scaling put it
     assert I._mark_words("doc", 1, marks) == {1: "hello"}
+
+
+def test_the_retry_box_is_on_the_notes_line_at_its_right_end():
+    """The user's word (11-11): under the line, at its left, the box sat under the tablet's always-on dot. It is on the
+    note's own line, right-aligned after the signature, inside the band; a long note is cut before it."""
+    x0, x1, top, bottom = N.band(FRAME)
+    strokes, box = N.letter(["Skipped after 1m 34s: " + "a long reason " * 30], FRAME, box=True)
+    plain, _ = N.letter(["Skipped after 1m 34s: " + "a long reason " * 30], FRAME)
+    text_y = [y for st in plain for (_x, y) in st[0]]
+    assert top <= box[1] < box[3] <= bottom and x1 - 200 < box[0] < box[2] <= x1
+    assert box[1] < max(text_y) and box[3] > min(text_y)                 # on the same line as the words
+    left_of_box = [x for st in strokes for (x, y) in st[0] if x < box[0]]
+    assert max(left_of_box) < box[0]                                       # nothing of the note runs into it

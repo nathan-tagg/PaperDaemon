@@ -882,37 +882,6 @@ def _settle_ledger(doc, pid):
 
 
 # ---------------------------------------------------------------- writing and pushing
-def _adopt_his(doc, pid, data, scene):
-    """A PAGE FROM BEFORE THE DAEMON'S NOTES HAD A BYTE, and the save puts a stroke of the user's on his layer: what his
-    layer holds is laid again as his first (notes.adopt: until his first note under the byte all of it is his, and that
-    note would take the user's stroke with it), and the save's ids for it follow. -> (bytes, scene, None or the call that
-    keeps his record once the page is written)."""
-    if not any(L.get("daemon") and any(not ln.get("id") for ln in L.get("lines") or []) for L in scene.get("layers") or []):
-        return data, scene, None
-    from paperdaemon.pipeline import daemon as D
-    from paperdaemon.pipeline.daemon import notes as N
-    state = D._ink(doc, pid)
-    new, moved, layer = N.adopt(data, state)
-    if not layer:
-        return data, scene, None
-    (old, lay), = layer.items()
-
-    def follow(L):
-        if not (L.get("daemon") and L.get("id") and tuple(L["id"]) == old):
-            return L
-        lines = []
-        for ln in L.get("lines") or []:
-            ln = dict(ln)
-            if ln.get("id") and tuple(ln["id"]) in moved:
-                ln["id"] = list(moved[tuple(ln["id"])])
-            if ln.get("group") and tuple(ln["group"]) == old:
-                ln["group"] = list(lay)
-            lines.append(ln)
-        return dict(L, id=list(lay), lines=lines)
-    scene = dict(scene, layers=[follow(L) for L in scene.get("layers") or []])
-    return new, scene, lambda: D._ink_keep(doc, pid, state)
-
-
 @paths.locks_page(lambda doc, page_no, *a, **k: _page(doc, page_no)[1])
 def write_in_place(doc, page_no, scene, stamp):
     """The editor's `scene` of a Mirror page written into the page in place (see the module's note), if the page is still
@@ -926,14 +895,11 @@ def write_in_place(doc, page_no, scene, stamp):
             raise StalePage("the page changed since the editor read it; it was not saved")
         check_cloud("%s/%s.rm" % (doc, pid))
         base = data if data is not None else _blank()
-        base, scene, ink = _adopt_his(doc, pid, base, scene)
         new, done = edit(doc, page_no, base, scene)
-        if new == base and ink is None:          # nothing changed: no file written (a page with none yet stays so)
+        if new == base:                          # nothing changed: no file written (a page with none yet stays so)
             return dict(done, changed=False, stamp=stamp, version=local.page_version(doc, page_no))
         backup(doc)
         paths.write_atomic(path, new)
-        if ink is not None:
-            ink()
     _settle_ledger(doc, pid)
     _record_written(doc)
     return dict(done, changed=True, stamp=stamp_of(new), version=local.page_version(doc, page_no))

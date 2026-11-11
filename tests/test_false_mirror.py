@@ -491,9 +491,9 @@ _ON_HIS = textwrap.dedent("""
 """)
 
 
-def test_the_user_draws_on_his_layer_and_keeps_it():
-    """The user's word, 11-07: "let me draw on it and keep my strokes". A stroke the editor adds on the daemon's layer
-    is saved there as the user's, the daemon's note stays the daemon's, and the next note takes only the daemon's own."""
+def test_the_user_draws_on_his_layer_and_his_next_note_wipes_it():
+    """A stroke the editor adds on the daemon's layer is saved there as the user's, and the daemon's next note wipes the
+    layer, that stroke with it (the user's word, 11-11: "it should wipe it EVERY time")."""
     got = _run(_ON_HIS + textwrap.dedent("""
         a = local.new_notebook("A")
         path = local._rm(a, 1)
@@ -510,14 +510,14 @@ def test_the_user_draws_on_his_layer_and_keeps_it():
         print(json.dumps({"first": len(first), "last": len(last), "saved": saved, "after": on_his(path)}))
     """))
     assert got["saved"]["authors"] == [1] + [8] * got["first"] and got["saved"]["layers"] == 1
-    assert got["after"]["authors"] == [1] + [8] * got["last"] and got["after"]["layers"] == 1
+    assert got["after"]["authors"] == [8] * got["last"] and got["after"]["layers"] == 1
 
 
 def test_on_a_page_from_before_his_byte_the_users_first_stroke_there_stays_theirs():
     """A page whose notes came before his byte (author 1, from 0.1.81 to 0.2.30): everything on his layer is his until
     his first note under the byte, which would take the user's stroke with it. The save that puts the user's first
     stroke there writes what the layer held as his (134), and the page's author table names him: his next note takes
-    his old note and leaves the user's stroke. A save that adds nothing there leaves the page as it was."""
+    his old note, and (11-11) the user's stroke with it. A save that adds nothing there leaves the page as it was."""
     got = _run(_ON_HIS + textwrap.dedent("""
         a = local.new_notebook("A")
         path = local._rm(a, 1)
@@ -544,7 +544,7 @@ def test_on_a_page_from_before_his_byte_the_users_first_stroke_there_stays_their
     assert got["elsewhere"] == {"authors": [1, 1], "old_page": True, "layers": 1}, got
     assert got["adopted"] == {"authors": [1, 8, 8], "old_page": False, "layers": 1}, got
     assert got["again"] == got["adopted"], got            # his old note stays his, though the save's ids said the tablet's
-    assert got["after"]["authors"] == [1] + [8] * got["note"] and not got["after"]["old_page"], got
+    assert got["after"]["authors"] == [8] * got["note"] and not got["after"]["old_page"], got
 
 
 def test_what_a_job_writes_is_remembered_as_its_own():
@@ -815,29 +815,3 @@ def test_his_layer_carries_the_tablets_second_record_and_his_note_its_low_number
         print(json.dumps({"lay": lay, "links": links, "authors": authors}))
     """)
     assert len(got["lay"]) == 1 and got["links"] == got["lay"] and got["authors"] == [8], got
-
-
-def test_no_erase_mark_hangs_on_a_layer_the_page_does_not_have():
-    """11-11, the Sonnet page: the note writer's record still held strokes laid on layer (134, 1), renumbered away by
-    hand, and the next note hung 603 erase marks on that missing layer; the tablet drew nothing on the page. A record
-    on a layer the page does not have (and the note does not make) is let go."""
-    got = _run("""
-        import io, json
-        from rmscene import read_blocks
-        from rmscene import scene_stream as ss
-        from paperdaemon.remarkable import local
-        from paperdaemon.pipeline.daemon import notes as N
-        a = local.new_notebook("A")
-        local.write_scene(a, 1, local.scene_of(a, 1))
-        path = local._rm(a, 1)
-        note, _ = N.letter(["Saw it 1:02 PM."], (1620.0, 2160.0))
-        state = {}
-        data = N.with_note(open(path, "rb").read(), note, state); open(path, "wb").write(data)
-        state["laid"] = [[1, 5, 10, 134, 134]] + state["laid"]
-        data = N.with_note(open(path, "rb").read(), note, state); open(path, "wb").write(data)
-        bl = list(read_blocks(io.BytesIO(open(path, "rb").read())))
-        nodes = {(b.group.node_id.part1, b.group.node_id.part2) for b in bl if isinstance(b, ss.TreeNodeBlock)}
-        stray = sum(1 for b in bl if isinstance(b, ss.SceneLineItemBlock) and (b.parent_id.part1, b.parent_id.part2) not in nodes)
-        print(json.dumps({"stray": stray, "kept": [r[3] for r in state["laid"]]}))
-    """)
-    assert got["stray"] == 0 and 134 not in got["kept"], got

@@ -9,24 +9,18 @@ page itself once the host is done, and up with the next push.
 
 ## D2. The daemon's own author id
 
-The tablet merges every version of a page it receives. Two notes with the same item ids, made from two
-copies, merge into a mess. Everything the daemon writes carries its own author number (218), registered in
-the page's author table beside the tablet's, the way a second device is. Its ids count upwards per page in
-`daemon-ink.json`, a file only the daemon writes; the host saves the ledger as it works and could lose a
-count kept there.
+Everything the daemon writes carries the page's author number for PaperDaemon's notes (8 unless the page's author
+table already ties another), registered in the page's author table beside the tablet's, the way a second device is,
+and numbered past every counter on the page. (It was 218 until that left pages unreadable, then 134 until the tablet
+was found to draw nothing under 128 and up.) Nothing is kept beside the page: until 11-11 a file, `daemon-ink.json`,
+recorded what he laid on every page; once the notes' numbers changed under it, it hung erase marks on layers pages no
+longer had, and the tablet drew nothing on them. The maintainer: "The daemon shouldn't need that."
 
-## D3. Erase everything of his first, keep one layer
+## D3. Wipe his layer every time, keep one layer
 
-Every write first erases every stroke of the daemon's on the page, tombstoned as the tablet erases. That
-includes the strokes of copies this page has never seen: they are recorded, and their tombstones go with
-every later write, until a page shows them erased. Notes from 0.1.52, on a layer named "PaperDaemon" with
-the tablet's ids, are erased the same way.
-
-The layer itself is kept, one per page. The tablet writes the user's strokes on whatever layer is
-current, and the user's handwriting was found on the daemon's layer. Deleting that layer would take the
-user's writing with it. The layer is made once and sent whole with every note (the same blocks and ids),
-so copies merge into one layer. It goes at the bottom of the tablet's list of layers. If the user deletes
-it on the tablet, the next note makes a new one.
+Every write erases every stroke on his layer, whoever drew it, tombstoned as the tablet erases (the maintainer's word,
+11-11: wipe it EVERY time). Two notes made from copies of the same page can share ids; if the tablet merges them while
+the user writes, the next note wipes the layer and the page is clean again.
 
 ## D4. What the renderer leaves out
 

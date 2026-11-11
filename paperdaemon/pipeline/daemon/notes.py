@@ -9,26 +9,19 @@ what is his (render.daemon_stroke), and the fingerprint that says whether a page
 (ledger._content_sha), so a note can neither start a job nor be read as the user's writing. Only the page editor shows
 it.
 
-HIS IDS: he writes as his notes' own author byte (render.author_of("notes"): PaperDaemon's, a note), never as the
-tablet (1) -- the author number his notes once had (218, render.DAEMON_AUTHOR) left every page it was on unreadable on
-the tablet. His ids are counted on from the highest of that author on the page, and kept per page in daemon-ink.json,
-so no note of his can share an id with another made from a different copy; nothing else is ever numbered as him, the
-host's work and the user's tablet each having authors of their own. Notes go up as copies of a page while the host
-works on the mirror's, and the tablet merges what it receives: two notes with the same ids, made from different
-copies, were once merged into a pile of three notes on top of each other. WHAT IS HIS on a page: everything under his
-author byte, and anything left under his old author; on a page from before his notes had a byte (its author table does
-not name it), everything on his layer, his old notes being the tablet's author there (render.notes_own_layers). The
-user may draw on his layer and keep it (the user's word, 11-07): their strokes there are theirs.
+HIS IDS: his notes are written under the page's number for PaperDaemon's notes (render.page_author: 8 unless the page's
+author table already ties another), never as the tablet (1) -- the author number his notes once had (218,
+render.DAEMON_AUTHOR) left every page it was on unreadable on the tablet -- numbered past every counter on the page.
 
-EVERY WRITE ERASES EVERYTHING OF HIS FIRST: his strokes erased (tombstoned, as the tablet erases), and the same for
-everything he put on this page before that this copy of it has never seen (daemon-ink.json keeps what he laid), so the
-merge on the tablet erases those too; his old notes on a layer named "PaperDaemon" with them. ANYTHING LEFT UNDER HIS
-OLD AUTHOR (218) is taken out of the file outright -- strokes, tombstones, its layer and its entry in the author table
--- so a page it made unreadable opens again once the next note reaches it.
-Then the note. HIS LAYER ITSELF STAYS, ONE PER PAGE: the tablet writes the user's strokes on whatever layer is
-current, and the user's writing has landed on his. It is made once and sent whole with every note, so copies merge into
-one layer; it is made anew only when the user deleted it on the tablet. Only his strokes on it are his; the user's
-there stay.
+EVERY WRITE WIPES HIS LAYER (the user's word, 11-11: "It should not care what is on that layer, it should wipe it EVERY
+time it wants to write something new to that layer"): every live stroke on it is erased (tombstoned, as the tablet
+erases), whoever drew it, and any note of his left elsewhere with it. NOTHING IS KEPT BESIDE THE PAGE: the page itself
+says where his layer is and which numbers are free (there was a record, daemon-ink.json, of what he had laid on every
+page; once the notes' author numbers changed under it, it hung erase marks on layers the pages no longer had, and the
+tablet drew nothing on them). ANYTHING LEFT UNDER HIS OLD AUTHOR (218) is taken out of the file outright -- strokes,
+tombstones, its layer and its entry in the author table -- so a page it made unreadable opens again.
+Then the note. HIS LAYER ITSELF STAYS, ONE PER PAGE: the first of his the page shows is used again, any other comes out
+of the list of layers, and with none a new one is made at the bottom of the tablet's list.
 
 A RETRY BOX: a job that was skipped or failed ends its note with a small box; anything the user writes in it asks for
 the job again (box_marks).
@@ -50,17 +43,12 @@ from rmscene.tagged_block_common import LwwValue
 from paperdaemon.pipeline.page.render import DAEMON_AUTHOR as LEGACY, author_of
 
 AUTHOR_UUID = uuid.uuid5(uuid.NAMESPACE_DNS, "daemon.paperdaemon")   # his old entry in a page's author table (218)
-# HE WRITES AS HIS NOTES' OWN AUTHOR BYTE (NOTES), which nothing else takes: the gap his ids once kept above the host's
-# (both were one author) is gone. Notes laid as the tablet's author (1, from 0.1.81 to 0.2.30) go with the first note
-# under the byte, the page's whole layer being his until then (render.notes_own_layers); anything left under 218 goes
-# outright.
-NOTES = author_of("notes")
+NOTES = author_of("notes")          # his notes' byte from 0.2.33 to 0.2.60, still his where a page has it
 SIZE = 15.0                         # the lettering's cap height, page units on a Paper Pro page
 LEAD = 24.0                         # baseline to baseline
 PEN_W = 5                           # the fineliner's width at that size
 BOX = 24.0                          # the retry box's side: about 2.7 mm on a Paper Pro (40 was too big)
 ROOT = (0, 1)                       # the page's list of layers
-LAID_MAX = 40                       # what he laid that a page has not shown back yet, kept at most
 
 
 def layer_name():
@@ -131,28 +119,183 @@ def _old_layers(blocks):
     return R.daemon_layer_ids(blocks)
 
 
-def _mine(r, own, data):
-    """Is a stroke (a C-pass row) his: under his notes' author or his old one, or on a layer whose every stroke is his
-    (`own`: render.notes_own_layers -- his layer on a page from before his notes had a byte). On his layer otherwise
-    the user's strokes are the user's (the user's word, 11-07: "let me draw on it and keep my strokes"). Never judged
-    by how its points look (render.daemon_stroke)."""
-    return r[7] in (getattr(own, "notes", None) or {NOTES}) or r[7] == LEGACY or (r[5], r[6]) in own
+def _mine(r, layers, notes):
+    """Is a stroke (a C-pass row) his to erase: ON HIS LAYER, whoever drew it (the user's word, 11-11: "it should not
+    care what is on that layer, it should wipe it EVERY time"), or under his notes' author anywhere, or under his old
+    one. `layers`: his layers on the page (by name); `notes`: his notes' author numbers there."""
+    return (r[5], r[6]) in layers or r[7] in notes or r[7] == LEGACY
 
 
-def _own_layers(blocks):
+def _notes_of(authors):
+    """His notes' author numbers on a page with this author table (the table's tie, and the byte of 0.2.33 to 0.2.60)."""
     from paperdaemon.pipeline.page import render as R
-    return R.notes_own_layers(blocks)
+    return {n for n, k in R.own_authors(authors).items() if k == "notes"} | {NOTES}
 
 
 def _live_counts(data):
     """(his live strokes, the user's) as the C pass reads the page, or None."""
+    from paperdaemon.pipeline.page import render as R
     got = _scan(data)
     if got is None:
         return None
     rows, rest = got
-    own = _own_layers(rest)
-    mine = sum(1 for r in rows if r[0] == LINE and r[14] and _mine(r, own, data))
+    layers, notes = _old_layers(rest), _notes_of(R.author_table(rest))
+    mine = sum(1 for r in rows if r[0] == LINE and r[14] and _mine(r, layers, notes))
     return mine, sum(1 for r in rows if r[0] == LINE and r[14]) - mine
+
+
+def _write(data, state=None, strokes=None, also=()):
+    """THE ONE WAY THE DAEMON CHANGES A PAGE: everything on his layer erased, whoever drew it, with any note of his
+    elsewhere, the user's strokes whose ids are in `also` (a tick in the retry box) erased too, and, given `strokes`,
+    the note on his layer. NOTHING IS KEPT BESIDE THE PAGE (the user's word, 11-11: "The daemon shouldn't need that"):
+    the page says where his layer is and which numbers are free. `state` is no longer read or written (kept for its
+    callers). -> (bytes, how many strokes erased, whether anything changed)."""
+    from rmscene.tagged_block_common import HEADER_V6
+    from paperdaemon.pipeline import draw as _A
+    from paperdaemon.pipeline.page import render as R
+    data, rows, blocks = _parts(data)
+    others = [b for b in blocks if b is not None]
+    layers = _old_layers(others)                     # his layers, by name: wiped, and where the note goes
+    authors = R.author_table(others)
+    notes = _notes_of(authors)
+    me = R.page_author(authors, "notes")           # his notes' number on this page, tied to PaperDaemon's id for notes
+    also = set(also)
+    theirs0 = sum(1 for r in rows if r[0] == LINE and r[14] and not _mine(r, layers, notes) and (r[7], r[8]) not in also)
+    frames, kinds = [], []
+    seen, trees, nodes, linked = set(), set(), set(), set()
+    erased, changed, table = 0, False, None
+    root_items = []
+    his_places = {}                                  # each live place of his in the root's list -> (frame, its item)
+    for r, b in zip(rows, blocks):
+        raw = data[r[1] - 8:r[2]]
+        if r[0] == LINE:
+            k = (r[7], r[8])
+            if r[7] == LEGACY or r[5] == LEGACY:     # under his old author, or on his layer made under it (which goes):
+                erased += 1 if r[14] else 0          # out of the file, every trace of it
+                changed = True
+                continue
+            seen.add(k)
+            if r[14] and (_mine(r, layers, notes) or k in also):
+                raw, erased, changed = _tomb(r), erased + 1, True
+        elif isinstance(b, ss.SceneGroupItemBlock):
+            it = b.item
+            k = _key(it.item_id)
+            if k[0] == LEGACY or getattr(it.value, "part1", None) == LEGACY:
+                changed = True
+                continue
+            seen.add(k)
+            if _key(b.parent_id) == ROOT:
+                root_items.append(it)
+                if it.value is not None and it.deleted_length == 0 and _key(it.value) in layers:
+                    his_places[_key(it.value)] = (len(frames), it)
+        elif isinstance(b, ss.SceneTreeBlock):
+            if b.tree_id.part1 == LEGACY:
+                changed = True
+                continue
+            trees.add(_key(b.tree_id))
+            if not b.is_update:
+                linked.add(_key(b.node_id))
+        elif isinstance(b, ss.TreeNodeBlock):
+            if b.group.node_id.part1 == LEGACY:
+                changed = True
+                continue
+            nodes.add(_key(b.group.node_id))
+        elif isinstance(b, ss.AuthorIdsBlock):
+            table = len(frames)
+            if LEGACY in b.author_uuids:
+                raw = _frame(ss.AuthorIdsBlock(author_uuids={a: u for a, u in b.author_uuids.items() if a != LEGACY}))
+                changed = True
+        frames.append(raw)
+        kinds.append(r[0])
+    news = []
+    # his ids: past EVERY counter on the page, whatever its author, as the tablet numbers its own
+    every = max([0] + [int(r[8]) + max(int(r[13] or 0), 1) - 1 for r in rows if r[0] == LINE])
+    n = max(every, _A.next_free_id(others) - 1) + 1
+    if strokes is not None:
+        if table is None:
+            raise RuntimeError("the page has no author table for the daemon's note")
+        if str(authors.get(me)) != str(R.uuid_of("notes")):   # the page's author table names his notes' author
+            frames[table] = _frame(ss.AuthorIdsBlock(author_uuids={
+                **{a: u for a, u in authors.items() if a != LEGACY}, me: R.uuid_of("notes")}))
+        # HIS LAYER, ONE PER PAGE, AS THE PAGE HAS IT: the first of his it shows is taken up again, and any other of
+        # his comes out of the list of layers (its place erased, as the tablet deletes a layer); with none, a new one,
+        # at the bottom of the tablet's list
+        if his_places:
+            la, ln = min(his_places)
+            for lk, (at, it) in sorted(his_places.items()):
+                if lk != (la, ln):
+                    frames[at] = _frame(ss.SceneGroupItemBlock(parent_id=CrdtId(*ROOT), item=CrdtSequenceItem(
+                        item_id=it.item_id, left_id=it.left_id, right_id=it.right_id, deleted_length=1, value=None)))
+        else:
+            first = _first_layer(root_items)
+            la, ln = me, n
+            news += _layer_blocks(la, ln, layer_name(), first)
+            n += 4
+        # THE TABLET'S SECOND RECORD OF A LAYER IT MAKES (tree: the layer's node, not an update, under nothing): without
+        # it the tablet listed no Daemon layer and drew nothing on it (the Sonnet page, 11-11)
+        if (la, ln) not in linked:
+            news.append((ss.SceneTreeBlock.BLOCK_TYPE, _frame(ss.SceneTreeBlock(
+                tree_id=CrdtId(me, n), node_id=CrdtId(la, ln), is_update=False, parent_id=CrdtId(0, 0)))))
+            n += 1
+        prev = CrdtId(0, 0)
+        for st in strokes:
+            pts, widths, tool, color = st[0], st[1], st[2], st[3]
+            P = [si.Point(x=float(x), y=float(y), speed=0, direction=0, width=int(widths[i]), pressure=190)
+                 for i, (x, y) in enumerate(pts)]
+            L = si.Line(color=color, tool=tool, points=P, thickness_scale=3.0, starting_length=0.0, move_id=None,
+                        color_rgba=None)
+            iid = CrdtId(me, n)
+            news.append((LINE, _frame(ss.SceneLineItemBlock(parent_id=CrdtId(la, ln), item=CrdtSequenceItem(
+                item_id=iid, left_id=prev, right_id=CrdtId(0, 0), deleted_length=0, value=L)))))
+            prev, n = iid, n + 1
+        changed = True
+    if not changed:
+        return data, 0, False
+    frames, kinds = _put(frames, kinds, news)
+    new = data[:len(HEADER_V6)] + b"".join(frames)
+    after = _live_counts(new)
+    want = len(strokes) if strokes is not None else 0
+    if after is None or after != (want, theirs0):
+        raise RuntimeError("the page did not read back with the daemon's note (%s)" % (after,))
+    return new, erased, True
+
+
+def erase(data, state=None, also=()):
+    """The page with everything on his layer erased, and any of the user's strokes whose ids are in `also` (a tick in
+    the retry box) -> (bytes, how many strokes erased); (data, 0) when there is nothing to erase."""
+    new, n, changed = _write(data, None, None, also)
+    return (new, n) if changed else (data, 0)
+
+
+def with_note(data, strokes, state=None):
+    """The page with everything on his layer erased and `strokes` (lettering.Drawing strokes: points, widths, tool,
+    color, rgba) there. The user's strokes elsewhere, text and pictures are as they were. -> bytes."""
+    return _write(data, None, strokes)[0]
+
+
+def box_marks(data, box, pad=6.0, shifts=None):
+    """The user's strokes with a point inside the retry box `box` (x0, y0, x1, y1, page units) -> their item ids
+    [(part1, part2)]: a tick, a cross, a scribble -- anything written in it asks for the job again, ON ANY LAYER (a tick
+    made on his layer is the user's all the same: told by its author, not its layer). `shifts`: {group (part1, part2):
+    (dx, dy)}, where the tablet draws a group it anchored to the typed text (render._anchor_offsets) -- on a page with
+    typed text the tablet puts the user's tick in such a group, stored hundreds of units from where it is drawn."""
+    if not box:
+        return []
+    import numpy as np
+    from paperdaemon.remarkable import fastrm
+    from paperdaemon.pipeline.page import render as R
+    data, rows, blocks = _parts(data)
+    notes = _notes_of(R.author_table([b for b in blocks if b is not None]))
+    shifts = shifts or {}
+    out = []
+    for r in rows:
+        if r[0] == LINE and r[14] and r[7] not in notes and r[7] != LEGACY and r[20]:
+            dx, dy = shifts.get((r[5], r[6])) or (0.0, 0.0)
+            x0, y0, x1, y1 = box[0] - pad - dx, box[1] - pad - dy, box[2] + pad - dx, box[3] + pad - dy
+            P = np.frombuffer(data, dtype=fastrm.POINT, count=r[20] // fastrm.POINT.itemsize, offset=r[19])
+            if ((P["x"] >= x0) & (P["x"] <= x1) & (P["y"] >= y0) & (P["y"] <= y1)).any():
+                out.append((r[7], r[8]))
+    return out
 
 
 def _layer_blocks(author, n, name, right):
@@ -198,271 +341,6 @@ def _first_layer(items):
     return _key(keys[0]) if keys else (0, 0)
 
 
-def _write(data, state, strokes=None, also=()):
-    """THE ONE WAY THE DAEMON CHANGES A PAGE: everything of his on it erased (see the module's note), the user's
-    strokes whose ids are in `also` erased (a tick in the retry box), and, given `strokes`, the note on his layer.
-    `state` (daemon-ink.json's entry for the page: {"author": the author he wrote it as, "next": his next id there,
-    "layer": [its id, the id it goes before (two numbers), its name, its author], "laid": [[layer, first id, last id,
-    author, the layer's author], ...]}) is brought up to date. -> (bytes, how many strokes erased, whether anything
-    changed)."""
-    from rmscene.tagged_block_common import HEADER_V6
-    from paperdaemon.pipeline.page import render as R
-    data, rows, blocks = _parts(data)
-    others = [b for b in blocks if b is not None]
-    old = _old_layers(others)                        # his layers, by name: where the note goes
-    own = _own_layers(others)                        # the layers whose every stroke is his (a page from before)
-    authors = R.author_table(others)
-    me = R.page_author(authors, "notes")           # his notes' number on this page, tied to PaperDaemon's id for notes
-    also = set(also)
-    theirs0 = sum(1 for r in rows if r[0] == LINE and r[14] and not _mine(r, own, data) and (r[7], r[8]) not in also)
-    frames, kinds = [], []
-    seen, dead, trees, nodes, places, linked = set(), set(), set(), set(), {}, set()
-    top, erased, changed, table = 0, 0, False, None
-    root_items = []
-    # HIS LAYERS AS THE PAGE HAS THEM: each live place of his in the root's list -> (its layer, where the place frame
-    # is, its item); and whose strokes (live, not his) lie on which layer
-    his_places, users_on = {}, set()
-    for r, b in zip(rows, blocks):
-        raw = data[r[1] - 8:r[2]]
-        if r[0] == LINE:
-            k = (r[7], r[8])
-            if r[7] == LEGACY:                       # under his old author: out of the file, every trace of it
-                erased += 1 if r[14] else 0
-                changed = True
-                continue
-            seen.add(k)
-            if r[14] and not _mine(r, own, data):
-                users_on.add((r[5], r[6]))
-            if r[14] and (_mine(r, own, data) or k in also):
-                raw, erased, changed = _tomb(r), erased + 1, True
-            elif not r[14]:
-                dead.add(k)
-            if r[7] == me:
-                top = max(top, r[8])
-        elif isinstance(b, ss.SceneGroupItemBlock):
-            it = b.item
-            k = _key(it.item_id)
-            if k[0] == LEGACY or getattr(it.value, "part1", None) == LEGACY:
-                changed = True
-                continue
-            seen.add(k)
-            places[k] = it.value is not None and it.deleted_length == 0
-            if k[0] == me:
-                top = max(top, k[1])
-            if _key(b.parent_id) == ROOT:
-                root_items.append(it)
-                if it.value is not None and it.deleted_length == 0 and _key(it.value) in old:
-                    his_places[_key(it.value)] = (len(frames), it)
-        elif isinstance(b, ss.SceneTreeBlock):
-            if b.tree_id.part1 == LEGACY:
-                changed = True
-                continue
-            trees.add(_key(b.tree_id))
-            if not b.is_update:
-                linked.add(_key(b.node_id))
-            if b.tree_id.part1 == me:
-                top = max(top, b.tree_id.part2 + 3)
-        elif isinstance(b, ss.TreeNodeBlock):
-            if b.group.node_id.part1 == LEGACY:
-                changed = True
-                continue
-            nodes.add(_key(b.group.node_id))
-        elif isinstance(b, ss.AuthorIdsBlock):
-            table = len(frames)
-            if LEGACY in b.author_uuids:
-                raw = _frame(ss.AuthorIdsBlock(author_uuids={a: u for a, u in b.author_uuids.items() if a != LEGACY}))
-                changed = True
-        elif isinstance(b, ss.RootTextBlock):
-            for tid, ti in b.value.items._items.items():   # typed text PaperDaemon wrote is numbered as it too
-                if tid.part1 == me:
-                    span = max(len(ti.value) if isinstance(ti.value, str) else 0, ti.deleted_length or 0, 1)
-                    top = max(top, tid.part2 + span - 1)
-        elif b is not None and isinstance(getattr(b, "data", None), (bytes, bytearray)):
-            from paperdaemon.pipeline.page import images as _IM   # a picture: its ids, read off its bytes
-            top = max(top, _IM.max_author_id(bytes(b.data), me))
-        frames.append(raw)
-        kinds.append(r[0])
-    # WHAT HE LAID BEFORE that this copy of the page has never seen, erased all the same: the tablet merges it with the
-    # copy that carried it. What the page already showed erased when it came here is forgotten (what is erased only
-    # now is not: a copy made later from an older page still has to erase it). Laid as PaperDaemon's author or, from
-    # 0.1.81 to 0.2.30, as the tablet's (1), on his layer under either.
-    news, keep = [], []
-    _sl = state.get("layer")                          # his layer as recorded: a note puts it back if the page lacks it
-    _remade = (int(_sl[4]), int(_sl[0])) if _sl and len(_sl) > 4 else None
-    for rec in list(state.get("laid") or []):
-        try:
-            lay, a, z, au = int(rec[0]), int(rec[1]), int(rec[2]), int(rec[3])
-            la = int(rec[4]) if len(rec) > 4 else au
-        except (TypeError, ValueError, IndexError):
-            continue
-        if au == LEGACY or la == LEGACY:
-            continue                                  # laid under his old author: gone with it
-        if (la, lay) not in nodes and not (strokes is not None and _remade == (la, lay)):
-            continue                                  # laid on a layer this page does not have: an erase mark hung on
-                                                      # it left the whole page undrawn on the tablet (the Sonnet page,
-                                                      # 11-11, after its authors were renumbered by hand)
-        ids = [(au, k) for k in range(a, z + 1)]
-        if all(k in dead for k in ids):
-            continue
-        keep.append([lay, a, z, au, la])
-        if au == me:
-            top = max(top, z)
-        for i, k in enumerate(ids):
-            if k not in seen:
-                news.append((LINE, _line_tomb((la, lay), k, ids[i - 1] if i else (0, 0))))
-    if news:
-        changed = True
-    # his ids: past EVERY counter on the page, whatever its author (the tablet hides a stroke whose counter is inside
-    # an erased range of any author, and the next note's erase of this one must not cover the user's or an
-    # answer's), and past the last he laid on any copy of it (daemon-ink.json); a record kept as another author
-    # counts for nothing
-    from paperdaemon.pipeline import draw as _A
-    every = max([0] + [int(r[8]) + max(int(r[13] or 0), 1) - 1 for r in rows if r[0] == LINE])
-    every = max(every, _A.next_free_id(others) - 1)
-    n = max(int(state.get("next") or 1) if state.get("author") == me else 1, top + 1, every + 1)
-    state["author"] = me
-    if strokes is not None:
-        if table is None:
-            raise RuntimeError("the page has no author table for the daemon's note")
-        if str(authors.get(me)) != str(R.uuid_of("notes")):   # the page's author table names his notes' author
-            frames[table] = _frame(ss.AuthorIdsBlock(author_uuids={
-                **{a: u for a, u in authors.items() if a != LEGACY}, me: R.uuid_of("notes")}))
-        # HIS LAYER: one per page, made once and sent whole with every note (the same blocks, the same ids, so copies
-        # merge into one layer); a new one only when the user deleted it on the tablet. THE PAGE SAYS WHICH: the
-        # record kept (state) is used while the page still has that layer; else the layer of his the page already
-        # shows is taken up again, whatever author it was made under -- a record lost must never make a second one.
-        # More than one of his on the page (from before): the first is his, and each other one that holds nothing of
-        # the user's is taken out of the list of layers (its place erased, as the tablet deletes a layer).
-        lay = state.get("layer")
-        if lay and (len(lay) < 5 or int(lay[4]) == LEGACY):
-            lay = None                                # a layer recorded under his old author: gone with it
-        if lay and (places.get((int(lay[4]), int(lay[0]) + 3)) is False or
-                    (his_places and (int(lay[4]), int(lay[0])) not in his_places)):
-            lay = None
-        if not lay and his_places:
-            ln0 = min(his_places)
-            it0 = his_places[ln0][1]
-            lay = [ln0[1], it0.right_id.part1, it0.right_id.part2, layer_name(), ln0[0]]
-        for lk, (at, it) in sorted(his_places.items()):
-            if lay and lk == (int(lay[4]), int(lay[0])) or lk in users_on:
-                continue
-            frames[at] = _frame(ss.SceneGroupItemBlock(parent_id=CrdtId(*ROOT), item=CrdtSequenceItem(
-                item_id=it.item_id, left_id=it.left_id, right_id=it.right_id, deleted_length=1, value=None)))
-        if not lay:
-            first = _first_layer(root_items)
-            lay = [n, first[0], first[1], layer_name(), me]
-            n += 4
-        ln, la = int(lay[0]), int(lay[4])
-        for kind, frame in _layer_blocks(la, ln, str(lay[3]), (int(lay[1]), int(lay[2]))):
-            if (kind == ss.SceneTreeBlock.BLOCK_TYPE and (la, ln) not in trees) or \
-                    (kind == ss.TreeNodeBlock.BLOCK_TYPE and (la, ln) not in nodes) or \
-                    (kind == ss.SceneGroupItemBlock.BLOCK_TYPE and (la, ln + 3) not in seen):
-                news.append((kind, frame))
-        # THE TABLET'S SECOND RECORD OF A LAYER IT MAKES (tree: the layer's node, not an update, under nothing): without
-        # it the tablet listed no Daemon layer and drew nothing on it (the Sonnet page, 11-11)
-        if (la, ln) not in linked:
-            news.append((ss.SceneTreeBlock.BLOCK_TYPE, _frame(ss.SceneTreeBlock(
-                tree_id=CrdtId(me, n), node_id=CrdtId(la, ln), is_update=False, parent_id=CrdtId(0, 0)))))
-            n += 1
-        state["layer"] = lay
-        prev, a = CrdtId(0, 0), n
-        for st in strokes:
-            if isinstance(st, si.Line):
-                L = st                                # (laid again exactly as it was: adopt)
-            else:
-                pts, widths, tool, color = st[0], st[1], st[2], st[3]
-                P = [si.Point(x=float(x), y=float(y), speed=0, direction=0, width=int(widths[i]), pressure=190)
-                     for i, (x, y) in enumerate(pts)]
-                L = si.Line(color=color, tool=tool, points=P, thickness_scale=3.0, starting_length=0.0, move_id=None,
-                            color_rgba=None)
-            iid = CrdtId(me, n)
-            news.append((LINE, _frame(ss.SceneLineItemBlock(parent_id=CrdtId(la, ln), item=CrdtSequenceItem(
-                item_id=iid, left_id=prev, right_id=CrdtId(0, 0), deleted_length=0, value=L)))))
-            prev, n = iid, n + 1
-        if n > a:
-            keep.append([ln, a, n - 1, me, la])
-        changed = True
-    state["laid"] = keep[-LAID_MAX:]
-    state["next"] = n
-    if not changed:
-        return data, 0, False
-    frames, kinds = _put(frames, kinds, news)
-    new = data[:len(HEADER_V6)] + b"".join(frames)
-    after = _live_counts(new)
-    want = len(strokes) if strokes is not None else 0
-    if after is None or after != (want, theirs0):
-        raise RuntimeError("the page did not read back with the daemon's note (%s)" % (after,))
-    return new, erased, True
-
-
-def erase(data, state=None, also=()):
-    """The page with everything of his erased, and any of the user's strokes whose ids are in `also` (a tick in the
-    retry box) -> (bytes, how many strokes erased); (data, 0) when there is nothing to erase."""
-    new, n, changed = _write(data, {} if state is None else state, None, also)
-    return (new, n) if changed else (data, 0)
-
-
-def with_note(data, strokes, state=None):
-    """The page with everything of his erased and `strokes` (lettering.Drawing strokes: points, widths, tool, color,
-    rgba) on his layer. The user's strokes, text and pictures are as they were. -> bytes."""
-    return _write(data, {} if state is None else state, strokes)[0]
-
-
-def adopt(data, state):
-    """A PAGE FROM BEFORE HIS NOTES HAD A BYTE, a stroke of the user's about to go onto his layer (the page editor's
-    save): until his first note under the byte everything on his layer is his (render.notes_own_layers), so that note
-    would take the user's stroke with it. What his layer holds is laid again as his instead -- each stroke erased and
-    the same stroke, exactly, written anew under his byte, in the same order (as a note of his, his ids counted on in
-    `state`) -- and the page's author table names it: the user's strokes there are theirs from then on. A layer of his
-    made under his old author (218) is taken out by any note of his, so his layer is then a new one, the strokes laid
-    there. Only a page with one layer of his. -> (bytes, {old stroke id: new id}, {old layer id: new layer id});
-    (data, {}, {}) when there is nothing to lay again."""
-    from rmscene.tagged_block_common import HEADER_V6
-    data, rows, blocks = _parts(data)
-    own = _own_layers([b for b in blocks if b is not None])
-    if len(own) != 1:
-        return data, {}, {}
-    was = next(iter(own))
-    olds, lines = [], []
-    for r in rows:
-        if r[0] == LINE and r[14] and (r[5], r[6]) == was:
-            b = next(x for x in read_blocks(io.BytesIO(HEADER_V6 + data[r[1] - 8:r[2]]))
-                     if isinstance(x, ss.SceneLineItemBlock))
-            olds.append((r[7], r[8]))
-            lines.append(b.item.value)
-    if not lines and was[0] != LEGACY:
-        return data, {}, {}
-    new, _erased, _changed = _write(data, state, lines)
-    lay = state["layer"]
-    a = int(state["laid"][-1][1]) if lines else 0
-    me = int(state["laid"][-1][3]) if lines else int(state.get("author") or NOTES)
-    return new, {old: (me, a + i) for i, old in enumerate(olds)}, {was: (int(lay[4]), int(lay[0]))}
-
-
-def box_marks(data, box, pad=6.0, shifts=None):
-    """The user's strokes (not his) with a point inside the retry box `box` (x0, y0, x1, y1, page units) -> their
-    item ids [(part1, part2)]: a tick, a cross, a scribble -- anything written in it asks for the job again.
-    `shifts`: {group (part1, part2): (dx, dy)}, where the tablet draws a group it anchored to the typed text
-    (render._anchor_offsets) -- on a page with typed text the tablet puts the user's tick in such a group, stored
-    hundreds of units from where it is drawn."""
-    if not box:
-        return []
-    import numpy as np
-    from paperdaemon.remarkable import fastrm
-    data, rows, blocks = _parts(data)
-    own = _own_layers([b for b in blocks if b is not None])
-    shifts = shifts or {}
-    out = []
-    for r in rows:
-        if r[0] == LINE and r[14] and not _mine(r, own, data) and r[20]:
-            dx, dy = shifts.get((r[5], r[6])) or (0.0, 0.0)
-            x0, y0, x1, y1 = box[0] - pad - dx, box[1] - pad - dy, box[2] + pad - dx, box[3] + pad - dy
-            P = np.frombuffer(data, dtype=fastrm.POINT, count=r[20] // fastrm.POINT.itemsize, offset=r[19])
-            if ((P["x"] >= x0) & (P["x"] <= x1) & (P["y"] >= y0) & (P["y"] <= y1)).any():
-                out.append((r[7], r[8]))
-    return out
-
-
 # ------------------------------------------------------------------ what a note says, lettered
 def band(frame):
     """(left x, right x, top y, bottom y) of the band the daemon's notes live in, on a page of this frame: above the safe area."""
@@ -472,10 +350,10 @@ def band(frame):
 
 
 def letter(lines, frame, box=False, latest=False):
-    """The note: ONE line in the band, `lines` run together, signed at its end, with a retry box under it when `box`,
-    at the band's left like the line. -> (Drawing strokes, the box (x0, y0, x1, y1) or None). It never wraps: a note too
-    long for the line is cut, with an ellipsis, where the signature begins. (`latest` is kept for its callers; one line
-    is all there is.)"""
+    """The note: ONE line in the band, `lines` run together, signed at its end, with a retry box when `box`: on the
+    same line, right-aligned at the band's right end, after the signature. -> (Drawing strokes, the box (x0, y0, x1,
+    y1) or None). It never wraps: a note too long for the line is cut, with an ellipsis, where the signature (and the
+    box) begin. (`latest` is kept for its callers; one line is all there is.)"""
     from paperdaemon.pipeline import draw as A
     from paperdaemon.pipeline.draw import lettering as T
     from paperdaemon.pipeline.draw import signature as SIG
@@ -484,7 +362,9 @@ def letter(lines, frame, box=False, latest=False):
     size, lead = SIZE * s, LEAD * s
     first = top + lead + 2 * s
     sig_w = size * 0.9 + SIG.signature_width(size * 0.9)       # the signature's room at the end of the last line
-    width = x1 - x0
+    side = BOX * s
+    box_w = (side + size * 0.5 + T.measure("retry", size) + size) if box else 0.0   # the box and its word, at the right
+    width = x1 - x0 - box_w
     wrapped = [" ".join(" ".join(str(ln).split()) for ln in lines)]
     last = 0
     wrapped[last] = _cut(T, wrapped[last], size, width - sig_w)
@@ -498,11 +378,11 @@ def letter(lines, frame, box=False, latest=False):
     SIG.draw_signature(d, cur, y, height=size * 0.9)
     got = None
     if box:
-        # THE BOX UNDER THE LINE, at the band's left like it (it sat at the band's right end, too
-        # big), still in the band under the toolbar; the word "retry" after it
-        side = BOX * s
-        bx = x0
-        by = y + lead * 0.55
+        # THE BOX ON THE NOTE'S LINE, right-aligned at the band's right end, the word "retry" after it (his word,
+        # 11-11: under the line, at the left, it sat under the tablet's always-on dot)
+        rw = T.measure("retry", size)
+        bx = x1 - rw - size * 0.5 - side
+        by = y - (size + side) / 2.0
         b = (bx, by, bx + side, by + side)
         d.stroke([(b[0], b[1]), (b[2], b[1]), (b[2], b[3]), (b[0], b[3]), (b[0], b[1])], width=PEN_W)
         T.text(d, "retry", b[2] + size * 0.5, by + side / 2.0 + size / 2.0, size=size, width=PEN_W)
