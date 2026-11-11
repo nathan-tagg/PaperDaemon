@@ -14,5 +14,6 @@
 
 ## 2. Proof
 
-- [ ] 2.1 The maintainer's lineups after the update: each on the harness it ran on before, the Opus lineup on Lean
-      Default, and a real job on it
+- [x] 2.1 The maintainer's app on 0.2.52 (11-10): the installed folder holds no removed harness file; each lineup on
+      the harness it named, the Opus lineup (saved as automatic) on Lean Default; a real job of words and a sketch on
+      it, one call
