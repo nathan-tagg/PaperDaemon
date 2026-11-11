@@ -185,13 +185,15 @@ def test_a_long_reply_runs_past_the_first_screen_whole(work):
     assert d["bottom"] > d["safe"][3]                                  # it did run past the first screen ...
 
 
-def test_an_erase_step_pointing_at_an_id_takes_that_off_and_the_job_is_done(work):
+@pytest.mark.parametrize("at", ["para:1", "'para:1'"])
+def test_an_erase_step_pointing_at_an_id_takes_that_off_and_the_job_is_done(work, at):
     # the plan's rulings already erase the request, and an extra erase step names it again by its id in `at` (as a
     # model wrote it): the id is read as an id, the second erase is the same one, and the job is done. (A plain
-    # request: a typed question stays, whatever a ruling says -- rulings.problems)
+    # request: a typed question stays, whatever a ruling says -- rulings.problems.) In quote marks too (11-11: "'para:1'"
+    # was looked for as words, found nowhere, and the request kept)
     r = _job(work, "chart", [
         ("plan", {"steps": [{"do": "write", "what": "the moons of Mars", "answers": replay.NEW},
-                            {"do": "erase", "what": "the request line", "at": "para:1", "answers": replay.NEW}],
+                            {"do": "erase", "what": "the request line", "at": at, "answers": replay.NEW}],
                   "rulings": replay.RULE("request", "erase")}),
         ("write_paragraph", {"lines": ["Phobos is the larger and closer moon.", "Deimos is small and far out."]})])
     assert r["status"] == "done", r["note"]

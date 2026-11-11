@@ -3,6 +3,7 @@
 ## 0.2.65
 
 - When Reddit refuses a request, the Daemon's note says why in plain words. A 429 shows as "Reddit is limiting requests from this computer right now; try again in a few minutes" instead of "HTTPError". A private, banned or missing subreddit says so.
+- A request line is taken off when the model names it in quote marks (`'para:1'`). The quotes made PaperDaemon look for those words on the page, so the request was kept and the note said "NOT DONE" though the job had worked.
 
 ## 0.2.64
 
