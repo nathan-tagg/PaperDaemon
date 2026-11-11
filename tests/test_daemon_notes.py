@@ -117,12 +117,12 @@ def test_a_note_is_his_own_and_every_write_erases_everything_of_his_first():
     a = N.with_note(page, strokes, state)
     assert _counts(a) == (len(strokes), 2, 1)
     blocks = _blocks(a)
-    # HE WRITES AS HIS NOTES' OWN AUTHOR BYTE (134: PaperDaemon's, a note), which the page's author table names; the
+    # HE WRITES UNDER HIS NOTES' OWN NUMBER (8, of 2 to 10), tied in its author table to PaperDaemon's id for notes; the
     # user's strokes stay the tablet's (1)
     from paperdaemon.pipeline.page import render as R
-    d = R.author_of("notes")
     table = next(b for b in blocks if isinstance(b, ss.AuthorIdsBlock)).author_uuids
-    assert d == 134 and sorted(table) == [1, d] and table[d] == R.author_uuid(d) and table[1] != R.author_uuid(d)
+    d = 8
+    assert sorted(table) == [1, d] and table[d] == R.uuid_of("notes") and table[1] != R.uuid_of("notes")
     his = _his_layers(blocks)
     assert {N._key(b.item.item_id)[0] for b in blocks if isinstance(b, ss.SceneLineItemBlock)
             and N._key(b.parent_id) in his} == {d}
@@ -300,7 +300,7 @@ def test_what_is_left_under_his_old_author_goes_out_of_the_file():
     ids = [N._key(b.item.item_id) for b in after if hasattr(b, "item")] + [N._key(b.tree_id) for b in after if isinstance(b, ss.SceneTreeBlock)]
     assert not [k for k in ids if k[0] == 218]
     from paperdaemon.pipeline.page import render as R
-    assert sorted(next(b for b in after if isinstance(b, ss.AuthorIdsBlock)).author_uuids) == [1, R.author_of("notes")]
+    assert sorted(next(b for b in after if isinstance(b, ss.AuthorIdsBlock)).author_uuids) == [1, 8]
     assert _counts(page) == (len(strokes), 1, 1)
     clean, n = N.erase(_write(blocks), {})
     assert n == 1 and _counts(clean) == (0, 1, 0)

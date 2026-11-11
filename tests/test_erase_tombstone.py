@@ -98,7 +98,7 @@ def test_what_a_job_writes_has_paperdaemons_own_author_and_ids(tmp_path):
         text = [(i.item_id.part1, i.item_id.part2) for i in tb.items.sequence_items()]
         uuids = next(b for b in bl if isinstance(b, ss.AuthorIdsBlock)).author_uuids
         table = list(uuids)
-        named = all(str(uuids.get(a)) == str(R.author_uuid(a)) for a in (129, 135, 136))
+        named = {k: n for n, k in R.own_authors(uuids).items()}
         print(json.dumps({"lines": lines, "text": text, "table": table, "named": named,
                           "pic": [list(pic["asset_id"]), list(pic["item_id"])], "pics": len(pics)}))
     """) % ROOT
@@ -108,11 +108,13 @@ def test_what_a_job_writes_has_paperdaemons_own_author_and_ids(tmp_path):
     out = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True, timeout=300)
     assert out.returncode == 0, out.stderr[-3000:]
     d = json.loads(out.stdout.strip().splitlines()[-1])
-    # each kind under its own byte, numbered from its own: written strokes 129, the picture 135, typed text 136
-    assert d["named"] and {129, 135, 136} <= set(d["table"])
-    assert [tuple(x) for x in d["lines"]] == [(129, 1), (129, 2)]
-    assert [tuple(x) for x in d["text"]] == [(136, 1)]
-    assert d["pic"] == [[135, 1], [135, 2]] and d["pics"] == 1
+    # each kind under its own number, 2 to 10, tied in the page's author table to PaperDaemon's id for it, and
+    # numbered from its own: written strokes, the picture, typed text
+    w, p, t = d["named"]["written"], d["named"]["picture"], d["named"]["typed"]
+    assert (w, p, t) == (3, 9, 10) and {w, p, t} <= set(d["table"])
+    assert [tuple(x) for x in d["lines"]] == [(w, 1), (w, 2)]
+    assert [tuple(x) for x in d["text"]] == [(t, 1)]
+    assert d["pic"] == [[p, 1], [p, 2]] and d["pics"] == 1
 
 
 def test_a_typed_paragraph_erased_takes_only_itself(tmp_path):

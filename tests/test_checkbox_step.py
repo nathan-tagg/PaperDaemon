@@ -52,10 +52,11 @@ def test_typed_paragraphs_take_the_tablets_own_checkboxes_stamped_newest():
     assert st["milk"][0] == 6 and st["eggs"][0] == 7 and st["bread"][0] == 1 and st["Groceries"][0] == 1
     # stamped as PaperDaemon's typed text, one past the stamp each replaced (milk's was 300, eggs' 301): newer than
     # that, and older than the tablet's next change, which takes the page's next item number
-    d = R.author_of("typed")
-    assert st["milk"][1].part1 == d == 136 and st["milk"][1].part2 == 301 and st["eggs"][1].part2 == 302
     table = next(b for b in read_blocks(io.BytesIO(out)) if isinstance(b, ss.AuthorIdsBlock)).author_uuids
-    assert table[d] == R.author_uuid(d)
+    d = st["milk"][1].part1
+    assert d == 10 and R.kind_of_author(d, table) == "typed"
+    assert st["milk"][1].part2 == 301 and st["eggs"][1].part2 == 302
+    assert table[d] == R.uuid_of("typed")
     assert TY.restyle_bytes(page, [("cheese", ParagraphStyle.CHECKBOX)]) == (page, 0)
     # "make these checkboxes, and tick the eggs one" (a real job, 11-10: two steps naming one paragraph): the paragraph
     # takes the last style named for it, set once, and the checklist does not fail on the first one's read-back

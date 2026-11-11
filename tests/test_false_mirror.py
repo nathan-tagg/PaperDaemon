@@ -509,8 +509,8 @@ def test_the_user_draws_on_his_layer_and_keeps_it():
         data = N.with_note(open(path, "rb").read(), last, state); open(path, "wb").write(data)
         print(json.dumps({"first": len(first), "last": len(last), "saved": saved, "after": on_his(path)}))
     """))
-    assert got["saved"]["authors"] == [1] + [134] * got["first"] and got["saved"]["layers"] == 1
-    assert got["after"]["authors"] == [1] + [134] * got["last"] and got["after"]["layers"] == 1
+    assert got["saved"]["authors"] == [1] + [8] * got["first"] and got["saved"]["layers"] == 1
+    assert got["after"]["authors"] == [1] + [8] * got["last"] and got["after"]["layers"] == 1
 
 
 def test_on_a_page_from_before_his_byte_the_users_first_stroke_there_stays_theirs():
@@ -542,9 +542,9 @@ def test_on_a_page_from_before_his_byte_the_users_first_stroke_there_stays_their
     """))
     assert got["before"] == {"authors": [1, 1], "old_page": True, "layers": 1}, got
     assert got["elsewhere"] == {"authors": [1, 1], "old_page": True, "layers": 1}, got
-    assert got["adopted"] == {"authors": [1, 134, 134], "old_page": False, "layers": 1}, got
+    assert got["adopted"] == {"authors": [1, 8, 8], "old_page": False, "layers": 1}, got
     assert got["again"] == got["adopted"], got            # his old note stays his, though the save's ids said the tablet's
-    assert got["after"]["authors"] == [1] + [134] * got["note"] and not got["after"]["old_page"], got
+    assert got["after"]["authors"] == [1] + [8] * got["note"] and not got["after"]["old_page"], got
 
 
 def test_what_a_job_writes_is_remembered_as_its_own():
@@ -757,8 +757,8 @@ def test_a_save_from_the_editor_keeps_what_paperdaemon_wrote_its_own():
         pics = [list(im["item"]) for im in IM.parse(data) if not im["deleted"]]
         print(json.dumps({"lines": lines, "pics": pics}))
     """)
-    assert got["lines"] == [1, 129]                       # the answer stays PaperDaemon's, the new stroke the user's
-    assert [p[0] for p in got["pics"]] == [135]
+    assert got["lines"] == [1, 3]                         # the answer stays PaperDaemon's, the new stroke the user's
+    assert [p[0] for p in got["pics"]] == [9]
 
 
 def test_a_notebook_is_made_on_the_tablet_s_library_with_mirror_editing_on(monkeypatch):
@@ -790,3 +790,28 @@ def test_a_notebook_is_made_on_the_tablet_s_library_with_mirror_editing_on(monke
     assert r.status_code == 400 and "was not sent to the tablet" in r.json()["error"]
     # every other edit of the library is still the false mirror's alone
     assert c.post("/api/v1/library/folder", json={"name": "no"}).status_code == 404
+
+
+def test_his_layer_carries_the_tablets_second_record_and_his_note_its_low_number():
+    """11-11, the Sonnet page on his tablet: nothing under 128-159 was drawn, and the Daemon layer was not listed until
+    it had the second tree record the tablet writes for a layer it makes. A note now goes up under 8 (2 to 10), and his
+    layer has that record once, however many notes follow."""
+    got = _run("""
+        import io, json
+        from rmscene import read_blocks
+        from rmscene import scene_stream as ss
+        from paperdaemon.remarkable import local
+        from paperdaemon.pipeline.daemon import notes as N
+        a = local.new_notebook("A")
+        local.write_scene(a, 1, local.scene_of(a, 1))
+        path = local._rm(a, 1)
+        note, _ = N.letter(["Saw it 1:02 PM."], (1620.0, 2160.0))
+        for _ in range(2):
+            data = N.with_note(open(path, "rb").read(), note, {}); open(path, "wb").write(data)
+        bl = list(read_blocks(io.BytesIO(open(path, "rb").read())))
+        lay = [[b.group.node_id.part1, b.group.node_id.part2] for b in bl if isinstance(b, ss.TreeNodeBlock) and b.group.label.value == "Daemon"]
+        links = [[b.node_id.part1, b.node_id.part2] for b in bl if isinstance(b, ss.SceneTreeBlock) and not b.is_update]
+        authors = sorted({b.item.item_id.part1 for b in bl if isinstance(b, ss.SceneLineItemBlock) and b.item.value is not None})
+        print(json.dumps({"lay": lay, "links": links, "authors": authors}))
+    """)
+    assert len(got["lay"]) == 1 and got["links"] == got["lay"] and got["authors"] == [8], got

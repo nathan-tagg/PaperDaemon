@@ -1062,15 +1062,21 @@ def _write_scene(doc, page_no, scene):
     # user's (1). Written anew under the editor's ids, a page's answers, pieces and pictures all became the user's after
     # any edit. Anything under his notes' old author (218, never written again) is a note of his (`his`: a stroke from
     # the page on his layer of a page from before his notes had a byte -- see below).
-    own_seq = {}
-    notes = R.author_of("notes")
+    own_seq, own_kind = {}, {}
+    table0 = R.author_table(head)
+    notes = R.page_author(table0, "notes")
+    kinds0 = R.own_authors(table0)
 
     def oid(of, his=False):
         a = (of or [1])[0] if isinstance(of, (list, tuple)) and of else 1
         if a == R.DAEMON_AUTHOR or (his and of):
-            a = notes
-        if not R.is_own(a):
-            return nid()
+            k = "notes"
+        else:                                         # the page's table says whose it is; an old byte (0.2.33 to 0.2.60,
+            k = kinds0.get(a) or R.kind_of_author(a)  # which the tablet does not draw) its kind, written anew 2 to 10
+            if k is None:
+                return nid()
+        a = R.page_author(table0, k)
+        own_kind[a] = k
         own_seq[a] = own_seq.get(a, seq[0] + 100_000) + 1
         return CrdtId(a, own_seq[a])
 
@@ -1145,7 +1151,7 @@ def _write_scene(doc, page_no, scene):
     for k, b in enumerate(head):
         if isinstance(b, ss.AuthorIdsBlock) and any(a not in b.author_uuids for a in own_seq):
             head[k] = ss.AuthorIdsBlock(author_uuids={**b.author_uuids,
-                                                      **{a: R.author_uuid(a) for a in own_seq if a not in b.author_uuids}})
+                                                      **{a: R.uuid_of(own_kind[a]) for a in own_seq if a not in b.author_uuids}})
     text = _text_block(scene.get("text"), nid)
     if info is not None:
         info.root_document_visible = LwwValue(timestamp=CrdtId(1, 1), value=bool(scene.get("textVisible", True)))

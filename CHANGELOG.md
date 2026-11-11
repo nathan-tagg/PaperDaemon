@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.61
+
+- Answers and the Daemon's notes show on the tablet again. Since 0.2.33 PaperDaemon wrote its strokes under author numbers 128 to 159. The tablet opened those pages but drew nothing under those numbers, and listed no Daemon layer. PaperDaemon now writes each kind of thing under a fixed number from 2 to 10: 3 for a written answer, 8 for the Daemon's note, 9 for a placed picture, 10 for typed text, and so on. It knows its own strokes by the page's author table, so pages written under 128 to 159 are still read as its own, and a page saved in the editor moves them to the new numbers.
+- The Daemon layer is made the way the tablet makes a layer, with the second record the tablet writes for it. Without it, the tablet showed no Daemon layer.
+
 ## 0.2.60
 
 - The line naming what a lineup doesn't offer now ends the model's instructions, where a small model still reads it, and it says only the request comes off the page. On 0.2.59, Qwen3-VL 8B asked to underline a word took the sentence off with the request and said the word was underlined.

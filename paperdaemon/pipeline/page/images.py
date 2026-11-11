@@ -785,8 +785,8 @@ def insert(doc, page_no, png_path, box, page_id=None):
     # theirs: never the tablet's, which what the user adds on the tablet meanwhile takes up. The page's author table is
     # given the author first.
     from paperdaemon.pipeline.page import render as _R
-    HOST = _R.author_of("picture")
-    data = _with_author(data, blocks_, HOST, _R.author_uuid(HOST))
+    HOST = _R.page_author(_R.author_table(blocks_), "picture")
+    data = _with_author(data, blocks_, HOST, _R.uuid_of("picture"))
     n = A.next_free_id(blocks_, HOST)
     # rmscene does not see image items, so their ids are not in next_free_id's view: step past
     # every (HOST, k) a picture on this page already took, item or asset, read as the varuints they are
@@ -866,8 +866,8 @@ def to_front(doc, page_no, keys, page_id=None):
     # A PICTURE'S AUTHOR BYTE (render.author_of), as insert() gives: never the tablet's
     from paperdaemon.pipeline.page import render as _R
     parsed = list(read_blocks(io.BytesIO(data)))
-    HOST = _R.author_of("picture")
-    data = _with_author(data, parsed, HOST, _R.author_uuid(HOST))
+    HOST = _R.page_author(_R.author_table(parsed), "picture")
+    data = _with_author(data, parsed, HOST, _R.uuid_of("picture"))
     n = A.next_free_id(parsed, HOST)
     for bt, body in blocks(data):
         if bt == 15:

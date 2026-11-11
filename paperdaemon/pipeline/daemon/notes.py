@@ -136,7 +136,7 @@ def _mine(r, own, data):
     (`own`: render.notes_own_layers -- his layer on a page from before his notes had a byte). On his layer otherwise
     the user's strokes are the user's (the user's word, 11-07: "let me draw on it and keep my strokes"). Never judged
     by how its points look (render.daemon_stroke)."""
-    return r[7] == NOTES or r[7] == LEGACY or (r[5], r[6]) in own
+    return r[7] in (getattr(own, "notes", None) or {NOTES}) or r[7] == LEGACY or (r[5], r[6]) in own
 
 
 def _own_layers(blocks):
@@ -212,11 +212,11 @@ def _write(data, state, strokes=None, also=()):
     old = _old_layers(others)                        # his layers, by name: where the note goes
     own = _own_layers(others)                        # the layers whose every stroke is his (a page from before)
     authors = R.author_table(others)
-    me = NOTES                                       # his notes' author byte: PaperDaemon's, a note
+    me = R.page_author(authors, "notes")           # his notes' number on this page, tied to PaperDaemon's id for notes
     also = set(also)
     theirs0 = sum(1 for r in rows if r[0] == LINE and r[14] and not _mine(r, own, data) and (r[7], r[8]) not in also)
     frames, kinds = [], []
-    seen, dead, trees, nodes, places = set(), set(), set(), set(), {}
+    seen, dead, trees, nodes, places, linked = set(), set(), set(), set(), {}, set()
     top, erased, changed, table = 0, 0, False, None
     root_items = []
     # HIS LAYERS AS THE PAGE HAS THEM: each live place of his in the root's list -> (its layer, where the place frame
@@ -258,6 +258,8 @@ def _write(data, state, strokes=None, also=()):
                 changed = True
                 continue
             trees.add(_key(b.tree_id))
+            if not b.is_update:
+                linked.add(_key(b.node_id))
             if b.tree_id.part1 == me:
                 top = max(top, b.tree_id.part2 + 3)
         elif isinstance(b, ss.TreeNodeBlock):
@@ -311,9 +313,9 @@ def _write(data, state, strokes=None, also=()):
     if strokes is not None:
         if table is None:
             raise RuntimeError("the page has no author table for the daemon's note")
-        if authors.get(me) != R.author_uuid(me):      # the page's author table names his notes' author
+        if str(authors.get(me)) != str(R.uuid_of("notes")):   # the page's author table names his notes' author
             frames[table] = _frame(ss.AuthorIdsBlock(author_uuids={
-                **{a: u for a, u in authors.items() if a != LEGACY}, me: R.author_uuid(me)}))
+                **{a: u for a, u in authors.items() if a != LEGACY}, me: R.uuid_of("notes")}))
         # HIS LAYER: one per page, made once and sent whole with every note (the same blocks, the same ids, so copies
         # merge into one layer); a new one only when the user deleted it on the tablet. THE PAGE SAYS WHICH: the
         # record kept (state) is used while the page still has that layer; else the layer of his the page already
@@ -345,6 +347,12 @@ def _write(data, state, strokes=None, also=()):
                     (kind == ss.TreeNodeBlock.BLOCK_TYPE and (la, ln) not in nodes) or \
                     (kind == ss.SceneGroupItemBlock.BLOCK_TYPE and (la, ln + 3) not in seen):
                 news.append((kind, frame))
+        # THE TABLET'S SECOND RECORD OF A LAYER IT MAKES (tree: the layer's node, not an update, under nothing): without
+        # it the tablet listed no Daemon layer and drew nothing on it (the Sonnet page, 11-11)
+        if (la, ln) not in linked:
+            news.append((ss.SceneTreeBlock.BLOCK_TYPE, _frame(ss.SceneTreeBlock(
+                tree_id=CrdtId(me, n), node_id=CrdtId(la, ln), is_update=False, parent_id=CrdtId(0, 0)))))
+            n += 1
         state["layer"] = lay
         prev, a = CrdtId(0, 0), n
         for st in strokes:
@@ -416,7 +424,8 @@ def adopt(data, state):
     new, _erased, _changed = _write(data, state, lines)
     lay = state["layer"]
     a = int(state["laid"][-1][1]) if lines else 0
-    return new, {old: (NOTES, a + i) for i, old in enumerate(olds)}, {was: (int(lay[4]), int(lay[0]))}
+    me = int(state["laid"][-1][3]) if lines else int(state.get("author") or NOTES)
+    return new, {old: (me, a + i) for i, old in enumerate(olds)}, {was: (int(lay[4]), int(lay[0]))}
 
 
 def box_marks(data, box, pad=6.0, shifts=None):

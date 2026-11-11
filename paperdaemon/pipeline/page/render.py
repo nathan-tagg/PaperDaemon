@@ -192,14 +192,15 @@ DAEMON_LAYER = "Daemon"
 DAEMON_LEGACY = "PaperDaemon"
 DAEMON_AUTHOR = 218                  # the author his notes once had: anything under it is his, and goes
 SYNTH_PRESSURE = 190                 # the pressure PaperDaemon draws its points at (speed 0, direction 0); never a test
-# PAPERDAEMON'S STROKES SAY SO THEMSELVES, in their author byte (his design, 11-07). A stroke keeps its author in ONE
-# byte, and the tablet opens a page with 1-159, 175, 191, 207, 212 and 240-255 and no other (measured, a page per
-# number from 1 to 512; past 255 a page went as the byte its strokes carry, and a number the page's author table does
-# not list opens all the same). Everything PaperDaemon puts on a page is numbered 100kkkkk, 128-159, all of which open:
-# the top three bits say it is PaperDaemon's, the low five what it was (KINDS) -- a written answer, a traced picture, a
-# chart, a sketch, a mark-up, the daemon's note, a placed picture, typed text. Nothing is kept beside the page: the
-# byte says it, wherever the page goes, and each kind numbers its own ids, so none meets another's or the tablet's.
-# 218 and 219 (notes and jobs before) fell in what the tablet refuses; 218 is taken out of a page by the next note.
+# PAPERDAEMON'S STROKES SAY SO THEMSELVES, through the page's author table. A stroke keeps its author in ONE byte, and
+# the page's table ties each number to an id. PaperDaemon has one id per kind of thing it writes (KINDS: a written
+# answer, a traced picture, a chart, a sketch, a mark-up, the daemon's note, a placed picture, typed text) and writes
+# each under the number the page's table gives that id, else its own, 2 to 10 (page_author; his choice, 11-11). Its own strokes are told by the id their number is tied to.
+# NEVER 128 OR ABOVE: from 0.2.33 to 0.2.60 PaperDaemon wrote under 100kkkkk (128-159). The tablet OPENED such a page
+# (measured 11-07: it opens 1-159, 175, 191, 207, 212 and 240-255) but DREW NOTHING under those numbers: the first
+# reply on his tablet since, 11-11, showed only once its strokes were renumbered 2 and 3. A page from then is still
+# read as PaperDaemon's by those numbers (own_authors). 218 and 219 (notes and jobs before) fell in what the tablet
+# refuses; 218 is taken out of a page by the next note.
 TABLET_AUTHOR = 1
 TABLET_OPENS = frozenset(range(1, 160)) | {175, 191, 207, 212} | frozenset(range(240, 256))   # measured 11-07
 HOST_UUID = __import__("uuid").uuid5(__import__("uuid").NAMESPACE_DNS, "host.paperdaemon")
@@ -210,19 +211,91 @@ KIND_NAMES = {v: k for k, v in KINDS.items()}
 _NAME = {"key": None, "name": DAEMON_LAYER}
 
 
+FIRST_OWN = 2                        # the lowest number PaperDaemon takes in a page's author table (1 is the tablet)
+EDITOR_AUTHOR = 127                  # the Mirror editor's own (remarkable/inplace.AUTHOR): never taken here
+
+
 def author_of(kind):
-    """The author byte PaperDaemon writes a thing of this kind under: 100 and the kind's five bits."""
+    """The byte PaperDaemon wrote a thing of this kind under from 0.2.33 to 0.2.60 (100 and the kind's five bits), which
+    the tablet does not draw: only for reading a page from then. What it writes under now: page_author."""
     return OWN_BASE | KINDS.get(kind or "other", 0)
 
 
-def is_own(author):
-    """Did PaperDaemon write it: an author byte of 100kkkkk (128-159)."""
+def _old_own(author):
+    """An author byte of 100kkkkk (128-159): PaperDaemon's on a page written from 0.2.33 to 0.2.60."""
     return (int(author) & OWN_MASK) == OWN_BASE and int(author) < 256
 
 
-def kind_of_author(author):
+def uuid_of(kind):
+    """PaperDaemon's id for a kind of thing it writes, as a page's author table ties a number to it."""
+    k = kind if kind in KINDS else "other"
+    return HOST_UUID if k == "other" else __import__("uuid").uuid5(__import__("uuid").NAMESPACE_DNS,
+                                                                   "%s.host.paperdaemon" % k)
+
+
+_UUID_KIND = {}
+
+
+def _kind_of_uuid(u):
+    if not _UUID_KIND:
+        _UUID_KIND.update({str(uuid_of(k)): k for k in KINDS})
+    return _UUID_KIND.get(str(u))
+
+
+def own_authors(table):
+    """{number: kind} for PaperDaemon's authors in a page's author table ({number: uuid}): a number tied to one of its
+    ids, and an old 100kkkkk byte (0.2.33 to 0.2.60)."""
+    out = {}
+    for n, u in (table or {}).items():
+        k = _kind_of_uuid(u)
+        if k is None and _old_own(n):
+            k = KIND_NAMES.get(int(n) & ~OWN_MASK, "other")
+        if k is not None:
+            out[int(n)] = k
+    return out
+
+
+def page_author(table, kind):
+    """The number PaperDaemon writes a thing of `kind` under on a page with this author table: the one the table already
+    ties to its id (below 128), else its own, 2 to 10 (2 and the kind's number in KINDS: his choice, 11-11, numbers
+    low enough to be safe), else -- another device holding that one on this page -- the lowest from 11 the table does
+    not hold. The caller puts it in the table."""
+    u = str(uuid_of(kind))
+    for n in sorted(table or {}):
+        if FIRST_OWN <= int(n) < OWN_BASE and str(table[n]) == u:
+            return int(n)
+    n = FIRST_OWN + KINDS.get(kind if kind in KINDS else "other", 0)
+    if n not in (table or {}):
+        return n
+    n = FIRST_OWN + len(KINDS)
+    while n in (table or {}) or n == EDITOR_AUTHOR:
+        n += 1
+    if n >= OWN_BASE:
+        raise RuntimeError("the page's author table is full below 128")
+    return n
+
+
+def claim_author(blocks, kind):
+    """page_author for a page's blocks (rmscene's), the number put in its author table -> the number."""
+    for i, b in enumerate(blocks):
+        if isinstance(b, ss.AuthorIdsBlock):
+            n = page_author(b.author_uuids, kind)
+            if n not in b.author_uuids:
+                blocks[i] = ss.AuthorIdsBlock(author_uuids={**b.author_uuids, n: uuid_of(kind)})
+            return n
+    raise RuntimeError("the page has no author table")
+
+
+def is_own(author, table=None):
+    """Did PaperDaemon write it: a number the page's author table ties to one of its ids, or an old 100kkkkk byte."""
+    return int(author) in own_authors(table) if table is not None else _old_own(author)
+
+
+def kind_of_author(author, table=None):
     """What a stroke of PaperDaemon's was (KINDS), or None for an author that is not PaperDaemon's."""
-    return KIND_NAMES.get(int(author) & ~OWN_MASK, "other") if is_own(author) else None
+    if table is not None:
+        return own_authors(table).get(int(author))
+    return KIND_NAMES.get(int(author) & ~OWN_MASK, "other") if _old_own(author) else None
 
 
 def author_table(blocks):
@@ -233,11 +306,14 @@ def author_table(blocks):
     return {}
 
 
-def author_uuid(author):
-    """The id the page's author table ties a PaperDaemon author byte to, one per kind."""
-    k = kind_of_author(author) or "other"
-    return HOST_UUID if k == "other" else __import__("uuid").uuid5(__import__("uuid").NAMESPACE_DNS,
-                                                                   "%s.host.paperdaemon" % k)
+def author_uuid(author, table=None):
+    """The id a PaperDaemon author number is tied to, one per kind (its kind read from `table`, else an old byte's)."""
+    return uuid_of(kind_of_author(author, table) or "other")
+
+
+class _OwnLayers(set):
+    """notes_own_layers' answer: the layers whose every stroke is his, and `notes`, his notes' numbers on the page."""
+    notes = frozenset()
 
 
 def daemon_layer_name():
@@ -284,7 +360,10 @@ def notes_own_layers(blocks):
     Once a note of his has gone up under it, his layer holds his strokes and the user's alike (the user's word, 11-07:
     "let me draw on it and keep my strokes"), each told by its author byte -> {(part1, part2)}."""
     blocks = list(blocks)
-    return set() if author_of("notes") in author_table(blocks) else daemon_layer_ids(blocks)
+    notes = {n for n, k in own_authors(author_table(blocks)).items() if k == "notes"}
+    out = _OwnLayers(() if notes else daemon_layer_ids(blocks))
+    out.notes = frozenset(notes | {author_of("notes")})
+    return out
 
 
 def daemon_stroke(author, parent, layers, drawn=None):
@@ -292,7 +371,7 @@ def daemon_stroke(author, parent, layers, drawn=None):
     layers whose every stroke is his (`layers`: notes_own_layers -- his layer on a page from before). Nothing is judged
     by how its points look: a stroke told apart by its points (machine-drawn: pressure 190, speed 0) could be the
     user's, drawn with a mouse, and erased. (`drawn` is no longer asked.)"""
-    return author == DAEMON_AUTHOR or author == author_of("notes") or parent in layers
+    return author == DAEMON_AUTHOR or author in (getattr(layers, "notes", None) or {author_of("notes")}) or parent in layers
 
 
 def _lines_of(path):

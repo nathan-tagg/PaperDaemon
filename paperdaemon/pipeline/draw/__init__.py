@@ -603,12 +603,16 @@ class Drawing:
         # EACH STROKE UNDER THE AUTHOR BYTE OF WHAT IT IS (render.author_of: PaperDaemon's, and what it was to it), its
         # ids counted on from the last of that author's own, never from the tablet's, so what the user writes on the
         # tablet meanwhile can never take the same ids
-        authors = [self.author or R.author_of(getattr(st, "kind", None) or self.kind) for st in self.strokes]
+        mine = {}
+        authors = []
+        for st in self.strokes:
+            k = getattr(st, "kind", None) or self.kind
+            if not self.author and k not in mine:
+                mine[k] = R.claim_author(blocks, k)  # the page's number for this kind, put in its author table
+            authors.append(self.author or mine[k])
         seqs = {}
         for a in authors:
             if a not in seqs:
-                if R.is_own(a):
-                    with_author(blocks, a, R.author_uuid(a))
                 seqs[a] = next_free_id(blocks, a) - 1
         prev = CrdtId(0, 0)
         if kept:

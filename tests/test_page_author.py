@@ -82,8 +82,8 @@ def test_notes_laid_as_the_tablets_author_are_erased_and_the_next_goes_up_as_pap
     assert _counts(after) == (len(strokes), 1, 1)                 # his old layer taken up: still one layer
     bl = _blocks(after)
     new = [b for b in bl if isinstance(b, ss.SceneLineItemBlock) and b.item.value is not None and b.parent_id == lay]
-    assert len(new) == len(strokes) and {b.item.item_id.part1 for b in new} == {134}
+    assert len(new) == len(strokes) and {b.item.item_id.part1 for b in new} == {8}
     assert {(1, 200_004), (1, 200_005), (1, 200_006)} <= _dead(after)
     table = next(b for b in bl if isinstance(b, ss.AuthorIdsBlock)).author_uuids
-    assert table[134] == R.author_uuid(134) and table[1] != R.author_uuid(134)
-    assert state["author"] == 134 and state["layer"][4] == 1 and state["laid"][-1][3:] == [134, 1]
+    assert table[8] == R.uuid_of("notes") and table[1] != R.uuid_of("notes")
+    assert state["author"] == 8 and state["layer"][4] == 1 and state["laid"][-1][3:] == [8, 1]

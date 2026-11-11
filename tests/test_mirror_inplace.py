@@ -762,11 +762,11 @@ def test_the_user_draws_on_his_layer_of_a_mirror_page_and_keeps_it():
     """)
     byte, tablet, old = got["byte"], got["tablet"], got["218"]
     assert byte["drawn"]["prefix"] and byte["drawn"]["added"] == 1 and byte["drawn"]["erased"] == 0, byte
-    assert byte["drawn"]["on_his"][0] == IP_AUTHOR and set(byte["drawn"]["on_his"][1:]) == {134} and not byte["drawn"]["old_page"], byte
-    assert tablet["drawn"] == {"on_his": [IP_AUTHOR, 134, 134], "his_layers": 1, "old_page": False, "added": 1, "erased": 0, "prefix": False}, tablet
-    assert old["drawn"] == {"on_his": [IP_AUTHOR, 134], "his_layers": 1, "old_page": False, "added": 1, "erased": 0, "prefix": False}, old
+    assert byte["drawn"]["on_his"][-1] == IP_AUTHOR and set(byte["drawn"]["on_his"][:-1]) == {8} and not byte["drawn"]["old_page"], byte
+    assert tablet["drawn"] == {"on_his": [8, 8, IP_AUTHOR], "his_layers": 1, "old_page": False, "added": 1, "erased": 0, "prefix": False}, tablet
+    assert old["drawn"] == {"on_his": [8, IP_AUTHOR], "his_layers": 1, "old_page": False, "added": 1, "erased": 0, "prefix": False}, old
     for case in (byte, tablet, old):                      # his next note takes his own and leaves the user's stroke
-        assert case["noted"] == {"on_his": [IP_AUTHOR] + [134] * case["note"], "his_layers": 1, "old_page": False}, case
+        assert case["noted"] == {"on_his": [8] * case["note"] + [IP_AUTHOR], "his_layers": 1, "old_page": False}, case
 
 
 def test_a_page_the_c_reader_does_not_cover_is_written_the_same():

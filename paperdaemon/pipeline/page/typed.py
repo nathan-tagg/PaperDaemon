@@ -607,8 +607,7 @@ def restyle_bytes(data, wants):
     tb = _text_block(allb)
     if tb is None:
         return data, 0
-    host = R.author_of("typed")
-    _A.with_author(allb, host, R.author_uuid(host))
+    host = R.claim_author(allb, "typed")
     paras = _para_keys(tb)
     # A PARAGRAPH NAMED TWICE TAKES THE LAST STYLE NAMED FOR IT, set once ("make these checkboxes, and tick the plants
     # one": the list's four paragraphs checkboxes, then one of them a ticked one -- each asked for its own style back
@@ -715,8 +714,7 @@ def insert(doc_name, page_no, text, dry_run=False):
     # PAPERDAEMON'S TYPED TEXT'S AUTHOR BYTE (render.author_of), counted on from its own: never the tablet's, which the
     # user's typing on the tablet meanwhile takes up
     from paperdaemon.pipeline.page import render as _R
-    HOST = _R.author_of("typed")
-    _A.with_author(allb, HOST, _R.author_uuid(HOST))
+    HOST = _R.claim_author(allb, "typed")
     end = _A.next_free_id(allb, HOST) - 1
     body = ("\n" if items else "") + text
     new_id = CrdtId(HOST, end + 1)
