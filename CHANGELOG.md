@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.50
+
+- The Command box of a command-line lineup is as wide as the Source and Harness boxes around it. In 0.2.48 it ran the whole width of the tab.
+
 ## 0.2.49
 
 - A sketch that comes with a lean lineup's plan sits right under what it follows. It was fitted into the middle of its place, and under a few sentences that place is the rest of the page, so the drawing landed half a page down.

@@ -90,7 +90,7 @@
         harnessRow(p, role, f, harnesses) +
         '<div class="actions"><button type="button" class="btn small" data-act="test" data-role="' + role + '">' + esc(PD.t("common.test")) + '</button><span id="' + id + '-test">' + (test || "") + "</span></div>";
     } else if (f.kind === "cli") {
-      out += '<div class="grid2">' + lab(id + "-at", "slot.command", "slot.command.help", "wide") + '<input class="field mono" id="' + id + '-at" value="' + esc(f.at) + '" spellcheck="false" autocomplete="off"></label></div>' +
+      out += '<div class="grid2">' + lab(id + "-at", "slot.command", "slot.command.help") + '<input class="field mono" id="' + id + '-at" value="' + esc(f.at) + '" spellcheck="false" autocomplete="off"></label><span></span></div>' +
         harnessRow(p, role, f, harnesses) +
         '<div class="actions"><button type="button" class="btn small" data-act="test" data-role="' + role + '">' + esc(PD.t("common.test")) + '</button><span id="' + id + '-test">' + (test || "") + "</span></div>";
     } else if (f.kind === "local") {
