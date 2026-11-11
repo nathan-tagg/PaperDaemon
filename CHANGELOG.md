@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.63
+
+- The Daemon's note no longer leaves erase marks for a layer the page doesn't have. On the Sonnet page, such marks left the whole page undrawn on the tablet.
+
 ## 0.2.62
 
 - A reply that writes out again a paragraph it is taking off the page is refused, and the model is told to leave the user's words where they are. Qwen3-VL 8B, asked to underline a word, erased the sentence and wrote it out again.

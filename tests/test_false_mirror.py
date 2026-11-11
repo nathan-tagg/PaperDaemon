@@ -815,3 +815,29 @@ def test_his_layer_carries_the_tablets_second_record_and_his_note_its_low_number
         print(json.dumps({"lay": lay, "links": links, "authors": authors}))
     """)
     assert len(got["lay"]) == 1 and got["links"] == got["lay"] and got["authors"] == [8], got
+
+
+def test_no_erase_mark_hangs_on_a_layer_the_page_does_not_have():
+    """11-11, the Sonnet page: the note writer's record still held strokes laid on layer (134, 1), renumbered away by
+    hand, and the next note hung 603 erase marks on that missing layer; the tablet drew nothing on the page. A record
+    on a layer the page does not have (and the note does not make) is let go."""
+    got = _run("""
+        import io, json
+        from rmscene import read_blocks
+        from rmscene import scene_stream as ss
+        from paperdaemon.remarkable import local
+        from paperdaemon.pipeline.daemon import notes as N
+        a = local.new_notebook("A")
+        local.write_scene(a, 1, local.scene_of(a, 1))
+        path = local._rm(a, 1)
+        note, _ = N.letter(["Saw it 1:02 PM."], (1620.0, 2160.0))
+        state = {}
+        data = N.with_note(open(path, "rb").read(), note, state); open(path, "wb").write(data)
+        state["laid"] = [[1, 5, 10, 134, 134]] + state["laid"]
+        data = N.with_note(open(path, "rb").read(), note, state); open(path, "wb").write(data)
+        bl = list(read_blocks(io.BytesIO(open(path, "rb").read())))
+        nodes = {(b.group.node_id.part1, b.group.node_id.part2) for b in bl if isinstance(b, ss.TreeNodeBlock)}
+        stray = sum(1 for b in bl if isinstance(b, ss.SceneLineItemBlock) and (b.parent_id.part1, b.parent_id.part2) not in nodes)
+        print(json.dumps({"stray": stray, "kept": [r[3] for r in state["laid"]]}))
+    """)
+    assert got["stray"] == 0 and 134 not in got["kept"], got

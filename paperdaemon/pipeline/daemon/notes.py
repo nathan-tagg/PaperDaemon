@@ -287,6 +287,8 @@ def _write(data, state, strokes=None, also=()):
     # now is not: a copy made later from an older page still has to erase it). Laid as PaperDaemon's author or, from
     # 0.1.81 to 0.2.30, as the tablet's (1), on his layer under either.
     news, keep = [], []
+    _sl = state.get("layer")                          # his layer as recorded: a note puts it back if the page lacks it
+    _remade = (int(_sl[4]), int(_sl[0])) if _sl and len(_sl) > 4 else None
     for rec in list(state.get("laid") or []):
         try:
             lay, a, z, au = int(rec[0]), int(rec[1]), int(rec[2]), int(rec[3])
@@ -295,6 +297,10 @@ def _write(data, state, strokes=None, also=()):
             continue
         if au == LEGACY or la == LEGACY:
             continue                                  # laid under his old author: gone with it
+        if (la, lay) not in nodes and not (strokes is not None and _remade == (la, lay)):
+            continue                                  # laid on a layer this page does not have: an erase mark hung on
+                                                      # it left the whole page undrawn on the tablet (the Sonnet page,
+                                                      # 11-11, after its authors were renumbered by hand)
         ids = [(au, k) for k in range(a, z + 1)]
         if all(k in dead for k in ids):
             continue
