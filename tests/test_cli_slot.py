@@ -214,3 +214,16 @@ def test_a_job_s_later_call_begins_exactly_as_its_first():
     two = json.loads(a.request("sys", later, caps={"vision": True}, harness=harnesses.DEFAULT["text"]())[1])
     n = len(one["message"]["content"])
     assert two["message"]["content"][:n] == one["message"]["content"]
+
+
+def test_calls_written_in_tool_call_markup_are_read():
+    """Sonnet 5.5 sometimes answered with the tool-call markup it was trained on instead of the JSON it was asked for;
+    each time cost two more calls to be asked again. The markup is read as the calls it names."""
+    cli = harnesses.get("claude-code").cli
+    said = ('<invoke name="answer">\n<parameter name="answers">["para:1"]</parameter>\n'
+            '<parameter name="lines">["Lima is the capital."]</parameter>\n</invoke>')
+    out = json.dumps({"type": "result", "is_error": False, "result": said, "usage": {}})
+    r = C.CommandLine.parse(out, TOOLS, cli, "claude")
+    assert [(c["name"], c["arguments"]) for c in r["tool_calls"]] == [("answer", {"answers": ["para:1"], "lines": ["Lima is the capital."]})]
+    plain = json.dumps({"type": "result", "is_error": False, "result": '<invoke name="skip"><parameter name="note">nothing here</parameter></invoke>'})
+    assert C.CommandLine.parse(plain, TOOLS, cli, "claude")["tool_calls"][0]["arguments"] == {"note": "nothing here"}

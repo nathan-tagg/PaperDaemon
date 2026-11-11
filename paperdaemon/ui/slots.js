@@ -32,12 +32,11 @@
     return pr.id === "other" ? f.at : pr.at;
   };
 
-  // THE TEXT MODEL'S HARNESS IS ONE OF THREE BASES, by the model's strength (the slider), and its CAPABILITIES are what
-  // the model can do on its own (the checkboxes). A box left as the base has it is not saved: moving the slider then
-  // gives the new base's own values.
+  // THE TEXT MODEL'S HARNESS IS ONE OF THREE BASES, by the model's strength (a dropdown), and its CAPABILITIES are what
+  // the model can do on its own (pills). A capability left as the base has it is not saved: picking another base then
+  // gives that base's own.
   const BASES = [["weak-text", "weak"], ["default-text", "medium"], ["lean-default", "strong"]];
   const CAPS = ["vision", "web_search", "image_generation"];
-  const LATER = ["image_generation"];                      // shown, and not yet something PaperDaemon can use
   const capsOf = slot => {
     const over = (slot && slot.overrides) || {}, out = {};
     CAPS.forEach(c => { if (c in over) out[c] = !!over[c]; });
@@ -72,8 +71,7 @@
     if (role === "text") return textHarness(p, f, harnesses);
     const list = (harnesses || []).filter(h => h.kind === role && h.offered !== false);   // (one that only holds what others share is not offered)
     const id = p + "-" + role + "-harness";
-    return '<div class="grid2"><div class="field-col"><div class="label-row">' + lab(id, "slot.harness", "slot.harness.help") + "</label>" +
-      '<button type="button" class="link-btn" data-act="addharness" data-kind="' + esc(role) + '">' + esc(PD.t("slot.add_harness")) + "</button></div>" +
+    return '<div class="grid2"><div class="field-col">' + lab(id, "slot.harness", "slot.harness.help_image") + "</label>" +
       select(id, list.map(h => [h.id, h.name]), f.harness) +
       '<p class="harness-note">' + esc(((list.find(h => h.id === f.harness) || list[0] || {}).notes) || "") + "</p>" +
       '<p class="harness-note">' + esc(PD.t("slot.image.instead")) + "</p>" +
@@ -89,46 +87,94 @@
     return "default-text";
   }
 
-  /** What the text model can do on its own: the box as the user set it, else as its harness has it. */
-  const capValue = (f, c, harnesses) => {
-    if (LATER.includes(c)) return false;
-    if (f.caps && c in f.caps) return !!f.caps[c];
+  /** What the text model can do on its own: as the user set it, else as its harness has it. */
+  const capDefault = (f, c, harnesses) => {
     const h = (harnesses || []).find(x => x.id === f.harness);
     return !!(h && h.fields && h.fields[c]);
   };
+  const capValue = (f, c, harnesses) => (f.caps && c in f.caps) ? !!f.caps[c] : capDefault(f, c, harnesses);
 
-  /** The text model's Harness (a Weak / Medium / Strong slider, the base's description, and the user's own harness files
-      when there are any) and its Capabilities (checkboxes, and a line saying what the model can do). */
+  /** The text model's Harness (Weak / Medium / Strong, and the base's description under it) and its Capabilities (a
+      type-ahead box, and a pill under it for each capability the model has). */
   function textHarness(p, f, harnesses) {
     const id = p + "-text";
     const list = (harnesses || []).filter(h => h.kind === "text" && h.offered !== false);
-    const own = list.filter(h => h.source === "user");
-    const mine = own.find(h => h.id === f.harness);
-    const base = baseOf(f.harness, list);
-    const at = Math.max(0, BASES.findIndex(b => b[0] === base));
-    const helpLink = '<button type="button" class="link-btn" data-script-help="harness">' + esc(PD.t("common.help")) + "</button>";
-    let out = '<div class="harness-box"><div class="label-row">' + lab(id + "-strength", "slot.harness", "slot.harness.help") + "</label>" +
-      '<span class="label-links"><button type="button" class="link-btn" data-act="addharness" data-kind="text">' + esc(PD.t("slot.add_harness")) + "</button>" +
-      helpLink + "</span></div>" +
-      '<input type="range" class="strength" id="' + id + '-strength" min="0" max="2" step="1" value="' + at + '"' +
-      ' aria-valuetext="' + esc(PD.t("slot.base." + BASES[at][1])) + '">' +
-      '<div class="strength-ticks">' + BASES.map((b, i) => '<button type="button" class="tick' + (i === at ? " on" : "") + '" data-strength="' + i + '">' +
-        esc(PD.t("slot.base." + b[1])) + "</button>").join("") + "</div>" +
-      '<p class="harness-note">' + esc(mine ? (mine.notes || "") : PD.t("slot.base." + BASES[at][1] + ".about")) + "</p>";
-    if (own.length) {
-      out += '<label class="own-harness">' + esc(PD.t("slot.own_harness")) + " " +
-        select(id + "-own", [["", PD.t("slot.own_harness.none")]].concat(own.map(h => [h.id, h.name])), mine ? mine.id : "") + "</label>";
-    }
+    const at = Math.max(0, BASES.findIndex(b => b[0] === baseOf(f.harness, list)));
+    const help = '<button type="button" class="link-btn" data-script-help="harness">' + esc(PD.t("common.help")) + "</button>";
     const on = CAPS.filter(c => capValue(f, c, list));
-    out += '<div class="label-row caps-head"><span class="lab">' + esc(PD.t("slot.capabilities")) + PD.helpTip(PD.t("slot.capabilities.help")) + "</span>" +
-      helpLink + "</div>" +
-      '<div class="caps">' + CAPS.map(c => '<label class="check-label"><input type="checkbox" id="' + id + "-cap-" + c + '"' +
-        (on.includes(c) ? " checked" : "") + (LATER.includes(c) ? " disabled" : "") + "> " + esc(PD.t("slot.cap." + c)) +
-        (LATER.includes(c) ? ' <span class="dim">(' + esc(PD.t("slot.cap.not_yet")) + ")</span>" : "") + "</label>").join("") + "</div>" +
-      '<p class="harness-note">' + esc(on.length ? PD.t("slot.can", { list: on.map(c => PD.t("slot.cap." + c)).join(", ") }) : PD.t("slot.can_none")) +
-      "</p>" + '<p class="harness-note">' + esc(PD.t("slot.cap.warning")) + "</p></div>";
-    return out;
+    return '<div class="grid2"><div class="field-col">' +
+      '<div class="label-row">' + lab(id + "-strength", "slot.harness", "slot.harness.help") + "</label>" + help + "</div>" +
+      select(id + "-strength", BASES.map(b => [b[0], PD.t("slot.base." + b[1])]), BASES[at][0]) +
+      '<p class="harness-note">' + esc(PD.t("slot.base." + BASES[at][1] + ".about")) + "</p>" +
+      '<div class="label-row caps-head">' + lab(id + "-capin", "slot.capabilities", "slot.capabilities.help") + "</label>" + help + "</div>" +
+      '<div class="cap-picker" data-caps-for="' + esc(id) + '">' +
+      '<input class="field" id="' + id + '-capin" placeholder="' + esc(PD.t("slot.cap.add")) + '" autocomplete="off" spellcheck="false"' +
+      ' role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="' + id + '-caplist">' +
+      '<ul class="ta-list" id="' + id + '-caplist" role="listbox" hidden></ul>' +
+      '<input type="hidden" id="' + id + '-caps" value="' + esc(on.join(",")) + '">' + "</div>" +
+      '<div class="cap-pills">' + on.map(c => '<span class="cap-pill" title="' + esc(PD.t("slot.cap." + c + ".tip")) + '">' +
+        esc(PD.t("slot.cap." + c)) + '<button type="button" class="chip-x" data-cap-remove="' + c + '" aria-label="' +
+        esc(PD.t("common.remove") + ": " + PD.t("slot.cap." + c)) + '">\u00d7</button></span>').join("") + "</div>" +
+      "</div><span></span></div>";
   }
+
+  /** The Capabilities box: the capabilities not yet added, narrowed by what is typed; arrows move, Enter adds the one
+      marked (or the first), Escape closes, Backspace in an empty box removes the last pill. Adding or removing one
+      changes the hidden list and tells the screen (a change event), which saves it and paints the pills again. */
+  function capsBox(el) {
+    const picker = el.closest(".cap-picker"); if (!picker) return null;
+    const id = picker.dataset.capsFor;
+    return { picker, input: picker.querySelector("#" + id + "-capin"), list: picker.querySelector("#" + id + "-caplist"),
+             hidden: picker.querySelector("#" + id + "-caps") };
+  }
+  const capsHave = b => b.hidden.value.split(",").filter(Boolean);
+  function capsSet(b, have) {
+    b.hidden.value = have.join(",");
+    b.hidden.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  function capsShow(b) {
+    const q = b.input.value.trim().toLowerCase(), have = capsHave(b);
+    const left = CAPS.filter(c => !have.includes(c) && (!q || PD.t("slot.cap." + c).toLowerCase().includes(q)));
+    b.list.innerHTML = left.map((c, i) => '<li role="option" data-cap="' + c + '"' + (i === 0 && q ? ' class="on"' : "") + ">" +
+      esc(PD.t("slot.cap." + c)) + "</li>").join("");
+    b.list.hidden = !left.length;
+    b.input.setAttribute("aria-expanded", String(!!left.length));
+  }
+  document.addEventListener("focusin", e => { const b = e.target.matches && e.target.matches(".cap-picker input.field") && capsBox(e.target); if (b) capsShow(b); });
+  document.addEventListener("click", e => { const b = e.target.matches && e.target.matches(".cap-picker input.field") && capsBox(e.target); if (b) capsShow(b); });
+  document.addEventListener("input", e => { const b = e.target.matches && e.target.matches(".cap-picker input.field") && capsBox(e.target); if (b) capsShow(b); });
+  document.addEventListener("focusout", e => {
+    const b = e.target.matches && e.target.matches(".cap-picker input.field") && capsBox(e.target);
+    if (b) setTimeout(() => { b.list.hidden = true; b.input.setAttribute("aria-expanded", "false"); }, 150);
+  });
+  document.addEventListener("keydown", e => {
+    const b = e.target.matches && e.target.matches(".cap-picker input.field") && capsBox(e.target); if (!b) return;
+    const items = [...b.list.querySelectorAll("li")];
+    let at = items.findIndex(li => li.classList.contains("on"));
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      if (b.list.hidden) { capsShow(b); return; }
+      at = e.key === "ArrowDown" ? Math.min(items.length - 1, at + 1) : Math.max(0, at - 1);
+      items.forEach((li, i) => li.classList.toggle("on", i === at));
+      e.preventDefault();
+    } else if (e.key === "Enter") {
+      const li = items[at >= 0 ? at : 0];
+      if (li && !b.list.hidden) { e.preventDefault(); capsSet(b, capsHave(b).concat(li.dataset.cap)); }
+    } else if (e.key === "Escape") { b.list.hidden = true; }
+    else if (e.key === "Backspace" && !b.input.value) {
+      const have = capsHave(b); if (have.length) { e.preventDefault(); capsSet(b, have.slice(0, -1)); }
+    }
+  });
+  document.addEventListener("mousedown", e => {
+    const li = e.target.closest && e.target.closest(".cap-picker .ta-list li"); if (!li) return;
+    e.preventDefault();
+    const b = capsBox(li); capsSet(b, capsHave(b).concat(li.dataset.cap));
+  });
+  document.addEventListener("click", e => {
+    const x = e.target.closest && e.target.closest("[data-cap-remove]"); if (!x) return;
+    const box = x.closest(".field-col") && x.closest(".field-col").querySelector(".cap-picker");
+    const b = box && capsBox(box.querySelector("input.field")); if (!b) return;
+    capsSet(b, capsHave(b).filter(c => c !== x.dataset.capRemove));
+  });
 
   /** The form for one slot. p: the id prefix; test: the test line's html (hosted only); lineup: the lineup's name, for
       the link to its LoRA folder under the image model's start script (none in the first-run setup). */
@@ -171,20 +217,16 @@
     const h = v("-harness");
     if (h) f.harness = h;
     if (role === "text") {
-      // the slider, or the user's own harness when one is picked: a new harness starts from its own capabilities
-      const st = $("#" + p + "-text-strength", root), ownEl = $("#" + p + "-text-own", root);
-      if (st) {
-        const picked = ownEl && ownEl.value ? ownEl.value : BASES[Math.max(0, Math.min(2, Number(st.value) || 0))][0];
-        if (picked !== f.harness) { f.harness = picked; f.caps = {}; return f; }
+      // the base picked: another base starts from its own capabilities
+      const st = $("#" + p + "-text-strength", root);
+      if (st && st.value && st.value !== f.harness) { f.harness = st.value; f.caps = {}; return f; }
+      // the pills: only what differs from the base is kept
+      const hid = $("#" + p + "-text-caps", root);
+      if (hid) {
+        const on = new Set(hid.value.split(",").filter(Boolean));
+        f.caps = {};
+        CAPS.forEach(c => { if (on.has(c) !== capDefault(f, c, PD.slots.harnesses)) f.caps[c] = on.has(c); });
       }
-      CAPS.forEach(c => {
-        const el = $("#" + p + "-text-cap-" + c, root);
-        if (!el || el.disabled) return;
-        f.caps = f.caps || {};
-        const h0 = (PD.slots.harnesses || []).find(x => x.id === f.harness);
-        const dflt = !!(h0 && h0.fields && h0.fields[c]);
-        if (el.checked === dflt) delete f.caps[c]; else f.caps[c] = el.checked;
-      });
     }
     const st = $("#" + p + "-" + role + "-scripttext", root);
     if (st) f.scriptText = st.value;
@@ -353,16 +395,6 @@
   function focusGrip(root, i) { const g = root.querySelector('.grip[data-i="' + i + '"]'); if (g) g.focus(); }
 
   const testHtml = t => t === "testing" ? mk("spin") + esc(PD.t("common.testing")) : t === "ok" ? mk("ok") + esc(PD.t("common.answering")) : t ? mk("fail") + esc(t) : "";
-
-  /** A tick under the slider moves it there. */
-  document.addEventListener("click", e => {
-    const t = e.target.closest && e.target.closest("[data-strength]");
-    if (!t) return;
-    const r = t.closest(".harness-box") && t.closest(".harness-box").querySelector("input.strength");
-    if (!r || String(r.value) === t.dataset.strength) return;
-    r.value = t.dataset.strength;
-    r.dispatchEvent(new Event("change", { bubbles: true }));
-  });
 
   PD.slots = { harnesses: [], tagsOf, tagsHtml, readTags, tagsOut, wireTagSort, focusGrip, formOf, html, read, slotOf, saveKeys, searchOf, searchHtml, readSearch, searchOut, testHtml };
 })();

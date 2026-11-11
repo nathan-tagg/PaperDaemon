@@ -9,13 +9,13 @@ PaperDaemon's own harnesses are part of the app, not kept here. They are the thr
 
 | Stop | `id` | For |
 | --- | --- | --- |
-| Weak | `weak-text` | Small models, such as 8B models. Full instructions, one call per step, short answers; sketches, social posts, pictures from the web and the long games are off. |
-| Medium | `default-text` | Mid-size models, such as 27B models and Gemini Flash. Full instructions, one call per step. Built for Qwen 3 models running in llama.cpp. |
-| Strong | `lean-default` | The strongest models, such as Claude. Short instructions; most jobs finish in one call. |
+| Weak | `weak-text` | Small models. Full instructions, one call per step, short answers; sketches, social posts, pictures from the web and the long games are off. Tested with Qwen3-VL 8B. |
+| Medium | `default-text` | Mid-size models. Full instructions, one call per step. Tested with 27B class Qwen 3 models and Gemini 3.8 Flash. |
+| Strong | `lean-default` | The strongest models. Short instructions; most jobs finish in one call. Tested with Claude Opus, Sonnet and Haiku 5.5. |
 
-A harness here builds on one of them (`extends`, or Medium when it names none) and changes only what it names. A
-lineup uses the stop on its slider, or the file picked under Your harness. PaperDaemon never chooses one from a
-model's name.
+A lineup's Text / Reasoning tab picks one of the three with its Harness dropdown, and its Capabilities add what the
+model can do on its own. PaperDaemon never chooses one from a model's name. The files here are read by PaperDaemon's
+own code and by these guides; the Lineup screen no longer picks one.
 
 How the model thinks and how much context it has are the server's own settings, in its start script, never a
 harness's.
@@ -53,9 +53,9 @@ pictures) its own way.
 | `id` | Its name in the settings. Optional: the file name without `.json`. Must not be taken. |
 | `name` | What the Harness box shows: the server, then the model. Optional: the `id`. |
 | `extends` | The harness it builds on: one of PaperDaemon's, or another here. Optional: Default. |
-| `vision` | `true` when the model can see a page picture. The Vision box starts from it. |
-| `web_search` | `true` when the model can search the web on its own. The Web search box starts from it. It is used only when the lineup's Network tab has no search. Optional: `false`. |
-| `image_generation` | `true` when the model can make pictures on its own. The Image generation box starts from it. PaperDaemon can't use it yet. Optional: `false`. |
+| `vision` | `true` when the model can see a page picture. The Vision capability starts from it. |
+| `web_search` | `true` when the model can search the web on its own. The Web search capability starts from it. It is used only when the lineup's Network tab has no search. Optional: `false`. |
+| `image_generation` | `true` when the model's server makes pictures on its own. The Image generation capability starts from it. It is used only when the lineup's Image tab has no image model: PaperDaemon asks the text model's server for the picture in a chat completion and takes it from the reply. Optional: `false`. |
 | `forced_tool` | `true` when the server can force the model to answer with a tool call. |
 | `max_output` | The most tokens one answer may have, or `null` for the server's own limit. |
 | `brief_additions` | Text added to the instructions PaperDaemon gives the model. |

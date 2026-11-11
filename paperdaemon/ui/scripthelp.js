@@ -42,9 +42,9 @@
       p("help.harness.intro"),
       h3("slot.harness"), list("ul", ["help.harness.strong", "help.harness.medium", "help.harness.weak"]),
       p("help.harness.mismatch"),
-      h3("slot.capabilities"), list("ul", ["help.harness.vision", "help.harness.web_search", "help.harness.image_generation"]),
-      p("help.harness.warning"),
-      h3("slot.own_harness"), p("help.harness.own"),
+      h3("slot.capabilities"), p("help.harness.caps_intro"),
+      list("ul", ["help.harness.vision", "help.harness.web_search", "help.harness.image_generation"]),
+      '<div class="warn-card" role="note">' + rich("help.harness.warning") + "</div>",
     ],
     prompt: null,
   };

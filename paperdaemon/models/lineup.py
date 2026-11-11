@@ -50,7 +50,7 @@ def facts(s=None, lineup=None):
         for f in CATALOG.by_name.values():
             if f.steps and not set(f.steps) & set(kinds):
                 off.setdefault(f.name, "this harness does not do %s" % f.summary)
-    if "pictures" in provides and image is None:
+    if ("pictures" in provides or slots.images_from_text(s, lu)) and image is None:
         image, workflows = ["generate"], []
     has_search = slots.has_search(lu)
     return {"text": text, "image": image, "workflows": workflows or [],

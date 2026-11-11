@@ -76,7 +76,11 @@ def harness_values(s=None, name=None):
     p = slots.pick("text", s, lu["text"])[0]
     caps = slots.caps("text", s, lu["text"])
     image = None
-    if str(lu["image"].get("location") or "").strip():
+    if slots.images_from_text(s, lu):
+        # THE TEXT MODEL MAKES THE PICTURES: no steps or workflows of an image model of its own to offer
+        image = {"id": "text-model", "name": "the text model itself", "abilities": ["generate"], "workflows": {},
+                 "steps": 1, "steps_range": [1, 1]}
+    elif str(lu["image"].get("location") or "").strip():
         h = slots.pick("image", s, lu["image"])[0]
         image = h.offer()
         ic = slots.caps("image", s, lu["image"])    # the slot's own steps, overrides included

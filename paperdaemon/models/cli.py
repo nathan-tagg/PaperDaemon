@@ -401,6 +401,8 @@ class CommandLine(Adapter):
         so = _at(d, spec.get("answer")) if d is not None and spec.get("answer") else None
         if not isinstance(so, dict):
             so = _json_in(text)
+        if not (so.get("tool_calls") if isinstance(so, dict) else None):
+            so = _invokes_in(text) or so
         names = {t["name"] for t in tools}
         calls = [{"id": "call_" + uuid.uuid4().hex[:12], "name": c.get("name"), "arguments": c.get("arguments") or {}}
                  for c in (so.get("tool_calls") or []) if isinstance(c, dict) and c.get("name") in names]
@@ -433,6 +435,24 @@ class CommandLine(Adapter):
             raise AdapterError("%s stopped (%d): %s" % (name, p.returncode, (p.stderr or "")[-300:].strip()))
         r["dropped_images"], r["forced_refused"] = dropped, False
         return r
+
+
+def _invokes_in(text):
+    """Calls a model wrote in the tool-call markup it was trained on instead of the JSON it was asked for:
+    <invoke name="answer"><parameter name="lines">["..."]</parameter></invoke>. Each parameter's value is read as
+    JSON when it is JSON, else as the text it is. -> {"text": "", "tool_calls": [...]}, or {} when there are none.
+    (Sonnet 5.5 answered this way on the command line, and each time cost two more calls to be asked again.)"""
+    calls = []
+    for m in re.finditer(r'<invoke\s+name="([^"]+)"\s*>(.*?)</invoke>', str(text or ""), re.S):
+        args = {}
+        for pm in re.finditer(r'<parameter\s+name="([^"]+)"\s*>(.*?)</parameter>', m.group(2), re.S):
+            raw = pm.group(2).strip()
+            try:
+                args[pm.group(1)] = json.loads(raw)
+            except ValueError:
+                args[pm.group(1)] = raw
+        calls.append({"name": m.group(1), "arguments": args})
+    return {"text": "", "tool_calls": calls} if calls else {}
 
 
 def _json_in(text):

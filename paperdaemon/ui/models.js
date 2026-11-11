@@ -159,7 +159,6 @@
       const [, e] = await PD.safe(PD.api("POST", "/lineups/" + encodeURIComponent(el.dataset.lineup) + "/loras/open"));
       if (e) { S.msg = PD.errText(e); S.bad = true; paint(); }
     }
-    else if (a === "addharness") { readAll(); PD.api("POST", "/harnesses/open", { kind: el.dataset.kind }); S.stale = true; }
     else if (a === "new" || a === "rename") {
       const v = await PD.ask({ title: PD.t(a === "new" ? "lineup.new" : "lineup.rename_title"), action: PD.t(a === "new" ? "lineup.create" : "lineup.rename"),
         fields: [{ name: "name", label: PD.t("lineup.name"), kind: "text", value: a === "new" ? "" : S.show }] });
@@ -191,7 +190,11 @@
         const t = e.target;
         if (t.id === "md-pick" && t.value === "__new__") { t.value = S.show; act("new", t); }
         else if (t.id === "md-pick") { S.show = t.value; S.msg = ""; fill(); paint(); }
-        else if (/^md-(text|image|search)-(kind|provider|harness|strength|own)$/.test(t.id) || /^md-text-cap-/.test(t.id)) { readAll(); S.test[S.tab] = ""; paint(); autosave(); }
+        else if (/^md-(text|image|search)-(kind|provider|harness|strength|caps)$/.test(t.id)) {
+          const refocus = t.id === "md-text-caps";      // a pill added from the box: the box keeps the focus
+          readAll(); S.test[S.tab] = ""; paint(); autosave();
+          if (refocus) { const i = $("#md-text-capin", R); if (i) i.focus(); }
+        }
         else if (/^md-mem-/.test(t.id)) memAct("memsave", t.id.slice(7));
         else if (/^md-/.test(t.id) && ["text", "image", "search", "tags"].includes(S.tab)) autosave();
       });

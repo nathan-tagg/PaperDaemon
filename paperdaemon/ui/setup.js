@@ -265,7 +265,6 @@
           else if (a === "retry") checkAndPull();
           else if (a === "save") PD.busy(el, async () => { if (await save()) go(4); });
           else if (a === "test") test(el.dataset.role);
-          else if (a === "addharness") { readForm(); PD.api("POST", "/harnesses/open", { kind: el.dataset.kind }); S.harnessesStale = true; }
           else if (a === "tab") { readForm(); S.tab = el.dataset.tab; paintModels(); }
           else if (a === "proceed") proceed(el);
           else if (a === "addtag") { readForm(); S.tags.push({ name: "", prompt: "" }); paintModels(); }
@@ -275,7 +274,7 @@
         PD.slots.wireTagSort(R, "su", () => (S.step === 3 && S.tab === "tags" ? S.tags : null), i => paintModels(i));
         R.addEventListener("change", e => {
           if (S.step !== 3 || !$("#su-step", R)) return;
-          if (/^su-(text|image|search)-(kind|provider|harness|strength|own)$/.test(e.target.id) || /^su-text-cap-/.test(e.target.id)) { readForm(); S.test[S.tab] = ""; paintModels(); }
+          if (/^su-(text|image|search)-(kind|provider|harness|strength|caps)$/.test(e.target.id)) { readForm(); S.test[S.tab] = ""; paintModels(); }
         });
         document.addEventListener("pd:status", () => { if (alive()) frame(); });
         // back from the harnesses folder: list what is there now

@@ -9,7 +9,7 @@
     "Other mid-size models"
   ],
   "kind": "text",
-  "notes": "Built for Qwen 3 models running in llama.cpp. For mid-size models, such as 27B models and Gemini Flash. Full instructions, and each step of a job is its own call.",
+  "notes": "For mid-size models. Full instructions, and each step of a job is its own call. Tested with 27B class Qwen 3 models and Gemini 3.8 Flash.",
   "vision": true,
   "forced_tool": true,
   "max_output": null,

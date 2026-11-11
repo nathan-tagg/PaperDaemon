@@ -20,12 +20,17 @@ gemini 3.8 flash, weak would be weaker ones than that."
 - A lineup with no search of its own and a text model that can search: the model is told to look facts up with its own
   search, and PaperDaemon turns that search on where it knows how (the `claude` program, by its data's `web_search`;
   the Anthropic API's own search tool). With neither, the model is told facts cannot be looked up.
-- Image generation by the text model: the box is shown and cannot be ticked yet; PaperDaemon has no way to take a
-  picture from a text model's answer.
-- The Text / Reasoning tab: a Weak / Medium / Strong slider with the base's description, Your harness (the user's own
-  files) when there are any, Capabilities checkboxes (Vision, Web search, Image generation) with a line saying what
-  the model can do and a warning, a "?" on each label, and Help opening a modal. The Image and Network tabs say that
-  what they set is used instead of the text model's own.
+- Image generation by the text model: with the Image tab empty and the capability added, a picture step goes to the
+  text model's own server (a chat completion asking for an image) and the picture is taken from the reply. It is for
+  servers that make images themselves and need no separate image model.
+- The Text / Reasoning tab (the maintainer's revision, 11-11: "the harness strength slider is ugly move it to a drop
+  down", "Perhaps the capacities area should be a typeahead with pills underneath instead", "The Your Harness should
+  not be there anymore", "THERE SHOULDN'T BE AN ADD HARNESS BUTTON ANYMORE", the capability lines "belong in the help
+  modal, in a warning card at the bottom"): a Harness dropdown (Weak / Medium / Strong) with the base's description
+  and the models it was tested with; Capabilities a type-ahead box with a pill under it for each capability (Enter adds,
+  the list narrows as pills are added, hovering a pill explains it, x removes it); a "?" and Help on both labels; the
+  help modal ends in a warning card. No "Your harness", no "+ Add Harness" on either tab. The Image and Network tabs say
+  that what they set is used instead of the text model's own.
 
 ## Impact
 

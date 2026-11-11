@@ -85,7 +85,7 @@ def test_model_harnesses_override_only_what_differs():
 
 def test_the_default_says_what_it_was_designed_for_and_the_harnesses_folded_into_it_name_it():
     """'fold them in, but in their header state that they were designed for qwen 3 models running in llama.cpp'."""
-    assert DefaultText.notes.startswith("Built for Qwen 3 models running in llama.cpp.")
+    assert DefaultText.notes.endswith("Tested with 27B class Qwen 3 models and Gemini 3.8 Flash.")
     assert DefaultText.server.startswith("llama.cpp") and DefaultText.models[:2] == ("Qwen 3.6 27B", "Qwen 3.8 27B")
     for gone in ("qwen3.6-27b", "qwen3.8-27b"):
         assert harnesses.get(gone) is None
@@ -383,6 +383,6 @@ def test_every_harness_to_pick_describes_itself_for_the_lineup_screen():
             assert len(said) > 80 and said == h.notes, h.id          # the file's own words, as the API lists them
     d, lean = DefaultText.notes, LeanDefault.notes
     assert "Full instructions, and each step of a job is its own call." in d
-    assert "most jobs finish in one call, so it uses the fewest tokens" in lean and "A weaker model will skip work" in lean
+    assert "most jobs finish in one call, so it uses the fewest tokens" in lean and lean.endswith("Tested with Claude Opus, Sonnet and Haiku 5.5.")
     assert "guess" not in (d + lean + Flux2Klein9B.notes + ZImageTurbo.notes + DefaultImage.notes).lower()
     assert "refused" not in Flux2Klein9B.notes                     # (it spoke of a hint a guess refused; nothing guesses)

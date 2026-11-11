@@ -119,6 +119,18 @@ def searches_itself(s=None, lu=None):
                 and (s.get("network") or {}).get("allowed") is not False)
 
 
+def images_from_text(s=None, lu=None):
+    """The text model makes the lineup's pictures: the Image tab has no model, the text model has the Image generation
+    capability, and its server speaks the OpenAI chat API (the one family a picture can be taken from)."""
+    from .. import settings as S_
+    s = s or S_.load()
+    lu = lu or S_.active(s)
+    t = lu["text"]
+    return bool(not str((lu.get("image") or {}).get("location") or "").strip()
+                and caps("text", s, t).get("image_generation") and str(t.get("location") or "").strip()
+                and (t.get("api") or "openai") == "openai")
+
+
 def call_caps(s=None, lu=None):
     """The capabilities a model call is made with: web_search only when the model searches the web itself."""
     from .. import settings as S_

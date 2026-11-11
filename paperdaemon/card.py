@@ -361,7 +361,7 @@ def generate(p, s=None):
     if wf["reference"]:
         raise ValueError("the %s workflow starts from a picture: send it to /edit with the picture"
                          % wf["workflow"])
-    with call("image", s):
+    with call("text" if slots.images_from_text(s) else "image", s):
         caps = slots.caps("image", s)
         ad = adapters.for_slot("image", s)
         seed = _seed(p.get("seed"))

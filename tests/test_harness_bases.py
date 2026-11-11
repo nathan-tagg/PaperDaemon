@@ -25,7 +25,7 @@ def test_three_bases_with_what_each_model_can_do_by_default():
     assert weak.extends == "default-text" and not weak.lean and strong.lean
     assert set(weak.features["off"]) == {"draw", "posts", "web_picture", "adventure", "messages", "concord"}
     assert weak.max_output == 4096 and "short" in weak.brief_additions
-    assert medium.notes.startswith("Built for Qwen 3 models running in llama.cpp.")
+    assert medium.notes.endswith("Tested with 27B class Qwen 3 models and Gemini 3.8 Flash.")
 
 
 def test_the_model_searches_itself_only_when_the_lineup_has_no_search_and_it_can():
@@ -94,3 +94,42 @@ def test_a_capability_is_a_yes_or_no_the_user_may_set():
     bad = _lineup({"harness": "weak-text", "overrides": {"web_search": "yes"}})[0]
     assert any("web_search must be" in e for e in settings.validate(bad))
     assert json.loads(json.dumps(harnesses.describe(harnesses.get("lean-default"))))["fields"]["web_search"] is True
+
+
+def test_the_text_model_makes_the_pictures_when_the_image_tab_is_empty_and_it_can(monkeypatch):
+    """A stand-in server, not a real model: the reply shapes are the ones gateways and Gemini's image models are
+    documented to give (an `images` list, image parts in the content, inline data, a data URI in the words)."""
+    import base64
+    png = base64.b64encode(b"\x89PNG fake").decode()
+    t = {"location": "https://api.example.test/v1", "api": "openai", "model": "an-image-model", "harness": "default-text",
+         "overrides": {"image_generation": True}}
+    s, n = _lineup(t)
+    lu = settings.lineup(s, n)
+    lu["image"]["location"] = ""
+    assert slots.images_from_text(s, lu) is True
+    lu["image"]["location"] = "http://127.0.0.1:8791"
+    assert slots.images_from_text(s, lu) is False                    # the Image tab's model is used instead
+    lu["image"]["location"] = ""
+    lu["text"]["overrides"] = {}
+    assert slots.images_from_text(s, lu) is False                    # the text model cannot
+    lu["text"]["overrides"] = {"image_generation": True}
+    s["lineup"] = n
+    ad = adapters.for_slot("image", s)
+    assert type(ad).__name__ == "TextModelImages" and ad.model == "an-image-model"
+    body = ad.request("a red apple", 1024, 1024)
+    assert body["modalities"] == ["image", "text"] and "a red apple" in body["messages"][0]["content"]
+    for reply in ({"choices": [{"message": {"content": "", "images": [{"type": "image_url", "image_url": {"url": "data:image/png;base64," + png}}]}}]},
+                  {"choices": [{"message": {"content": [{"type": "text", "text": "here"}, {"type": "image_url", "image_url": {"url": "data:image/png;base64," + png}}]}}]},
+                  {"choices": [{"message": {"content": [{"inline_data": {"mime_type": "image/png", "data": png}}]}}]},
+                  {"choices": [{"message": {"content": "Here it is: data:image/png;base64," + png}}]}):
+        monkeypatch.setattr(adapters, "_request", lambda *a, **k: reply)
+        assert ad.generate("a red apple", 1024, 1024) == b"\x89PNG fake"
+    monkeypatch.setattr(adapters, "_request", lambda *a, **k: {"choices": [{"message": {"content": "I can't draw."}}]})
+    try:
+        ad.generate("a red apple", 1024, 1024)
+        raise AssertionError("no error")
+    except adapters.AdapterError as ex:
+        assert "without a picture" in str(ex)
+    feats = __import__("paperdaemon.models.lineup", fromlist=["features"]).features(s, n)
+    assert feats["image"]["state"] != "off"
+    assert loop.harness_values(s, n)["image"]["name"] == "the text model itself"

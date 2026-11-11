@@ -2,26 +2,26 @@
 
 ### Requirement: A text model's harness is set by its strength
 PaperDaemon SHALL ship three text harness bases, Weak, Medium and Strong, and the Text / Reasoning tab SHALL set a
-lineup's text harness with a slider over them, showing the picked base's description under it. Strong SHALL be the
-lean way of working; Medium SHALL be built for Qwen 3 models running in llama.cpp and say so; Weak SHALL be Medium
-with short answers and with sketches, social posts, pictures from the web and the long games turned off. A harness
-file of the user's own SHALL be offered under Your harness when there is one, and picking it SHALL replace the
-slider's base until None is picked.
+lineup's text harness with a dropdown of them, showing under it the picked base's description and the models it was
+tested with. Strong SHALL be the lean way of working; Weak SHALL be Medium with short answers and with sketches,
+social posts, pictures from the web and the long games turned off. The tab SHALL offer no other harness and no way to
+add one.
 
-#### Scenario: Moving the slider
-- **WHEN** the user moves a lineup's Harness slider from Strong to Weak
-- **THEN** the lineup runs on the Weak base, the description under the slider is Weak's, and the capability boxes
-  show Weak's own values
+#### Scenario: Picking a base
+- **WHEN** the user picks Weak in a lineup's Harness dropdown
+- **THEN** the lineup runs on the Weak base, the description under the dropdown is Weak's, and the capability pills are
+  Weak's own
 
 ### Requirement: What the text model can do on its own
 A text harness SHALL say whether its model can search the web and make images on its own, and the Text / Reasoning
-tab SHALL show these with Vision as checkboxes the user may change, with a line naming what the model can do and a
-warning that claiming a capability the model lacks causes failed or wrong jobs. A lineup's own search SHALL be used
-whenever it has one. With no search of its own, a model that can search SHALL be told to look facts up with its own
-search, and PaperDaemon SHALL turn that search on where the program's data or the API says how; a model that cannot
-SHALL be told facts cannot be looked up. Image generation SHALL be shown and SHALL NOT be offered to the user until
-PaperDaemon can take a picture from a text model's answer. The Image and Network tabs SHALL say that what they set is
-used instead of the text model's own.
+tab SHALL show these with Vision as pills under a type-ahead box the user adds them with; hovering a pill SHALL say
+that it only tells PaperDaemon what the model can do and that the Image or Network tab is used instead when set. The
+help modal SHALL end in a warning card: claiming a capability the model lacks causes failed or wrong jobs. A lineup's
+own search SHALL be used whenever it has one. With no search of its own, a model that can search SHALL be told to look
+facts up with its own search, and PaperDaemon SHALL turn that search on where the program's data or the API says how;
+a model that cannot SHALL be told facts cannot be looked up. With no image model of its own, a lineup whose text model
+makes images SHALL have its pictures made by the text model's server and taken from its reply. The Image and Network
+tabs SHALL say that what they set is used instead of the text model's own.
 
 #### Scenario: Claude with no search in its lineup
 - **WHEN** a lineup on the `claude` program, on Strong, has no search on its Network tab
@@ -34,3 +34,7 @@ used instead of the text model's own.
 #### Scenario: Neither
 - **WHEN** a lineup has no search and its model cannot search
 - **THEN** the model is told facts cannot be looked up, to say so, and never to fill them in from memory
+
+#### Scenario: A server that makes its own pictures
+- **WHEN** a lineup's Image tab has no model and its text model has the Image generation capability
+- **THEN** an image step asks the text model's server for the picture and puts the picture from its reply on the page

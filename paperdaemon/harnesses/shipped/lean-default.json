@@ -7,7 +7,7 @@
     "Other models as strong"
   ],
   "extends": "default-text",
-  "notes": "For the strongest models, such as Claude. Short instructions, and most jobs finish in one call, so it uses the fewest tokens. A weaker model will skip work or plan badly.",
+  "notes": "For the strongest models. Short instructions, and most jobs finish in one call, so it uses the fewest tokens. Tested with Claude Opus, Sonnet and Haiku 5.5.",
   "lean": true,
   "web_search": true
 }

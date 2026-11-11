@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.57
+
+- The Text / Reasoning tab's Harness is a dropdown: Weak, Medium, Strong. Under it is the base's description and the models it was tested with. "Your harness" and "+ Add Harness" are gone, on the Image tab too.
+- Capabilities is a box you type into, with a pill for each capability under it. Click the box to see what's left to add, type to narrow it, press Enter to add, and click × on a pill to remove it. Hovering a pill says what it tells PaperDaemon, and that the Image or Network tab is used instead when set. The warning about claiming what a model can't do is now at the foot of the Help page.
+- Image generation works: with the Image tab empty and the capability added, a picture is asked of the text model's own server and taken from its answer. It is for servers that make pictures themselves, such as Gemini's image models. It has been tested against the reply formats those servers document, not yet against a real image model.
+- On the command line, a model that answers in tool-call markup instead of the JSON it was asked for (Sonnet 5.5 sometimes does) is understood the first time, where it used to be asked twice more.
+
 ## 0.2.56
 
 - A lineup you save takes effect without restarting PaperDaemon. Until now only the Settings screen's save reached the running loop: a new lineup's tag was not watched for, and a changed harness or capability not used, until the app started again.

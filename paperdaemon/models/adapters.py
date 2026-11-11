@@ -15,6 +15,7 @@ mistake cannot leak a page to a model that cannot use it.
 """
 import base64
 import json
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -436,6 +437,74 @@ class OpenAIImages(Adapter):
         raise AdapterError("%s returned no image" % _where(self.base))
 
 
+class TextModelImages(Adapter):
+    """PICTURES MADE BY THE TEXT MODEL ITSELF: an OpenAI-compatible text server whose model answers with images (Gemini's
+    image models, GPT models behind gateways that pass images through). The picture is asked for in a chat completion
+    (`modalities` image and text) and taken from the reply: the message's `images` list, an image part of its content,
+    or a data URI in its words."""
+    family = "text-images"
+
+    def headers(self):
+        return {"Authorization": "Bearer " + self.key} if self.key else {}
+
+    def request(self, prompt, width, height, **_):
+        shape = "square" if abs(int(width) - int(height)) < 64 else ("tall" if int(height) > int(width) else "wide")
+        body = {"messages": [{"role": "user", "content": "Make this picture (%s, about %d x %d pixels): %s"
+                                                         % (shape, int(width), int(height), prompt)}],
+                "modalities": ["image", "text"]}
+        if self.model:
+            body["model"] = self.model
+        return body
+
+    def generate(self, prompt, width, height, steps=None, cfg=None, sampler=None, scheduler=None, seed=-1,
+                 shift=None):
+        d = _request("POST", self.api + "/chat/completions", self.request(prompt, width, height), self.headers(),
+                     MODEL_CALL)
+        got = picture_in_reply(d)
+        if got is None:
+            raise AdapterError("%s answered without a picture: the model may not make images" % _where(self.base))
+        if got.startswith(("http://", "https://")):
+            return _request("GET", got, timeout=MODEL_CALL, raw=True)
+        return base64.b64decode(got.split(",", 1)[1] if got.startswith("data:") else got)
+
+
+def picture_in_reply(d):
+    """The first picture in a chat completion's reply -> a data URI, plain base64 or an http(s) address, else None."""
+    msg = ((d.get("choices") or [{}])[0].get("message") or {}) if isinstance(d, dict) else {}
+
+    def url_of(part):
+        if not isinstance(part, dict):
+            return None
+        iu = part.get("image_url")
+        if isinstance(iu, dict) and iu.get("url"):
+            return iu["url"]
+        if isinstance(iu, str) and iu:
+            return iu
+        if part.get("b64_json"):
+            return part["b64_json"]
+        inline = part.get("inline_data") or part.get("inlineData")
+        if isinstance(inline, dict) and inline.get("data"):
+            return "data:%s;base64,%s" % (inline.get("mime_type") or inline.get("mimeType") or "image/png", inline["data"])
+        if part.get("type") in ("image", "output_image") and isinstance(part.get("url") or part.get("data"), str):
+            return part.get("url") or part.get("data")
+        return None
+    for part in msg.get("images") or []:
+        u = url_of(part)
+        if u:
+            return u
+    content = msg.get("content")
+    if isinstance(content, list):
+        for part in content:
+            u = url_of(part)
+            if u:
+                return u
+    if isinstance(content, str):
+        m = re.search(r"data:image/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]+", content)
+        if m:
+            return m.group(0)
+    return None
+
+
 CHAT = {"openai": OpenAIChat, "anthropic": AnthropicChat}
 IMAGE = {"sdapi": SDAPI, "openai-images": OpenAIImages}
 
@@ -449,7 +518,11 @@ def _chat_class(api):
 
 
 def for_slot(role, s=None, m=None):
-    """The adapter for a slot as configured, with its key from the credential store."""
+    """The adapter for a slot as configured, with its key from the credential store. The image slot of a lineup whose
+    text model makes the pictures itself is the text model's server (TextModelImages)."""
+    if role == "image" and m is None and slots.images_from_text(s):
+        t = slots.slot("text", s)
+        return TextModelImages(t.get("location") or "", vault.get(slots.key_of("text", t)), t.get("model") or "")
     m = m if m is not None else slots.slot(role, s)
     api = m.get("api") or ("openai" if role == "text" else "sdapi")
     cls = _chat_class(api) if role == "text" else IMAGE[api]
