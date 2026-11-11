@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.64
+
+- Answers show on the tablet after the Daemon's notes. PaperDaemon numbered each author's strokes on their own, so an answer took counters the Daemon's earlier notes had used and erased, and the tablet hides a stroke whose counter falls inside an erased range, whatever its author. Everything PaperDaemon writes (answers, notes, pictures, typed text, editor saves) is now numbered past every counter on the page, as the tablet numbers its own.
+
 ## 0.2.63
 
 - The Daemon's note no longer leaves erase marks for a layer the page doesn't have. On the Sonnet page, such marks left the whole page undrawn on the tablet.

@@ -75,7 +75,7 @@ def has_images(data):
 
 
 def max_author_id(body, author=1):
-    """The largest part2 of any CrdtId of `author` among a block body's leading id tags (parent,
+    """The largest part2 of any CrdtId of `author` (None: of any author) among a block body's leading id tags (parent,
     item, left, right) and its value's ids -- so stroke ids never land on a picture's."""
     best = 0
     i = 0
@@ -94,7 +94,7 @@ def max_author_id(body, author=1):
                 sh += 7
                 if not b & 0x80:
                     break
-            if p1 == author:
+            if author is None or p1 == author:
                 best = max(best, v)
             i = j
         elif t == 0xC and i + 5 <= n:
@@ -787,18 +787,18 @@ def insert(doc, page_no, png_path, box, page_id=None):
     from paperdaemon.pipeline.page import render as _R
     HOST = _R.page_author(_R.author_table(blocks_), "picture")
     data = _with_author(data, blocks_, HOST, _R.uuid_of("picture"))
-    n = A.next_free_id(blocks_, HOST)
+    n = A.next_free_id(blocks_)                       # past every counter on the page, whatever its author
     # rmscene does not see image items, so their ids are not in next_free_id's view: step past
-    # every (HOST, k) a picture on this page already took, item or asset, read as the varuints they are
+    # every (author, k) a picture on this page already took, item or asset, read as the varuints they are
     # (a single byte stopped being enough at id 128)
     for bt, body in blocks(data):
         if bt == 15:
             it = _item_of(body)
-            if it and it[0] == HOST:
+            if it:
                 n = max(n, it[1] + 1)
         elif bt == 14:
             for _h, aid, _nm, _s, _e in _asset_entries(body) or []:
-                if aid and aid[0] == HOST:
+                if aid:
                     n = max(n, aid[1] + 1)
     asset_id, item_id = (HOST, n), (HOST, n + 1)
     raw = open(png_path, "rb").read()
@@ -868,14 +868,14 @@ def to_front(doc, page_no, keys, page_id=None):
     parsed = list(read_blocks(io.BytesIO(data)))
     HOST = _R.page_author(_R.author_table(parsed), "picture")
     data = _with_author(data, parsed, HOST, _R.uuid_of("picture"))
-    n = A.next_free_id(parsed, HOST)
+    n = A.next_free_id(parsed)                        # past every counter on the page, whatever its author
     for bt, body in blocks(data):
         if bt == 15:
             it = _item_of(body)
-            if it and it[0] == HOST:
+            if it:
                 n = max(n, it[1] + 1)
         elif bt == 14:
-            n = max([n] + [a[1] + 1 for _h, a, _nm, _s, _e in _asset_entries(body) or [] if a and a[0] == HOST])
+            n = max([n] + [a[1] + 1 for _h, a, _nm, _s, _e in _asset_entries(body) or [] if a])
     out, again = bytearray(data[:43]), []
     i = 43
     while i + 8 <= len(data):

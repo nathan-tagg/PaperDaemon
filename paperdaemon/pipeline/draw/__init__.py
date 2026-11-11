@@ -155,6 +155,22 @@ def with_author(blocks, author, uid):
     raise RuntimeError("the page has no author table")
 
 
+def _tree_ids(b):
+    """The ids a layer's records hold (a tree record's, a group's node and its name's and visibility's stamps)."""
+    out = []
+    for k in ("tree_id", "node_id"):
+        v = getattr(b, k, None)
+        if hasattr(v, "part2"):
+            out.append(v)
+    g = getattr(b, "group", None)
+    if g is not None:
+        for v in (getattr(g, "node_id", None), getattr(getattr(g, "label", None), "timestamp", None),
+                  getattr(getattr(g, "visible", None), "timestamp", None)):
+            if hasattr(v, "part2"):
+                out.append(v)
+    return out
+
+
 def next_free_id(blocks, author=None):
     """The first id no item -- live, tombstoned, or a deleted RANGE -- occupies.
 
@@ -168,7 +184,9 @@ def next_free_id(blocks, author=None):
     ids 872..915 while a tombstone covered 827..931, and they never appeared on
     the device while rendering perfectly here.
 
-    `author`: count that author's ids alone (render.author_of, what PaperDaemon writes: each kind its own id space).
+    `author`: count that author's ids alone. PaperDaemon numbers what it writes past EVERY author's (author None),
+    as the tablet does: the tablet hides a stroke whose counter falls inside an erased range of any author (11-11:
+    answers under author 2 sat under counters the Daemon's notes, author 3, had erased, and did not show).
     """
     end = 0
     mine = (lambda p1: True) if author is None else (lambda p1: p1 == author)
@@ -186,6 +204,9 @@ def next_free_id(blocks, author=None):
                 span = max(len(tv) if isinstance(tv, str) else 0, getattr(ti, "deleted_length", 0) or 0, 1)
                 end = max(end, tid.part2 + span - 1)
             continue
+        for cid in _tree_ids(b):                        # a layer's records: its tree ids, its node, its name's stamps
+            if mine(cid.part1):
+                end = max(end, cid.part2)
         it = getattr(b, "item", None)
         if it is None or not hasattr(it, "item_id"):
             # A PICTURE placed on the page (block types 14/15, rmscene's UnreadableBlock) has
@@ -195,7 +216,7 @@ def next_free_id(blocks, author=None):
             if isinstance(raw, (bytes, bytearray)) and len(raw) > 8:
                 try:
                     from paperdaemon.pipeline.page import images as _IM
-                    end = max(end, _IM.max_author_id(bytes(raw), 1 if author is None else author))
+                    end = max(end, _IM.max_author_id(bytes(raw), author))
                 except Exception:
                     pass
             continue
@@ -610,10 +631,10 @@ class Drawing:
             if not self.author and k not in mine:
                 mine[k] = R.claim_author(blocks, k)  # the page's number for this kind, put in its author table
             authors.append(self.author or mine[k])
-        seqs = {}
-        for a in authors:
-            if a not in seqs:
-                seqs[a] = next_free_id(blocks, a) - 1
+        # ONE COUNTER, PAST EVERY ID ON THE PAGE, whatever its author: the tablet hides a stroke whose counter is
+        # inside an erased range of any author (the Sonnet and Haiku pages, 11-11)
+        top = next_free_id(blocks) - 1
+        seqs = set(authors)
         prev = CrdtId(0, 0)
         if kept:
             # Never reuse an id that is already on the page, and hang the new
@@ -652,8 +673,8 @@ class Drawing:
                      starting_length=0.0, move_id=None,
                      # (r, g, b), opaque, or (r, g, b, a) as a kept decomp carries it: four values either way
                      color_rgba=(tuple(rgba[:3]) + (tuple(rgba[3:4]) or (255,)) if rgba else None))
-            seqs[a] += 1
-            iid = CrdtId(a, seqs[a])
+            top += 1
+            iid = CrdtId(a, top)
             blocks.append(ss.SceneLineItemBlock(
                 parent_id=layer,
                 item=CrdtSequenceItem(item_id=iid, left_id=prev,
@@ -684,11 +705,9 @@ class Drawing:
         # hours precisely because every local check passes. Belt and braces on
         # top of next_free_id(): if the allocator is ever wrong again, this
         # stops the file reaching the page instead of letting it look fine.
-        buried = []
-        for au in seqs:
-            rng = dead_ranges(rb_all, au)
-            buried += [b.item.item_id.part2 for b in rb if b.item.item_id.part1 == au
-                       and any(a <= b.item.item_id.part2 <= z for a, z in rng)]
+        rng = dead_ranges(rb_all)                     # every author's: the tablet does not tell them apart
+        buried = [b.item.item_id.part2 for b in rb if b.item.item_id.part1 in seqs
+                  and any(a <= b.item.item_id.part2 <= z for a, z in rng)]
         if buried:
             raise RuntimeError(
                 "REFUSING TO WRITE: %d stroke id(s) fall inside a deleted "

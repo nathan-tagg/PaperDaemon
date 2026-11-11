@@ -312,9 +312,14 @@ def _write(data, state, strokes=None, also=()):
                 news.append((LINE, _line_tomb((la, lay), k, ids[i - 1] if i else (0, 0))))
     if news:
         changed = True
-    # his ids: on from the highest of his author on the page, and past the last he laid on any copy of it
-    # (daemon-ink.json); a record kept as another author counts for nothing
-    n = max(int(state.get("next") or 1) if state.get("author") == me else 1, top + 1)
+    # his ids: past EVERY counter on the page, whatever its author (the tablet hides a stroke whose counter is inside
+    # an erased range of any author, and the next note's erase of this one must not cover the user's or an
+    # answer's), and past the last he laid on any copy of it (daemon-ink.json); a record kept as another author
+    # counts for nothing
+    from paperdaemon.pipeline import draw as _A
+    every = max([0] + [int(r[8]) + max(int(r[13] or 0), 1) - 1 for r in rows if r[0] == LINE])
+    every = max(every, _A.next_free_id(others) - 1)
+    n = max(int(state.get("next") or 1) if state.get("author") == me else 1, top + 1, every + 1)
     state["author"] = me
     if strokes is not None:
         if table is None:

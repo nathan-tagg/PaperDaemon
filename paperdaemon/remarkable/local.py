@@ -1077,8 +1077,11 @@ def _write_scene(doc, page_no, scene):
                 return nid()
         a = R.page_author(table0, k)
         own_kind[a] = k
-        own_seq[a] = own_seq.get(a, seq[0] + 100_000) + 1
-        return CrdtId(a, own_seq[a])
+        # ONE COUNTER FOR ALL OF PAPERDAEMON'S, past the editor's own: the tablet hides a stroke whose counter is
+        # inside an erased range of any author (11-11)
+        own_seq["n"] = own_seq.get("n", seq[0] + 100_000) + 1
+        own_seq[a] = own_seq["n"]
+        return CrdtId(a, own_seq["n"])
 
     layers = scene.get("layers") or [{"label": "Layer 1", "visible": True, "lines": []}]
     # THE DAEMON'S LAYER IS HIS, AND THE USER DRAWS THERE TOO (the user's word, 11-07: "let me draw on it and keep my
@@ -1149,9 +1152,9 @@ def _write_scene(doc, page_no, scene):
     # the pictures' ids now, so the page's author table names every author byte of PaperDaemon's the page is written with
     pics, npics = _picture_blocks(doc, page_no, scene.get("images"), nodes[0], nid, oid)
     for k, b in enumerate(head):
-        if isinstance(b, ss.AuthorIdsBlock) and any(a not in b.author_uuids for a in own_seq):
+        if isinstance(b, ss.AuthorIdsBlock) and any(a not in b.author_uuids for a in own_kind):
             head[k] = ss.AuthorIdsBlock(author_uuids={**b.author_uuids,
-                                                      **{a: R.uuid_of(own_kind[a]) for a in own_seq if a not in b.author_uuids}})
+                                                      **{a: R.uuid_of(own_kind[a]) for a in own_kind if a not in b.author_uuids}})
     text = _text_block(scene.get("text"), nid)
     if info is not None:
         info.root_document_visible = LwwValue(timestamp=CrdtId(1, 1), value=bool(scene.get("textVisible", True)))

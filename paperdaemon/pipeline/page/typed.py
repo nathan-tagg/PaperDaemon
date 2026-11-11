@@ -715,7 +715,7 @@ def insert(doc_name, page_no, text, dry_run=False):
     # user's typing on the tablet meanwhile takes up
     from paperdaemon.pipeline.page import render as _R
     HOST = _R.claim_author(allb, "typed")
-    end = _A.next_free_id(allb, HOST) - 1
+    end = _A.next_free_id(allb) - 1                    # past every counter on the page, whatever its author
     body = ("\n" if items else "") + text
     new_id = CrdtId(HOST, end + 1)
     items[new_id] = CrdtSequenceItem(

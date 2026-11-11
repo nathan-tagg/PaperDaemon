@@ -112,9 +112,13 @@ def test_what_a_job_writes_has_paperdaemons_own_author_and_ids(tmp_path):
     # numbered from its own: written strokes, the picture, typed text
     w, p, t = d["named"]["written"], d["named"]["picture"], d["named"]["typed"]
     assert (w, p, t) == (3, 9, 10) and {w, p, t} <= set(d["table"])
-    assert [tuple(x) for x in d["lines"]] == [(w, 1), (w, 2)]
-    assert [tuple(x) for x in d["text"]] == [(t, 1)]
-    assert d["pic"] == [[p, 1], [p, 2]] and d["pics"] == 1
+    # numbered past every counter on the page, whatever its author (the tablet hides a stroke whose counter is inside
+    # an erased range of any author, 11-11): each kind's ids follow on, and no two kinds share a counter
+    (a1, c1), (a2, c2) = [tuple(x) for x in d["lines"]]
+    assert a1 == a2 == w and c2 == c1 + 1
+    assert [x[0] for x in d["text"]] == [t] and d["pics"] == 1 and [x[0] for x in d["pic"]] == [p, p]
+    counters = [c1, c2] + [x[1] for x in d["text"]] + [x[1] for x in d["pic"]]
+    assert len(set(counters)) == len(counters)
 
 
 def test_a_typed_paragraph_erased_takes_only_itself(tmp_path):
@@ -158,3 +162,56 @@ def test_a_typed_paragraph_erased_takes_only_itself(tmp_path):
     d = json.loads(out.stdout.strip().splitlines()[-1])
     assert d["twice"] == 0 and d["first"] >= 1 and d["second"] >= 1
     assert d["left"] == "Groceries:\neggs\nbread\napples", d["left"]
+
+
+def test_an_answer_after_the_daemons_notes_takes_counters_past_every_author(tmp_path):
+    """11-11, the Sonnet and Haiku pages: the answers (author 2) were numbered from their own author's ids, under
+    counters the Daemon's notes (author 3) had already taken and erased, and the tablet drew none of them -- it hides a
+    stroke whose counter is inside an erased range of any author. Every id PaperDaemon writes now goes past every
+    counter on the page."""
+    code = textwrap.dedent("""
+        import io, json, os, shutil, sys, uuid
+        sys.path.insert(0, %r)
+        import paperdaemon.pipeline  # noqa: F401
+        from paperdaemon import paths
+        from paperdaemon.pipeline import TEMPLATES, draw as A
+        from paperdaemon.pipeline.daemon import notes as N
+        from rmscene import read_blocks
+        from rmscene import scene_stream as ss
+        M = paths.mirror_dir()
+        doc, pid = str(uuid.uuid4()), str(uuid.uuid4())
+        os.makedirs(os.path.join(M, doc))
+        path = os.path.join(M, doc, pid + ".rm")
+        shutil.copyfile(os.path.join(TEMPLATES, "blank-page.rm"), path)
+        json.dump({"cPages": {"pages": [{"id": pid, "idx": {"timestamp": "1:2", "value": "ba"}}]}, "fileType": "notebook",
+                   "pageCount": 1}, open(os.path.join(M, doc + ".content"), "w"))
+        json.dump({"visibleName": "T", "parent": "", "type": "DocumentType"}, open(os.path.join(M, doc + ".metadata"), "w"))
+        state = {}
+        for t in ("On it.", "Step 1 of 2.", "Saw it 1:02 PM."):     # each note erases the one before
+            note, _ = N.letter([t], (1620.0, 2160.0))
+            data = N.with_note(open(path, "rb").read(), note, state); open(path, "wb").write(data)
+        d = A.Drawing(1620, 2160)
+        for x in (-300, 0, 300):
+            d.stroke([(x, 400), (x + 100, 500)])
+        d.write_rm(doc, 1, keep_existing=True)
+        note, _ = N.letter(["Finished."], (1620.0, 2160.0))
+        data = N.with_note(open(path, "rb").read(), note, state); open(path, "wb").write(data)
+        bl = list(read_blocks(io.BytesIO(open(path, "rb").read())))
+        live = [(b.item.item_id.part1, b.item.item_id.part2) for b in bl
+                if isinstance(b, ss.SceneLineItemBlock) and b.item.value is not None]
+        dead = [(b.item.item_id.part1, b.item.item_id.part2) for b in bl
+                if isinstance(b, ss.SceneLineItemBlock) and b.item.value is None]
+        print(json.dumps({"live": live, "dead": dead}))
+    """) % ROOT
+    env = dict(os.environ, PAPERDAEMON_HOME=str(tmp_path / "home"), PYTHON_KEYRING_BACKEND="keyring.backends.null.Keyring")
+    for k in ("RM_STATE", "RM_MIRROR", "RM_CACHE", "RM_RUN"):
+        env.pop(k, None)
+    out = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True, timeout=300)
+    assert out.returncode == 0, out.stderr[-3000:]
+    d = json.loads(out.stdout.strip().splitlines()[-1])
+    live = [tuple(x) for x in d["live"]]
+    counters = [c for _a, c in live] + [c for _a, c in d["dead"]]
+    assert len(set(counters)) == len(counters), "two items share a counter"
+    answer = [c for a, c in live if a != 8]                # everything but the note (8)
+    erased_before = [c for _a, c in d["dead"] if c < min(answer)]
+    assert len(answer) == 3 and erased_before and min(answer) > max(erased_before)
