@@ -169,6 +169,16 @@ def problems(kind, args, offered=None):
         if rid in worded:
             out.append("ruling %d: %s asks something (it has a question mark) and is answered in words, so it is a "
                        "question, which stays -- then: keep." % (i, rid))
+    # WORDS THAT COME OFF ARE NOT WRITTEN BACK: a reply that writes out a paragraph the same decision takes off has
+    # only moved the user's words (Qwen3-VL 8B, 11-11, asked to underline a word it could not: the sentence and the
+    # request erased, the sentence written out again under "The word 'bell' is underlined")
+    said = _norm(" ".join(str(x) for x in (args.get("lines") or []))) if kind == "answer" else _norm(" ".join(
+        str(x) for q in (steps or []) if isinstance(q, dict) and q.get("do") == "write" for x in (q.get("lines") or [])))
+    for rid in sorted(erased_ids):
+        words = _norm(listing.get(rid, {}).get("text"))
+        if len(words) >= 12 and words in said:
+            out.append("%s is ruled to come off, but the reply writes its words out again: the user's words stay where "
+                       "they are -- then: keep -- and the reply says only what answers the request." % rid)
     return out
 
 

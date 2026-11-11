@@ -169,3 +169,24 @@ def test_the_brief_names_what_is_not_offered(monkeypatch):
         assert "web" not in line[0] and "checkboxes" not in line[0] and b.rstrip().endswith(line[0])
     H._BRIEF, H.RUN = None, dict(H.RUN, features={})
     assert "NOT OFFERED HERE" not in H.system_brief()
+
+
+def test_a_reply_that_writes_back_what_it_takes_off_is_refused(monkeypatch):
+    """Qwen3-VL 8B, asked to underline a word with mark-ups off, erased the sentence and the request and wrote the
+    sentence out again: the decision is refused with what to fix, and the same answer keeping the sentence is not."""
+    from paperdaemon.pipeline.host import rulings as RU
+    from paperdaemon.pipeline.host.job import JOB
+    monkeypatch.setattr(JOB, "listing", {"para:1": {"text": "The harbor master rings a bell at noon every day.", "owner": "user"},
+                                         "para:2": {"text": "Underline the word bell in the sentence above.", "owner": "user"}},
+                        raising=False)
+    monkeypatch.setattr(JOB, "new_refs", ["para:1", "para:2"], raising=False)
+    line = "The harbor master rings a bell at noon every day. The word 'bell' is underlined in the sentence above."
+    bad = RU.problems("answer", {"answers": ["para:1", "para:2"], "lines": [line],
+                                 "rulings": [{"id": "para:1", "is": "request", "then": "erase"},
+                                             {"id": "para:2", "is": "request", "then": "erase"}]})
+    assert any(p.startswith("para:1 is ruled to come off, but the reply writes its words out again") for p in bad)
+    assert not any(p.startswith("para:2 is ruled") for p in bad)
+    ok = RU.problems("answer", {"answers": ["para:2"], "lines": ["Underlining isn't offered here."],
+                                "rulings": [{"id": "para:1", "is": "note", "then": "keep"},
+                                            {"id": "para:2", "is": "request", "then": "erase"}]})
+    assert ok == []
