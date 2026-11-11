@@ -2,6 +2,7 @@
 
 ## 0.2.50
 
+- On a lean lineup a sketch is no longer shown back to the model for a fix. The look was a whole further call, so a job of words and a sketch is now one call.
 - The Command box of a command-line lineup is as wide as the Source and Harness boxes around it. In 0.2.48 it ran the whole width of the tab.
 
 ## 0.2.49

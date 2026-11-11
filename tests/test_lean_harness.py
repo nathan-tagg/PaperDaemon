@@ -114,3 +114,11 @@ def test_a_sketch_on_its_own_grid_follows_on_from_the_top_of_a_stacked_box(monke
     tall = [[(0.0, 0.0), (50.0, 0.0), (50.0, 400.0), (0.0, 400.0)]]          # one that fills the box's height stays inside it
     filled = ys(H._fit_paths(tall, box, top=True))
     assert min(filled) == 440.0 and max(filled) <= 2000.0
+
+
+def test_a_sketch_is_not_shown_back_on_a_lean_lineup(monkeypatch):
+    """'I think the lookback should be skipped': the look is a whole further call."""
+    _lean(monkeypatch, False)
+    assert H.draw_looks() == H.DRAW_LOOKS == 1
+    _lean(monkeypatch)
+    assert H.draw_looks() == 0

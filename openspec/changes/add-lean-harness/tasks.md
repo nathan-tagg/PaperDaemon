@@ -20,3 +20,4 @@
       (9,285 and 11,212), 7 s. On 0.2.47 a sketch was three calls with about 24,000 tokens read in each
 - [x] 2.3 A sketch fitted from the plan's parts sits at the top of a stacked place, not its middle (seen on the
       sundial page: half a page of empty paper above it)
+- [x] 2.4 No look back at a sketch on a lean lineup (his ruling 11-10)

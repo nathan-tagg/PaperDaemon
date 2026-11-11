@@ -21,7 +21,9 @@ Default (stronger models only)' version and then harnesses for opus, sonnet, and
   - a plan's step may carry its content (a write's lines, a sketch's parts, a chart's spec), which is made from
     with no turn of its own, so a job of words and a sketch is one call. A write whose plan has a search is still
     asked for with the results. A chart or a calendar is asked for when its step runs, with the types and facts it
-    needs. A sketch is still shown back once.
+    needs;
+  - a sketch is not shown back to the model for a fix (the maintainer's ruling, 11-10, on seeing that the look was
+    the second call of a sketch job: "I think the lookback should be skipped").
 - Shipped harnesses: "Lean Default (stronger models only)", and on it "Claude Opus 5.5", "Claude Sonnet 5.5" and
   "Claude Haiku 5.5", picked by the model's name.
 - The default harness and every lineup on it are unchanged.

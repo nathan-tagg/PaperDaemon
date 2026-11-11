@@ -84,7 +84,7 @@ PaperDaemon's own "Lean Default (stronger models only)" has `lean: true`, and it
 Sonnet 5.5 and Haiku 5.5 build on it. Extend it (`"extends": "lean-default"`) for any other strong model. A lean
 lineup is worked with far fewer tokens: a short job description; each turn sent only the calls it may make, not the
 whole tool list; a page of typed text sent as its text, with no picture; and a job's words or sketch given in the
-plan itself, so most jobs are one call. Every rule PaperDaemon enforces is checked all the same. A weaker model on a
+plan itself, so most jobs are one call. A sketch is not shown back to the model for a fix, which would be a call more. Every rule PaperDaemon enforces is checked all the same. A weaker model on a
 lean harness plans badly: leave those on the built-in default.
 
 ### A command-line program

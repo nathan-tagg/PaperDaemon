@@ -226,7 +226,7 @@ def _notepad_read(args, doc):
 
 def _look_round(msgs, doc, page):
     """Show the drawing back once; one fix is allowed. No call means it is fine."""
-    for _ in range(H.DRAW_LOOKS):
+    for _ in range(H.draw_looks()):
         msgs.append(H.page_image(doc, page, "Here is the page with your drawing on it. Look at it as a "
                                           "stranger would. If ONE thing is clearly wrong, fix it: "
                                           "edit_figure(changes) for a part, undo_last(n) to take the "

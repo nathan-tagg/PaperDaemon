@@ -943,6 +943,13 @@ DRAW_LOOKS = int(os.environ.get("RM_HOST_DRAW_LOOKS", "1"))
 MAX_STEPS = 12
 
 
+def draw_looks():
+    """How many times this lineup's drawing is shown back. NONE ON A LEAN HARNESS (the ruling, 11-10: "I think the
+    lookback should be skipped"): the look is a whole further call, about 9,000 tokens on the maintainer's lineup, and
+    was added for a model whose sketches came out as a few rectangles."""
+    return 0 if LEAN else DRAW_LOOKS
+
+
 # The temperature of a structural turn (what the page asks, what goes where, a chart's spec), where the same
 # request should come out the same way. The words of a reply and a picture's prompt keep the server's sampling.
 DECIDE_TEMP = float(os.environ.get("RM_DECIDE_TEMP", "0.3"))
@@ -1137,7 +1144,7 @@ def converse(doc_id, page, name, keys=(), extra=None, conflict=None):
                     _close_step(fn0)
                     if cur["status"] == "done":
                         log("  step %d (%s) made from what the plan gave it" % (cur["id"], cur["do"]))
-                        if cur["do"] == "draw" and DRAW_LOOKS > 0:
+                        if cur["do"] == "draw" and draw_looks() > 0:
                             _look_round(msgs, doc_id, page)
                         continue
                 cur["plan_spec_error"] = str((r0 or {}).get("error") or "it could not be made")[:200]
@@ -1154,7 +1161,7 @@ def converse(doc_id, page, name, keys=(), extra=None, conflict=None):
                 ST.finish(steps, cur, False, str((res2 or {}).get("error") or "no usable call")[:160])
                 log("  step %d (%s) FAILED: %s" % (cur["id"], cur["do"], cur.get("note")))
                 continue
-            if cur["do"] == "draw" and DRAW_LOOKS > 0 and fn2 in ("draw_figure", "element"):
+            if cur["do"] == "draw" and draw_looks() > 0 and fn2 in ("draw_figure", "element"):
                 _look_round(msgs, doc_id, page)
         if prev is not None and prev.get("draw_from") is not None:
             JOB.draw.tag(prev["draw_from"], ST.STROKE_KIND.get(prev["do"]))   # the last model step's, as what it is
