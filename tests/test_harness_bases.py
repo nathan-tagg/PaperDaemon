@@ -23,7 +23,8 @@ def test_three_bases_with_what_each_model_can_do_by_default():
         assert h.vision is True and h.image_generation is False
     assert (weak.web_search, medium.web_search, strong.web_search) == (False, False, True)
     assert weak.extends == "default-text" and not weak.lean and strong.lean
-    assert set(weak.features["off"]) == {"draw", "posts", "web_picture", "adventure", "messages", "concord"}
+    assert set(weak.features["off"]) == {"draw", "posts", "web_picture", "adventure", "messages", "concord", "markup",
+                                         "checkbox"}
     assert weak.max_output == 4096 and "short" in weak.brief_additions
     assert medium.notes.endswith("Tested with 27B class Qwen 3 models and Gemini 3.8 Flash.")
 
@@ -133,3 +134,20 @@ def test_the_text_model_makes_the_pictures_when_the_image_tab_is_empty_and_it_ca
     feats = __import__("paperdaemon.models.lineup", fromlist=["features"]).features(s, n)
     assert feats["image"]["state"] != "off"
     assert loop.harness_values(s, n)["image"]["name"] == "the text model itself"
+
+
+def test_the_checklist_sentence_follows_whether_checkboxes_are_offered(monkeypatch):
+    """Qwen3-VL 8B, asked to make a typed list a checklist, named no paragraphs and ruled the whole list erased; on
+    Weak, checkboxes made of the user's own lines are off and the brief says to write the checklist anew."""
+    import paperdaemon.pipeline.host as H
+    for name in ("LEAN", "_BRIEF", "_SCHEMA", "RUN"):
+        monkeypatch.setattr(H, name, getattr(H, name))
+    for off, want in (({}, H.CHECKLIST[True]), ({"checkbox": {"state": "off"}}, H.CHECKLIST[False])):
+        for lean in (False, True):
+            H.LEAN, H._BRIEF, H._SCHEMA = lean, None, None
+            H.RUN = dict(H.RUN, features=off)
+            b = H.system_brief()
+            assert want in b and "<<" not in b
+    from paperdaemon.pipeline import features as F
+    cat = F.Catalog()
+    assert cat.step_feature()["checkbox"] == "checkbox" and cat.by_name["checkbox"].requires.features == ("write",)

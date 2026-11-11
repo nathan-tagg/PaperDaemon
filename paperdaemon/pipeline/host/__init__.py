@@ -699,9 +699,8 @@ events go in a calendar's spec, never beside it. Your own drawing or reply that 
 stale_work and made again. Never a second copy.
 
 WORDS. answer(answers, lines, rulings) when the whole job is words; a write step takes
-write_paragraph(lines). Answer at the length the question deserves; the page scrolls. The user's own typed
-list asked to be a checklist becomes one where it is: a checkbox step on its paragraphs. A new checklist asked
-for is lines that start "- [ ] ", each drawn with a box to tick. <<FACTS>>
+write_paragraph(lines). Answer at the length the question deserves; the page scrolls. <<CHECKLIST>>A new
+checklist asked for is lines that start "- [ ] ", each drawn with a box to tick. <<FACTS>>
 
 <<CALENDAR>>
 The host fills in the forecast, holidays and sunrise and sunset. The user's dates go in as events;
@@ -763,8 +762,7 @@ ruled stale_work and made again. Never a second copy.
 
 WORDS, in answer() and in a write step's lines: one string a paragraph, at the length the question deserves;
 the host wraps them and the page scrolls. "" is a blank line: leave several where the user will write by
-hand. Lines that start "- [ ] " are drawn with a box to tick; the user's own typed list asked to be a
-checklist is a checkbox step instead. <<FACTS>>
+hand. Lines that start "- [ ] " are drawn with a box to tick. <<CHECKLIST>><<FACTS>>
 
 <<CALENDAR>>
 The host fills in a calendar's forecast, holidays, sunrise and sunset; the user's dates go in its spec as
@@ -798,6 +796,12 @@ FACTS_LEAN = {
     "none": ("Facts about the world -- places, people, numbers, dates, news -- cannot be looked up here. Say so, and "
              "never fill them in from memory."),
 }
+
+
+# THE USER'S OWN TYPED LIST ASKED TO BE A CHECKLIST, by whether checkboxes are offered (a Weak harness turns them off)
+CHECKLIST = {True: "The user's own typed list asked to be a checklist becomes one where it is: a checkbox step on its "
+                   "paragraphs, naming them in targets. ",
+             False: "The user's own typed list asked to be a checklist is written again as a new checklist below it. "}
 
 
 _BRIEF = None

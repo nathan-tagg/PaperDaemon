@@ -742,7 +742,7 @@
   <string name="slot.base.strong">强</string>
   <string name="slot.base.strong.about">适合最强的模型。指令简短，大多数任务一次调用就能完成，所以用的令牌最少。已用 Claude Opus、Sonnet 和 Haiku 5.5 测试。</string>
   <string name="slot.base.medium.about">适合中等规模的模型。发送完整指令，任务的每一步都是单独一次调用。已用 27B 级 Qwen 3 模型和 Gemini 3.8 Flash 测试。</string>
-  <string name="slot.base.weak.about">适合小模型。发送完整指令，每一步一次调用，回答简短。草图、社交媒体帖子、网上的图片和长篇游戏都关闭。已用 Qwen3-VL 8B 测试。</string>
+  <string name="slot.base.weak.about">适合小模型。发送完整指令，每一步一次调用，回答简短。草图、标记、用你自己的行做成的复选框、社交媒体帖子、网上的图片和长篇游戏都关闭。已用 Qwen3-VL 8B 测试。</string>
   <string name="slot.capabilities">能力</string>
   <string name="slot.capabilities.help">这个模型自己能做的事。只添加它确实能做的。</string>
   <string name="slot.cap.vision">视觉</string>
@@ -754,7 +754,7 @@
   <string name="help.harness.intro">适配框架决定 PaperDaemon 用这个模型处理任务的方式。能力说明模型自己能做什么。</string>
   <string name="help.harness.strong">**强**：适合最强的模型。指令简短，大多数任务一次调用就能完成，所以用的令牌最少。已用 Claude Opus、Sonnet 和 Haiku 5.5 测试。</string>
   <string name="help.harness.medium">**中**：适合中等规模的模型。发送完整指令，任务的每一步都是单独一次调用。已用 27B 级 Qwen 3 模型和 Gemini 3.8 Flash 测试。</string>
-  <string name="help.harness.weak">**弱**：适合小模型。发送完整指令，每一步一次调用，回答简短。草图、社交媒体帖子、网上的图片和长篇游戏都关闭。已用 Qwen3-VL 8B 测试。</string>
+  <string name="help.harness.weak">**弱**：适合小模型。发送完整指令，每一步一次调用，回答简短。草图、标记、用你自己的行做成的复选框、社交媒体帖子、网上的图片和长篇游戏都关闭。已用 Qwen3-VL 8B 测试。</string>
   <string name="help.harness.vision">**视觉**：模型能看到页面的图片。没有它，模型收到的是文字形式的页面：打出的字，以及 PaperDaemon 读出的手写内容。</string>
   <string name="help.harness.web_search">**网页搜索**：模型自己上网搜索。只有在“网络”标签页没有设置搜索时才会用到。PaperDaemon 会为 `claude` 程序和 Anthropic API 打开它。其他服务器只有在服务器自己会搜索时才添加。</string>
   <string name="help.harness.image_generation">**图片生成**：模型的服务器自己生成图片，比如 Gemini 的图片模型。只有在“图片”标签页没有图片模型时才会用到。PaperDaemon 向模型要每张图片，并从回答中取出。</string>

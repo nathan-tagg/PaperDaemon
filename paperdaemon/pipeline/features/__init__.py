@@ -40,8 +40,10 @@ def _f(name, summary, requires=Requires(), optional=Requires(), steps=(), tools=
 
 
 FEATURES = (
-    _f("write", "answers in words, lettered on the page", steps=("write", "checkbox"),
+    _f("write", "answers in words, lettered on the page", steps=("write",),
        tools=("answer", "write_paragraph", "write_line"), decisions=("item.ruling", "step.kind")),
+    _f("checkbox", "the user's own typed lines made checkboxes", requires=Requires(features=("write",)),
+       steps=("checkbox",)),
     _f("erase", "erasing what the page asked to have removed", optional=Requires(features=("point",)),
        steps=("erase",), decisions=("item.ruling",)),
     _f("inspect", "looking closer before deciding", optional=Requires(text={"vision": True}),

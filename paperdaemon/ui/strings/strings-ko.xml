@@ -742,7 +742,7 @@
   <string name="slot.base.strong">강함</string>
   <string name="slot.base.strong.about">가장 강한 모델용. 지시가 짧고 대부분의 작업이 한 번의 호출로 끝나 토큰을 가장 적게 씁니다. Claude Opus, Sonnet, Haiku 5.5로 테스트했습니다.</string>
   <string name="slot.base.medium.about">중간 크기 모델용. 지시를 모두 보내고, 작업의 각 단계가 별도의 호출입니다. 27B급 Qwen 3 모델과 Gemini 3.8 Flash로 테스트했습니다.</string>
-  <string name="slot.base.weak.about">작은 모델용. 지시를 모두 보내고, 단계마다 한 번 호출하며, 답은 짧게 합니다. 스케치, 소셜 게시물, 웹 이미지, 긴 게임은 꺼집니다. Qwen3-VL 8B로 테스트했습니다.</string>
+  <string name="slot.base.weak.about">작은 모델용. 지시를 모두 보내고, 단계마다 한 번 호출하며, 답은 짧게 합니다. 스케치, 표시, 내 줄로 만든 체크박스, 소셜 게시물, 웹 이미지, 긴 게임은 꺼집니다. Qwen3-VL 8B로 테스트했습니다.</string>
   <string name="slot.capabilities">기능</string>
   <string name="slot.capabilities.help">이 모델이 스스로 할 수 있는 것. 정말 할 수 있는 것만 추가하세요.</string>
   <string name="slot.cap.vision">이미지 인식</string>
@@ -754,7 +754,7 @@
   <string name="help.harness.intro">하네스는 PaperDaemon이 이 모델로 작업을 처리하는 방식을 정합니다. 기능은 모델이 스스로 무엇을 할 수 있는지 알려 줍니다.</string>
   <string name="help.harness.strong">**강함**: 가장 강한 모델용. 지시가 짧고 대부분의 작업이 한 번의 호출로 끝나 토큰을 가장 적게 씁니다. Claude Opus, Sonnet, Haiku 5.5로 테스트했습니다.</string>
   <string name="help.harness.medium">**보통**: 중간 크기 모델용. 지시를 모두 보내고, 작업의 각 단계가 별도의 호출입니다. 27B급 Qwen 3 모델과 Gemini 3.8 Flash로 테스트했습니다.</string>
-  <string name="help.harness.weak">**약함**: 작은 모델용. 지시를 모두 보내고, 단계마다 한 번 호출하며, 답은 짧게 합니다. 스케치, 소셜 게시물, 웹 이미지, 긴 게임은 꺼집니다. Qwen3-VL 8B로 테스트했습니다.</string>
+  <string name="help.harness.weak">**약함**: 작은 모델용. 지시를 모두 보내고, 단계마다 한 번 호출하며, 답은 짧게 합니다. 스케치, 표시, 내 줄로 만든 체크박스, 소셜 게시물, 웹 이미지, 긴 게임은 꺼집니다. Qwen3-VL 8B로 테스트했습니다.</string>
   <string name="help.harness.vision">**이미지 인식**: 모델이 페이지 이미지를 볼 수 있습니다. 없으면 모델은 페이지를 텍스트로 받습니다. 입력된 글자와, PaperDaemon이 읽은 손글씨입니다.</string>
   <string name="help.harness.web_search">**웹 검색**: 모델이 스스로 웹을 검색합니다. 네트워크 탭에 검색이 없을 때만 사용됩니다. PaperDaemon은 `claude` 프로그램과 Anthropic API에서 이를 켭니다. 다른 서버라면 서버가 스스로 검색할 때만 추가하세요.</string>
   <string name="help.harness.image_generation">**이미지 생성**: 모델의 서버가 스스로 그림을 만듭니다. Gemini의 이미지 모델 같은 경우입니다. 이미지 탭에 이미지 모델이 없을 때만 사용됩니다. PaperDaemon은 그림마다 모델에 요청하고 답에서 가져옵니다.</string>

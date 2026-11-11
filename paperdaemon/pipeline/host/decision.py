@@ -732,6 +732,7 @@ def system_brief():
         H._BRIEF = H._BRIEF.replace("<<STEPS>>", ST.brief_list([k for k in ST.KINDS if k not in off], lean=H.LEAN))
         where = "search" if "search" not in off else "own" if H.RUN.get("searches_itself") else "none"
         H._BRIEF = H._BRIEF.replace("<<FACTS>>", (H.FACTS_LEAN if H.LEAN else H.FACTS)[where])
+        H._BRIEF = H._BRIEF.replace("<<CHECKLIST>>", H.CHECKLIST["checkbox" not in off])
     return H._BRIEF
 
 

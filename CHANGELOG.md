@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.58
+
+- Weak no longer offers mark-ups (underline, circle, highlight) or turning your own typed lines into checkboxes. On Qwen3-VL 8B both went wrong: asked to underline a word, it wrote the sentence out again; asked to make a typed list a checklist, it erased the list. With Weak, a checklist you ask for is written as a new list below yours.
+- Checkboxes made of your own lines are now their own feature, so a harness can turn them off without turning off writing.
+
 ## 0.2.57
 
 - The Text / Reasoning tab's Harness is a dropdown: Weak, Medium, Strong. Under it is the base's description and the models it was tested with. "Your harness" and "+ Add Harness" are gone, on the Image tab too.

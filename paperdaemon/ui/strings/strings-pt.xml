@@ -742,7 +742,7 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="slot.base.strong">Forte</string>
   <string name="slot.base.strong.about">Para os modelos mais fortes. Instruções curtas, e a maioria dos trabalhos termina em uma chamada, então usa menos tokens. Testado com Claude Opus, Sonnet e Haiku 5.5.</string>
   <string name="slot.base.medium.about">Para modelos médios. Instruções completas, e cada etapa de um trabalho é uma chamada separada. Testado com modelos Qwen 3 da classe 27B e o Gemini 3.8 Flash.</string>
-  <string name="slot.base.weak.about">Para modelos pequenos. Instruções completas, uma chamada por etapa e respostas curtas. Esboços, posts de redes sociais, imagens da web e os jogos longos ficam desligados. Testado com o Qwen3-VL 8B.</string>
+  <string name="slot.base.weak.about">Para modelos pequenos. Instruções completas, uma chamada por etapa e respostas curtas. Esboços, marcações, caixas de seleção feitas com suas próprias linhas, posts de redes sociais, imagens da web e os jogos longos ficam desligados. Testado com o Qwen3-VL 8B.</string>
   <string name="slot.capabilities">Capacidades</string>
   <string name="slot.capabilities.help">O que este modelo consegue fazer sozinho. Adicione só o que ele realmente consegue.</string>
   <string name="slot.cap.vision">Visão</string>
@@ -754,7 +754,7 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="help.harness.intro">O harness define como o PaperDaemon executa os trabalhos com este modelo. As capacidades dizem o que o modelo consegue fazer sozinho.</string>
   <string name="help.harness.strong">**Forte**: Para os modelos mais fortes. Instruções curtas, e a maioria dos trabalhos termina em uma chamada, então usa menos tokens. Testado com Claude Opus, Sonnet e Haiku 5.5.</string>
   <string name="help.harness.medium">**Médio**: Para modelos médios. Instruções completas, e cada etapa de um trabalho é uma chamada separada. Testado com modelos Qwen 3 da classe 27B e o Gemini 3.8 Flash.</string>
-  <string name="help.harness.weak">**Fraco**: Para modelos pequenos. Instruções completas, uma chamada por etapa e respostas curtas. Esboços, posts de redes sociais, imagens da web e os jogos longos ficam desligados. Testado com o Qwen3-VL 8B.</string>
+  <string name="help.harness.weak">**Fraco**: Para modelos pequenos. Instruções completas, uma chamada por etapa e respostas curtas. Esboços, marcações, caixas de seleção feitas com suas próprias linhas, posts de redes sociais, imagens da web e os jogos longos ficam desligados. Testado com o Qwen3-VL 8B.</string>
   <string name="help.harness.vision">**Visão**: o modelo consegue ver uma imagem da página. Sem isso, ele recebe a página como texto: as palavras digitadas e a escrita à mão como o PaperDaemon a lê.</string>
   <string name="help.harness.web_search">**Busca na web**: o modelo busca na web sozinho. Só é usada quando a aba Rede não tem busca. O PaperDaemon a liga para o programa `claude` e a API da Anthropic. Para qualquer outro servidor, adicione só se o servidor buscar por conta própria.</string>
   <string name="help.harness.image_generation">**Geração de imagens**: o servidor do modelo cria imagens sozinho, como os modelos de imagem do Gemini. Só é usada quando a aba Imagem não tem modelo de imagem. O PaperDaemon pede cada imagem ao modelo e a tira da resposta.</string>

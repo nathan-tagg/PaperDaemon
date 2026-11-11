@@ -22,6 +22,7 @@
       the documented reply shapes; his Google key's free tier has no image-model quota)
 - [x] 3.0b Tool-call markup read as calls on the command line (Sonnet 5.5 answered that way and was asked twice more)
 - [x] 3.0c A lineup saved or deleted reaches the running loop (0.2.56)
+- [x] 3.0d Weak turns off mark-ups and checkboxes made of the user's own lines (Qwen3-VL 8B ruled a whole typed list erased and copied a sentence back instead of underlining it); checkboxes are a feature of their own
 
 ## 4. Proof
 
