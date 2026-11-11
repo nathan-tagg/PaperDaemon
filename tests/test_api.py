@@ -413,3 +413,18 @@ def test_the_editor_says_why_it_draws_on_the_processor_in_the_window_s_words(cap
     c.post("/api/v1/render/fallback", json={"code": "<b>made up</b>", "why": "x"})
     assert c.get("/api/v1/status").json()["render"]["editor"] == "refused"
     server._render_down["editor"] = None
+
+
+def test_a_lineup_saved_or_deleted_is_taken_up_by_a_running_loop(monkeypatch):
+    """A new lineup's tag was not watched for, and a lineup's new harness not used, until the app started again: only
+    the Settings screen's save told the running loop."""
+    told = []
+    monkeypatch.setattr(loop, "settings_saved", lambda: told.append(1))
+    c = client()
+    assert c.put("/api/v1/lineups/Small", json={"text": {"location": "http://127.0.0.1:9100", "harness": "weak-text"},
+                                                "tags": [{"name": "Small", "prompt": ""}]}).status_code == 200
+    assert told == [1]
+    assert c.put("/api/v1/lineups/Small", json={"text": {"harness": "lean-default"}}).status_code == 200
+    assert told == [1, 1]
+    assert c.delete("/api/v1/lineups/Small").status_code == 200
+    assert told == [1, 1, 1]

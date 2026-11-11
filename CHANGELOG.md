@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.56
+
+- A lineup you save takes effect without restarting PaperDaemon. Until now only the Settings screen's save reached the running loop: a new lineup's tag was not watched for, and a changed harness or capability not used, until the app started again.
+
 ## 0.2.55
 
 - The Harness box for a text model is now a slider: Weak, Medium, Strong. Strong is for the strongest models such as Claude, Medium for 27B models and Gemini Flash, and Weak is new, for small models. The base's description shows under the slider. A harness file of your own is under Your harness.

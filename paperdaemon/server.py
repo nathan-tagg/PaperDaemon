@@ -870,6 +870,9 @@ def put_lineup(name: str, body: dict = Body(...)):
         settings.save(s)
     except ValueError as ex:
         return _bad(str(ex))
+    # A RUNNING LOOP TAKES THE CHANGE UP (once no job is running), as a Settings save: a lineup's new tag was not
+    # watched for, and its new harness not used, until the app started again
+    loop.settings_saved()
     return _lineups_view()
 
 
@@ -899,6 +902,7 @@ def delete_lineup(name: str):
         settings.save(s)
     except ValueError as ex:
         return _bad(str(ex))
+    loop.settings_saved()                                # its tags are no longer watched for
     from . import memories
     memories.drop(name)                                  # a deleted lineup's memories go with it
     if settings.in_use() == name:
