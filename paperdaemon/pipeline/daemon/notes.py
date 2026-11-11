@@ -378,7 +378,7 @@ def letter(lines, frame, box=False, latest=False):
     SIG.draw_signature(d, cur, y, height=size * 0.9)
     got = None
     if box:
-        # THE BOX ON THE NOTE'S LINE, right-aligned at the band's right end, the word "retry" after it (his word,
+        # THE BOX ON THE NOTE'S LINE, right-aligned at the band's right end, the word "retry" after it (the user's word,
         # 11-11: under the line, at the left, it sat under the tablet's always-on dot)
         rw = T.measure("retry", size)
         bx = x1 - rw - size * 0.5 - side

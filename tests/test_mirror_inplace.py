@@ -691,7 +691,7 @@ def test_a_page_the_pipeline_wrote_with_the_daemons_layer_a_picture_and_a_new_la
 
 def test_the_user_draws_on_his_layer_of_a_mirror_page_and_his_next_note_wipes_it():
     """On a Mirror page his layer takes the user's stroke as any layer does, and his next note wipes the layer, the
-    user's stroke with it (the user's word, 11-11: "it should wipe it EVERY time"), on any page: one with his note under
+    user's stroke with it (the user's word, 11-11: "it should wipe it EVERY time"), on any page: one with the daemon's note under
     its number, his old note under the tablet's author, or his layer under his old author (218)."""
     got = _run("""
         import uuid

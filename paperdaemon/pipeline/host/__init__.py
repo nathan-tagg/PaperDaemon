@@ -1003,6 +1003,13 @@ def draw_looks():
 DECIDE_TEMP = float(os.environ.get("RM_DECIDE_TEMP", "0.3"))
 
 
+def _decide_temp():
+    """The decision turn's temperature: the harness's (decide_temperature: Weak's 0, where a small model at 0.3 decided
+    the same page differently from one run to the next), else DECIDE_TEMP."""
+    t = getattr(_H(), "decide_temperature", None)
+    return DECIDE_TEMP if t is None else float(t)
+
+
 # ----------------------------------------------------------- the host does not read for the model
 
 
@@ -1201,7 +1208,7 @@ def converse(doc_id, page, name, keys=(), extra=None, conflict=None):
             msgs.append({"role": "user", "content": step_message(cur) + (("\n\n" + told) if told else "")})
             fn2, args2, res2 = _turn(msgs, proto.allowed, tries=3,
                                      final=tuple(proto.closes) + ("need_step",),
-                                     temperature=DECIDE_TEMP if proto.exact else None)
+                                     temperature=_decide_temp() if proto.exact else None)
             if fn2 == "need_step":
                 cur["status"] = "todo"          # comes round again after the inserted step
                 continue

@@ -62,6 +62,7 @@ pictures) its own way.
 | `request` | Extra fields for every request, by a capability and its value: `{"vision": {"off": {"cache_prompt": true}}}`. |
 | `features` | Things this model should not be asked to do: `{"off": ["chart"]}`. The model is never offered them. |
 | `inspect_tokens` | How many tokens the model may spend looking at the page (zooming in, reading its history) before it decides. Optional: 12000. |
+| `decide_temperature` | The temperature of the turn where the model decides what to do with the page, 0 to 2. Optional: 0.3. Weak sets 0, so a small model decides the same page the same way every time. |
 | `assists` | Keyword assists for a model that needs help with one decision (see below). Optional: none. |
 | `cli` | How a command-line program is spoken to, when the model's source is a command line (see below). Optional: none. |
 | `lean` | `true` for a model strong enough to do a whole job in one call (see below). Optional: `false`. |

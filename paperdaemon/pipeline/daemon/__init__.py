@@ -321,6 +321,22 @@ def report_failure(job, why):
 
 # The daemon and the host share two files: the queue (one JSON file per job) and the ledger.
 QUEUE = os.path.join(_STATE, "rm-queue")
+# A JOB IN HAND, from its hand-over to its final note and push (loop.busy reads it), and A HOLD FOR AN UPDATE (the
+# engine's /updates/ready sets it): while it is there no new job is handed over. An update stopped the engine between a
+# job's record and its final note (11-11): the page kept no note, and its changes reached the tablet hours later.
+INHAND = os.path.join(_STATE, "rm-inhand")
+HOLD = os.path.join(_STATE, "rm-hold")
+
+
+def _mark(path, on):
+    try:
+        if on:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(str(time.time()))
+        elif os.path.exists(path):
+            os.remove(path)
+    except OSError:
+        pass
 
 
 # --------------------------------------------------------- the daemon's notes on the page, and another try
@@ -614,6 +630,7 @@ def hand_over(job):
     with open(os.path.join(QUEUE, stamp + ".json"), "w", encoding="utf-8") as f:
         json.dump(body, f)
     log("QUEUED %s" % where(job))
+    _mark(INHAND, True)
     INFLIGHT.update(job=job, keys=keys, key=key, since=time.time(),
                     seen={r["key"]: (r["doc_id"], r.get("page_id"),
                                      r["state"]["sha"])
@@ -731,12 +748,15 @@ def finish_job(attempts):
         except Exception as ex:
             log("  could not write the daemon's note: %s" % str(ex)[:120])
     INFLIGHT.clear()
+    _mark(INHAND, False)
 
 
 # ------------------------------------------------------------------- main loop
 def main():
     reset_log(LOGFILE)
     log("daemon start  interval=%ds dry=%s" % (INTERVAL, DRY))
+    _mark(INHAND, False)                             # a new daemon holds no job yet, and no update is pending
+    _mark(HOLD, False)
     # NO RECORD IS HALF TAKEN AT START: a host's "checked" is cleared as the daemon wraps its job up, and the scan treats
     # a page carrying it as the job left it -- one left by a daemon that stopped in between would hide the user's later
     # changes to that page for good. The host starts afresh with the daemon, so none of them is pending now.
@@ -900,9 +920,12 @@ def main():
                 if k0 in attempts:
                     attempts[k0] = max(0, attempts[k0] - 1)
                 INFLIGHT.clear()
+                _mark(INHAND, False)
             else:
                 note = "%s  %s" % (where(INFLIGHT["job"]),
                                    elapsed(INFLIGHT["since"]))
+        elif os.path.exists(HOLD):
+            note = "held for an update"              # no new job: the engine is about to stop for an update
         else:
           for job in batch(todo):
             keys = job["keys"]

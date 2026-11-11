@@ -755,9 +755,10 @@ def _not_offered():
            if n in cat.by_name and n not in _SAID_ELSEWHERE]
     if not off:
         return ""
-    return ("NOT OFFERED HERE: %s. A request for one of these is answered with one written line saying it can't be "
-            "done here. Only the request comes off the page; the user's other words stay, and are never written out "
-            "again in its place." % "; ".join(off))
+    return ("NOT OFFERED HERE: %s. When the page asks for one of these, nothing is done for it: answer(...) with one "
+            "line saying it isn't offered on this lineup (\"That isn't offered on this lineup.\"), never that it was "
+            "done. Only the request comes off the page; the user's other words stay, and are never written out "
+            "again." % "; ".join(off))
 
 
 def _off_features():

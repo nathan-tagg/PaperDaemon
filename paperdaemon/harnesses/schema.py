@@ -126,6 +126,8 @@ RULES = {
                 "the model's value, and \"hint\": what to tell the model or \"set\": {fields to override}}"),
     "lean": (lambda v: isinstance(v, bool), "true or false"),
     "inspect_tokens": (lambda v: _posint(v) and int(v) <= 200000, "a whole number of tokens above 0"),
+    "decide_temperature": (lambda v: v is None or (isinstance(v, (int, float)) and not isinstance(v, bool) and 0 <= v <= 2),
+                           "a number from 0 to 2"),
     "vision": (lambda v: isinstance(v, bool), "true or false"),
     "web_search": (lambda v: isinstance(v, bool), "true or false"),
     "image_generation": (lambda v: isinstance(v, bool), "true or false"),

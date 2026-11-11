@@ -293,6 +293,8 @@ def busy(state=None):
             return "a job is working"
     except (OSError, ValueError):
         pass
+    if os.path.exists(os.path.join(data, "rm-inhand")):
+        return "a job is being finished"         # recorded, its final note and push still to come (daemon.INHAND)
     if not card.idle():
         return "a model call is in progress"
     return None

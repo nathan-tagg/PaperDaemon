@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.69
+
+- An update waits for the job in hand. When you install an update, PaperDaemon now starts no new job, lets the one in hand finish (its final note and its push to the tablet included), and only then closes and updates. On 11-11 an update cut a job off between its work and its final note: the page kept no Daemon note, and its changes reached the tablet hours later.
+- Weak works better on small models. Tested on Qwen3-VL 8B: asked to circle or underline in a sentence, it now leaves your sentence on the page and takes off only the request. It decides at temperature 0, so the same page goes the same way every time. Still open: it can say it underlined when it didn't, and on a "cross out the one that doesn't belong" list it takes the list off.
+- On every lineup, the page message tells the model to answer only what asks for something and leave the rest as it is. A reply that names the page's internal ids ("para:2") is refused.
+
 ## 0.2.68
 
 - A reply that writes your typed lines out again while taking them off the page is refused, and the model is told to leave your words where they are. The check was added in 0.2.62 but never saw the reply's words on the one-call answer, so it never ran there.

@@ -1529,6 +1529,36 @@ def get_notepad(doc: str):
         return _bad(str(ex), 404)
 
 
+@app.post(API + "/updates/ready")
+def post_updates_ready():
+    """Before an update stops the engine: no new job is handed over (the tablet's and the false mirror's), and 409 while
+    a job is still in hand, 200 once none is. The shell asks until it gets 200. (11-11: an update stopped the engine
+    between a job's record and its final note and push.)"""
+    why = None
+    for state in (paths.data_dir(), paths.false_mirror_state_dir()):
+        if os.path.isdir(state):
+            try:
+                with open(os.path.join(state, "rm-hold"), "w", encoding="utf-8") as f:
+                    f.write(str(time.time()))
+            except OSError:
+                pass
+            why = why or loop.busy(state)
+    if why:
+        return _bad("%s; the update waits for it" % why, 409)
+    return {"ready": True}
+
+
+@app.post(API + "/updates/resume")
+def post_updates_resume():
+    """An update that did not install: jobs are handed over again."""
+    for state in (paths.data_dir(), paths.false_mirror_state_dir()):
+        try:
+            os.remove(os.path.join(state, "rm-hold"))
+        except OSError:
+            pass
+    return {"resumed": True}
+
+
 @app.post(API + "/notepads/{doc}/wipe")
 def post_notepad_wipe(doc: str):
     why = loop.busy()

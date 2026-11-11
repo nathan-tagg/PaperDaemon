@@ -644,8 +644,9 @@ def job_context(doc, page, name):
     if new_refs:
         L.append(("NEW SINCE THIS SYSTEM LAST WORKED ON THIS PAGE" if JOB.page_history else
                   "NEW (this system has not worked on this page before)") +
-                 " -- what woke you, each to be ruled, and answered or carried out (a turn in a conversation or a "
-                 "role-play is answered in kind): " + ", ".join(new_refs))
+                 " -- what woke you, each to be ruled: answer or carry out the ones that ask for something (a turn "
+                 "in a conversation or a role-play is answered in kind), and leave the rest as they are: "
+                 + ", ".join(new_refs))
     arr = H._arrows(doc, page)
     if arr:
         L.append("ARROWS, as the host's detector guesses them (your own eyes are better -- say where "
@@ -703,6 +704,12 @@ def job_context(doc, page, name):
           "  ask(lines)                       a request cannot be done without something only the user can "
           "tell you (ASKING)",
           "  plan(steps, rulings)             anything else, or several things"]
+    # WHAT THIS LINEUP DOES NOT OFFER, again where the decision is made: at the end of a long brief a small model passed
+    # over it (Qwen3-VL 8B, asked to circle a date with mark-ups off, wrote the user's lines out again, 11-11)
+    from paperdaemon.pipeline.host import decision as _D
+    off = _D._not_offered()
+    if off:
+        L += ["", off]
     return "\n".join(L)
 
 

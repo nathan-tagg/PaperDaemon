@@ -22,5 +22,6 @@
       "markup",
       "checkbox"
     ]
-  }
+  },
+  "decide_temperature": 0
 }

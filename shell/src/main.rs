@@ -404,6 +404,25 @@ fn toggle_pause(app: &AppHandle) {
     }
 }
 
+/// Before an update stops the engine: no new job starts, and the job in hand -- its record, its final note and its push
+/// to the tablet -- is let finish (11-11: an update stopped the engine between a job's record and its final note, and
+/// the page's changes reached the tablet hours later). The engine answers 409 while a job is in hand; an engine that
+/// does not answer has nothing to wait for.
+fn wait_for_the_job_in_hand(app: &AppHandle) {
+    let (port, token) = match app.state::<Shell>().engine.lock().unwrap().as_ref() {
+        Some(e) => (e.port, e.token.clone()),
+        None => return,
+    };
+    let mut said = false;
+    while api_post(port, &token, "/updates/ready") == Some(409) {
+        if !said {
+            update_log("waiting for the job in hand to finish");
+            said = true;
+        }
+        std::thread::sleep(std::time::Duration::from_secs(2));
+    }
+}
+
 fn stop_engine(app: &AppHandle) {
     let shell = app.state::<Shell>();
     let taken = shell.engine.lock().unwrap().take();
@@ -473,10 +492,14 @@ fn check_for_updates(app: AppHandle) {
         let app2 = app.clone();
         // the signature is verified before anything is installed; a download that does not match is refused
         let result = tauri::async_runtime::block_on(update.download_and_install(|_chunk, _total| {}, move || {
+            wait_for_the_job_in_hand(&app2);
             update_log("downloaded and verified; stopping the engine to install");
             stop_engine(&app2);
         }));
         if let Err(e) = result {
+            if let Some(engine) = app.state::<Shell>().engine.lock().unwrap().as_ref() {
+                let _ = api_post(engine.port, &engine.token, "/updates/resume");   // jobs are handed over again
+            }
             say(&app, &format!("The update was not installed: {}", e), MessageDialogKind::Error);
         }
     });

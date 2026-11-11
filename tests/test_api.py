@@ -428,3 +428,25 @@ def test_a_lineup_saved_or_deleted_is_taken_up_by_a_running_loop(monkeypatch):
     assert told == [1, 1]
     assert c.delete("/api/v1/lineups/Small").status_code == 200
     assert told == [1, 1, 1]
+
+
+def test_an_update_waits_for_the_job_in_hand_and_holds_new_ones(monkeypatch):
+    """11-11: an update stopped the engine between a job's record and its final note and push. /updates/ready holds new
+    jobs (rm-hold in each state folder) and answers 409 while a job is in hand (rm-inhand, from hand-over to the last
+    push), 200 once none is; /updates/resume lets jobs go again."""
+    import os
+    from paperdaemon import loop, paths
+    monkeypatch.setattr(loop.card, "idle", lambda: True)
+    data = paths.data_dir()
+    os.makedirs(data, exist_ok=True)
+    inhand = os.path.join(data, "rm-inhand")
+    open(inhand, "w").write("1")
+    try:
+        assert loop.busy() == "a job is being finished"
+        r = client().post("/api/v1/updates/ready")
+        assert r.status_code == 409 and os.path.exists(os.path.join(data, "rm-hold"))
+    finally:
+        os.remove(inhand)
+    assert client().post("/api/v1/updates/ready").status_code == 200
+    assert client().post("/api/v1/updates/resume").status_code == 200
+    assert not os.path.exists(os.path.join(data, "rm-hold"))

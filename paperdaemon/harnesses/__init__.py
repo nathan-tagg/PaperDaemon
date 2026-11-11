@@ -118,8 +118,10 @@ class TextHarness(Harness, TextProtocols):
     CAPABILITIES = ("vision", "forced_tool", "max_output", "web_search", "image_generation")
     web_search = False
     image_generation = False
-    FIELDS = CAPABILITIES + ("brief_additions", "request", "features", "assists", "inspect_tokens", "cli", "lean")
+    FIELDS = CAPABILITIES + ("brief_additions", "request", "features", "assists", "inspect_tokens", "cli", "lean",
+                             "decide_temperature")
     request = {}
+    decide_temperature = None           # the decision turn's temperature (None: the host's, 0.3); Weak sets 0
     cli = {}                            # how a command-line program is spoken to (models/cli.py), when it is one
     lean = False                        # the lean way of working, for a model that needs little telling (GUIDE-llm.md)
     features = {}                       # {"off": [feature names]}: a harness may narrow what is offered

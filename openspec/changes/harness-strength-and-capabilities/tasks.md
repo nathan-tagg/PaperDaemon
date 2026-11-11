@@ -24,6 +24,7 @@
 - [x] 3.0c A lineup saved or deleted reaches the running loop (0.2.56)
 - [x] 3.0d Weak turns off mark-ups and checkboxes made of the user's own lines (Qwen3-VL 8B ruled a whole typed list erased and copied a sentence back instead of underlining it); checkboxes are a feature of their own
 - [x] 3.0e The brief names the features a lineup has off (search and checkboxes aside: their own lines say what to do), and a request for one is answered with a line saying it can't be done here
+- [x] 3.0f Weak decides at temperature 0 (decide_temperature); the page message says to answer only what asks for something, the not-offered line is repeated where the model decides, and a reply may not name the page's ids. Tried on the real Qwen3-VL 8B through the development host (a pass-through to the running server)
 
 ## 4. Proof
 

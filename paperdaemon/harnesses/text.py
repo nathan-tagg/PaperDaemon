@@ -164,7 +164,8 @@ class TextProtocols:
 
     def decision(self, host, msgs):
         """The turn that decides: skip, answer, ask or plan."""
-        return Turn(msgs, tuple(host.PLAN_TOOLS), tries=3, temperature=host.DECIDE_TEMP)
+        t = getattr(self, "decide_temperature", None)          # Weak's 0: the same page decided the same way
+        return Turn(msgs, tuple(host.PLAN_TOOLS), tries=3, temperature=host.DECIDE_TEMP if t is None else float(t))
 
     # ------------------------------------------------------------ output
     def calls(self, message):

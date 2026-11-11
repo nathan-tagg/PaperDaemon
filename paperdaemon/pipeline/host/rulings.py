@@ -26,7 +26,9 @@ RULINGS = {"type": "array", "items": RULING_ITEM, "description":
            "One ruling per thing on the page you rule on, and one for EVERY item listed as NEW: {\"id\": copied "
            "from the listing, \"is\": request | command | asked_to_remove | stale_work | question | conversation | "
            "note | other, \"then\": erase | keep}. erase only for a request or command this job carries out, "
-           "what the user asked to have removed, or your own work this job makes stale."}
+           "what the user asked to have removed, or your own work this job makes stale. What a request is ABOUT -- the "
+           "sentence or list it points at (\"the date\", \"the sentence above\", \"this list\") -- is not the request: "
+           "it is the user's note, and stays (note, keep)."}
 ANSWERS = {"type": "array", "items": {"type": "string", "enum": list(ST.ERASE_IDS)}, "description":
            "The ids of what on the page this carries out ([] when nothing there asked for it)."}
 
@@ -179,6 +181,12 @@ def problems(kind, args, offered=None):
         if len(words) >= 12 and words in said:
             out.append("%s is ruled to come off, but the reply writes its words out again: the user's words stay where "
                        "they are -- then: keep -- and the reply says only what answers the request." % rid)
+    # THE PAGE'S IDS ARE FOR YOU, NOT THE USER: a reply naming one ("underlined in para:2") is written on their page
+    import re as _re
+    named = sorted(set(_re.findall(r"\b(?:para|mark|line|picture):\d+\b", said)))
+    if named:
+        out.append("the reply names %s: those ids are for you, never for the user; say it in plain words."
+                   % ", ".join(named))
     return out
 
 
