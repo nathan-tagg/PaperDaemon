@@ -9,6 +9,8 @@
 - [x] 1.3 "Built in" named "Default" (text and image); the three Claude harnesses removed; nothing reads a model out
       of a command
 - [x] 1.4 The guides and the tests
+- [x] 1.5 An update clears the installed engine folder first (0.2.52): the 0.2.51 update left the three removed
+      harness files in place, and they were still loaded and offered
 
 ## 2. Proof
 

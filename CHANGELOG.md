@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.52
+
+- An update removes the earlier version's engine files before it writes the new ones. Until now it wrote over them and left behind any file the new version no longer has, so after updating to 0.2.51 the Harness box still listed "Claude Opus 5.5", "Claude Sonnet 5.5" and "Claude Haiku 5.5", which that version had removed. Your settings and data are in their own folder and are not touched.
+
 ## 0.2.51
 
 - A lineup's harness is the one you pick, and nothing else. "Automatic (from the model's name)" is gone: PaperDaemon no longer chooses a harness from a model's name, a server's report or a start script. The Harness box is a plain list that always shows a harness; a new lineup starts on "Default". A lineup that was on Automatic keeps the harness it was running on, now shown by name.

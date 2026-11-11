@@ -656,6 +656,12 @@ Section Install
   !insertmacro WaitFileFree "$INSTDIR\${MAINBINARYNAME}.exe"
   !insertmacro WaitFileFree "$INSTDIR\engine\PaperDaemon.exe"
 
+  ; PaperDaemon: AN UPDATE LEAVES NOTHING OF THE EARLIER VERSION'S ENGINE BEHIND. The files below are written over
+  ; the old ones, so a file this version no longer has stayed where it was: three harness files removed in 0.2.51
+  ; were still read from the installed folder and still offered. The engine folder holds only what the installer
+  ; put there (the user's data is in its own folder) and is written whole just below.
+  RMDir /r "$INSTDIR\engine"
+
   ; Copy main executable
   File "${MAINBINARYSRCPATH}"
 
