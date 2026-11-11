@@ -151,3 +151,21 @@ def test_the_checklist_sentence_follows_whether_checkboxes_are_offered(monkeypat
     from paperdaemon.pipeline import features as F
     cat = F.Catalog()
     assert cat.step_feature()["checkbox"] == "checkbox" and cat.by_name["checkbox"].requires.features == ("write",)
+
+
+def test_the_brief_names_what_is_not_offered(monkeypatch):
+    """Qwen3-VL 8B, asked to underline with mark-ups off, wrote the sentence out again: the brief now names what is
+    off, except search and checkboxes, which their own lines answer."""
+    import paperdaemon.pipeline.host as H
+    for name in ("LEAN", "_BRIEF", "_SCHEMA", "RUN"):
+        monkeypatch.setattr(H, name, getattr(H, name))
+    off = {n: {"state": "off"} for n in ("markup", "checkbox", "search", "draw")}
+    for lean in (False, True):
+        H.LEAN, H._BRIEF, H._SCHEMA = lean, None, None
+        H.RUN = dict(H.RUN, features=off)
+        b = H.system_brief()
+        line = [x for x in b.splitlines() if x.startswith("Not offered here:")]
+        assert len(line) == 1 and "underlining" in line[0] and "drawings" in line[0]
+        assert "web" not in line[0] and "checkboxes" not in line[0]
+    H._BRIEF, H.RUN = None, dict(H.RUN, features={})
+    assert "Not offered here" not in H.system_brief()

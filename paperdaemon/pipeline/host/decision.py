@@ -729,11 +729,29 @@ def system_brief():
         if extra:
             H._BRIEF += "\n\n" + extra
         off = H._off_steps_and_tools()[0]
-        H._BRIEF = H._BRIEF.replace("<<STEPS>>", ST.brief_list([k for k in ST.KINDS if k not in off], lean=H.LEAN))
+        H._BRIEF = H._BRIEF.replace("<<STEPS>>", ST.brief_list([k for k in ST.KINDS if k not in off], lean=H.LEAN)
+                                    + _not_offered())
         where = "search" if "search" not in off else "own" if H.RUN.get("searches_itself") else "none"
         H._BRIEF = H._BRIEF.replace("<<FACTS>>", (H.FACTS_LEAN if H.LEAN else H.FACTS)[where])
         H._BRIEF = H._BRIEF.replace("<<CHECKLIST>>", H.CHECKLIST["checkbox" not in off])
     return H._BRIEF
+
+
+# OFF FEATURES ANOTHER LINE OF THE BRIEF ALREADY ANSWERS: web search (the facts line) and the user's own lines made
+# checkboxes (the checklist line)
+_SAID_ELSEWHERE = ("search", "checkbox")
+
+
+def _not_offered():
+    """A line naming the features this lineup has off, so a request for one is answered in words, or ""."""
+    from paperdaemon.pipeline import features as F
+    cat = F.Catalog()
+    off = [cat.by_name[n].summary for n in sorted(H._off_features())
+           if n in cat.by_name and n not in _SAID_ELSEWHERE]
+    if not off:
+        return ""
+    return ("\nNot offered here: %s. A request for one of these is answered with one written line saying it can't be "
+            "done here; the page's text is never written out again in its place." % "; ".join(off))
 
 
 def _off_features():

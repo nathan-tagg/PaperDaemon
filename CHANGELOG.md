@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.59
+
+- A model is told what its lineup doesn't offer (for Weak: sketches, mark-ups, social posts, pictures from the web, the long games), and asked for one of them, it writes one line saying it can't be done here. On Qwen3-VL 8B, asked to underline a word, it used to write the sentence and the request out again.
+
 ## 0.2.58
 
 - Weak no longer offers mark-ups (underline, circle, highlight) or turning your own typed lines into checkboxes. On Qwen3-VL 8B both went wrong: asked to underline a word, it wrote the sentence out again; asked to make a typed list a checklist, it erased the list. With Weak, a checklist you ask for is written as a new list below yours.
