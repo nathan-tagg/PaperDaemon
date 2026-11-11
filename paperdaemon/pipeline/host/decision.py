@@ -38,7 +38,9 @@ def t_answer(answers, lines, rulings=None, size=None):
     size and spacing (write._body); a `size` sent anyway changes nothing."""
     rulings = rulings if isinstance(rulings, list) else []
     answers = answers if isinstance(answers, list) else []
-    probs = RU.problems("answer", {"answers": answers, "rulings": rulings})
+    # the reply's words go to the check too: a reply that writes back what it takes off is refused (rulings.problems;
+    # without them it never ran on this path -- Qwen3-VL 8B erased two typed lines and wrote them out again, 11-11)
+    probs = RU.problems("answer", {"answers": answers, "rulings": rulings, "lines": lines})
     if not probs:
         d, hint = AS.apply({"rulings": rulings}, getattr(H._H(), "assists", ()))
         if hint:

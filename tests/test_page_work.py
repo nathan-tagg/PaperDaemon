@@ -255,3 +255,29 @@ def test_a_step_that_fails_is_said_in_words_and_the_request_stays(work):
     texts = [p["text"] for p in d["paras"]]
     assert "Highlight the word zebra in my note, if it's there." in texts           # the request stays
     assert not d["marks"]                                                         # nothing was highlighted
+
+
+def test_an_answer_that_writes_back_the_lines_it_takes_off_is_refused(work):
+    # 11-11, Qwen3-VL 8B: asked to circle a date it could not, it ruled both typed lines requests, erased them and wrote
+    # them out again; the check that refuses that never saw the reply's words on the answer path. It does now: the
+    # model is told to keep the user's words, and its second answer is written.
+    replay.run_case("prep", {"fixture": "typed-question", "replies": [("skip", {"note": "first look"})]}, work=str(work))
+    _look(work, PAGE + """
+    from paperdaemon.pipeline.page import typed as TY
+    TY.insert(doc, page, "Meeting moved to Thursday, March 4.")
+    TY.insert(doc, page, "Circle the date.")
+    print("{}")
+    """)
+    r = _job(work, "typed-question", [
+        ("answer", {"answers": ["para:2", "para:3"], "lines": ["Meeting moved to Thursday, March 4.", "Circle the date."],
+                    "rulings": [{"id": "para:1", "is": "question", "then": "keep"},
+                                {"id": "para:2", "is": "request", "then": "erase"},
+                                {"id": "para:3", "is": "request", "then": "erase"}]}),
+        ("answer", {"answers": ["para:3"], "lines": ["Circling isn't offered here."],
+                    "rulings": [{"id": "para:1", "is": "question", "then": "keep"},
+                                {"id": "para:2", "is": "note", "then": "keep"},
+                                {"id": "para:3", "is": "request", "then": "erase"}]})])
+    assert r["unused_replies"] == [], r                                  # the first answer was refused, the second used
+    d = _look(work, MARKS.replace("WORD", repr("March")))
+    texts = [p["text"] for p in d["paras"]]
+    assert "Meeting moved to Thursday, March 4." in texts and "Circle the date." not in texts

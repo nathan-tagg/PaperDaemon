@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.68
+
+- A reply that writes your typed lines out again while taking them off the page is refused, and the model is told to leave your words where they are. The check was added in 0.2.62 but never saw the reply's words on the one-call answer, so it never ran there.
+
 ## 0.2.67
 
 - Every time the Daemon writes to a page, it wipes the Daemon layer first: everything on it, whoever drew it. Nothing about what it wrote is kept beside the page any more. The record it kept (daemon-ink.json) hung erase marks on layers some pages no longer had, and the tablet drew nothing on those pages.
