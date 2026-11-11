@@ -729,11 +729,13 @@ def system_brief():
         if extra:
             H._BRIEF += "\n\n" + extra
         off = H._off_steps_and_tools()[0]
-        H._BRIEF = H._BRIEF.replace("<<STEPS>>", ST.brief_list([k for k in ST.KINDS if k not in off], lean=H.LEAN)
-                                    + _not_offered())
+        H._BRIEF = H._BRIEF.replace("<<STEPS>>", ST.brief_list([k for k in ST.KINDS if k not in off], lean=H.LEAN))
         where = "search" if "search" not in off else "own" if H.RUN.get("searches_itself") else "none"
         H._BRIEF = H._BRIEF.replace("<<FACTS>>", (H.FACTS_LEAN if H.LEAN else H.FACTS)[where])
         H._BRIEF = H._BRIEF.replace("<<CHECKLIST>>", H.CHECKLIST["checkbox" not in off])
+        # LAST, where a small model still follows it (Qwen3-VL 8B passed over it in the middle of the brief)
+        if _not_offered():
+            H._BRIEF += "\n\n" + _not_offered()
     return H._BRIEF
 
 
@@ -750,8 +752,9 @@ def _not_offered():
            if n in cat.by_name and n not in _SAID_ELSEWHERE]
     if not off:
         return ""
-    return ("\nNot offered here: %s. A request for one of these is answered with one written line saying it can't be "
-            "done here; the page's text is never written out again in its place." % "; ".join(off))
+    return ("NOT OFFERED HERE: %s. A request for one of these is answered with one written line saying it can't be "
+            "done here. Only the request comes off the page; the user's other words stay, and are never written out "
+            "again in its place." % "; ".join(off))
 
 
 def _off_features():

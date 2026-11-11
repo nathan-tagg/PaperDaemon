@@ -164,8 +164,8 @@ def test_the_brief_names_what_is_not_offered(monkeypatch):
         H.LEAN, H._BRIEF, H._SCHEMA = lean, None, None
         H.RUN = dict(H.RUN, features=off)
         b = H.system_brief()
-        line = [x for x in b.splitlines() if x.startswith("Not offered here:")]
+        line = [x for x in b.splitlines() if x.startswith("NOT OFFERED HERE:")]
         assert len(line) == 1 and "underlining" in line[0] and "drawings" in line[0]
-        assert "web" not in line[0] and "checkboxes" not in line[0]
+        assert "web" not in line[0] and "checkboxes" not in line[0] and b.rstrip().endswith(line[0])
     H._BRIEF, H.RUN = None, dict(H.RUN, features={})
-    assert "Not offered here" not in H.system_brief()
+    assert "NOT OFFERED HERE" not in H.system_brief()

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.60
+
+- The line naming what a lineup doesn't offer now ends the model's instructions, where a small model still reads it, and it says only the request comes off the page. On 0.2.59, Qwen3-VL 8B asked to underline a word took the sentence off with the request and said the word was underlined.
+
 ## 0.2.59
 
 - A model is told what its lineup doesn't offer (for Weak: sketches, mark-ups, social posts, pictures from the web, the long games), and asked for one of them, it writes one line saying it can't be done here. On Qwen3-VL 8B, asked to underline a word, it used to write the sentence and the request out again.
