@@ -36,6 +36,19 @@
     prompt: () => PD.t("help.search.prompt"),
   };
 
+  const HARNESS = {
+    title: "help.harness.title",
+    body: () => [
+      p("help.harness.intro"),
+      h3("slot.harness"), list("ul", ["help.harness.strong", "help.harness.medium", "help.harness.weak"]),
+      p("help.harness.mismatch"),
+      h3("slot.capabilities"), list("ul", ["help.harness.vision", "help.harness.web_search", "help.harness.image_generation"]),
+      p("help.harness.warning"),
+      h3("slot.own_harness"), p("help.harness.own"),
+    ],
+    prompt: null,
+  };
+
   /** The Help link, right-aligned above a start script box. kind: "text" | "image" | "search". */
   PD.scriptHelpLink = kind => '<button type="button" class="link-btn script-help" data-script-help="' + esc(kind) + '">' + esc(PD.t("common.help")) + "</button>";
 
@@ -64,9 +77,9 @@
   };
 
   function open(kind) {
-    const h = kind === "search" ? SEARCH : MODEL;
+    const h = kind === "search" ? SEARCH : kind === "harness" ? HARNESS : MODEL;
     const dlg = PD.sheet(PD.t(h.title), '<div class="script-help-body">' + h.body().join("") + "</div>" +
-      '<div class="actions"><button type="button" class="link-btn" data-v="ask">' + esc(PD.t("help.ask")) + "</button>" +
+      '<div class="actions">' + (h.prompt ? '<button type="button" class="link-btn" data-v="ask">' + esc(PD.t("help.ask")) + "</button>" : "") +
       '<button type="button" class="btn primary" data-v="close" autofocus>' + esc(PD.t("common.close")) + "</button></div>");
     dlg.classList.add("wide");
     dlg.addEventListener("click", async e => {

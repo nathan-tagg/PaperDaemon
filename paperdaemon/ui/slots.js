@@ -32,15 +32,28 @@
     return pr.id === "other" ? f.at : pr.at;
   };
 
+  // THE TEXT MODEL'S HARNESS IS ONE OF THREE BASES, by the model's strength (the slider), and its CAPABILITIES are what
+  // the model can do on its own (the checkboxes). A box left as the base has it is not saved: moving the slider then
+  // gives the new base's own values.
+  const BASES = [["weak-text", "weak"], ["default-text", "medium"], ["lean-default", "strong"]];
+  const CAPS = ["vision", "web_search", "image_generation"];
+  const LATER = ["image_generation"];                      // shown, and not yet something PaperDaemon can use
+  const capsOf = slot => {
+    const over = (slot && slot.overrides) || {}, out = {};
+    CAPS.forEach(c => { if (c in over) out[c] = !!over[c]; });
+    return out;
+  };
+
   /** A lineup's slot -> the form's state. */
   function formOf(role, slot) {
     slot = slot || {};
     const loc = slot.location || "", harness = slot.harness || "default-" + role;
-    if (role === "text" && slot.api === CLI_API) return { kind: "cli", provider: HOSTED[role][0].id, at: loc, model: "", harness };
-    if (!loc) return { kind: role === "image" ? "none" : "hosted", provider: HOSTED[role][0].id, at: "", model: slot.model || "", harness };
+    const caps = capsOf(slot);
+    if (role === "text" && slot.api === CLI_API) return { kind: "cli", provider: HOSTED[role][0].id, at: loc, model: "", harness, caps };
+    if (!loc) return { kind: role === "image" ? "none" : "hosted", provider: HOSTED[role][0].id, at: "", model: slot.model || "", harness, caps };
     const p = HOSTED[role].filter(h => h.at && loc.startsWith(h.at)).sort((a, b) => b.at.length - a.at.length)[0];   // (the longest address that fits)
-    if (p || !PD.isLocal(loc)) return { kind: "hosted", provider: p ? p.id : "other", at: loc, model: slot.model || "", harness };
-    return { kind: "local", provider: HOSTED[role][0].id, at: loc, model: slot.model || "", scriptText: slot.script_text || "", harness };
+    if (p || !PD.isLocal(loc)) return { kind: "hosted", provider: p ? p.id : "other", at: loc, model: slot.model || "", harness, caps };
+    return { kind: "local", provider: HOSTED[role][0].id, at: loc, model: slot.model || "", scriptText: slot.script_text || "", harness, caps };
   }
 
   function select(id, opts, value) {
@@ -48,22 +61,73 @@
       opts.map(([v, l]) => '<option value="' + esc(v) + '"' + (v === value ? " selected" : "") + ">" + esc(l) + "</option>").join("") + "</select></span>";
   }
 
-  /** The harness: a list of every harness of the kind that is offered, the default first. It always holds the one the
-      user picked; PaperDaemon never chooses one (no "automatic"). Under it, the picked harness's own description (its
-      file's `notes`): what it is for, what the model must be able to do, and what it costs. */
+  /** The image model's harness: a list of every harness of the kind that is offered, the default first. It always holds
+      the one the user picked; PaperDaemon never chooses one. Under it, the picked harness's own description. */
   /** A field's label, opened (the caller closes it after the field): its text and, to its right, a "?" with the
       help. Tied to the field by `for`, so the "?" inside it does not take the label's clicks. */
   const lab = (forId, key, help, cls) => '<label for="' + forId + '"' + (cls ? ' class="' + cls + '"' : "") + '><span class="lab">' +
     esc(PD.t(key)) + PD.helpTip(PD.t(help)) + "</span>";
 
   function harnessRow(p, role, f, harnesses) {
+    if (role === "text") return textHarness(p, f, harnesses);
     const list = (harnesses || []).filter(h => h.kind === role && h.offered !== false);   // (one that only holds what others share is not offered)
     const id = p + "-" + role + "-harness";
     return '<div class="grid2"><div class="field-col"><div class="label-row">' + lab(id, "slot.harness", "slot.harness.help") + "</label>" +
       '<button type="button" class="link-btn" data-act="addharness" data-kind="' + esc(role) + '">' + esc(PD.t("slot.add_harness")) + "</button></div>" +
       select(id, list.map(h => [h.id, h.name]), f.harness) +
       '<p class="harness-note">' + esc(((list.find(h => h.id === f.harness) || list[0] || {}).notes) || "") + "</p>" +
+      '<p class="harness-note">' + esc(PD.t("slot.image.instead")) + "</p>" +
       "</div><span></span></div>";
+  }
+
+  /** The base a harness is (or is built on): one of BASES' ids, else Medium's. */
+  function baseOf(id, harnesses) {
+    const by = new Map((harnesses || []).map(h => [h.id, h]));
+    for (let h = by.get(id), n = 0; h && n < 20; h = by.get(h.extends), n++) {
+      if (BASES.some(b => b[0] === h.id)) return h.id;
+    }
+    return "default-text";
+  }
+
+  /** What the text model can do on its own: the box as the user set it, else as its harness has it. */
+  const capValue = (f, c, harnesses) => {
+    if (LATER.includes(c)) return false;
+    if (f.caps && c in f.caps) return !!f.caps[c];
+    const h = (harnesses || []).find(x => x.id === f.harness);
+    return !!(h && h.fields && h.fields[c]);
+  };
+
+  /** The text model's Harness (a Weak / Medium / Strong slider, the base's description, and the user's own harness files
+      when there are any) and its Capabilities (checkboxes, and a line saying what the model can do). */
+  function textHarness(p, f, harnesses) {
+    const id = p + "-text";
+    const list = (harnesses || []).filter(h => h.kind === "text" && h.offered !== false);
+    const own = list.filter(h => h.source === "user");
+    const mine = own.find(h => h.id === f.harness);
+    const base = baseOf(f.harness, list);
+    const at = Math.max(0, BASES.findIndex(b => b[0] === base));
+    const helpLink = '<button type="button" class="link-btn" data-script-help="harness">' + esc(PD.t("common.help")) + "</button>";
+    let out = '<div class="harness-box"><div class="label-row">' + lab(id + "-strength", "slot.harness", "slot.harness.help") + "</label>" +
+      '<span class="label-links"><button type="button" class="link-btn" data-act="addharness" data-kind="text">' + esc(PD.t("slot.add_harness")) + "</button>" +
+      helpLink + "</span></div>" +
+      '<input type="range" class="strength" id="' + id + '-strength" min="0" max="2" step="1" value="' + at + '"' +
+      ' aria-valuetext="' + esc(PD.t("slot.base." + BASES[at][1])) + '">' +
+      '<div class="strength-ticks">' + BASES.map((b, i) => '<button type="button" class="tick' + (i === at ? " on" : "") + '" data-strength="' + i + '">' +
+        esc(PD.t("slot.base." + b[1])) + "</button>").join("") + "</div>" +
+      '<p class="harness-note">' + esc(mine ? (mine.notes || "") : PD.t("slot.base." + BASES[at][1] + ".about")) + "</p>";
+    if (own.length) {
+      out += '<label class="own-harness">' + esc(PD.t("slot.own_harness")) + " " +
+        select(id + "-own", [["", PD.t("slot.own_harness.none")]].concat(own.map(h => [h.id, h.name])), mine ? mine.id : "") + "</label>";
+    }
+    const on = CAPS.filter(c => capValue(f, c, list));
+    out += '<div class="label-row caps-head"><span class="lab">' + esc(PD.t("slot.capabilities")) + PD.helpTip(PD.t("slot.capabilities.help")) + "</span>" +
+      helpLink + "</div>" +
+      '<div class="caps">' + CAPS.map(c => '<label class="check-label"><input type="checkbox" id="' + id + "-cap-" + c + '"' +
+        (on.includes(c) ? " checked" : "") + (LATER.includes(c) ? " disabled" : "") + "> " + esc(PD.t("slot.cap." + c)) +
+        (LATER.includes(c) ? ' <span class="dim">(' + esc(PD.t("slot.cap.not_yet")) + ")</span>" : "") + "</label>").join("") + "</div>" +
+      '<p class="harness-note">' + esc(on.length ? PD.t("slot.can", { list: on.map(c => PD.t("slot.cap." + c)).join(", ") }) : PD.t("slot.can_none")) +
+      "</p>" + '<p class="harness-note">' + esc(PD.t("slot.cap.warning")) + "</p></div>";
+    return out;
   }
 
   /** The form for one slot. p: the id prefix; test: the test line's html (hosted only); lineup: the lineup's name, for
@@ -106,6 +170,22 @@
     }
     const h = v("-harness");
     if (h) f.harness = h;
+    if (role === "text") {
+      // the slider, or the user's own harness when one is picked: a new harness starts from its own capabilities
+      const st = $("#" + p + "-text-strength", root), ownEl = $("#" + p + "-text-own", root);
+      if (st) {
+        const picked = ownEl && ownEl.value ? ownEl.value : BASES[Math.max(0, Math.min(2, Number(st.value) || 0))][0];
+        if (picked !== f.harness) { f.harness = picked; f.caps = {}; return f; }
+      }
+      CAPS.forEach(c => {
+        const el = $("#" + p + "-text-cap-" + c, root);
+        if (!el || el.disabled) return;
+        f.caps = f.caps || {};
+        const h0 = (PD.slots.harnesses || []).find(x => x.id === f.harness);
+        const dflt = !!(h0 && h0.fields && h0.fields[c]);
+        if (el.checked === dflt) delete f.caps[c]; else f.caps[c] = el.checked;
+      });
+    }
     const st = $("#" + p + "-" + role + "-scripttext", root);
     if (st) f.scriptText = st.value;
     return f;
@@ -114,6 +194,12 @@
   /** f -> the lineup's slot (base: the slot as saved). */
   function slotOf(role, f, base) {
     const o = Object.assign({}, base || {}, { harness: f.harness || "default-" + role });
+    if (role === "text") {
+      // the capabilities the user set apart from the harness's own; the rest come from the harness
+      const over = Object.assign({}, (base && base.overrides) || {});
+      CAPS.forEach(c => { delete over[c]; });
+      o.overrides = Object.assign(over, f.caps || {});
+    }
     if (f.kind === "none") return Object.assign(o, { location: "", script: "", script_text: "", model: "" });
     if (f.kind === "local") return Object.assign(o, { location: f.at, script: "", script_text: (f.scriptText || "").replace(/\r?\n/g, "\r\n"), api: LOCAL_API[role], model: f.model || "" });
     if (f.kind === "cli") return Object.assign(o, { location: f.at || "", script: "", script_text: "", api: CLI_API, model: "" });
@@ -148,7 +234,8 @@
   /** The Network tab: the lineup's web search (none, a search service with an API key, or a search server hosted
       locally). */
   function searchHtml(p, f, test) {
-    return '<h3 class="tab-h">' + esc(PD.t("net.search")) + "</h3>" + searchForm(p, f, test);
+    return '<h3 class="tab-h">' + esc(PD.t("net.search")) + "</h3>" + '<p class="tab-note">' + esc(PD.t("net.instead")) + "</p>" +
+      searchForm(p, f, test);
   }
 
   function searchForm(p, f, test) {
@@ -266,6 +353,16 @@
   function focusGrip(root, i) { const g = root.querySelector('.grip[data-i="' + i + '"]'); if (g) g.focus(); }
 
   const testHtml = t => t === "testing" ? mk("spin") + esc(PD.t("common.testing")) : t === "ok" ? mk("ok") + esc(PD.t("common.answering")) : t ? mk("fail") + esc(t) : "";
+
+  /** A tick under the slider moves it there. */
+  document.addEventListener("click", e => {
+    const t = e.target.closest && e.target.closest("[data-strength]");
+    if (!t) return;
+    const r = t.closest(".harness-box") && t.closest(".harness-box").querySelector("input.strength");
+    if (!r || String(r.value) === t.dataset.strength) return;
+    r.value = t.dataset.strength;
+    r.dispatchEvent(new Event("change", { bubbles: true }));
+  });
 
   PD.slots = { harnesses: [], tagsOf, tagsHtml, readTags, tagsOut, wireTagSort, focusGrip, formOf, html, read, slotOf, saveKeys, searchOf, searchHtml, readSearch, searchOut, testHtml };
 })();

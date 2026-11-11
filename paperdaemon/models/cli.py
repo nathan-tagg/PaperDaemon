@@ -23,6 +23,8 @@ here knows any one program. What is particular to a program is DATA, the `cli` f
                       tell the user when it is not} -- without it, a program that is found is ready
     sends_to          the host the program sends a page to, for the notices; without it the page stays here
     answer_rule       one sentence on how this program wants a structured answer given
+    web_search        the program's name for its own web search tool: {web_search} is that name when the model
+                      searches the web itself (the lineup has no search and the model can), and nothing otherwise
 
     {system}  {system_file}       the system text, or a file holding it
     {prompt}  {prompt_file}       the conversation as plain text, or a file holding it
@@ -316,7 +318,8 @@ class CommandLine(Adapter):
                         f.write(content)
                 return made[key]
             return give
-        values = {"system": system, "prompt": prompt, "schema": schema}
+        values = {"system": system, "prompt": prompt, "schema": schema,
+                  "web_search": str(cli.get("web_search") or "") if caps.get("web_search") else ""}
         values.update({k: file_of(k) for k in FILES})
         for k in used:
             if k.startswith("request."):

@@ -112,7 +112,12 @@ class Harness:
 
 class TextHarness(Harness, TextProtocols):
     kind = "text"
-    CAPABILITIES = ("vision", "forced_tool", "max_output")
+    # what the model can do: see a picture of the page, be made to answer with a tool call, the most it may write, and
+    # what it can do on its own -- search the web, make an image -- which counts only when the lineup has no search or
+    # no image model of its own
+    CAPABILITIES = ("vision", "forced_tool", "max_output", "web_search", "image_generation")
+    web_search = False
+    image_generation = False
     FIELDS = CAPABILITIES + ("brief_additions", "request", "features", "assists", "inspect_tokens", "cli", "lean")
     request = {}
     cli = {}                            # how a command-line program is spoken to (models/cli.py), when it is one

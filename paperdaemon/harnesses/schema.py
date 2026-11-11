@@ -94,7 +94,7 @@ def _assist(a):
 def _cli(v):
     """How a command-line program is spoken to (models/cli.py reads it)."""
     if not isinstance(v, dict) or set(v) - {"program", "places", "args", "input", "output", "ready", "sends_to",
-                                             "answer_rule"}:
+                                             "answer_rule", "web_search"}:
         return False
     texts = lambda x: isinstance(x, list) and all(isinstance(t, str) for t in x)
     arg = lambda a: (isinstance(a, str) or texts(a)
@@ -109,7 +109,8 @@ def _cli(v):
             and out.get("format", "text") in ("text", "json", "json-lines") and isinstance(out.get("where", {}), dict)
             and isinstance(out.get("usage", {}), dict)
             and isinstance(chk, dict) and set(chk) <= {"args", "json", "else"} and texts(chk.get("args", []))
-            and isinstance(v.get("sends_to", ""), str) and isinstance(v.get("answer_rule", ""), str))
+            and isinstance(v.get("sends_to", ""), str) and isinstance(v.get("answer_rule", ""), str)
+            and isinstance(v.get("web_search", ""), str))
 
 
 RULES = {
@@ -117,7 +118,8 @@ RULES = {
                   "\"args\": [text, [a group left out when it has nothing to give], {\"each_picture\": [...]}], "
                   "\"input\": text or {\"json\", \"text\", \"picture\"}, \"output\": {\"format\": text, json or json-lines, "
                   "\"where\", \"text\", \"answer\", \"error\", \"error_text\", \"usage\"}, \"ready\": {\"args\", \"json\", "
-                  "\"else\"}, \"sends_to\": a host, \"answer_rule\": a sentence} (see the guide)"),
+                  "\"else\"}, \"sends_to\": a host, \"answer_rule\": a sentence, \"web_search\": the program's name for its own "
+                  "web search tool} (see the guide)"),
     "assists": (lambda v: isinstance(v, list) and all(_assist(a) for a in v),
                 "a list of assists, each {\"decision\": one the features declare, \"reads\": one of step.what, step.words, "
                 "step.source, step.search, item.text, \"keywords\": [words] or \"ends_with\": text, optionally \"when\": "
@@ -125,6 +127,8 @@ RULES = {
     "lean": (lambda v: isinstance(v, bool), "true or false"),
     "inspect_tokens": (lambda v: _posint(v) and int(v) <= 200000, "a whole number of tokens above 0"),
     "vision": (lambda v: isinstance(v, bool), "true or false"),
+    "web_search": (lambda v: isinstance(v, bool), "true or false"),
+    "image_generation": (lambda v: isinstance(v, bool), "true or false"),
     "forced_tool": (lambda v: isinstance(v, bool), "true or false"),
     "max_output": (lambda v: v is None or _posint(v), "a whole number above 0, or empty"),
     "brief_additions": (lambda v: isinstance(v, str) and len(v) <= 20000, "text of at most 20,000 characters"),

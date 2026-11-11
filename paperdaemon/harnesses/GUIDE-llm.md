@@ -3,12 +3,19 @@
 An LLM harness tells PaperDaemon how to work with one text model on one server: what the model is shown and
 told, how its replies are read, how it is asked small questions about a page (where something is, what a
 picture says), and what it can do. PaperDaemon reads every harness in this folder, checks it, and lists every
-one that passes in the Harness box of the Text / Reasoning tab. One that fails is listed with what is wrong with it.
+one that passes under Your harness on the Text / Reasoning tab. One that fails is listed with what is wrong with it.
 
-PaperDaemon's own harnesses are part of the app, not kept here: Default (designed for Qwen 3 models running in
-llama.cpp, and right for most models) and Lean Default (stronger models only). A harness here builds on one of them (`extends`, or Default
-when it names none) and changes only what it names. A lineup uses the harness you pick in its Harness box, Default
-until you pick another: PaperDaemon never chooses one from a model's name.
+PaperDaemon's own harnesses are part of the app, not kept here. They are the three stops of the Harness slider:
+
+| Stop | `id` | For |
+| --- | --- | --- |
+| Weak | `weak-text` | Small models, such as 8B models. Full instructions, one call per step, short answers; sketches, social posts, pictures from the web and the long games are off. |
+| Medium | `default-text` | Mid-size models, such as 27B models and Gemini Flash. Full instructions, one call per step. Built for Qwen 3 models running in llama.cpp. |
+| Strong | `lean-default` | The strongest models, such as Claude. Short instructions; most jobs finish in one call. |
+
+A harness here builds on one of them (`extends`, or Medium when it names none) and changes only what it names. A
+lineup uses the stop on its slider, or the file picked under Your harness. PaperDaemon never chooses one from a
+model's name.
 
 How the model thinks and how much context it has are the server's own settings, in its start script, never a
 harness's.
@@ -46,7 +53,9 @@ pictures) its own way.
 | `id` | Its name in the settings. Optional: the file name without `.json`. Must not be taken. |
 | `name` | What the Harness box shows: the server, then the model. Optional: the `id`. |
 | `extends` | The harness it builds on: one of PaperDaemon's, or another here. Optional: Default. |
-| `vision` | `true` when the model can see a page picture. |
+| `vision` | `true` when the model can see a page picture. The Vision box starts from it. |
+| `web_search` | `true` when the model can search the web on its own. The Web search box starts from it. It is used only when the lineup's Network tab has no search. Optional: `false`. |
+| `image_generation` | `true` when the model can make pictures on its own. The Image generation box starts from it. PaperDaemon can't use it yet. Optional: `false`. |
 | `forced_tool` | `true` when the server can force the model to answer with a tool call. |
 | `max_output` | The most tokens one answer may have, or `null` for the server's own limit. |
 | `brief_additions` | Text added to the instructions PaperDaemon gives the model. |
@@ -55,7 +64,7 @@ pictures) its own way.
 | `inspect_tokens` | How many tokens the model may spend looking at the page (zooming in, reading its history) before it decides. Optional: 12000. |
 | `assists` | Keyword assists for a model that needs help with one decision (see below). Optional: none. |
 | `cli` | How a command-line program is spoken to, when the model's source is a command line (see below). Optional: none. |
-| `lean` | `true` for a model strong enough to do a whole job from one look at the page, and dear to call (see below). Optional: `false`. |
+| `lean` | `true` for a model strong enough to do a whole job in one call (see below). Optional: `false`. |
 | `offered` | `false` for a harness that only holds what others share, such as a program's `cli`: it is not listed in the Harness box. Optional: `true`. |
 
 A model that sees pictures and is never asked to draw:
@@ -78,12 +87,11 @@ in a file written for an earlier version are read and no longer used: nothing pi
 
 ### The lean way
 
-PaperDaemon's own "Lean Default (stronger models only)" has `lean: true`; pick it for any strong model, or extend it
-(`"extends": "lean-default"`) when one needs something of its own. A lean
+Strong has `lean: true`; extend it (`"extends": "lean-default"`) when a strong model needs something of its own. A lean
 lineup is worked with far fewer tokens: a short job description; each turn sent only the calls it may make, not the
 whole tool list; a page of typed text sent as its text, with no picture; and a job's words or sketch given in the
 plan itself, so most jobs are one call. A sketch is not shown back to the model for a fix, which would be a call more. Every rule PaperDaemon enforces is checked all the same. A weaker model on a
-lean harness plans badly: leave those on Default.
+lean harness plans badly: leave those on Medium or Weak.
 
 ### A command-line program
 
@@ -104,6 +112,7 @@ more than that gets a harness with a `cli` field, which says how it is spoken to
 | `ready` | `{"args": [...], "json": "a.path", "else": "what to tell the user"}`: a run of the program that says whether it is ready (signed in). Optional: a program that is found is ready. |
 | `sends_to` | The host the program sends a page to, for the notice that pages leave this computer. Optional: they stay here. |
 | `answer_rule` | One sentence on how this program wants a structured answer given. Optional. |
+| `web_search` | The program's name for its own web search tool. When the model searches the web itself (its Web search box is ticked and the Network tab has no search), `{web_search}` in `args` is that name; otherwise it is empty. Optional. |
 
 Placeholders: `{system}` or `{system_file}` (the system text, or a file holding it); `{prompt}` or
 `{prompt_file}` (the conversation as plain text); `{schema}` or `{schema_file}` (the tools as one JSON schema for the

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.55
+
+- The Harness box for a text model is now a slider: Weak, Medium, Strong. Strong is for the strongest models such as Claude, Medium for 27B models and Gemini Flash, and Weak is new, for small models. The base's description shows under the slider. A harness file of your own is under Your harness.
+- Under it are Capabilities: Vision, Web search, Image generation. They start from the harness and you can change them. A line says what the model can do, with a warning that ticking something it can't do will cause failed or wrong jobs. Help next to each label opens a page explaining both.
+- When a lineup's Network tab has no search and its model can search the web, the model looks facts up itself. PaperDaemon turns on the `claude` program's own search and the Anthropic API's. With neither, the model is told facts can't be looked up. The Image and Network tabs say that what they set is used instead of the model's own.
+- Image generation can't be ticked yet: PaperDaemon can't take a picture from a text model's answer.
+
 ## 0.2.54
 
 - PaperDaemon can make a notebook on the tablet itself, not only in the False Mirror, when "Edit the Mirror" is on in Settings. The notebook gets its name, folder and tags and is sent to the tablet at once. There is no button for it in the window yet.

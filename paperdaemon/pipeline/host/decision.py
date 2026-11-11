@@ -730,6 +730,8 @@ def system_brief():
             H._BRIEF += "\n\n" + extra
         off = H._off_steps_and_tools()[0]
         H._BRIEF = H._BRIEF.replace("<<STEPS>>", ST.brief_list([k for k in ST.KINDS if k not in off], lean=H.LEAN))
+        where = "search" if "search" not in off else "own" if H.RUN.get("searches_itself") else "none"
+        H._BRIEF = H._BRIEF.replace("<<FACTS>>", (H.FACTS_LEAN if H.LEAN else H.FACTS)[where])
     return H._BRIEF
 
 

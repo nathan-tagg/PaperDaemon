@@ -701,11 +701,7 @@ stale_work and made again. Never a second copy.
 WORDS. answer(answers, lines, rulings) when the whole job is words; a write step takes
 write_paragraph(lines). Answer at the length the question deserves; the page scrolls. The user's own typed
 list asked to be a checklist becomes one where it is: a checkbox step on its paragraphs. A new checklist asked
-for is lines that start "- [ ] ", each drawn with a box to tick. Facts about
-the world -- places, people, numbers, dates, distances, times, news -- are looked up: a search step,
-then a write step, also when they sit inside advice. Write the facts the results give; one they do
-not give, say you could not find -- never fill it in from memory. answer() is for what needs no
-looking up.
+for is lines that start "- [ ] ", each drawn with a box to tick. <<FACTS>>
 
 <<CALENDAR>>
 The host fills in the forecast, holidays and sunrise and sunset. The user's dates go in as events;
@@ -768,9 +764,7 @@ ruled stale_work and made again. Never a second copy.
 WORDS, in answer() and in a write step's lines: one string a paragraph, at the length the question deserves;
 the host wraps them and the page scrolls. "" is a blank line: leave several where the user will write by
 hand. Lines that start "- [ ] " are drawn with a box to tick; the user's own typed list asked to be a
-checklist is a checkbox step instead. Facts about the world -- places, people, numbers, dates, news -- are
-looked up: a search step, then a write step WITHOUT lines; you are asked for its words with the results,
-and what the results do not give you say you could not find, never from memory.
+checklist is a checkbox step instead. <<FACTS>>
 
 <<CALENDAR>>
 The host fills in a calendar's forecast, holidays, sunrise and sunset; the user's dates go in its spec as
@@ -780,6 +774,30 @@ A SKETCH's parts need only agree with each other: the host fits the figure to it
 drawing on the page (near "mark:N", side "on") is drawn in the page's own numbers and stays where you draw
 it. COORDINATES are page units: x 0 at the page's center, y 0 at its top and growing down; each page states
 its size."""
+
+
+# LOOKING FACTS UP, by where the lineup's search comes from: its own search (a search step), the model's own web
+# search (the lineup has none, and the model can), or none at all
+FACTS = {
+    "search": ("Facts about the world -- places, people, numbers, dates, distances, times, news -- are looked up: a "
+               "search step, then a write step, also when they sit inside advice. Write the facts the results give; "
+               "one they do not give, say you could not find -- never fill it in from memory. answer() is for what "
+               "needs no looking up."),
+    "own": ("Facts about the world -- places, people, numbers, dates, distances, times, news -- are looked up with "
+            "your own web search before you write them, also when they sit inside advice. Write the facts the search "
+            "gives; one it does not give, say you could not find -- never fill it in from memory."),
+    "none": ("Facts about the world -- places, people, numbers, dates, distances, times, news -- cannot be looked up "
+             "here. Say so, and never fill them in from memory."),
+}
+FACTS_LEAN = {
+    "search": ("Facts about the world -- places, people, numbers, dates, news -- are looked up: a search step, then a "
+               "write step WITHOUT lines; you are asked for its words with the results, and what the results do not "
+               "give you say you could not find, never from memory."),
+    "own": ("Facts about the world -- places, people, numbers, dates, news -- are looked up with your own web search "
+            "before you write them; what it does not give you say you could not find, never from memory."),
+    "none": ("Facts about the world -- places, people, numbers, dates, news -- cannot be looked up here. Say so, and "
+             "never fill them in from memory."),
+}
 
 
 _BRIEF = None

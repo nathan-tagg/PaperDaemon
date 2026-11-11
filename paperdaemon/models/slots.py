@@ -103,6 +103,30 @@ def caps(role, s=None, m=None):
     return {k: v["value"] for k, v in capabilities(role, s, m).items()}
 
 
+def has_search(lu):
+    """The lineup has a search of its own: a search service with its provider, or a local search server."""
+    sr = (lu or {}).get("search") or {}
+    return bool(sr.get("url") if sr.get("kind") == "local" else sr.get("provider") if sr.get("kind") == "api" else False)
+
+
+def searches_itself(s=None, lu=None):
+    """The text model searches the web on its own: it can, the lineup has no search of its own, and the internet is
+    allowed. Its own search never stands in for the lineup's."""
+    from .. import settings as S_
+    s = s or S_.load()
+    lu = lu or S_.active(s)
+    return bool(caps("text", s, lu["text"]).get("web_search") and not has_search(lu)
+                and (s.get("network") or {}).get("allowed") is not False)
+
+
+def call_caps(s=None, lu=None):
+    """The capabilities a model call is made with: web_search only when the model searches the web itself."""
+    from .. import settings as S_
+    s = s or S_.load()
+    lu = lu or S_.active(s)
+    return dict(caps("text", s, lu["text"]), web_search=searches_itself(s, lu))
+
+
 def harness(role, s=None, m=None):
     """An instance of the slot's harness, for its hooks (tune, prompt)."""
     return pick(role, s, m)[0]()

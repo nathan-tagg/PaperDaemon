@@ -268,6 +268,10 @@ class AnthropicChat(Adapter):
             # forcing a tool is not allowed together with thinking
             forced = force_tool and caps.get("forced_tool") and not thinking
             body["tool_choice"] = {"type": "any"} if forced else {"type": "auto"}
+        if caps.get("web_search"):
+            # THE MODEL SEARCHES THE WEB ITSELF (the lineup has no search, and the model can): Anthropic's own search
+            # tool, run on Anthropic's side within the call
+            body.setdefault("tools", []).append({"type": "web_search_20260209", "name": "web_search"})
         if temperature is not None and not thinking:
             body["temperature"] = float(temperature)
         if harness is not None:

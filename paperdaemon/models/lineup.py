@@ -52,8 +52,7 @@ def facts(s=None, lineup=None):
                 off.setdefault(f.name, "this harness does not do %s" % f.summary)
     if "pictures" in provides and image is None:
         image, workflows = ["generate"], []
-    has_search = bool(search.get("url") if search.get("kind") == "local"
-                      else search.get("provider") if search.get("kind") == "api" else False)
+    has_search = slots.has_search(lu)
     return {"text": text, "image": image, "workflows": workflows or [],
             "search": has_search or "search" in provides,
             "content": _content(), "settings": filled, "off": off,

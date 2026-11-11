@@ -524,6 +524,17 @@ textarea.field { height: auto; padding: 8px 10px; }
 .tab-note { color: var(--ink-2); font-size: 14px; line-height: 20px; margin: 0 0 var(--s4); }
 .harness-note { color: var(--ink-2); font-size: 14px; line-height: 20px; margin: var(--s2) 0 0; white-space: pre-line; }   /* what the picked harness is for */
 .harness-note:empty { display: none; }
+/* the text model's Harness slider and its Capabilities: as wide as the boxes beside them */
+.harness-box { display: grid; gap: var(--s2); max-width: 540px; margin-top: var(--s4); color: var(--ink-2); }
+.label-links { display: inline-flex; gap: var(--s4); }
+input.strength { width: 100%; margin: var(--s1) 0 0; accent-color: var(--mark); cursor: pointer; }
+.strength-ticks { display: flex; justify-content: space-between; margin-top: -2px; }
+.strength-ticks .tick { border: 0; padding: 0; background: none; font: inherit; font-size: 14px; color: var(--ink-3); cursor: pointer; }
+.strength-ticks .tick.on { color: var(--ink); }
+.own-harness { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s2); }
+.own-harness .select, .own-harness .field { flex: 1; width: 100%; }
+.caps-head { margin-top: var(--s4); }
+.caps { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); }
 .tag-card textarea, .custom-tag.tag-card textarea { min-height: 96px; }
 /* a picture still coming from the engine: a spinner, never a broken image (PD.loadImage) */
 .img-wait { position: relative; }

@@ -2543,7 +2543,7 @@ async def host_llm(key: str, rest: str, request: Request):
     try:
         d = json.loads(body)
         if isinstance(d, dict):
-            d = slots.harness("text", s).tune(d, slots.caps("text", s))
+            d = slots.harness("text", s).tune(d, slots.call_caps(s))
             body = json.dumps(d).encode()
     except (ValueError, TypeError):
         pass
@@ -2556,7 +2556,7 @@ async def host_llm(key: str, rest: str, request: Request):
         try:
             req = adapters.from_openai(json.loads(body))
             reply = await run_in_threadpool(lambda: adapters.for_slot("text", s).chat(
-                caps=slots.caps("text", s), harness=slots.harness("text", s), **req))
+                caps=slots.call_caps(s), harness=slots.harness("text", s), **req))
         except Exception as ex:
             return JSONResponse({"error": {"message": str(ex)[:400]}}, status_code=502)
         finally:

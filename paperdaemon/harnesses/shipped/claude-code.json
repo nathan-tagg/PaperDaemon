@@ -7,7 +7,7 @@
   ],
   "extends": "default-text",
   "offered": false,
-  "notes": "How the program is spoken to when a text model's source is the command line and the command is `claude`. It is not a harness to pick: it holds what every lineup that runs this program shares. Each request is one run with none of the program's own tools, settings, hooks or connected services and no session kept: the system text from a file, the conversation and its pictures on the input as one JSON message, the answer read from the last result line the program prints. The calls come back as one JSON object in the answer's words, which PaperDaemon checks itself: asked to check them against a schema, the program makes a second request for every answer and the tokens double. The model and the effort are the command's own arguments, typed by you. The program is run as installed and signed in by you; where it sends a page is its own business with its maker.",
+  "notes": "How the program is spoken to when a text model's source is the command line and the command is `claude`. It is not a harness to pick: it holds what every lineup that runs this program shares. Each request is one run with none of the program's own tools (but its web search, when the model searches the web itself), settings, hooks or connected services and no session kept: the system text from a file, the conversation and its pictures on the input as one JSON message, the answer read from the last result line the program prints. The calls come back as one JSON object in the answer's words, which PaperDaemon checks itself: asked to check them against a schema, the program makes a second request for every answer and the tokens double. The model and the effort are the command's own arguments, typed by you. The program is run as installed and signed in by you; where it sends a page is its own business with its maker.",
   "vision": true,
   "forced_tool": true,
   "cli": {
@@ -31,7 +31,11 @@
     "args": [
       "-p",
       "--tools",
-      "",
+      "{web_search}",
+      [
+        "--allowedTools",
+        "{web_search}"
+      ],
       "--strict-mcp-config",
       "--setting-sources",
       "",
@@ -84,6 +88,7 @@
         "output": "usage.output_tokens",
         "cached": "usage.cache_read_input_tokens"
       }
-    }
+    },
+    "web_search": "WebSearch"
   }
 }

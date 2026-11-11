@@ -68,7 +68,7 @@ def test_nothing_chooses_a_harness_any_more():
         assert slots.pick("text", None, dict(settings.slot_defaults("text"), location="http://127.0.0.1:9000"))[0] is DefaultText
     finally:
         slots.report_models("text", [])
-    assert [h.name for h in harnesses.for_kind("text")][:2] == ["Default", "Lean Default (stronger models only)"]
+    assert [h.name for h in harnesses.for_kind("text")][:3] == ["Medium", "Strong", "Weak"]
     assert harnesses.for_kind("image")[0].name == "Default"
     for gone in ("claude-opus-5.5", "claude-sonnet-5.5", "claude-haiku-5.5"):
         assert harnesses.get(gone) is None
@@ -80,7 +80,7 @@ def test_model_harnesses_override_only_what_differs():
     assert DefaultText.vision is True and DefaultText.forced_tool is True
     assert LeanDefault.vision and LeanDefault.forced_tool and LeanDefault.extends == "default-text"
     assert set(json.load(open(os.path.join(os.path.dirname(harnesses.__file__), "shipped", "lean-default.json"),
-                              encoding="utf-8"))) == {"id", "name", "server", "models", "extends", "notes", "lean"}
+                              encoding="utf-8"))) == {"id", "name", "server", "models", "extends", "notes", "lean", "web_search"}
 
 
 def test_the_default_says_what_it_was_designed_for_and_the_harnesses_folded_into_it_name_it():
@@ -223,7 +223,7 @@ def test_capabilities_resolve_in_layers():
 def test_the_harness_is_the_user_s_pick():
     s = _s(model="lean-default", harness="default-text")
     assert slots.pick("text", s)[0] is DefaultText
-    assert slots.describe("text", s)["harness"] == {"id": "default-text", "name": "Default"}
+    assert slots.describe("text", s)["harness"] == {"id": "default-text", "name": "Medium"}
 
 
 def test_the_shipped_lineups_pick_their_harnesses():
@@ -294,7 +294,7 @@ def test_the_shipped_example_harnesses_are_valid_and_not_active():
 def test_shipped_harnesses_are_data_loaded_by_the_users_loader():
     folder = os.path.join(os.path.dirname(harnesses.__file__), "shipped")
     assert sorted(os.listdir(folder)) == ["claude-code.json", "default-image.json", "default-text.json",
-                                          "flux.2-klein-9b.json", "lean-default.json",
+                                          "flux.2-klein-9b.json", "lean-default.json", "weak-text.json",
                                           "z-image-turbo.json"]
     assert all(p.source == "shipped" and p.file for p in harnesses.BUILT_IN)
     assert not [n for n in os.listdir(os.path.dirname(harnesses.__file__)) if n.endswith(".py")
@@ -367,7 +367,7 @@ def test_every_harness_file_says_its_server_and_models():
     for p in harnesses.BUILT_IN:                                     # the shipped ones say theirs
         assert p.server and p.models
     named = {p.id: p.name for p in harnesses.SHIPPED}
-    assert named["lean-default"] == "Lean Default (stronger models only)"
+    assert named["lean-default"] == "Strong"
     _user_harness("mine.json", {"extends": "lean-default"})
     mine = harnesses.get("mine")
     assert mine.server == "a test server" and mine.models == ("a test model",)
@@ -382,8 +382,7 @@ def test_every_harness_to_pick_describes_itself_for_the_lineup_screen():
             said = harnesses.describe(h)["notes"]
             assert len(said) > 80 and said == h.notes, h.id          # the file's own words, as the API lists them
     d, lean = DefaultText.notes, LeanDefault.notes
-    assert "Requires a model that can see images and can be forced to call a tool" in d and "fail jobs" in d
-    assert "Lean Default uses far fewer tokens" in d
-    assert "Weaker models will skip work or plan badly; use Default for them." in lean
+    assert "Full instructions, and each step of a job is its own call." in d
+    assert "most jobs finish in one call, so it uses the fewest tokens" in lean and "A weaker model will skip work" in lean
     assert "guess" not in (d + lean + Flux2Klein9B.notes + ZImageTurbo.notes + DefaultImage.notes).lower()
     assert "refused" not in Flux2Klein9B.notes                     # (it spoke of a hint a guess refused; nothing guesses)

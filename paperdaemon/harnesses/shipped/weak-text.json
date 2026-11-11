@@ -1,0 +1,24 @@
+{
+  "id": "weak-text",
+  "name": "Weak",
+  "server": "llama.cpp (llama-server), and any other OpenAI- or Anthropic-compatible server",
+  "models": [
+    "Qwen3-VL 8B",
+    "Other small models"
+  ],
+  "extends": "default-text",
+  "notes": "For small models, such as 8B models. Full instructions, short answers, one call per step, and the harder jobs left out: sketches, social posts, pictures from the web, and the long games.",
+  "max_output": 4096,
+  "inspect_tokens": 4000,
+  "brief_additions": "Keep every reply short: a few sentences, unless the page asks for more.",
+  "features": {
+    "off": [
+      "draw",
+      "posts",
+      "web_picture",
+      "adventure",
+      "messages",
+      "concord"
+    ]
+  }
+}

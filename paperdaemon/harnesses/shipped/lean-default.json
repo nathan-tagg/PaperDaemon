@@ -1,11 +1,13 @@
 {
   "id": "lean-default",
-  "name": "Lean Default (stronger models only)",
+  "name": "Strong",
   "server": "Any OpenAI- or Anthropic-compatible server, or a command line",
   "models": [
-    "Any model strong enough to do a whole job from one look at the page"
+    "Claude models",
+    "Other models as strong"
   ],
   "extends": "default-text",
-  "notes": "Built for strong paid models, such as the Claude, GPT and Gemini Pro models.\nRequires a model that can see images, can be forced to call a tool, and can plan a whole job in one call. Weaker models will skip work or plan badly; use Default for them.\nSends short instructions and only the tools each call needs. Most jobs finish in one call.",
-  "lean": true
+  "notes": "For the strongest models, such as Claude. Short instructions, and most jobs finish in one call, so it uses the fewest tokens. A weaker model will skip work or plan badly.",
+  "lean": true,
+  "web_search": true
 }

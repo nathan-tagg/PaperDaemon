@@ -1,17 +1,20 @@
 {
   "id": "default-text",
-  "name": "Default",
+  "name": "Medium",
   "server": "llama.cpp (llama-server), and any other OpenAI- or Anthropic-compatible server",
   "models": [
     "Qwen 3.6 27B",
     "Qwen 3.8 27B",
-    "Any model that sees the page and can be made to call a tool"
+    "Gemini 3.8 Flash",
+    "Other mid-size models"
   ],
   "kind": "text",
-  "notes": "Built for Qwen 3 models running in llama.cpp. Works with most models.\nRequires a model that can see images and can be forced to call a tool. Other models will misread pages or fail jobs.\nSends full instructions and every tool on each call, with one call per step. On a strong paid model, Lean Default uses far fewer tokens.",
+  "notes": "Built for Qwen 3 models running in llama.cpp. For mid-size models, such as 27B models and Gemini Flash. Full instructions, and each step of a job is its own call.",
   "vision": true,
   "forced_tool": true,
   "max_output": null,
   "brief_additions": "",
-  "request": {}
+  "request": {},
+  "web_search": false,
+  "image_generation": false
 }

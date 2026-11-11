@@ -156,7 +156,7 @@ def test_models_describe_the_active_lineup():
     c = client()
     d = c.get("/api/v1/models").json()
     assert d["lineup"] == "Qwen 3.8 + Klein"
-    assert d["text"]["harness"] == {"id": "default-text", "name": "Default"}
+    assert d["text"]["harness"] == {"id": "default-text", "name": "Medium"}
     assert d["text"]["capabilities"]["vision"]["value"] is True
     assert d["image"]["harness"]["name"] == "stable-diffusion.cpp - FLUX.2 Klein 9B"
     assert d["text"]["server"]["answering"] is False and d["text"]["server"]["started_by_paperdaemon"] is False

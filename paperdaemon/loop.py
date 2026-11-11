@@ -85,6 +85,7 @@ def harness_values(s=None, name=None):
             "text_location": lu["text"].get("location") or "",
             "model": str(lu["text"].get("model") or "PaperDaemon"),
             "brief_additions": getattr(p, "brief_additions", "") or "", "lean": bool(getattr(p, "lean", False)),
+            "searches_itself": slots.searches_itself(s, lu),
             "image": image}
 
 
