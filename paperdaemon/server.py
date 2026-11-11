@@ -1726,13 +1726,18 @@ def _doc_ok(u):
 
 @app.post(API + "/library/notebook")
 def post_library_notebook(body: dict = Body(default={})):
-    """A new notebook: {name, parent, template (a template's file, with an account signed in), cover: last | first}."""
+    """A new notebook: {name, parent, template (a template's file, with an account signed in), cover: last | first,
+    tags}. In the False Mirror, always; on the tablet's own library (the Mirror's engine) only with Mirror editing on,
+    and the notebook is sent to the tablet at once (the first of add-mirror-library-actions)."""
     from .remarkable import local
     template = str(body.get("template") or "Blank") if _signed_in() else "Blank"
     cover = "first" if body.get("cover") == "first" else "last"
     tags = [str(t) for t in body.get("tags") or [] if str(t).strip()][:20]
+    tablet = not paths.local_only()
+    if tablet and not _mirror_edit():
+        return _mirror_edit_off()
     return _local(lambda: {"id": local.new_notebook(str(body.get("name") or ""), str(body.get("parent") or ""),
-                                                    template, cover, tags)})
+                                                    template, cover, tags, tablet=tablet)})
 
 
 @app.post(API + "/library/quick-sheets")

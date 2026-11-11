@@ -2,6 +2,10 @@
 
 ## 1. The engine
 
+- [x] 1.0 The first of them, built ahead of the rest when the maintainer asked for notebooks made on his tablet
+      (11-11): POST /library/notebook on the Mirror's engine with Mirror editing on, the notebook in a folder, with
+      its tags, sent to the tablet at once (push_new_doc); refused with editing off
+
 - [ ] 1.1 The library's actions (notebook, folder, quick sheets, import, the selection's move, delete, tags and
       covers) answered by the Mirror's engine when Mirror editing is on, refused as now when it is off
 - [ ] 1.2 Each followed by its push: a new item with push_new_doc, a changed one with push_doc after the cloud

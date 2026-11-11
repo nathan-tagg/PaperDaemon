@@ -138,8 +138,9 @@ def test_the_false_mirror_through_the_engine():
         assert os.path.isdir(paths.false_mirror_dir()) and os.path.isdir(paths.false_mirror_state_dir())
         lib = c.get("/api/v1/fm/library").json()
         assert [x["name"] for x in lib] == ["Notebook"], lib
-        # the Mirror's own engine refuses the false mirror's edits
-        assert c.post("/api/v1/library/notebook", json={"name": "no"}).status_code == 404
+        # the Mirror's own engine refuses the false mirror's edits (a notebook, too, while Mirror editing is off)
+        assert c.post("/api/v1/library/notebook", json={"name": "no"}).status_code == 403
+        assert c.post("/api/v1/library/folder", json={"name": "no"}).status_code == 404
         folder = c.post("/api/v1/fm/library/folder", json={"name": "Recipes"}).json()["id"]
         doc = c.post("/api/v1/fm/library/notebook", json={"name": "Soup", "parent": folder}).json()["id"]
         assert c.post("/api/v1/fm/library/" + doc + "/pages", json={}).json() == {"page": 2}
@@ -758,3 +759,34 @@ def test_a_save_from_the_editor_keeps_what_paperdaemon_wrote_its_own():
     """)
     assert got["lines"] == [1, 129]                       # the answer stays PaperDaemon's, the new stroke the user's
     assert [p[0] for p in got["pics"]] == [135]
+
+
+def test_a_notebook_is_made_on_the_tablet_s_library_with_mirror_editing_on(monkeypatch):
+    """The first of the Mirror's library actions: a notebook in a folder of the tablet's own library, tagged, and sent
+    to the tablet at once (the cloud stood in for). Off, it is refused; a push that fails is said."""
+    import json, os
+    from fastapi.testclient import TestClient
+    from paperdaemon import paths, server
+    from paperdaemon.remarkable import local, sync
+    assert not paths.local_only()
+    c = TestClient(server.app)
+    c.headers["Authorization"] = "Bearer " + server.pairing_token()
+    sent = []
+    monkeypatch.setattr(sync, "push_new_doc", lambda doc, dry_run=True: (sent.append((doc, dry_run)), {"root_put": 200})[1])
+    r = c.post("/api/v1/library/notebook", json={"name": "Sonnet 5.5", "parent": "a-folder", "tags": ["Sonnet"]})
+    assert r.status_code == 403 and r.json()["reason"] == "off" and sent == []
+    monkeypatch.setattr(server, "_mirror_edit", lambda: True)
+    r = c.post("/api/v1/library/notebook", json={"name": "Sonnet 5.5", "parent": "a-folder", "tags": ["Sonnet"]})
+    assert r.status_code == 200, r.text
+    doc = r.json()["id"]
+    assert sent == [(doc, False)]                                       # up to the tablet, for real, at once
+    meta = json.load(open(os.path.join(local.M, doc + ".metadata"), encoding="utf-8"))
+    content = json.load(open(os.path.join(local.M, doc + ".content"), encoding="utf-8"))
+    assert meta["visibleName"] == "Sonnet 5.5" and meta["parent"] == "a-folder" and meta["type"] == "DocumentType"
+    assert [t["name"] for t in content["tags"]] == ["Sonnet"] and len(content["cPages"]["pages"]) == 1
+    assert os.path.getsize(os.path.join(local.M, doc, content["cPages"]["pages"][0]["id"] + ".rm")) > 0
+    monkeypatch.setattr(sync, "push_new_doc", lambda doc, dry_run=True: {"root_put": 412})
+    r = c.post("/api/v1/library/notebook", json={"name": "Haiku 5.5"})
+    assert r.status_code == 400 and "was not sent to the tablet" in r.json()["error"]
+    # every other edit of the library is still the false mirror's alone
+    assert c.post("/api/v1/library/folder", json={"name": "no"}).status_code == 404

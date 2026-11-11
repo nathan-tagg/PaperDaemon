@@ -106,16 +106,22 @@ def page_id(doc, page_no):
 
 # ---------------------------------------------------------------- notebooks, folders, pages
 
-def new_notebook(name, parent="", template="Blank", cover="last", tags=()):
+def new_notebook(name, parent="", template="Blank", cover="last", tags=(), tablet=False):
     """A notebook with one page, in the Paper Pro's frame, as the tablet makes one: its cover the page last visited
     (`cover` "last") or its first page ("first"), its page's `template` (the tablet's file name, "P Grid medium";
-    "Blank" for none). -> its id."""
-    _guard()
+    "Blank" for none). -> its id.
+
+    `tablet`: ON THE TABLET'S OWN LIBRARY (the Mirror; the caller has checked that Mirror editing is on). Its page is
+    one of the user's own tablet's, and the notebook is sent to the tablet at once, a document the cloud has never
+    seen; a push that does not go through is said, and the notebook goes up with the next sync."""
+    if not tablet:
+        _guard()
     from paperdaemon import studio
     doc = str(uuid.uuid4())
     template = str(template or "Blank").strip()[:120] or "Blank"
     studio._new_notebook(M, _pipeline(), doc, (name or "Notebook").strip() or "Notebook", parent, _now())
-    blank = studio._blank_page_bytes(_pipeline())          # the bundled Paper Pro page: no user library to copy
+    # the false mirror: the bundled Paper Pro page (no user library to copy); the tablet's: a page in its own frame
+    blank = studio._blank_page_bytes(_pipeline(), M if tablet else None)
     pid = str(uuid.uuid4())
     paths.write_atomic(os.path.join(M, doc, pid + ".rm"), blank)
     c = _content(doc)
@@ -127,7 +133,13 @@ def new_notebook(name, parent="", template="Blank", cover="last", tags=()):
     _save_content(doc, c)
     paths.write_atomic(os.path.join(M, doc + ".pagedata"), template + "\n")
     if tags:
-        set_tags(doc, tags)                          # the notebook's own tags, as New notebook was given them
+        _set_tags(doc, tags)                         # the notebook's own tags, as New notebook was given them
+    if tablet:
+        from . import sync
+        r = sync.push_new_doc(doc, dry_run=False) or {}
+        if r.get("root_put") != 200:
+            raise ValueError("the notebook is made here and was not sent to the tablet (%s); it goes up with the next "
+                             "sync" % str(r.get("error") or r.get("root_put") or "no answer")[:120])
     return doc
 
 
@@ -529,6 +541,10 @@ def delete(u):
 def set_tags(u, tags):
     """A folder's or a document's tags, as the tablet stores them."""
     _guard()
+    _set_tags(u, tags)
+
+
+def _set_tags(u, tags):
     p = os.path.join(M, u + ".content")
     c = _read(p) if os.path.exists(p) else {}
     was = {str(t.get("name") if isinstance(t, dict) else t): t for t in c.get("tags") or []}

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.54
+
+- PaperDaemon can make a notebook on the tablet itself, not only in the False Mirror, when "Edit the Mirror" is on in Settings: the engine takes a new notebook for the tablet's own library (its name, folder and tags) and sends it to the tablet at once. The window has no button for it yet.
+
 ## 0.2.53
 
 - Under a lineup's Harness box is the picked harness's own description: what it is for, what the model must be able to do on it and what goes wrong with one that cannot, and what it costs to run (Default on a strong model uses several times the tokens Lean Default does). The text is the harness file's `notes`, so a harness of your own shows yours.
