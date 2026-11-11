@@ -315,7 +315,6 @@
   <string name="common.disclaimer">Hinweis</string>
   <string name="common.cancel">Abbrechen</string>
   <string name="slot.other_provider">Andere (OpenAI-kompatibel)</string>
-  <string name="slot.harness_auto">Automatisch (nach dem Namen des Modells)</string>
   <string name="slot.harness">Harness</string>
   <string name="slot.add_harness">+ Harness hinzufügen</string>
   <string name="slot.none">Keines</string>
@@ -428,7 +427,6 @@
   <string name="su.need_name">Die Aufstellung braucht einen Namen.</string>
   <string name="su.finish_lead">PaperDaemon startet mit der folgenden Konfiguration.</string>
   <string name="su.proceed">Weiter zu PaperDaemon</string>
-  <string name="su.automatic">Automatisch</string>
   <string name="su.local_at">Lokal gehostet unter {address}</string>
   <string name="su.local_at_script">Lokal gehostet unter {address} · mit einer Start.bat</string>
   <string name="su.harness_is">Harness: {harness}</string>
@@ -615,7 +613,7 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="slot.model.help">Der Name des Modells, genau so, wie der Anbieter ihn schreibt.</string>
   <string name="slot.api_key.help">Wird in der Windows-Anmeldeinformationsverwaltung aufbewahrt, nie in einer Datei. Aufstellungen, die denselben Server nutzen, teilen sich seinen Schlüssel.</string>
   <string name="slot.address.help_local">Wo der Server deines Modells antwortet, zum Beispiel http://127.0.0.1:8080. Antwortet dort nichts, startet PaperDaemon das Startskript unten.</string>
-  <string name="slot.harness.help">Wie PaperDaemon mit diesem Modell arbeitet: was es ihm sagt und wie es die Antworten liest. Automatisch wählt eines nach dem Namen des Modells; Harness hinzufügen öffnet den Ordner für eigene.</string>
+  <string name="slot.harness.help">Wie PaperDaemon mit diesem Modell arbeitet: was es ihm sagt und wie es die Antworten liest. „Default“ passt für die meisten Modelle; wähle ein anderes, wenn eines für deines gemacht ist. „Harness hinzufügen“ öffnet den Ordner für deine eigenen.</string>
   <string name="net.source.help">Wo ein Auftrag nachschlägt: ein Suchdienst, für den du einen API-Schlüssel hast, oder ein SearXNG-Server, den du selbst betreibst.</string>
   <string name="net.service.help">Der Suchdienst, zu dem dein Schlüssel gehört.</string>
   <string name="net.address.help">Wo dein SearXNG-Server antwortet, zum Beispiel http://127.0.0.1:8888. Antwortet dort nichts Brauchbares, startet PaperDaemon das Startskript unten.</string>

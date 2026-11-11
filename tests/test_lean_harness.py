@@ -17,10 +17,11 @@ def _lean(monkeypatch, on=True):
 
 def test_the_harness_says_it_and_the_host_is_told(monkeypatch):
     assert harnesses.get("lean-default").lean is True and harnesses.DEFAULT["text"].lean is False
-    lu = settings.normalize_lineup({"name": "L", "text": {"api": "cli", "location": "claude --model opus"}})
+    lu = settings.normalize_lineup({"name": "L", "text": {"api": "cli", "location": "claude --model opus",
+                                                         "harness": "lean-default"}})
     s = settings._shape({"lineups": [lu]})
-    assert loop.harness_values(s, "L")["lean"] is True and loop.harness_values(s, "L")["id"] == "claude-opus-5.5"
-    settings.lineup(s, "L")["text"]["location"] = "claude"
+    assert loop.harness_values(s, "L")["lean"] is True and loop.harness_values(s, "L")["id"] == "lean-default"
+    settings.lineup(s, "L")["text"]["harness"] = "default-text"        # the harness says it, never the model's name
     assert loop.harness_values(s, "L")["lean"] is False
     for name in ("RUN", "_RUN_FILE", "CAPS", "MODEL", "CTX", "MAX_TOKENS", "VISION", "LEAN", "_BRIEF", "_SCHEMA"):
         monkeypatch.setattr(H, name, getattr(H, name))

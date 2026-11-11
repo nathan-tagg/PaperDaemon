@@ -35,7 +35,7 @@
   /** A lineup's slot -> the form's state. */
   function formOf(role, slot) {
     slot = slot || {};
-    const loc = slot.location || "", harness = slot.harness || "auto";
+    const loc = slot.location || "", harness = slot.harness || "default-" + role;
     if (role === "text" && slot.api === CLI_API) return { kind: "cli", provider: HOSTED[role][0].id, at: loc, model: "", harness };
     if (!loc) return { kind: role === "image" ? "none" : "hosted", provider: HOSTED[role][0].id, at: "", model: slot.model || "", harness };
     const p = HOSTED[role].filter(h => h.at && loc.startsWith(h.at)).sort((a, b) => b.at.length - a.at.length)[0];   // (the longest address that fits)
@@ -48,9 +48,8 @@
       opts.map(([v, l]) => '<option value="' + esc(v) + '"' + (v === value ? " selected" : "") + ">" + esc(l) + "</option>").join("") + "</select></span>";
   }
 
-  const AUTO = PD.t("slot.harness_auto");
-
-  /** The harness, typed ahead: the box suggests every harness of the kind by name; empty means automatic. */
+  /** The harness: a list of every harness of the kind that is offered, the default first. It always holds the one the
+      user picked; PaperDaemon never chooses one (no "automatic"). */
   /** A field's label, opened (the caller closes it after the field): its text and, to its right, a "?" with the
       help. Tied to the field by `for`, so the "?" inside it does not take the label's clicks. */
   const lab = (forId, key, help, cls) => '<label for="' + forId + '"' + (cls ? ' class="' + cls + '"' : "") + '><span class="lab">' +
@@ -58,20 +57,11 @@
 
   function harnessRow(p, role, f, harnesses) {
     const list = (harnesses || []).filter(h => h.kind === role && h.offered !== false);   // (one that only holds what others share is not offered)
-    const cur = f.harness && f.harness !== "auto" ? ((list.find(h => h.id === f.harness) || {}).name || f.harness) : "";
     const id = p + "-" + role + "-harness";
     return '<div class="grid2"><div class="field-col"><div class="label-row">' + lab(id, "slot.harness", "slot.harness.help") + "</label>" +
       '<button type="button" class="link-btn" data-act="addharness" data-kind="' + esc(role) + '">' + esc(PD.t("slot.add_harness")) + "</button></div>" +
-      '<input class="field" id="' + id + '" data-ta="' + esc(JSON.stringify(list.map(h => h.name))) + '" value="' + esc(cur) + '" placeholder="' + esc(AUTO) + '" spellcheck="false">' +
+      select(id, list.map(h => [h.id, h.name]), f.harness) +
       "</div><span></span></div>";
-  }
-
-  /** What the harness box holds -> a harness id ("auto" when empty or not a harness's name). */
-  function harnessId(text, role, harnesses) {
-    const t = String(text || "").trim().toLowerCase();
-    if (!t || t === AUTO.toLowerCase()) return "auto";
-    const h = (harnesses || []).find(x => x.kind === role && (x.name.toLowerCase() === t || x.id.toLowerCase() === t));
-    return h ? h.id : "auto";
   }
 
   /** The form for one slot. p: the id prefix; test: the test line's html (hosted only); lineup: the lineup's name, for
@@ -113,7 +103,7 @@
       const x = v(s); if (x !== null) f[k] = x;
     }
     const h = v("-harness");
-    if (h !== null) f.harness = harnessId(h, role, PD.slots.harnesses);
+    if (h) f.harness = h;
     const st = $("#" + p + "-" + role + "-scripttext", root);
     if (st) f.scriptText = st.value;
     return f;
@@ -121,7 +111,7 @@
 
   /** f -> the lineup's slot (base: the slot as saved). */
   function slotOf(role, f, base) {
-    const o = Object.assign({}, base || {}, { harness: f.harness || "auto" });
+    const o = Object.assign({}, base || {}, { harness: f.harness || "default-" + role });
     if (f.kind === "none") return Object.assign(o, { location: "", script: "", script_text: "", model: "" });
     if (f.kind === "local") return Object.assign(o, { location: f.at, script: "", script_text: (f.scriptText || "").replace(/\r?\n/g, "\r\n"), api: LOCAL_API[role], model: f.model || "" });
     if (f.kind === "cli") return Object.assign(o, { location: f.at || "", script: "", script_text: "", api: CLI_API, model: "" });

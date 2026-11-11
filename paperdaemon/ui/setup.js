@@ -212,7 +212,7 @@
   function modelSummary(role) {
     const slot = (S.lineup && S.lineup[role]) || {}, f = PD.slots.formOf(role, slot);
     if (f.kind === "none") return none();
-    const h = slot.harness && slot.harness !== "auto" ? ((S.harnesses || []).find(x => x.id === slot.harness) || {}).name || slot.harness : PD.t("su.automatic");
+    const h = ((S.harnesses || []).find(x => x.id === slot.harness) || {}).name || slot.harness || "";
     const where = f.kind === "local" ? esc(PD.t(slot.script_text && slot.script_text.trim() ? "su.local_at_script" : "su.local_at", { address: f.at }))
       : esc(f.kind === "cli" || f.provider === "other" ? f.at : f.provider.charAt(0).toUpperCase() + f.provider.slice(1)) + (f.model ? " · " + esc(f.model) : "");
     return where + '<span class="meta">' + esc(PD.t("su.harness_is", { harness: h })) + "</span>";

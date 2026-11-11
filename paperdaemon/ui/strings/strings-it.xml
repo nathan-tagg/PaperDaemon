@@ -315,7 +315,6 @@
   <string name="common.disclaimer">Avvertenza</string>
   <string name="common.cancel">Annulla</string>
   <string name="slot.other_provider">Altro (compatibile con OpenAI)</string>
-  <string name="slot.harness_auto">Automatico (dal nome del modello)</string>
   <string name="slot.harness">Harness</string>
   <string name="slot.add_harness">+ Aggiungi harness</string>
   <string name="slot.none">Nessuno</string>
@@ -428,7 +427,6 @@
   <string name="su.need_name">La formazione ha bisogno di un nome.</string>
   <string name="su.finish_lead">PaperDaemon partirà con la configurazione seguente.</string>
   <string name="su.proceed">Vai a PaperDaemon</string>
-  <string name="su.automatic">Automatico</string>
   <string name="su.local_at">Ospitato in locale su {address}</string>
   <string name="su.local_at_script">Ospitato in locale su {address} · con uno Start.bat</string>
   <string name="su.harness_is">Harness: {harness}</string>
@@ -615,7 +613,7 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="slot.model.help">Il nome del modello esattamente come lo scrive il fornitore.</string>
   <string name="slot.api_key.help">Conservata in Gestione credenziali di Windows, mai in un file. Le formazioni che usano lo stesso server ne condividono la chiave.</string>
   <string name="slot.address.help_local">Dove risponde il server del tuo modello, per esempio http://127.0.0.1:8080. Se lì non risponde nulla, PaperDaemon esegue lo script di avvio qui sotto.</string>
-  <string name="slot.harness.help">Come PaperDaemon lavora con questo modello: cosa gli dice e come ne legge le risposte. Automatico ne sceglie uno dal nome del modello; Aggiungi harness apre la cartella per i tuoi.</string>
+  <string name="slot.harness.help">Come PaperDaemon lavora con questo modello: che cosa gli dice e come ne legge le risposte. «Default» va bene per la maggior parte dei modelli; scegline un altro se ce n'è uno fatto per il tuo. Aggiungi harness apre la cartella dei tuoi.</string>
   <string name="net.source.help">Dove un lavoro cerca le informazioni: un servizio di ricerca di cui hai una chiave API, o un server SearXNG che esegui tu.</string>
   <string name="net.service.help">Il servizio di ricerca a cui appartiene la tua chiave.</string>
   <string name="net.address.help">Dove risponde il tuo server SearXNG, per esempio http://127.0.0.1:8888. Se lì non risponde nulla di utilizzabile, PaperDaemon esegue lo script di avvio qui sotto.</string>

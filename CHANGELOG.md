@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.51
+
+- A lineup's harness is the one you pick, and nothing else. "Automatic (from the model's name)" is gone: PaperDaemon no longer chooses a harness from a model's name, a server's report or a start script. The Harness box is a plain list that always shows a harness; a new lineup starts on "Default". A lineup that was on Automatic keeps the harness it was running on, now shown by name.
+- "Built in" is named "Default", beside "Lean Default (stronger models only)". The harnesses "Claude Opus 5.5", "Claude Sonnet 5.5" and "Claude Haiku 5.5" are gone: they were the same thing as Lean Default, which a lineup that used one now names.
+
 ## 0.2.50
 
 - On a lean lineup a sketch is no longer shown back to the model for a fix. The look was a whole further call, so a job of words and a sketch is now one call.

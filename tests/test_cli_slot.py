@@ -2,7 +2,7 @@
 adapter knows no program: how one is spoken to -- its arguments, its input, where its answer is, its readiness, where
 it sends a page -- is the `cli` field of a harness. The shipped harness for the command `claude` is that data and
 nothing more. The command is WHOLE: the model and the effort are arguments the user types in it; no field beside it
-names a model, and no harness sets an effort."""
+names a model, no harness sets an effort, and nothing reads the command to choose a harness."""
 import json
 import os
 import sys
@@ -16,7 +16,8 @@ TOOLS = [{"name": "answer", "description": "Answer in words.",
           "parameters": {"type": "object", "properties": {"lines": {"type": "array", "items": {"type": "string"}}},
                          "required": ["lines"]}},
          {"name": "skip", "description": "Do nothing.", "parameters": {"type": "object", "properties": {}}}]
-SLOT = dict(settings.slot_defaults("text"), api="cli", location="claude --model claude-opus-5-5 --effort medium")
+SLOT = dict(settings.slot_defaults("text"), api="cli", location="claude --model claude-opus-5-5 --effort medium",
+            harness="lean-default")
 
 
 def test_the_slot_is_a_setting_like_any_other_and_an_earlier_version_s_is_upgraded():
@@ -35,34 +36,18 @@ def test_the_slot_is_a_setting_like_any_other_and_an_earlier_version_s_is_upgrad
     assert settings.upgrade_slot(other) == {"api": "cli", "location": "some-other-program -x", "model": ""}  # no argument known for it
 
 
-def test_the_model_is_the_one_the_command_names():
-    """'its stupid to have both a Command field and a Model field': how a model is named is the program's own syntax."""
+def test_the_command_is_the_user_s_and_nothing_is_read_out_of_it():
+    """'its stupid to have both a Command field and a Model field'; 'ZERO inference from paperdaemons perspective'."""
     cli = harnesses.get("claude-code").cli
-    assert cli["model_arg"] == "--model" and not any(isinstance(a, list) and a[0] in ("--model", "--effort") for a in cli["args"])
-    assert C.model_of("claude --model claude-opus-5-5 --effort medium") == "claude-opus-5-5"
-    assert C.model_of("claude --model=sonnet") == "sonnet" and C.model_of("claude") == "" and C.model_of("other --model x") == ""
-    assert C.CommandLine("claude --model haiku").model == "haiku" and C.CommandLine("claude --model haiku").models() == ["haiku"]
-    for command, harness in (("claude --model claude-opus-5-5", "claude-opus-5.5"), ("claude --model sonnet", "claude-sonnet-5.5"),
-                             ("claude --model claude-haiku-5-5 --effort low", "claude-haiku-5.5"), ("claude", "default-text")):
-        assert slots.pick("text", None, dict(SLOT, location=command))[0].id == harness
-    # a model name left in the slot by an earlier version is not what picks the harness
-    assert slots.pick("text", None, dict(SLOT, location="claude", model="claude-opus-5-5"))[0].id == "default-text"
-
-
-def test_one_harness_a_model_and_the_program_s_data_is_not_one_to_pick():
-    """'WHY do I have two opus harnesses in the drop down': the program's data is kept, and is not offered."""
+    assert "model_arg" not in cli and not any(isinstance(a, list) and a[0] in ("--model", "--effort") for a in cli["args"])
+    a = C.CommandLine("claude --model haiku")
+    assert a.model == "" and a.models() == []
+    for command in ("claude --model claude-opus-5-5", "claude --model sonnet", "claude"):
+        m = dict(settings.slot_defaults("text"), api="cli", location=command)
+        assert slots.pick("text", None, m)[0].id == "default-text"         # the harness is the slot's own, whatever the command
     offered = [h.id for h in harnesses.for_kind("text")]
-    assert "claude-code" not in offered and harnesses.get("claude-code") is not None
-    assert [i for i in offered if "opus" in i] == ["claude-opus-5.5"]
-    assert {"lean-default", "claude-opus-5.5", "claude-sonnet-5.5", "claude-haiku-5.5"} <= set(offered)
+    assert "claude-code" not in offered and harnesses.get("claude-code") is not None     # the program's data is not one to pick
     assert harnesses.describe(harnesses.get("claude-code"))["offered"] is False
-    assert harnesses.describe(harnesses.get("claude-opus-5.5"))["offered"] is True
-    names = {harnesses.get(i).name for i in ("lean-default", "claude-opus-5.5", "claude-sonnet-5.5", "claude-haiku-5.5")}
-    assert names == {"Lean Default (stronger models only)", "Claude Opus 5.5", "Claude Sonnet 5.5", "Claude Haiku 5.5"}
-    for i in ("claude-opus-5.5", "claude-sonnet-5.5", "claude-haiku-5.5"):
-        h = harnesses.get(i)
-        assert h.extends == "lean-default" and h.lean is True and not h.request and "effort" not in h.name.lower()
-    assert harnesses.DEFAULT["text"].lean is False
 
 
 def test_nothing_in_the_adapter_names_a_program():
@@ -71,12 +56,11 @@ def test_nothing_in_the_adapter_names_a_program():
 
 
 def test_the_harness_made_for_the_program_speaks_for_it():
-    assert slots.pick("text", None, SLOT)[0].id == "claude-opus-5.5"          # by the model's name, as always
-    assert not harnesses.get("claude-opus-5.5").cli                            # a model's harness says nothing of a program...
-    assert C.cli_of(harnesses.get("claude-opus-5.5"), SLOT["location"])["program"] == "claude"   # ...the program's data speaks
-    plain = dict(SLOT, location="claude --model some-other-model")
-    assert slots.pick("text", None, plain)[0].id == "default-text"            # no harness for that model...
-    assert C.cli_of(slots.pick("text", None, plain)[0], "claude --verbose")["program"] == "claude"   # ...the program's still speaks
+    assert slots.pick("text", None, SLOT)[0].id == "lean-default"             # the one the slot names
+    assert not harnesses.get("lean-default").cli                               # which says nothing of a program...
+    assert C.cli_of(harnesses.get("lean-default"), SLOT["location"])["program"] == "claude"      # ...the program's data speaks
+    plain = dict(SLOT, harness="default-text")
+    assert C.cli_of(slots.pick("text", None, plain)[0], "claude --verbose")["program"] == "claude"   # under any harness
     assert C.cli_of(harnesses.DEFAULT["text"], "some-other-program") is C.PLAIN
     assert C.name_of('"C:\\Tools\\Claude.EXE" --x') == "claude"
     # where a page goes is the harness's to say; a program that says nothing keeps it here
@@ -88,7 +72,7 @@ def test_the_harness_made_for_the_program_speaks_for_it():
 
 def test_a_request_is_built_from_the_harness_s_data(tmp_path):
     a = C.CommandLine("claude --model claude-opus-5-5 --effort medium")
-    hp = harnesses.get("claude-opus-5.5")()
+    hp = harnesses.get("lean-default")()
     args, stdin, system, dropped = a.request("You work on a page.", [{"role": "user", "text": "hi", "images": [b"png"]}],
                                              tools=TOOLS, force_tool=True, caps={"vision": True, "forced_tool": True},
                                              harness=hp, folder=str(tmp_path))
@@ -105,7 +89,7 @@ def test_a_request_is_built_from_the_harness_s_data(tmp_path):
     # a program that does check an answer against a schema is handed it, and told its own way to give the answer
     checking = dict(a.cli(hp), answer_rule="Give it through the answer tool.")
     checking["args"] = list(checking["args"]) + [["--answer-schema", "{schema}"]]
-    hc = type("Checking", (harnesses.get("claude-opus-5.5"),), {"cli": checking})()
+    hc = type("Checking", (harnesses.get("lean-default"),), {"cli": checking})()
     args_c, _in, system_c, _d = a.request("You work on a page.", [{"role": "user", "text": "hi"}], tools=TOOLS, force_tool=True,
                                           caps={"vision": True, "forced_tool": True}, harness=hc, folder=str(tmp_path))
     calls = json.loads(dict(zip(args_c, args_c[1:]))["--answer-schema"])["properties"]["tool_calls"]
@@ -124,7 +108,7 @@ def test_a_request_is_built_from_the_harness_s_data(tmp_path):
 def test_an_argument_typed_in_the_command_stands_over_the_harness_s(tmp_path):
     # "Can the cli have a parameter, maybe?" -- the command is typed as in a terminal, its own arguments included
     a = C.CommandLine("claude --effort high --model sonnet --system-prompt-file mine.txt")
-    hp = harnesses.get("claude-sonnet-5.5")()
+    hp = harnesses.get("lean-default")()
     args, stdin, system, dropped = a.request("sys", [{"role": "user", "text": "hi"}], caps={"vision": True}, harness=hp,
                                              folder=str(tmp_path))
     assert "--system-prompt-file" not in args and "--no-session-persistence" in args      # a group the user gave is left out

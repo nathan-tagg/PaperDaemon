@@ -24,8 +24,9 @@ Default (stronger models only)' version and then harnesses for opus, sonnet, and
     needs;
   - a sketch is not shown back to the model for a fix (the maintainer's ruling, 11-10, on seeing that the look was
     the second call of a sketch job: "I think the lookback should be skipped").
-- Shipped harnesses: "Lean Default (stronger models only)", and on it "Claude Opus 5.5", "Claude Sonnet 5.5" and
-  "Claude Haiku 5.5", picked by the model's name.
+- Shipped: "Lean Default (stronger models only)", picked by the user for a lineup like any harness. (0.2.48 to
+  0.2.50 also shipped "Claude Opus 5.5", "Claude Sonnet 5.5" and "Claude Haiku 5.5" on it, identical to it; the
+  maintainer had them folded into it: "lets just condense the harnesses into the lean default".)
 - The default harness and every lineup on it are unchanged.
 
 ## Impact

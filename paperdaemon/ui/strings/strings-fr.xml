@@ -314,7 +314,6 @@
   <string name="common.disclaimer">Avertissement</string>
   <string name="common.cancel">Annuler</string>
   <string name="slot.other_provider">Autre (compatible OpenAI)</string>
-  <string name="slot.harness_auto">Automatique (d'après le nom du modèle)</string>
   <string name="slot.harness">Harnais</string>
   <string name="slot.add_harness">+ Ajouter un harnais</string>
   <string name="slot.none">Aucun</string>
@@ -427,7 +426,6 @@
   <string name="su.need_name">L'équipe a besoin d'un nom.</string>
   <string name="su.finish_lead">PaperDaemon va démarrer avec la configuration suivante.</string>
   <string name="su.proceed">Aller à PaperDaemon</string>
-  <string name="su.automatic">Automatique</string>
   <string name="su.local_at">Hébergé en local à {address}</string>
   <string name="su.local_at_script">Hébergé en local à {address} · avec un Start.bat</string>
   <string name="su.harness_is">Harnais : {harness}</string>
@@ -615,7 +613,7 @@ Ensuite, guide-moi pour installer SearXNG si besoin, écris le fichier .bat avec
   <string name="slot.model.help">Le nom du modèle, exactement comme le fournisseur l'écrit.</string>
   <string name="slot.api_key.help">Conservée dans le Gestionnaire d'identification de Windows, jamais dans un fichier. Les compositions qui utilisent le même serveur partagent sa clé.</string>
   <string name="slot.address.help_local">Où le serveur de votre modèle répond, par exemple http://127.0.0.1:8080. Si rien n'y répond, PaperDaemon lance le script de démarrage ci-dessous.</string>
-  <string name="slot.harness.help">Comment PaperDaemon travaille avec ce modèle : ce qu'il lui dit et comment il lit ses réponses. Automatique en choisit un d'après le nom du modèle ; Ajouter un harness ouvre le dossier pour les vôtres.</string>
+  <string name="slot.harness.help">La façon dont PaperDaemon travaille avec ce modèle : ce qu'il lui dit et comment il lit ses réponses. « Default » convient à la plupart des modèles ; choisissez-en un autre s'il en existe un fait pour le vôtre. Ajouter un harnais ouvre le dossier des vôtres.</string>
   <string name="net.source.help">Où une tâche cherche des informations : un service de recherche pour lequel vous avez une clé d'API, ou un serveur SearXNG que vous faites tourner vous-même.</string>
   <string name="net.service.help">Le service de recherche auquel appartient votre clé.</string>
   <string name="net.address.help">Où votre serveur SearXNG répond, par exemple http://127.0.0.1:8888. Si rien d'utilisable n'y répond, PaperDaemon lance le script de démarrage ci-dessous.</string>

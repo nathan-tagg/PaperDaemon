@@ -14,8 +14,7 @@ file and any field of the request the harness tuned; a group of arguments left o
 nothing to give, or when it begins with an argument the user's own command already gives), what goes on the program's
 input, where the answer, an error and the token counts are in what it
 prints, a command that says whether the program is ready and what to tell the user when it is not, the host it sends
-a page to, and the argument after which a command names its model (so that the model's harness can be guessed from the
-command; nothing is added for it). A harness that only holds what others share (a program's data) SHALL be able to
+a page to. A harness that only holds what others share (a program's data) SHALL be able to
 say it is not offered, and SHALL then not be listed where a harness is picked. The harness that speaks for a command SHALL be the slot's harness
 when it has a `cli` field, else the harness whose `cli.program` is the command's program; a program with neither
 SHALL be given the system text and the conversation on its input and its printed text taken as the answer.
@@ -56,6 +55,6 @@ command-line slot saved with a model beside its command SHALL be read as the com
 - **WHEN** settings saved by 0.2.42 to 0.2.47 hold the command `claude` and the model `claude-opus-5-5`
 - **THEN** the slot is read as the command `claude --model claude-opus-5-5` with no model beside it
 
-#### Scenario: One harness a model
+#### Scenario: The program's data is not a harness to pick
 - **WHEN** the user opens the Harness box of a command-line slot
-- **THEN** it offers one harness for each model PaperDaemon is tuned for and Lean Default, and not the program's data
+- **THEN** it offers Default, Lean Default and the other harnesses for text models, and not the program's data

@@ -315,7 +315,6 @@
   <string name="common.disclaimer">Ansvarsfraskrivelse</string>
   <string name="common.cancel">Avbryt</string>
   <string name="slot.other_provider">Annen (OpenAI-kompatibel)</string>
-  <string name="slot.harness_auto">Automatisk (fra modellens navn)</string>
   <string name="slot.harness">Sele</string>
   <string name="slot.add_harness">+ Legg til sele</string>
   <string name="slot.none">Ingen</string>
@@ -428,7 +427,6 @@
   <string name="su.need_name">Oppsettet trenger et navn.</string>
   <string name="su.finish_lead">PaperDaemon starter med følgende konfigurasjon.</string>
   <string name="su.proceed">Gå videre til PaperDaemon</string>
-  <string name="su.automatic">Automatisk</string>
   <string name="su.local_at">Kjøres lokalt på {address}</string>
   <string name="su.local_at_script">Kjøres lokalt på {address} · med en Start.bat</string>
   <string name="su.harness_is">Sele: {harness}</string>
@@ -615,7 +613,7 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="slot.model.help">Modellens navn nøyaktig slik leverandøren skriver det.</string>
   <string name="slot.api_key.help">Lagres i Windows Legitimasjonsbehandling, aldri i en fil. Oppstillinger som bruker samme server, deler nøkkelen.</string>
   <string name="slot.address.help_local">Der modellens server svarer, for eksempel http://127.0.0.1:8080. Hvis ingenting svarer der, kjører PaperDaemon oppstartsskriptet nedenfor.</string>
-  <string name="slot.harness.help">Hvordan PaperDaemon jobber med denne modellen: hva den sier til den og hvordan den leser svarene. Automatisk velger en ut fra modellens navn; Legg til harness åpner mappen for dine egne.</string>
+  <string name="slot.harness.help">Hvordan PaperDaemon arbeider med denne modellen: hva den får vite og hvordan svarene leses. «Default» passer for de fleste modeller; velg en annen når en er laget for din. Legg til harness åpner mappen for dine egne.</string>
   <string name="net.source.help">Der en jobb slår opp ting: en søketjeneste du har en API-nøkkel til, eller en SearXNG-server du kjører selv.</string>
   <string name="net.service.help">Søketjenesten nøkkelen din hører til.</string>
   <string name="net.address.help">Der SearXNG-serveren din svarer, for eksempel http://127.0.0.1:8888. Hvis ingenting brukbart svarer der, kjører PaperDaemon oppstartsskriptet nedenfor.</string>

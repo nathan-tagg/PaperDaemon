@@ -6,7 +6,7 @@ configuration of one model:
     location   where the model answers (a URL); empty for an image slot means "no pictures"
     script     the start script: a file name in <data>/start-scripts/ or a full path; empty means the
                user runs the server (or it is a remote service)
-    harness    "auto" or a harness id
+    harness    a harness id: the one the user picked (the default of the slot's kind until they pick another)
 
 A slot may also carry, for less common setups: `script_text` (an inline script, used when `script` is
 empty), `api` (how the server is spoken to: openai or anthropic for text, sdapi or openai-images for
@@ -56,7 +56,7 @@ _RETIRED_TABLET_KEYS = ("mute_tag", "sprompt_tag", "trigger_tag",  # trigger_tag
 
 
 def slot_defaults(role):
-    return {"location": "", "script": "", "script_text": "", "harness": "auto", "api": APIS[role][0],
+    return {"location": "", "script": "", "script_text": "", "harness": "default-" + role, "api": APIS[role][0],
             "model": "", "overrides": {}, "tested": {}}
 
 
@@ -216,10 +216,10 @@ def _merge(base, over):
     return out
 
 
-def upgrade_slot(m):
+def upgrade_slot(m, role=None):
     """A slot as saved by an earlier version, in today's shape: the harness was once called its
-    "profile", and an image slot's coloring_steps capability is now the steps of the harness's coloring
-    book style."""
+    "profile", an image slot's coloring_steps capability is now the steps of the harness's coloring
+    book style, and a harness left "automatic" is the one that version ran the slot on (`role`: the slot's kind)."""
     m = dict(m)
     if "profile" in m:
         old = m.pop("profile")
@@ -234,6 +234,17 @@ def upgrade_slot(m):
         # 0.2.42 to 0.2.47 kept a command line's model in a field beside the command: the command is whole now
         from .models.cli import with_model
         m.update(location=with_model(m.get("location") or "", m["model"]), model="")
+    if role:
+        from . import harnesses
+        if m.get("harness") in harnesses.REMOVED:
+            m["harness"] = harnesses.REMOVED[m["harness"]]
+        elif "harness" in m and m.get("harness") in (None, "", "auto"):
+            # VERSIONS TO 0.2.50 CHOSE A HARNESS FROM THE MODEL'S NAME when the slot said "automatic". Nothing is chosen
+            # any more: such a slot keeps the harness it was running on, written here as its own
+            from .models import slots
+            from .models.cli import model_of
+            name = model_of(m.get("location") or "", legacy=True) if m.get("api") == "cli" else m.get("model")
+            m["harness"] = harnesses.was_automatic(role, str(name or ""), slots.script_text(m))
     return m
 
 
@@ -353,7 +364,7 @@ def normalize_lineup(lu):
     lu = dict(lu or {})
     out = {"name": str(lu.get("name") or "").strip()}
     for role in ROLES:
-        got = upgrade_slot(lu.get(role)) if isinstance(lu.get(role), dict) else {}
+        got = upgrade_slot(lu.get(role), role) if isinstance(lu.get(role), dict) else {}
         out[role] = _merge(slot_defaults(role), got)
     sr = dict(lu.get("search")) if isinstance(lu.get("search"), dict) else {}
     if sr.get("kind") == "searxng":                 # an earlier version's name for a local SearXNG

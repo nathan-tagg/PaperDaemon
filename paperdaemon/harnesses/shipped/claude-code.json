@@ -84,7 +84,6 @@
         "output": "usage.output_tokens",
         "cached": "usage.cache_read_input_tokens"
       }
-    },
-    "model_arg": "--model"
+    }
   }
 }

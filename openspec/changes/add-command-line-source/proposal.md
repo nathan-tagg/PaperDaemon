@@ -38,8 +38,8 @@ to that ruling.
   out.
 - The program's data for the command `claude` ships as a harness that is not offered where a harness is picked
   ("WHY do I have two opus harnesses in the drop down"): it holds what every lineup running that program shares.
-  The harnesses offered are tied to a model's name: Claude Opus 5.5, Claude Sonnet 5.5, Claude Haiku 5.5, each
-  building on Lean Default (the change `add-lean-harness`).
+  0.2.48 offered one harness each for Claude Opus 5.5, Sonnet 5.5 and Haiku 5.5; they were the same thing three
+  times and are gone (0.2.51): a lineup on such a model picks Lean Default (the change `add-lean-harness`).
 - The calls come back as one JSON object in the program's answer, checked by PaperDaemon. Asked to check them
   against a schema itself, `claude` makes a second request for every answer: measured 11-10, 15,109 tokens in where
   5,978 do.

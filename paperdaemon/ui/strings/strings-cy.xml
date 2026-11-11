@@ -315,7 +315,6 @@
   <string name="common.disclaimer">Ymwadiad</string>
   <string name="common.cancel">Canslo</string>
   <string name="slot.other_provider">Arall (sy'n gydnaws ag OpenAI)</string>
-  <string name="slot.harness_auto">Awtomatig (o enw'r model)</string>
   <string name="slot.harness">Harnais</string>
   <string name="slot.add_harness">+ Ychwanegu harnais</string>
   <string name="slot.none">Dim</string>
@@ -428,7 +427,6 @@
   <string name="su.need_name">Mae angen enw ar y tîm.</string>
   <string name="su.finish_lead">Bydd PaperDaemon yn dechrau gyda'r ffurfweddiad canlynol.</string>
   <string name="su.proceed">Ymlaen i PaperDaemon</string>
-  <string name="su.automatic">Awtomatig</string>
   <string name="su.local_at">Wedi'i gynnal yn lleol yn {address}</string>
   <string name="su.local_at_script">Wedi'i gynnal yn lleol yn {address} · gyda Start.bat</string>
   <string name="su.harness_is">Harnais: {harness}</string>
@@ -615,7 +613,7 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="slot.model.help">Enw'r model yn union fel mae'r darparwr yn ei ysgrifennu.</string>
   <string name="slot.api_key.help">Yn cael ei chadw yn Rheolwr Manylion Adnabod Windows, byth mewn ffeil. Mae timau sy'n defnyddio'r un gweinydd yn rhannu ei allwedd.</string>
   <string name="slot.address.help_local">Ble mae gweinydd eich model yn ateb, er enghraifft http://127.0.0.1:8080. Os nad oes dim yn ateb yno, mae PaperDaemon yn rhedeg y sgript gychwyn isod.</string>
-  <string name="slot.harness.help">Sut mae PaperDaemon yn gweithio gyda'r model hwn: beth mae'n ei ddweud wrtho a sut mae'n darllen yr atebion. Mae Awtomatig yn dewis un o enw'r model; mae Ychwanegu harness yn agor y ffolder ar gyfer eich rhai chi.</string>
+  <string name="slot.harness.help">Sut mae PaperDaemon yn gweithio gyda'r model hwn: beth mae'n ei ddweud wrtho a sut mae'n darllen yr atebion. Mae "Default" yn addas i'r rhan fwyaf o fodelau; dewiswch un arall pan fo un wedi'i wneud ar gyfer eich un chi. Mae Ychwanegu harnais yn agor y ffolder ar gyfer eich rhai chi.</string>
   <string name="net.source.help">Ble mae tasg yn chwilio am bethau: gwasanaeth chwilio y mae gennych allwedd API ar ei gyfer, neu weinydd SearXNG rydych chi'n ei redeg eich hun.</string>
   <string name="net.service.help">Y gwasanaeth chwilio y mae eich allwedd yn perthyn iddo.</string>
   <string name="net.address.help">Ble mae eich gweinydd SearXNG yn ateb, er enghraifft http://127.0.0.1:8888. Os nad oes dim defnyddiadwy yn ateb yno, mae PaperDaemon yn rhedeg y sgript gychwyn isod.</string>

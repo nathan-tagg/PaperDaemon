@@ -315,7 +315,6 @@
   <string name="common.disclaimer">Penafian</string>
   <string name="common.cancel">Batal</string>
   <string name="slot.other_provider">Lainnya (kompatibel dengan OpenAI)</string>
-  <string name="slot.harness_auto">Otomatis (dari nama model)</string>
   <string name="slot.harness">Harness</string>
   <string name="slot.add_harness">+ Tambah Harness</string>
   <string name="slot.none">Tidak ada</string>
@@ -428,7 +427,6 @@
   <string name="su.need_name">Formasi memerlukan nama.</string>
   <string name="su.finish_lead">PaperDaemon akan dimulai dengan konfigurasi berikut.</string>
   <string name="su.proceed">Lanjut ke PaperDaemon</string>
-  <string name="su.automatic">Otomatis</string>
   <string name="su.local_at">Dijalankan secara lokal di {address}</string>
   <string name="su.local_at_script">Dijalankan secara lokal di {address} · dengan Start.bat</string>
   <string name="su.harness_is">Harness: {harness}</string>
@@ -615,7 +613,7 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="slot.model.help">Nama model persis seperti yang ditulis penyedia.</string>
   <string name="slot.api_key.help">Disimpan di Pengelola Kredensial Windows, tidak pernah di berkas. Formasi yang memakai server yang sama berbagi kuncinya.</string>
   <string name="slot.address.help_local">Tempat server model Anda menjawab, misalnya http://127.0.0.1:8080. Jika tidak ada yang menjawab di sana, PaperDaemon menjalankan skrip mulai di bawah.</string>
-  <string name="slot.harness.help">Cara PaperDaemon bekerja dengan model ini: apa yang disampaikan kepadanya dan cara membaca jawabannya. Otomatis memilih satu dari nama model; Tambah Harness membuka folder untuk milik Anda sendiri.</string>
+  <string name="slot.harness.help">Cara PaperDaemon bekerja dengan model ini: apa yang disampaikannya dan bagaimana jawabannya dibaca. "Default" cocok untuk sebagian besar model; pilih yang lain bila ada yang dibuat untuk model Anda. Tambah harness membuka folder untuk milik Anda sendiri.</string>
   <string name="net.source.help">Tempat sebuah tugas mencari informasi: layanan pencarian yang kunci API-nya Anda punya, atau server SearXNG yang Anda jalankan sendiri.</string>
   <string name="net.service.help">Layanan pencarian pemilik kunci Anda.</string>
   <string name="net.address.help">Tempat server SearXNG Anda menjawab, misalnya http://127.0.0.1:8888. Jika tidak ada jawaban yang bisa dipakai di sana, PaperDaemon menjalankan skrip mulai di bawah.</string>

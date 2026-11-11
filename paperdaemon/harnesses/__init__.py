@@ -10,8 +10,6 @@ differs; every field it leaves out keeps the value of the harness it extends.
       "name": "Qwen 3.6, small context",   optional; the id when left out
       "extends": "qwen3.6-27b",            the harness it extends; a kind's default when left out
       "kind": "text",                      needed only when "extends" is left out
-      "patterns": ["qwen-?3\\\\.?6"],        optional: model names that make it the automatic guess
-      "refuse": ["(^|-)base(-|\\\\.|$)"],      optional: names that rule it out even when a pattern matches
       "max_output": 4096,                  any field of its kind (schema.FIELDS), with the value it takes
       "request": {"vision": {"off": {"cache_prompt": true}}}
     }
@@ -28,10 +26,11 @@ LoRA adapters ({"file", "strength"}, applied per picture by the image server) an
 reference picture. Workflows add to the ones the harness extends; one with the same name replaces it. A
 complete example is examples/klein-character-turnaround.json.
 
-The guess reads three hints in order of how deliberate they are: the model name the slot names, the model
-the server reports, and the model file named in the start script. User harnesses are tried before the
-shipped ones. A file that cannot be read or breaks a rule is listed with the reason and skipped; it never
-stops the other harnesses.
+A SLOT'S HARNESS IS THE ONE ITS USER PICKED, the default of its kind until they pick another. PaperDaemon never
+chooses one from a model's name (the maintainer's ruling, 11-10: "ZERO inference"). `patterns` and `refuse`, which
+versions to 0.2.50 matched against model names for an "automatic" harness, are read from a file only so that a slot
+those versions saved as automatic is given, once, the harness it was running on (was_automatic). A file that cannot
+be read or breaks a rule is listed with the reason and skipped; it never stops the other harnesses.
 """
 import copy
 import json
@@ -48,7 +47,6 @@ SHIPPED_FOLDER = os.path.join(HERE, "shipped")
 META = ("id", "name", "extends", "kind", "patterns", "refuse", "notes", "server", "models", "offered")
 # what every harness file says about itself, for the people who read it; never used, never inherited
 DECLARED = ("server", "models", "notes")
-HINT_LABEL = {"model": "the model name", "server": "the model the server reports", "launch": "the start script"}
 # a model file in a start script: the argument of -m / --model / --diffusion-model, or any path to a model file
 _FILE = re.compile(r"""(?:--?(?:m|model|diffusion-model)\s+)?["']?([^\s"'=]+\.(?:gguf|safetensors|ckpt|bin|pt))""",
                    re.IGNORECASE)
@@ -483,16 +481,24 @@ def launch_models(script):
     return [m.group(1) for m in _FILE.finditer(script or "")]
 
 
-def guess(kind, model="", server=(), launch=""):
-    """-> (harness class, which hint matched or None, the hint's text or None)."""
-    hints = [("model", model)] + [("server", s) for s in (server or ())] + \
-            [("launch", f) for f in launch_models(launch)]
-    candidates = [p for p in user_harnesses() + SHIPPED if p.kind == kind]
-    for source, hint in hints:
-        for p in candidates:
-            if p.matches(hint):
-                return p, source, hint
-    return DEFAULT[kind], None, None
+# harnesses of earlier versions that are no more, and the one a slot that named them has now
+REMOVED = {"claude-opus-5.5": "lean-default", "claude-sonnet-5.5": "lean-default", "claude-haiku-5.5": "lean-default"}
+# model names those harnesses were the automatic pick for
+_WAS_LEAN = re.compile(r"claude-(opus|sonnet|haiku)-5[.-]5|^(opus|sonnet|haiku)$")
+
+
+def was_automatic(kind, model="", launch=""):
+    """The harness a slot saved as "automatic" by 0.2.50 or earlier was running on -> its id. Asked once for such a
+    slot, when its settings are read; the answer is then the slot's own harness, like any the user picked. Nothing else
+    may call it: PaperDaemon does not choose a harness."""
+    hints = [model] + launch_models(launch)
+    for hint in hints:
+        for p in user_harnesses() + SHIPPED:
+            if p.kind == kind and p.matches(hint):
+                return p.id
+        if kind == "text" and _WAS_LEAN.search(normalize(hint)):
+            return "lean-default"
+    return DEFAULT[kind].id
 
 
 def describe(p):
@@ -502,6 +508,6 @@ def describe(p):
             "fields": p.fields()}
 
 
-__all__ = ["ABILITIES", "BUILT_IN", "COLORING_BOOK", "DEFAULT", "EDIT_ABILITY", "SHIPPED", "HINT_LABEL",
-           "Harness", "TextHarness", "ImageHarness", "get", "for_kind", "guess", "launch_models", "normalize",
+__all__ = ["ABILITIES", "BUILT_IN", "COLORING_BOOK", "DEFAULT", "EDIT_ABILITY", "SHIPPED", "REMOVED",
+           "Harness", "TextHarness", "ImageHarness", "get", "for_kind", "was_automatic", "launch_models", "normalize",
            "all_harnesses", "user_harnesses", "user_errors", "describe", "load"]

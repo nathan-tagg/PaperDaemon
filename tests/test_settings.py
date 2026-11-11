@@ -25,7 +25,7 @@ def test_one_blank_lineup_ships():
     assert [lu["name"] for lu in REAL_SHIPPED] == ["Lineup 1"] and REAL_DEFAULT == "Lineup 1"
     for role in ("text", "image"):
         slot = REAL_SHIPPED[0][role]
-        assert slot["location"] == "" and slot["script"] == "" and slot["harness"] == "auto"
+        assert slot["location"] == "" and slot["script"] == "" and slot["harness"] == "default-" + role
 
 
 def test_ports_avoid_other_local_model_software():
@@ -49,7 +49,7 @@ def test_a_saved_lineup_gains_missing_slot_fields():
         json.dump({"lineups": [{"name": "Mine", "text": {"location": "http://127.0.0.1:9000"}}], "lineup": "Mine"}, f)
     lu = settings.active()
     assert lu["text"]["location"] == "http://127.0.0.1:9000"
-    assert lu["text"]["harness"] == "auto" and lu["text"]["api"] == "openai"
+    assert lu["text"]["harness"] == "default-text" and lu["text"]["api"] == "openai"
     assert lu["image"]["location"] == "" and lu["image"]["api"] == "sdapi"
 
 

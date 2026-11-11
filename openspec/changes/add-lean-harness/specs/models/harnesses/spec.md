@@ -9,9 +9,8 @@ step from the content its plan gave it (a write step's lines, a sketch's parts, 
 own. A write step in a plan that has a search SHALL still be asked for in a turn of its own, with the results. A
 sketch SHALL NOT be shown back to the model for a fix on a lean lineup. What
 the host checks, refuses, erases and commits SHALL be the same as on any harness. PaperDaemon SHALL ship a lean
-harness named "Lean Default (stronger models only)" and, built on it, one harness for each of Claude Opus 5.5,
-Claude Sonnet 5.5 and Claude Haiku 5.5, each picked by its model's name. A lineup whose harness is not lean SHALL be
-worked exactly as before.
+harness named "Lean Default (stronger models only)". A lineup whose harness is not lean SHALL be worked exactly as
+before.
 
 #### Scenario: A job of words and a sketch on a lean lineup
 - **WHEN** a page asks for two sentences and a small drawing, on a lineup whose harness is lean

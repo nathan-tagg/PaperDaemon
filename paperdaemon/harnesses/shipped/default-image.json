@@ -1,6 +1,6 @@
 {
   "id": "default-image",
-  "name": "Built in",
+  "name": "Default",
   "server": "Any server with the Stable Diffusion web UI API or OpenAI's image API",
   "models": [
     "Any image model"

@@ -323,7 +323,6 @@
   <string name="common.disclaimer">Предупреждение</string>
   <string name="common.cancel">Отмена</string>
   <string name="slot.other_provider">Другой (совместимый с OpenAI)</string>
-  <string name="slot.harness_auto">Автоматически (по названию модели)</string>
   <string name="slot.harness">Обвязка</string>
   <string name="slot.add_harness">+ Добавить обвязку</string>
   <string name="slot.none">Нет</string>
@@ -442,7 +441,6 @@
   <string name="su.need_name">Составу нужно название.</string>
   <string name="su.finish_lead">PaperDaemon запустится со следующей конфигурацией.</string>
   <string name="su.proceed">Перейти к PaperDaemon</string>
-  <string name="su.automatic">Автоматически</string>
   <string name="su.local_at">Размещено локально: {address}</string>
   <string name="su.local_at_script">Размещено локально: {address} · со Start.bat</string>
   <string name="su.harness_is">Обвязка: {harness}</string>
@@ -629,7 +627,7 @@
   <string name="slot.model.help">Название модели в точности так, как его пишет поставщик.</string>
   <string name="slot.api_key.help">Хранится в диспетчере учётных данных Windows и никогда не попадает в файл. Составы, использующие один и тот же сервер, делят его ключ.</string>
   <string name="slot.address.help_local">Где отвечает сервер вашей модели, например http://127.0.0.1:8080. Если там ничего не отвечает, PaperDaemon запускает скрипт запуска ниже.</string>
-  <string name="slot.harness.help">Как PaperDaemon работает с этой моделью: что он ей говорит и как читает её ответы. «Автоматически» выбирает его по названию модели; «Добавить harness» открывает папку для ваших собственных.</string>
+  <string name="slot.harness.help">Как PaperDaemon работает с этой моделью: что он ей сообщает и как читает ответы. «Default» подходит большинству моделей; выберите другой, если есть сделанный для вашей. «Добавить харнесс» открывает папку для ваших собственных.</string>
   <string name="net.source.help">Где задача ищет сведения: в поисковом сервисе, для которого у вас есть ключ API, или на сервере SearXNG, который вы запускаете сами.</string>
   <string name="net.service.help">Поисковый сервис, к которому относится ваш ключ.</string>
   <string name="net.address.help">Где отвечает ваш сервер SearXNG, например http://127.0.0.1:8888. Если там не отвечает ничего пригодного, PaperDaemon запускает скрипт запуска ниже.</string>

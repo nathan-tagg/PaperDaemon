@@ -4,9 +4,10 @@ An image harness tells PaperDaemon how to get pictures out of one family of imag
 every `.json` file in this folder, checks it, and lists every harness that passes in the Harness box of the
 Image tab. A file that fails is listed with what is wrong with it.
 
-PaperDaemon's own image harnesses are part of the app, not kept here: the built-in default, and
+PaperDaemon's own image harnesses are part of the app, not kept here: Default, and
 stable-diffusion.cpp - FLUX.2 Klein 9B and stable-diffusion.cpp - Z-Image Turbo. A harness here builds on one of
-them (`extends`, or the built-in default when it names none) and changes only what it names.
+them (`extends`, or Default when it names none) and changes only what it names. A lineup uses the harness you pick
+in its Harness box, Default until you pick another: PaperDaemon never chooses one from a model's name.
 
 ## Name it for its server and model
 
@@ -27,9 +28,7 @@ PaperDaemon shows these and never acts on them. A harness you build on another s
 | --- | --- |
 | `id` | Its name in the settings. Optional: the file name without `.json`. Must not be taken. |
 | `name` | What the Harness box shows: the server, then the model. Optional: the `id`. |
-| `extends` | The harness it builds on: one of PaperDaemon's, or another here. Optional: the built-in default. |
-| `patterns` | Model names (regular expressions) that make this harness the automatic choice. |
-| `refuse` | Model names that rule it out even when a pattern matches. |
+| `extends` | The harness it builds on: one of PaperDaemon's, or another here. Optional: Default. |
 | `abilities` | What it can do: `generate`, `edit_reference`, `img2img`, `inpaint`. |
 | `steps` | Steps per picture (1 to 150). |
 | `steps_range` | The lowest and highest steps worth using: `[4, 12]`. |
@@ -82,7 +81,6 @@ workflows add to the ones of the harness you build on; one with the same name re
   "server": "stable-diffusion.cpp (sd-server)",
   "models": ["My image model"],
   "notes": "Eight steps are enough; more change nothing.",
-  "patterns": ["my-image-model"],
   "abilities": ["generate"],
   "steps": 8,
   "workflows": {
@@ -95,5 +93,5 @@ workflows add to the ones of the harness you build on; one with the same name re
 }
 ```
 
-Save it here as `my-image-model.json`, then choose it in the Image tab's Harness box, or leave the box empty
-and let the pattern pick it.
+Save it here as `my-image-model.json`, then choose it in the Image tab's Harness box. (`patterns` and `refuse` in a
+file written for an earlier version are read and no longer used: nothing picks a harness for you.)

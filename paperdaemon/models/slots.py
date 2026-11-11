@@ -1,9 +1,9 @@
 """The two model slots of a lineup (the one in use unless one is named): their settings, their harness, and
 their effective capabilities.
 
-A slot's capability resolves in layers: the user's override, else a model-check result the user
-accepted, else the harness's value (a user harness's, a model harness's, or the default's). The models
-screen shows each value with the layer it came from.
+A slot's harness is the one its user picked (the default of its kind until they pick another): nothing here
+chooses one. A slot's capability resolves in layers: the user's override, else a model-check result the user
+accepted, else the harness's value. The models screen shows each value with the layer it came from.
 """
 import re
 
@@ -18,7 +18,7 @@ def key_of(role, m):
     return vault.key_name(role, (m or {}).get("location") or "")
 CAP_RULES = rules.RULES
 
-# the models each slot's server last reported (filled by the model check): a hint for the guess
+# the models each slot's server last reported (filled by the model check), shown on the models screen
 _reported = {"text": [], "image": []}
 
 
@@ -70,20 +70,14 @@ def script_text(m):
 
 
 def pick(role, s=None, m=None):
-    """-> (harness class, "user" | "guess", the hint's source or None, the hint or None)."""
+    """-> (the slot's harness class, ...). The one the slot names; the default of its kind when it names none, or
+    one that is no longer there (a user's file removed). Never a guess. (The rest of the tuple is kept for the
+    callers that unpack it.)"""
     m = m if m is not None else slot(role, s)
-    chosen = m.get("harness") or "auto"
-    if chosen != "auto":
-        p = harnesses.get(chosen)
-        if p is not None and p.kind == role:
-            return p, "user", None, None
-    if m.get("api") == "cli":
-        # a command line names its model in the command itself; no server reports one and there is no start script
-        from .cli import model_of
-        p, source, hint = harnesses.guess(role, model_of(m.get("location") or ""))
-        return p, "guess", source, hint
-    p, source, hint = harnesses.guess(role, m.get("model"), _reported.get(role), script_text(m))
-    return p, "guess", source, hint
+    p = harnesses.get(m.get("harness") or "")
+    if p is None or p.kind != role:
+        p = harnesses.DEFAULT[role]
+    return p, "user", None, None
 
 
 def capabilities(role, s=None, m=None):
@@ -121,19 +115,13 @@ def describe(role, s=None, lineup=None):
     lu = S.lineup(s, lineup) if lineup else S.active(s)
     m = lu[role]
     loc = str(m.get("location") or "").strip()
-    p, how, source, hint = pick(role, s, m)
-    if how == "user":
-        why = "picked by you"
-    elif source:
-        why = "guessed from %s (%s)" % (harnesses.HINT_LABEL[source], hint)
-    else:
-        why = "no harness matched, so the default harness is used"
+    p = pick(role, s, m)[0]
     return {
         "lineup": lu["name"],
         "configured": bool(loc),
         "location": loc,
         "script": m.get("script") or "",
-        "harness": {"id": p.id, "name": p.name, "how": how, "why": why},
+        "harness": {"id": p.id, "name": p.name},
         "capabilities": capabilities(role, s, m),
         "off_machine": pages_go_to(role, s, m),
         "harnesses": [{"id": q.id, "name": q.name} for q in harnesses.for_kind(role)],
@@ -145,8 +133,8 @@ def check_harness_and_overrides(role, m, where=None):
     """Errors in a slot's harness choice and capability values (used by settings.validate)."""
     where = where or "the %s slot" % role
     errs = []
-    chosen = m.get("harness") or "auto"
-    if chosen != "auto":
+    chosen = m.get("harness") or ""
+    if chosen:
         p = harnesses.get(chosen)
         if p is None or p.kind != role:
             errs.append("%s: %r is not a %s harness" % (where, chosen, role))

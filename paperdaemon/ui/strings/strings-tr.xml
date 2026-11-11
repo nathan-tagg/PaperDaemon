@@ -315,7 +315,6 @@
   <string name="common.disclaimer">Feragatname</string>
   <string name="common.cancel">İptal</string>
   <string name="slot.other_provider">Diğer (OpenAI uyumlu)</string>
-  <string name="slot.harness_auto">Otomatik (modelin adından)</string>
   <string name="slot.harness">Harness</string>
   <string name="slot.add_harness">+ Harness ekle</string>
   <string name="slot.none">Yok</string>
@@ -428,7 +427,6 @@
   <string name="su.need_name">Dizilimin bir ada ihtiyacı var.</string>
   <string name="su.finish_lead">PaperDaemon aşağıdaki yapılandırmayla başlayacak.</string>
   <string name="su.proceed">PaperDaemon'a geç</string>
-  <string name="su.automatic">Otomatik</string>
   <string name="su.local_at">{address} adresinde yerelde barındırılıyor</string>
   <string name="su.local_at_script">{address} adresinde yerelde barındırılıyor · bir Start.bat ile</string>
   <string name="su.harness_is">Harness: {harness}</string>
@@ -615,7 +613,7 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="slot.model.help">Modelin adı, tam olarak sağlayıcının yazdığı gibi.</string>
   <string name="slot.api_key.help">Windows Kimlik Bilgisi Yöneticisi'nde saklanır, asla bir dosyada değil. Aynı sunucuyu kullanan dizilimler onun anahtarını paylaşır.</string>
   <string name="slot.address.help_local">Modelinizin sunucusunun yanıt verdiği yer, örneğin http://127.0.0.1:8080. Orada hiçbir şey yanıt vermezse PaperDaemon aşağıdaki başlatma betiğini çalıştırır.</string>
-  <string name="slot.harness.help">PaperDaemon'ın bu modelle nasıl çalıştığı: ona ne söylediği ve yanıtları nasıl okuduğu. Otomatik, modelin adından birini seçer; Harness ekle, kendi harness'larınız için klasörü açar.</string>
+  <string name="slot.harness.help">PaperDaemon'un bu modelle nasıl çalıştığı: ona ne söylediği ve yanıtları nasıl okuduğu. "Default" çoğu modele uyar; sizinki için yapılmış biri varsa onu seçin. Harness ekle, kendi dosyalarınızın klasörünü açar.</string>
   <string name="net.source.help">Bir işin bilgi aradığı yer: API anahtarınız olan bir arama hizmeti ya da kendi çalıştırdığınız bir SearXNG sunucusu.</string>
   <string name="net.service.help">Anahtarınızın ait olduğu arama hizmeti.</string>
   <string name="net.address.help">SearXNG sunucunuzun yanıt verdiği yer, örneğin http://127.0.0.1:8888. Orada kullanılabilir bir şey yanıt vermezse PaperDaemon aşağıdaki başlatma betiğini çalıştırır.</string>

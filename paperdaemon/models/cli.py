@@ -23,8 +23,6 @@ here knows any one program. What is particular to a program is DATA, the `cli` f
                       tell the user when it is not} -- without it, a program that is found is ready
     sends_to          the host the program sends a page to, for the notices; without it the page stays here
     answer_rule       one sentence on how this program wants a structured answer given
-    model_arg         the argument after which the command names its model (`--model`): how PaperDaemon knows which
-                      model a command runs, to guess its harness; nothing is added for it
 
     {system}  {system_file}       the system text, or a file holding it
     {prompt}  {prompt_file}       the conversation as plain text, or a file holding it
@@ -94,9 +92,15 @@ def cli_of(harness, command):
     return PLAIN
 
 
-def model_of(command, cli=None):
-    """The model the command names, by the program's `model_arg` (`prog --model x` and `prog --model=x`), else ""."""
-    arg = str((cli if cli is not None else cli_of(None, command)).get("model_arg") or "").strip()
+# THE ARGUMENT A COMMAND NAMED ITS MODEL WITH in the versions that kept a model beside the command (0.2.42 to 0.2.47,
+# whose one shipped program took `--model`). Read only to bring such a slot into today's shape; nothing running does.
+_OLD_MODEL_ARG = "--model"
+
+
+def model_of(command, cli=None, legacy=False):
+    """UPGRADES ONLY (`legacy`): the model a command of an earlier version names (`prog --model x`, `prog --model=x`),
+    else "". PaperDaemon does not otherwise look for a model in a command: the command is the user's."""
+    arg = _OLD_MODEL_ARG if legacy else ""
     own = split(command)[1:]
     for i, a in enumerate(own):
         if arg and a == arg and i + 1 < len(own):
@@ -108,9 +112,9 @@ def model_of(command, cli=None):
 
 def with_model(command, model, cli=None):
     """A command and a model name kept beside it by an earlier version -> the command naming that model itself."""
-    cli = cli if cli is not None else cli_of(None, command)
-    arg = str(cli.get("model_arg") or "").strip()
-    if not (arg and str(model or "").strip() and str(command or "").strip()) or model_of(command, cli):
+    arg = _OLD_MODEL_ARG
+    if not (str(model or "").strip() and str(command or "").strip()) or model_of(command, legacy=True) \
+            or not cli_of(None, command).get("program"):
         return str(command or "").strip()
     return "%s %s %s" % (str(command).strip(), arg, str(model).strip())
 
@@ -246,8 +250,7 @@ class CommandLine(Adapter):
     def __init__(self, url=None, key=None, harness=None):
         self.command = str(url or "").strip()
         self.base = self.api = self.command
-        self.key, self.harness = None, harness
-        self.model = model_of(self.command, self.cli())          # the one the command names; no other is kept
+        self.key, self.model, self.harness = None, "", harness    # (no model is kept: the command says its own)
 
     def cli(self, harness=None):
         return cli_of(harness if harness is not None else self.harness, self.command)
@@ -256,7 +259,7 @@ class CommandLine(Adapter):
         cli = self.cli()
         if not find(self.command, cli)[0]:
             raise AdapterError("the program `%s` was not found on this computer" % (split(self.command) or ["?"])[0])
-        return [self.model] if self.model else []
+        return []
 
     def health(self):
         return ready(self.command, self.cli())[0]

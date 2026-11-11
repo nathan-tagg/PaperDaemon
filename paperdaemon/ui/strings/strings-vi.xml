@@ -315,7 +315,6 @@
   <string name="common.disclaimer">Tuyên bố miễn trừ</string>
   <string name="common.cancel">Hủy</string>
   <string name="slot.other_provider">Khác (tương thích OpenAI)</string>
-  <string name="slot.harness_auto">Tự động (theo tên mô hình)</string>
   <string name="slot.harness">Harness</string>
   <string name="slot.add_harness">+ Thêm Harness</string>
   <string name="slot.none">Không có</string>
@@ -428,7 +427,6 @@
   <string name="su.need_name">Đội hình cần một cái tên.</string>
   <string name="su.finish_lead">PaperDaemon sẽ khởi động với cấu hình sau.</string>
   <string name="su.proceed">Vào PaperDaemon</string>
-  <string name="su.automatic">Tự động</string>
   <string name="su.local_at">Chạy trên máy tại {address}</string>
   <string name="su.local_at_script">Chạy trên máy tại {address} · có Start.bat</string>
   <string name="su.harness_is">Harness: {harness}</string>
@@ -615,7 +613,7 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="slot.model.help">Tên mô hình đúng như nhà cung cấp viết.</string>
   <string name="slot.api_key.help">Được giữ trong Trình quản lý thông tin xác thực của Windows, không bao giờ trong tệp. Các đội hình dùng cùng máy chủ sẽ dùng chung khóa của nó.</string>
   <string name="slot.address.help_local">Nơi máy chủ mô hình của bạn phản hồi, ví dụ http://127.0.0.1:8080. Nếu không có gì phản hồi ở đó, PaperDaemon chạy tập lệnh khởi động bên dưới.</string>
-  <string name="slot.harness.help">Cách PaperDaemon làm việc với mô hình này: nói gì với nó và đọc câu trả lời thế nào. Tự động chọn một harness theo tên mô hình; Thêm Harness mở thư mục cho harness của riêng bạn.</string>
+  <string name="slot.harness.help">Cách PaperDaemon làm việc với mô hình này: nó nói gì với mô hình và đọc câu trả lời ra sao. "Default" hợp với hầu hết các mô hình; hãy chọn cái khác khi có cái được làm riêng cho mô hình của bạn. Thêm harness mở thư mục chứa các harness của riêng bạn.</string>
   <string name="net.source.help">Nơi một công việc tra cứu thông tin: một dịch vụ tìm kiếm bạn có khóa API, hoặc một máy chủ SearXNG bạn tự chạy.</string>
   <string name="net.service.help">Dịch vụ tìm kiếm mà khóa của bạn thuộc về.</string>
   <string name="net.address.help">Nơi máy chủ SearXNG của bạn phản hồi, ví dụ http://127.0.0.1:8888. Nếu không có phản hồi dùng được ở đó, PaperDaemon chạy tập lệnh khởi động bên dưới.</string>

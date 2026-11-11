@@ -21,3 +21,5 @@
 - [x] 2.3 A sketch fitted from the plan's parts sits at the top of a stacked place, not its middle (seen on the
       sundial page: half a page of empty paper above it)
 - [x] 2.4 No look back at a sketch on a lean lineup (his ruling 11-10)
+- [x] 2.5 The three Claude harnesses folded into Lean Default (his ruling 11-10); a slot that named one names Lean
+      Default

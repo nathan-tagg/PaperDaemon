@@ -315,7 +315,6 @@
   <string name="common.disclaimer">免责声明</string>
   <string name="common.cancel">取消</string>
   <string name="slot.other_provider">其他（兼容 OpenAI）</string>
-  <string name="slot.harness_auto">自动（根据模型名称）</string>
   <string name="slot.harness">适配框架</string>
   <string name="slot.add_harness">+ 添加适配框架</string>
   <string name="slot.none">无</string>
@@ -428,7 +427,6 @@
   <string name="su.need_name">阵容需要一个名称。</string>
   <string name="su.finish_lead">PaperDaemon 将以下列配置启动。</string>
   <string name="su.proceed">进入 PaperDaemon</string>
-  <string name="su.automatic">自动</string>
   <string name="su.local_at">本地托管于 {address}</string>
   <string name="su.local_at_script">本地托管于 {address} · 带有 Start.bat</string>
   <string name="su.harness_is">适配框架：{harness}</string>
@@ -615,7 +613,7 @@
   <string name="slot.model.help">模型名称，与服务商的写法完全一致。</string>
   <string name="slot.api_key.help">保存在 Windows 凭据管理器中，从不写入文件。使用同一服务器的阵容共用其密钥。</string>
   <string name="slot.address.help_local">模型服务器应答的地址，例如 http://127.0.0.1:8080。如果那里没有应答，PaperDaemon 会运行下方的启动脚本。</string>
-  <string name="slot.harness.help">PaperDaemon 与此模型协作的方式：告诉它什么、如何读取它的回答。自动会根据模型名称选择一个；添加 Harness 会打开存放您自己的 harness 的文件夹。</string>
+  <string name="slot.harness.help">PaperDaemon 与此模型协作的方式：告诉它什么，以及如何读取它的回答。“Default”适合大多数模型；如果有专为你的模型制作的，就选那个。“添加 Harness”会打开存放你自己的 harness 的文件夹。</string>
   <string name="net.source.help">任务查找资料的地方：您有 API 密钥的搜索服务，或您自己运行的 SearXNG 服务器。</string>
   <string name="net.service.help">您的密钥所属的搜索服务。</string>
   <string name="net.address.help">您的 SearXNG 服务器应答的地址，例如 http://127.0.0.1:8888。如果那里没有可用的应答，PaperDaemon 会运行下方的启动脚本。</string>

@@ -315,7 +315,6 @@
   <string name="common.disclaimer">注意事項</string>
   <string name="common.cancel">キャンセル</string>
   <string name="slot.other_provider">その他 (OpenAI 互換)</string>
-  <string name="slot.harness_auto">自動 (モデル名から)</string>
   <string name="slot.harness">ハーネス</string>
   <string name="slot.add_harness">+ ハーネスを追加</string>
   <string name="slot.none">なし</string>
@@ -428,7 +427,6 @@
   <string name="su.need_name">ラインナップには名前が必要です。</string>
   <string name="su.finish_lead">PaperDaemon は次の構成で起動します。</string>
   <string name="su.proceed">PaperDaemon へ進む</string>
-  <string name="su.automatic">自動</string>
   <string name="su.local_at">{address} でローカルにホスト</string>
   <string name="su.local_at_script">{address} でローカルにホスト · Start.bat あり</string>
   <string name="su.harness_is">ハーネス: {harness}</string>
@@ -615,7 +613,7 @@
   <string name="slot.model.help">事業者が表記しているとおりのモデル名です。</string>
   <string name="slot.api_key.help">Windows 資格情報マネージャーに保存され、ファイルには書かれません。同じサーバーを使うラインナップはそのキーを共有します。</string>
   <string name="slot.address.help_local">モデルのサーバーが応答する場所。例: http://127.0.0.1:8080。そこで何も応答しなければ、PaperDaemon は下の起動スクリプトを実行します。</string>
-  <string name="slot.harness.help">PaperDaemon がこのモデルとどう連携するか、つまり何を伝え、応答をどう読むかです。自動はモデル名から選びます。ハーネスを追加は自分用のフォルダーを開きます。</string>
+  <string name="slot.harness.help">PaperDaemon がこのモデルとどう働くか、つまり何を伝え、答えをどう読むかを決めます。ほとんどのモデルには「Default」が合います。お使いのモデル用のものがあれば、そちらを選んでください。「ハーネスを追加」で自作用のフォルダーが開きます。</string>
   <string name="net.source.help">ジョブが調べものをする先です。API キーを持っている検索サービスか、自分で動かす SearXNG サーバーです。</string>
   <string name="net.service.help">キーが属する検索サービスです。</string>
   <string name="net.address.help">SearXNG サーバーが応答する場所。例: http://127.0.0.1:8888。そこで使えるものが応答しなければ、PaperDaemon は下の起動スクリプトを実行します。</string>

@@ -315,7 +315,6 @@
   <string name="common.disclaimer">अस्वीकरण</string>
   <string name="common.cancel">रद्द करें</string>
   <string name="slot.other_provider">अन्य (OpenAI-संगत)</string>
-  <string name="slot.harness_auto">स्वचालित (मॉडल के नाम से)</string>
   <string name="slot.harness">हार्नेस</string>
   <string name="slot.add_harness">+ हार्नेस जोड़ें</string>
   <string name="slot.none">कोई नहीं</string>
@@ -428,7 +427,6 @@
   <string name="su.need_name">लाइनअप को एक नाम चाहिए।</string>
   <string name="su.finish_lead">PaperDaemon इस कॉन्फ़िगरेशन के साथ शुरू होगा।</string>
   <string name="su.proceed">PaperDaemon पर जाएँ</string>
-  <string name="su.automatic">स्वचालित</string>
   <string name="su.local_at">{address} पर लोकल होस्ट</string>
   <string name="su.local_at_script">{address} पर लोकल होस्ट · Start.bat के साथ</string>
   <string name="su.harness_is">हार्नेस: {harness}</string>
@@ -615,7 +613,7 @@
   <string name="slot.model.help">मॉडल का नाम ठीक वैसा ही जैसा प्रदाता लिखता है।</string>
   <string name="slot.api_key.help">Windows क्रेडेंशियल मैनेजर में रखी जाती है, किसी फ़ाइल में कभी नहीं। एक ही सर्वर इस्तेमाल करने वाले लाइनअप उसकी कुंजी साझा करते हैं।</string>
   <string name="slot.address.help_local">जहाँ आपके मॉडल का सर्वर जवाब देता है, उदाहरण के लिए http://127.0.0.1:8080। अगर वहाँ कुछ जवाब नहीं देता, तो PaperDaemon नीचे दी गई स्टार्ट स्क्रिप्ट चलाता है।</string>
-  <string name="slot.harness.help">PaperDaemon इस मॉडल के साथ कैसे काम करता है: उसे क्या बताता है और उसके जवाब कैसे पढ़ता है। स्वचालित मॉडल के नाम से एक चुनता है; Harness जोड़ें आपके अपने harness के लिए फ़ोल्डर खोलता है।</string>
+  <string name="slot.harness.help">PaperDaemon इस मॉडल के साथ कैसे काम करता है: उसे क्या बताता है और जवाब कैसे पढ़ता है। "Default" ज़्यादातर मॉडलों के लिए ठीक है; अगर कोई आपके मॉडल के लिए बना हो तो वही चुनें। हार्नेस जोड़ें आपके अपने हार्नेस का फ़ोल्डर खोलता है।</string>
   <string name="net.source.help">जहाँ कोई काम जानकारी खोजता है: वह खोज सेवा जिसकी API कुंजी आपके पास है, या वह SearXNG सर्वर जिसे आप खुद चलाते हैं।</string>
   <string name="net.service.help">वह खोज सेवा जिसकी यह कुंजी है।</string>
   <string name="net.address.help">जहाँ आपका SearXNG सर्वर जवाब देता है, उदाहरण के लिए http://127.0.0.1:8888। अगर वहाँ कोई काम का जवाब नहीं मिलता, तो PaperDaemon नीचे दी गई स्टार्ट स्क्रिप्ट चलाता है।</string>

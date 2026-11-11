@@ -315,7 +315,6 @@
   <string name="common.disclaimer">تنبيه</string>
   <string name="common.cancel">إلغاء</string>
   <string name="slot.other_provider">آخر (متوافق مع OpenAI)</string>
-  <string name="slot.harness_auto">تلقائي (من اسم النموذج)</string>
   <string name="slot.harness">الإطار</string>
   <string name="slot.add_harness">+ إضافة إطار</string>
   <string name="slot.none">لا شيء</string>
@@ -428,7 +427,6 @@
   <string name="su.need_name">تحتاج التشكيلة إلى اسم.</string>
   <string name="su.finish_lead">سيبدأ PaperDaemon بالإعداد التالي.</string>
   <string name="su.proceed">المتابعة إلى PaperDaemon</string>
-  <string name="su.automatic">تلقائي</string>
   <string name="su.local_at">مستضاف محليًا على {address}</string>
   <string name="su.local_at_script">مستضاف محليًا على {address} · مع Start.bat</string>
   <string name="su.harness_is">الإطار: {harness}</string>
@@ -636,7 +634,7 @@
   <string name="slot.model.help">اسم النموذج كما يكتبه المزوّد تمامًا.</string>
   <string name="slot.api_key.help">يُحفظ في مدير بيانات الاعتماد في Windows، ولا يُكتب في ملف أبدًا. التشكيلات التي تستخدم الخادم نفسه تتشارك مفتاحه.</string>
   <string name="slot.address.help_local">حيث يجيب خادم نموذجك، مثلًا http://127.0.0.1:8080. إن لم يجب شيء هناك، يشغّل PaperDaemon سكربت البدء أدناه.</string>
-  <string name="slot.harness.help">طريقة عمل PaperDaemon مع هذا النموذج: ما يقوله له وكيف يقرأ إجاباته. «تلقائي» يختار واحدًا من اسم النموذج؛ و«إضافة Harness» يفتح المجلد لما تضيفه بنفسك.</string>
+  <string name="slot.harness.help">كيف يعمل PaperDaemon مع هذا النموذج: ما الذي يخبره به وكيف يقرأ إجاباته. «Default» يناسب معظم النماذج؛ اختر غيره إن وُجد واحد مصنوع لنموذجك. «إضافة Harness» يفتح المجلد الخاص بما تصنعه أنت.</string>
   <string name="net.source.help">حيث تبحث المهمة عن المعلومات: خدمة بحث لديك مفتاح API لها، أو خادم SearXNG تشغّله بنفسك.</string>
   <string name="net.service.help">خدمة البحث التي ينتمي إليها مفتاحك.</string>
   <string name="net.address.help">حيث يجيب خادم SearXNG الخاص بك، مثلًا http://127.0.0.1:8888. إن لم يجب هناك شيء صالح للاستخدام، يشغّل PaperDaemon سكربت البدء أدناه.</string>

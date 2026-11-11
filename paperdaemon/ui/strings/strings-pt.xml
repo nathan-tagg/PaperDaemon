@@ -314,7 +314,6 @@
   <string name="common.disclaimer">Aviso</string>
   <string name="common.cancel">Cancelar</string>
   <string name="slot.other_provider">Outro (compatível com OpenAI)</string>
-  <string name="slot.harness_auto">Automático (pelo nome do modelo)</string>
   <string name="slot.harness">Harness</string>
   <string name="slot.add_harness">+ Adicionar harness</string>
   <string name="slot.none">Nenhum</string>
@@ -427,7 +426,6 @@
   <string name="su.need_name">A escalação precisa de um nome.</string>
   <string name="su.finish_lead">O PaperDaemon vai iniciar com a configuração a seguir.</string>
   <string name="su.proceed">Ir para o PaperDaemon</string>
-  <string name="su.automatic">Automático</string>
   <string name="su.local_at">Hospedado localmente em {address}</string>
   <string name="su.local_at_script">Hospedado localmente em {address} · com um Start.bat</string>
   <string name="su.harness_is">Harness: {harness}</string>
@@ -615,7 +613,7 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="slot.model.help">O nome do modelo exatamente como o provedor o escreve.</string>
   <string name="slot.api_key.help">Guardada no Gerenciador de Credenciais do Windows, nunca em um arquivo. Escalações que usam o mesmo servidor compartilham a chave dele.</string>
   <string name="slot.address.help_local">Onde o servidor do seu modelo responde, por exemplo http://127.0.0.1:8080. Se nada responder ali, o PaperDaemon executa o script de inicialização abaixo.</string>
-  <string name="slot.harness.help">Como o PaperDaemon trabalha com este modelo: o que diz a ele e como lê as respostas. Automático escolhe um pelo nome do modelo; Adicionar harness abre a pasta para os seus.</string>
+  <string name="slot.harness.help">Como o PaperDaemon trabalha com este modelo: o que diz a ele e como lê as respostas. "Default" serve para a maioria dos modelos; escolha outro quando houver um feito para o seu. Adicionar harness abre a pasta dos seus.</string>
   <string name="net.source.help">Onde um trabalho busca informações: um serviço de busca para o qual você tem chave de API, ou um servidor SearXNG que você mesmo executa.</string>
   <string name="net.service.help">O serviço de busca ao qual a sua chave pertence.</string>
   <string name="net.address.help">Onde o seu servidor SearXNG responde, por exemplo http://127.0.0.1:8888. Se nada utilizável responder ali, o PaperDaemon executa o script de inicialização abaixo.</string>

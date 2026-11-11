@@ -1,6 +1,6 @@
 {
   "id": "default-text",
-  "name": "Built in",
+  "name": "Default",
   "server": "Any OpenAI- or Anthropic-compatible server",
   "models": [
     "Any model that sees the page and can be made to call a tool"

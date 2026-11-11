@@ -10,7 +10,7 @@ from paperdaemon.harnesses import COLORING_BOOK
 DefaultText, DefaultImage = harnesses.DEFAULT["text"], harnesses.DEFAULT["image"]
 Qwen36_27B, Qwen38_27B = harnesses.get("qwen3.6-27b"), harnesses.get("qwen3.8-27b")
 Flux2Klein9B, ZImageTurbo = harnesses.get("flux.2-klein-9b"), harnesses.get("z-image-turbo")
-ClaudeOpus55 = harnesses.get("claude-opus-5.5")
+LeanDefault = harnesses.get("lean-default")
 
 
 @pytest.mark.parametrize("kind,hint,want", [
@@ -24,9 +24,9 @@ ClaudeOpus55 = harnesses.get("claude-opus-5.5")
     ("text", "Qwen3.8-27B-Base-Q8_0.gguf", DefaultText),     # pretrained, not instruction-tuned
     ("text", "qwen3-14b-q4_k_m.gguf", DefaultText),
     ("text", "Qwen3.6-27B-Base-Q8_0.gguf", DefaultText),
-    ("text", "claude-opus-5-5", ClaudeOpus55),
-    ("text", "claude-sonnet-5-5", harnesses.get("claude-sonnet-5.5")),
-    ("text", "haiku", harnesses.get("claude-haiku-5.5")),
+    ("text", "claude-opus-5-5", LeanDefault),              # the harnesses of 0.2.39 to 0.2.50 for these are Lean Default
+    ("text", "claude-sonnet-5-5", LeanDefault),
+    ("text", "haiku", LeanDefault),
     ("text", "claude-sonnet-4-6", DefaultText),
     ("image", "flux-2-klein-9b-Q8_0.gguf", Flux2Klein9B),
     ("image", "FLUX.2-klein-9B-BF16.gguf", Flux2Klein9B),
@@ -36,26 +36,44 @@ ClaudeOpus55 = harnesses.get("claude-opus-5.5")
     ("image", "fuzz-imagery-v2.safetensors", DefaultImage),
     ("image", "Qwen3.6-27B", DefaultImage),                   # a text harness never fits an image slot
 ])
-def test_guess_by_name(kind, hint, want):
-    got, source, _ = harnesses.guess(kind, model=hint)
-    assert got is want
-    assert source == ("model" if want not in (DefaultText, DefaultImage) else None)
+def test_a_slot_saved_as_automatic_keeps_the_harness_it_ran_on(kind, hint, want):
+    """PaperDaemon does not choose a harness ("ZERO inference"). Versions to 0.2.50 did, from the model's name, when a
+    slot said "automatic": such a slot is given, once, as its settings are read, the harness it was running on."""
+    assert harnesses.was_automatic(kind, model=hint) == want.id
+    old = {"location": "http://127.0.0.1:9000", "model": hint, "harness": "auto"}
+    assert settings.upgrade_slot(old, kind)["harness"] == want.id
+    assert settings.upgrade_slot(dict(old, harness="default-" + kind), kind)["harness"] == "default-" + kind   # a pick stands
 
 
-def test_hint_order_is_name_then_server_then_script():
-    p, source, _ = harnesses.guess("image", model="", server=["z_image_turbo.gguf"],
-                                  launch=r"sd-server.exe --diffusion-model C:\m\flux-2-klein-9b-Q8_0.gguf")
-    assert (p, source) == (ZImageTurbo, "server")
-    p, source, hint = harnesses.guess("image", launch=r'sd-server.exe --diffusion-model "C:\m\flux-2-klein-9b-Q8_0.gguf" --vae C:\m\ae.safetensors')
-    assert (p, source) == (Flux2Klein9B, "launch") and hint.endswith("flux-2-klein-9b-Q8_0.gguf")
-    p, source, _ = harnesses.guess("text", model="qwen3.6-27b", server=["something-else"])
-    assert (p, source) == (Qwen36_27B, "model")
-
-
-def test_a_batch_file_variable_names_the_model():
+def test_the_start_script_s_model_file_counted_after_the_model_s_name():
+    assert harnesses.was_automatic("image", launch=r'sd-server.exe --diffusion-model "C:\m\flux-2-klein-9b-Q8_0.gguf" '
+                                                   r'--vae C:\m\ae.safetensors') == "flux.2-klein-9b"
+    assert harnesses.was_automatic("image", model="z_image_turbo.gguf",
+                                   launch=r"sd-server.exe --diffusion-model C:\m\flux-2-klein-9b-Q8_0.gguf") == "z-image-turbo"
     script = 'set "MODEL=%MODELS%\\qwen3.8-27b-q4km.gguf"\r\n"%SERVER%" -m "%MODEL%"\r\n'
-    p, source, _ = harnesses.guess("text", launch=script)
-    assert (p, source) == (Qwen38_27B, "launch")
+    assert harnesses.was_automatic("text", launch=script) == "qwen3.8-27b"
+
+
+def test_nothing_chooses_a_harness_any_more():
+    """The slot's harness is the one it names; one that is gone, or none, is the default of its kind. No model name,
+    reported model or start script changes that."""
+    assert not hasattr(harnesses, "guess")
+    for model in ("qwen3.6-27b", "claude-opus-5-5", "anything"):
+        m = dict(settings.slot_defaults("text"), location="http://127.0.0.1:9000", model=model)
+        assert m["harness"] == "default-text" and slots.pick("text", None, m)[0] is DefaultText
+        assert slots.pick("text", None, dict(m, harness="lean-default"))[0] is LeanDefault
+        assert slots.pick("text", None, dict(m, harness="a-file-since-removed"))[0] is DefaultText
+        assert slots.pick("text", None, dict(m, harness="auto"))[0] is DefaultText       # (unread by any upgrade: still no guess)
+    slots.report_models("text", ["qwen3.6-27b"])
+    try:
+        assert slots.pick("text", None, dict(settings.slot_defaults("text"), location="http://127.0.0.1:9000"))[0] is DefaultText
+    finally:
+        slots.report_models("text", [])
+    assert [h.name for h in harnesses.for_kind("text")][:2] == ["Default", "Lean Default (stronger models only)"]
+    assert harnesses.for_kind("image")[0].name == "Default"
+    for gone in ("claude-opus-5.5", "claude-sonnet-5.5", "claude-haiku-5.5"):
+        assert harnesses.get(gone) is None
+        assert settings.upgrade_slot({"location": "x", "harness": gone}, "text")["harness"] == "lean-default"
 
 
 def test_model_harnesses_override_only_what_differs():
@@ -166,10 +184,11 @@ def test_a_broken_user_harness_is_listed_and_skipped(body, message):
     assert harnesses.get("fine").max_output == 4096
 
 
-def test_a_user_pattern_claims_a_model():
+def test_a_user_pattern_still_counts_for_a_slot_saved_as_automatic():
     _user_harness("mine.json", {"extends": "qwen3.8-27b", "patterns": ["q4km"], "max_output": 100000})
-    p, source, _ = harnesses.guess("text", model="qwen3.8-27b-q4km.gguf")
-    assert p.id == "mine" and source == "model"
+    assert harnesses.was_automatic("text", model="qwen3.8-27b-q4km.gguf") == "mine"
+    m = dict(settings.slot_defaults("text"), location="http://127.0.0.1:9000", model="qwen3.8-27b-q4km.gguf")
+    assert slots.pick("text", None, m)[0] is DefaultText               # ...and for nothing else
 
 
 def _s(**text):
@@ -179,22 +198,21 @@ def _s(**text):
 
 
 def test_capabilities_resolve_in_layers():
-    s = _s(model="qwen3.6-27b", script="", harness="auto")
+    s = _s(model="qwen3.6-27b", script="", harness="qwen3.6-27b")
     caps = slots.capabilities("text", s)
     assert caps["vision"] == {"value": True, "source": "default"}
     assert caps["max_output"] == {"value": None, "source": "default"}
-    s = _s(model="qwen3.6-27b", script="", harness="auto", tested={"vision": False, "max_output": 16384},
+    s = _s(model="qwen3.6-27b", script="", harness="qwen3.6-27b", tested={"vision": False, "max_output": 16384},
            overrides={"max_output": 8000})
     caps = slots.capabilities("text", s)
     assert caps["vision"] == {"value": False, "source": "test"}
     assert caps["max_output"] == {"value": 8000, "source": "override"}
 
 
-def test_user_pick_beats_the_guess():
+def test_the_harness_is_the_user_s_pick():
     s = _s(model="qwen3.6-27b", harness="default-text")
-    p, how, *_ = slots.pick("text", s)
-    assert p is DefaultText and how == "user"
-    assert "picked by you" in slots.describe("text", s)["harness"]["why"]
+    assert slots.pick("text", s)[0] is DefaultText
+    assert slots.describe("text", s)["harness"] == {"id": "default-text", "name": "Default"}
 
 
 def test_the_shipped_lineups_pick_their_harnesses():
@@ -264,8 +282,7 @@ def test_the_shipped_example_harnesses_are_valid_and_not_active():
 
 def test_shipped_harnesses_are_data_loaded_by_the_users_loader():
     folder = os.path.join(os.path.dirname(harnesses.__file__), "shipped")
-    assert sorted(os.listdir(folder)) == ["claude-code.json", "claude-haiku-5.5.json", "claude-opus-5.5.json",
-                                          "claude-sonnet-5.5.json", "default-image.json", "default-text.json",
+    assert sorted(os.listdir(folder)) == ["claude-code.json", "default-image.json", "default-text.json",
                                           "flux.2-klein-9b.json", "lean-default.json", "qwen3.6-27b.json", "qwen3.8-27b.json",
                                           "z-image-turbo.json"]
     assert all(p.source == "shipped" and p.file for p in harnesses.BUILT_IN)

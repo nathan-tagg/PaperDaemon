@@ -38,3 +38,5 @@
       answer where there were two; a real call 11-10: 5,978 tokens in, 6.6 s, against 15,109 and 8.7 s)
 - [x] 4.5 Real jobs in the False Mirror on the maintainer's lineup after the update (11-10 on 0.2.48): his saved
       command and model read as `claude --model claude-opus-5-5`, the effort typed into it, three pages worked
+- [x] 4.6 Nothing reads a model out of a command (0.2.51): the program's data names no model argument, and the three
+      identical Claude harnesses are gone (the change `remove-automatic-harness`)

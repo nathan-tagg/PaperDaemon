@@ -314,7 +314,6 @@
   <string name="common.disclaimer">Disclaimer</string>
   <string name="common.cancel">Cancel</string>
   <string name="slot.other_provider">Other (OpenAI-compatible)</string>
-  <string name="slot.harness_auto">Automatic (from the model's name)</string>
   <string name="slot.harness">Harness</string>
   <string name="slot.add_harness">+ Add Harness</string>
   <string name="slot.none">None</string>
@@ -427,7 +426,6 @@
   <string name="su.need_name">The lineup needs a name.</string>
   <string name="su.finish_lead">PaperDaemon will start with the following configuration.</string>
   <string name="su.proceed">Proceed to PaperDaemon</string>
-  <string name="su.automatic">Automatic</string>
   <string name="su.local_at">Hosted locally at {address}</string>
   <string name="su.local_at_script">Hosted locally at {address} · with a Start.bat</string>
   <string name="su.harness_is">Harness: {harness}</string>
@@ -615,7 +613,7 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="slot.model.help">The model's name exactly as the provider writes it.</string>
   <string name="slot.api_key.help">Kept in Windows Credential Manager, never in a file. Lineups that use the same server share its key.</string>
   <string name="slot.address.help_local">Where your model's server answers, for example http://127.0.0.1:8080. If nothing answers there, PaperDaemon runs the start script below.</string>
-  <string name="slot.harness.help">How PaperDaemon works with this model: what it tells it and how it reads the answers. Automatic picks one from the model's name; Add Harness opens the folder for your own.</string>
+  <string name="slot.harness.help">How PaperDaemon works with this model: what it tells it and how it reads the answers. "Default" suits most models; pick another when one is made for yours. Add Harness opens the folder for your own.</string>
   <string name="net.source.help">Where a job looks things up: a search service you have an API key for, or a SearXNG server you run yourself.</string>
   <string name="net.service.help">The search service your key belongs to.</string>
   <string name="net.address.help">Where your SearXNG server answers, for example http://127.0.0.1:8888. If nothing usable answers there, PaperDaemon runs the start script below.</string>
