@@ -402,7 +402,8 @@ def test_the_editor_reads_and_saves_a_mirror_page_through_the_engine(monkeypatch
         assert r.status_code == 200 and r.json()["erased"] == 1 and r.json()["changed"], r.text
         assert c.put(url, json=scene).json()["reason"] == "stale"
         e = ledger.load()["entries"]["k"]
-        assert e["handled_sha"] == ledger.page_state(doc, pid)["sha"]
+        # the user's edit in the Mirror is the user's writing, as on the tablet: the page is NOT marked handled, so a job starts
+        assert e["handled_sha"] == "old" != ledger.page_state(doc, pid)["sha"]
         fresh_scene = c.get(url + "?form=bin")
         assert fresh_scene.status_code == 200 and fresh_scene.content[:4] == b"PDS1"
         cloud["newer"] = True

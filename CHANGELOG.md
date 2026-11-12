@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.72
+
+- What you write or erase in the Mirror and save (Ctrl+S) starts a job on a tagged page, the same as writing on the tablet. The save used to mark the page as already handled, so the edit reached the tablet and no job started.
+
 ## 0.2.71
 
 - Weak never erases anything you wrote; replies only add, your request included. On Qwen3-VL 8B, asked which item in a list doesn't belong, it used to take your list off with the request.

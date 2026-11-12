@@ -865,22 +865,6 @@ def backup(doc):
     return folder
 
 
-def _settle_ledger(doc, pid):
-    """The page as written is PaperDaemon's own: a job settled on it stays settled (its page's state is now this one),
-    as the daemon's own writes are recorded -- the user's edit in the window is not a request to the daemon."""
-    from paperdaemon import ledger
-    with ledger.locked():
-        led = ledger.load()
-        st, touched = None, False
-        for e in (led.get("entries") or {}).values():
-            if e.get("doc_id") == doc and e.get("page_id") == pid and e.get("status") in ("done", "skipped"):
-                st = st or ledger.page_state(doc, pid)
-                e["handled_sha"], e["handled_raw"] = st["sha"], st.get("raw")
-                touched = True
-        if touched:
-            ledger.save(led)
-
-
 # ---------------------------------------------------------------- writing and pushing
 @paths.locks_page(lambda doc, page_no, *a, **k: _page(doc, page_no)[1])
 def write_in_place(doc, page_no, scene, stamp):
@@ -900,7 +884,6 @@ def write_in_place(doc, page_no, scene, stamp):
             return dict(done, changed=False, stamp=stamp, version=local.page_version(doc, page_no))
         backup(doc)
         paths.write_atomic(path, new)
-    _settle_ledger(doc, pid)
     _record_written(doc)
     return dict(done, changed=True, stamp=stamp_of(new), version=local.page_version(doc, page_no))
 
