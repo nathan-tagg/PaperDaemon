@@ -863,11 +863,15 @@ def _turn(msgs, allowed, tries=3, choice="required", accept_prose=False, final=N
             return None, None, {"error": "model: %s" % str(ex)[:100]}
         used = usage.get("prompt_tokens") or 0
         JOB.ctx_peak = max(JOB.ctx_peak, used)
-        if deciding:
-            start_tokens = used if start_tokens is None else start_tokens
-            spent = (used - start_tokens) + (usage.get("completion_tokens") or 0)
         said = (m.get("content") or "").strip()
         calls = H._H().calls(m)
+        if deciding:
+            # WHAT THE MODEL WRITES INTO THE CONVERSATION, not what it thought on the way: a turn's thinking is in its
+            # output count, and on 11-12 one turn's 128,000 tokens of it spent the whole budget before the first look,
+            # so read_page was refused ("the looking is done") and the job said it could not read the page
+            start_tokens = used if start_tokens is None else start_tokens
+            wrote = len(said) + len(json.dumps(m.get("tool_calls") or [], ensure_ascii=False))
+            spent = (used - start_tokens) + wrote // 4
         # prose here is a reply that should have been a call; it is never taken as the request
         if usage.get("runaway"):
             msgs.extend(H._H().nudge_runaway(said, allowed))

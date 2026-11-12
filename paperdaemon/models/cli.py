@@ -25,6 +25,9 @@ here knows any one program. What is particular to a program is DATA, the `cli` f
     answer_rule       one sentence on how this program wants a structured answer given
     web_search        the program's name for its own web search tool: {web_search} is that name when the model
                       searches the web itself (the lineup has no search and the model can), and nothing otherwise
+    env               {name: text with placeholders}: set in the program's environment for each request (the
+                      program's own name for a setting it reads only from there: the request's output limit, say);
+                      a variable whose placeholder has nothing to give is left unset
 
     {system}  {system_file}       the system text, or a file holding it
     {prompt}  {prompt_file}       the conversation as plain text, or a file holding it
@@ -135,8 +138,8 @@ def find(command, cli=None):
     return hit, parts[1:]
 
 
-def _run(exe, args, stdin=None, folder=None):
-    kw = {}
+def _run(exe, args, stdin=None, folder=None, env=None):
+    kw = {"env": dict(os.environ, **env)} if env else {}
     if os.name == "nt":
         kw["creationflags"] = 0x08000000   # no console window
     try:
@@ -283,7 +286,8 @@ class CommandLine(Adapter):
             body = harness.tune(body, caps)
         args_spec = list(cli.get("args") or [])
         inp = cli.get("input", PLAIN["input"])
-        used = set(HOLE.findall(json.dumps([args_spec, inp])))
+        env_spec = dict(cli.get("env") or {})
+        used = set(HOLE.findall(json.dumps([args_spec, inp, env_spec])))
         takes_pictures = (isinstance(inp, dict) and bool(inp.get("picture"))) or any(isinstance(a, dict) for a in args_spec)
         turns, dropped = turns_of(messages, bool(caps.get("vision")) and takes_pictures)
         system = system or "You are a helpful assistant."
@@ -364,6 +368,11 @@ class CommandLine(Adapter):
             stdin = json.dumps(_fill_json(copy.deepcopy(inp.get("json", "{parts}")), values, parts), ensure_ascii=False) + "\n"
         else:
             stdin = _fill(inp, values)[0] if inp else None
+        self.env = {}
+        for k, v in env_spec.items():
+            text, ok = _fill(str(v), values)
+            if ok and text != "":
+                self.env[str(k)] = text
         return args, stdin, system, dropped
 
     @staticmethod
@@ -420,7 +429,7 @@ class CommandLine(Adapter):
         try:
             args, stdin, system, dropped = self.request(system, messages, tools, force_tool, caps, harness,
                                                         temperature, max_tokens, folder=folder)
-            p = _run(exe, own + args, stdin, folder)
+            p = _run(exe, own + args, stdin, folder, getattr(self, "env", None))
         finally:
             shutil.rmtree(folder, ignore_errors=True)
         try:

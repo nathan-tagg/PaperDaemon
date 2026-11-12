@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.76
+
+- A model run as a command-line program (`claude`) is held to PaperDaemon's output limit (16,384 tokens). It wasn't given one: on 11-12 Opus spent 14 minutes and about 128,000 tokens on one turn before it asked for anything.
+- Looking at the page (reading another page, the changes, the marks) is counted by what the model writes, not by its hidden thinking. One long-thinking turn used to use the whole allowance, so the job's request to read page 2 was refused and it said it couldn't read the page.
+- Handwriting on a long page is read. A page past about 5,000 units tall gave Windows' reader a picture too large to take, so none of its handwriting was read; it is now read in overlapping bands.
+
 ## 0.2.75
 
 - The Daemon's notes no longer pile up on the tablet. The on-it and progress notes went up on copies of the page as it was when the job began, so every note reused the same stroke numbers, and the final note and the job's own drawing reused them again. The tablet keeps strokes it already has, so old notes stayed on the page (four signatures over two Daemon layers). Every note is now written into the page itself: it erases the last note the way the tablet erases, and its strokes get new numbers.

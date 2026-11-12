@@ -37,6 +37,39 @@ class WindowsOCR(Engine):
         return True, ""
 
     def read_image(self, image):
+        """A TALLER PICTURE THAN THE ENGINE TAKES is read in bands (Windows refuses either side past MAX_SIDE: a long
+        page's render failed whole, 11-12): each band overlaps the next, and a line is kept from the band whose own
+        part holds its middle, moved back to the picture's place."""
+        from .render import MAX_SIDE
+        if image.height <= MAX_SIDE - 1 and image.width <= MAX_SIDE - 1:
+            return self._read_one(image)
+        if image.width > MAX_SIDE - 1:                    # (a page is never that wide: scaled to fit across)
+            from PIL import Image
+            k = (MAX_SIDE - 1) / float(image.width)
+            small = image.resize((MAX_SIDE - 1, max(1, int(image.height * k))), Image.LANCZOS)
+            return [Line([Word(w.text, tuple(v / k for v in w.box), w.confidence) for w in ln.words])
+                    for ln in self.read_image(small)]
+        band, over = MAX_SIDE - 1, 600
+        step = band - over
+        lines, top = [], 0
+        while True:
+            bottom = min(image.height, top + band)
+            own0 = 0 if top == 0 else top + over / 2.0
+            own1 = image.height if bottom == image.height else bottom - over / 2.0
+            for ln in self._read_one(image.crop((0, top, image.width, bottom))):
+                words = [Word(w.text, (w.box[0], w.box[1] + top, w.box[2], w.box[3] + top), w.confidence)
+                         for w in ln.words]
+                if not words:
+                    continue
+                mid = (min(w.box[1] for w in words) + max(w.box[3] for w in words)) / 2.0
+                if own0 <= mid < own1:
+                    lines.append(Line(words))
+            if bottom == image.height:
+                break
+            top += step
+        return lines
+
+    def _read_one(self, image):
         from winrt.windows.graphics.imaging import BitmapPixelFormat, SoftwareBitmap
         rgba = image.convert("RGBA")
         bmp = SoftwareBitmap.create_copy_from_buffer(rgba.tobytes(), BitmapPixelFormat.RGBA8, rgba.width, rgba.height)

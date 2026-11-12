@@ -94,7 +94,7 @@ def _assist(a):
 def _cli(v):
     """How a command-line program is spoken to (models/cli.py reads it)."""
     if not isinstance(v, dict) or set(v) - {"program", "places", "args", "input", "output", "ready", "sends_to",
-                                             "answer_rule", "web_search"}:
+                                             "answer_rule", "web_search", "env"}:
         return False
     texts = lambda x: isinstance(x, list) and all(isinstance(t, str) for t in x)
     arg = lambda a: (isinstance(a, str) or texts(a)
@@ -110,7 +110,9 @@ def _cli(v):
             and isinstance(out.get("usage", {}), dict)
             and isinstance(chk, dict) and set(chk) <= {"args", "json", "else"} and texts(chk.get("args", []))
             and isinstance(v.get("sends_to", ""), str) and isinstance(v.get("answer_rule", ""), str)
-            and isinstance(v.get("web_search", ""), str))
+            and isinstance(v.get("web_search", ""), str)
+            and isinstance(v.get("env", {}), dict) and all(isinstance(k, str) and isinstance(t, str)
+                                                            for k, t in v.get("env", {}).items()))
 
 
 RULES = {
@@ -119,7 +121,7 @@ RULES = {
                   "\"input\": text or {\"json\", \"text\", \"picture\"}, \"output\": {\"format\": text, json or json-lines, "
                   "\"where\", \"text\", \"answer\", \"error\", \"error_text\", \"usage\"}, \"ready\": {\"args\", \"json\", "
                   "\"else\"}, \"sends_to\": a host, \"answer_rule\": a sentence, \"web_search\": the program's name for its own "
-                  "web search tool} (see the guide)"),
+                  "web search tool, \"env\": {name: text set in its environment}} (see the guide)"),
     "assists": (lambda v: isinstance(v, list) and all(_assist(a) for a in v),
                 "a list of assists, each {\"decision\": one the features declare, \"reads\": one of step.what, step.words, "
                 "step.source, step.search, item.text, \"keywords\": [words] or \"ends_with\": text, optionally \"when\": "

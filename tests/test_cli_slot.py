@@ -227,3 +227,21 @@ def test_calls_written_in_tool_call_markup_are_read():
     assert [(c["name"], c["arguments"]) for c in r["tool_calls"]] == [("answer", {"answers": ["para:1"], "lines": ["Lima is the capital."]})]
     plain = json.dumps({"type": "result", "is_error": False, "result": '<invoke name="skip"><parameter name="note">nothing here</parameter></invoke>'})
     assert C.CommandLine.parse(plain, TOOLS, cli, "claude")["tool_calls"][0]["arguments"] == {"note": "nothing here"}
+
+
+def test_the_requests_output_limit_reaches_the_program_through_its_environment(tmp_path, monkeypatch):
+    """The program takes its output limit only from its environment: the harness's `env` gives it. Without it Opus ran
+    one turn to 128,000 tokens of thinking (11-12), where PaperDaemon asks for 16,384. No limit asked: none set."""
+    a = C.CommandLine("claude --model claude-opus-5-5 --effort medium")
+    hp = harnesses.get("lean-default")()
+    a.request("You work on a page.", [{"role": "user", "text": "hi"}], tools=TOOLS, force_tool=True,
+              caps={"vision": True, "forced_tool": True}, harness=hp, max_tokens=16384, folder=str(tmp_path))
+    assert a.env == {"CLAUDE_CODE_MAX_OUTPUT_TOKENS": "16384"}
+    a.request("You work on a page.", [{"role": "user", "text": "hi"}], tools=TOOLS, force_tool=True,
+              caps={"vision": True, "forced_tool": True}, harness=hp, folder=str(tmp_path))
+    assert a.env == {}
+    seen = {}
+    monkeypatch.setattr(C.subprocess, "run", lambda *x, **k: seen.update(k) or types.SimpleNamespace(stdout="", stderr="", returncode=0))
+    C._run("claude.exe", [], env={"CLAUDE_CODE_MAX_OUTPUT_TOKENS": "16384"})
+    assert seen["env"]["CLAUDE_CODE_MAX_OUTPUT_TOKENS"] == "16384" and "PATH" in {k.upper() for k in seen["env"]}
+    assert schema.RULES["cli"][0](a.cli(hp))

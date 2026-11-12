@@ -114,6 +114,7 @@ more than that gets a harness with a `cli` field, which says how it is spoken to
 | `sends_to` | The host the program sends a page to, for the notice that pages leave this computer. Optional: they stay here. |
 | `answer_rule` | One sentence on how this program wants a structured answer given. Optional. |
 | `web_search` | The program's name for its own web search tool. When the model searches the web itself (its Web search box is ticked and the Network tab has no search), `{web_search}` in `args` is that name; otherwise it is empty. Optional. |
+| `env` | `{name: text}`: set in the program's environment for each request, with the same placeholders as `args`. For a setting the program reads only from its environment, such as its output limit (`{request.max_tokens}`). A variable whose placeholder has nothing to give is left unset. Optional. |
 
 Placeholders: `{system}` or `{system_file}` (the system text, or a file holding it); `{prompt}` or
 `{prompt_file}` (the conversation as plain text); `{schema}` or `{schema_file}` (the tools as one JSON schema for the
