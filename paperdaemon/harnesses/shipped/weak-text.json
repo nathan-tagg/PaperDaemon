@@ -7,7 +7,7 @@
     "Other small models"
   ],
   "extends": "default-text",
-  "notes": "For small models. Full instructions, one call per step, and short answers. Sketches, mark-ups, checkboxes made of your own lines, social posts, pictures from the web and the long games are turned off. Tested with Qwen3-VL 8B.",
+  "notes": "For small models. Full instructions, one call per step, and short answers. Nothing you wrote is erased; replies only add. Sketches, mark-ups, checkboxes made of your own lines, social posts, pictures from the web and the long games are turned off. Tested with Qwen3-VL 8B.",
   "max_output": 4096,
   "inspect_tokens": 4000,
   "brief_additions": "Keep every reply short: a few sentences, unless the page asks for more. Say only what your steps do: never write that something was done unless a step does it.",
@@ -20,7 +20,8 @@
       "messages",
       "concord",
       "markup",
-      "checkbox"
+      "checkbox",
+      "erase"
     ]
   },
   "decide_temperature": 0

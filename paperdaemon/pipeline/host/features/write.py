@@ -109,7 +109,13 @@ def _mend_breaks(lines):
     never ends a thought, and a long line with no closing punctuation followed by one in lower case is one
     sentence. A line shorter than 40 characters -- a poem's, a list's, a title -- is left exactly as written."""
     out = []
+    # A CHECKLIST RUN TOGETHER ON ONE LINE ("- [ ] Milk - [ ] Eggs - [ ] Bread", Qwen3-VL 8B, 11-11) is a line per item:
+    # only the first was drawn with a box
+    split = []
     for ln in lines:
+        s = str(ln)
+        split += re.split(r"\s+(?=[-*+]\s+\[[ xX]\]\s)", s) if _MD_TASK.match(s) else [s]
+    for ln in split:
         s = str(ln)
         if out:
             prev = out[-1].rstrip()

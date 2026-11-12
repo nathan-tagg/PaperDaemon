@@ -206,9 +206,24 @@ def _quote_problem(quote, value):
 
 
 def erase_of(rulings):
-    """The rulings that take something off -> erase entries [{id, because}]."""
-    return [{"id": r["id"], "because": BECAUSE[r["is"]]} for r in rulings or ()
-            if isinstance(r, dict) and r.get("then") == "erase" and r.get("is") in BECAUSE]
+    """The rulings that take something off -> erase entries [{id, because}]. ON A LINEUP WITH ERASING OFF (Weak) nothing
+    the user wrote comes off, a request included: replies only add (the user's word, 11-11, on Weak); what this system
+    wrote itself and the job makes stale still goes."""
+    out = [{"id": r["id"], "because": BECAUSE[r["is"]]} for r in rulings or ()
+           if isinstance(r, dict) and r.get("then") == "erase" and r.get("is") in BECAUSE]
+    if _users_words_stay():
+        listing = JOB.listing or {}
+        out = [e for e in out if (listing.get(e["id"]) or {}).get("owner") == "system"]
+    return out
+
+
+def _users_words_stay():
+    """Is erasing switched off on this lineup (its harness, or what it lacks): then nothing of the user's comes off."""
+    try:
+        from paperdaemon.pipeline import host as H
+        return "erase" in H._off_features()
+    except Exception:
+        return False
 
 
 def kept(rulings):

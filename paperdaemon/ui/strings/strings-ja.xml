@@ -742,7 +742,7 @@
   <string name="slot.base.strong">強</string>
   <string name="slot.base.strong.about">最も強いモデル向け。指示は短く、ほとんどのジョブが 1 回の呼び出しで終わるため、トークンの使用量が最も少なくなります。Claude Opus、Sonnet、Haiku 5.5 でテスト済み。</string>
   <string name="slot.base.medium.about">中規模モデル向け。指示はすべて送り、ジョブの各ステップは別々の呼び出しです。27B クラスの Qwen 3 モデルと Gemini 3.8 Flash でテスト済み。</string>
-  <string name="slot.base.weak.about">小さいモデル向け。指示はすべて送り、ステップごとに 1 回の呼び出しで、回答は短くします。スケッチ、マークアップ、自分の行から作るチェックボックス、SNS の投稿、ウェブの画像、長いゲームはオフです。Qwen3-VL 8B でテスト済み。</string>
+  <string name="slot.base.weak.about">小さいモデル向け。指示はすべて送り、ステップごとに 1 回の呼び出しで、回答は短くします。あなたが書いたものは消されません。回答は追加されるだけです。スケッチ、マークアップ、自分の行から作るチェックボックス、SNS の投稿、ウェブの画像、長いゲームはオフです。Qwen3-VL 8B でテスト済み。</string>
   <string name="slot.capabilities">機能</string>
   <string name="slot.capabilities.help">このモデルが自分でできること。本当にできるものだけを追加してください。</string>
   <string name="slot.cap.vision">画像認識</string>
@@ -754,7 +754,7 @@
   <string name="help.harness.intro">ハーネスは、PaperDaemon がこのモデルでジョブをどう進めるかを決めます。機能は、モデルが自分で何をできるかを示します。</string>
   <string name="help.harness.strong">**強**: 最も強いモデル向け。指示は短く、ほとんどのジョブが 1 回の呼び出しで終わるため、トークンの使用量が最も少なくなります。Claude Opus、Sonnet、Haiku 5.5 でテスト済み。</string>
   <string name="help.harness.medium">**中**: 中規模モデル向け。指示はすべて送り、ジョブの各ステップは別々の呼び出しです。27B クラスの Qwen 3 モデルと Gemini 3.8 Flash でテスト済み。</string>
-  <string name="help.harness.weak">**弱**: 小さいモデル向け。指示はすべて送り、ステップごとに 1 回の呼び出しで、回答は短くします。スケッチ、マークアップ、自分の行から作るチェックボックス、SNS の投稿、ウェブの画像、長いゲームはオフです。Qwen3-VL 8B でテスト済み。</string>
+  <string name="help.harness.weak">**弱**: 小さいモデル向け。指示はすべて送り、ステップごとに 1 回の呼び出しで、回答は短くします。あなたが書いたものは消されません。回答は追加されるだけです。スケッチ、マークアップ、自分の行から作るチェックボックス、SNS の投稿、ウェブの画像、長いゲームはオフです。Qwen3-VL 8B でテスト済み。</string>
   <string name="help.harness.vision">**画像認識**: モデルがページの画像を見られます。ない場合、モデルはページをテキストで受け取ります。入力された文字と、PaperDaemon が読み取った手書きです。</string>
   <string name="help.harness.web_search">**ウェブ検索**: モデルが自分でウェブを検索します。ネットワークタブに検索がないときだけ使われます。PaperDaemon は `claude` プログラムと Anthropic API でこれをオンにします。それ以外のサーバーでは、サーバー自身が検索する場合だけ追加してください。</string>
   <string name="help.harness.image_generation">**画像生成**: モデルのサーバーが自分で画像を作ります。Gemini の画像モデルなどです。画像タブに画像モデルがないときだけ使われます。PaperDaemon は画像ごとにモデルに頼み、回答から取り出します。</string>

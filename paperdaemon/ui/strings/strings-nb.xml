@@ -742,7 +742,7 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="slot.base.strong">Sterk</string>
   <string name="slot.base.strong.about">For de sterkeste modellene. Korte instruksjoner, og de fleste jobber er ferdige etter ett kall, så den bruker færrest tokens. Testet med Claude Opus, Sonnet og Haiku 5.5.</string>
   <string name="slot.base.medium.about">For mellomstore modeller. Fulle instruksjoner, og hvert steg i en jobb er et eget kall. Testet med Qwen 3-modeller i 27B-klassen og Gemini 3.8 Flash.</string>
-  <string name="slot.base.weak.about">For små modeller. Fulle instruksjoner, ett kall per steg og korte svar. Skisser, markeringer, avkrysningsbokser laget av dine egne linjer, innlegg fra sosiale medier, bilder fra nettet og de lange spillene er slått av. Testet med Qwen3-VL 8B.</string>
+  <string name="slot.base.weak.about">For små modeller. Fulle instruksjoner, ett kall per steg og korte svar. Ingenting du har skrevet blir slettet; svar legges bare til. Skisser, markeringer, avkrysningsbokser laget av dine egne linjer, innlegg fra sosiale medier, bilder fra nettet og de lange spillene er slått av. Testet med Qwen3-VL 8B.</string>
   <string name="slot.capabilities">Evner</string>
   <string name="slot.capabilities.help">Det denne modellen kan gjøre selv. Legg bare til det den faktisk kan.</string>
   <string name="slot.cap.vision">Syn</string>
@@ -754,7 +754,7 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="help.harness.intro">Selen bestemmer hvordan PaperDaemon kjører jobber med denne modellen. Evnene sier hva modellen kan gjøre selv.</string>
   <string name="help.harness.strong">**Sterk**: For de sterkeste modellene. Korte instruksjoner, og de fleste jobber er ferdige etter ett kall, så den bruker færrest tokens. Testet med Claude Opus, Sonnet og Haiku 5.5.</string>
   <string name="help.harness.medium">**Middels**: For mellomstore modeller. Fulle instruksjoner, og hvert steg i en jobb er et eget kall. Testet med Qwen 3-modeller i 27B-klassen og Gemini 3.8 Flash.</string>
-  <string name="help.harness.weak">**Svak**: For små modeller. Fulle instruksjoner, ett kall per steg og korte svar. Skisser, markeringer, avkrysningsbokser laget av dine egne linjer, innlegg fra sosiale medier, bilder fra nettet og de lange spillene er slått av. Testet med Qwen3-VL 8B.</string>
+  <string name="help.harness.weak">**Svak**: For små modeller. Fulle instruksjoner, ett kall per steg og korte svar. Ingenting du har skrevet blir slettet; svar legges bare til. Skisser, markeringer, avkrysningsbokser laget av dine egne linjer, innlegg fra sosiale medier, bilder fra nettet og de lange spillene er slått av. Testet med Qwen3-VL 8B.</string>
   <string name="help.harness.vision">**Syn**: modellen kan se et bilde av siden. Uten det får modellen siden som tekst: de skrevne ordene, og håndskriften slik PaperDaemon leser den.</string>
   <string name="help.harness.web_search">**Nettsøk**: modellen søker på nettet selv. Det brukes bare når fanen Nettverk ikke har noe søk. PaperDaemon slår det på for programmet `claude` og Anthropics API. For alle andre servere: legg det bare til hvis serveren søker selv.</string>
   <string name="help.harness.image_generation">**Bildegenerering**: modellens server lager bilder selv, som Geminis bildemodeller. Det brukes bare når fanen Bilde ikke har noen bildemodell. PaperDaemon ber modellen om hvert bilde og henter det ut av svaret.</string>

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.71
+
+- Weak never erases anything you wrote; replies only add, your request included. On Qwen3-VL 8B, asked which item in a list doesn't belong, it used to take your list off with the request.
+- A checklist the model writes on one line ("- [ ] Milk - [ ] Eggs - [ ] Bread") is split into one line per item, each with its box.
+
 ## 0.2.70
 
 - The Daemon works on one layer only: the page's Daemon layer. Every note wipes everything on it and goes there; PaperDaemon never removes, moves or adds back a layer, and makes one only when the page has none, added the way the tablet adds a layer (at the top). Its notes used to put back a layer entry the tablet had moved, and the tablet showed two Daemon layers with the same strokes.

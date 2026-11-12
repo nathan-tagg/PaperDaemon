@@ -742,7 +742,7 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="slot.base.strong">Güçlü</string>
   <string name="slot.base.strong.about">En güçlü modeller için. Kısa talimatlar; işlerin çoğu tek çağrıda biter, bu yüzden en az token'ı kullanır. Claude Opus, Sonnet ve Haiku 5.5 ile denendi.</string>
   <string name="slot.base.medium.about">Orta boy modeller için. Tam talimatlar; bir işin her adımı ayrı bir çağrıdır. 27B sınıfı Qwen 3 modelleri ve Gemini 3.8 Flash ile denendi.</string>
-  <string name="slot.base.weak.about">Küçük modeller için. Tam talimatlar, adım başına bir çağrı ve kısa yanıtlar. Eskizler, işaretlemeler, kendi satırlarınızdan yapılan onay kutuları, sosyal medya gönderileri, web'den resimler ve uzun oyunlar kapalıdır. Qwen3-VL 8B ile denendi.</string>
+  <string name="slot.base.weak.about">Küçük modeller için. Tam talimatlar, adım başına bir çağrı ve kısa yanıtlar. Yazdığınız hiçbir şey silinmez; yanıtlar yalnızca eklenir. Eskizler, işaretlemeler, kendi satırlarınızdan yapılan onay kutuları, sosyal medya gönderileri, web'den resimler ve uzun oyunlar kapalıdır. Qwen3-VL 8B ile denendi.</string>
   <string name="slot.capabilities">Yetenekler</string>
   <string name="slot.capabilities.help">Bu modelin kendi başına yapabildikleri. Yalnızca gerçekten yapabildiğini ekleyin.</string>
   <string name="slot.cap.vision">Görme</string>
@@ -754,7 +754,7 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="help.harness.intro">Harness, PaperDaemon'un bu modelle işleri nasıl yürüttüğünü belirler. Yetenekler, modelin kendi başına neler yapabildiğini söyler.</string>
   <string name="help.harness.strong">**Güçlü**: En güçlü modeller için. Kısa talimatlar; işlerin çoğu tek çağrıda biter, bu yüzden en az token'ı kullanır. Claude Opus, Sonnet ve Haiku 5.5 ile denendi.</string>
   <string name="help.harness.medium">**Orta**: Orta boy modeller için. Tam talimatlar; bir işin her adımı ayrı bir çağrıdır. 27B sınıfı Qwen 3 modelleri ve Gemini 3.8 Flash ile denendi.</string>
-  <string name="help.harness.weak">**Zayıf**: Küçük modeller için. Tam talimatlar, adım başına bir çağrı ve kısa yanıtlar. Eskizler, işaretlemeler, kendi satırlarınızdan yapılan onay kutuları, sosyal medya gönderileri, web'den resimler ve uzun oyunlar kapalıdır. Qwen3-VL 8B ile denendi.</string>
+  <string name="help.harness.weak">**Zayıf**: Küçük modeller için. Tam talimatlar, adım başına bir çağrı ve kısa yanıtlar. Yazdığınız hiçbir şey silinmez; yanıtlar yalnızca eklenir. Eskizler, işaretlemeler, kendi satırlarınızdan yapılan onay kutuları, sosyal medya gönderileri, web'den resimler ve uzun oyunlar kapalıdır. Qwen3-VL 8B ile denendi.</string>
   <string name="help.harness.vision">**Görme**: model sayfanın bir resmini görebilir. Bu olmadan model sayfayı metin olarak alır: yazılmış kelimeler ve PaperDaemon'un okuduğu haliyle el yazısı.</string>
   <string name="help.harness.web_search">**Web araması**: model web'de kendi başına arama yapar. Yalnızca Ağ sekmesinde arama yoksa kullanılır. PaperDaemon bunu `claude` programı ve Anthropic API'si için açar. Başka bir sunucu için yalnızca sunucu kendi arama yapıyorsa ekleyin.</string>
   <string name="help.harness.image_generation">**Görsel oluşturma**: modelin sunucusu kendi başına resim oluşturur; Gemini'nin görsel modelleri gibi. Yalnızca Görsel sekmesinde görsel modeli yoksa kullanılır. PaperDaemon her resmi modelden ister ve yanıttan alır.</string>

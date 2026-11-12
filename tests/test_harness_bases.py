@@ -24,7 +24,7 @@ def test_three_bases_with_what_each_model_can_do_by_default():
     assert (weak.web_search, medium.web_search, strong.web_search) == (False, False, True)
     assert weak.extends == "default-text" and not weak.lean and strong.lean
     assert set(weak.features["off"]) == {"draw", "posts", "web_picture", "adventure", "messages", "concord", "markup",
-                                         "checkbox"}
+                                         "checkbox", "erase"}
     assert weak.max_output == 4096 and "short" in weak.brief_additions
     assert medium.notes.endswith("Tested with 27B class Qwen 3 models and Gemini 3.8 Flash.")
 
@@ -190,3 +190,28 @@ def test_a_reply_that_writes_back_what_it_takes_off_is_refused(monkeypatch):
                                 "rulings": [{"id": "para:1", "is": "note", "then": "keep"},
                                             {"id": "para:2", "is": "request", "then": "erase"}]})
     assert ok == []
+
+
+def test_on_a_lineup_with_erasing_off_nothing_of_the_users_comes_off(monkeypatch):
+    """The user's word (11-11), on Weak: nothing you wrote ever comes off; replies only add. Qwen3-VL 8B, asked which
+    item doesn't belong, took the user's list off with the request. What this system wrote and the job makes stale still
+    goes."""
+    import paperdaemon.pipeline.host as H
+    from paperdaemon.pipeline.host import rulings as RU
+    from paperdaemon.pipeline.host.job import JOB
+    monkeypatch.setattr(JOB, "listing", {"para:1": {"owner": "user"}, "para:2": {"owner": "user"},
+                                         "picture:1": {"owner": "system"}}, raising=False)
+    rulings = [{"id": "para:1", "is": "request", "then": "erase"}, {"id": "para:2", "is": "command", "then": "erase"},
+               {"id": "picture:1", "is": "stale_work", "then": "erase"}]
+    monkeypatch.setattr(H, "_off_features", lambda: set())
+    assert [e["id"] for e in RU.erase_of(rulings)] == ["para:1", "para:2", "picture:1"]
+    monkeypatch.setattr(H, "_off_features", lambda: {"erase"})
+    assert [e["id"] for e in RU.erase_of(rulings)] == ["picture:1"]
+    from paperdaemon import harnesses as HS
+    assert "erase" in HS.get("weak-text").features["off"]
+
+
+def test_a_checklist_run_together_on_one_line_is_a_line_per_item():
+    from paperdaemon.pipeline.host.features import write as W
+    assert W._mend_breaks(["- [ ] Milk - [ ] Eggs - [ ] Bread", "A plain line - with a dash.", "- [x] Done"]) == \
+        ["- [ ] Milk", "- [ ] Eggs", "- [ ] Bread", "A plain line - with a dash.", "- [x] Done"]
