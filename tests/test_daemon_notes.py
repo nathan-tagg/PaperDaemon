@@ -164,24 +164,13 @@ def test_a_layer_the_user_deleted_is_made_anew():
     assert _his_place(_blocks(again)).item.value != first and _counts(again) == (len(strokes), 1, 1)
 
 
-def test_a_record_lost_never_makes_a_second_layer_and_two_become_one():
-    """The page says which layer is his: a record (daemon-ink.json) lost takes up the layer the page already shows; a
-    page that already has two of his (from before) keeps the first and takes the empty other out of the list."""
+def test_a_note_finds_the_pages_daemon_layer_again_and_makes_no_second():
+    """The page says which layer is his: the next note goes on the layer the page already has, never a new one."""
     strokes, _ = N.letter(["On it."], FRAME)
-    page = N.with_note(_page([(0.0, 900.0)]), strokes, {})
-    again = N.with_note(page, strokes, {})                      # its record gone
+    page = N.with_note(_page([(0.0, 900.0)]), strokes)
+    again = N.with_note(page, strokes)
     assert _counts(again) == (len(strokes), 1, 1)
-    frames, kinds = [], []
-    from rmscene.tagged_block_common import HEADER_V6
-    data, rows, _b = N._parts(page)
-    for r in rows:
-        frames.append(data[r[1] - 8:r[2]]); kinds.append(r[0])
-    first = _his_place(_blocks(page)).item.value
-    frames, kinds = N._put(frames, kinds, N._layer_blocks(2, 500_000, "Daemon", (first.part1, first.part2)))
-    two = data[:len(HEADER_V6)] + b"".join(frames)
-    assert _counts(two)[2] == 2
-    one = N.with_note(two, strokes, {})
-    assert _counts(one) == (len(strokes), 1, 1)
+    assert _his_place(_blocks(again)).item.value == _his_place(_blocks(page)).item.value
 
 
 def test_whatever_is_on_his_layer_goes_with_his_next_note(tmp_path, monkeypatch):
@@ -437,10 +426,10 @@ def test_the_retry_box_is_on_the_notes_line_at_its_right_end():
     assert max(left_of_box) < box[0]                                       # nothing of the note runs into it
 
 
-def test_his_layer_is_in_the_tablets_list_once_whoever_put_it_there_twice():
-    """11-11: the tablet moved his layer to the top of its list (its own place, after Layer 1) while a note copy put his
-    old place back, so the tablet showed two Daemon layers with the same strokes. Every write keeps one place -- the
-    tablet's -- and erases the others."""
+def test_a_note_wipes_his_one_layer_and_leaves_the_list_of_layers_as_it_is():
+    """The user's word (11-11): only operate on the one layer and erase everything on it; never remove or re-add a layer.
+    A page whose list names his layer twice (the tablet put it in again) keeps its list; the note wipes the layer and
+    goes on it."""
     strokes, _ = N.letter(["On it."], FRAME)
     page = N.with_note(_page([(0.0, 900.0)]), strokes)
     blocks = _blocks(page)
@@ -448,8 +437,8 @@ def test_his_layer_is_in_the_tablets_list_once_whoever_put_it_there_twice():
     blocks.append(ss.SceneGroupItemBlock(parent_id=CrdtId(0, 1), item=CrdtSequenceItem(
         item_id=CrdtId(1, 9000), left_id=CrdtId(0, 13), right_id=CrdtId(0, 0), deleted_length=0, value=lay)))
     two = _write(blocks)
-    assert _counts(two)[2] == 2
-    one = N.with_note(two, strokes)
-    assert _counts(one) == (len(strokes), 1, 1)
-    assert _his_place(_blocks(one)).item.item_id == CrdtId(1, 9000)          # the tablet's place is the one kept
-    assert N.erase(two)[0] != two and _counts(N.erase(two)[0])[2] == 1       # the erase before a job does it too
+    again = N.with_note(two, strokes)
+    assert _counts(again) == (len(strokes), 1, 2)            # the new note alone on the layer; the list untouched
+    places = lambda d: sorted((b.item.item_id.part1, b.item.item_id.part2) for b in _blocks(d)
+                              if isinstance(b, ss.SceneGroupItemBlock) and b.item.value is not None and not b.item.deleted_length)
+    assert places(again) == places(two)

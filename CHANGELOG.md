@@ -2,7 +2,7 @@
 
 ## 0.2.70
 
-- One Daemon layer on the tablet. PaperDaemon put its layer first in the page's list of layers; your tablet moved it to the top, and PaperDaemon's next note put the old entry back, so the tablet listed two Daemon layers showing the same strokes. A new Daemon layer is now added the way the tablet adds one, at the top, and every write keeps a single entry for it and removes any other.
+- The Daemon works on one layer only: the page's Daemon layer. Every note wipes everything on it and goes there; PaperDaemon never removes, moves or adds back a layer, and makes one only when the page has none, added the way the tablet adds a layer (at the top). Its notes used to put back a layer entry the tablet had moved, and the tablet showed two Daemon layers with the same strokes.
 - Ctrl+S on a Mirror page syncs both ways: your edits go up, then the tablet's latest comes down and the page shows it. With nothing edited in the window it used to do nothing.
 - On a lineup with something switched off, the model can answer "that isn't offered here" with one plain call, and PaperDaemon writes the line ("Underlining the word bell isn't offered on this lineup."). Nothing of yours comes off. On Qwen3-VL 8B this replaced the copied lines and the claims that a word was underlined.
 

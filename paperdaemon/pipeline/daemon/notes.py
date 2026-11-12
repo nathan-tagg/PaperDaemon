@@ -119,6 +119,16 @@ def _old_layers(blocks):
     return R.daemon_layer_ids(blocks)
 
 
+def _his_layer(blocks):
+    """THE ONE LAYER HE WRITES ON: the first named as his (not under his old author) that is in the page's list of
+    layers -> (part1, part2), or None when the page has none."""
+    named = {k for k in _old_layers(blocks) if k[0] != LEGACY}
+    listed = {_key(b.item.value) for b in blocks if isinstance(b, ss.SceneGroupItemBlock) and _key(b.parent_id) == ROOT
+              and b.item.value is not None and not b.item.deleted_length}
+    have = sorted(named & listed)
+    return have[0] if have else None
+
+
 def _mine(r, layers, notes):
     """Is a stroke (a C-pass row) his to erase: ON HIS LAYER, whoever drew it (the user's word, 11-11: "it should not
     care what is on that layer, it should wipe it EVERY time"), or under his notes' author anywhere, or under his old
@@ -139,7 +149,8 @@ def _live_counts(data):
     if got is None:
         return None
     rows, rest = got
-    layers, notes = _old_layers(rest), _notes_of(R.author_table(rest))
+    one = _his_layer(rest)
+    layers, notes = ({one} if one else set()), _notes_of(R.author_table(rest))
     mine = sum(1 for r in rows if r[0] == LINE and r[14] and _mine(r, layers, notes))
     return mine, sum(1 for r in rows if r[0] == LINE and r[14]) - mine
 
@@ -155,17 +166,18 @@ def _write(data, state=None, strokes=None, also=()):
     from paperdaemon.pipeline.page import render as R
     data, rows, blocks = _parts(data)
     others = [b for b in blocks if b is not None]
-    layers = _old_layers(others)                     # his layers, by name: wiped, and where the note goes
+    one = _his_layer(others)                         # THE layer: wiped, and where the note goes
+    layers = {one} if one else set()
     authors = R.author_table(others)
     notes = _notes_of(authors)
     me = R.page_author(authors, "notes")           # his notes' number on this page, tied to PaperDaemon's id for notes
     also = set(also)
-    theirs0 = sum(1 for r in rows if r[0] == LINE and r[14] and not _mine(r, layers, notes) and (r[7], r[8]) not in also)
+    theirs0 = sum(1 for r in rows if r[0] == LINE and r[14] and not _mine(r, layers, notes) and (r[7], r[8]) not in also
+                  and r[5] != LEGACY)                # (what is on his old author's layer goes out with it)
     frames, kinds = [], []
     seen, trees, nodes, linked = set(), set(), set(), set()
     erased, changed, table = 0, False, None
     root_items = []
-    his_places = {}                                  # each live place of his in the root's list -> (frame, its item)
     for r, b in zip(rows, blocks):
         raw = data[r[1] - 8:r[2]]
         if r[0] == LINE:
@@ -186,8 +198,6 @@ def _write(data, state=None, strokes=None, also=()):
             seen.add(k)
             if _key(b.parent_id) == ROOT:
                 root_items.append(it)
-                if it.value is not None and it.deleted_length == 0 and _key(it.value) in layers:
-                    his_places.setdefault(_key(it.value), []).append((len(frames), it))
         elif isinstance(b, ss.SceneTreeBlock):
             if b.tree_id.part1 == LEGACY:
                 changed = True
@@ -208,23 +218,9 @@ def _write(data, state=None, strokes=None, also=()):
         frames.append(raw)
         kinds.append(r[0])
     news = []
-    # ONE PLACE OF HIS IN THE TABLET'S LIST OF LAYERS: every live place of his layers is gathered (a layer can be in the
-    # list twice -- the tablet put his layer in again where he had put it first, 11-11, and every note showed twice),
-    # the first layer of his kept at one place -- the tablet's own, where it made one -- and every other place erased,
-    # as the tablet deletes a layer
-    keep = None
-    if his_places:
-        la0 = min(his_places)
-        mine_ = set(notes) | {me}
-        spots = his_places[la0]
-        keep = next((s for s in spots if s[1].item_id.part1 not in mine_), spots[-1])
-        for lk, ss_ in his_places.items():
-            for at, it in ss_:
-                if (at, it) is keep or (lk == la0 and at == keep[0]):
-                    continue
-                frames[at] = _frame(ss.SceneGroupItemBlock(parent_id=CrdtId(*ROOT), item=CrdtSequenceItem(
-                    item_id=it.item_id, left_id=it.left_id, right_id=it.right_id, deleted_length=1, value=None)))
-                changed = True
+    # HIS LAYER IS FOUND, NEVER REMOVED OR PUT IN AGAIN (the user's word, 11-11: "you don't need to completely remove the
+    # layer, just only let the daemon operate on the one layer and erase literally everything on that layer"): the
+    # first of his the page has is the one he writes on; the page's list of layers is left as it is
     # his ids: past EVERY counter on the page, whatever its author, as the tablet numbers its own
     every = max([0] + [int(r[8]) + max(int(r[13] or 0), 1) - 1 for r in rows if r[0] == LINE])
     n = max(every, _A.next_free_id(others) - 1) + 1
@@ -234,10 +230,10 @@ def _write(data, state=None, strokes=None, also=()):
         if str(authors.get(me)) != str(R.uuid_of("notes")):   # the page's author table names his notes' author
             frames[table] = _frame(ss.AuthorIdsBlock(author_uuids={
                 **{a: u for a, u in authors.items() if a != LEGACY}, me: R.uuid_of("notes")}))
-        # HIS LAYER, ONE PER PAGE, AS THE PAGE HAS IT (kept above); with none, a new one, ADDED AS THE TABLET ADDS A
-        # LAYER: last in the list, after the last layer there is
-        if his_places:
-            la, ln = min(his_places)
+        # HIS LAYER, AS THE PAGE HAS IT; with none, a new one, ADDED AS THE TABLET ADDS A LAYER: last in the list, after
+        # the last layer there is
+        if one:
+            la, ln = one
         else:
             la, ln = me, n
             news += _layer_blocks(la, ln, layer_name(), _last_layer(root_items))
