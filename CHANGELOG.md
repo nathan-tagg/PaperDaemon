@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.74
+
+- Undo takes back only what was drawn. On 11-11 the model drew a scarf, looked, and undid with a count of 5. The whole scarf was one entry, so the undo also brought back the typed request it had just erased, and the job ended with no scarf.
+- A drawing taken back after a look is drawn again before the job ends. If it isn't, the step fails and your request stays on the page.
+
 ## 0.2.73
 
 - One progress bar. A Mirror sync (Ctrl+S, or closing a document) shows in the same bar as a job, along the bottom of the page and its cover, and the bar goes back to the job when the sync is through. There used to be a thin bar at the top for the sync and an orange one at the bottom for the job.

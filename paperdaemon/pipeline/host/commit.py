@@ -66,15 +66,28 @@ def _drew():
                for op in JOB.ops)
 
 
+_DRAWN_OPS = ("figure ", "element ", "icon ")
+
+
 def t_undo_last(parts=1):
     """Take back the last thing(s) drawn, without binning the whole draft: `Drawing.strokes` is a plain
     list, so the last N operations can simply be dropped."""
     n = max(1, int(parts))
     if not JOB.ops:
         return dict({"error": "nothing drawn yet"}, **H._did())
+    # ONLY WHAT WAS DRAWN comes back off, back to the first thing that is not a drawing: an erase (the request taken off
+    # the page, a ruling's erase) is not "the last thing drawn". On 11-11 a look round's undo_last(5), meant for a
+    # five-part scarf drawn as ONE op, went past it and brought the user's typed request back
+    drawn = 0
+    for op in reversed(JOB.ops):
+        if not op.startswith(_DRAWN_OPS):
+            break
+        drawn += 1
+    if not drawn:
+        return dict({"error": "the last thing done was not a drawing; undo_last takes back only drawings"}, **H._did())
     marks = JOB.marks or []
     kept = len(JOB.draw.strokes)
-    for _ in range(min(n, len(JOB.ops))):
+    for _ in range(min(n, drawn)):
         idx = len(JOB.ops)
         JOB.ops.pop()
         kept = marks.pop() if marks else 0

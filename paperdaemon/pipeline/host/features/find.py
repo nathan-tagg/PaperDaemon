@@ -239,6 +239,12 @@ def _look_round(msgs, doc, page):
             JOB.looking = False
         if fn is None:
             break
+        # A DRAWING TAKEN BACK IS DRAWN AGAIN: the look allows one fix, and an undo_last that leaves nothing drawn is no
+        # fix; the job ended on it with nothing on the page (11-11, the scarf). One more turn, which must draw
+        if fn == "undo_last" and not H._drew():
+            msgs.append({"role": "user", "content": "You took the drawing back, so the page has none now. Draw it again, "
+                                                    "done right, with draw_figure."})
+            H._turn(msgs, ("draw_figure", "element"), tries=2, choice="required")
 
 
 # the tools this module serves, as the host offers them (the host's TOOLS keeps this order)

@@ -1003,6 +1003,14 @@ DRAW_LOOKS = int(os.environ.get("RM_HOST_DRAW_LOOKS", "1"))
 MAX_STEPS = 12
 
 
+def _still_drawn(steps, cur):
+    """A DRAW STEP WHOSE DRAWING WAS TAKEN BACK is not done: when the look round's undo left nothing drawn and no drawing
+    came again, the step fails, so the request stays on the page (validity rule 10) and the note says why."""
+    if not _drew() and not any(op.startswith(("element ", "icon ")) for op in JOB.ops):
+        ST.finish(steps, cur, False, "the drawing was taken back after a look and not drawn again")
+        log("  step %d (%s) FAILED: taken back after a look, not drawn again" % (cur["id"], cur["do"]))
+
+
 def draw_looks():
     """How many times this lineup's drawing is shown back. NONE ON A LEAN HARNESS (the ruling, 11-10: "I think the
     lookback should be skipped"): the look is a whole further call, about 9,000 tokens on the maintainer's lineup, and
@@ -1213,6 +1221,7 @@ def converse(doc_id, page, name, keys=(), extra=None, conflict=None):
                         log("  step %d (%s) made from what the plan gave it" % (cur["id"], cur["do"]))
                         if cur["do"] == "draw" and draw_looks() > 0:
                             _look_round(msgs, doc_id, page)
+                            _still_drawn(steps, cur)
                         continue
                 cur["plan_spec_error"] = str((r0 or {}).get("error") or "it could not be made")[:200]
             proto = JB.protocol(cur["do"], H)
@@ -1230,6 +1239,7 @@ def converse(doc_id, page, name, keys=(), extra=None, conflict=None):
                 continue
             if cur["do"] == "draw" and draw_looks() > 0 and fn2 in ("draw_figure", "element"):
                 _look_round(msgs, doc_id, page)
+                _still_drawn(steps, cur)
         if prev is not None and prev.get("draw_from") is not None:
             JOB.draw.tag(prev["draw_from"], ST.STROKE_KIND.get(prev["do"]))   # the last model step's, as what it is
         # 3. A REQUEST COMES OFF ONLY ONCE THE WORK THAT ANSWERS IT LANDED (validity rule 10): what was not
