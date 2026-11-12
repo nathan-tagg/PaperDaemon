@@ -1,11 +1,14 @@
 # Design: add-daemon-page-notes
 
-## D1. Notes go up as copies, the last one in the page itself
+## D1. Every note goes into the page itself
 
-While a job runs, the host reads and writes the page in the mirror. A note written into that page would go
-up with the job's work before the job is recorded. So the notes during a job go up as copies of the page
-as it was handed over, that page's file alone (`sync.push_doc(only=True)`). The last note goes into the
-page itself once the host is done, and up with the next push.
+Every note is written into the page in the mirror, under the page's lock, and that page's file alone goes up
+(`sync.push_doc(only=True)`). Each note erases the last as the tablet erases and takes ids no note had. Until 11-11
+the notes during a job went up as copies of the page as it was handed over: every copy numbered its note from the
+same page, so each note took the ids of the last, and the job's work and its final note took them once more. The
+tablet keeps an item it already holds, so its old notes stayed and piled up (four signatures over two Daemon layers).
+The job's work goes up only with the job's end: once the host has written the page (its content fingerprint, which
+leaves his notes out, differs from the page as handed over), a note during the job waits for the final one.
 
 ## D2. The daemon's own author id
 
@@ -19,8 +22,7 @@ longer had, and the tablet drew nothing on them. The maintainer: "The daemon sho
 ## D3. Wipe his layer every time, keep one layer
 
 Every write erases every stroke on his layer, whoever drew it, tombstoned as the tablet erases (the maintainer's word,
-11-11: wipe it EVERY time). Two notes made from copies of the same page can share ids; if the tablet merges them while
-the user writes, the next note wipes the layer and the page is clean again.
+11-11: wipe it EVERY time).
 
 ## D4. What the renderer leaves out
 
@@ -32,14 +34,13 @@ his own layer are read. The page editor shows everything.
 ## D5. The running account
 
 The host appends a line to `run/progress.json` (`events`) for what it read, for its plan, and for each
-step as it ends. The daemon checks the file each second while a job runs. When it holds new lines, a copy
+step as it ends. The daemon checks the file each second while a job runs. When it holds new lines, a note
 goes up with "On it" and the latest lines that fit the band (four rows). Lines that arrive together go up
 as one note.
 
 ## D6. In the False Mirror
 
-The False Mirror has no tablet to send a copy to, so its notes go into the page file itself, where its page editor
-shows them; the host and the fingerprint never see them, as anywhere. "On it" is written before the host gets the
+In the False Mirror the notes go into the page file the same way and go nowhere else; its page editor shows them; the host and the fingerprint never see them, as anywhere. "On it" is written before the host gets the
 page and the last note after it is done. A note while the job runs is written only if the page is still as the daemon
 read it: a page the host wrote in between keeps what it wrote, and that note is skipped.
 

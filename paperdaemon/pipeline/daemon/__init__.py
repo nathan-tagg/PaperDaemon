@@ -429,24 +429,21 @@ def _letter(lines, frame, box=False, latest=False):
 
 
 def _note_copy(doc, pid, base, lines, what):
-    """A copy of the page as it was handed over, his layer deleted and a new one with `lines` on it, up to the tablet;
-    the page in the mirror, which the host works on, is not touched. THE FALSE MIRROR has no tablet to send a copy to:
-    there the note goes into the page itself (_note_in_place), where its editor shows it."""
-    from paperdaemon.pipeline.daemon import notes as N
+    """The on-it and progress notes, written INTO THE PAGE ITSELF (_note_in_place) and, on the Mirror, that page sent up
+    to the tablet. They used to go up on copies of the page as it was handed over: every copy numbered its note from the
+    same page, so each note took the SAME ids as the last, and the job's own writing and its final note took them once
+    more. The tablet keeps an item it already holds, so its old notes stayed and piled up (11-11: four signatures over
+    two Daemon layers). Written into the page, each note erases the last as the tablet erases, and every id is new."""
     if base is None:
         return
-    if paths.local_only():
-        _note_in_place(doc, pid, lines, what)
-        return
-    strokes, _box = _letter(lines, _frame_of(doc, pid), latest=True)
-    data = N.with_note(base, strokes)
-    _push_copy(doc, pid, data, what)
+    _note_in_place(doc, pid, lines, what, push=not paths.local_only())
 
 
-def _note_in_place(doc, pid, lines, what):
-    """The note written into the false mirror's page as it is now, while the host may be working on it: his strokes
-    alone change (the host and the fingerprint never see them), and only if the page is still as it was read -- a
-    page the host wrote in between keeps what it wrote, and the note waits for the next one."""
+def _note_in_place(doc, pid, lines, what, push=False):
+    """The note written into the page as it is now, while the host may be working on it: his strokes alone change (the
+    host and the fingerprint never see them). `push`: the page then goes up to the tablet (the Mirror) -- unless the
+    host has written the page since the job was handed over: its work reaches the tablet only with the job's end
+    (push_pending), so the note waits for the final one then."""
     from paperdaemon.pipeline.daemon import notes as N
     path = N.page_file(doc, pid)
     strokes, _box = _letter(lines, _frame_of(doc, pid), latest=True)
@@ -457,14 +454,31 @@ def _note_in_place(doc, pid, lines, what):
             data = open(path, "rb").read()
         except OSError:
             return
-        paths.write_atomic(path, N.with_note(data, strokes))
-    log("  the %s note is on the page" % what)
+        job = INFLIGHT.get("job") or {}
+        base = job.get("note_base")
+        if push and base is not None and _without_notes(data) != _without_notes(base):
+            log("  the %s note waits: the job has written the page" % what)
+            return
+        out = N.with_note(data, strokes)
+        paths.write_atomic(path, out)
+    if push:
+        _push_copy(doc, pid, out, what)
+    else:
+        log("  the %s note is on the page" % what)
+
+
+def _without_notes(data):
+    """What is on the page apart from the daemon's notes (the ledger's content fingerprint, which leaves his strokes
+    out): what tells the host's writing from his notes."""
+    import hashlib
+    from paperdaemon import ledger
+    return ledger._content_sha("", data, hashlib.sha256(data).hexdigest()[:16])
 
 
 def prepare_page(job):
     """Before a job goes to the host: his layer deleted from the page, and anything the user wrote in its retry box
     with it (a retry asked for -> job["retry"]); a retry the settings allowed carried on the job; then, with notes on,
-    "On it" up to the tablet at once, on a copy of the page."""
+    "On it" into the page and up to the tablet at once."""
     from paperdaemon.pipeline.daemon import notes as N
     key = job["keys"][0]
     ent = rm_scan.load()["entries"].get(key) or {}

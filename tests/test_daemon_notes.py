@@ -442,3 +442,34 @@ def test_a_note_wipes_his_one_layer_and_leaves_the_list_of_layers_as_it_is():
     places = lambda d: sorted((b.item.item_id.part1, b.item.item_id.part2) for b in _blocks(d)
                               if isinstance(b, ss.SceneGroupItemBlock) and b.item.value is not None and not b.item.deleted_length)
     assert places(again) == places(two)
+
+
+def test_on_the_mirror_each_note_goes_into_the_page_with_new_ids_and_up_to_the_tablet(tmp_path, monkeypatch):
+    """The Mirror's on-it and progress notes used to go up on copies of the page as handed over, each numbered from the
+    same page: every note took the ids of the last, the tablet kept the items it already held, and its old notes piled
+    up (11-11: four signatures over two Daemon layers). Now each goes into the page itself, erases the last as the
+    tablet erases, takes ids no note had, and the page as written goes up. Once the host has written the page, a note
+    waits for the final one (the job's work goes up only with the job's end)."""
+    import paperdaemon.pipeline.daemon as D
+    f = _mirror(tmp_path, monkeypatch)
+    page = _page([(0.0, 900.0), (60.0, 950.0)])
+    _sha(f, page)
+    sent = []
+    monkeypatch.setattr(D.paths, "local_only", lambda: False)
+    monkeypatch.setattr(N, "page_file", lambda d, p: str(f))
+    monkeypatch.setattr(D, "log", lambda *a, **k: None)
+    monkeypatch.setattr(D, "_frame_of", lambda d, p: FRAME)
+    monkeypatch.setattr(D, "_push_copy", lambda d, p, data, what: sent.append(data))
+    monkeypatch.setitem(D.INFLIGHT, "job", {"note_base": page})
+    D._note_copy(DOC, PID, page, ["On it"], "on-it")
+    first = _his_strokes(f.read_bytes())
+    D._note_copy(DOC, PID, page, ["Now: reading"], "progress")
+    data = f.read_bytes()
+    second = _his_strokes(data)
+    assert first and second and not (set(first) & set(second))      # no id used twice
+    assert set(first) <= _dead(data)                                  # the last note erased as the tablet erases
+    assert len(sent) == 2 and sent[-1] == data                        # the page as written went up
+    host = _page([(0.0, 900.0), (60.0, 950.0)], [(-300.0, 500.0), (-250.0, 520.0)])
+    f.write_bytes(host)                                               # the host wrote the page
+    D._note_copy(DOC, PID, page, ["Now: drawing"], "progress")
+    assert f.read_bytes() == host and len(sent) == 2                  # the note waits for the final one

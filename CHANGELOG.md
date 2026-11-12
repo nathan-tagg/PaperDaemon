@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.75
+
+- The Daemon's notes no longer pile up on the tablet. The on-it and progress notes went up on copies of the page as it was when the job began, so every note reused the same stroke numbers, and the final note and the job's own drawing reused them again. The tablet keeps strokes it already has, so old notes stayed on the page (four signatures over two Daemon layers). Every note is now written into the page itself: it erases the last note the way the tablet erases, and its strokes get new numbers.
+
 ## 0.2.74
 
 - Undo takes back only what was drawn. On 11-11 the model drew a scarf, looked, and undid with a count of 5. The whole scarf was one entry, so the undo also brought back the typed request it had just erased, and the job ended with no scarf.
