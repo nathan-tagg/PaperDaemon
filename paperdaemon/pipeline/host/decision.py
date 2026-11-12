@@ -586,6 +586,20 @@ def t_skip(note):
     return {"ok": True, "recorded": "skipped"}
 
 
+def t_cannot(what):
+    """The page asks for something this lineup does not offer (NOT OFFERED HERE): the host says so in one line, built
+    from `what` ("circling the date" -> "Circling the date isn't offered on this lineup."), and nothing comes off, so the
+    request stays for a lineup that offers it."""
+    import re as _re
+    w = " ".join(str(what or "").split()).strip().rstrip(".")
+    if not w:
+        return dict({"error": "what is the thing asked, in a few plain words (\"circling the date\")."}, **H._did())
+    if _re.search(r"\b(?:para|mark|line|picture):\d+\b", w):
+        return dict({"error": "say what was asked in plain words, with no ids."}, **H._did())
+    JOB.asking = True                                # the request stays, as for ask()
+    return H._reply([w[0].upper() + w[1:] + " isn't offered on this lineup."], task="said what this lineup does not offer")
+
+
 def t_ask(lines):
     """Ask the user for what the request cannot be done without, and leave the request on the page: written like
     an answer, under what is on the page, and nothing comes off. The user's reply brings the page back as a new
@@ -602,6 +616,8 @@ LEAN_SAID = {
            "your question. It is written under the request and nothing comes off.",
     "skip": "The decision when this page asks for nothing: note = what is on it and why you are not acting, in plain "
             "words with no ids (it is shown on the page). Nothing changes.",
+    "cannot": "The decision when the page asks for something NOT OFFERED HERE: what = the thing asked, in a few plain "
+              "words. The host says it isn't offered on this lineup; nothing comes off.",
 }
 LEAN_REMEMBER = ("A lesson about working for this user (YOUR MEMORIES), only when one was learned: {\"text\"} adds "
                  "one, {\"text\", \"replaces\": \"mN\"} replaces mN, {\"text\": \"\", \"replaces\": \"mN\"} removes it.")
@@ -617,7 +633,7 @@ def _lean_tools(allowed):
     if key in made:
         return made[key]
     names = set(allowed)
-    if names == set(H.PLAN_TOOLS):
+    if H._deciding(names):
         names |= set(H.LOOK_TOOLS) - {"find"}
     ids = list(ST.ERASE_IDS)
 
@@ -755,10 +771,9 @@ def _not_offered():
            if n in cat.by_name and n not in _SAID_ELSEWHERE]
     if not off:
         return ""
-    return ("NOT OFFERED HERE: %s. When the page asks for one of these, nothing is done for it: answer(...) with one "
-            "line saying it isn't offered on this lineup (\"That isn't offered on this lineup.\"), never that it was "
-            "done. Only the request comes off the page; the user's other words stay, and are never written out "
-            "again." % "; ".join(off))
+    return ("NOT OFFERED HERE: %s. When the page asks for one of these, the decision is cannot(what): nothing is done "
+            "for it, and never write that it was done. The user's words stay, and are never written out again."
+            % "; ".join(off))
 
 
 def _off_features():
@@ -837,7 +852,7 @@ def _turn(msgs, allowed, tries=3, choice="required", accept_prose=False, final=N
     helpers = 0
     # THE DECISION'S LOOKING IS BOUNDED BY TOKENS, never by a count or a clock: what the inspections add to the
     # conversation and what the model writes, against the harness's budget; the same look twice is refused
-    deciding = set(allowed) == set(H.PLAN_TOOLS)
+    deciding = H._deciding(allowed)
     budget = int(getattr(H._H(), "inspect_tokens", 12000) or 12000)
     start_tokens, spent, asked = None, 0, set()
     for _ in range(tries + 4):
@@ -904,7 +919,7 @@ def _turn(msgs, allowed, tries=3, choice="required", accept_prose=False, final=N
                 msgs.append({"role": "tool", "tool_call_id": cid, "content": json.dumps(H._H().nudge_refused(allowed))})
                 last = {"error": "called %s instead of %s" % (fn, "/".join(allowed))}
                 continue
-            if fn in H.PLAN_TOOLS and "remember" in args:
+            if (fn in H.PLAN_TOOLS or fn == "cannot") and "remember" in args:
                 args = dict(args)
                 JOB.remember = args.pop("remember")     # applied when the job ends (memories)
             try:
@@ -1066,6 +1081,10 @@ TOOLS = [
   "you (ASKING): lines = your question, in your own words, one string per line. It is written under the "
   "request and nothing comes off; the request stays until the user's reply lets a later job do it.",
   {"lines": "array", "remember": H.REMEMBER}, t_ask),
+ ("cannot", "Your ONE decision when the page asks for something NOT OFFERED HERE (the list at the end of the "
+  "page): what = the thing asked, in a few plain words (\"circling the date\"). The host writes that it isn't offered "
+  "on this lineup; nothing comes off, and nothing else is done for it.", {"what": "string", "remember": H.REMEMBER},
+  t_cannot),
  ("skip", "Your ONE decision when THIS page asks for nothing, or when this notebook's system prompt "
   "says to leave it alone: say what is on it and why you are not acting, in plain words -- the note is "
   "shown on the page, so never an id like line:1 or mark:11. Nothing changes. What "

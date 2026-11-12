@@ -709,6 +709,7 @@ def job_context(doc, page, name):
     from paperdaemon.pipeline.host import decision as _D
     off = _D._not_offered()
     if off:
+        L[-1:-1] = ["  cannot(what)                     the page asks for something NOT OFFERED HERE (below)"]
         L += ["", off]
     return "\n".join(L)
 

@@ -187,7 +187,7 @@ def _write(data, state=None, strokes=None, also=()):
             if _key(b.parent_id) == ROOT:
                 root_items.append(it)
                 if it.value is not None and it.deleted_length == 0 and _key(it.value) in layers:
-                    his_places[_key(it.value)] = (len(frames), it)
+                    his_places.setdefault(_key(it.value), []).append((len(frames), it))
         elif isinstance(b, ss.SceneTreeBlock):
             if b.tree_id.part1 == LEGACY:
                 changed = True
@@ -208,6 +208,23 @@ def _write(data, state=None, strokes=None, also=()):
         frames.append(raw)
         kinds.append(r[0])
     news = []
+    # ONE PLACE OF HIS IN THE TABLET'S LIST OF LAYERS: every live place of his layers is gathered (a layer can be in the
+    # list twice -- the tablet put his layer in again where he had put it first, 11-11, and every note showed twice),
+    # the first layer of his kept at one place -- the tablet's own, where it made one -- and every other place erased,
+    # as the tablet deletes a layer
+    keep = None
+    if his_places:
+        la0 = min(his_places)
+        mine_ = set(notes) | {me}
+        spots = his_places[la0]
+        keep = next((s for s in spots if s[1].item_id.part1 not in mine_), spots[-1])
+        for lk, ss_ in his_places.items():
+            for at, it in ss_:
+                if (at, it) is keep or (lk == la0 and at == keep[0]):
+                    continue
+                frames[at] = _frame(ss.SceneGroupItemBlock(parent_id=CrdtId(*ROOT), item=CrdtSequenceItem(
+                    item_id=it.item_id, left_id=it.left_id, right_id=it.right_id, deleted_length=1, value=None)))
+                changed = True
     # his ids: past EVERY counter on the page, whatever its author, as the tablet numbers its own
     every = max([0] + [int(r[8]) + max(int(r[13] or 0), 1) - 1 for r in rows if r[0] == LINE])
     n = max(every, _A.next_free_id(others) - 1) + 1
@@ -217,19 +234,13 @@ def _write(data, state=None, strokes=None, also=()):
         if str(authors.get(me)) != str(R.uuid_of("notes")):   # the page's author table names his notes' author
             frames[table] = _frame(ss.AuthorIdsBlock(author_uuids={
                 **{a: u for a, u in authors.items() if a != LEGACY}, me: R.uuid_of("notes")}))
-        # HIS LAYER, ONE PER PAGE, AS THE PAGE HAS IT: the first of his it shows is taken up again, and any other of
-        # his comes out of the list of layers (its place erased, as the tablet deletes a layer); with none, a new one,
-        # at the bottom of the tablet's list
+        # HIS LAYER, ONE PER PAGE, AS THE PAGE HAS IT (kept above); with none, a new one, ADDED AS THE TABLET ADDS A
+        # LAYER: last in the list, after the last layer there is
         if his_places:
             la, ln = min(his_places)
-            for lk, (at, it) in sorted(his_places.items()):
-                if lk != (la, ln):
-                    frames[at] = _frame(ss.SceneGroupItemBlock(parent_id=CrdtId(*ROOT), item=CrdtSequenceItem(
-                        item_id=it.item_id, left_id=it.left_id, right_id=it.right_id, deleted_length=1, value=None)))
         else:
-            first = _first_layer(root_items)
             la, ln = me, n
-            news += _layer_blocks(la, ln, layer_name(), first)
+            news += _layer_blocks(la, ln, layer_name(), _last_layer(root_items))
             n += 4
         # THE TABLET'S SECOND RECORD OF A LAYER IT MAKES (tree: the layer's node, not an update, under nothing): without
         # it the tablet listed no Daemon layer and drew nothing on it (the Sonnet page, 11-11)
@@ -298,10 +309,11 @@ def box_marks(data, box, pad=6.0, shifts=None):
     return out
 
 
-def _layer_blocks(author, n, name, right):
+def _layer_blocks(author, n, name, left):
     """His layer (author, n), as the tablet makes one: its tree node under the root, its group (named, visible), and
-    its place FIRST in the root's list (the bottom of the tablet's layers, under the user's), before `right`. Ids n (the
-    layer), n+1 and n+2 (its name's and visibility's), n+3 (its place), all of `author`."""
+    its place LAST in the root's list, after `left` (the last layer there is), as the tablet adds a layer -- put first,
+    the tablet put it in the list a second time (11-11). Ids n (the layer), n+1 and n+2 (its name's and visibility's),
+    n+3 (its place), all of `author`."""
     layer = CrdtId(author, n)
     g = si.Group(node_id=layer)
     g.label = LwwValue(timestamp=CrdtId(author, n + 1), value=name)
@@ -310,7 +322,7 @@ def _layer_blocks(author, n, name, right):
                                                                     parent_id=CrdtId(*ROOT)))),
             (ss.TreeNodeBlock.BLOCK_TYPE, _frame(ss.TreeNodeBlock(group=g))),
             (ss.SceneGroupItemBlock.BLOCK_TYPE, _frame(ss.SceneGroupItemBlock(parent_id=CrdtId(*ROOT), item=CrdtSequenceItem(
-                item_id=CrdtId(author, n + 3), left_id=CrdtId(0, 0), right_id=CrdtId(*right), deleted_length=0,
+                item_id=CrdtId(author, n + 3), left_id=CrdtId(*left), right_id=CrdtId(0, 0), deleted_length=0,
                 value=layer))))]
 
 
@@ -329,6 +341,17 @@ def _put(frames, kinds, news):
         out_k[at + 1:at + 1] = [kind] * len(batch)
     lines = [f for k, f in news if k == LINE]
     return out_f + lines, out_k + [LINE] * len(lines)
+
+
+def _last_layer(items):
+    """The last live item of the root's list of layers, in the list's own order (CRDT), or (0, 0)."""
+    from rmscene.crdt_sequence import CrdtSequence
+    live = [i for i in items if i.value is not None and not i.deleted_length]
+    try:
+        keys = list(CrdtSequence(live).keys())
+    except Exception:
+        keys = [i.item_id for i in live]
+    return _key(keys[-1]) if keys else (0, 0)
 
 
 def _first_layer(items):

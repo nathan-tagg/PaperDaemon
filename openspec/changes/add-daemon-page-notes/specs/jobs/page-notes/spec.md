@@ -61,8 +61,14 @@ layer's name and whether it shows SHALL stay as he made them. His next note wipe
 
 ### Requirement: His layer
 The daemon's notes SHALL be on one layer per page, named as the user chose (Settings: Daemon layer,
-"Daemon" by default), at the bottom of the tablet's list of layers. A layer the user deleted SHALL be made
-anew for the next note.
+"Daemon" by default), in the tablet's list of layers ONCE: a new one is added as the tablet adds a layer, last in
+the list, and every write keeps one entry for it (the tablet's own, where it made one) and erases any other (11-11:
+put first, the tablet put it in the list again, and every note showed on two Daemon layers). A layer the user deleted
+SHALL be made anew for the next note.
+
+#### Scenario: The layer in the list twice
+- **WHEN** a page's list of layers holds his layer twice
+- **THEN** the next write leaves it there once, and the tablet shows one Daemon layer
 
 #### Scenario: The user deletes the layer
 - **WHEN** the user deletes the daemon's layer on the tablet and a later job writes a note

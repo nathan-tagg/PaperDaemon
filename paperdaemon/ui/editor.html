@@ -8471,6 +8471,7 @@ span.lname { cursor: default; }
         const r = await fetch("/api/v1/library/" + encodeURIComponent(DOC) + "/push", { method: "POST", keepalive: true,
                                                                                     headers: { Authorization: "Bearer " + token() } });
         if (!r.ok) { syncTold("end", false); saveState("error", await r.json().then(j => j.error, () => "") || String(r.status)); return; }
+        await lookAtFile(true);                               // the tablet's latest, brought down by the sync, shown
         syncTold("end", true);
         saved.textContent = "Synced";
         setTimeout(() => { if (saved.textContent === "Synced") saved.textContent = ""; }, 1500);

@@ -974,4 +974,10 @@ def push(doc):
     pages = sorted({n.split("/", 1)[1][:-3] for n, _k, _h in sync.changed_files(doc) if "/" in n and n.endswith(".rm")})
     r = sync.push_edited(doc, pages)
     _record_written(doc)
+    # AND THE TABLET'S LATEST BROUGHT DOWN (the user's word, 11-11: "CTRL+S Does NOTHING ON THE MIRROR STILL"): a sync is
+    # both ways, as the tablet's is -- with nothing edited here, the push sent nothing and nothing came back
+    try:
+        sync.pull()
+    except Exception:
+        pass                                          # (the push's answer stands; the keeper pulls again on its own)
     return r

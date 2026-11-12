@@ -281,3 +281,33 @@ def test_an_answer_that_writes_back_the_lines_it_takes_off_is_refused(work):
     d = _look(work, MARKS.replace("WORD", repr("March")))
     texts = [p["text"] for p in d["paras"]]
     assert "Meeting moved to Thursday, March 4." in texts and "Circle the date." not in texts
+
+
+def test_a_request_for_what_the_lineup_does_not_offer_is_said_so_and_nothing_comes_off(work):
+    # 11-11, Qwen3-VL 8B on Weak (mark-ups off): saying "not offered" through answer() came out as a copy of the page or
+    # a claim that the word was underlined. cannot(what) is offered where something is off; the host writes the line.
+    replay.run_case("prep", {"fixture": "typed-question", "replies": [("skip", {"note": "first look"})]}, work=str(work))
+    _look(work, PAGE + """
+    from paperdaemon.pipeline.page import typed as TY
+    TY.insert(doc, page, "The harbor master rings a bell at noon every day.")
+    TY.insert(doc, page, "Underline the word bell in the sentence above.")
+    print("{}")
+    """)
+    off = {"markup": {"state": "off", "because": ["the text model's harness switches it off"], "summary": "highlighting, circling, underlining and striking words"}}
+    r = replay.run_case("page-work", {"fixture": "typed-question", "lineup": {"features": off},
+                                      "replies": [("cannot", {"what": "underlining the word bell"})]}, work=str(work))
+    assert r["unused_replies"] == [] and "cannot" in r["offered"][0], r
+    d = _look(work, MARKS.replace("WORD", repr("bell")))
+    texts = [p["text"] for p in d["paras"]]
+    assert "The harbor master rings a bell at noon every day." in texts
+    assert "Underline the word bell in the sentence above." in texts                 # nothing came off
+    assert not d["marks"]
+
+
+def test_cannot_is_offered_only_where_something_is_off(monkeypatch):
+    import paperdaemon.pipeline.host as H
+    from paperdaemon.pipeline.host import decision as D
+    monkeypatch.setattr(D, "_not_offered", lambda: "")
+    assert H.decision_tools() == H.PLAN_TOOLS
+    monkeypatch.setattr(D, "_not_offered", lambda: "NOT OFFERED HERE: sketches.")
+    assert H.decision_tools() == H.PLAN_TOOLS + ("cannot",) and H._deciding(H.decision_tools())

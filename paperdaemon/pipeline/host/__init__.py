@@ -983,6 +983,18 @@ def run_job_pages(job):
 # step when asked: the words, the spec, the parts. The host does the bookkeeping: order, erasing, searching,
 # placing, committing, checking, recording.
 PLAN_TOOLS = ("plan", "answer", "ask", "skip")
+
+
+def decision_tools():
+    """The decision's calls: the four, and cannot(what) on a lineup that has something switched off."""
+    from paperdaemon.pipeline.host import decision as _D
+    return PLAN_TOOLS + (("cannot",) if _D._not_offered() else ())
+
+
+def _deciding(allowed):
+    """Is this turn the decision: the four calls, with cannot or without."""
+    a = set(allowed)
+    return set(PLAN_TOOLS) <= a <= set(PLAN_TOOLS) | {"cannot"}
 LOOK_TOOLS = JB.LOOK_TOOLS       # served, then the turn is re-asked
 # how many times a drawing is shown back for a fix: ONE by default (the ruling, 11-07). With none, "a lighthouse on a
 # rock" came out as a few rectangles with no rock, and nothing looked; a second round made drawings different rather

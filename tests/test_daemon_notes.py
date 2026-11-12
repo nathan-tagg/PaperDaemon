@@ -131,7 +131,7 @@ def test_a_note_is_his_own_and_every_write_erases_everything_of_his_first():
     assert {N._key(b.tree_id)[0] for b in blocks if isinstance(b, ss.SceneTreeBlock) and N._key(b.tree_id) in his} == {d}
     # his layer goes at the bottom of the list of layers, under the user's
     place = _his_place(blocks).item
-    assert N._key(place.left_id) == (0, 0) and place.right_id.part1 == 0
+    assert N._key(place.left_id) == (0, 13) and N._key(place.right_id) == (0, 0)   # last in the list, as the tablet adds a layer
     b = N.with_note(a, strokes[:3], state)                      # the next note: everything of the last one erased
     assert _counts(b) == (3, 2, 1)
     assert _his_strokes(a) <= _dead(b)
@@ -435,3 +435,21 @@ def test_the_retry_box_is_on_the_notes_line_at_its_right_end():
     assert box[1] < max(text_y) and box[3] > min(text_y)                 # on the same line as the words
     left_of_box = [x for st in strokes for (x, y) in st[0] if x < box[0]]
     assert max(left_of_box) < box[0]                                       # nothing of the note runs into it
+
+
+def test_his_layer_is_in_the_tablets_list_once_whoever_put_it_there_twice():
+    """11-11: the tablet moved his layer to the top of its list (its own place, after Layer 1) while a note copy put his
+    old place back, so the tablet showed two Daemon layers with the same strokes. Every write keeps one place -- the
+    tablet's -- and erases the others."""
+    strokes, _ = N.letter(["On it."], FRAME)
+    page = N.with_note(_page([(0.0, 900.0)]), strokes)
+    blocks = _blocks(page)
+    lay = _his_place(blocks).item.value
+    blocks.append(ss.SceneGroupItemBlock(parent_id=CrdtId(0, 1), item=CrdtSequenceItem(
+        item_id=CrdtId(1, 9000), left_id=CrdtId(0, 13), right_id=CrdtId(0, 0), deleted_length=0, value=lay)))
+    two = _write(blocks)
+    assert _counts(two)[2] == 2
+    one = N.with_note(two, strokes)
+    assert _counts(one) == (len(strokes), 1, 1)
+    assert _his_place(_blocks(one)).item.item_id == CrdtId(1, 9000)          # the tablet's place is the one kept
+    assert N.erase(two)[0] != two and _counts(N.erase(two)[0])[2] == 1       # the erase before a job does it too

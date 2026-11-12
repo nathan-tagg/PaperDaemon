@@ -873,3 +873,20 @@ def test_a_value_the_editor_sets_is_stamped_one_past_the_one_it_replaces():
     assert len(got["changed"]) == 1, got
     key, new, old = got["changed"][0]
     assert key == [0, 0] and new[0] == IP_AUTHOR and new[1] == old[1] + 1, got
+
+
+def test_ctrl_s_on_a_mirror_page_also_brings_the_tablets_latest_down(monkeypatch):
+    """11-11: "CTRL+S Does NOTHING ON THE MIRROR STILL" -- with nothing edited in the window, the push sent nothing and
+    nothing came back. The Mirror's sync is both ways: the edits up, then the cloud pulled. (The cloud calls are stand-ins
+    here; a real sync is the tablet's.)"""
+    from paperdaemon.remarkable import inplace as IP, sync as S
+    from paperdaemon import ledger
+    calls = []
+    monkeypatch.setattr(IP, "_mirror_only", lambda: None)
+    monkeypatch.setattr(IP, "_record_written", lambda doc: None)
+    monkeypatch.setattr(ledger, "load", lambda: {"entries": {}})
+    monkeypatch.setattr(S, "changed_files", lambda doc: [])
+    monkeypatch.setattr(S, "push_edited", lambda doc, pages: calls.append(("push", tuple(pages))) or {"pushed": []})
+    monkeypatch.setattr(S, "pull", lambda *a, **k: calls.append(("pull",)))
+    r = IP.push("a-doc")
+    assert calls == [("push", ()), ("pull",)] and r == {"pushed": []}

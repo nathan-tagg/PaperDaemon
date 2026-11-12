@@ -210,6 +210,9 @@ def run_case(name, spec, work=None):
                             "network": {"allowed": False}}}
         for k, v in (spec.get("settings") or {}).items():      # a case's own settings (network, home place)
             run["settings"][k] = v
+        for k, v in (spec.get("lineup") or {}).items():         # a case's own lineup values (features switched off)
+            run[k] = v
+            run["lineups"]["Replay"][k] = v
         runfile = os.path.join(state, "lineup.json")
         with open(runfile, "w", encoding="utf-8") as f:
             json.dump(run, f)
