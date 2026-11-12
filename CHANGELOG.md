@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.73
+
+- One progress bar. A Mirror sync (Ctrl+S, or closing a document) shows in the same bar as a job, along the bottom of the page and its cover, and the bar goes back to the job when the sync is through. There used to be a thin bar at the top for the sync and an orange one at the bottom for the job.
+
 ## 0.2.72
 
 - What you write or erase in the Mirror and save (Ctrl+S) starts a job on a tagged page, the same as writing on the tablet. The save used to mark the page as already handled, so the edit reached the tablet and no job started.

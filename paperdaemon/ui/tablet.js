@@ -310,45 +310,40 @@
       fr.focus();
     });
 
-    // A JOB'S PROGRESS, as the host reports it (GET /progress): a bar over the bottom edge of the document's cover, and
-    // along the bottom of the viewer when that document is open; no count until the model's plan is in
-    function progressBar(p) {
-      const known = p && p.total;
-      return '<span class="job-bar' + (known ? "" : " busy") + '" role="progressbar"' +
-        (known ? ' aria-valuemin="0" aria-valuemax="' + p.total + '" aria-valuenow="' + p.done + '"' : "") +
-        '><i style="width:' + (known ? Math.max(4, 100 * p.done / p.total) : 30) + '%"></i></span>';
+    // ONE BAR FOR A DOCUMENT'S WORK: a job's progress (GET /progress) and the Mirror's sync (a document's edits going up to
+    // the tablet: Ctrl+S, the document closed; GET /library/<doc>/sync) share the bar over the bottom edge of the
+    // document's cover, and along the bottom of the viewer when that document is open. A sync shows while it runs (it
+    // takes seconds), then the bar is the job's again. No count until the model's plan is in; a sync fills by the push's
+    // requests to the cloud and a sync that failed shows nothing (its reason is by the document's name)
+    function barOf(doc) {
+      const s = S.sync, p = S.progress;
+      if (s && s.doc === doc) return { busy: s.busy, frac: s.frac };
+      if (p && p.doc === doc) return { busy: !p.total, frac: p.total ? p.done / p.total : 0, done: p.done, total: p.total };
+      return null;
     }
     // A BAR THAT IS THERE IS CHANGED IN PLACE, never drawn anew: a new element each poll started its animation over
     // every second (it looked stuck) and could not slide its width from the last value
-    function setBar(holder, old, p) {
-      if (!old) { holder.insertAdjacentHTML("beforeend", progressBar(p)); return; }
-      const known = !!(p && p.total);
-      old.classList.toggle("busy", !known);
-      if (known) {
-        old.setAttribute("aria-valuemin", "0"); old.setAttribute("aria-valuemax", String(p.total)); old.setAttribute("aria-valuenow", String(p.done));
+    function setBar(holder, b) {
+      let old = holder.querySelector(":scope > .job-bar");
+      if (!b) { if (old) old.remove(); return; }
+      if (!old) {
+        holder.insertAdjacentHTML("beforeend", '<span class="job-bar" role="progressbar"><i></i></span>');
+        old = holder.querySelector(":scope > .job-bar");
+      }
+      old.classList.toggle("busy", b.busy);
+      if (b.total) {
+        old.setAttribute("aria-valuemin", "0"); old.setAttribute("aria-valuemax", String(b.total)); old.setAttribute("aria-valuenow", String(b.done));
       } else ["aria-valuemin", "aria-valuemax", "aria-valuenow"].forEach(a => old.removeAttribute(a));
-      const w = (known ? Math.max(4, 100 * p.done / p.total) : 30) + "%";
+      const w = (b.busy ? 30 : Math.max(4, 100 * b.frac)) + "%";
       const i = old.querySelector("i"); if (i && i.style.width !== w) i.style.width = w;
     }
-    function paintProgress() {
-      if (!R) return;
-      const p = S.progress;
-      R.querySelectorAll(".cover .job-bar").forEach(b => { if (!p || b.closest(".doc-card").dataset.open !== p.doc) b.remove(); });
-      if (p) {
-        const card = R.querySelector('.doc-card[data-open="' + p.doc + '"] .cover');
-        if (card) setBar(card, card.querySelector(".job-bar"), p);
-      }
+    function paintBars() {
+      if (R) R.querySelectorAll(".doc-card .cover").forEach(c => setBar(c, barOf(c.closest(".doc-card").dataset.open)));
       const dlg = $("#" + VIEWER);
-      if (dlg) {
-        const old = dlg.querySelector(":scope > .job-bar");
-        if (p && dlg.open && S.doc && S.doc.id === p.doc) setBar(dlg, old, p);
-        else if (old) old.remove();
-      }
+      if (dlg) setBar(dlg, dlg.open && S.doc ? barOf(S.doc.id) : null);
     }
-    // THE MIRROR'S SYNC (a document's edits going up to the tablet: Ctrl+S, the document closed), as the engine reports
-    // it (GET /library/<doc>/sync): a thin bar under the viewer's bar while the document is open, along the top of its
-    // cover once it is closed. It fills by the push's requests to the cloud and is gone a moment after it is through;
-    // a sync that failed leaves no bar (its reason is by the document's name)
+    function paintProgress() { paintBars(); }
+    function paintSync() { paintBars(); }
     function syncBar(d) {
       if (d.state === "start") {
         if (!S.doc) return;
@@ -371,25 +366,6 @@
       if (!ok) { S.sync = null; paintSync(); return; }
       s.busy = false; s.frac = 1; paintSync();
       setTimeout(() => { if (S.sync === s) { S.sync = null; paintSync(); } }, 700);
-    }
-    function paintSync() {
-      const s = S.sync, dlg = $("#" + VIEWER);
-      const open = !!(s && dlg && dlg.open && S.doc && S.doc.id === s.doc);
-      const places = [];
-      const vb = dlg && $(".viewer-bar", dlg);
-      if (vb) places.push([vb, open]);
-      if (R) R.querySelectorAll(".doc-card .cover").forEach(c => places.push([c, !!s && !open && c.closest(".doc-card").dataset.open === s.doc]));
-      for (const [at, want] of places) {
-        let bar = at.querySelector(":scope > .sync-bar");
-        if (!want) { if (bar) bar.remove(); continue; }
-        if (!bar) {
-          at.insertAdjacentHTML("beforeend", '<span class="sync-bar" role="progressbar" aria-label="' + esc(PD.t("keys.sync")) + '"><i></i></span>');
-          bar = at.querySelector(":scope > .sync-bar");
-        }
-        bar.classList.toggle("busy", s.busy);
-        const w = (s.busy ? 30 : Math.max(4, 100 * s.frac)) + "%", i = bar.querySelector("i");
-        if (i.style.width !== w) i.style.width = w;
-      }
     }
     // THE SELECTION'S MAKE-UP, as the page editor tells it: brush icons (or color swatches) with their counts, to the
     // right of the selection, drawn here over the viewer so they reach past the editor's frame; a press keeps only those
