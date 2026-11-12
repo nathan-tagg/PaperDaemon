@@ -357,9 +357,11 @@ def _plan(plan_steps, rulings=(), places=None):
            for p in places) and not index:
         return {"error": "near='mark:N' names an ink mark, but this page has no ink to anchor to. "
                          "Use near='stack', a corner, or 'center'."}
-    if not places and not erase and not any(q["do"] in ST.MARK_UP or q["do"] == "checkbox" for q in plan_steps):
+    if not places and not erase and not any(q["do"] in ST.MARK_UP or q["do"] in ("checkbox", "elsewhere")
+                                            for q in plan_steps):
         # AN ERASE-ONLY JOB has nothing to place, nor does a highlight or a checklist made of the user's own typed
-        # paragraphs: the step is the whole of the work.
+        # paragraphs, nor work handed to another page (11-12: a plan of one elsewhere step was refused, and the model
+        # had to add a reply here to get through): the step is the whole of the work.
         return {"error": "a plan needs at least one place, or an erase list. What goes on the "
                          "page, or what comes off it?"}
     # Resolve erase-by-number NOW, to stroke signatures: the numbers go stale the moment anything

@@ -14,4 +14,6 @@
 ## 3. Checks
 
 - [x] 3.1 Tests: tests/test_elsewhere.py
-- [ ] 3.2 A real run: the Opus lineup makes the new version of page 2 on a page of its own
+- [x] 3.2 A real run (11-12): the Opus lineup handed the new version of page 2 to page 4, and the job there read
+      pages 2 and 3 and wrote it
+- [x] 3.3 A plan of one elsewhere step needs no place on the asking page

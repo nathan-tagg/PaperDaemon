@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.78
+
+- A job whose whole work goes to another page is accepted as it is. Asked only to put something on another page, the model used to have its plan refused ("a plan needs at least one place") and had to add a reply on the asking page to get through.
+
 ## 0.2.77
 
 - A job can put work on another page: a page of the same notebook, a new page right after the one you tagged, or a new notebook made beside it. PaperDaemon makes the page or notebook, tags it for the same lineup, and runs a job there with your request word for word; that job reads the pages it needs and writes on its own page, with its own Daemon note. Before, a job could only write on the page that woke it.

@@ -311,3 +311,27 @@ def test_cannot_is_offered_only_where_something_is_off(monkeypatch):
     assert H.decision_tools() == H.PLAN_TOOLS
     monkeypatch.setattr(D, "_not_offered", lambda: "NOT OFFERED HERE: sketches.")
     assert H.decision_tools() == H.PLAN_TOOLS + ("cannot",) and H._deciding(H.decision_tools())
+
+
+def test_a_plan_of_one_elsewhere_step_hands_the_work_to_a_new_page(work):
+    """The whole of a job can be work handed to another page: the plan needs no place of its own here (11-12: a plan
+    of one elsewhere step was refused, and the model added a reply to get through). The new page comes after this one,
+    filed as asked for with the request, and the next scan makes it a job though it is blank."""
+    got = _job(work, "typed-question", [
+        ("plan", {"steps": [{"do": "elsewhere", "page": "new", "what": "Answer the question on page 1 here.",
+                             "answers": replay.NEW}], "rulings": replay.RULE("question", "keep")})])
+    assert "new page" in got["note"] or "page 2" in got["note"], got["note"]
+    seen = _look(work, """
+        from paperdaemon import ledger as S
+        from paperdaemon.pipeline.page import render as R
+        led = S.load()
+        asked = [e for e in led["entries"].values() if e.get("asked")]
+        doc = asked[0]["doc_id"]
+        S.classify(S.scan(), led)
+        found = [f for f in S.classify(S.scan(), S.load()) if f["key"] in [k for k, e in led["entries"].items() if e.get("asked")]]
+        print(json.dumps({"asked": asked, "pages": len(R.live_pages(doc)), "status": [f["status"] for f in found]}))
+    """)
+    assert len(seen["asked"]) == 1 and seen["pages"] == 2
+    e = seen["asked"][0]
+    assert e["page"] == 2 and e["status"] == "pending" and e["asked"]["what"] == "Answer the question on page 1 here."
+    assert seen["status"] == ["PENDING"]
