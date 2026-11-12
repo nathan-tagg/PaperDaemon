@@ -343,6 +343,10 @@ def _drain_host_steps(limit=8, kinds=None):
             elif cur["do"] == "tag":
                 ok, note = _stage_tag(cur["what"])
                 ST.finish(steps, cur, ok, note)
+            elif cur["do"] == "elsewhere":
+                from paperdaemon.pipeline.host.features import elsewhere as _EW
+                ok, note = _EW.run(cur)
+                ST.finish(steps, cur, ok, note)
             elif cur["do"] in ST.GAMES:
                 # the game is set up on this page itself (_game_page): nothing needs to say where it is
                 ok, note = _run_game(cur)
@@ -945,6 +949,9 @@ def run_job_pages(job):
         extra = ("THIS PAGE IS BEING TRIED AGAIN (%s). The last try ended: %s" % (
             "the user asked for it" if retry.get("asked") else "try %d after a failure" % int(retry.get("n") or 1),
             str(retry.get("note") or "")[:600])) if isinstance(retry, dict) else None
+        if isinstance(e.get("asked"), dict):                # the work was handed here from another page (elsewhere)
+            from paperdaemon.pipeline.host.features import elsewhere as _EW
+            extra = _EW.asked_text(e["asked"]) + (("\n\n" + extra) if extra else "")
         outcome, note, dt, _ = converse(doc_id, page, name, [k], extra=extra, conflict=job.get("conflict"))
         # DID THE PAGE CHANGE UNDER THE JOB? Recording the page records whatever is on it now, so anything
         # written while the job ran would pass as answered. The host knows what it saw and what it wrote;
@@ -970,6 +977,10 @@ def run_job_pages(job):
             if foreign:
                 log("  the page changed while the job worked, and not by the job -- it goes back in the queue")
             S.mark(k, outcome, note, failed=bool(JOB.failed))
+            if outcome == "done" and not JOB.failed:     # a request handed here is carried out once
+                led = S.load()
+                if led["entries"].get(k, {}).pop("asked", None) is not None:
+                    S.save(led)
         log("  %s in %ds -- %s" % (outcome.upper(), dt, note[:110]))
         try:
             from paperdaemon.pipeline.host import steps as _ST

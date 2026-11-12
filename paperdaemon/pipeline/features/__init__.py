@@ -80,6 +80,8 @@ FEATURES = (
        optional=Requires(text={"vision": True}), steps=("concord",)),
     _f("notepad", "the notebook's notepad", tools=("notepad",)),
     _f("tag", "tagging the page when the user asked for it", steps=("tag",)),
+    _f("elsewhere", "work on another page, a new page or a new notebook, and reading the user's other notebooks",
+       steps=("elsewhere",), tools=("notebooks",)),
 )
 
 

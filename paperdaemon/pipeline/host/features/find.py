@@ -114,6 +114,9 @@ def _serve_look(fn, args, cid, msgs, doc, page):
     if fn == "read_page":
         msgs.append({"role": "tool", "tool_call_id": cid, "content": json.dumps(_read_page(args, doc, page))[:6500]})
         return
+    if fn == "notebooks":
+        msgs.append({"role": "tool", "tool_call_id": cid, "content": json.dumps(_notebooks(args, doc))[:6500]})
+        return
     # render
     JOB.unseen = False
     JOB.looks = JOB.looks + 1
@@ -121,20 +124,85 @@ def _serve_look(fn, args, cid, msgs, doc, page):
     msgs.append(H.page_image(doc, page, "The page as it now stands, with your draft drawn on it."))
 
 
+def _library():
+    """Every notebook, PDF and book in the library, not in the trash -> [(id, name, folder path, kind, pages, modified)]."""
+    from paperdaemon import ledger as S_
+    found, folders = [], {}
+    for f in os.listdir(S_.RM):
+        if not f.endswith(".metadata"):
+            continue
+        m = S_.meta(f[:-9])
+        if m.get("deleted") or m.get("parent") == "trash":
+            continue
+        if m.get("type") == "CollectionType":
+            folders[f[:-9]] = (m.get("visibleName") or "", m.get("parent") or "")
+        else:
+            found.append((f[:-9], m))
+
+    def path(parent):
+        names, seen = [], set()
+        while parent and parent in folders and parent not in seen:
+            seen.add(parent)
+            names.append(folders[parent][0])
+            parent = folders[parent][1]
+        return "/".join(reversed(names))
+    out = []
+    for d, m in found:
+        c = S_.content(d)
+        kind = {"pdf": "PDF", "epub": "book"}.get(c.get("fileType") or "", "notebook")
+        out.append((d, m.get("visibleName") or d, path(m.get("parent") or ""), kind, len(S_.live_pages(c) or []),
+                    int(m.get("lastModified") or 0)))
+    return sorted(out, key=lambda t: -t[5])
+
+
+def _notebook_named(name):
+    """The library's document named `name` (exact, case aside; else the one name holding it) -> (id, its name) or
+    (None, why not)."""
+    want = " ".join(str(name or "").split()).lower()
+    lib = _library()
+    hit = [t for t in lib if t[1].lower() == want] or [t for t in lib if want and want in t[1].lower()]
+    if not hit:
+        return None, "no notebook is named %r; notebooks() lists them" % str(name)[:60]
+    if len(hit) > 1 and hit[0][1].lower() != want:
+        return None, "%d notebooks have %r in their names: %s" % (len(hit), str(name)[:60],
+                                                                   ", ".join(repr(t[1]) for t in hit[:8]))
+    return hit[0][0], hit[0][1]
+
+
+def _notebooks(args, doc):
+    """THE USER'S OTHER NOTEBOOKS, listed: name, folder, kind and pages, the latest changed first; `named` narrows the
+    list to the names holding it. read_page(page, notebook) reads one of their pages."""
+    want = " ".join(str(args.get("named") or "").split()).lower()
+    rows = [{"name": n, "folder": f or "(top)", "kind": k, "pages": p} for d, n, f, k, p, _t in _library()
+            if d != doc and (not want or want in n.lower())]
+    return {"notebooks": rows[:80], "more": max(0, len(rows) - 80)}
+
+
 def _read_page(args, doc, page):
-    """ANOTHER PAGE OF THIS NOTEBOOK, in words: its typed text, exact, and its handwriting as the reader reads it, line
-    by line. A request that names another page ("my budget on page 1") had the host ask the user to type the list
-    again: it saw only the page it was on. Pages are counted as the tablet counts them."""
+    """A PAGE IN WORDS: its typed text, exact, and its handwriting as the reader reads it, line by line -- another page
+    of this notebook, or a page of another notebook named in `notebook`. A request that names another page ("my budget
+    on page 1") had the host ask the user to type the list again: it saw only the page it was on. Pages are counted as
+    the tablet counts them."""
     try:
         want = int(args.get("page"))
     except Exception:
         return {"error": "give the page's number"}
+    other = None
+    if str(args.get("notebook") or "").strip():
+        found, named = _notebook_named(args["notebook"])
+        if not found:
+            return {"error": named}
+        if found != doc:
+            doc, other = found, named
     pages = R.live_pages(doc)
     if not (1 <= want <= len(pages)):
-        return {"error": "this notebook has %d page%s" % (len(pages), "" if len(pages) == 1 else "s")}
-    if want == page:
+        return {"error": "%s has %d page%s" % (repr(other) if other else "this notebook", len(pages),
+                                                "" if len(pages) == 1 else "s")}
+    if want == page and not other:
         return {"error": "that is this page: you have it in front of you"}
     out = {"page": want, "typed": [], "written": []}
+    if other:
+        out["notebook"] = other
     try:
         from paperdaemon.pipeline.page import typed as TY
         _tb, paras = TY.paragraphs(doc, want)
@@ -144,7 +212,7 @@ def _read_page(args, doc, page):
     try:
         from paperdaemon import reader
         png = os.path.join(H.QUEUE, "_host_read_page.png")
-        R.render(doc, want, png, typed=False, hide=H._hide(), blank_ok=True)
+        R.render(doc, want, png, typed=False, hide=H._hide() if not other else None, blank_ok=True)
         lines = {}
         for w in reader.read_picture(png, scale=2):
             lines.setdefault(w.get("line", 0), []).append((w["x"], w["text"]))
@@ -263,8 +331,12 @@ TOOLS = [
  ("changes", "What was added to the page and what was erased since this system last worked on it.", {}, None),
  ("notepad_read", "Read this notebook's notepad beyond what the listing shows: scope = 'page' (this page's "
   "entries) or 'notebook' (all of them).", {"scope": "string"}, None),
- ("read_page", "Read ANOTHER page of this notebook in words -- its typed text, exact, and its handwriting as read -- "
-  "when the request points at one ('my list on page 1', 'the budget on the last page'). page: its number as the "
-  "tablet counts pages. Then rule and plan with what it says; never ask the user to type it again.",
-  {"page": "number"}, None),
+ ("read_page", "Read ANOTHER page in words -- its typed text, exact, and its handwriting as read -- when the request "
+  "points at one ('my list on page 1', 'the budget on the last page', 'page 3 of my Garden notebook'). page: its "
+  "number as the tablet counts pages; notebook: another notebook's name (leave it out for this notebook). Then rule "
+  "and plan with what it says; never ask the user to type it again.",
+  {"page": "number", "notebook": "string"}, None),
+ ("notebooks", "List the user's other notebooks, PDFs and books: name, folder, kind and page count, the latest changed "
+  "first. named: words of a name, to narrow the list. Then read_page(page, notebook) reads one of their pages.",
+  {"named": "string"}, None),
 ]

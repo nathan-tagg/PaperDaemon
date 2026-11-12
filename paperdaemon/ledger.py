@@ -831,7 +831,9 @@ def classify(found, led):
                     e["status"] = "pending"
                     e["why"] = "changed"
             else:
-                status = "WAITING" if st.get("empty") else "PENDING"
+                # A PAGE ANOTHER PAGE HANDED WORK TO (an elsewhere step) is a job though nothing is on it yet: its
+                # request is in its entry ("asked")
+                status = "WAITING" if st.get("empty") and not e.get("asked") else "PENDING"
         f["status"] = status
         f["why"] = entries[f["key"]].get("why")
         queue.append(f)

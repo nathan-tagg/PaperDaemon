@@ -19,7 +19,7 @@ HOST, MODEL = "host", "model"
 KINDS = {
     "erase": HOST, "search": HOST, "image": HOST, "web_picture": HOST, "coloring": HOST, "posts": HOST,
     "highlight": HOST, "circle": HOST, "underline": HOST, "strike": HOST, "checkbox": HOST,
-    "tag": HOST, "chess": HOST, "adventure": HOST, "messages": HOST, "concord": HOST,
+    "tag": HOST, "chess": HOST, "adventure": HOST, "messages": HOST, "concord": HOST, "elsewhere": HOST,
     "chart": MODEL, "calendar": MODEL, "write": MODEL, "draw": MODEL,
 }
 MARK_UP = ("highlight", "circle", "underline", "strike")
@@ -52,6 +52,7 @@ FIELDS = {
     "adventure": (),
     "messages": ("members",),
     "concord": (),
+    "elsewhere": ("page", "notebook"),
 }
 WHAT_IS = {
     "erase": "what you point at, with at", "search": "the query", "image": "a sentence describing the picture",
@@ -64,6 +65,7 @@ WHAT_IS = {
     "concord": "the family the user plays, as asked (or nothing)",
     "chart": "what it shows and from which figures", "calendar": "the month as YYYY-MM, or week",
     "write": "what the words are about", "draw": "the thing to draw",
+    "elsewhere": "the request for that page, whole: what to make there and which pages to read for it",
 }
 # WHAT THE MODEL IS TOLD ABOUT EACH KIND, in the brief's PLAN STEPS list, in this order: the kinds an entry
 # covers and its text. A lineup is told only the kinds its features offer.
@@ -105,6 +107,12 @@ STEP_BRIEF = [
      '  concord      the Concord of Merrow Bay, a game of letters and orders among seven old families (what =\n               the family the user plays, if named): its map takes THIS page whole, its orders, letters and\n               seasons pages go right after'),
     (('messages',),
      "  messages     texting the game's residents: members (who, one or several for a group chat); it\n               takes THIS page whole (nothing else goes on it). A picture OF a board is a chart, not a game"),
+    (('elsewhere',),
+     "  elsewhere    the work goes on ANOTHER page: page (a page number of this notebook, or \"new\" for a new page\n"
+     "               right after this one) or notebook (the name of a NEW notebook, made beside this one). A job\n"
+     "               runs there with what as its request, word for word: say everything it needs, and which pages\n"
+     "               to read (\"rewrite page 2 of this notebook with ...\"). Use it whenever the user asks for\n"
+     "               something on another page, a new page or a new notebook; a reply here says where it went"),
 ]
 
 
@@ -154,6 +162,10 @@ LEAN_STEP_BRIEF = [
      '  concord      the Concord of Merrow Bay (what = the family the user plays, if named); it takes this page whole'),
     (('messages',),
      "  messages     texting the game's residents: members; it takes this page whole"),
+    (('elsewhere',),
+     "  elsewhere    the work on ANOTHER page: page (a number of this notebook, or \"new\") or notebook (a NEW\n"
+     "               notebook's name); a job runs there with what as its request: say all it needs, and which pages\n"
+     "               to read. For anything asked on another page, a new page or a new notebook"),
 ]
 
 
@@ -275,6 +287,22 @@ def build(raw):
             mv = [t for t in re.split(r"[\s,;]+", mv) if t and not re.fullmatch(r"\d+\.+", t)]
         if isinstance(mv, list) and mv:
             step["moves"] = [str(m).strip()[:12] for m in mv if str(m).strip()][:40]
+        # ANOTHER PAGE: a page of this notebook (its number), a new page right after this one, or a new notebook
+        if do == "elsewhere":
+            nb = " ".join(str(s.get("notebook") or "").split())[:80]
+            pg = str(s.get("page") if s.get("page") is not None else "").strip().lower()
+            if nb:
+                step["notebook"] = nb
+            elif pg == "new":
+                step["page"] = "new"
+            else:
+                try:
+                    step["page"] = int(float(pg))
+                except ValueError:
+                    raise StepError("step %d (elsewhere) needs page: a page number of this notebook or \"new\", or "
+                                    "notebook: the name of a new notebook." % (i + 1))
+                if step["page"] < 1:
+                    raise StepError("step %d (elsewhere): page %d is not a page; they count from 1." % (i + 1, step["page"]))
         mem = s.get("members")
         if isinstance(mem, list):
             step["members"] = [str(m).strip() for m in mem if str(m).strip()][:12]
@@ -468,6 +496,10 @@ def describe(step):
         aim = " ".join(x for x in (repr(step["words"]) if step.get("words") else "",
                                    ("in " if step.get("words") else "") + step["target"] if step.get("target") else "") if x)
         return "%s %s" % ("strike through" if d == "strike" else d, aim or w)
+    if d == "elsewhere":
+        where = ("a new notebook %r" % step["notebook"] if step.get("notebook") else
+                 "a new page" if step.get("page") == "new" else "page %s" % step.get("page"))
+        return "on %s: %s" % (where, w)
     if d == "checkbox":
         return "make %s the tablet's %s" % (", ".join(step.get("targets") or []) or w,
                                             "ticked checkboxes" if step.get("checked") else "checkboxes")

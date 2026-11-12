@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.77
+
+- A job can put work on another page: a page of the same notebook, a new page right after the one you tagged, or a new notebook made beside it. PaperDaemon makes the page or notebook, tags it for the same lineup, and runs a job there with your request word for word; that job reads the pages it needs and writes on its own page, with its own Daemon note. Before, a job could only write on the page that woke it.
+- A job can read your other notebooks: it can list them (name, folder, kind, pages) and read any page of one by the notebook's name.
+
 ## 0.2.76
 
 - A model run as a command-line program (`claude`) is held to PaperDaemon's output limit (16,384 tokens). It wasn't given one: on 11-12 Opus spent 14 minutes and about 128,000 tokens on one turn before it asked for anything.

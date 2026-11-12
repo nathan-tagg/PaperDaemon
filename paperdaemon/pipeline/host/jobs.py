@@ -36,7 +36,7 @@ class JobKind(Enum):
     CONFLICT = "conflict"            # the tablet and a job changed one page
 
 
-LOOK_TOOLS = ("show_marks", "look_closer", "find", "render", "page_history", "changes", "notepad_read", "read_page")
+LOOK_TOOLS = ("show_marks", "look_closer", "find", "render", "page_history", "changes", "notepad_read", "read_page", "notebooks")
 # (served, then the turn is asked again)
 
 
