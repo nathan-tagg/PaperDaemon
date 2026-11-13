@@ -19,3 +19,5 @@
 - [x] 3.3 A plan of one elsewhere step needs no place on the asking page
 - [x] 3.4 A real run in the False Mirror (11-12): one Opus job read page 1 of another notebook and made a new
       notebook beside it; the job there wrote its checklist
+- [x] 3.5 The model places what is new (0.2.80): a real Opus run (11-13, DF230) made a folder inside Dogfood and a
+      notebook in it, and a page at the end of the asking notebook; both jobs wrote there
