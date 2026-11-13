@@ -12,9 +12,12 @@ and the entry's `asked` is dropped once that job is done.
 
 ## D2. Where a new page and a new notebook go
 
-A new page goes right after the asking page, behind any page this job has already added (as a coloring book's pages
-do). A new notebook is made in the asking notebook's folder, tagged with the job's tag, and sent to the tablet at once
-(the Mirror; in the False Mirror it stays there).
+The model says. A new page goes `after` a page number, or at the "end"; said nothing, right after the asking page,
+behind any page this job has already added. A new notebook goes in `folder`: a name met once in the library, or a path
+of names from the top ("Work/Resumes"), each part that does not exist made and sent to the tablet; "/" is the top;
+said nothing, the asking notebook's folder. A name several folders share is answered with that, so the model gives
+the path. (The first version, 0.2.77, fixed both places; the maintainer: "Why would you place those limitations ...
+its not me who would be asking, its the LLM".)
 
 ## D3. Reading other notebooks
 

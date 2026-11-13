@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.80
+
+- The model decides where new pages and notebooks go. A new page can go after any page, or at the end; a new notebook can go in any folder, named or given as a path ("Work/Resumes"), with missing folders made, or at the top of the library. In 0.2.77 a new page always went right after the asking page and a new notebook always went in the asking notebook's folder; those are now only what happens when the model doesn't say.
+
 ## 0.2.79
 
 - A model call that fails without stopping the job is logged with the reason the model's program gave. It used to log only "HTTP Error 502: Bad Gateway", so a failed look at the page could not be traced.

@@ -6,6 +6,7 @@ on its own page, and the Daemon's note goes on that page. Nothing here writes in
 
 Until 11-12 a job could only work on the page that woke it: asked to write a new version of page 2 on a new page, the
 Opus lineup told the user to write the request there and tag it themselves."""
+import os
 import time
 
 from paperdaemon import ledger as S
@@ -28,6 +29,40 @@ def _tagged_whole(doc, tag):
     return any(str(t.get("name", "")).strip().lower() == str(tag or "").strip().lower() for t in (c.get("tags") or []))
 
 
+def _folder(path, doc):
+    """The folder a new notebook goes in -> its id ("" the library's top): `path` a folder's name or a path of names
+    ("Work/Resumes"), each matched by name (case aside) under the one before it, or anywhere when it is a single name
+    met once; a part that does not exist is made (and sent to the tablet). "/" is the top; no path, this notebook's
+    folder. Raises ValueError for a single name that several folders share."""
+    from paperdaemon import paths
+    from paperdaemon.remarkable import local
+    if path is None or not str(path).strip():
+        parent = (S.meta(doc) or {}).get("parent") or ""
+        return "" if parent == "trash" else parent
+    parts = [p.strip() for p in str(path).strip().split("/") if p.strip()]
+    folders = {}
+    for f in os.listdir(S.RM):
+        if f.endswith(".metadata"):
+            m = S.meta(f[:-9])
+            if m.get("type") == "CollectionType" and not m.get("deleted") and m.get("parent") != "trash":
+                folders[f[:-9]] = (str(m.get("visibleName") or "").strip().lower(), m.get("parent") or "")
+    if len(parts) == 1 and not str(path).strip().startswith("/"):
+        hits = [u for u, (n, _p) in folders.items() if n == parts[0].lower()]
+        if len(hits) == 1:
+            return hits[0]
+        if len(hits) > 1:
+            raise ValueError("%d folders are named %r: give its path (\"Parent/%s\")" % (len(hits), parts[0], parts[0]))
+    parent = ""
+    for name in parts:
+        hit = next((u for u, (n, p) in folders.items() if n == name.lower() and p == parent), None)
+        if hit is None:
+            hit = local.new_folder(name, parent, tablet=not paths.local_only())
+            folders[hit] = (name.lower(), parent)
+            H.log("  made the folder %r" % name)
+        parent = hit
+    return parent
+
+
 def _target(step, src):
     """-> (doc, page id, page number, notebook name, why not or None): the page the work goes to, made when new."""
     from paperdaemon import paths
@@ -35,21 +70,26 @@ def _target(step, src):
     doc = JOB.doc
     if step.get("notebook"):
         from paperdaemon.remarkable import local
-        parent = (S.meta(doc) or {}).get("parent") or ""
-        if parent == "trash":
-            parent = ""
         try:
+            parent = _folder(step.get("folder"), doc)
             new = local.new_notebook(step["notebook"], parent=parent, tags=(src.get("tag"),) if src.get("tag") else (),
                                      tablet=not paths.local_only())
         except ValueError as ex:                     # made here, not yet on the tablet: it goes up with the next sync
             H.log("  the new notebook: %s" % str(ex)[:160])
-            new = None
-        if new is None:
-            return None, None, None, None, "the new notebook could not be sent to the tablet"
+            return None, None, None, None, "the new notebook could not be made: %s" % str(ex)[:160]
         pid = R.live_pages(new)[0]["id"]
         return new, pid, 1, step["notebook"], None
     if step.get("page") == "new":
-        after = (JOB.added_pages or [JOB.page_id])[-1]
+        live = [p["id"] for p in R.live_pages(doc)]
+        af = step.get("after")
+        if af == "end":
+            after = live[-1]
+        elif af:
+            if not 1 <= int(af) <= len(live):
+                return None, None, None, None, "after: this notebook has %d page%s" % (len(live), "" if len(live) == 1 else "s")
+            after = live[int(af) - 1]
+        else:
+            after = (JOB.added_pages or [JOB.page_id])[-1]      # right after this page, behind what the job added
         pid = PG.insert_pages(doc, after, 1)[0][0]
         JOB.added_pages.append(pid)
         n = [p["id"] for p in R.live_pages(doc)].index(pid) + 1

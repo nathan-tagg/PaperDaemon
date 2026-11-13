@@ -154,14 +154,23 @@ def quick_sheets():
     return docs[0], new_page(docs[0])
 
 
-def new_folder(name, parent=""):
-    _guard()
+def new_folder(name, parent="", tablet=False):
+    """A folder named `name` in `parent` ("" the library's top). `tablet`: in the tablet's own library (the Mirror),
+    sent to the tablet at once, as new_notebook sends a notebook. -> its id."""
+    if not tablet:
+        _guard()
     u = str(uuid.uuid4())
     now = str(_now())
     paths.write_json_atomic(os.path.join(M, u + ".metadata"), {
         "createdTime": now, "lastModified": now, "new": False, "parent": parent, "pinned": False, "source": "",
         "type": "CollectionType", "visibleName": (name or "Folder").strip() or "Folder"})
     paths.write_json_atomic(os.path.join(M, u + ".content"), {"tags": []})
+    if tablet:
+        from . import sync
+        r = sync.push_new_doc(u, dry_run=False) or {}
+        if r.get("root_put") != 200:
+            raise ValueError("the folder is made here and was not sent to the tablet (%s); it goes up with the next "
+                             "sync" % str(r.get("error") or r.get("root_put") or "no answer")[:120])
     return u
 
 

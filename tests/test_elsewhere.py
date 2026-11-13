@@ -78,3 +78,49 @@ def test_a_blank_page_handed_work_is_a_job_not_waiting():
     assert S.classify(found, dict(led, watching_since=1))[0]["status"] == "PENDING"
     del led["entries"]["k"]["asked"]
     assert S.classify(found, dict(led, watching_since=1))[0]["status"] == "WAITING"
+
+
+def test_the_model_puts_a_new_page_where_it_says(monkeypatch):
+    """A new page goes where the step says: after a page number, or at the end; right after this page by default."""
+    led, _ = _setup(monkeypatch)
+    ok, note = EW.run(ST.build([{"do": "elsewhere", "page": "new", "after": "end", "what": "x"}])[0])
+    assert ok and "page 5" in note and [p["id"] for p in R.live_pages(DOC)][-1] == "new-eeeeeeee"
+    led, _ = _setup(monkeypatch)
+    ok, note = EW.run(ST.build([{"do": "elsewhere", "page": "new", "after": 1, "what": "x"}])[0])
+    assert ok and "page 2" in note
+    led, _ = _setup(monkeypatch)
+    assert EW.run(ST.build([{"do": "elsewhere", "page": "new", "after": 9, "what": "x"}])[0])[0] is False
+
+
+def test_a_new_notebook_goes_in_the_folder_the_model_names_made_when_missing(monkeypatch, tmp_path):
+    """folder: a name met once, a path of names (the parts missing are made), or "/" for the top."""
+    import json
+    _setup(monkeypatch)
+    monkeypatch.setattr(S, "RM", str(tmp_path))
+
+    def folder(u, name, parent=""):
+        (tmp_path / (u + ".metadata")).write_text(json.dumps({"type": "CollectionType", "visibleName": name,
+                                                              "parent": parent}))
+    folder("work", "Work")
+    folder("res", "Resumes", "work")
+    folder("old1", "Old")
+    folder("old2", "Old", "work")
+    monkeypatch.setattr(S, "meta", lambda d: json.loads((tmp_path / (d + ".metadata")).read_text())
+                        if (tmp_path / (d + ".metadata")).exists() else {"parent": "work"})
+    from paperdaemon.remarkable import local
+    made = []
+
+    def new_folder(name, parent="", tablet=False):
+        u = "made%d" % len(made)
+        made.append((name, parent))
+        folder(u, name, parent)
+        return u
+    monkeypatch.setattr(local, "new_folder", new_folder)
+    assert EW._folder("Resumes", "doc") == "res"
+    assert EW._folder("Work/Resumes", "doc") == "res"
+    assert EW._folder("/", "doc") == "" and EW._folder(None, "doc") == "work"
+    assert EW._folder("Work/Drafts/2026", "doc") == "made1" and made == [("Drafts", "work"), ("2026", "made0")]
+    import pytest
+    with pytest.raises(ValueError):
+        EW._folder("Old", "doc")
+    assert EW._folder("Work/Old", "doc") == "old2"

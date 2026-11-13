@@ -52,7 +52,7 @@ FIELDS = {
     "adventure": (),
     "messages": ("members",),
     "concord": (),
-    "elsewhere": ("page", "notebook"),
+    "elsewhere": ("page", "notebook", "after", "folder"),
 }
 WHAT_IS = {
     "erase": "what you point at, with at", "search": "the query", "image": "a sentence describing the picture",
@@ -108,11 +108,14 @@ STEP_BRIEF = [
     (('messages',),
      "  messages     texting the game's residents: members (who, one or several for a group chat); it\n               takes THIS page whole (nothing else goes on it). A picture OF a board is a chart, not a game"),
     (('elsewhere',),
-     "  elsewhere    the work goes on ANOTHER page: page (a page number of this notebook, or \"new\" for a new page\n"
-     "               right after this one) or notebook (the name of a NEW notebook, made beside this one). A job\n"
-     "               runs there with what as its request, word for word: say everything it needs, and which pages\n"
-     "               to read (\"rewrite page 2 of this notebook with ...\"). Use it whenever the user asks for\n"
-     "               something on another page, a new page or a new notebook; a reply here says where it went"),
+     "  elsewhere    the work goes on ANOTHER page: page (a page number of this notebook, or \"new\" for a new page)\n"
+     "               or notebook (the name of a NEW notebook). A new page goes after: a page number, or \"end\" (right\n"
+     "               after this page when after is left out). A new notebook goes in folder: a folder's name or path\n"
+     "               (\"Work/Resumes\"; one that does not exist is made), or \"/\" for the top of the library (this\n"
+     "               notebook's folder when folder is left out). A job runs there with what as its request, word for\n"
+     "               word: say everything it needs, and which pages to read (\"rewrite page 2 of this notebook with\n"
+     "               ...\"). Use it whenever the user asks for something on another page, a new page or a new\n"
+     "               notebook; a reply here says where it went"),
 ]
 
 
@@ -163,9 +166,10 @@ LEAN_STEP_BRIEF = [
     (('messages',),
      "  messages     texting the game's residents: members; it takes this page whole"),
     (('elsewhere',),
-     "  elsewhere    the work on ANOTHER page: page (a number of this notebook, or \"new\") or notebook (a NEW\n"
-     "               notebook's name); a job runs there with what as its request: say all it needs, and which pages\n"
-     "               to read. For anything asked on another page, a new page or a new notebook"),
+     "  elsewhere    the work on ANOTHER page: page (a number of this notebook, or \"new\", placed with after: a\n"
+     "               page number or \"end\") or notebook (a NEW notebook's name, placed with folder: a name or path,\n"
+     "               made if missing, \"/\" the top); a job runs there with what as its request: say all it needs,\n"
+     "               and which pages to read. For anything asked on another page, a new page or a new notebook"),
 ]
 
 
@@ -293,8 +297,18 @@ def build(raw):
             pg = str(s.get("page") if s.get("page") is not None else "").strip().lower()
             if nb:
                 step["notebook"] = nb
+                if s.get("folder") is not None and str(s.get("folder")).strip():
+                    step["folder"] = " ".join(str(s["folder"]).split())[:200]
             elif pg == "new":
                 step["page"] = "new"
+                af = str(s.get("after") if s.get("after") is not None else "").strip().lower()
+                if af == "end":
+                    step["after"] = "end"
+                elif af:
+                    try:
+                        step["after"] = int(float(af))
+                    except ValueError:
+                        raise StepError("step %d (elsewhere): after is a page number or \"end\"." % (i + 1))
             else:
                 try:
                     step["page"] = int(float(pg))
@@ -497,8 +511,11 @@ def describe(step):
                                    ("in " if step.get("words") else "") + step["target"] if step.get("target") else "") if x)
         return "%s %s" % ("strike through" if d == "strike" else d, aim or w)
     if d == "elsewhere":
-        where = ("a new notebook %r" % step["notebook"] if step.get("notebook") else
-                 "a new page" if step.get("page") == "new" else "page %s" % step.get("page"))
+        where = ("a new notebook %r%s" % (step["notebook"], (" in %s" % step["folder"]) if step.get("folder") else "")
+                 if step.get("notebook") else
+                 "a new page%s" % ((" at the end" if step.get("after") == "end" else " after page %s" % step["after"])
+                                   if step.get("after") else "")
+                 if step.get("page") == "new" else "page %s" % step.get("page"))
         return "on %s: %s" % (where, w)
     if d == "checkbox":
         return "make %s the tablet's %s" % (", ".join(step.get("targets") or []) or w,
