@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.79
+
+- A model call that fails without stopping the job is logged with the reason the model's program gave. It used to log only "HTTP Error 502: Bad Gateway", so a failed look at the page could not be traced.
+
 ## 0.2.78
 
 - A job whose whole work goes to another page is accepted as it is. Asked only to put something on another page, the model used to have its plan refused ("a plan needs at least one place") and had to add a reply on the asking page to get through.

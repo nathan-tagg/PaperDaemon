@@ -17,3 +17,5 @@
 - [x] 3.2 A real run (11-12): the Opus lineup handed the new version of page 2 to page 4, and the job there read
       pages 2 and 3 and wrote it
 - [x] 3.3 A plan of one elsewhere step needs no place on the asking page
+- [x] 3.4 A real run in the False Mirror (11-12): one Opus job read page 1 of another notebook and made a new
+      notebook beside it; the job there wrote its checklist

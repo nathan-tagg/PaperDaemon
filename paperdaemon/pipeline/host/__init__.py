@@ -167,8 +167,26 @@ def _warn(where, ex):
     not be composited), but the failure reaches the log and the job's result, so it can be fixed. A
     measurement that fails silently is worse: the model is told the page is empty where it is not.
     """
-    JOB.warnings.append("%s: %s: %s" % (where, type(ex).__name__, str(ex)[:160]))
-    log("  ! %s failed -- %s: %s" % (where, type(ex).__name__, str(ex)[:160]))
+    said = _said_by(ex)
+    JOB.warnings.append("%s: %s: %s%s" % (where, type(ex).__name__, str(ex)[:160], said))
+    log("  ! %s failed -- %s: %s%s" % (where, type(ex).__name__, str(ex)[:160], said))
+
+
+def _said_by(ex):
+    """WHAT THE ENGINE SAID with an HTTP error (its {"error": {"message"}}), so a quiet failure names its cause: on
+    11-12 a grounding call logged only "HTTP Error 502: Bad Gateway". -> " (the message)" or ""."""
+    import urllib.error
+    if not isinstance(ex, urllib.error.HTTPError):
+        return ""
+    try:
+        body = ex.read()
+        try:
+            msg = (json.loads(body).get("error") or {}).get("message")
+        except (ValueError, AttributeError):
+            msg = body.decode("utf-8", "replace")
+        return (" (%s)" % " ".join(str(msg).split())[:300]) if msg else ""
+    except Exception:
+        return ""
 
 
 def _did():
