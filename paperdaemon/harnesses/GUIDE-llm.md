@@ -64,9 +64,8 @@ pictures) its own way.
 | `inspect_tokens` | How many tokens the model may spend looking at the page (zooming in, reading its history) before it decides. Optional: 12000. |
 | `decide_temperature` | The temperature of the turn where the model decides what to do with the page, 0 to 2. Optional: 0.3. Weak sets 0, so a small model decides the same page the same way every time. |
 | `assists` | Keyword assists for a model that needs help with one decision (see below). Optional: none. |
-| `cli` | How a command-line program is spoken to, when the model's source is a command line (see below). Optional: none. |
 | `lean` | `true` for a model strong enough to do a whole job in one call (see below). Optional: `false`. |
-| `offered` | `false` for a harness that only holds what others share, such as a program's `cli`: it is not listed in the Harness box. Optional: `true`. |
+| `offered` | `false` for a harness that only holds what others share: it is not listed in the Harness box. Optional: `true`. |
 
 A model that sees pictures and is never asked to draw:
 
@@ -97,54 +96,13 @@ lean harness plans badly: leave those on Medium or Weak.
 ### A command-line program
 
 A lineup's text model can be a command: Source "Command line", then the WHOLE command as you would type it in a
-terminal, your own arguments included: `my-program --model big-one --effort high`. There is no other field: which
-model and how much effort are the command's to say, in the program's own way. PaperDaemon starts the program itself
-(no shell), once for each turn, hands it the request and reads what it prints. With no harness for the
-program, the system text and the conversation go on its input and what it prints is the answer. A program that wants
-more than that gets a harness with a `cli` field, which says how it is spoken to:
-
-| In `cli` | What it is |
-| --- | --- |
-| `program` | The program's usual name. A command that runs this program uses this harness's `cli`, whatever model it names. |
-| `places` | Where the program is installed, tried when the command is not on the PATH. `~` and `%NAMES%` are filled in. |
-| `args` | What is added after the user's own arguments for every request (see the placeholders): only what carries the request in and the answer out, never a model or an effort. A list inside the list is left out whole when a placeholder in it has nothing to give, and when it begins with an argument the command itself already gives: with the command `my-program --effort high`, a `["--effort", ...]` list is left out and the typed effort stands. `{"each_picture": [...]}` is repeated for every picture. |
-| `input` | What goes on the program's input: text with placeholders, or `{"json": ..., "text": ..., "picture": ...}`, a JSON value written on one line in which `"{parts}"` becomes the list of the conversation's turns, each written as `text` says and each picture as `picture` says. Optional: the system text, then the conversation. |
-| `output` | Where the answer is in what the program prints: `format` (`text`, `json`, or `json-lines` with `where`, the fields of the line to read), `text` (the answer's words), `answer` (a structured answer the program checked against the schema), `error` and `error_text`, `usage` (`input`, `output`, `cached`). Each is a dotted path such as `usage.output_tokens`; a count may be a list of paths added up. Optional: what it prints is the answer. |
-| `ready` | `{"args": [...], "json": "a.path", "else": "what to tell the user"}`: a run of the program that says whether it is ready (signed in). Optional: a program that is found is ready. |
-| `sends_to` | The host the program sends a page to, for the notice that pages leave this computer. Optional: they stay here. |
-| `answer_rule` | One sentence on how this program wants a structured answer given. Optional. |
-| `web_search` | The program's name for its own web search tool. When the model searches the web itself (its Web search box is ticked and the Network tab has no search), `{web_search}` in `args` is that name; otherwise it is empty. Optional. |
-| `env` | `{name: text}`: set in the program's environment for each request, with the same placeholders as `args`. For a setting the program reads only from its environment, such as its output limit (`{request.max_tokens}`). A variable whose placeholder has nothing to give is left unset. Optional. |
-
-Placeholders: `{system}` or `{system_file}` (the system text, or a file holding it); `{prompt}` or
-`{prompt_file}` (the conversation as plain text); `{schema}` or `{schema_file}` (the tools as one JSON schema for the
-answer); `{picture_file}`, and in `input`'s `picture` also `{base64}` and `{media_type}`; `{text}` in `input`'s
-`text`; and `{request.a.b}`, any field of the request as this harness's `request` tuned it, such as an effort.
-Files are made in a folder of the run's own and removed after it.
-
-A program that takes its prompt on its input and a picture as a file:
-
-```json
-{
-  "id": "my-program",
-  "name": "my-program (command line)",
-  "server": "my-program, a command-line program",
-  "models": ["The models it takes by name"],
-  "notes": "Prompt on the input, one --image for each picture, plain text out.",
-  "offered": false,
-  "vision": true,
-  "cli": {
-    "program": "my-program",
-    "args": [["--system", "{system_file}"], {"each_picture": ["--image", "{picture_file}"]}],
-    "input": "{prompt}"
-  }
-}
-```
-
-PaperDaemon's own `claude-code` harness is a fuller one: a JSON message on the input with pictures in it, the answer
-read from the last result line of what the program prints, a readiness check, and where pages go. A program that
-checks an answer against a schema can be handed it (`["--its-argument", "{schema}"]`), but look at what that costs:
-`claude` makes a second request for every answer checked that way, so its data leaves the checking to PaperDaemon.
+terminal, your own arguments included. PaperDaemon runs it exactly as typed, once for each turn, and adds nothing to
+it. The system text and the conversation go on its input as plain text; a page's picture is saved as a file in the
+run's own folder (the program's working folder) and named in the words where it is; what the program prints is the
+answer, and with tools the JSON object in it is read. Everything else is the command's to say, in the program's own
+way: printing an answer and stopping, which model, how much effort, which of its own tools it may use (it needs one
+that opens a file to see a page). The program runs as it is installed and signed in on this computer: sign it in
+before the lineup runs. No harness says anything about a program.
 
 ### Keyword assists
 

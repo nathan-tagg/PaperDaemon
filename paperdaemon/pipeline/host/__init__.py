@@ -875,6 +875,24 @@ def lineup_for(tag):
     return (_RUN_FILE.get("tag_lineup") or {}).get(trig) if trig else None
 
 
+def _fresh_run_file():
+    """THE LINEUPS READ COLD FOR EVERY JOB: their harness values, features and capabilities taken from the settings as
+    they are now, not as the loop started with them (the maintainer, 11-15: "The app should read the lineup cold on
+    every job"). A change written to the settings by anyone, a model of a lineup with full tools included, holds from
+    the next job. Only the app's own run file is rebuilt so: a run file a test or the benchmark gives is theirs."""
+    global _RUN_FILE, RUN
+    try:
+        from paperdaemon import settings as _S
+        mine = os.path.join(paths.data_dir(), "run", "lineup.json")
+        if os.path.normcase(os.path.abspath(os.environ.get("RM_RUN") or "")) != os.path.normcase(os.path.abspath(mine))                 or not _S.exists():
+            return
+        from paperdaemon import loop as _L
+        _RUN_FILE = _L.run_content(_S.load())
+        RUN.pop("_chosen", None)                     # (use_lineup takes the lineup's values anew)
+    except Exception as ex:
+        log("  the lineups could not be read fresh (%s); the job runs on them as the loop read them" % str(ex)[:120])
+
+
 def use_lineup(name):
     """Work the next job on lineup `name`: its harness values, capabilities, features and brief, and the engine
     told, so the job's model calls and pictures go to that lineup's slots (its start script runs if another
@@ -959,6 +977,7 @@ def run_job_pages(job):
             _ST.begin(os.path.join(_paths.state_dir(), "run", "progress.json"), doc_id, page)
         except Exception:
             pass
+        _fresh_run_file()
         use_lineup(lineup_for(e.get("tag")))
         S.use_trigger(e.get("tag"))               # a page the job adds is tagged for the same lineup
         # A RETRY says so: the user asked for the page again (the daemon's retry box), or the last try failed and the

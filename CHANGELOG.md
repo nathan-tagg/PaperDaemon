@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.81
+
+- A command-line lineup runs your command exactly as you type it. PaperDaemon adds nothing to it and ships nothing particular to any program: the instructions and the conversation go in as plain text, a page's picture is a file in the program's working folder that it opens itself, and the answer is what it prints. Until now a data file for one program added its own arguments to every request. A command now says everything else itself, for example `claude -p --model claude-opus-5-5 --effort medium --tools Read`; the program must be signed in on this computer.
+- Each job reads the lineups fresh from the settings when it starts, so a change made in the settings holds from the next job.
+
 ## 0.2.80
 
 - The model decides where new pages and notebooks go. A new page can go after any page, or at the end; a new notebook can go in any folder, named or given as a path ("Work/Resumes"), with missing folders made, or at the top of the library. In 0.2.77 a new page always went right after the asking page and a new notebook always went in the asking notebook's folder; those are now only what happens when the model doesn't say.

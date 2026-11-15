@@ -48,16 +48,11 @@ def test_the_model_searches_itself_only_when_the_lineup_has_no_search_and_it_can
     assert loop.harness_values(s, n)["searches_itself"] is True
 
 
-def test_the_command_line_turns_on_the_program_s_own_search_by_its_data():
-    a = C.CommandLine("claude --model claude-opus-5-5")
+def test_a_command_line_is_never_given_search_or_anything_else():
+    """Whether a command-line program may search is the command's to say; PaperDaemon adds nothing for it."""
     h = harnesses.get("lean-default")()
-    args = a.request("sys", [{"role": "user", "text": "hi"}], caps={"vision": True, "web_search": True}, harness=h)[0]
-    i = args.index("--tools")
-    assert args[i + 1] == "WebSearch" and args[args.index("--allowedTools") + 1] == "WebSearch"
-    args = a.request("sys", [{"role": "user", "text": "hi"}], caps={"vision": True}, harness=h)[0]
-    assert args[args.index("--tools") + 1] == "" and "--allowedTools" not in args
-    plain = C.CommandLine("some-other-program")                               # a program with no search in its data
-    assert plain.request("sys", [{"role": "user", "text": "hi"}], caps={"web_search": True}, harness=h)[0] == []
+    a = C.CommandLine("some-program -p")
+    assert a.request("sys", [{"role": "user", "text": "hi"}], caps={"vision": True, "web_search": True}, harness=h)[0] == []
 
 
 def test_the_anthropic_api_gets_its_own_search_tool_only_when_the_model_searches_itself():

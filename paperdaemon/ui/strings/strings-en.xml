@@ -606,7 +606,7 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="issue.loop_supervisor">PaperDaemon's supervisor hit an error: {why}</string>
   <string name="slot.key_where">Fill in the server's address first: the key is kept for that server.</string>
   <string name="day.saturday">Saturday</string>
-  <string name="slot.source.help">API key: a company runs the model, and PaperDaemon reaches it with your key. Host locally: a model server you run, on this computer or your network. Command line: a program on this computer that takes a request and prints the model's answer. PaperDaemon runs it once for each turn; the harness says how it is spoken to.</string>
+  <string name="slot.source.help">API key: a company runs the model, and PaperDaemon reaches it with your key. Host locally: a model server you run, on this computer or your network. Command line: a program on this computer that takes a request and prints the model's answer. PaperDaemon runs your command exactly as you type it, once for each turn. Make sure the program is signed in on this computer first.</string>
   <string name="slot.provider.help">Who runs the model. Other: any service that speaks the OpenAI API, at the address you give.</string>
   <string name="slot.address.help_hosted">The service's API address, for example https://api.example.com/v1.</string>
   <string name="slot.model.help">The model's name exactly as the provider writes it.</string>
@@ -756,7 +756,7 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="help.harness.medium">**Medium**: for mid-size models. Full instructions, and each step of a job is its own call. Tested with 27B class Qwen 3 models and Gemini 3.8 Flash.</string>
   <string name="help.harness.weak">**Weak**: For small models. Full instructions, one call per step, and short answers. Nothing you wrote is erased; replies only add. Sketches, mark-ups, checkboxes made of your own lines, social posts, pictures from the web and the long games are turned off. Tested with Qwen3-VL 8B.</string>
   <string name="help.harness.vision">**Vision**: the model can see a picture of the page. Without it, the model gets the page as text: the typed words, and the handwriting as PaperDaemon reads it.</string>
-  <string name="help.harness.web_search">**Web search**: the model searches the web on its own. Used only when the Network tab has no search. PaperDaemon turns it on for the `claude` program and the Anthropic API. For any other server, add it only if the server searches by itself.</string>
+  <string name="help.harness.web_search">**Web search**: the model searches the web on its own. Used only when the Network tab has no search. PaperDaemon turns it on for the Anthropic API; for a command line, your command says whether the program may search. For any other server, add it only if the server searches by itself.</string>
   <string name="help.harness.image_generation">**Image generation**: the model's server makes pictures on its own, such as Gemini's image models. Used only when the Image tab has no image model. PaperDaemon asks the model for each picture and takes it from the answer.</string>
   <string name="help.harness.warning">**Warning:** telling PaperDaemon a model can do something it can't will cause failed or wrong jobs. The Test tab checks whether the model sees pictures.</string>
   <string name="slot.harness.help_image">How PaperDaemon works with this image model: its steps, settings and workflows.</string>

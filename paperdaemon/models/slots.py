@@ -49,14 +49,11 @@ def off_machine(role, s=None):
 
 
 def pages_go_to(role, s, m):
-    """Where the slot `m` sends a page: a server's host when it is not this computer; for a command line, the host
-    its harness says the program sends to (`cli.sends_to`), a program that says none keeping the page here."""
+    """Where the slot `m` sends a page: a server's host when it is not this computer. A command line's program sends
+    it wherever the program does, which PaperDaemon does not know: None."""
     loc = str(m.get("location") or "").strip()
-    if not loc:
+    if not loc or m.get("api") == "cli":
         return None
-    if m.get("api") == "cli":
-        from .cli import cli_of
-        return str(cli_of(pick(role, s, m)[0], loc).get("sends_to") or "").strip().lower() or None
     return S.host_of(loc) if not S.loopback(loc) else None
 
 

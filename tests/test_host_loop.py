@@ -39,3 +39,23 @@ def test_a_quiet_failure_from_the_engine_names_its_cause():
     H._warn("grounding 1 place(s)", ex)
     assert H.JOB.warnings[-1].endswith("(claude stopped (1): usage limit)")
     assert H._said_by(ValueError("x")) == ""
+
+
+def test_the_lineups_are_read_fresh_for_every_job(monkeypatch, tmp_path):
+    """The app's own run file is rebuilt from the settings as they are at each job's start; a run file a test or the
+    benchmark gives is left as it is."""
+    from paperdaemon import loop, settings
+    run = tmp_path / "run"
+    run.mkdir()
+    monkeypatch.setattr(H.paths, "data_dir", lambda: str(tmp_path))
+    monkeypatch.setattr(settings, "exists", lambda: True)
+    monkeypatch.setattr(settings, "load", lambda: {"marker": "now"})
+    monkeypatch.setattr(loop, "run_content", lambda s: {"lineups": {}, "from": s["marker"]})
+    monkeypatch.setattr(H, "_RUN_FILE", {"lineups": {}, "from": "loop start"})
+    monkeypatch.setenv("RM_RUN", str(run / "lineup.json"))
+    H._fresh_run_file()
+    assert H._RUN_FILE["from"] == "now"
+    monkeypatch.setattr(H, "_RUN_FILE", {"lineups": {}, "from": "a test's own"})
+    monkeypatch.setenv("RM_RUN", str(tmp_path / "elsewhere.json"))
+    H._fresh_run_file()
+    assert H._RUN_FILE["from"] == "a test's own"

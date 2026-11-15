@@ -293,7 +293,7 @@ def test_the_shipped_example_harnesses_are_valid_and_not_active():
 
 def test_shipped_harnesses_are_data_loaded_by_the_users_loader():
     folder = os.path.join(os.path.dirname(harnesses.__file__), "shipped")
-    assert sorted(os.listdir(folder)) == ["claude-code.json", "default-image.json", "default-text.json",
+    assert sorted(os.listdir(folder)) == ["default-image.json", "default-text.json",
                                           "flux.2-klein-9b.json", "lean-default.json", "weak-text.json",
                                           "z-image-turbo.json"]
     assert all(p.source == "shipped" and p.file for p in harnesses.BUILT_IN)

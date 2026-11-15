@@ -606,7 +606,7 @@
   <string name="issue.loop_supervisor">PaperDaemon 的监控出错：{why}</string>
   <string name="slot.key_where">请先填写服务器地址：密钥会为该服务器保存。</string>
   <string name="day.saturday">星期六</string>
-  <string name="slot.source.help">API 密钥：由公司运行模型，PaperDaemon 用您的密钥访问它。本地托管：您自己在这台电脑或您的网络上运行的模型服务器。命令行：这台电脑上的一个程序，接收请求并输出模型的回答。PaperDaemon 每一轮运行它一次；如何与它交互由 harness 决定。</string>
+  <string name="slot.source.help">API 密钥：由公司运行模型，PaperDaemon 用您的密钥访问它。本地托管：您自己在这台电脑或您的网络上运行的模型服务器。命令行：这台电脑上的一个程序，接收请求并输出模型的回答。PaperDaemon 会完全按照你输入的样子运行命令，每轮一次。请先确认该程序已在这台电脑上登录。</string>
   <string name="slot.provider.help">运行模型的服务商。其他：任何在您给出的地址上使用 OpenAI API 的服务。</string>
   <string name="slot.address.help_hosted">该服务的 API 地址，例如 https://api.example.com/v1。</string>
   <string name="slot.model.help">模型名称，与服务商的写法完全一致。</string>
@@ -756,7 +756,7 @@
   <string name="help.harness.medium">**中**：适合中等规模的模型。发送完整指令，任务的每一步都是单独一次调用。已用 27B 级 Qwen 3 模型和 Gemini 3.8 Flash 测试。</string>
   <string name="help.harness.weak">**弱**：适合小模型。发送完整指令，每一步一次调用，回答简短。你写的内容不会被擦除，回答只会添加。草图、标记、用你自己的行做成的复选框、社交媒体帖子、网上的图片和长篇游戏都关闭。已用 Qwen3-VL 8B 测试。</string>
   <string name="help.harness.vision">**视觉**：模型能看到页面的图片。没有它，模型收到的是文字形式的页面：打出的字，以及 PaperDaemon 读出的手写内容。</string>
-  <string name="help.harness.web_search">**网页搜索**：模型自己上网搜索。只有在“网络”标签页没有设置搜索时才会用到。PaperDaemon 会为 `claude` 程序和 Anthropic API 打开它。其他服务器只有在服务器自己会搜索时才添加。</string>
+  <string name="help.harness.web_search">**网页搜索**：模型自己上网搜索。只有在“网络”标签页没有设置搜索时才会用到。PaperDaemon 会为 Anthropic API 打开它；对于命令行，程序能否搜索由你的命令决定。其他服务器只有在服务器自己会搜索时才添加。</string>
   <string name="help.harness.image_generation">**图片生成**：模型的服务器自己生成图片，比如 Gemini 的图片模型。只有在“图片”标签页没有图片模型时才会用到。PaperDaemon 向模型要每张图片，并从回答中取出。</string>
   <string name="help.harness.warning">**注意：**告诉 PaperDaemon 某个模型能做它做不到的事，会导致任务失败或出错。“测试”标签页会检查模型能否看到图片。</string>
   <string name="slot.harness.help_image">PaperDaemon 用这个图片模型的方式：步数、设置和工作流。</string>
