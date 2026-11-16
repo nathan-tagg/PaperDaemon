@@ -736,7 +736,7 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="settings.mirror_edit.warn_on">Aç</string>
   <string name="slot.cli">Komut satırı</string>
   <string name="slot.command">Komut</string>
-  <string name="slot.command.help">Komutun tamamı, bir terminale yazacağınız gibi: programın adı veya tam yolu, ardından model ve çaba dahil kendi argümanlarınız. PaperDaemon programı kendisi başlatır ve yalnızca her isteğin gerektirdiğini ekler.</string>
+  <string name="slot.command.help">Bir terminale yazacağınız gibi komutun tamamı: programın adı ya da tam yolu, ardından kendi argümanlarınız. PaperDaemon onu tam yazıldığı gibi çalıştırır ve hiçbir şey eklemez: istek metin olarak, bir sayfanın resmi programın çalışma klasöründe bir dosya olarak girer ve yanıt, programın yazdırdığı şeydir. Örneğin claude programıyla: yalnızca okuma (sayfa resmini kendisi açar): claude -p --model claude-opus-5-5 --effort medium --tools Read. Tüm araçları, otomatik modda: claude -p --model claude-opus-5-5 --effort xhigh --permission-mode auto. Kendi bağlayıcılarınız, hook'larınız ve ayarlarınız olmadan çalıştırmak için --strict-mcp-config --setting-sources "" ekleyin.</string>
   <string name="slot.base.weak">Zayıf</string>
   <string name="slot.base.medium">Orta</string>
   <string name="slot.base.strong">Güçlü</string>

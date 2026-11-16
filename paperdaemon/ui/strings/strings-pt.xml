@@ -736,7 +736,7 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="settings.mirror_edit.warn_on">Ativar</string>
   <string name="slot.cli">Linha de comando</string>
   <string name="slot.command">Comando</string>
-  <string name="slot.command.help">O comando inteiro, como você o digitaria em um terminal: o nome do programa ou o caminho completo e, depois, os seus próprios argumentos, entre eles o modelo e o esforço. O PaperDaemon inicia o programa por conta própria e acrescenta apenas o que cada solicitação precisa.</string>
+  <string name="slot.command.help">O comando inteiro, como você o digitaria num terminal: o nome do programa ou o caminho completo, depois os seus próprios argumentos. O PaperDaemon o executa exatamente como foi digitado e não acrescenta nada: o pedido entra como texto, a imagem de uma página como um arquivo na pasta de trabalho do programa, e a resposta é o que ele imprime. Com o programa claude, por exemplo: só leitura (ele mesmo abre a imagem da página): claude -p --model claude-opus-5-5 --effort medium --tools Read. Todas as ferramentas dele, em modo automático: claude -p --model claude-opus-5-5 --effort xhigh --permission-mode auto. Acrescente --strict-mcp-config --setting-sources "" para executá-lo sem os seus próprios conectores, hooks e configurações.</string>
   <string name="slot.base.weak">Fraco</string>
   <string name="slot.base.medium">Médio</string>
   <string name="slot.base.strong">Forte</string>

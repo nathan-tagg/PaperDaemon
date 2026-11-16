@@ -736,7 +736,7 @@
   <string name="settings.mirror_edit.warn_on">آن کریں</string>
   <string name="slot.cli">کمانڈ لائن</string>
   <string name="slot.command">کمانڈ</string>
-  <string name="slot.command.help">پوری کمانڈ، جیسے آپ اسے ٹرمینل میں لکھتے: پروگرام کا نام یا اس کا مکمل راستہ، پھر آپ کے اپنے آرگیومنٹس، جن میں ماڈل اور کوشش کی سطح شامل ہیں۔ PaperDaemon پروگرام کو خود چلاتا ہے اور صرف وہی شامل کرتا ہے جس کی ہر درخواست کو ضرورت ہو۔</string>
+  <string name="slot.command.help">پوری کمانڈ، جیسے آپ اسے ٹرمینل میں لکھیں گے: پروگرام کا نام یا اس کا پورا راستہ، پھر آپ کے اپنے آرگیومنٹس۔ PaperDaemon اسے بالکل ویسے ہی چلاتا ہے جیسے لکھی گئی ہو اور کچھ نہیں جوڑتا: درخواست متن کے طور پر جاتی ہے، صفحے کی تصویر پروگرام کے ورکنگ فولڈر میں ایک فائل کے طور پر، اور جواب وہ ہے جو وہ پرنٹ کرتا ہے۔ مثال کے طور پر claude پروگرام کے ساتھ: صرف پڑھنا (صفحے کی تصویر وہ خود کھولتا ہے): claude -p --model claude-opus-5-5 --effort medium --tools Read۔ اس کے سب ٹولز، آٹو موڈ میں: claude -p --model claude-opus-5-5 --effort xhigh --permission-mode auto۔ اپنے کنیکٹرز، ہُکس اور سیٹنگز کے بغیر چلانے کے لیے --strict-mcp-config --setting-sources "" شامل کریں۔</string>
   <string name="slot.base.weak">کمزور</string>
   <string name="slot.base.medium">درمیانہ</string>
   <string name="slot.base.strong">طاقتور</string>

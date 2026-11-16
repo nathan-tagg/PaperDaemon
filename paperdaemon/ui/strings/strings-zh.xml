@@ -736,7 +736,7 @@
   <string name="settings.mirror_edit.warn_on">开启</string>
   <string name="slot.cli">命令行</string>
   <string name="slot.command">命令</string>
-  <string name="slot.command.help">完整的命令，就像你在终端里输入的那样：程序的名称或完整路径，后面是你自己的参数，包括模型和努力程度。PaperDaemon 会自行启动该程序，只添加每个请求所需的内容。</string>
+  <string name="slot.command.help">完整的命令，就像你在终端里输入的那样：程序名或它的完整路径，然后是你自己的参数。PaperDaemon 完全按原样运行它，不添加任何内容：请求以文本传入，页面的图片作为程序工作文件夹中的文件，程序打印的内容就是回答。以 claude 程序为例，只读（它自己打开页面图片）：claude -p --model claude-opus-5-5 --effort medium --tools Read。所有工具，自动模式：claude -p --model claude-opus-5-5 --effort xhigh --permission-mode auto。加上 --strict-mcp-config --setting-sources "" 可以在不带你自己的连接器、钩子和设置的情况下运行。</string>
   <string name="slot.base.weak">弱</string>
   <string name="slot.base.medium">中</string>
   <string name="slot.base.strong">强</string>

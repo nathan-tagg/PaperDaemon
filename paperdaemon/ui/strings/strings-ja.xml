@@ -736,7 +736,7 @@
   <string name="settings.mirror_edit.warn_on">オンにする</string>
   <string name="slot.cli">コマンドライン</string>
   <string name="slot.command">コマンド</string>
-  <string name="slot.command.help">コマンド全体を、ターミナルに入力するとおりに書きます。プログラムの名前またはフルパスのあとに、モデルや労力の指定を含む独自の引数を続けます。PaperDaemon がプログラムを直接起動し、各リクエストに必要なものだけを追加します。</string>
+  <string name="slot.command.help">ターミナルに入力するとおりのコマンド全体です。プログラムの名前またはフルパスのあとに、あなた自身の引数を続けます。PaperDaemon は入力されたとおりに実行し、何も追加しません。リクエストはテキストとして、ページの画像はプログラムの作業フォルダー内のファイルとして渡され、プログラムが出力したものが応答になります。たとえば claude プログラムの場合、読み取りのみ（ページの画像は自分で開きます）: claude -p --model claude-opus-5-5 --effort medium --tools Read。すべてのツールを自動モードで: claude -p --model claude-opus-5-5 --effort xhigh --permission-mode auto。あなた自身のコネクター、フック、設定なしで実行するには --strict-mcp-config --setting-sources "" を加えます。</string>
   <string name="slot.base.weak">弱</string>
   <string name="slot.base.medium">中</string>
   <string name="slot.base.strong">強</string>

@@ -736,7 +736,7 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="settings.mirror_edit.warn_on">Turn on</string>
   <string name="slot.cli">Command line</string>
   <string name="slot.command">Command</string>
-  <string name="slot.command.help">The whole command, as you would type it in a terminal: the program's name or its full path, then your own arguments, the model and the effort among them. PaperDaemon starts the program itself and adds only what each request needs.</string>
+  <string name="slot.command.help">The whole command, as you would type it in a terminal: the program's name or its full path, then your own arguments. PaperDaemon runs it exactly as typed and adds nothing: the request goes in as text, a page's picture as a file in the program's working folder, and the answer is what it prints. With the claude program, for example: reading only (it opens the page picture itself): claude -p --model claude-opus-5-5 --effort medium --tools Read. All of its tools, in auto mode: claude -p --model claude-opus-5-5 --effort xhigh --permission-mode auto. Add --strict-mcp-config --setting-sources "" to run it without your own connectors, hooks and settings.</string>
   <string name="slot.base.weak">Weak</string>
   <string name="slot.base.medium">Medium</string>
   <string name="slot.base.strong">Strong</string>

@@ -736,7 +736,7 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="settings.mirror_edit.warn_on">Bật</string>
   <string name="slot.cli">Dòng lệnh</string>
   <string name="slot.command">Lệnh</string>
-  <string name="slot.command.help">Toàn bộ lệnh, như khi bạn gõ trong terminal: tên chương trình hoặc đường dẫn đầy đủ, sau đó là các đối số của riêng bạn, trong đó có mô hình và mức nỗ lực. PaperDaemon tự khởi chạy chương trình và chỉ thêm những gì mỗi yêu cầu cần.</string>
+  <string name="slot.command.help">Toàn bộ lệnh, như bạn sẽ gõ trong terminal: tên chương trình hoặc đường dẫn đầy đủ, rồi đến các đối số của bạn. PaperDaemon chạy đúng như đã gõ và không thêm gì: yêu cầu được đưa vào dưới dạng văn bản, hình của một trang là một tệp trong thư mục làm việc của chương trình, và câu trả lời là những gì nó in ra. Ví dụ với chương trình claude: chỉ đọc (nó tự mở hình trang): claude -p --model claude-opus-5-5 --effort medium --tools Read. Tất cả công cụ của nó, ở chế độ tự động: claude -p --model claude-opus-5-5 --effort xhigh --permission-mode auto. Thêm --strict-mcp-config --setting-sources "" để chạy mà không có các trình kết nối, hook và cài đặt của riêng bạn.</string>
   <string name="slot.base.weak">Yếu</string>
   <string name="slot.base.medium">Trung bình</string>
   <string name="slot.base.strong">Mạnh</string>

@@ -758,7 +758,7 @@
   <string name="settings.mirror_edit.warn_on">تشغيل</string>
   <string name="slot.cli">سطر الأوامر</string>
   <string name="slot.command">الأمر</string>
-  <string name="slot.command.help">الأمر كاملاً كما تكتبه في الطرفية: اسم البرنامج أو مساره الكامل، ثم معطياتك الخاصة، ومنها النموذج ومقدار الجهد. يشغّل PaperDaemon البرنامج بنفسه ويضيف فقط ما يحتاجه كل طلب.</string>
+  <string name="slot.command.help">الأمر كاملًا كما تكتبه في الطرفية: اسم البرنامج أو مساره الكامل، ثم وسائطك أنت. يشغّله PaperDaemon كما كُتب تمامًا ولا يضيف شيئًا: يدخل الطلب نصًا، وصورة الصفحة ملفًا في مجلد عمل البرنامج، والإجابة هي ما يطبعه. مع برنامج claude مثلًا: قراءة فقط (يفتح صورة الصفحة بنفسه): claude -p --model claude-opus-5-5 --effort medium --tools Read. كل أدواته، في الوضع التلقائي: claude -p --model claude-opus-5-5 --effort xhigh --permission-mode auto. أضف --strict-mcp-config --setting-sources "" لتشغيله دون موصلاتك وخطافاتك وإعداداتك الخاصة.</string>
   <string name="slot.base.weak">ضعيف</string>
   <string name="slot.base.medium">متوسط</string>
   <string name="slot.base.strong">قوي</string>
