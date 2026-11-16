@@ -218,8 +218,6 @@
   <string name="keys.back_d">Xóa từ cuối văn bản.</string>
   <string name="keys.letgo">Rời văn bản</string>
   <string name="keys.letgo_d">Phím tiếp theo lại bắt đầu dưới mực.</string>
-  <string name="keys.styles">Kiểu</string>
-  <string name="keys.styles_d">Tiêu đề, đầu mục, phần, nội dung.</string>
   <string name="keys.bold">Đậm và nghiêng</string>
   <string name="keys.bold_d">Phần đã chọn, hoặc những gì bạn gõ tiếp.</string>
   <string name="keys.move">Di chuyển đoạn</string>
@@ -767,4 +765,18 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="help.harness.caps_intro">Thêm những gì mô hình này tự làm được. Một harness mới bắt đầu với các khả năng của chính nó.</string>
   <string name="help.harness.mismatch">Harness quá mạnh so với mô hình khiến nó bỏ sót việc hoặc lập kế hoạch kém. Harness quá yếu so với mô hình tốn thêm token và thời gian.</string>
   <string name="lineup.test_no_program">PaperDaemon không tìm thấy chương trình {program} trên máy tính này. Hãy kiểm tra rằng nó đã được cài (lệnh where {program} trong terminal tìm thấy nó), hoặc đặt đường dẫn đầy đủ của nó ở đầu lệnh.</string>
+  <string name="keys.st_title">Tiêu đề</string>
+  <string name="keys.st_title_d">Đoạn văn thành tiêu đề.</string>
+  <string name="keys.st_heading">Đề mục</string>
+  <string name="keys.st_heading_d">Đoạn văn thành đề mục.</string>
+  <string name="keys.st_section">Mục</string>
+  <string name="keys.st_section_d">Đoạn văn thành tiêu đề mục, in đậm.</string>
+  <string name="keys.st_body">Thân</string>
+  <string name="keys.st_body_d">Đoạn văn thành văn bản thường.</string>
+  <string name="keys.st_bullets">Dấu đầu dòng</string>
+  <string name="keys.st_bullets_d">Đoạn văn thành một dấu đầu dòng; nhấn lần nữa, văn bản thường.</string>
+  <string name="keys.st_numbered">Danh sách đánh số</string>
+  <string name="keys.st_numbered_d">Đoạn văn thành một mục đánh số; nhấn lần nữa, văn bản thường.</string>
+  <string name="keys.st_checks">Ô đánh dấu</string>
+  <string name="keys.st_checks_d">Đoạn văn có ô đánh dấu; nhấn lần nữa, văn bản thường. Ctrl+Enter đánh dấu nó.</string>
 </resources>

@@ -217,8 +217,6 @@
   <string name="keys.back_d">Borra desde el final del texto.</string>
   <string name="keys.letgo">Soltar el texto</string>
   <string name="keys.letgo_d">La siguiente tecla empieza otra vez bajo la tinta.</string>
-  <string name="keys.styles">Estilos</string>
-  <string name="keys.styles_d">Título, encabezado, sección, cuerpo.</string>
   <string name="keys.bold">Negrita y cursiva</string>
   <string name="keys.bold_d">La selección, o lo que escribas después.</string>
   <string name="keys.move">Mover un párrafo</string>
@@ -767,4 +765,18 @@ Luego guíame para instalar SearXNG si hace falta, escribe el archivo .bat con u
   <string name="help.harness.caps_intro">Añade lo que este modelo puede hacer por sí mismo. Un harness nuevo empieza con las suyas.</string>
   <string name="help.harness.mismatch">Un harness demasiado fuerte para el modelo hace que se salte trabajo o planifique mal. Uno demasiado débil para el modelo cuesta más tokens y más tiempo.</string>
   <string name="lineup.test_no_program">PaperDaemon no encuentra el programa {program} en este equipo. Comprueba que está instalado (where {program} en una terminal lo encuentra) o pon su ruta completa al principio del comando.</string>
+  <string name="keys.st_title">Título</string>
+  <string name="keys.st_title_d">El párrafo pasa a ser un título.</string>
+  <string name="keys.st_heading">Encabezado</string>
+  <string name="keys.st_heading_d">El párrafo pasa a ser un encabezado.</string>
+  <string name="keys.st_section">Sección</string>
+  <string name="keys.st_section_d">El párrafo pasa a ser un encabezado de sección, en negrita.</string>
+  <string name="keys.st_body">Cuerpo</string>
+  <string name="keys.st_body_d">El párrafo pasa a ser texto normal.</string>
+  <string name="keys.st_bullets">Viñetas</string>
+  <string name="keys.st_bullets_d">El párrafo pasa a ser una viñeta; pulsado otra vez, texto normal.</string>
+  <string name="keys.st_numbered">Lista numerada</string>
+  <string name="keys.st_numbered_d">El párrafo pasa a ser un elemento numerado; pulsado otra vez, texto normal.</string>
+  <string name="keys.st_checks">Casillas</string>
+  <string name="keys.st_checks_d">El párrafo recibe una casilla; pulsado otra vez, texto normal. Ctrl+Intro la marca.</string>
 </resources>

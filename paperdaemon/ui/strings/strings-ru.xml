@@ -224,8 +224,6 @@
   <string name="keys.back_d">Удаляет с конца текста.</string>
   <string name="keys.letgo">Отпустить текст</string>
   <string name="keys.letgo_d">Следующая клавиша снова начинает под чернилами.</string>
-  <string name="keys.styles">Стили</string>
-  <string name="keys.styles_d">Заголовок, подзаголовок, раздел, основной текст.</string>
   <string name="keys.bold">Жирный и курсив</string>
   <string name="keys.bold_d">Выделенное или то, что вы напечатаете дальше.</string>
   <string name="keys.move">Переместить абзац</string>
@@ -781,4 +779,18 @@
   <string name="help.harness.caps_intro">Добавьте то, что эта модель умеет сама. Новая обвязка начинает со своих.</string>
   <string name="help.harness.mismatch">Слишком сильная для модели обвязка заставляет её пропускать работу или плохо планировать. Слишком слабая для модели стоит больше токенов и времени.</string>
   <string name="lineup.test_no_program">PaperDaemon не может найти программу {program} на этом компьютере. Проверьте, что она установлена (команда where {program} в терминале её находит), или укажите полный путь к ней в начале команды.</string>
+  <string name="keys.st_title">Заголовок</string>
+  <string name="keys.st_title_d">Абзац становится заголовком.</string>
+  <string name="keys.st_heading">Подзаголовок</string>
+  <string name="keys.st_heading_d">Абзац становится подзаголовком.</string>
+  <string name="keys.st_section">Раздел</string>
+  <string name="keys.st_section_d">Абзац становится заголовком раздела, жирным.</string>
+  <string name="keys.st_body">Текст</string>
+  <string name="keys.st_body_d">Абзац становится обычным текстом.</string>
+  <string name="keys.st_bullets">Маркеры</string>
+  <string name="keys.st_bullets_d">Абзац становится пунктом списка; при повторном нажатии — обычным текстом.</string>
+  <string name="keys.st_numbered">Нумерованный список</string>
+  <string name="keys.st_numbered_d">Абзац становится нумерованным пунктом; при повторном нажатии — обычным текстом.</string>
+  <string name="keys.st_checks">Флажки</string>
+  <string name="keys.st_checks_d">У абзаца появляется флажок; при повторном нажатии — обычный текст. Ctrl+Enter отмечает его.</string>
 </resources>

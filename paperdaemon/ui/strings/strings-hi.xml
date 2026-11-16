@@ -218,8 +218,6 @@
   <string name="keys.back_d">पाठ के अंत से मिटाता है।</string>
   <string name="keys.letgo">पाठ छोड़ें</string>
   <string name="keys.letgo_d">अगली कुंजी फिर स्याही के नीचे से शुरू होती है।</string>
-  <string name="keys.styles">शैलियाँ</string>
-  <string name="keys.styles_d">शीर्षक, उपशीर्षक, खंड, मुख्य पाठ।</string>
   <string name="keys.bold">बोल्ड और इटैलिक</string>
   <string name="keys.bold_d">चयन, या जो आप आगे टाइप करें।</string>
   <string name="keys.move">अनुच्छेद हिलाएँ</string>
@@ -767,4 +765,18 @@
   <string name="help.harness.caps_intro">वह जोड़ें जो यह मॉडल खुद कर सकता है। नया हार्नेस अपनी क्षमताओं से शुरू होता है।</string>
   <string name="help.harness.mismatch">मॉडल के लिए बहुत मज़बूत हार्नेस उससे काम छुड़वाता है या खराब योजना बनवाता है। मॉडल के लिए बहुत कमज़ोर हार्नेस ज़्यादा टोकन और समय लेता है।</string>
   <string name="lineup.test_no_program">PaperDaemon इस कंप्यूटर पर प्रोग्राम {program} नहीं ढूंढ पा रहा। जांचें कि वह इंस्टॉल है (टर्मिनल में where {program} उसे ढूंढ लेता है), या कमांड की शुरुआत में उसका पूरा पथ लिखें।</string>
+  <string name="keys.st_title">शीर्षक</string>
+  <string name="keys.st_title_d">अनुच्छेद शीर्षक बन जाता है।</string>
+  <string name="keys.st_heading">हेडिंग</string>
+  <string name="keys.st_heading_d">अनुच्छेद हेडिंग बन जाता है।</string>
+  <string name="keys.st_section">सेक्शन</string>
+  <string name="keys.st_section_d">अनुच्छेद बोल्ड सेक्शन हेडिंग बन जाता है।</string>
+  <string name="keys.st_body">मुख्य पाठ</string>
+  <string name="keys.st_body_d">अनुच्छेद सामान्य पाठ बन जाता है।</string>
+  <string name="keys.st_bullets">बुलेट</string>
+  <string name="keys.st_bullets_d">अनुच्छेद बुलेट पॉइंट बन जाता है; फिर दबाने पर सामान्य पाठ।</string>
+  <string name="keys.st_numbered">क्रमांकित सूची</string>
+  <string name="keys.st_numbered_d">अनुच्छेद क्रमांकित आइटम बन जाता है; फिर दबाने पर सामान्य पाठ।</string>
+  <string name="keys.st_checks">चेकबॉक्स</string>
+  <string name="keys.st_checks_d">अनुच्छेद को चेकबॉक्स मिलता है; फिर दबाने पर सामान्य पाठ। Ctrl+Enter उसे टिक करता है।</string>
 </resources>

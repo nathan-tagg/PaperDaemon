@@ -218,8 +218,6 @@
   <string name="keys.back_d">文字の終わりから消します。</string>
   <string name="keys.letgo">文字から離れる</string>
   <string name="keys.letgo_d">次のキーはまたインクの下から始まります。</string>
-  <string name="keys.styles">スタイル</string>
-  <string name="keys.styles_d">タイトル、見出し、セクション、本文。</string>
   <string name="keys.bold">太字と斜体</string>
   <string name="keys.bold_d">選択部分、または次に入力する文字。</string>
   <string name="keys.move">段落を動かす</string>
@@ -767,4 +765,18 @@
   <string name="help.harness.caps_intro">このモデルが自分でできることを追加します。新しいハーネスはそのハーネス自身の機能から始まります。</string>
   <string name="help.harness.mismatch">モデルに対して強すぎるハーネスでは、作業を飛ばしたり計画を誤ったりします。弱すぎるハーネスでは、トークンと時間が余計にかかります。</string>
   <string name="lineup.test_no_program">PaperDaemon はこのコンピューターでプログラム {program} を見つけられません。インストールされているか確認するか（ターミナルで where {program} を実行すると見つかります）、コマンドの先頭にフルパスを書いてください。</string>
+  <string name="keys.st_title">タイトル</string>
+  <string name="keys.st_title_d">段落をタイトルにします。</string>
+  <string name="keys.st_heading">見出し</string>
+  <string name="keys.st_heading_d">段落を見出しにします。</string>
+  <string name="keys.st_section">セクション</string>
+  <string name="keys.st_section_d">段落を太字のセクション見出しにします。</string>
+  <string name="keys.st_body">本文</string>
+  <string name="keys.st_body_d">段落を通常の本文にします。</string>
+  <string name="keys.st_bullets">箇条書き</string>
+  <string name="keys.st_bullets_d">段落を箇条書きにします。もう一度押すと本文に戻ります。</string>
+  <string name="keys.st_numbered">番号付きリスト</string>
+  <string name="keys.st_numbered_d">段落を番号付きの項目にします。もう一度押すと本文に戻ります。</string>
+  <string name="keys.st_checks">チェックボックス</string>
+  <string name="keys.st_checks_d">段落にチェックボックスを付けます。もう一度押すと本文に戻ります。Ctrl+Enter でチェックします。</string>
 </resources>

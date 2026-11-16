@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.88
+
+- The page grid shows each page's tags on its picture, as a notebook's cover shows its own.
+- The tablet's list keys in the page editor: Ctrl+5 bullets, Ctrl+6 a numbered list, Ctrl+7 checkboxes (pressed again, plain text), beside Ctrl+1 title, Ctrl+2 heading, Ctrl+3 section and Ctrl+4 body. The ? sheet lists each of the seven on its own line.
+
 ## 0.2.87
 
 - A command-line program that makes pictures inside a sandbox (as Codex does) gets them to the page. Each run's folder was made locked to its files' owners, and a picture saved there by the sandbox's own account could not be read ("left no picture in its folder"). Run folders now take the same access as the rest of PaperDaemon's data.

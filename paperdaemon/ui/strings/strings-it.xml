@@ -218,8 +218,6 @@
   <string name="keys.back_d">Cancella dalla fine del testo.</string>
   <string name="keys.letgo">Lascia il testo</string>
   <string name="keys.letgo_d">Il tasto successivo riparte sotto l'inchiostro.</string>
-  <string name="keys.styles">Stili</string>
-  <string name="keys.styles_d">Titolo, intestazione, sezione, corpo.</string>
   <string name="keys.bold">Grassetto e corsivo</string>
   <string name="keys.bold_d">La selezione, o ciò che scrivi dopo.</string>
   <string name="keys.move">Sposta un paragrafo</string>
@@ -767,4 +765,18 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="help.harness.caps_intro">Aggiungi ciò che questo modello sa fare da solo. Un nuovo harness parte con le sue.</string>
   <string name="help.harness.mismatch">Un harness troppo forte per il modello gli fa saltare lavoro o pianificare male. Uno troppo debole per il modello costa più token e più tempo.</string>
   <string name="lineup.test_no_program">PaperDaemon non trova il programma {program} su questo computer. Controlla che sia installato (where {program} in un terminale lo trova), oppure metti il suo percorso completo all'inizio del comando.</string>
+  <string name="keys.st_title">Titolo</string>
+  <string name="keys.st_title_d">Il paragrafo diventa un titolo.</string>
+  <string name="keys.st_heading">Intestazione</string>
+  <string name="keys.st_heading_d">Il paragrafo diventa un'intestazione.</string>
+  <string name="keys.st_section">Sezione</string>
+  <string name="keys.st_section_d">Il paragrafo diventa un titolo di sezione, in grassetto.</string>
+  <string name="keys.st_body">Corpo</string>
+  <string name="keys.st_body_d">Il paragrafo diventa testo normale.</string>
+  <string name="keys.st_bullets">Elenco puntato</string>
+  <string name="keys.st_bullets_d">Il paragrafo diventa un punto elenco; premuto di nuovo, testo normale.</string>
+  <string name="keys.st_numbered">Elenco numerato</string>
+  <string name="keys.st_numbered_d">Il paragrafo diventa una voce numerata; premuto di nuovo, testo normale.</string>
+  <string name="keys.st_checks">Caselle</string>
+  <string name="keys.st_checks_d">Il paragrafo riceve una casella; premuto di nuovo, testo normale. Ctrl+Invio la spunta.</string>
 </resources>

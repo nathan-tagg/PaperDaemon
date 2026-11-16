@@ -218,8 +218,6 @@
   <string name="keys.back_d">Yn dileu o ddiwedd y testun.</string>
   <string name="keys.letgo">Gollwng y testun</string>
   <string name="keys.letgo_d">Mae'r fysell nesaf yn dechrau eto o dan yr inc.</string>
-  <string name="keys.styles">Arddulliau</string>
-  <string name="keys.styles_d">Teitl, pennawd, adran, corff.</string>
   <string name="keys.bold">Trwm ac italig</string>
   <string name="keys.bold_d">Y dewis, neu'r hyn a deipiwch nesaf.</string>
   <string name="keys.move">Symud paragraff</string>
@@ -767,4 +765,18 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="help.harness.caps_intro">Ychwanegwch beth all y model hwn ei wneud ar ei ben ei hun. Mae harnais newydd yn dechrau gyda'i rai ei hun.</string>
   <string name="help.harness.mismatch">Mae harnais sy'n rhy gryf i'r model yn gwneud iddo hepgor gwaith neu gynllunio'n wael. Mae un sy'n rhy wan i'r model yn costio mwy o docynnau ac amser.</string>
   <string name="lineup.test_no_program">Ni all PaperDaemon ddod o hyd i'r rhaglen {program} ar y cyfrifiadur hwn. Gwiriwch ei bod wedi'i gosod (mae where {program} mewn terfynell yn dod o hyd iddi), neu rhowch ei llwybr llawn ar ddechrau'r gorchymyn.</string>
+  <string name="keys.st_title">Teitl</string>
+  <string name="keys.st_title_d">Mae'r paragraff yn troi'n deitl.</string>
+  <string name="keys.st_heading">Pennawd</string>
+  <string name="keys.st_heading_d">Mae'r paragraff yn troi'n bennawd.</string>
+  <string name="keys.st_section">Adran</string>
+  <string name="keys.st_section_d">Mae'r paragraff yn troi'n bennawd adran, mewn print trwm.</string>
+  <string name="keys.st_body">Corff</string>
+  <string name="keys.st_body_d">Mae'r paragraff yn troi'n destun plaen.</string>
+  <string name="keys.st_bullets">Bwledi</string>
+  <string name="keys.st_bullets_d">Mae'r paragraff yn troi'n bwynt bwled; o'i bwyso eto, testun plaen.</string>
+  <string name="keys.st_numbered">Rhestr wedi'i rhifo</string>
+  <string name="keys.st_numbered_d">Mae'r paragraff yn troi'n eitem wedi'i rhifo; o'i bwyso eto, testun plaen.</string>
+  <string name="keys.st_checks">Blychau ticio</string>
+  <string name="keys.st_checks_d">Mae'r paragraff yn cael blwch ticio; o'i bwyso eto, testun plaen. Mae Ctrl+Enter yn ei dicio.</string>
 </resources>

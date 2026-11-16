@@ -218,8 +218,6 @@
   <string name="keys.back_d">从文字末尾删除。</string>
   <string name="keys.letgo">离开文字</string>
   <string name="keys.letgo_d">下一个键会再从墨迹下方开始。</string>
-  <string name="keys.styles">样式</string>
-  <string name="keys.styles_d">标题、页眉、小节、正文。</string>
   <string name="keys.bold">粗体与斜体</string>
   <string name="keys.bold_d">所选内容，或接下来输入的文字。</string>
   <string name="keys.move">移动段落</string>
@@ -767,4 +765,18 @@
   <string name="help.harness.caps_intro">添加这个模型自己能做的事。新的适配框架从它自带的能力开始。</string>
   <string name="help.harness.mismatch">适配框架对模型来说太强，模型会漏做工作或计划不好。太弱则会多花令牌和时间。</string>
   <string name="lineup.test_no_program">PaperDaemon 在这台电脑上找不到程序 {program}。请确认它已安装（在终端里运行 where {program} 能找到它），或在命令开头写上它的完整路径。</string>
+  <string name="keys.st_title">标题</string>
+  <string name="keys.st_title_d">段落变为标题。</string>
+  <string name="keys.st_heading">小标题</string>
+  <string name="keys.st_heading_d">段落变为小标题。</string>
+  <string name="keys.st_section">章节</string>
+  <string name="keys.st_section_d">段落变为加粗的章节标题。</string>
+  <string name="keys.st_body">正文</string>
+  <string name="keys.st_body_d">段落变为普通正文。</string>
+  <string name="keys.st_bullets">项目符号</string>
+  <string name="keys.st_bullets_d">段落变为项目符号；再按一次，变回普通文本。</string>
+  <string name="keys.st_numbered">编号列表</string>
+  <string name="keys.st_numbered_d">段落变为编号项；再按一次，变回普通文本。</string>
+  <string name="keys.st_checks">复选框</string>
+  <string name="keys.st_checks_d">段落带上复选框；再按一次，变回普通文本。Ctrl+Enter 勾选它。</string>
 </resources>

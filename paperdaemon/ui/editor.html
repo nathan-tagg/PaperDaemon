@@ -6077,9 +6077,16 @@ span.lname { cursor: default; }
       return true;
     }
     if (alt) return false;
-    if (ctrl && "1234".includes(k)) {
+    if (ctrl && k.length === 1 && "1234".includes(k)) {
       const style = ["title", "header", "section", "body"][Number(k) - 1];
       eachPara(P => { P.style = style; if (style !== "body") P.list = null; }); return true;
+    }
+    // THE TABLET'S LIST KEYS: Ctrl+5 bullets, Ctrl+6 a numbered list, Ctrl+7 checkboxes, each a body paragraph; the same
+    // key on a paragraph that already is that list makes it plain body again
+    if (ctrl && k.length === 1 && "567".includes(k)) {
+      const want = { 5: "bullet", 6: "number", 7: "check" }[k];
+      const kin = { bullet: ["bullet", "bullet2"], number: ["number"], check: ["check", "checked"] }[want];
+      eachPara(P => { const on = kin.includes(P.list); P.style = "body"; P.list = on ? null : want; }); return true;
     }
     if (ctrl && (k === "b" || k === "i")) { toggleFormat(k); return true; }
     if (ctrl && k === "a") { const n = page.text.paras.length; if (n) { setCursors([{ anchor: { p: 0, o: 0 }, caret: { p: n - 1, o: paraLen(n - 1) } }]); paint(); } return true; }

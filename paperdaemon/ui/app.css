@@ -484,7 +484,9 @@ textarea.field { height: auto; padding: 8px 10px; }
 .viewer-goto input[aria-invalid="true"] { border-color: var(--mark); outline: 1px solid var(--mark); }
 .viewer-page.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: var(--s5) var(--s4); align-content: start; }
 .thumb { display: grid; gap: var(--s1); padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; text-align: center; }
-.thumb .cover { display: block; aspect-ratio: 3 / 4; background: #F4F4EC; border: 1px solid var(--edge); overflow: hidden; }
+.thumb .cover { position: relative; display: block; aspect-ratio: 3 / 4; background: #F4F4EC; border: 1px solid var(--edge); overflow: hidden; }
+/* a page's tags on its picture in the grid, as a notebook's are on its cover; edged, as the page under them is light */
+.thumb .cover-tags .chip { border: 1px solid var(--edge); }
 .thumb .cover img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
 .thumb.here .cover, .thumb:hover .cover { border-color: var(--mark); }
 /* PAGES CHOSEN in the False Mirror's grid (their actions: the select bar, in the viewer's bar) */

@@ -217,8 +217,6 @@
   <string name="keys.back_d">Efface depuis la fin du texte.</string>
   <string name="keys.letgo">Lâcher le texte</string>
   <string name="keys.letgo_d">La touche suivante repart sous l'encre.</string>
-  <string name="keys.styles">Styles</string>
-  <string name="keys.styles_d">Titre, en-tête, section, corps.</string>
   <string name="keys.bold">Gras et italique</string>
   <string name="keys.bold_d">La sélection, ou ce que vous tapez ensuite.</string>
   <string name="keys.move">Déplacer un paragraphe</string>
@@ -767,4 +765,18 @@ Ensuite, guide-moi pour installer SearXNG si besoin, écris le fichier .bat avec
   <string name="help.harness.caps_intro">Ajoutez ce que ce modèle sait faire seul. Un nouveau harnais commence avec les siennes.</string>
   <string name="help.harness.mismatch">Un harnais trop fort pour le modèle le fait sauter du travail ou mal planifier. Un harnais trop faible pour le modèle coûte plus de tokens et de temps.</string>
   <string name="lineup.test_no_program">PaperDaemon ne trouve pas le programme {program} sur cet ordinateur. Vérifiez qu'il est installé (where {program} dans un terminal le trouve), ou mettez son chemin complet au début de la commande.</string>
+  <string name="keys.st_title">Titre</string>
+  <string name="keys.st_title_d">Le paragraphe devient un titre.</string>
+  <string name="keys.st_heading">En-tête</string>
+  <string name="keys.st_heading_d">Le paragraphe devient un en-tête.</string>
+  <string name="keys.st_section">Section</string>
+  <string name="keys.st_section_d">Le paragraphe devient un titre de section, en gras.</string>
+  <string name="keys.st_body">Corps</string>
+  <string name="keys.st_body_d">Le paragraphe devient du texte normal.</string>
+  <string name="keys.st_bullets">Puces</string>
+  <string name="keys.st_bullets_d">Le paragraphe devient une puce ; appuyé de nouveau, texte normal.</string>
+  <string name="keys.st_numbered">Liste numérotée</string>
+  <string name="keys.st_numbered_d">Le paragraphe devient un élément numéroté ; appuyé de nouveau, texte normal.</string>
+  <string name="keys.st_checks">Cases à cocher</string>
+  <string name="keys.st_checks_d">Le paragraphe reçoit une case à cocher ; appuyé de nouveau, texte normal. Ctrl+Entrée la coche.</string>
 </resources>

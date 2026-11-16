@@ -138,6 +138,17 @@
       if (now) S.told = opened(S.doc.id, S.page);
       S.seen = now;
     }
+    // EACH PAGE'S TAGS ON ITS PICTURE IN THE GRID, as a notebook's are on its cover (11-16: "The tags can't be seen on the
+    // pages grid"); filled in as the notebook's tags arrive and whenever they change
+    function paintGridTags() {
+      const dlg = $("#" + VIEWER); if (!dlg) return;
+      const per = (S.tags && S.tags.page_tags) || [];
+      dlg.querySelectorAll("[data-ptags]").forEach(el => {
+        const ts = per[Number(el.dataset.ptags) - 1] || [];
+        el.innerHTML = ts.map(t => '<span class="chip">' + esc(String(t)) + "</span>").join("");
+        el.hidden = !ts.length;
+      });
+    }
     async function paintBody() {
       const dlg = $("#" + VIEWER); if (!dlg || !S.doc) return;
       paintMakeUp({ show: false });                          // (a page left: its selection's icons with it)
@@ -147,7 +158,9 @@
       if (S.view === "pages") {
         body.className = "viewer-page grid";
         body.innerHTML = Array.from({ length: n }, (_, i) => '<button type="button" class="thumb' + (i + 1 === S.page ? " here" : "") + '" data-go="' + (i + 1) + '">' +
-          '<span class="cover"><img alt="" data-thumb="' + (i + 1) + '"></span><span class="meta">' + (i + 1) + "</span></button>").join("");
+          '<span class="cover"><img alt="" data-thumb="' + (i + 1) + '"><span class="cover-tags" data-ptags="' + (i + 1) + '"></span></span>' +
+          '<span class="meta">' + (i + 1) + "</span></button>").join("");
+        paintGridTags();
         paintPagePick();
         const d = S.doc.id, io = new IntersectionObserver(es => es.forEach(x => {
           if (!x.isIntersecting) return;
@@ -442,7 +455,7 @@
       const [, e] = await PD.safe(api("PUT", "/library/" + S.doc.id + "/page/" + S.page + "/tags", { tags: next }));
       if (e) return;
       const [d] = await PD.safe(api("GET", "/library/" + S.doc.id));
-      if (d) { S.tags = d; paintBar(); paintTagPop(); }
+      if (d) { S.tags = d; paintBar(); paintTagPop(); paintGridTags(); }
     }
 
     function openDoc(x) {                                     // at the page it was last open on, as the tablet opens it
@@ -581,7 +594,7 @@
       }
       dlg.showModal();
       paintBar(); paintBody(); sizeViewer();
-      PD.safe(api("GET", "/library/" + x)).then(([d]) => { if (S.doc && S.doc.id === x) { S.tags = d; paintBar(); } });
+      PD.safe(api("GET", "/library/" + x)).then(([d]) => { if (S.doc && S.doc.id === x) { S.tags = d; paintBar(); paintGridTags(); } });
       PD.safe(api("GET", "/library/" + x + "/chapters")).then(([c]) => {
         if (!S.doc || S.doc.id !== x) return;
         S.chapters = Array.isArray(c) ? c : [];
@@ -696,7 +709,7 @@
       S.doc = byId(x) || S.doc;
       S.page = Math.min(S.page, pageCount());
       const [d] = await PD.safe(api("GET", "/library/" + x));
-      if (d) S.tags = d;
+      if (d) { S.tags = d; paintGridTags(); }
       paintBar(); paintBody();
     }
     async function pagePickAct(act) {

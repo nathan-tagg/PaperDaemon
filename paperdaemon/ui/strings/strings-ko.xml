@@ -218,8 +218,6 @@
   <string name="keys.back_d">텍스트 끝에서부터 지웁니다.</string>
   <string name="keys.letgo">텍스트 놓기</string>
   <string name="keys.letgo_d">다음 키는 다시 잉크 아래에서 시작합니다.</string>
-  <string name="keys.styles">스타일</string>
-  <string name="keys.styles_d">제목, 머리글, 섹션, 본문.</string>
   <string name="keys.bold">굵게와 기울임</string>
   <string name="keys.bold_d">선택한 부분, 또는 다음에 입력할 내용.</string>
   <string name="keys.move">단락 옮기기</string>
@@ -767,4 +765,18 @@
   <string name="help.harness.caps_intro">이 모델이 스스로 할 수 있는 것을 추가하세요. 새 하네스는 그 하네스의 기능으로 시작합니다.</string>
   <string name="help.harness.mismatch">모델에 비해 너무 강한 하네스를 쓰면 작업을 건너뛰거나 계획을 잘못 세웁니다. 너무 약한 하네스를 쓰면 토큰과 시간이 더 듭니다.</string>
   <string name="lineup.test_no_program">PaperDaemon이 이 컴퓨터에서 {program} 프로그램을 찾을 수 없습니다. 설치되어 있는지 확인하거나(터미널에서 where {program}로 찾을 수 있어야 합니다), 명령 앞에 전체 경로를 적으세요.</string>
+  <string name="keys.st_title">제목</string>
+  <string name="keys.st_title_d">문단을 제목으로 만듭니다.</string>
+  <string name="keys.st_heading">머리글</string>
+  <string name="keys.st_heading_d">문단을 머리글로 만듭니다.</string>
+  <string name="keys.st_section">섹션</string>
+  <string name="keys.st_section_d">문단을 굵은 섹션 제목으로 만듭니다.</string>
+  <string name="keys.st_body">본문</string>
+  <string name="keys.st_body_d">문단을 일반 본문으로 만듭니다.</string>
+  <string name="keys.st_bullets">글머리 기호</string>
+  <string name="keys.st_bullets_d">문단을 글머리 기호 항목으로 만듭니다. 다시 누르면 일반 텍스트가 됩니다.</string>
+  <string name="keys.st_numbered">번호 목록</string>
+  <string name="keys.st_numbered_d">문단을 번호 항목으로 만듭니다. 다시 누르면 일반 텍스트가 됩니다.</string>
+  <string name="keys.st_checks">체크박스</string>
+  <string name="keys.st_checks_d">문단에 체크박스를 붙입니다. 다시 누르면 일반 텍스트가 됩니다. Ctrl+Enter로 체크합니다.</string>
 </resources>

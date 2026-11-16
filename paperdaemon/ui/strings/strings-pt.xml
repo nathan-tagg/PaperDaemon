@@ -217,8 +217,6 @@
   <string name="keys.back_d">Apaga a partir do fim do texto.</string>
   <string name="keys.letgo">Soltar o texto</string>
   <string name="keys.letgo_d">A próxima tecla recomeça abaixo da tinta.</string>
-  <string name="keys.styles">Estilos</string>
-  <string name="keys.styles_d">Título, cabeçalho, seção, corpo.</string>
   <string name="keys.bold">Negrito e itálico</string>
   <string name="keys.bold_d">A seleção, ou o que você digitar a seguir.</string>
   <string name="keys.move">Mover um parágrafo</string>
@@ -767,4 +765,18 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="help.harness.caps_intro">Adicione o que este modelo consegue fazer sozinho. Um harness novo começa com as próprias.</string>
   <string name="help.harness.mismatch">Um harness forte demais para o modelo faz ele pular trabalho ou planejar mal. Um fraco demais para o modelo custa mais tokens e tempo.</string>
   <string name="lineup.test_no_program">O PaperDaemon não encontra o programa {program} neste computador. Verifique se ele está instalado (where {program} num terminal o encontra) ou coloque o caminho completo dele no início do comando.</string>
+  <string name="keys.st_title">Título</string>
+  <string name="keys.st_title_d">O parágrafo vira um título.</string>
+  <string name="keys.st_heading">Cabeçalho</string>
+  <string name="keys.st_heading_d">O parágrafo vira um cabeçalho.</string>
+  <string name="keys.st_section">Seção</string>
+  <string name="keys.st_section_d">O parágrafo vira um título de seção, em negrito.</string>
+  <string name="keys.st_body">Corpo</string>
+  <string name="keys.st_body_d">O parágrafo vira texto normal.</string>
+  <string name="keys.st_bullets">Marcadores</string>
+  <string name="keys.st_bullets_d">O parágrafo vira um marcador; pressionado de novo, texto normal.</string>
+  <string name="keys.st_numbered">Lista numerada</string>
+  <string name="keys.st_numbered_d">O parágrafo vira um item numerado; pressionado de novo, texto normal.</string>
+  <string name="keys.st_checks">Caixas de seleção</string>
+  <string name="keys.st_checks_d">O parágrafo ganha uma caixa de seleção; pressionado de novo, texto normal. Ctrl+Enter a marca.</string>
 </resources>

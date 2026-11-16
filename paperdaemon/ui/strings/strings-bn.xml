@@ -218,8 +218,6 @@
   <string name="keys.back_d">লেখার শেষ থেকে মোছে।</string>
   <string name="keys.letgo">লেখা ছেড়ে দিন</string>
   <string name="keys.letgo_d">পরের কী আবার কালির নিচ থেকে শুরু করে।</string>
-  <string name="keys.styles">শৈলী</string>
-  <string name="keys.styles_d">শিরোনাম, উপশিরোনাম, অংশ, মূল লেখা।</string>
   <string name="keys.bold">বোল্ড ও ইটালিক</string>
   <string name="keys.bold_d">নির্বাচন, বা এরপর যা টাইপ করবেন।</string>
   <string name="keys.move">অনুচ্ছেদ সরান</string>
@@ -767,4 +765,18 @@
   <string name="help.harness.caps_intro">এই মডেল নিজে যা পারে তা যোগ করুন। নতুন হারনেস তার নিজের সক্ষমতা দিয়ে শুরু হয়।</string>
   <string name="help.harness.mismatch">মডেলের তুলনায় খুব শক্তিশালী হারনেস মডেলকে কাজ বাদ দিতে বা খারাপ পরিকল্পনা করতে বাধ্য করে। খুব দুর্বল হারনেসে বেশি টোকেন ও সময় লাগে।</string>
   <string name="lineup.test_no_program">PaperDaemon এই কম্পিউটারে {program} প্রোগ্রামটি খুঁজে পাচ্ছে না। দেখুন এটি ইনস্টল করা আছে কি না (টার্মিনালে where {program} এটি খুঁজে পায়), অথবা কমান্ডের শুরুতে এর পুরো পথ লিখুন।</string>
+  <string name="keys.st_title">শিরোনাম</string>
+  <string name="keys.st_title_d">অনুচ্ছেদটি শিরোনাম হয়ে যায়।</string>
+  <string name="keys.st_heading">হেডিং</string>
+  <string name="keys.st_heading_d">অনুচ্ছেদটি হেডিং হয়ে যায়।</string>
+  <string name="keys.st_section">সেকশন</string>
+  <string name="keys.st_section_d">অনুচ্ছেদটি গাঢ় সেকশন হেডিং হয়ে যায়।</string>
+  <string name="keys.st_body">মূল লেখা</string>
+  <string name="keys.st_body_d">অনুচ্ছেদটি সাধারণ লেখা হয়ে যায়।</string>
+  <string name="keys.st_bullets">বুলেট</string>
+  <string name="keys.st_bullets_d">অনুচ্ছেদটি বুলেট পয়েন্ট হয়ে যায়; আবার চাপলে সাধারণ লেখা।</string>
+  <string name="keys.st_numbered">সংখ্যাযুক্ত তালিকা</string>
+  <string name="keys.st_numbered_d">অনুচ্ছেদটি সংখ্যাযুক্ত আইটেম হয়ে যায়; আবার চাপলে সাধারণ লেখা।</string>
+  <string name="keys.st_checks">চেকবক্স</string>
+  <string name="keys.st_checks_d">অনুচ্ছেদটি একটি চেকবক্স পায়; আবার চাপলে সাধারণ লেখা। Ctrl+Enter এটি টিক দেয়।</string>
 </resources>

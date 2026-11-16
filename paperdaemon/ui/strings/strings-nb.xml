@@ -218,8 +218,6 @@
   <string name="keys.back_d">Sletter fra slutten av teksten.</string>
   <string name="keys.letgo">Slipp teksten</string>
   <string name="keys.letgo_d">Neste tast begynner igjen under blekket.</string>
-  <string name="keys.styles">Stiler</string>
-  <string name="keys.styles_d">Tittel, overskrift, avsnitt, brødtekst.</string>
   <string name="keys.bold">Fet og kursiv</string>
   <string name="keys.bold_d">Utvalget, eller det du skriver etterpå.</string>
   <string name="keys.move">Flytt et avsnitt</string>
@@ -767,4 +765,18 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="help.harness.caps_intro">Legg til det denne modellen kan gjøre selv. En ny sele starter med sine egne.</string>
   <string name="help.harness.mismatch">En sele som er for sterk for modellen, får den til å hoppe over arbeid eller planlegge dårlig. En som er for svak for modellen, koster flere tokens og mer tid.</string>
   <string name="lineup.test_no_program">PaperDaemon finner ikke programmet {program} på denne datamaskinen. Sjekk at det er installert (where {program} i en terminal finner det), eller sett hele stien til det først i kommandoen.</string>
+  <string name="keys.st_title">Tittel</string>
+  <string name="keys.st_title_d">Avsnittet blir en tittel.</string>
+  <string name="keys.st_heading">Overskrift</string>
+  <string name="keys.st_heading_d">Avsnittet blir en overskrift.</string>
+  <string name="keys.st_section">Seksjon</string>
+  <string name="keys.st_section_d">Avsnittet blir en seksjonsoverskrift i fet skrift.</string>
+  <string name="keys.st_body">Brødtekst</string>
+  <string name="keys.st_body_d">Avsnittet blir vanlig tekst.</string>
+  <string name="keys.st_bullets">Punktliste</string>
+  <string name="keys.st_bullets_d">Avsnittet blir et punkt; trykket igjen, vanlig tekst.</string>
+  <string name="keys.st_numbered">Nummerert liste</string>
+  <string name="keys.st_numbered_d">Avsnittet blir et nummerert punkt; trykket igjen, vanlig tekst.</string>
+  <string name="keys.st_checks">Avmerkingsbokser</string>
+  <string name="keys.st_checks_d">Avsnittet får en avmerkingsboks; trykket igjen, vanlig tekst. Ctrl+Enter krysser den av.</string>
 </resources>

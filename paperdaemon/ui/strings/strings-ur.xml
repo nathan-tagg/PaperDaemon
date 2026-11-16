@@ -218,8 +218,6 @@
   <string name="keys.back_d">متن کے آخر سے مٹاتا ہے۔</string>
   <string name="keys.letgo">متن چھوڑ دیں</string>
   <string name="keys.letgo_d">اگلی کلید پھر سیاہی کے نیچے سے شروع کرتی ہے۔</string>
-  <string name="keys.styles">طرزیں</string>
-  <string name="keys.styles_d">عنوان، سرخی، حصہ، متن۔</string>
   <string name="keys.bold">جلی اور ترچھا</string>
   <string name="keys.bold_d">انتخاب، یا جو آپ آگے ٹائپ کریں۔</string>
   <string name="keys.move">پیراگراف منتقل کریں</string>
@@ -767,4 +765,18 @@
   <string name="help.harness.caps_intro">وہ شامل کریں جو یہ ماڈل خود کر سکتا ہے۔ نیا Harness اپنی صلاحیتوں سے شروع ہوتا ہے۔</string>
   <string name="help.harness.mismatch">ماڈل کے لیے بہت طاقتور Harness اسے کام چھوڑنے یا برا منصوبہ بنانے پر مجبور کرتا ہے۔ ماڈل کے لیے بہت کمزور Harness زیادہ ٹوکن اور وقت لیتا ہے۔</string>
   <string name="lineup.test_no_program">PaperDaemon اس کمپیوٹر پر پروگرام {program} نہیں ڈھونڈ پاتا۔ دیکھیں کہ وہ انسٹال ہے (ٹرمینل میں where {program} اسے ڈھونڈ لیتا ہے)، یا کمانڈ کے شروع میں اس کا پورا راستہ لکھیں۔</string>
+  <string name="keys.st_title">عنوان</string>
+  <string name="keys.st_title_d">پیراگراف عنوان بن جاتا ہے۔</string>
+  <string name="keys.st_heading">سرخی</string>
+  <string name="keys.st_heading_d">پیراگراف سرخی بن جاتا ہے۔</string>
+  <string name="keys.st_section">حصہ</string>
+  <string name="keys.st_section_d">پیراگراف موٹے حروف میں حصے کی سرخی بن جاتا ہے۔</string>
+  <string name="keys.st_body">متن</string>
+  <string name="keys.st_body_d">پیراگراف سادہ متن بن جاتا ہے۔</string>
+  <string name="keys.st_bullets">بلٹ</string>
+  <string name="keys.st_bullets_d">پیراگراف بلٹ پوائنٹ بن جاتا ہے؛ دوبارہ دبانے پر سادہ متن۔</string>
+  <string name="keys.st_numbered">نمبر وار فہرست</string>
+  <string name="keys.st_numbered_d">پیراگراف نمبر وار آئٹم بن جاتا ہے؛ دوبارہ دبانے پر سادہ متن۔</string>
+  <string name="keys.st_checks">چیک باکس</string>
+  <string name="keys.st_checks_d">پیراگراف کو چیک باکس ملتا ہے؛ دوبارہ دبانے پر سادہ متن۔ Ctrl+Enter اسے نشان زد کرتا ہے۔</string>
 </resources>

@@ -218,8 +218,6 @@
   <string name="keys.back_d">يحذف من نهاية النص.</string>
   <string name="keys.letgo">ترك النص</string>
   <string name="keys.letgo_d">المفتاح التالي يبدأ من جديد تحت الحبر.</string>
-  <string name="keys.styles">الأنماط</string>
-  <string name="keys.styles_d">عنوان، رأس، قسم، متن.</string>
   <string name="keys.bold">عريض ومائل</string>
   <string name="keys.bold_d">التحديد، أو ما تكتبه بعده.</string>
   <string name="keys.move">نقل فقرة</string>
@@ -789,4 +787,18 @@
   <string name="help.harness.caps_intro">أضف ما يستطيع هذا النموذج فعله بنفسه. يبدأ الإطار الجديد بقدراته الخاصة.</string>
   <string name="help.harness.mismatch">الإطار الأقوى من النموذج يجعله يتخطى العمل أو يخطط بشكل سيئ. والإطار الأضعف من النموذج يكلّف رموزًا ووقتًا أكثر.</string>
   <string name="lineup.test_no_program">لا يجد PaperDaemon البرنامج {program} على هذا الحاسوب. تأكد من أنه مثبَّت (يجده الأمر where {program} في الطرفية)، أو اكتب مساره الكامل في بداية الأمر.</string>
+  <string name="keys.st_title">عنوان</string>
+  <string name="keys.st_title_d">تصبح الفقرة عنوانًا.</string>
+  <string name="keys.st_heading">ترويسة</string>
+  <string name="keys.st_heading_d">تصبح الفقرة ترويسة.</string>
+  <string name="keys.st_section">قسم</string>
+  <string name="keys.st_section_d">تصبح الفقرة عنوان قسم بخط عريض.</string>
+  <string name="keys.st_body">متن</string>
+  <string name="keys.st_body_d">تصبح الفقرة نصًا عاديًا.</string>
+  <string name="keys.st_bullets">تعداد نقطي</string>
+  <string name="keys.st_bullets_d">تصبح الفقرة نقطة تعداد؛ وبالضغط مرة أخرى نصًا عاديًا.</string>
+  <string name="keys.st_numbered">قائمة مرقّمة</string>
+  <string name="keys.st_numbered_d">تصبح الفقرة عنصرًا مرقّمًا؛ وبالضغط مرة أخرى نصًا عاديًا.</string>
+  <string name="keys.st_checks">مربعات اختيار</string>
+  <string name="keys.st_checks_d">تحصل الفقرة على مربع اختيار؛ وبالضغط مرة أخرى نصًا عاديًا. يضع Ctrl+Enter علامة فيه.</string>
 </resources>

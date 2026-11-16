@@ -218,8 +218,6 @@
   <string name="keys.back_d">Metnin sonundan siler.</string>
   <string name="keys.letgo">Metni bırak</string>
   <string name="keys.letgo_d">Sonraki tuş yeniden mürekkebin altından başlar.</string>
-  <string name="keys.styles">Stiller</string>
-  <string name="keys.styles_d">Başlık, üst başlık, bölüm, gövde.</string>
   <string name="keys.bold">Kalın ve italik</string>
   <string name="keys.bold_d">Seçim ya da sonra yazacağın.</string>
   <string name="keys.move">Paragraf taşı</string>
@@ -767,4 +765,18 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="help.harness.caps_intro">Bu modelin kendi başına yapabildiklerini ekleyin. Yeni bir harness kendininkilerle başlar.</string>
   <string name="help.harness.mismatch">Model için fazla güçlü bir harness, modelin iş atlamasına ya da kötü plan yapmasına yol açar. Model için fazla zayıf olanı daha fazla token ve zamana mal olur.</string>
   <string name="lineup.test_no_program">PaperDaemon bu bilgisayarda {program} programını bulamıyor. Kurulu olduğunu kontrol edin (bir terminalde where {program} onu bulur) ya da komutun başına tam yolunu yazın.</string>
+  <string name="keys.st_title">Başlık</string>
+  <string name="keys.st_title_d">Paragraf başlık olur.</string>
+  <string name="keys.st_heading">Üst başlık</string>
+  <string name="keys.st_heading_d">Paragraf üst başlık olur.</string>
+  <string name="keys.st_section">Bölüm</string>
+  <string name="keys.st_section_d">Paragraf kalın bir bölüm başlığı olur.</string>
+  <string name="keys.st_body">Gövde</string>
+  <string name="keys.st_body_d">Paragraf düz metin olur.</string>
+  <string name="keys.st_bullets">Madde işaretleri</string>
+  <string name="keys.st_bullets_d">Paragraf madde işareti olur; tekrar basılınca düz metin.</string>
+  <string name="keys.st_numbered">Numaralı liste</string>
+  <string name="keys.st_numbered_d">Paragraf numaralı öğe olur; tekrar basılınca düz metin.</string>
+  <string name="keys.st_checks">Onay kutuları</string>
+  <string name="keys.st_checks_d">Paragrafa onay kutusu eklenir; tekrar basılınca düz metin. Ctrl+Enter işaretler.</string>
 </resources>

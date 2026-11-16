@@ -217,8 +217,6 @@
   <string name="keys.back_d">Deletes from the end of the text.</string>
   <string name="keys.letgo">Let go of the text</string>
   <string name="keys.letgo_d">The next key starts again below the ink.</string>
-  <string name="keys.styles">Styles</string>
-  <string name="keys.styles_d">Title, heading, section, body.</string>
   <string name="keys.bold">Bold and italic</string>
   <string name="keys.bold_d">The selection, or what you type next.</string>
   <string name="keys.move">Move a paragraph</string>
@@ -767,4 +765,18 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="help.harness.caps_intro">Add what this model can do on its own. A new harness starts with its own.</string>
   <string name="help.harness.mismatch">A harness too strong for the model makes it skip work or plan badly. A harness too weak for the model costs more tokens and time.</string>
   <string name="lineup.test_no_program">PaperDaemon can't find the program {program} on this computer. Check that it is installed (running where {program} in a terminal finds it), or put its full path at the start of the command.</string>
+  <string name="keys.st_title">Title</string>
+  <string name="keys.st_title_d">The paragraph becomes a title.</string>
+  <string name="keys.st_heading">Heading</string>
+  <string name="keys.st_heading_d">The paragraph becomes a heading.</string>
+  <string name="keys.st_section">Section</string>
+  <string name="keys.st_section_d">The paragraph becomes a section heading, in bold.</string>
+  <string name="keys.st_body">Body</string>
+  <string name="keys.st_body_d">The paragraph becomes plain body text.</string>
+  <string name="keys.st_bullets">Bullets</string>
+  <string name="keys.st_bullets_d">The paragraph becomes a bullet point; pressed again, plain text.</string>
+  <string name="keys.st_numbered">Numbered list</string>
+  <string name="keys.st_numbered_d">The paragraph becomes a numbered item; pressed again, plain text.</string>
+  <string name="keys.st_checks">Checkboxes</string>
+  <string name="keys.st_checks_d">The paragraph gets a checkbox; pressed again, plain text. Ctrl+Enter ticks it.</string>
 </resources>

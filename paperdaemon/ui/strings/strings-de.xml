@@ -218,8 +218,6 @@
   <string name="keys.back_d">Löscht am Ende des Textes.</string>
   <string name="keys.letgo">Den Text loslassen</string>
   <string name="keys.letgo_d">Die nächste Taste beginnt wieder unter der Tinte.</string>
-  <string name="keys.styles">Formate</string>
-  <string name="keys.styles_d">Titel, Überschrift, Abschnitt, Fließtext.</string>
   <string name="keys.bold">Fett und kursiv</string>
   <string name="keys.bold_d">Die Auswahl oder das, was du als Nächstes tippst.</string>
   <string name="keys.move">Absatz verschieben</string>
@@ -767,4 +765,18 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="help.harness.caps_intro">Füge hinzu, was dieses Modell selbst kann. Ein neuer Harness beginnt mit seinen eigenen.</string>
   <string name="help.harness.mismatch">Ist der Harness zu stark für das Modell, lässt es Arbeit aus oder plant schlecht. Ist er zu schwach für das Modell, kostet das mehr Tokens und Zeit.</string>
   <string name="lineup.test_no_program">PaperDaemon findet das Programm {program} auf diesem Computer nicht. Prüfe, ob es installiert ist (where {program} in einem Terminal findet es), oder setze seinen vollständigen Pfad an den Anfang des Befehls.</string>
+  <string name="keys.st_title">Titel</string>
+  <string name="keys.st_title_d">Der Absatz wird ein Titel.</string>
+  <string name="keys.st_heading">Überschrift</string>
+  <string name="keys.st_heading_d">Der Absatz wird eine Überschrift.</string>
+  <string name="keys.st_section">Abschnitt</string>
+  <string name="keys.st_section_d">Der Absatz wird eine fette Abschnittsüberschrift.</string>
+  <string name="keys.st_body">Text</string>
+  <string name="keys.st_body_d">Der Absatz wird normaler Text.</string>
+  <string name="keys.st_bullets">Aufzählung</string>
+  <string name="keys.st_bullets_d">Der Absatz wird ein Aufzählungspunkt; noch einmal gedrückt, normaler Text.</string>
+  <string name="keys.st_numbered">Nummerierte Liste</string>
+  <string name="keys.st_numbered_d">Der Absatz wird ein nummerierter Eintrag; noch einmal gedrückt, normaler Text.</string>
+  <string name="keys.st_checks">Kontrollkästchen</string>
+  <string name="keys.st_checks_d">Der Absatz bekommt ein Kontrollkästchen; noch einmal gedrückt, normaler Text. Strg+Eingabe hakt es ab.</string>
 </resources>
