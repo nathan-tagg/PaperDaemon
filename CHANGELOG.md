@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.2
+
+- The pages a job makes, like an ink adventure's character sheet, story and journal, are no longer taken as requests. They took the notebook's tag, so each one became a job of its own, was skipped, and got the daemon's note written across its title: text over text on every page. They're now settled as the job left them, and if you write on one later, that's a request like any other.
+- A notebook opens with the Pointer in hand, and the tool you pick stays as you turn pages. Before, every page started with a pen, and a link could only be followed with Ctrl+click.
+- Links light up in PaperDaemon's own color, not yellow.
+- With the Pointer or Select, a click on a link follows it and a click on a picture selects it, on PDF and book pages too. Where a link sits over a picture, a double-click selects the picture.
+
 ## 0.3.1
 
 - A page written the very moment PaperDaemon was checking it could be taken for a blank page for good, and its job never ran. PaperDaemon now judges a page by the exact bytes it read, so the request is seen on the next look.

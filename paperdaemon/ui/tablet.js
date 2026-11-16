@@ -490,6 +490,7 @@
       // (the window on another card than Settings chose: the document opens in a fresh one on that card, PD.moveWindow)
       if (PD.windowStale && !PD.moved) { PD.moveWindow(id, S.at, x).then(moving => { if (!moving) openDoc(x); }); return; }
       S.doc = byId(x); S.page = Math.min(Math.max(1, (S.doc && S.doc.at_page) || 1), pageCount());
+      try { sessionStorage.setItem("pd-open", String(Date.now())); } catch (e) { /* (the Pointer on every page) */ }   // (each opening: the editor starts with the Pointer)
       S.tags = null; S.chapters = null; S.hist = [S.page]; S.hpos = 0; S.pp = [];
       S.view = PD.firstTab === "pages" || PD.firstTab === "chapters" ? PD.firstTab : "page"; PD.firstTab = "";
       if (S.pmove && S.pmove.out) { S.pmove.out = false; S.pmove.at = 0; S.view = "pages"; unpick(); }   // where they go: its pages

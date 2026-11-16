@@ -108,3 +108,19 @@ def test_the_daemon_holds_back_the_other_flights(monkeypatch, tmp_path):
     assert D.held_by_others(None) == {"A", "B", "journal-of-b"}
     assert D._doc_of({"doc_id": "A"}) == "A" and D._doc_of({"batch": [{"doc_id": "B"}]}) == "B"
     json.dumps(D.FLIGHTS)
+
+
+def test_pages_a_job_made_are_settled_not_worked(monkeypatch, tmp_path):
+    """11-16, DF241: an adventure's own pages (sheet, story, journal) inherit the notebook's tag; they are the job's work
+    and are settled as the job left them -- no job, no note -- while one the user has written on since is a request."""
+    import paperdaemon.pipeline.daemon as D
+    marked = []
+    monkeypatch.setattr(D.rm_scan, "mark", lambda k, status, note, **kw: marked.append((k, status)))
+    monkeypatch.setattr(D, "log", lambda *a, **k: None)
+    monkeypatch.setattr(D, "MADE", {"doc1/sheet": "s1", "doc1/story": "s2"})
+    todo = [{"key": "doc1/sheet", "doc": "N", "page": 2, "state": {"sha": "s1"}},          # as the job left it
+            {"key": "doc1/story", "doc": "N", "page": 3, "state": {"sha": "written"}},     # the user wrote on it
+            {"key": "doc2/req", "doc": "M", "page": 1, "state": {"sha": "x"}}]             # another notebook's request
+    left = D.settle_made(todo)
+    assert marked == [("doc1/sheet", "done")]
+    assert [q["key"] for q in left] == ["doc1/story", "doc2/req"] and D.MADE == {}

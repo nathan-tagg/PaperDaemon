@@ -716,10 +716,51 @@ def watch_inflight(fl):
             fl["moved"][k] = time.time()
 
 
+# PAGES A JOB MADE (its sheet, its journal, a page it added): key -> the page's fingerprint as the job left it. Such a
+# page inherits the notebook's tag, so it would be a job of its own, and get a note on it; it is the job's work, not a
+# request, and is settled as it is (settle_made) -- until the user writes on it
+MADE = {}
+
+
+def note_made_pages(fl):
+    """The pages of the job's notebook it did not have when it was handed over (paths.files_had): its own."""
+    doc = _doc_of(fl["job"])
+    had = paths.files_had(paths.job_id(fl["keys"][0] if fl.get("keys") else fl.get("key")))
+    if had is None:
+        return
+    try:
+        from paperdaemon.remarkable.sync import MIRROR as _M
+        names = os.listdir(os.path.join(_M, doc))
+    except OSError:
+        return
+    for n in names:
+        if n.endswith(".rm") and "%s/%s" % (doc, n) not in had:
+            pid = n[:-3]
+            try:
+                MADE["%s/%s" % (doc[:8], pid[:8])] = rm_scan.page_state(doc, pid)["sha"]
+            except OSError:
+                pass
+
+
+def settle_made(todo):
+    """Every page in `todo` a job made, as the job left it, settled without a job or a note -> `todo` without them. One
+    the user has written on since is a request like any other."""
+    out = []
+    for q in todo:
+        sha = MADE.pop(q["key"], None)
+        if sha is not None and q["state"]["sha"] == sha:
+            rm_scan.mark(q["key"], "done", "a page PaperDaemon made for a job; nothing on it is a request")
+            log("  %s: made by its notebook's job -- settled as it is" % where(q))
+            continue
+        out.append(q)
+    return out
+
+
 def finish_job(fl, attempts):
     """A job in flight has recorded. Sync (its own work, not the other jobs'), re-anchor, re-queue, clear."""
     job, keys, key = fl["job"], fl["keys"], fl["key"]
     doc = _doc_of(job)
+    note_made_pages(fl)
     log("  %s finished in %s" % (where(job), elapsed(fl["since"])))
     done_at = time.time()
     requeue = {k for k, when in fl["moved"].items()
@@ -977,6 +1018,8 @@ def main():
         if os.path.exists(HOLD):
             note = "held for an update"              # no new job: the engine is about to stop for an update
         else:
+          if MADE and not DRY:                       # (after this cycle's finished jobs noted the pages they made)
+              todo = settle_made(todo)
           handed = set(FLIGHTS)                      # ONE JOB PER NOTEBOOK: a notebook with one in flight waits
           for job in batch(todo):
             keys = job["keys"]

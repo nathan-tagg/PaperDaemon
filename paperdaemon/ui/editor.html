@@ -70,8 +70,8 @@ canvas { display: block; }
 .vscroll.on, .vscroll:hover, .vscroll.drag { opacity: 1; transition-duration: 0.12s; }
 .pd-links { position: absolute; inset: 0; pointer-events: none; z-index: 2; overflow: hidden; }
 .pd-link { position: absolute; pointer-events: auto; padding: 0; border: 0; background: transparent; cursor: pointer; border-radius: 2px; }
-.pd-link:hover, .pd-link:focus-visible { background: rgba(255, 213, 0, 0.18); outline: 1px solid rgba(160, 120, 0, 0.45); }
-.pd-link:active { background: rgba(255, 213, 0, 0.32); }
+.pd-link:hover, .pd-link:focus-visible { background: rgba(208, 128, 106, 0.18); outline: 1px solid rgba(208, 128, 106, 0.6); }
+.pd-link:active { background: rgba(208, 128, 106, 0.32); }
 .vscroll i { position: absolute; right: 3px; width: 5px; border-radius: 3px; background: rgba(0, 0, 0, 0.30);
              box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55); transition: width 0.12s ease, right 0.12s ease, background 0.12s ease; }
 .vscroll:hover i, .vscroll.drag i { right: 2px; width: 8px; border-radius: 4px; background: rgba(0, 0, 0, 0.46); }
@@ -342,7 +342,16 @@ span.lname { cursor: default; }
   const WSCALE = { HIGHLIGHTER: 0.25 }, WSCALE_DEFAULT = 0.25;     // render.py's: a pen's width field / 4 on the tablet (measured)
 
   const pickers = { a: { pen: "fineliner", size: 1, pick: 0 }, b: { pen: "highlighter", size: 0, pick: 0 } };
-  let tool = "a", eraseMode = "stroke", popFor = null;
+  // THE TOOL IN HAND: the Pointer when a notebook is opened, and from page to page of it the one in hand (each page is
+  // an editor of its own; the viewer stamps each opening, pd-open, and the tool is kept with that stamp)
+  const KEPT_TOOL = (() => {
+    try {
+      const t = JSON.parse(sessionStorage.getItem("pd-tool") || "null");
+      return t && t.open && t.open === sessionStorage.getItem("pd-open") ? t : null;
+    } catch (e) { return null; }
+  })();
+  let tool = (KEPT_TOOL && KEPT_TOOL.tool) || "text", eraseMode = (KEPT_TOOL && KEPT_TOOL.eraseMode) || "stroke", popFor = null;
+  if (KEPT_TOOL && KEPT_TOOL.pickers) for (const k of Object.keys(pickers)) Object.assign(pickers[k], KEPT_TOOL.pickers[k] || {});
   const choiceOf = pk => { const cs = colorsOf(pk.pen); return cs[Math.min(pk.pick, cs.length - 1)]; };
 
   // ================================================================ THE RENDERER, ported from fastdecomp/render.c
@@ -4249,6 +4258,14 @@ span.lname { cursor: default; }
       b.style.left = a + "px"; b.style.top = c + "px"; b.style.width = Math.max(1, d - a) + "px"; b.style.height = Math.max(1, f - c) + "px";
     }
   }
+  // A LINK OVER A PICTURE (the Pointer, or Select): a click follows it, a double-click selects the picture under it --
+  // so the click's follow waits the moment a second click takes (linkWait), and goes at once where no picture is under it
+  let linkWait = null;
+  function followSoon(l, x, y) {
+    clearTimeout(linkWait); linkWait = null;
+    if (pictureAt(x, y) < 0) { followLink(l); return; }
+    linkWait = setTimeout(() => { linkWait = null; followLink(l); }, 300);
+  }
   function followLink(l) {                                    // to the viewer: a page turned to, or a web address opened
     if (window.parent === window) return;
     window.parent.postMessage(l.go ? { pd: "view-go", page: l.go } : { pd: "view-open", uri: l.uri }, location.origin);
@@ -4355,9 +4372,9 @@ span.lname { cursor: default; }
     const W = page.paperSize[0], H = links.aspect ? W * links.aspect : page.paperSize[1];
     const [x0, y0, x1, y1] = l.box;
     const [a, c] = toScreen(-W / 2 + x0 * W, y0 * H), [d, f] = toScreen(-W / 2 + x1 * W, y1 * H);
-    ctx.fillStyle = linkLit.pressed ? "rgba(255, 213, 0, 0.32)" : "rgba(255, 213, 0, 0.18)";
+    ctx.fillStyle = linkLit.pressed ? "rgba(208, 128, 106, 0.32)" : "rgba(208, 128, 106, 0.18)";   // (PaperDaemon's color)
     ctx.fillRect(a, c, d - a, f - c);
-    ctx.strokeStyle = "rgba(160, 120, 0, 0.45)"; ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgba(208, 128, 106, 0.6)"; ctx.lineWidth = 1;
     ctx.strokeRect(a + 0.5, c + 0.5, Math.max(0, d - a - 1), Math.max(0, f - c - 1));
   }
   function drawDocSel() {
@@ -6308,6 +6325,12 @@ span.lname { cursor: default; }
     heldKeys(e);
     const [x, y] = toPage(...local(e));
     if (e.button === 2) { e.preventDefault(); openMenu(e, x, y); return; }   // THE RIGHT BUTTON IS A MENU (openMenu)
+    // THE SECOND CLICK OF A DOUBLE-CLICK ON A LINK: the picture under it, selected (the link's follow called off)
+    if (linkWait && e.button === 0 && e.detail >= 2 && (tool === "text" || tool === "pick") && pictureAt(x, y) >= 0) {
+      clearTimeout(linkWait); linkWait = null;
+      e.preventDefault(); docSel = null;
+      pickDown(e, x, y, true); return;
+    }
     // CTRL AND A CLICK ON A PDF'S OR A BOOK'S LINK follows it, once let go without a drag (finish). The press is the link's
     // only where Ctrl alone is held (Ctrl+Shift and Ctrl+Alt are the erasers', the cursors') and no corners or shape are
     // being set; a press without Ctrl draws as anywhere else
@@ -6343,8 +6366,8 @@ span.lname { cursor: default; }
     }
     // A PICTURE UNDER THE POINTER, off the typed text: a click selects it and a drag moves it, as with Capture (11-16:
     // "Clicking on an image with the cursor or either selection tool should select the image for moving")
-    if (tool === "text" && !page.source && e.button === 0 && !e.ctrlKey && !e.altKey && !e.shiftKey && !overTextAt(x, y) &&
-        ((pick && hitPick(...local(e))) || pictureAt(x, y) >= 0)) {
+    if (tool === "text" && e.button === 0 && !e.ctrlKey && !e.altKey && !e.shiftKey &&
+        (page.source ? !linkAt(x, y) : !overTextAt(x, y)) && ((pick && hitPick(...local(e))) || pictureAt(x, y) >= 0)) {
       e.preventDefault(); if (cursors.length) setCursors([]); pickDown(e, x, y, true); return;
     }
     if (tool === "text" && pick && e.button === 0) clearPick();   // a press elsewhere lets the selection go
@@ -6513,7 +6536,7 @@ span.lname { cursor: default; }
     }
     if (docDrag) {                                            // the selection stays, drawn, to be copied; a click on a link
       const D = docDrag; docDrag = null;                      // (let go without a drag) follows it instead
-      if (D.link && !D.moved && e.type === "pointerup") { docSel = null; paint(); followLink(D.link); }
+      if (D.link && !D.moved && e.type === "pointerup") { docSel = null; paint(); followSoon(D.link, ...D.pt); }
       if (D.link) updateCursor();                              // (the press's light goes with it, a cancel's too)
       return;
     }
@@ -6713,7 +6736,14 @@ span.lname { cursor: default; }
   function sendTools() {
     if (EMBED) window.parent.postMessage({ pd: "editor-tools", html: VIEW ? "" : controls.innerHTML }, location.origin);
   }
+  function keepTool() {
+    try {
+      sessionStorage.setItem("pd-tool", JSON.stringify({ open: sessionStorage.getItem("pd-open"), tool, eraseMode, pickMode,
+                                                         pickers: JSON.parse(JSON.stringify(pickers)) }));
+    } catch (e) { /* (no storage: each page starts with the Pointer) */ }
+  }
   function paintControls() {
+    keepTool();
     const pen = k => {
       const pk = pickers[k], c = choiceOf(pk), ring = c[4] ? " ring" : "";
       const dotBg = c[4] ? (c[0] === "Black" ? "#000" : "#fff") : rgb(c[3]);
@@ -7084,7 +7114,7 @@ span.lname { cursor: default; }
   // strokes PaperDaemon reads back, and as a picture any program can paste), Ctrl+V puts back what is there, centered
   // under the pointer: strokes as strokes, selected; an image as a picture; Ctrl+Shift+V an image as strokes, decomposed
   // at its own size.
-  let pickMode = "select", pick = null, pickDrag = null, pickLoop = null, lastAt = null;
+  let pickMode = (KEPT_TOOL && KEPT_TOOL.pickMode) || "select", pick = null, pickDrag = null, pickLoop = null, lastAt = null;
   let makeUpBox = null, makeUp = null, makeUpTold = "", makeUpKeys = 0;   // (the selection's make-up: paintMakeUp)
   // (the keys the window knows a make-up by are this editor's own: counted from 1 in every editor, a new one's first
   // selection had the old one's key, and the window kept showing the counts of the selection before)
@@ -7509,6 +7539,8 @@ span.lname { cursor: default; }
       if (l.shape) setShape(1);
       // A CLICK ON A PICTURE with Select in hand selects it (a loop drawn over it still selects the strokes)
       if (!l.shape && l.pts.every(([px, py]) => Math.hypot(px - l.pts[0][0], py - l.pts[0][1]) * scale() < 4)) {
+        const lk = linkAt(...l.pts[0]);
+        if (lk) { followSoon(lk, ...l.pts[0]); paint(); return true; }          // a click on a link follows it
         const i = pictureAt(...l.pts[0]);
         if (i >= 0) { selectPicture(i); return true; }
       }
