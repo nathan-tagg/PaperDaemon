@@ -332,7 +332,7 @@ def _mark(path, on):
     try:
         if on:
             with open(path, "w", encoding="utf-8") as f:
-                f.write(str(time.time()))
+                f.write("%s %d" % (time.time(), os.getpid()))   # (the daemon's own process: a mark it left in dying is told)
         elif os.path.exists(path):
             os.remove(path)
     except OSError:

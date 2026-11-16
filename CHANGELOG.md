@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.85
+
+- Check for updates > Update says what it is doing. It tells you it is downloading, the tray icon's tip shows how far, and if a job is in progress it says the update installs as soon as that job is finished. Before, nothing showed while the 180 MB installer downloaded, and it looked like nothing happened.
+- An update waits only for a job actually in progress, whether the Daemon is started or stopped. A queued job runs after the update instead of holding it, and a job left unfinished by a Daemon that is no longer running holds nothing. A queued job on a Daemon that was not started used to hold an update for good.
+
 ## 0.2.84
 
 - Setup opens by itself only once. Once it is finished or left, it no longer comes back at every start while no tablet is connected; the Daemon page's set-up item still opens it, and everything in it is also in the window (the tablet's login in Settings, lineups on their tab, the loop on Daemon).

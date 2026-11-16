@@ -300,6 +300,47 @@ def busy(state=None):
     return None
 
 
+def in_hand(state=None):
+    """The job an update waits for, or None: one IN PROGRESS -- handed over and not yet finished (rm-inhand, written by
+    the daemon from hand-over to its last push, by a process still alive), or a model call in flight. A queued job is
+    not waited for: it runs after the update. The same whether the loop is started or stopped (11-15: "the update
+    should not be dependant on weather its started or stopped"; a queued job on a loop not started had held an update
+    for good)."""
+    data = state or paths.data_dir()
+    try:
+        with open(os.path.join(data, "rm-inhand"), encoding="utf-8") as f:
+            words = f.read().split()
+    except OSError:
+        words = None
+    if words is not None:
+        pid = int(words[1]) if len(words) > 1 and words[1].isdigit() else None
+        if pid is None or _alive(pid):
+            return "a job is being finished"
+    if not card.idle():
+        return "a model call is in progress"
+    return None
+
+
+def _alive(pid):
+    """Is process `pid` running?"""
+    if os.name == "nt":
+        import ctypes
+        h = ctypes.windll.kernel32.OpenProcess(0x1000, False, int(pid))     # PROCESS_QUERY_LIMITED_INFORMATION
+        if not h:
+            return False
+        try:
+            code = ctypes.c_ulong()
+            ok = ctypes.windll.kernel32.GetExitCodeProcess(h, ctypes.byref(code))
+            return bool(ok) and code.value == 259                                 # STILL_ACTIVE
+        finally:
+            ctypes.windll.kernel32.CloseHandle(h)
+    try:
+        os.kill(int(pid), 0)
+        return True
+    except OSError:
+        return False
+
+
 def running():
     return bool(_run["on"])
 

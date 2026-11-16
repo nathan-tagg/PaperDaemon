@@ -1542,7 +1542,7 @@ def post_updates_ready():
                     f.write(str(time.time()))
             except OSError:
                 pass
-            why = why or loop.busy(state)
+            why = why or loop.in_hand(state)
     if why:
         return _bad("%s; the update waits for it" % why, 409)
     return {"ready": True}

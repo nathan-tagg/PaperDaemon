@@ -416,10 +416,28 @@ fn wait_for_the_job_in_hand(app: &AppHandle) {
     let mut said = false;
     while api_post(port, &token, "/updates/ready") == Some(409) {
         if !said {
+            // SAID, NOT SILENT (11-15: "when he hits check for updates > update it does nothing"): the update is
+            // downloaded and waits for the job in hand
             update_log("waiting for the job in hand to finish");
+            tell(app, "The update is downloaded. PaperDaemon installs it as soon as the job it is working on is \
+                       finished, then starts again by itself.");
+            set_tray_tip(app, "Update ready: waiting for the job in hand to finish");
             said = true;
         }
         std::thread::sleep(std::time::Duration::from_secs(2));
+    }
+}
+
+/// A message that does not wait for an answer: the update goes on while it is shown.
+fn tell(app: &AppHandle, text: &str) {
+    if std::env::var_os("PAPERDAEMON_UPDATE_YES").is_none() {
+        app.dialog().message(text).title("PaperDaemon").kind(MessageDialogKind::Info).show(|_| {});
+    }
+}
+
+fn set_tray_tip(app: &AppHandle, text: &str) {
+    if let Some(tray) = app.tray_by_id("tray") {
+        let _ = tray.set_tooltip(Some(text));
     }
 }
 
@@ -490,8 +508,22 @@ fn check_for_updates(app: AppHandle) {
             return update_log("not now");
         }
         let app2 = app.clone();
+        let app3 = app.clone();
+        tell(&app, "PaperDaemon is downloading the update. It closes, updates and starts again by itself when it is \
+                    ready; the tray icon's tip shows how far it is.");
+        let mut got: u64 = 0;
+        let mut shown: u64 = 101;
         // the signature is verified before anything is installed; a download that does not match is refused
-        let result = tauri::async_runtime::block_on(update.download_and_install(|_chunk, _total| {}, move || {
+        let result = tauri::async_runtime::block_on(update.download_and_install(move |chunk, total| {
+            got += chunk as u64;
+            if let Some(t) = total {
+                let pct = if t > 0 { got * 100 / t } else { 0 };
+                if pct != shown {
+                    shown = pct;
+                    set_tray_tip(&app3, &format!("Downloading the update: {}%", pct));
+                }
+            }
+        }, move || {
             wait_for_the_job_in_hand(&app2);
             update_log("downloaded and verified; stopping the engine to install");
             stop_engine(&app2);

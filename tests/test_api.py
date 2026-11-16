@@ -440,13 +440,26 @@ def test_an_update_waits_for_the_job_in_hand_and_holds_new_ones(monkeypatch):
     data = paths.data_dir()
     os.makedirs(data, exist_ok=True)
     inhand = os.path.join(data, "rm-inhand")
-    open(inhand, "w").write("1")
+    open(inhand, "w").write("1 %d" % os.getpid())                      # a daemon that is alive (this process)
     try:
-        assert loop.busy() == "a job is being finished"
+        assert loop.busy() == "a job is being finished" and loop.in_hand() == "a job is being finished"
         r = client().post("/api/v1/updates/ready")
         assert r.status_code == 409 and os.path.exists(os.path.join(data, "rm-hold"))
+        # A MARK LEFT BY A DAEMON THAT IS GONE holds nothing (11-15: the update must not hang on what no one will finish)
+        open(inhand, "w").write("1 999999")
+        assert loop.in_hand() is None and client().post("/api/v1/updates/ready").status_code == 200
     finally:
         os.remove(inhand)
+    # A QUEUED JOB IS NOT WAITED FOR, whether the loop runs or not: it runs after the update
+    q = os.path.join(data, "rm-queue")
+    os.makedirs(q, exist_ok=True)
+    job = os.path.join(q, "zz-test-job.json")
+    open(job, "w").write("{}")
+    try:
+        assert loop.busy() == "a job is queued" and loop.in_hand() is None
+        assert client().post("/api/v1/updates/ready").status_code == 200
+    finally:
+        os.remove(job)
     assert client().post("/api/v1/updates/ready").status_code == 200
     assert client().post("/api/v1/updates/resume").status_code == 200
     assert not os.path.exists(os.path.join(data, "rm-hold"))
