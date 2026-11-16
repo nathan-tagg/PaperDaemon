@@ -723,7 +723,7 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="keys.k_pgdn">PgDn</string>
   <string name="settings.mirror_edit">Golygu'r Drych</string>
   <string name="settings.mirror_edit.on">Golygu tudalennau'r llechen yn y Drych</string>
-  <string name="settings.mirror_edit.help">I ffwrdd, mae tudalennau'r Drych yn agor i'w gweld yn unig. Ymlaen, maen nhw'n agor gydag offer golygydd y dudalen, ac mae'r newidiadau'n mynd i'r llechen. Ni all PaperDaemon addo na fydd golygiad byth yn niweidio llyfr nodiadau, yn enwedig ar ôl diweddariad i feddalwedd y llechen.</string>
+  <string name="settings.mirror_edit.help">I ffwrdd, mae tudalennau'r Drych yn agor i'w gweld yn unig. Ymlaen, maen nhw'n agor gydag offer golygydd y dudalen, ac mae'r newidiadau'n mynd i'r llechen. Gallwch hefyd greu, symud, tagio a dileu llyfrau nodiadau a ffolderi, a mewnforio ffeiliau, o'r botwm +, ac mae hynny hefyd yn mynd i'r llechen. Ni all PaperDaemon addo na fydd golygiad byth yn niweidio llyfr nodiadau, yn enwedig ar ôl diweddariad i feddalwedd y llechen.</string>
   <string name="risks.title">Cyn i chi ddefnyddio PaperDaemon</string>
   <string name="risks.intro">I ddefnyddio PaperDaemon, darllenwch ei risgiau a chadarnhewch eich bod yn eu derbyn.</string>
   <string name="risks.read">Darllen y risgiau ar GitHub</string>

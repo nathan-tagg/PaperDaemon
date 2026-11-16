@@ -942,6 +942,48 @@ def rename(doc, name):
     return True
 
 
+# ---------------------------------------------------------------- the library's own changes (add-mirror-library-actions)
+def _item_files(u):
+    return [n for n in (u + ".metadata", u + ".content") if os.path.exists(os.path.join(local.M, n))]
+
+
+def library_change(fn, changes=(), made=None, what="it was not changed"):
+    """A CHANGE TO THE TABLET'S OWN LIBRARY (Mirror editing on; the caller checks): `fn` is local.py's own function for
+    it (a move, a delete to the trash, tags, a notebook's pages), run as in the False Mirror, with a page's safety for
+    each item it changes (`changes`): never when the tablet changed the item since PaperDaemon pulled it, and the item
+    backed up first. Then each changed item is pushed, and each item it made (`made`(its answer) -> ids) sent as new.
+    -> fn's answer (a dict gets "push"). Raises a Refused, or local.NotHere in the False Mirror."""
+    _mirror_only()
+    from . import sync
+    changes = [u for u in dict.fromkeys(changes) if u]
+    with local._writing:
+        for u in changes:
+            for name in _item_files(u):
+                try:
+                    check_cloud(name)
+                except TabletNewer:
+                    raise TabletNewer("the tablet changed this since PaperDaemon read it, so " + what)
+                except CloudUnreachable as ex:
+                    raise CloudUnreachable(str(ex).replace("so the page was not saved", "so " + what))
+            backup(u)
+        with local.on_tablet():
+            got = fn()
+    pushed = {}
+    for u in changes:
+        _record_written(u)
+        pushed[u] = push(u)
+    for u in (made(got) if made else []):
+        if u and u not in sync._state().get("docs", {}):
+            r = sync.send_new(u)
+            if r.get("root_put") != 200:
+                raise ValueError("it is made here and was not sent to the tablet (%s); it goes up with the next sync"
+                                 % str(r.get("error") or r.get("root_put") or "no answer")[:120])
+            pushed[u] = r
+    if isinstance(got, dict):
+        got = dict(got, push=pushed)
+    return got
+
+
 def push(doc):
     """The document's edits up to the tablet by PaperDaemon's own sync, now (the editor's Ctrl+S, or the document
     closed). A job at work on the notebook is left its push: the edit goes up with the job's work. -> what the push

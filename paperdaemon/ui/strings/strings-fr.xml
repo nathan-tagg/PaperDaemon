@@ -723,7 +723,7 @@ Ensuite, guide-moi pour installer SearXNG si besoin, écris le fichier .bat avec
   <string name="keys.k_pgdn">Pg suiv</string>
   <string name="settings.mirror_edit">Modifier le Miroir</string>
   <string name="settings.mirror_edit.on">Modifier les pages de la tablette dans le Miroir</string>
-  <string name="settings.mirror_edit.help">Désactivé, les pages du Miroir s'ouvrent en lecture seule. Activé, elles s'ouvrent avec les outils de l'éditeur de page, et les modifications partent vers la tablette. PaperDaemon ne peut pas garantir qu'une modification n'abîmera jamais un carnet, surtout après une mise à jour du logiciel de la tablette.</string>
+  <string name="settings.mirror_edit.help">Désactivé, les pages du Miroir s'ouvrent en lecture seule. Activé, elles s'ouvrent avec les outils de l'éditeur de page, et les modifications partent vers la tablette. Vous pouvez aussi créer, déplacer, étiqueter et supprimer des carnets et des dossiers, et importer des fichiers, avec le bouton +, et cela part aussi vers la tablette. PaperDaemon ne peut pas garantir qu'une modification n'abîmera jamais un carnet, surtout après une mise à jour du logiciel de la tablette.</string>
   <string name="risks.title">Avant d'utiliser PaperDaemon</string>
   <string name="risks.intro">Pour utiliser PaperDaemon, lisez ses risques et confirmez que vous les acceptez.</string>
   <string name="risks.read">Lire les risques sur GitHub</string>

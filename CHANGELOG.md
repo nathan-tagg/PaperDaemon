@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.90
+
+- The Mirror's library does what the False Mirror's does while Edit the Mirror is on in Settings. You get the + menu (Quick sheet, New notebook, New folder, Import), files dropped on the screen are imported into the folder open, and a right-click or a long press selects notebooks and folders for Export, Duplicate, Move, Tag and Delete. In the viewer you can add pages, tag pages and work on the page grid's selection. Each change goes straight to the tablet. Before PaperDaemon changes something already on the tablet, it checks that the tablet hasn't changed it since, and backs it up first. A book you import is filed the way the desktop app files one, and the tablet lays it out. With Edit the Mirror off, none of this shows.
+- In both libraries, a left-click on a notebook or folder opens it, even while something is selected. Before, after a right-click had selected a notebook, a left-click just took it out of the selection. To add to a selection or take something out of it, Ctrl-click, Shift-click, right-click or long-press it.
+- If a new notebook or folder can't reach the tablet (no connection, or no tablet signed in), PaperDaemon says so in plain words instead of "500 Internal Server Error". It stays in the Mirror and goes up with the next sync.
+
 ## 0.2.89
 
 - Ctrl+A in the page editor just works with the Pointer. With no text highlighted or typed it selects all the typed text; on a page with no text it selects all the strokes, as it does with a pen in hand.

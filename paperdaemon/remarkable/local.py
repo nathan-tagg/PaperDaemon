@@ -44,8 +44,22 @@ class NotHere(PermissionError):
     """An edit asked of the tablet's mirror: these are the false mirror's alone."""
 
 
+# THE TABLET'S OWN LIBRARY, LET IN (add-mirror-library-actions): with Mirror editing on, inplace.library_change runs
+# these same functions on the Mirror -- the items checked against the cloud and backed up first, pushed after -- inside
+# on_tablet(); nowhere else do they write the tablet's library
+_tablet = threading.local()
+
+
+class on_tablet:
+    def __enter__(self):
+        _tablet.on = True
+
+    def __exit__(self, *a):
+        _tablet.on = False
+
+
 def _guard():
-    if not paths.local_only():
+    if not paths.local_only() and not getattr(_tablet, "on", False):
         raise NotHere("this is done only in the False Mirror")
 
 
@@ -136,22 +150,31 @@ def new_notebook(name, parent="", template="Blank", cover="last", tags=(), table
         _set_tags(doc, tags)                         # the notebook's own tags, as New notebook was given them
     if tablet:
         from . import sync
-        r = sync.push_new_doc(doc, dry_run=False) or {}
+        r = sync.send_new(doc)
         if r.get("root_put") != 200:
             raise ValueError("the notebook is made here and was not sent to the tablet (%s); it goes up with the next "
                              "sync" % str(r.get("error") or r.get("root_put") or "no answer")[:120])
     return doc
 
 
-def quick_sheets():
-    """QUICK SHEETS, as the tablet's button opens them: the library's one Quick sheets (the document of that name at the
-    root; made when there is none) on a new page at its end. -> (its id, the new page's number)."""
+def quick_sheets_doc():
+    """The library's one Quick sheets (the document of that name at its top), or None."""
     from paperdaemon import studio
-    _guard()
     docs, how = studio.inbox_docs(M, None)
-    if how != "quick sheets":
-        return new_notebook(studio.QUICK_SHEETS, ""), 1
-    return docs[0], new_page(docs[0])
+    return docs[0] if how == "quick sheets" else None
+
+
+def quick_sheets(tablet=False):
+    """QUICK SHEETS, as the tablet's button opens them: the library's one Quick sheets (the document of that name at the
+    root; made when there is none) on a new page at its end. -> (its id, the new page's number). `tablet`: one made is
+    made in the tablet's frame and sent to it, as new_notebook's."""
+    from paperdaemon import studio
+    if not tablet:
+        _guard()
+    doc = quick_sheets_doc()
+    if doc is None:
+        return new_notebook(studio.QUICK_SHEETS, "", tablet=tablet), 1
+    return doc, new_page(doc)
 
 
 def new_folder(name, parent="", tablet=False):
@@ -167,7 +190,7 @@ def new_folder(name, parent="", tablet=False):
     paths.write_json_atomic(os.path.join(M, u + ".content"), {"tags": []})
     if tablet:
         from . import sync
-        r = sync.push_new_doc(u, dry_run=False) or {}
+        r = sync.send_new(u)
         if r.get("root_put") != 200:
             raise ValueError("the folder is made here and was not sent to the tablet (%s); it goes up with the next "
                              "sync" % str(r.get("error") or r.get("root_put") or "no answer")[:120])
@@ -232,6 +255,8 @@ def import_epub(name, data, parent=""):
                 raise ValueError("that is not an EPUB")
     except (KeyError, zipfile.BadZipFile, AttributeError):
         raise ValueError("that is not an EPUB")
+    if not paths.local_only():
+        return _tablet_epub(name, data, parent)
     doc = str(uuid.uuid4())
     epub = os.path.join(M, doc + ".epub")
     paths.write_atomic(epub, data)
@@ -269,9 +294,39 @@ def import_epub(name, data, parent=""):
     return doc
 
 
+def _tablet_epub(name, data, parent):
+    """AN EPUB FOR THE TABLET'S OWN LIBRARY, filed as the desktop app files one (convert.py sends books the same way):
+    the book with its .content and .metadata, its pages counted by PaperDaemon's layout; the tablet lays it out itself
+    when it opens it. -> its id."""
+    from . import books
+    doc = str(uuid.uuid4())
+    epub = os.path.join(M, doc + ".epub")
+    paths.write_atomic(epub, data)
+    try:
+        _pdf, index = books.lay_out(epub, books.settings_of(None))
+    except Exception:
+        os.remove(epub)
+        raise ValueError("the book could not be laid out")
+    n = max(1, int(index["pages"]))
+    title = (name or "Book").strip() or "Book"
+    now = str(_now())
+    paths.write_json_atomic(os.path.join(M, doc + ".content"), {
+        "coverPageNumber": 0, "customZoomCenterX": 0, "customZoomCenterY": 936, "customZoomOrientation": "portrait",
+        "customZoomPageHeight": 1872, "customZoomPageWidth": 1404, "customZoomScale": 1,
+        "documentMetadata": {"title": title}, "extraMetadata": {}, "fileType": "epub", "fontName": "",
+        "formatVersion": 1, "lineHeight": 100, "orientation": "portrait", "originalPageCount": n, "pageCount": n,
+        "pageTags": [], "pages": [str(uuid.uuid4()) for _ in range(n)], "redirectionPageMap": list(range(n)),
+        "sizeInBytes": str(len(data)), "tags": [], "textAlignment": "justify", "textScale": 1, "zoomMode": "bestFit"})
+    paths.write_json_atomic(os.path.join(M, doc + ".metadata"), {
+        "createdTime": now, "lastModified": now, "lastOpened": "0", "lastOpenedPage": 0, "new": False,
+        "parent": parent or "", "pinned": False, "source": "", "type": "DocumentType", "visibleName": title})
+    paths.write_atomic(os.path.join(M, doc + ".pagedata"), "Blank\n" * n)
+    return doc
+
+
 def export_pdf(doc):
-    """The document as a PDF, every page drawn by PaperDaemon's renderer, in order. -> bytes."""
-    _guard()
+    """The document as a PDF, every page drawn by PaperDaemon's renderer, in order. -> bytes. (Read only: the Mirror's
+    documents too.)"""
     from PIL import Image
     from paperdaemon import thumbs
     pics = []
@@ -537,7 +592,7 @@ def tag_pages(doc, page_nos, add=(), remove=()):
 def move(u, parent):
     _guard()
     if parent and (parent == u or parent not in F.items()):
-        raise ValueError("that folder is not in the False Mirror")
+        raise ValueError("that folder is not in the library")
     return F.move(u, parent)
 
 

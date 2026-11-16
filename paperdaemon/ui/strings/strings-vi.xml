@@ -723,7 +723,7 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="keys.k_pgdn">PgDn</string>
   <string name="settings.mirror_edit">Sửa Bản sao</string>
   <string name="settings.mirror_edit.on">Sửa các trang của máy tính bảng trong Bản sao</string>
-  <string name="settings.mirror_edit.help">Khi tắt, các trang của Bản sao chỉ mở để xem. Khi bật, chúng mở cùng công cụ của trình sửa trang, và các thay đổi được gửi lên máy tính bảng. PaperDaemon không thể hứa rằng một lần sửa sẽ không bao giờ làm hỏng sổ tay, nhất là sau khi phần mềm máy tính bảng được cập nhật.</string>
+  <string name="settings.mirror_edit.help">Khi tắt, các trang của Bản sao chỉ mở để xem. Khi bật, chúng mở cùng công cụ của trình sửa trang, và các thay đổi được gửi lên máy tính bảng. Bạn cũng có thể tạo, di chuyển, gắn thẻ và xóa sổ tay và thư mục, cũng như nhập tệp, từ nút +, và những thay đổi đó cũng được gửi lên máy tính bảng. PaperDaemon không thể hứa rằng một lần sửa sẽ không bao giờ làm hỏng sổ tay, nhất là sau khi phần mềm máy tính bảng được cập nhật.</string>
   <string name="risks.title">Trước khi bạn dùng PaperDaemon</string>
   <string name="risks.intro">Để dùng PaperDaemon, vui lòng đọc các rủi ro và xác nhận rằng bạn chấp nhận chúng.</string>
   <string name="risks.read">Đọc các rủi ro trên GitHub</string>

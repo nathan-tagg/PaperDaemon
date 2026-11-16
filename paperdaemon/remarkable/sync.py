@@ -1078,6 +1078,15 @@ def push_new_doc(doc_uuid, dry_run=True):
     return plan
 
 
+def send_new(doc_uuid):
+    """What the user made on the tablet's own library from the window, sent up as a new document (push_new_doc) ->
+    what it said; a cloud that cannot be reached, or no tablet signed in, said as {"error": ...}, never raised."""
+    try:
+        return push_new_doc(doc_uuid, dry_run=False) or {}
+    except Exception as ex:
+        return {"error": str(ex)[:200]}
+
+
 @_one_at_a_time
 def delete_doc(doc_uuid):
     """Remove a document from the cloud OUTRIGHT -- its line taken out of the root index, in one root move; not moved to

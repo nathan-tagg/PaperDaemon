@@ -543,10 +543,17 @@ def post_false_mirror():
 @app.post(API + "/false-mirror/export")
 def post_false_mirror_export(body: dict = Body(...)):
     """A false-mirror document exported as a PDF into the user's Downloads folder (a new name when one is taken)
-    -> {path, name}."""
+    -> {path, name}. {"mirror": true}: one of the Mirror's, drawn by this engine."""
     doc = str(body.get("doc") or "")
     if paths.local_only() or not _doc_ok(doc):
         return _bad("not a document id")
+    if body.get("mirror"):
+        from .remarkable import local
+        try:
+            data = local.export_pdf(doc)
+        except Exception as ex:
+            return _bad("the document could not be exported: %s" % str(ex)[:200], 502)
+        return _to_downloads(body.get("name") or "Document", ".pdf", data)
     import urllib.request
     fm_start()
     if not _fm.get("port"):
@@ -1741,8 +1748,10 @@ def _fm_call(method, path, body=None, timeout=600):
         return code, raw.decode("utf-8", "replace")[:300]
 
 
-# ---------------------------------------------------------------- the false mirror's own edits (remarkable/local.py)
-# Answered only by the false mirror's engine (its requests reach it as /fm/...); the Mirror's engine refuses them all.
+# ---------------------------------------------------------------- the library's own edits (remarkable/local.py)
+# The False Mirror's engine (its requests reach it as /fm/...) makes them at once; the Mirror's engine only with Mirror
+# editing on, each through inplace.library_change: checked against the cloud, backed up, then sent to the tablet
+# (add-mirror-library-actions).
 
 def _local(fn, *a):
     from .remarkable import local
@@ -1756,6 +1765,27 @@ def _local(fn, *a):
 
 def _doc_ok(u):
     return bool(re.fullmatch(r"[0-9a-fA-F-]{36}", u or ""))
+
+
+def _lib(fn, changes=(), made=None, what="it was not changed"):
+    """A library action: in the False Mirror `fn` at once; on the Mirror with editing on, through
+    inplace.library_change (the items in `changes` checked and backed up, then pushed; those `made` sent as new)."""
+    from .remarkable import inplace
+    if paths.local_only():
+        return _local(fn)
+    if not _mirror_edit():
+        return _mirror_edit_off()
+
+    def go():
+        try:
+            return inplace.library_change(fn, changes, made, what)
+        except inplace.Refused as ex:
+            return _refused(ex)
+    return _local(go)
+
+
+def _new_id(got):
+    return [got.get("id")] if isinstance(got, dict) else []
 
 
 @app.post(API + "/library/notebook")
@@ -1778,13 +1808,19 @@ def post_library_notebook(body: dict = Body(default={})):
 def post_library_quick_sheets():
     """Quick sheets, as the tablet's button: a new page at the end of the library's one Quick sheets -> {id, page}."""
     from .remarkable import local
-    return _local(lambda: dict(zip(("id", "page"), local.quick_sheets())))
+    if paths.local_only():
+        return _local(lambda: dict(zip(("id", "page"), local.quick_sheets())))
+    qs = local.quick_sheets_doc()
+    if qs is None:                                    # none yet: one made in the tablet's frame and sent to it
+        return _lib(lambda: dict(zip(("id", "page"), local.quick_sheets(tablet=True))))
+    return _lib(lambda: dict(zip(("id", "page"), local.quick_sheets(tablet=True))), [qs])
 
 
 @app.post(API + "/library/folder")
 def post_library_folder(body: dict = Body(default={})):
     from .remarkable import local
-    return _local(lambda: {"id": local.new_folder(str(body.get("name") or ""), str(body.get("parent") or ""))})
+    tablet = not paths.local_only()
+    return _lib(lambda: {"id": local.new_folder(str(body.get("name") or ""), str(body.get("parent") or ""), tablet=tablet)})
 
 
 @app.post(API + "/library/import")
@@ -1792,7 +1828,7 @@ async def post_library_import(request: Request, name: str = "", parent: str = ""
     """A PDF or an EPUB, its bytes the request's body, into folder `parent`."""
     from .remarkable import local
     data = await request.body()
-    return await run_in_threadpool(_local, lambda: {"id": local.import_file(name, data, parent)})
+    return await run_in_threadpool(_lib, lambda: {"id": local.import_file(name, data, parent)}, (), _new_id)
 
 
 @app.post(API + "/library/{doc}/pages/{act}")
@@ -1804,17 +1840,18 @@ def post_library_pages_act(doc: str, act: str, body: dict = Body(default={})):
         return _bad("not a document id")
     nos = [int(n) for n in body.get("pages") or [] if str(n).isdigit()]
     if act == "delete":
-        return _local(lambda: {"pages": local.delete_pages(doc, nos)})
+        return _lib(lambda: {"pages": local.delete_pages(doc, nos)}, [doc])
     if act == "duplicate":
-        return _local(lambda: {"pages": local.duplicate_pages(doc, nos)})
+        return _lib(lambda: {"pages": local.duplicate_pages(doc, nos)}, [doc])
     if act == "move":
         at = body.get("at")
-        return _local(lambda: {"pages": local.move_pages(doc, nos, str(body.get("to") or "") or None,
-                                                          int(at) if at not in (None, "") else None,
-                                                          str(body.get("where") or "after"))})
+        return _lib(lambda: {"pages": local.move_pages(doc, nos, str(body.get("to") or "") or None,
+                                                        int(at) if at not in (None, "") else None,
+                                                        str(body.get("where") or "after"))},
+                    [doc, str(body.get("to") or "")])
     if act == "tags":
-        return _local(lambda: {"pages": local.tag_pages(doc, nos, [str(t) for t in body.get("add") or []],
-                                                         [str(t) for t in body.get("remove") or []])})
+        return _lib(lambda: {"pages": local.tag_pages(doc, nos, [str(t) for t in body.get("add") or []],
+                                                       [str(t) for t in body.get("remove") or []])}, [doc])
     return _bad("no such page action", 404)
 
 
@@ -1823,7 +1860,7 @@ def post_library_duplicate(u: str):
     from .remarkable import local
     if not _doc_ok(u):
         return _bad("not a document id")
-    return _local(lambda: {"id": local.duplicate(u)})
+    return _lib(lambda: {"id": local.duplicate(u)}, (), _new_id)
 
 
 @app.post(API + "/library/{doc}/pages")
@@ -1831,7 +1868,7 @@ def post_library_page(doc: str, body: dict = Body(default={})):
     from .remarkable import local
     if not _doc_ok(doc):
         return _bad("not a document id")
-    return _local(lambda: {"page": local.new_page(doc, body.get("after"))})
+    return _lib(lambda: {"page": local.new_page(doc, body.get("after"))}, [doc])
 
 
 @app.get(API + "/library/{doc}/export.pdf")
@@ -1848,7 +1885,7 @@ def post_library_move(u: str, body: dict = Body(default={})):
     from .remarkable import local
     if not _doc_ok(u):
         return _bad("not an id")
-    return _local(lambda: {"moved": local.move(u, str(body.get("parent") or ""))})
+    return _lib(lambda: {"moved": local.move(u, str(body.get("parent") or ""))}, [u], what="it was not moved")
 
 
 @app.delete(API + "/library/{u}")
@@ -1856,7 +1893,7 @@ def delete_library_item(u: str):
     from .remarkable import local
     if not _doc_ok(u):
         return _bad("not an id")
-    return _local(lambda: {"deleted": local.delete(u)})
+    return _lib(lambda: {"deleted": local.delete(u)}, [u], what="it was not deleted")
 
 
 @app.put(API + "/library/{u}/tags")
@@ -1864,7 +1901,8 @@ def put_library_tags(u: str, body: dict = Body(default={})):
     from .remarkable import local
     if not _doc_ok(u):
         return _bad("not an id")
-    return _local(lambda: (local.set_tags(u, body.get("tags") or []), {"tags": body.get("tags") or []})[1])
+    return _lib(lambda: (local.set_tags(u, body.get("tags") or []), {"tags": body.get("tags") or []})[1], [u],
+                what="its tags were not changed")
 
 
 @app.put(API + "/library/{u}/name")
@@ -1927,7 +1965,8 @@ def put_library_page_tags(doc: str, page: int, body: dict = Body(default={})):
     from .remarkable import local
     if not _doc_ok(doc):
         return _bad("not a document id")
-    return _local(lambda: (local.set_page_tags(doc, page, body.get("tags") or []), {"tags": body.get("tags") or []})[1])
+    return _lib(lambda: (local.set_page_tags(doc, page, body.get("tags") or []), {"tags": body.get("tags") or []})[1],
+                [doc], what="its tags were not changed")
 
 
 # A PAGE'S BINARY FORM KEPT by what it was made from (its files as they are: local.page_version): a page opened again --
@@ -2314,7 +2353,8 @@ def put_library_page_template(doc: str, page: int, body: dict = Body(...)):
     from .remarkable import local
     if not _doc_ok(doc):
         return _bad("not a document id")
-    return _local(lambda: (local.set_page_template(doc, page, body.get("file")), {"template": body.get("file")})[1])
+    return _lib(lambda: (local.set_page_template(doc, page, body.get("file")), {"template": body.get("file")})[1], [doc],
+                what="its template was not changed")
 
 
 # ---------------------------------------------------------------- the tablet's page templates (remarkable/templates.py)

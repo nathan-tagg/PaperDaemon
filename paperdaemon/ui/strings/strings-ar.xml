@@ -745,7 +745,7 @@
   <string name="keys.k_pgdn">PgDn</string>
   <string name="settings.mirror_edit">تحرير المرآة</string>
   <string name="settings.mirror_edit.on">تحرير صفحات الجهاز اللوحي في المرآة</string>
-  <string name="settings.mirror_edit.help">عند الإيقاف تُفتح صفحات المرآة للعرض فقط. وعند التشغيل تُفتح مع أدوات محرر الصفحات، وتذهب التغييرات إلى الجهاز اللوحي. لا يستطيع PaperDaemon أن يضمن ألا يُتلف التحرير دفترًا أبدًا، خاصة بعد تحديث برنامج الجهاز اللوحي.</string>
+  <string name="settings.mirror_edit.help">عند الإيقاف تُفتح صفحات المرآة للعرض فقط. وعند التشغيل تُفتح مع أدوات محرر الصفحات، وتذهب التغييرات إلى الجهاز اللوحي. ويمكنك أيضًا إنشاء الدفاتر والمجلدات ونقلها ووسمها وحذفها واستيراد الملفات من زر +، وتذهب هذه التغييرات أيضًا إلى الجهاز اللوحي. لا يستطيع PaperDaemon أن يضمن ألا يُتلف التحرير دفترًا أبدًا، خاصة بعد تحديث برنامج الجهاز اللوحي.</string>
   <string name="risks.title">قبل أن تستخدم PaperDaemon</string>
   <string name="risks.intro">لاستخدام PaperDaemon، يُرجى قراءة مخاطره وتأكيد قبولك لها.</string>
   <string name="risks.read">اقرأ المخاطر على GitHub</string>

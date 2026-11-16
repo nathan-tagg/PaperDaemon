@@ -723,7 +723,7 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="keys.k_pgdn">PgDn</string>
   <string name="settings.mirror_edit">Editar o Espelho</string>
   <string name="settings.mirror_edit.on">Editar as páginas do tablet no Espelho</string>
-  <string name="settings.mirror_edit.help">Desligado, as páginas do Espelho abrem só para ver. Ligado, abrem com as ferramentas do editor de páginas, e o que for alterado vai para o tablet. O PaperDaemon não pode prometer que uma edição nunca danifique um caderno, sobretudo depois de uma atualização do software do tablet.</string>
+  <string name="settings.mirror_edit.help">Desligado, as páginas do Espelho abrem só para ver. Ligado, abrem com as ferramentas do editor de páginas, e o que for alterado vai para o tablet. Também pode criar, mover, etiquetar e apagar cadernos e pastas, e importar arquivos, pelo botão +, e isso também vai para o tablet. O PaperDaemon não pode prometer que uma edição nunca danifique um caderno, sobretudo depois de uma atualização do software do tablet.</string>
   <string name="risks.title">Antes de usar o PaperDaemon</string>
   <string name="risks.intro">Para usar o PaperDaemon, leia os riscos e confirme que você os aceita.</string>
   <string name="risks.read">Ler os riscos no GitHub</string>

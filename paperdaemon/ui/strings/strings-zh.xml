@@ -723,7 +723,7 @@
   <string name="keys.k_pgdn">PgDn</string>
   <string name="settings.mirror_edit">编辑镜像</string>
   <string name="settings.mirror_edit.on">在镜像中编辑平板的页面</string>
-  <string name="settings.mirror_edit.help">关闭时，镜像中的页面只能查看。开启时，页面会带着页面编辑器的工具打开，所做的更改会发送到平板。PaperDaemon 无法保证编辑永远不会损坏笔记本，尤其是在平板软件更新之后。</string>
+  <string name="settings.mirror_edit.help">关闭时，镜像中的页面只能查看。开启时，页面会带着页面编辑器的工具打开，所做的更改会发送到平板。你还可以用 + 按钮新建、移动、加标签和删除笔记本与文件夹，以及导入文件，这些也会发送到平板。PaperDaemon 无法保证编辑永远不会损坏笔记本，尤其是在平板软件更新之后。</string>
   <string name="risks.title">使用 PaperDaemon 之前</string>
   <string name="risks.intro">要使用 PaperDaemon，请阅读其风险并确认您接受。</string>
   <string name="risks.read">在 GitHub 上阅读风险说明</string>

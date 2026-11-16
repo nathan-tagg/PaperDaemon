@@ -723,7 +723,7 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="keys.k_pgdn">PagGiù</string>
   <string name="settings.mirror_edit">Modificare lo Specchio</string>
   <string name="settings.mirror_edit.on">Modifica le pagine del tablet nello Specchio</string>
-  <string name="settings.mirror_edit.help">Disattivato, le pagine dello Specchio si aprono solo in lettura. Attivato, si aprono con gli strumenti dell'editor di pagina e le modifiche vanno al tablet. PaperDaemon non può garantire che una modifica non danneggi mai un quaderno, soprattutto dopo un aggiornamento del software del tablet.</string>
+  <string name="settings.mirror_edit.help">Disattivato, le pagine dello Specchio si aprono solo in lettura. Attivato, si aprono con gli strumenti dell'editor di pagina e le modifiche vanno al tablet. Puoi anche creare, spostare, etichettare ed eliminare quaderni e cartelle, e importare file, dal pulsante +, e anche questo va al tablet. PaperDaemon non può garantire che una modifica non danneggi mai un quaderno, soprattutto dopo un aggiornamento del software del tablet.</string>
   <string name="risks.title">Prima di usare PaperDaemon</string>
   <string name="risks.intro">Per usare PaperDaemon, leggi i suoi rischi e conferma di accettarli.</string>
   <string name="risks.read">Leggi i rischi su GitHub</string>

@@ -138,9 +138,9 @@ def test_the_false_mirror_through_the_engine():
         assert os.path.isdir(paths.false_mirror_dir()) and os.path.isdir(paths.false_mirror_state_dir())
         lib = c.get("/api/v1/fm/library").json()
         assert [x["name"] for x in lib] == ["Notebook"], lib
-        # the Mirror's own engine refuses the false mirror's edits (a notebook, too, while Mirror editing is off)
+        # the Mirror's own engine refuses the library's edits while Mirror editing is off
         assert c.post("/api/v1/library/notebook", json={"name": "no"}).status_code == 403
-        assert c.post("/api/v1/library/folder", json={"name": "no"}).status_code == 404
+        assert c.post("/api/v1/library/folder", json={"name": "no"}).status_code == 403
         folder = c.post("/api/v1/fm/library/folder", json={"name": "Recipes"}).json()["id"]
         doc = c.post("/api/v1/fm/library/notebook", json={"name": "Soup", "parent": folder}).json()["id"]
         assert c.post("/api/v1/fm/library/" + doc + "/pages", json={}).json() == {"page": 2}
@@ -788,8 +788,10 @@ def test_a_notebook_is_made_on_the_tablet_s_library_with_mirror_editing_on(monke
     monkeypatch.setattr(sync, "push_new_doc", lambda doc, dry_run=True: {"root_put": 412})
     r = c.post("/api/v1/library/notebook", json={"name": "Haiku 5.5"})
     assert r.status_code == 400 and "was not sent to the tablet" in r.json()["error"]
-    # every other edit of the library is still the false mirror's alone
-    assert c.post("/api/v1/library/folder", json={"name": "no"}).status_code == 404
+    # and a folder, as the rest of the library's actions (add-mirror-library-actions; tests/test_mirror_library.py)
+    monkeypatch.setattr(sync, "push_new_doc", lambda doc, dry_run=True: (sent.append((doc, dry_run)), {"root_put": 200})[1])
+    r = c.post("/api/v1/library/folder", json={"name": "Projects"})
+    assert r.status_code == 200 and sent[-1] == (r.json()["id"], False), r.text
 
 
 def test_his_layer_carries_the_tablets_second_record_and_his_note_its_low_number():

@@ -3,10 +3,10 @@
    its folders, then its notebooks and documents as covers. A notebook opens in a viewer the height of the window, one
    page at a time.
 
-   One screen, made twice: MIRROR over the tablet's library (its pages edited in the page editor and written in place;
-   nothing else changed there: tags shown, never changed), and FALSE MIRROR over
-   the false mirror's (its requests go to /fm/..., which the engine passes to the false mirror's own engine). Only the
-   false mirror has the making and changing: New notebook, New folder and Import in the head; a long press selects a
+   One screen, made twice: MIRROR over the tablet's library, and FALSE MIRROR over the false mirror's (its requests go
+   to /fm/..., which the engine passes to the false mirror's own engine). Both have the making and changing -- the
+   Mirror only while Edit the Mirror is on in Settings, each change sent to the tablet (add-mirror-library-actions):
+   Quick sheets, New notebook, New folder and Import under the + in the head; a long press or a right-click selects a
    notebook or folder and a menu slides down over the top of the screen with Export, Move, Tags and Delete; the
    viewer adds pages, edits a page's tags, and opens each page in the page editor. */
 (() => {
@@ -34,6 +34,8 @@
     const S = { list: null, err: "", at: "", doc: null, page: 1, view: "page", tags: null, chapters: null, hist: [1], hpos: 0,
                 picked: null, held: false, pp: [], ppHeld: false };
     const api = (m, p, b) => PD.api(m, base + p, b);
+    // THE MAKING AND CHANGING: always in the False Mirror; in the Mirror while Edit the Mirror is on
+    const can = () => fm || !!PD.getK(PD.settings || {}, "mirror.edit");
     const byId = x => (S.list || []).find(d => d.id === x);
     const VIEWER = id + "-viewer";
     // THE FOLDER SHOWN IS REMEMBERED, this screen's own, and opened again when the window starts with no address
@@ -62,6 +64,7 @@
 
     function paint() {
       const box = $("#" + id + "-files", R); if (!box) return;
+      const acts = $(".head-acts", R); if (acts) acts.hidden = !can();     // (Edit the Mirror may have changed)
       if (S.err) { box.innerHTML = '<p class="msg err">' + esc(S.err) + "</p>"; return; }
       if (!S.list) { box.innerHTML = '<p class="sub">' + esc(PD.t("common.reading")) + "</p>"; return; }
       const crumbs = [{ id: "", name: PD.t("tablet.my_files") }].concat(path(S.at));
@@ -114,7 +117,7 @@
           '<span class="viewer-count">' + esc(PD.t("tablet.page_of", { page: S.page, pages: n })) + "</span>" +
           '<button type="button" class="icon-btn" data-v="next" title="' + esc(PD.t("viewer.next")) + '" aria-label="' + esc(PD.t("viewer.next")) + '"' +
             (S.page >= n ? " disabled" : "") + ">" + ICON.next + "</button>" +
-          (fm && S.doc.kind === "notebook" ? '<button type="button" class="icon-btn" data-v="newpage" title="' + esc(PD.t("fm.new_page")) + '" aria-label="' +
+          (can() && S.doc.kind === "notebook" ? '<button type="button" class="icon-btn" data-v="newpage" title="' + esc(PD.t("fm.new_page")) + '" aria-label="' +
             esc(PD.t("fm.new_page")) + '">' + ICON.newpage + "</button>" : "")
         : ((S.chapters || []).length ? tool("chapters", PD.t("viewer.chapters")) : "") + tool("pages", PD.t("viewer.pages")) +
           '<label class="viewer-goto">' + esc(PD.t("viewer.goto", { last: PD.n(n) })) +
@@ -239,12 +242,12 @@
       (S.list || []).forEach(d => (d.tags || []).forEach(keep));
       ((S.tags && S.tags.page_tags) || []).forEach(ts => (ts || []).forEach(keep));
       const all = [...used.values()].sort((a, b) => a.localeCompare(b));
-      const pill = t => fm ? '<button type="button" class="chip tag-pill" data-tagtoggle="' + esc(t) + '" aria-pressed="' + hasTag(here, t) + '">' + esc(t) + "</button>"
+      const pill = t => can() ? '<button type="button" class="chip tag-pill" data-tagtoggle="' + esc(t) + '" aria-pressed="' + hasTag(here, t) + '">' + esc(t) + "</button>"
                            : '<span class="chip">' + esc(t) + "</span>";
       const pop = document.createElement("div");
       pop.className = "tag-pop";
-      pop.innerHTML = '<div class="tag-pills">' + (fm ? all : here).map(pill).join("") + "</div>" +
-        (fm ? '<div class="tag-new"><input class="field" data-tag-add spellcheck="false" placeholder="' + esc(PD.t("fm.tag_add")) + '" aria-label="' +
+      pop.innerHTML = '<div class="tag-pills">' + (can() ? all : here).map(pill).join("") + "</div>" +
+        (can() ? '<div class="tag-new"><input class="field" data-tag-add spellcheck="false" placeholder="' + esc(PD.t("fm.tag_add")) + '" aria-label="' +
               esc(PD.t("fm.tag_add")) + '"><button type="button" class="btn small" data-v="tagadd">' + esc(PD.t("fm.add")) + "</button></div>" : "");
       $(".viewer-bar", dlg).append(pop);
       // under the tag button, kept inside the bar: near the right edge it opens leftward
@@ -606,7 +609,7 @@
     // ---- PAGES CHOSEN IN THE GRID, as the tablet's page overview chooses them: a long press or a right-click on a page
     // selects it, and while any is selected a click adds a page or takes it away. A strip at the top of the grid says
     // how many and does it to all of them: Select all, Duplicate, Move, Tags, Delete. S.pp: the page numbers chosen.
-    const gridHere = () => fm && S.doc && S.view === "pages";
+    const gridHere = () => can() && S.doc && S.view === "pages";
     function pickPage(n) {
       S.pp = S.pp.includes(n) ? S.pp.filter(x => x !== n) : S.pp.concat([n]).sort((a, b) => a - b);
       paintPagePick();
@@ -830,27 +833,27 @@
     // changed), its tags shown. Saved, the library is read again: the cover is drawn anew once the viewer closes
     function docSheet() {
       const d = S.doc; if (!d) return;
-      const can = fm || !!PD.getK(PD.settings || {}, "mirror.edit"), now = d.cover === "first" ? "first" : "last", off = can ? "" : " disabled";
+      const ok = can(), now = d.cover === "first" ? "first" : "last", off = ok ? "" : " disabled";
       const radio = (v, l) => '<label class="check-label"><input type="radio" name="doc-cover" value="' + v + '"' + (v === now ? " checked" : "") + off + "> " + esc(l) + "</label>";
-      const chip = t => '<span class="chip" data-tag="' + esc(t) + '">' + esc(t) + (fm ? '<button type="button" class="chip-x" aria-label="' + esc(PD.t("fm.untag", { tag: t })) + '">×</button>' : "") + "</span>";
+      const chip = t => '<span class="chip" data-tag="' + esc(t) + '">' + esc(t) + (ok ? '<button type="button" class="chip-x" aria-label="' + esc(PD.t("fm.untag", { tag: t })) + '">×</button>' : "") + "</span>";
       const tags0 = (d.tags || []).slice();
       const dlg = ask(d.name,
         '<label class="field-row"><span>' + esc(PD.t("fm.name")) + '</span><input class="field w-l" type="text" data-doc-name spellcheck="false" value="' + esc(d.name) + '"' + off + "></label>" +
         '<div class="field-row doc-tags"><span>' + esc(PD.t("fm.tag")) + '</span><div class="tag-edit" data-tags>' + tags0.map(chip).join("") + "</div>" +
-        (fm ? '<input class="field w-l" type="text" data-new-tag spellcheck="false" placeholder="' + esc(PD.t("fm.tag_add")) + '">' : "") + "</div>" +
+        (ok ? '<input class="field w-l" type="text" data-new-tag spellcheck="false" placeholder="' + esc(PD.t("fm.tag_add")) + '">' : "") + "</div>" +
         '<fieldset class="field-row nb-cover"><legend>' + esc(PD.t("fm.cover")) + "</legend>" + radio("last", PD.t("fm.cover.last")) + radio("first", PD.t("fm.cover.first")) + "</fieldset>" +
         '<div class="field-row"><button type="button" class="btn" data-doc-export>' + esc(PD.t("fm.export")) + '</button><span class="hint" data-doc-said role="status"></span></div>',
         PD.t("fm.save"), async box => {
           const id = encodeURIComponent(d.id), name = box.querySelector("[data-doc-name]").value.trim();
-          if (can && name && name !== d.name) { await api("PUT", "/library/" + id + "/name", { name }); d.name = name; }
-          if (fm) {
+          if (ok && name && name !== d.name) { await api("PUT", "/library/" + id + "/name", { name }); d.name = name; }
+          if (ok) {
             const tags = [...box.querySelectorAll("[data-tag]")].map(c => c.dataset.tag), field = box.querySelector("[data-new-tag]");
             const extra = field && field.value.trim() ? knownSpelling(field.value.trim()) : "";
             if (extra && !hasTag(tags, extra)) tags.push(extra);
             if (tags.join("\n") !== tags0.join("\n")) { await api("PUT", "/library/" + id + "/tags", { tags }); d.tags = tags; }
           }
           const v = (box.querySelector("[name=doc-cover]:checked") || {}).value || now;
-          if (can && v !== now) { await api("PUT", "/library/" + id + "/cover", { cover: v }); d.cover = v; }
+          if (ok && v !== now) { await api("PUT", "/library/" + id + "/cover", { cover: v }); d.cover = v; }
           paintBar(); load();
         });
       dlg.addEventListener("click", async e => {
@@ -858,7 +861,7 @@
         if (!e.target.closest("[data-doc-export]")) return;
         const said = dlg.querySelector("[data-doc-said]");
         said.textContent = PD.t("fm.exporting");
-        const [got, err] = await PD.safe(PD.api("POST", "/false-mirror/export", { doc: d.id, name: d.name }));
+        const [got, err] = await PD.safe(PD.api("POST", "/false-mirror/export", { doc: d.id, name: d.name, mirror: !fm }));
         said.textContent = err ? PD.errText(err) : PD.t("fm.exported", { name: got.name });
       });
       const add = dlg.querySelector("[data-new-tag]");
@@ -973,9 +976,9 @@
     // only while Edit the Mirror is on
     function coverPick(its) {
       const cs = its.map(it => it.cover === "first" ? "first" : "last"), same = cs.every(c => c === cs[0]) ? cs[0] : "";
-      const can = fm || !!PD.getK(PD.settings || {}, "mirror.edit");
+      const ok = can();
       const opt = (v, l) => '<option value="' + v + '"' + (same === v ? " selected" : "") + ">" + esc(l) + "</option>";
-      return '<span class="select"><select class="field" data-pick-cover aria-label="' + esc(PD.t("fm.cover")) + '"' + (can ? "" : " disabled") + ">" +
+      return '<span class="select"><select class="field" data-pick-cover aria-label="' + esc(PD.t("fm.cover")) + '"' + (ok ? "" : " disabled") + ">" +
         (same ? "" : '<option value="" selected disabled>' + esc(PD.t("fm.cover")) + "</option>") + opt("last", PD.t("fm.cover.last")) + opt("first", PD.t("fm.cover.first")) + "</select></span>";
     }
     async function pickCover(v) {
@@ -1049,7 +1052,7 @@
       if (act === "export") {
         for (const it of its) {
           say(PD.t("fm.exporting"));
-          const [got, e] = await PD.safe(PD.api("POST", "/false-mirror/export", { doc: it.id, name: it.name }));
+          const [got, e] = await PD.safe(PD.api("POST", "/false-mirror/export", { doc: it.id, name: it.name, mirror: !fm }));
           if (e) { say(PD.errText(e), true); return; }
           say(PD.t("fm.exported", { name: got.name }));
         }
@@ -1110,24 +1113,27 @@
       },
       mount(root) {
         R = root;
-        // THE FALSE MIRROR'S ACTIONS under a + at the top right: Quick sheets, New notebook, New folder, Import
-        root.innerHTML = '<div class="page-head"><h1>' + esc(label) + "</h1>" + (fm ? '<span class="head-acts"><button type="button" class="icon-btn" data-act="fm-menu" aria-haspopup="menu" aria-expanded="false" title="' +
+        // THE LIBRARY'S ACTIONS under a + at the top right: Quick sheets, New notebook, New folder, Import (the Mirror's
+        // shown while Edit the Mirror is on: paint)
+        root.innerHTML = '<div class="page-head"><h1>' + esc(label) + "</h1>" + ('<span class="head-acts"' + (can() ? "" : " hidden") + '><button type="button" class="icon-btn" data-act="fm-menu" aria-haspopup="menu" aria-expanded="false" title="' +
           esc(PD.t("fm.new_menu")) + '" aria-label="' + esc(PD.t("fm.new_menu")) + '">' + ICON.add + '</button><span class="head-menu" role="menu" hidden>' +
           '<button type="button" role="menuitem" data-act="quick-sheets">' + esc(PD.t("fm.quick_sheets")) + "</button>" +
           '<button type="button" role="menuitem" data-act="new-notebook">' + esc(PD.t("fm.new_notebook")) + "</button>" +
           '<button type="button" role="menuitem" data-act="new-folder">' + esc(PD.t("fm.new_folder")) + "</button>" +
           '<button type="button" role="menuitem" data-act="import">' + esc(PD.t("fm.import")) + "</button></span></span>" +
-          '<div class="select-bar" id="' + id + '-menu" role="toolbar" hidden></div>' : "") + "</div>" +
-          (fm ? '<p class="hint import-msg" id="' + id + '-import" role="status"></p>' +
-                '<div class="drop-here" id="' + id + '-drop" hidden>' + esc(PD.t("fm.drop")) + "</div>" : "") +
+          '<div class="select-bar" id="' + id + '-menu" role="toolbar" hidden></div>') + "</div>" +
+          '<p class="hint import-msg" id="' + id + '-import" role="status"></p>' +
+          '<div class="drop-here" id="' + id + '-drop" hidden>' + esc(PD.t("fm.drop")) + "</div>" +
           '<div class="lib-box" id="' + id + '-files"></div>';
-        // WHILE ANYTHING IS SELECTED a click on a notebook or folder adds it or takes it away; a crumb still goes there.
-        // WHILE MOVING the folders open as ever (the bar follows: Move here); pages moving out open a notebook
+        // WHILE ANYTHING IS SELECTED a click opens the notebook or folder and lets the selection go (11-16: "if I try to
+        // left click it should just open the notebook"); Ctrl or Shift and a click, a right-click or a long press adds one
+        // or takes it away. WHILE MOVING the folders open as ever (the bar follows: Move here); pages moving out open a
+        // notebook
         const moving = () => S.lmove || !!(S.pmove && S.pmove.out);
         const choosing = () => (S.picked || []).length > 0 && !moving();
         PD.on(root, "click", "[data-at]", (e, el) => {
           if (S.held) { S.held = false; return; }
-          if (choosing() && el.dataset.item) { pick(el.dataset.item); return; }
+          if (choosing() && el.dataset.item && (e.ctrlKey || e.metaKey || e.shiftKey)) { pick(el.dataset.item); return; }
           if (choosing()) unpick();
           S.at = el.dataset.at; remember(); paint();
           if (moving()) paintPickMenu();
@@ -1135,7 +1141,8 @@
         PD.on(root, "click", "[data-open]", (e, el) => {
           if (S.held) { S.held = false; return; }
           if (S.lmove) return;                                // documents are not where things move to
-          if (choosing()) { pick(el.dataset.item); return; }
+          if (choosing() && (e.ctrlKey || e.metaKey || e.shiftKey)) { pick(el.dataset.item); return; }
+          if (choosing()) unpick();
           if (S.pmove && S.pmove.out && (byId(el.dataset.open) || {}).kind !== "notebook") {
             const m = $("#" + id + "-menu .pick-name", R); if (m) { m.textContent = PD.t("fm.pmove_notebooks_only"); m.classList.add("attn"); }
             return;
@@ -1145,7 +1152,6 @@
         root.addEventListener("click", e => {
           if (choosing() && !e.target.closest("[data-item], .select-bar, .head-acts, button, a, input")) unpick();
         });
-        if (!fm) return;
         const menu = $(".head-menu", root), menuBtn = $("[data-act=fm-menu]", root);
         const closeMenu = () => { menu.hidden = true; menuBtn.setAttribute("aria-expanded", "false"); };
         PD.on(root, "click", "[data-act=fm-menu]", () => { menu.hidden = !menu.hidden; menuBtn.setAttribute("aria-expanded", String(!menu.hidden)); });
@@ -1167,11 +1173,11 @@
         const drop = $("#" + id + "-drop", root);
         let over = 0;
         const hasFiles = e => [...(e.dataTransfer && e.dataTransfer.types || [])].includes("Files");
-        root.addEventListener("dragenter", e => { if (!hasFiles(e)) return; e.preventDefault(); over++; drop.hidden = false; });
-        root.addEventListener("dragover", e => { if (hasFiles(e)) e.preventDefault(); });
+        root.addEventListener("dragenter", e => { if (!hasFiles(e) || !can()) return; e.preventDefault(); over++; drop.hidden = false; });
+        root.addEventListener("dragover", e => { if (hasFiles(e) && can()) e.preventDefault(); });
         root.addEventListener("dragleave", () => { if (--over <= 0) { over = 0; drop.hidden = true; } });
         root.addEventListener("drop", e => {
-          if (!hasFiles(e)) return;
+          if (!hasFiles(e) || !can()) return;
           e.preventDefault(); over = 0; drop.hidden = true;
           importFiles(e.dataTransfer.files);
         });
@@ -1181,14 +1187,14 @@
           // every press starts clean: the click that ended a long press may never have landed (the selection repaints
           // what was under the pointer), and must not swallow this one
           S.held = false;
-          const it = e.target.closest("[data-item]"); if (!it || e.button !== 0) return;
+          const it = e.target.closest("[data-item]"); if (!it || e.button !== 0 || !can()) return;
           clearTimeout(timer);
           timer = setTimeout(() => { S.held = true; pick(it.dataset.item); }, 500);
         });
         ["pointerup", "pointerleave", "pointercancel"].forEach(t => root.addEventListener(t, () => clearTimeout(timer)));
         // A RIGHT-CLICK SELECTS, as a long press does
         root.addEventListener("contextmenu", e => {
-          const it = e.target.closest("[data-item]"); if (!it) return;
+          const it = e.target.closest("[data-item]"); if (!it || !can()) return;
           e.preventDefault(); clearTimeout(timer); pick(it.dataset.item);
         });
       },

@@ -723,7 +723,7 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="keys.k_pgdn">PgDn</string>
   <string name="settings.mirror_edit">Aynayı düzenle</string>
   <string name="settings.mirror_edit.on">Tabletin sayfalarını Aynada düzenle</string>
-  <string name="settings.mirror_edit.help">Kapalıyken Aynadaki sayfalar yalnızca görüntülemek için açılır. Açıkken sayfa düzenleyicinin araçlarıyla açılır ve değişiklikler tablete gider. PaperDaemon, bir düzenlemenin bir defteri asla bozmayacağına söz veremez; özellikle tablet yazılımı güncellendikten sonra.</string>
+  <string name="settings.mirror_edit.help">Kapalıyken Aynadaki sayfalar yalnızca görüntülemek için açılır. Açıkken sayfa düzenleyicinin araçlarıyla açılır ve değişiklikler tablete gider. + düğmesinden defter ve klasör oluşturabilir, taşıyabilir, etiketleyebilir, silebilir ve dosya içe aktarabilirsiniz; bunlar da tablete gider. PaperDaemon, bir düzenlemenin bir defteri asla bozmayacağına söz veremez; özellikle tablet yazılımı güncellendikten sonra.</string>
   <string name="risks.title">PaperDaemon'ı kullanmadan önce</string>
   <string name="risks.intro">PaperDaemon'ı kullanmak için lütfen risklerini okuyun ve kabul ettiğinizi onaylayın.</string>
   <string name="risks.read">Riskleri GitHub'da okuyun</string>

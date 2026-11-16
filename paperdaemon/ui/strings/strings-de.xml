@@ -723,7 +723,7 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="keys.k_pgdn">Bild↓</string>
   <string name="settings.mirror_edit">Spiegel bearbeiten</string>
   <string name="settings.mirror_edit.on">Die Seiten des Tablets im Spiegel bearbeiten</string>
-  <string name="settings.mirror_edit.help">Aus: Die Seiten des Spiegels öffnen sich nur zum Ansehen. An: Sie öffnen sich mit den Werkzeugen des Seiteneditors, und Änderungen gehen an das Tablet. PaperDaemon kann nicht versprechen, dass eine Bearbeitung nie ein Notizbuch beschädigt, vor allem nach einem Update der Tablet-Software.</string>
+  <string name="settings.mirror_edit.help">Aus: Die Seiten des Spiegels öffnen sich nur zum Ansehen. An: Sie öffnen sich mit den Werkzeugen des Seiteneditors, und Änderungen gehen an das Tablet. Über das + kannst du auch Notizbücher und Ordner anlegen, verschieben, mit Tags versehen und löschen und Dateien importieren; auch das geht an das Tablet. PaperDaemon kann nicht versprechen, dass eine Bearbeitung nie ein Notizbuch beschädigt, vor allem nach einem Update der Tablet-Software.</string>
   <string name="risks.title">Bevor du PaperDaemon verwendest</string>
   <string name="risks.intro">Um PaperDaemon zu verwenden, lies bitte seine Risiken und bestätige, dass du sie akzeptierst.</string>
   <string name="risks.read">Die Risiken auf GitHub lesen</string>

@@ -723,7 +723,7 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="keys.k_pgdn">PgDn</string>
   <string name="settings.mirror_edit">Edit Cermin</string>
   <string name="settings.mirror_edit.on">Edit halaman tablet di Cermin</string>
-  <string name="settings.mirror_edit.help">Jika mati, halaman Cermin hanya dibuka untuk dilihat. Jika hidup, halaman dibuka dengan alat editor halaman, dan perubahannya dikirim ke tablet. PaperDaemon tidak dapat menjamin suntingan tidak akan pernah merusak buku catatan, terutama setelah perangkat lunak tablet diperbarui.</string>
+  <string name="settings.mirror_edit.help">Jika mati, halaman Cermin hanya dibuka untuk dilihat. Jika hidup, halaman dibuka dengan alat editor halaman, dan perubahannya dikirim ke tablet. Anda juga bisa membuat, memindahkan, memberi tag, dan menghapus buku catatan dan folder, serta mengimpor file, dari tombol +, dan itu juga dikirim ke tablet. PaperDaemon tidak dapat menjamin suntingan tidak akan pernah merusak buku catatan, terutama setelah perangkat lunak tablet diperbarui.</string>
   <string name="risks.title">Sebelum Anda memakai PaperDaemon</string>
   <string name="risks.intro">Untuk memakai PaperDaemon, harap baca risikonya dan nyatakan bahwa Anda menerimanya.</string>
   <string name="risks.read">Baca risikonya di GitHub</string>

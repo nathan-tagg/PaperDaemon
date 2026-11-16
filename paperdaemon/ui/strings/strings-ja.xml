@@ -723,7 +723,7 @@
   <string name="keys.k_pgdn">PgDn</string>
   <string name="settings.mirror_edit">ミラーを編集</string>
   <string name="settings.mirror_edit.on">タブレットのページをミラーで編集する</string>
-  <string name="settings.mirror_edit.help">オフのとき、ミラーのページは閲覧専用で開きます。オンのときはページエディターのツール付きで開き、変更はタブレットに送られます。特にタブレットのソフトウェア更新の後は、編集でノートが損なわれないとはPaperDaemonは約束できません。</string>
+  <string name="settings.mirror_edit.help">オフのとき、ミラーのページは閲覧専用で開きます。オンのときはページエディターのツール付きで開き、変更はタブレットに送られます。＋ボタンからノートやフォルダーの作成・移動・タグ付け・削除、ファイルの読み込みもでき、これもタブレットに送られます。特にタブレットのソフトウェア更新の後は、編集でノートが損なわれないとはPaperDaemonは約束できません。</string>
   <string name="risks.title">PaperDaemon をお使いになる前に</string>
   <string name="risks.intro">PaperDaemon を使うには、リスクをお読みのうえ、同意してください。</string>
   <string name="risks.read">GitHub でリスクを読む</string>
