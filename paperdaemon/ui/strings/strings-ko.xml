@@ -736,7 +736,7 @@
   <string name="settings.mirror_edit.warn_on">켜기</string>
   <string name="slot.cli">명령줄</string>
   <string name="slot.command">명령</string>
-  <string name="slot.command.help">터미널에 입력하듯이 쓰는 명령 전체입니다. 프로그램 이름이나 전체 경로 뒤에 직접 정한 인수를 붙입니다. PaperDaemon은 입력한 그대로 실행하며 아무것도 덧붙이지 않습니다. 요청은 텍스트로, 페이지 그림은 프로그램 작업 폴더의 파일로 들어가고, 응답은 프로그램이 출력한 내용입니다. 예를 들어 claude 프로그램이라면, 읽기만(페이지 그림은 스스로 엽니다): claude -p --model claude-opus-5-5 --effort medium --tools Read. 모든 도구를 자동 모드로: claude -p --model claude-opus-5-5 --effort xhigh --permission-mode auto. 내 커넥터, 훅, 설정 없이 실행하려면 --strict-mcp-config --setting-sources ""를 추가하세요.</string>
+  <string name="slot.command.help">터미널에 입력하듯이 쓰는 명령 전체입니다. cmd나 PowerShell에서 실행되지 않습니다. 시스템이 실행 상자(Win+R)처럼 프로그램을 직접 시작하므로 파이프, &amp;&amp;, 리디렉션은 작동하지 않고, %VARIABLE%는 프로그램 경로에서만 채워집니다. 공백이 있는 인수는 큰따옴표로 감싸세요. 프로그램 이름이나 전체 경로 뒤에 직접 정한 인수를 붙입니다. PaperDaemon은 입력한 그대로 실행하며 아무것도 덧붙이지 않습니다. 요청은 텍스트로, 페이지 그림은 프로그램 작업 폴더의 파일로 들어가고, 응답은 프로그램이 출력한 내용입니다. 예를 들어 claude 프로그램이라면, 읽기만(페이지 그림은 스스로 엽니다): claude -p --model claude-opus-5-5 --effort medium --tools Read. 모든 도구를 자동 모드로: claude -p --model claude-opus-5-5 --effort xhigh --permission-mode auto. 내 커넥터, 훅, 설정 없이 실행하려면 --strict-mcp-config --setting-sources ""를 추가하세요.</string>
   <string name="slot.base.weak">약함</string>
   <string name="slot.base.medium">보통</string>
   <string name="slot.base.strong">강함</string>

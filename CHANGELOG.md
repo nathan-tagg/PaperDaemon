@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- The Command help says the command runs exactly as typed, with examples for the `claude` program: reading only, all of its tools in auto mode, and how to run it without your own connectors, hooks and settings.
+- The Command help says the command runs exactly as typed, with examples for the `claude` program: reading only, all of its tools in auto mode, and how to run it without your own connectors, hooks and settings. It also says how the line is read: the system starts the program directly, as the Run box (Win+R) does, not in cmd or PowerShell, so pipes, && and redirects do not work.
 
 ## 0.2.81
 
