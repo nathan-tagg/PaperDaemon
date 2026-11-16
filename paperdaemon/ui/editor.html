@@ -1000,7 +1000,7 @@ span.lname { cursor: default; }
     // 1/16). A block whose points do not fit one corner keeps them ASIDE: two words a point, in two blocks' room of its
     // own (asideAt: where), held with its block's place (b.side, b.sb) -- decoded, the same numbers either way
     const RB = 80, recBytes = n => n / BLK * RB;              // (a block's bytes; n records' bytes, n a whole number of blocks)
-    const OX = -2048, OY = -1024, OYS = -2048;
+    const OX = -2048, OY = -1024, OYS = -2048, OXS = -16384;
     const gq = v => Math.floor(Math.fround(v * 32 + 0.5)), wq = v => Math.floor(Math.fround(v * 16 + 0.5));   // (rounded as the card rounds)
     const asideAt = new Map();
     // A BLOCK'S WORDS: the engine's records of f (four words each) r + k0 .. r + k1 -- the first its stroke's number s0,
@@ -1032,7 +1032,10 @@ span.lname { cursor: default; }
       for (let k = k0; k <= k1; k++) { const o = 4 * (r + k); sideEnc(f[o], f[o + 1], f[o + 2], sw, so + (k < 8 ? 4 + 2 * k : 24 + 2 * (k - 8))); }
     }
     function sideEnc(x, y, w, sw, q) {                         // a point's two words aside (MOVE's sideWrite)
-      sw[q] = gq(x); sw[q + 1] = Math.min(Math.max(gq(y) - OYS * 32, 0), 0x7ffff) | Math.min(Math.max(wq(w), 0), 8191) << 19;
+      // (x 20 bits from OXS and y's top 12; y's low 19 and the width: y 31 bits from OYS, a page of any length -- 11-16, the
+      // Tools page's ink past y 14,336 had been pinned there, a flat rule)
+      const X = Math.min(Math.max(gq(x) - OXS * 32, 0), 0xfffff), Y = Math.min(Math.max(gq(y) - OYS * 32, 0), 0x7fffffff);
+      sw[q] = X | Math.floor(Y / 524288) << 20; sw[q + 1] = Y % 524288 | Math.min(Math.max(wq(w), 0), 8191) << 19;
     }
     function asideTake(b, j) {                                // block j (of place b) given room to keep its points aside -> where
       const at = heapTake(2 * BLK, false);

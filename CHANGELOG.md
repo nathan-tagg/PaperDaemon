@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.6
+
+- Long pages draw all the way down. Past a certain length (about seven and a half page heights), the window drew every stroke further down on one flat line, so a long page's last replies looked cut off under a rule. The page itself was fine; the window now draws pages of any length.
+
 ## 0.3.5
 
 - Handwriting can be selected like text. With the Pointer, drag across handwritten words, yours or PaperDaemon's: they highlight as text does, and Ctrl+C copies them as text. Ctrl+X or Delete removes the strokes of the words selected, and Ctrl+Z brings them back. The page is read on the processor once it has loaded and again a moment after your strokes settle; drawing is never held up for it. Ctrl+A doesn't select handwriting.

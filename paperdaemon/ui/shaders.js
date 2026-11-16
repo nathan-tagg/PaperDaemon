@@ -40,14 +40,15 @@ struct Own { grain: u32, gfirst: u32, first: u32, alpha: f32, depth: f32 };
 // (x 12 bits, whole units from OX; y 13, from OY) and the narrowest width (7, whole units); B the stroke of the block's
 // first point (22 bits), that point (4), its last (4), whether its last goes on into the next block (1; a block cleared
 // draws nothing), whether its points are kept aside (1); C which of them start a stroke (16) and whether a highlighter's
-// points are among them (1); D where they are kept aside, two words a point (x in 1/32 units; y in 1/32 from OYS, 19
-// bits, and the width in 1/16, 13) -- a block whose points do not fit a corner. Every point lies on one grid whatever
+// points are among them (1); D where they are kept aside, two words a point (x in 1/32 units from OXS, 20 bits, and y's
+// top 12; then y's low 19 -- 31 bits in 1/32 from OYS, a page of any length -- and the width in 1/16, 13) -- a block whose
+// points do not fit a corner. Every point lies on one grid whatever
 // block holds it: decoded, the same numbers wherever it was written. A point read (rec4) as the engine's record: its
 // flags 1 a segment to the next, 2 a dot (a stroke of one point), 32 it starts its stroke, and 64 (WORD) a segment of a
 // block with a highlighter's points, not its stroke's first -- where it may turn, its box reaching the width before (the
 // engine's 4; a highlighter's turns are worked out where it is drawn)
 const WORD: bool = false;
-const OX: i32 = -2048; const OY: i32 = -1024; const OYS: i32 = -2048;
+const OX: i32 = -2048; const OY: i32 = -1024; const OYS: i32 = -2048; const OXS: i32 = -16384;
 fn wordOf(i: u32) -> u32 { return (i >> 4u) * 5u + 1u + ((i & 15u) >> 2u); }   // (the load holding raw slot i: its word i & 3)
 fn rawAt(R: u32, w: u32) -> u32 { if (WORD) { let s = R + w; return rec[wordOf(s)][s & 3u]; } return rec[R + (w >> 2u)][w & 3u]; }
 // (WORD: C's bit 17, a point of the block near a cut -- the erase's mark, the engine's flag 16 a block at a time: its
@@ -60,7 +61,7 @@ fn rec4(i: u32) -> vec4<u32> {
   var x = 0.0; var y = 0.0; var w = 0.0;
   if ((B >> 31u) != 0u) {
     let sa = H.w + 2u * k; let s0 = rawAt(sa, 0u); let s1 = rawAt(sa, 1u);
-    x = f32(bitcast<i32>(s0)) / 32.0; y = f32(i32(s1 & 0x7ffffu) + OYS * 32) / 32.0; w = f32(s1 >> 19u) / 16.0;
+    x = f32(i32(s0 & 0xfffffu) + OXS * 32) / 32.0; y = f32(i32(((s0 >> 20u) << 19u) | (s1 & 0x7ffffu)) + OYS * 32) / 32.0; w = f32(s1 >> 19u) / 16.0;
   } else {
     let p = rec[hb + 1u + (k >> 2u)][k & 3u];
     x = f32(i32(A & 0xfffu) + OX) + f32(p & 0xfffu) / 32.0;
@@ -574,7 +575,8 @@ fn cornerP(H: vec4<u32>, p: u32) -> vec3<f32> {
 }
 fn sideP(H: vec4<u32>, k: u32) -> vec3<f32> {
   let sa = H.w + 2u * k; let s0 = rawAt(sa, 0u); let s1 = rawAt(sa, 1u);
-  return vec3<f32>(f32(bitcast<i32>(s0)) / 32.0, f32(i32(s1 & 0x7ffffu) + OYS * 32) / 32.0, f32(s1 >> 19u) / 16.0);
+  return vec3<f32>(f32(i32(s0 & 0xfffffu) + OXS * 32) / 32.0, f32(i32(((s0 >> 20u) << 19u) | (s1 & 0x7ffffu)) + OYS * 32) / 32.0,
+                   f32(s1 >> 19u) / 16.0);
 }
 fn flagsOf(H: vec4<u32>, k: u32) -> u32 {
   let B = H.y; let C = H.z;
@@ -804,14 +806,15 @@ struct C { lo: vec2<f32>, hi: vec2<f32>, n: u32, nb: u32, first: u32, count: u32
 // (x 12 bits, whole units from OX; y 13, from OY) and the narrowest width (7, whole units); B the stroke of the block's
 // first point (22 bits), that point (4), its last (4), whether its last goes on into the next block (1; a block cleared
 // draws nothing), whether its points are kept aside (1); C which of them start a stroke (16) and whether a highlighter's
-// points are among them (1); D where they are kept aside, two words a point (x in 1/32 units; y in 1/32 from OYS, 19
-// bits, and the width in 1/16, 13) -- a block whose points do not fit a corner. Every point lies on one grid whatever
+// points are among them (1); D where they are kept aside, two words a point (x in 1/32 units from OXS, 20 bits, and y's
+// top 12; then y's low 19 -- 31 bits in 1/32 from OYS, a page of any length -- and the width in 1/16, 13) -- a block whose
+// points do not fit a corner. Every point lies on one grid whatever
 // block holds it: decoded, the same numbers wherever it was written. A point read (rec4) as the engine's record: its
 // flags 1 a segment to the next, 2 a dot (a stroke of one point), 32 it starts its stroke, and 64 (WORD) a segment of a
 // block with a highlighter's points, not its stroke's first -- where it may turn, its box reaching the width before (the
 // engine's 4; a highlighter's turns are worked out where it is drawn)
 const WORD: bool = false;
-const OX: i32 = -2048; const OY: i32 = -1024; const OYS: i32 = -2048;
+const OX: i32 = -2048; const OY: i32 = -1024; const OYS: i32 = -2048; const OXS: i32 = -16384;
 fn wordOf(i: u32) -> u32 { return (i >> 4u) * 5u + 1u + ((i & 15u) >> 2u); }   // (the load holding raw slot i: its word i & 3)
 fn rawAt(R: u32, w: u32) -> u32 { if (WORD) { let s = R + w; return rec[wordOf(s)][s & 3u]; } return rec[R + (w >> 2u)][w & 3u]; }
 // (WORD: C's bit 17, a point of the block near a cut -- the erase's mark, the engine's flag 16 a block at a time: its
@@ -824,7 +827,7 @@ fn rec4(i: u32) -> vec4<u32> {
   var x = 0.0; var y = 0.0; var w = 0.0;
   if ((B >> 31u) != 0u) {
     let sa = H.w + 2u * k; let s0 = rawAt(sa, 0u); let s1 = rawAt(sa, 1u);
-    x = f32(bitcast<i32>(s0)) / 32.0; y = f32(i32(s1 & 0x7ffffu) + OYS * 32) / 32.0; w = f32(s1 >> 19u) / 16.0;
+    x = f32(i32(s0 & 0xfffffu) + OXS * 32) / 32.0; y = f32(i32(((s0 >> 20u) << 19u) | (s1 & 0x7ffffu)) + OYS * 32) / 32.0; w = f32(s1 >> 19u) / 16.0;
   } else {
     let p = rec[hb + 1u + (k >> 2u)][k & 3u];
     x = f32(i32(A & 0xfffu) + OX) + f32(p & 0xfffu) / 32.0;
@@ -1328,14 +1331,15 @@ struct Step { lo: vec2<f32>, hi: vec2<f32>, R: f32, least: f32, reach: f32, nS: 
 // (x 12 bits, whole units from OX; y 13, from OY) and the narrowest width (7, whole units); B the stroke of the block's
 // first point (22 bits), that point (4), its last (4), whether its last goes on into the next block (1; a block cleared
 // draws nothing), whether its points are kept aside (1); C which of them start a stroke (16) and whether a highlighter's
-// points are among them (1); D where they are kept aside, two words a point (x in 1/32 units; y in 1/32 from OYS, 19
-// bits, and the width in 1/16, 13) -- a block whose points do not fit a corner. Every point lies on one grid whatever
+// points are among them (1); D where they are kept aside, two words a point (x in 1/32 units from OXS, 20 bits, and y's
+// top 12; then y's low 19 -- 31 bits in 1/32 from OYS, a page of any length -- and the width in 1/16, 13) -- a block whose
+// points do not fit a corner. Every point lies on one grid whatever
 // block holds it: decoded, the same numbers wherever it was written. A point read (rec4) as the engine's record: its
 // flags 1 a segment to the next, 2 a dot (a stroke of one point), 32 it starts its stroke, and 64 (WORD) a segment of a
 // block with a highlighter's points, not its stroke's first -- where it may turn, its box reaching the width before (the
 // engine's 4; a highlighter's turns are worked out where it is drawn)
 const WORD: bool = false;
-const OX: i32 = -2048; const OY: i32 = -1024; const OYS: i32 = -2048;
+const OX: i32 = -2048; const OY: i32 = -1024; const OYS: i32 = -2048; const OXS: i32 = -16384;
 fn wordOf(i: u32) -> u32 { return (i >> 4u) * 5u + 1u + ((i & 15u) >> 2u); }   // (the load holding raw slot i: its word i & 3)
 fn rawAt(R: u32, w: u32) -> u32 { if (WORD) { let s = R + w; return rec[wordOf(s)][s & 3u]; } return rec[R + (w >> 2u)][w & 3u]; }
 // (WORD: C's bit 17, a point of the block near a cut -- the erase's mark, the engine's flag 16 a block at a time: its
@@ -1348,7 +1352,7 @@ fn rec4(i: u32) -> vec4<u32> {
   var x = 0.0; var y = 0.0; var w = 0.0;
   if ((B >> 31u) != 0u) {
     let sa = H.w + 2u * k; let s0 = rawAt(sa, 0u); let s1 = rawAt(sa, 1u);
-    x = f32(bitcast<i32>(s0)) / 32.0; y = f32(i32(s1 & 0x7ffffu) + OYS * 32) / 32.0; w = f32(s1 >> 19u) / 16.0;
+    x = f32(i32(s0 & 0xfffffu) + OXS * 32) / 32.0; y = f32(i32(((s0 >> 20u) << 19u) | (s1 & 0x7ffffu)) + OYS * 32) / 32.0; w = f32(s1 >> 19u) / 16.0;
   } else {
     let p = rec[hb + 1u + (k >> 2u)][k & 3u];
     x = f32(i32(A & 0xfffu) + OX) + f32(p & 0xfffu) / 32.0;
@@ -1371,8 +1375,9 @@ fn gq(v: f32) -> i32 { return i32(floor(v * 32.0 + 0.5)); }   // (a place on the
 fn wq(v: f32) -> i32 { return i32(floor(v * 16.0 + 0.5)); }   // (a width: 1/16)
 // a point kept aside at sa (its block's D, and two words a point after it), as the move writes it
 fn sideWrite(sa: u32, x: f32, y: f32, w: f32) {
-  rawPut(sa, 0u, bitcast<u32>(gq(x)));
-  rawPut(sa, 1u, u32(clamp(gq(y) - OYS * 32, 0, 0x7ffff)) | (u32(clamp(wq(w), 0, 8191)) << 19u));
+  let X = u32(clamp(gq(x) - OXS * 32, 0, 0xfffff)); let Y = u32(clamp(gq(y) - OYS * 32, 0, 0x7fffffff));
+  rawPut(sa, 0u, X | ((Y >> 19u) << 20u));
+  rawPut(sa, 1u, (Y & 0x7ffffu) | (u32(clamp(wq(w), 0, 8191)) << 19u));
 }
 fn sidePut(i: u32, x: f32, y: f32, w: f32) { sideWrite(rec[(i >> 4u) * 5u].w + 2u * (i & 15u), x, y, w); }
 fn markBlock(q: u32) { rec[q * 5u].z = rec[q * 5u].z | 0x20000u; }   // (every writer sets the same bit)
@@ -2632,14 +2637,15 @@ struct MU { a: vec4<f32>, t: vec2<f32>, n: u32, wide: u32, w: u32, p0: u32, p1: 
 // (x 12 bits, whole units from OX; y 13, from OY) and the narrowest width (7, whole units); B the stroke of the block's
 // first point (22 bits), that point (4), its last (4), whether its last goes on into the next block (1; a block cleared
 // draws nothing), whether its points are kept aside (1); C which of them start a stroke (16) and whether a highlighter's
-// points are among them (1); D where they are kept aside, two words a point (x in 1/32 units; y in 1/32 from OYS, 19
-// bits, and the width in 1/16, 13) -- a block whose points do not fit a corner. Every point lies on one grid whatever
+// points are among them (1); D where they are kept aside, two words a point (x in 1/32 units from OXS, 20 bits, and y's
+// top 12; then y's low 19 -- 31 bits in 1/32 from OYS, a page of any length -- and the width in 1/16, 13) -- a block whose
+// points do not fit a corner. Every point lies on one grid whatever
 // block holds it: decoded, the same numbers wherever it was written. A point read (rec4) as the engine's record: its
 // flags 1 a segment to the next, 2 a dot (a stroke of one point), 32 it starts its stroke, and 64 (WORD) a segment of a
 // block with a highlighter's points, not its stroke's first -- where it may turn, its box reaching the width before (the
 // engine's 4; a highlighter's turns are worked out where it is drawn)
 const WORD: bool = false;
-const OX: i32 = -2048; const OY: i32 = -1024; const OYS: i32 = -2048;
+const OX: i32 = -2048; const OY: i32 = -1024; const OYS: i32 = -2048; const OXS: i32 = -16384;
 fn wordOf(i: u32) -> u32 { return (i >> 4u) * 5u + 1u + ((i & 15u) >> 2u); }   // (the load holding raw slot i: its word i & 3)
 fn rawAt(R: u32, w: u32) -> u32 { if (WORD) { let s = R + w; return rec[wordOf(s)][s & 3u]; } return rec[R + (w >> 2u)][w & 3u]; }
 // (WORD: C's bit 17, a point of the block near a cut -- the erase's mark, the engine's flag 16 a block at a time: its
@@ -2652,7 +2658,7 @@ fn rec4(i: u32) -> vec4<u32> {
   var x = 0.0; var y = 0.0; var w = 0.0;
   if ((B >> 31u) != 0u) {
     let sa = H.w + 2u * k; let s0 = rawAt(sa, 0u); let s1 = rawAt(sa, 1u);
-    x = f32(bitcast<i32>(s0)) / 32.0; y = f32(i32(s1 & 0x7ffffu) + OYS * 32) / 32.0; w = f32(s1 >> 19u) / 16.0;
+    x = f32(i32(s0 & 0xfffffu) + OXS * 32) / 32.0; y = f32(i32(((s0 >> 20u) << 19u) | (s1 & 0x7ffffu)) + OYS * 32) / 32.0; w = f32(s1 >> 19u) / 16.0;
   } else {
     let p = rec[hb + 1u + (k >> 2u)][k & 3u];
     x = f32(i32(A & 0xfffu) + OX) + f32(p & 0xfffu) / 32.0;
@@ -2675,8 +2681,9 @@ fn gq(v: f32) -> i32 { return i32(floor(v * 32.0 + 0.5)); }   // (a place on the
 fn wq(v: f32) -> i32 { return i32(floor(v * 16.0 + 0.5)); }   // (a width: 1/16)
 // a point kept aside at sa (its block's D, and two words a point after it), as the move writes it
 fn sideWrite(sa: u32, x: f32, y: f32, w: f32) {
-  rawPut(sa, 0u, bitcast<u32>(gq(x)));
-  rawPut(sa, 1u, u32(clamp(gq(y) - OYS * 32, 0, 0x7ffff)) | (u32(clamp(wq(w), 0, 8191)) << 19u));
+  let X = u32(clamp(gq(x) - OXS * 32, 0, 0xfffff)); let Y = u32(clamp(gq(y) - OYS * 32, 0, 0x7fffffff));
+  rawPut(sa, 0u, X | ((Y >> 19u) << 20u));
+  rawPut(sa, 1u, (Y & 0x7ffffu) | (u32(clamp(wq(w), 0, 8191)) << 19u));
 }
 fn sidePut(i: u32, x: f32, y: f32, w: f32) { sideWrite(rec[(i >> 4u) * 5u].w + 2u * (i & 15u), x, y, w); }
 fn markBlock(q: u32) { rec[q * 5u].z = rec[q * 5u].z | 0x20000u; }   // (every writer sets the same bit)
