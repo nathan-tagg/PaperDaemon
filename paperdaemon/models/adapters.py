@@ -522,6 +522,9 @@ def for_slot(role, s=None, m=None):
     text model makes the pictures itself is the text model's server (TextModelImages)."""
     if role == "image" and m is None and slots.images_from_text(s):
         t = slots.slot("text", s)
+        if t.get("api") == "cli":                    # a command line: the picture is the file it leaves in its folder
+            from .cli import CommandLineImages
+            return CommandLineImages(t.get("location") or "")
         return TextModelImages(t.get("location") or "", vault.get(slots.key_of("text", t)), t.get("model") or "")
     m = m if m is not None else slots.slot(role, s)
     api = m.get("api") or ("openai" if role == "text" else "sdapi")

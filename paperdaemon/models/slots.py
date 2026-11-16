@@ -118,14 +118,15 @@ def searches_itself(s=None, lu=None):
 
 def images_from_text(s=None, lu=None):
     """The text model makes the lineup's pictures: the Image tab has no model, the text model has the Image generation
-    capability, and its server speaks the OpenAI chat API (the one family a picture can be taken from)."""
+    capability, and a picture can be taken from it: its server speaks the OpenAI chat API, or it is a command line
+    (the picture is the file it leaves in its folder, models/cli.CommandLineImages)."""
     from .. import settings as S_
     s = s or S_.load()
     lu = lu or S_.active(s)
     t = lu["text"]
     return bool(not str((lu.get("image") or {}).get("location") or "").strip()
                 and caps("text", s, t).get("image_generation") and str(t.get("location") or "").strip()
-                and (t.get("api") or "openai") == "openai")
+                and (t.get("api") or "openai") in ("openai", "cli"))
 
 
 def call_caps(s=None, lu=None):

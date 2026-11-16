@@ -160,3 +160,38 @@ def test_the_test_names_a_program_that_is_not_found(monkeypatch):
     m = dict(SLOT, location="no-such-program-here -p")
     st = hotswap.status("text", None, m)
     assert st["answering"] is False and st["missing_program"] == "no-such-program-here"
+
+
+def test_a_program_makes_a_picture_by_leaving_it_in_its_folder(tmp_path):
+    """A command line whose model makes pictures: asked in words to save the picture in its working folder, the file
+    it leaves there is the picture (any name, any common picture type), taken before the folder goes; none, said."""
+    from PIL import Image
+    import io
+    maker = tmp_path / "maker.py"
+    maker.write_text("import sys\nfrom PIL import Image\nask = sys.stdin.read()\nassert 'output.png' in ask and 'tall' in ask\n"
+                     "Image.new('RGB', (40, 60), (200, 10, 10)).save('output.png')\nprint('done')\n", encoding="utf-8")
+    a = C.CommandLineImages('"%s" "%s"' % (sys.executable, maker))
+    png = a.generate("a red door", 400, 600)
+    with Image.open(io.BytesIO(png)) as im:
+        assert im.format == "PNG" and im.size == (40, 60) and im.getpixel((5, 5)) == (200, 10, 10)
+    other = tmp_path / "other.py"
+    other.write_text("from PIL import Image\nImage.new('RGB', (8, 8)).save('my picture.jpg')\n", encoding="utf-8")
+    assert C.CommandLineImages('"%s" "%s"' % (sys.executable, other)).generate("x", 512, 512)[:8] == b"\x89PNG\r\n\x1a\n"
+    none = tmp_path / "none.py"
+    none.write_text("print('I cannot make pictures')\n", encoding="utf-8")
+    try:
+        C.CommandLineImages('"%s" "%s"' % (sys.executable, none)).generate("x", 512, 512)
+        raise AssertionError("no error")
+    except adapters.AdapterError as ex:
+        assert "left no picture" in str(ex) and "I cannot make pictures" in str(ex)
+    assert not [n for n in os.listdir(C.paths.sub("cache", "cli")) if n.startswith("run-")]
+
+
+def test_a_command_lines_pictures_come_from_it_when_it_can_make_them(monkeypatch):
+    from paperdaemon.models import slots
+    lu = {"name": "L", "text": dict(SLOT), "image": {"location": ""}}
+    monkeypatch.setattr(slots, "caps", lambda role, s, m: {"image_generation": True})
+    assert slots.images_from_text({"lineups": [lu]}, lu)
+    monkeypatch.setattr(slots, "images_from_text", lambda s=None, lu=None: True)
+    monkeypatch.setattr(slots, "slot", lambda role, s=None: dict(SLOT))
+    assert type(adapters.for_slot("image", {})).__name__ == "CommandLineImages"

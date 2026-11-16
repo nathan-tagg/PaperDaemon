@@ -757,7 +757,7 @@
   <string name="help.harness.weak">**약함**: 작은 모델용. 지시를 모두 보내고, 단계마다 한 번 호출하며, 답은 짧게 합니다. 내가 쓴 내용은 지워지지 않으며, 답은 추가되기만 합니다. 스케치, 표시, 내 줄로 만든 체크박스, 소셜 게시물, 웹 이미지, 긴 게임은 꺼집니다. Qwen3-VL 8B로 테스트했습니다.</string>
   <string name="help.harness.vision">**이미지 인식**: 모델이 페이지 이미지를 볼 수 있습니다. 없으면 모델은 페이지를 텍스트로 받습니다. 입력된 글자와, PaperDaemon이 읽은 손글씨입니다.</string>
   <string name="help.harness.web_search">**웹 검색**: 모델이 스스로 웹을 검색합니다. 네트워크 탭에 검색이 없을 때만 사용됩니다. PaperDaemon은 Anthropic API에서 이 기능을 켭니다. 명령줄에서는 프로그램이 검색할 수 있는지를 사용자의 명령이 정합니다. 다른 서버라면 서버가 스스로 검색할 때만 추가하세요.</string>
-  <string name="help.harness.image_generation">**이미지 생성**: 모델의 서버가 스스로 그림을 만듭니다. Gemini의 이미지 모델 같은 경우입니다. 이미지 탭에 이미지 모델이 없을 때만 사용됩니다. PaperDaemon은 그림마다 모델에 요청하고 답에서 가져옵니다.</string>
+  <string name="help.harness.image_generation">**이미지 생성**: 모델의 서버가 스스로 그림을 만듭니다. Gemini의 이미지 모델 같은 경우입니다. 이미지 탭에 이미지 모델이 없을 때만 사용됩니다. PaperDaemon은 그림마다 모델에 요청하고 답에서 가져옵니다. 명령줄의 경우 PaperDaemon은 프로그램에 각 그림을 작업 폴더에 파일로 저장하도록 요청하고 그 파일을 가져옵니다. 따라서 명령이 그곳에 파일을 쓸 수 있게 허용해야 합니다.</string>
   <string name="help.harness.warning">**주의:** 모델이 할 수 없는 것을 할 수 있다고 PaperDaemon에 알리면 작업이 실패하거나 잘못됩니다. 테스트 탭에서 모델이 그림을 보는지 확인할 수 있습니다.</string>
   <string name="slot.harness.help_image">PaperDaemon이 이 이미지 모델과 일하는 방식입니다. 단계 수, 설정, 워크플로를 정합니다.</string>
   <string name="slot.cap.add">기능 추가</string>

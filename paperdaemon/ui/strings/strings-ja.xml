@@ -757,7 +757,7 @@
   <string name="help.harness.weak">**弱**: 小さいモデル向け。指示はすべて送り、ステップごとに 1 回の呼び出しで、回答は短くします。あなたが書いたものは消されません。回答は追加されるだけです。スケッチ、マークアップ、自分の行から作るチェックボックス、SNS の投稿、ウェブの画像、長いゲームはオフです。Qwen3-VL 8B でテスト済み。</string>
   <string name="help.harness.vision">**画像認識**: モデルがページの画像を見られます。ない場合、モデルはページをテキストで受け取ります。入力された文字と、PaperDaemon が読み取った手書きです。</string>
   <string name="help.harness.web_search">**ウェブ検索**: モデルが自分でウェブを検索します。ネットワークタブに検索がないときだけ使われます。PaperDaemon は Anthropic API でこれをオンにします。コマンドラインでは、プログラムが検索してよいかどうかはあなたのコマンドが決めます。それ以外のサーバーでは、サーバー自身が検索する場合だけ追加してください。</string>
-  <string name="help.harness.image_generation">**画像生成**: モデルのサーバーが自分で画像を作ります。Gemini の画像モデルなどです。画像タブに画像モデルがないときだけ使われます。PaperDaemon は画像ごとにモデルに頼み、回答から取り出します。</string>
+  <string name="help.harness.image_generation">**画像生成**: モデルのサーバーが自分で画像を作ります。Gemini の画像モデルなどです。画像タブに画像モデルがないときだけ使われます。PaperDaemon は画像ごとにモデルに頼み、回答から取り出します。コマンドラインの場合、PaperDaemon はプログラムに各画像を作業フォルダーへファイルとして保存するよう頼み、そのファイルを受け取ります。そのため、コマンドでそこへのファイル書き込みを許可しておく必要があります。</string>
   <string name="help.harness.warning">**注意:** モデルにできないことをできると PaperDaemon に伝えると、ジョブが失敗したり誤ったりします。テストタブで、モデルが画像を見られるか確認できます。</string>
   <string name="slot.harness.help_image">PaperDaemon がこの画像モデルとどう働くか。ステップ数、設定、ワークフローです。</string>
   <string name="slot.cap.add">機能を追加</string>

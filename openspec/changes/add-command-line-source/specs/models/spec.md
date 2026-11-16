@@ -31,3 +31,16 @@ saved with a model beside its command SHALL keep its command as it is.
 - **WHEN** the user opens a lineup whose text model is a command
 - **THEN** the form's Source reads "Command line", with the command and the harness under it, and no provider,
   address, key or model
+
+### Requirement: A command line can make the lineup's pictures
+When a command-line lineup's Image tab has no model and its text model has the Image generation capability, each
+picture SHALL be one run of the command exactly as typed, in a folder of its own (the program's working folder): the
+program SHALL be asked in words to make the picture and save it there as a PNG file named `output.png`, and the
+picture SHALL be the file it leaves there (that name, else the newest picture file), taken as PNG before the folder is
+removed. A run that leaves no picture SHALL fail with what the program printed. The help SHALL say the command must let
+the program write files in its working folder.
+
+#### Scenario: A picture from a command line
+- **WHEN** a job asks for a picture on a command-line lineup whose model makes pictures
+- **THEN** the program is run once with the picture asked for in words, and the PNG it saved in its folder goes on
+  the page

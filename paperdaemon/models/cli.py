@@ -222,6 +222,73 @@ class CommandLine(Adapter):
         return r
 
 
+class CommandLineImages(Adapter):
+    """PICTURES MADE BY A COMMAND-LINE PROGRAM: the lineup's text command, its Image tab empty and its text model able to
+    make pictures (the Image generation capability). One run of the command, exactly as typed, for each picture, in
+    a folder of its own (its working folder): asked in words to make the picture and save it there as a file, and
+    the picture it leaves there is taken before the folder is removed. Nothing particular to any program: the request
+    says where the picture goes, and the program saves it its own way."""
+    family = "cli-images"
+    NAME = "output.png"
+    KINDS = (".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp")
+
+    def __init__(self, url=None, key=None, model=None):
+        self.command = str(url or "").strip()
+        self.base = self.api = self.command
+        self.key, self.model = None, ""
+
+    def health(self):
+        return ready(self.command)[0]
+
+    @staticmethod
+    def request(prompt, width, height):
+        """What the program is told for one picture."""
+        shape = "square" if abs(int(width) - int(height)) < 64 else ("tall" if int(height) > int(width) else "wide")
+        return ("Make this picture (%s, about %d x %d pixels): %s\n\nSave the picture as a PNG file named %s in the "
+                "current folder. Reply with only the word done once the file is saved."
+                % (shape, int(width), int(height), str(prompt or "").strip(), CommandLineImages.NAME))
+
+    @classmethod
+    def picture_in(cls, folder):
+        """The picture the program left in its folder -> PNG bytes, else None: the file asked for, else the newest
+        picture file there (a program that named it its own way)."""
+        from PIL import Image
+        import io
+        files = []
+        for root, _dirs, names in os.walk(folder):
+            for n in names:
+                if os.path.splitext(n)[1].lower() in cls.KINDS:
+                    f = os.path.join(root, n)
+                    files.append((n.lower() == cls.NAME, os.path.getmtime(f), f))
+        for _named, _t, f in sorted(files, reverse=True):
+            try:
+                with Image.open(f) as im:
+                    im.load()
+                    out = io.BytesIO()
+                    im.convert("RGBA" if im.mode in ("RGBA", "LA", "P") else "RGB").save(out, "PNG")
+                    return out.getvalue()
+            except Exception:
+                continue
+        return None
+
+    def generate(self, prompt, width, height, steps=None, cfg=None, sampler=None, scheduler=None, seed=-1,
+                 shift=None):
+        exe, own = find(self.command)
+        name = os.path.basename(exe) if exe else (split(self.command) or ["the program"])[0]
+        if not exe:
+            raise AdapterError("the program `%s` was not found on this computer" % name)
+        folder = tempfile.mkdtemp(prefix="run-", dir=paths.sub("cache", "cli"))
+        try:
+            p = _run(exe, own, self.request(prompt, width, height), folder)
+            png = self.picture_in(folder)
+        finally:
+            shutil.rmtree(folder, ignore_errors=True)
+        if png is None:
+            said = ((p.stdout or "") + (p.stderr or "")).strip()[-300:]
+            raise AdapterError("%s left no picture in its folder%s" % (name, (": " + said) if said else ""))
+        return png
+
+
 def _invokes_in(text):
     """Calls a model wrote in the tool-call markup it was trained on instead of the JSON it was asked for:
     <invoke name="answer"><parameter name="lines">["..."]</parameter></invoke>. Each parameter's value is read as
@@ -252,4 +319,4 @@ def _json_in(text):
     return {}
 
 
-__all__ = ["CommandLine", "find", "ready", "split", "name_of", "model_of", "with_model", "turns_of"]
+__all__ = ["CommandLine", "CommandLineImages", "find", "ready", "split", "name_of", "model_of", "with_model", "turns_of"]

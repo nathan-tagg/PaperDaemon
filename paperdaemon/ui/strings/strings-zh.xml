@@ -757,7 +757,7 @@
   <string name="help.harness.weak">**弱**：适合小模型。发送完整指令，每一步一次调用，回答简短。你写的内容不会被擦除，回答只会添加。草图、标记、用你自己的行做成的复选框、社交媒体帖子、网上的图片和长篇游戏都关闭。已用 Qwen3-VL 8B 测试。</string>
   <string name="help.harness.vision">**视觉**：模型能看到页面的图片。没有它，模型收到的是文字形式的页面：打出的字，以及 PaperDaemon 读出的手写内容。</string>
   <string name="help.harness.web_search">**网页搜索**：模型自己上网搜索。只有在“网络”标签页没有设置搜索时才会用到。PaperDaemon 会为 Anthropic API 打开它；对于命令行，程序能否搜索由你的命令决定。其他服务器只有在服务器自己会搜索时才添加。</string>
-  <string name="help.harness.image_generation">**图片生成**：模型的服务器自己生成图片，比如 Gemini 的图片模型。只有在“图片”标签页没有图片模型时才会用到。PaperDaemon 向模型要每张图片，并从回答中取出。</string>
+  <string name="help.harness.image_generation">**图片生成**：模型的服务器自己生成图片，比如 Gemini 的图片模型。只有在“图片”标签页没有图片模型时才会用到。PaperDaemon 向模型要每张图片，并从回答中取出。对于命令行，PaperDaemon 会让程序把每张图片作为文件保存在它的工作文件夹中，然后取走该文件，所以命令必须允许程序在那里写入文件。</string>
   <string name="help.harness.warning">**注意：**告诉 PaperDaemon 某个模型能做它做不到的事，会导致任务失败或出错。“测试”标签页会检查模型能否看到图片。</string>
   <string name="slot.harness.help_image">PaperDaemon 用这个图片模型的方式：步数、设置和工作流。</string>
   <string name="slot.cap.add">添加能力</string>

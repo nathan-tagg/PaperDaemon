@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.83
+
+- A command-line lineup can make pictures. With the Image tab empty and the text model's Image generation capability ticked, each picture is one run of the command: the program is asked in words to save the picture as `output.png` in its working folder, and PaperDaemon takes the picture it leaves there. The command has to let the program write files in its folder.
+
 ## 0.2.82
 
 - A command-line program installed while PaperDaemon was running is found without restarting PaperDaemon. Its lineup's Test used to say "No answer. Check the provider, model and key."
