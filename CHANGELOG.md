@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.84
+
+- Setup opens by itself only once. Once it is finished or left, it no longer comes back at every start while no tablet is connected; the Daemon page's set-up item still opens it, and everything in it is also in the window (the tablet's login in Settings, lineups on their tab, the loop on Daemon).
+
 ## 0.2.83
 
 - A command-line lineup can make pictures. With the Image tab empty and the text model's Image generation capability ticked, each picture is one run of the command: the program is asked in words to save the picture as `output.png` in its working folder, and PaperDaemon takes the picture it leaves there. The command has to let the program write files in its folder.

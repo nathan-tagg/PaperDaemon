@@ -7,17 +7,20 @@
   let current = null;
   let tick = 0;
 
-  // ---- the setup flag: the engine says whether this is a first run; leaving setup early is kept for this session
+  // ---- the setup flag: the engine says whether this is a first run. SETUP OPENS BY ITSELF ONCE: finished or left, it
+  // is not shown at a start again (11-15: "that setup page should only show once"; it holds nothing the window does
+  // not -- the tablet's login is in Settings, the lineups on their tab, the loop on Daemon), and the Daemon page's
+  // "set up" item opens it while the tablet is not connected
 
   let leftSetup = "";
-  const flag = () => { try { return sessionStorage.getItem("setup-left") || leftSetup; } catch (e) { return leftSetup; } };
+  const flag = () => (PD.memory && PD.memory["setup-left"]) || leftSetup;   // kept on the engine (PD.remember)
   const skipped = () => !!flag();
   PD.finishSetup = (go, how) => {
     leftSetup = how || "done";
-    try { sessionStorage.setItem("setup-left", leftSetup); } catch (e) { /* kept for this page only */ }
+    PD.remember("setup-left", leftSetup);
     startApp(go);
   };
-  PD.reopenSetup = () => { leftSetup = ""; try { sessionStorage.removeItem("setup-left"); } catch (e) { /* none */ } PD.setup.start(); };
+  PD.reopenSetup = () => { PD.setup.start(); };
 
   // ---- pages that are not a screen: pairing, and an engine that did not answer
 
@@ -206,10 +209,10 @@
       plainPage("<h1>PaperDaemon</h1>");
       await PD.acknowledgeRisks();
     }
+    await PD.loadMemory();                       // the screen and folder to open on, and whether setup was seen
     const at = ((PD.firstPane || "").match(/^setup([1-4])$/) || [])[1];       // a link straight to a setup step
     if (at) return PD.setup.start(Number(at));
     if (st.first_run && !skipped()) return PD.setup.start();
-    await PD.loadMemory();                                                    // the screen and folder to open on
     startApp();
   }
   PD.boot = boot;
