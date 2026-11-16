@@ -1566,6 +1566,71 @@ def post_library_run(doc: str, body: dict = Body(default={})):
     return out
 
 
+INK_READ_MAX = 40000   # strokes: past this the page is a drawing (a traced picture), not handwriting to read
+
+
+def ink_text(data):
+    """THE HANDWRITING ON A PAGE AS TEXT, for the editor to select and copy (11-16): the page as the editor holds it (its
+    binary form) read by the handwriting reader on this computer's processor -> {"ink": true, "text", "boxes" (one per
+    character, page units), "lines" ([start, end) of each line in text), "words" ([{"s", "e", "box"}])}, the shape of
+    a PDF page's text layer. The daemon's own layer and hidden layers are not read."""
+    from . import reader
+    from .remarkable import fastrm
+    sc = fastrm.scene_from_bytes(data)
+    strokes = []
+    for L in sc.get("layers") or []:
+        if not L.get("visible", True) or L.get("daemon"):
+            continue
+        for ln in L.get("lines") or []:
+            P = ln.get("points")
+            try:
+                xs, ys = P["x"].tolist(), P["y"].tolist()
+            except (TypeError, KeyError, IndexError, ValueError):
+                continue
+            if xs:
+                strokes.append({"points": list(zip(xs, ys)), "width": 2.0})
+    empty = {"ink": True, "text": "", "boxes": [], "lines": [], "words": []}
+    if not strokes or len(strokes) > INK_READ_MAX:
+        return empty
+    # DRAWN AT A SIZE THE READER READS: letters about 30 pixels tall, by the strokes' usual height (a line of big writing
+    # drawn at the reader's usual 2 pixels a unit came out 120 pixels tall, and read as nothing)
+    hs = sorted(max(y for _x, y in s["points"]) - min(y for _x, y in s["points"]) for s in strokes)
+    hs = [h for h in hs if h > 3.0] or [15.0]
+    scale = max(0.2, min(2.0, 30.0 / hs[len(hs) // 2]))
+    try:
+        lines = reader.read(strokes, scale=scale)
+    except LookupError:
+        return empty
+    text, boxes, out_lines, words = "", [], [], []
+    for line in lines:
+        s = len(text)
+        for i, w in enumerate(line.words):
+            x0, y0, x1, y1 = [float(v) for v in w.box]
+            if i:                                     # the space between two words: the gap's box
+                p = line.words[i - 1].box
+                text += " "
+                boxes.append([float(p[2]), min(float(p[1]), y0), max(float(p[2]) + 1.0, x0), max(float(p[3]), y1)])
+            ws, n = len(text), max(1, len(w.text))
+            for k, ch in enumerate(w.text):
+                text += ch
+                boxes.append([x0 + (x1 - x0) * k / n, y0, x0 + (x1 - x0) * (k + 1) / n, y1])
+            words.append({"s": ws, "e": len(text), "box": [x0, y0, x1, y1]})
+        out_lines.append([s, len(text)])
+        text += "\n"
+        boxes.append(list(boxes[-1]) if boxes else [0.0, 0.0, 0.0, 0.0])
+    return {"ink": True, "text": text, "boxes": boxes, "lines": out_lines, "words": words}
+
+
+@app.post(API + "/ink-text")
+async def post_ink_text(request: Request):
+    """The handwriting on the page the editor sends (its binary form) as selectable text: ink_text."""
+    data = await request.body()
+    try:
+        return await run_in_threadpool(ink_text, data)
+    except ValueError as ex:
+        return _bad(str(ex)[:200])
+
+
 @app.post(API + "/queue/abandon")
 def post_queue_abandon(body: dict = Body(...)):
     """A job being worked, stopped at once and thrown away: ITS worker ends (and with it the job's model call and

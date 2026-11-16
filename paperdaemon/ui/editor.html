@@ -4457,8 +4457,72 @@ span.lname { cursor: default; }
   const inkVer = new WeakMap();
   let inkTick = 0, drawnTick = -1;                           // (drawnTick: the ink's count as the page was last drawn whole, or scrolled)
   const verOf = Ly => inkVer.get(Ly) || 0;
+  // THE HANDWRITING AS TEXT (11-16): read by the engine on the processor from the page as it is here -- once the page is
+  // in, and again a moment after its strokes last changed -- and selected with the Pointer as a PDF's text is (docText,
+  // marked .ink); a reading takes the place of the last only once it is done
+  let inkAsk = 0, inkTimer = 0;
+  function inkSettle(ms) {
+    if (page.source || VIEW || THUMB_W || !loaded) return;
+    clearTimeout(inkTimer); inkTimer = setTimeout(readInk, ms == null ? 1500 : ms);
+  }
+  async function readInk() {
+    const n = ++inkAsk;
+    try {
+      const r = await fetch("/api/v1/ink-text", { method: "POST", body: sceneBytes(),
+        headers: { Authorization: "Bearer " + token(), "Content-Type": "application/octet-stream" } });
+      if (!r.ok || n !== inkAsk) return;
+      const t = await r.json();
+      if (n !== inkAsk || page.source) return;                // (a newer reading asked for meanwhile: that one stands)
+      if (!t.lines || !t.lines.length) { if (docText && docText.ink) { docText = null; docSel = null; paint(); } return; }
+      t.bands = t.lines.map(([s, e]) => {
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+        for (let k = s; k < e; k++) { const b = t.boxes[k]; x0 = Math.min(x0, b[0]); y0 = Math.min(y0, b[1]); x1 = Math.max(x1, b[2]); y1 = Math.max(y1, b[3]); }
+        return [x0, y0, x1, y1];
+      });
+      const same = !!(docText && docText.ink && docText.text === t.text);
+      docText = t;
+      if (!same) { docSel = null; paint(); }
+      if (tool === "text" && lastAt) { overText = overTextAt(...lastAt) || docOver(...lastAt); updateCursor(); }
+    } catch (e) { /* no reading: nothing to select */ }
+  }
+  // HANDWRITING SELECTED, TAKEN AWAY (Ctrl+X, Delete, Backspace): the strokes of every word the selection touches -- a
+  // stroke is a word's when most of its points lie in the word's box (a little wider) -- removed as an eraser removes
+  // them, an undo bringing them back
+  function inkWordsLines(Ly, boxes) {
+    return Ly.lines.filter(L => {
+      const P = L.points, n = P.length;
+      if (!n) return false;
+      let k = 0;
+      for (let i = 0; i < n; i++) {
+        const x = P.x(i), y = P.y(i);
+        if (boxes.some(b => x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3])) k++;
+      }
+      return k * 2 >= n;
+    });
+  }
+  function removeInkWords() {
+    const ws = (docText.words || []).filter(w => w.e > docSel.a && w.s <= docSel.b);
+    const boxes = ws.map(w => { const p = (w.box[3] - w.box[1]) * 0.25; return [w.box[0] - p, w.box[1] - p, w.box[2] + p, w.box[3] + p]; });
+    let n = 0;
+    for (const Ly of page.layers) {
+      if (!Ly.visible || Ly.daemon) continue;
+      const lines = inkWordsLines(Ly, boxes);
+      if (lines.length) { selectStrokes(lines, Ly); deletePick(); n += lines.length; }
+    }
+    docSel = null; paint();
+    if (n) tell(n === 1 ? "1 stroke removed" : n + " strokes removed");
+  }
+  window.addEventListener("keydown", e => {
+    if (!docSel || !docText || !docText.ink || docDrag || editing() || pick) return;
+    const cut = (e.ctrlKey || e.metaKey) && !e.altKey && (e.key === "x" || e.key === "X");
+    if (!cut && e.key !== "Delete" && e.key !== "Backspace") return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (cut) { const t = docSelText(); if (navigator.clipboard) navigator.clipboard.writeText(t).catch(() => {}); }
+    removeInkWords();
+  }, true);
   function inkChanged(Ly) {                                   // a layer's strokes changed (none named: any of them)
     inkTick++;
+    inkSettle();
     if (!Ly) inkFoot = null;
     for (const L of Ly ? [Ly] : page.layers) inkVer.set(L, verOf(L) + 1);
     gridSoon(); packSoon();
@@ -6382,6 +6446,15 @@ span.lname { cursor: default; }
       linkPress = { link: linkAt(x, y), at: local(e), moved: false };
       pointer = e.pointerId; vp.setPointerCapture(e.pointerId); updateCursor(); return;
     }
+    // THE POINTER ON HANDWRITING (read as text, readInk): a drag selects its words, as a PDF's text is selected
+    if (tool === "text" && !page.source && e.button === 0 && !e.ctrlKey && !e.altKey && !e.shiftKey && docText && docText.ink &&
+        !overTextAt(x, y) && !(pick && hitPick(...local(e))) && docOver(x, y)) {
+      e.preventDefault();
+      if (cursors.length) setCursors([]);
+      clearPick(); docSel = null; paint();
+      docDrag = { pt: [x, y], at: local(e), anchor: -1, moved: false, last: null, link: null };
+      pointer = e.pointerId; vp.setPointerCapture(e.pointerId); docAnchor(); return;
+    }
     if (tool === "text" && e.button === 0 && !e.ctrlKey && !e.altKey && !e.shiftKey && !linkAt(x, y) &&
         (page.source || !overTextAt(x, y)) && ((pick && hitPick(...local(e))) || pictureAt(x, y) >= 0)) {
       e.preventDefault(); if (cursors.length) setCursors([]); pickDown(e, x, y, true); return;
@@ -6463,7 +6536,8 @@ span.lname { cursor: default; }
     if (keyErase(held)) heldMoved = true;
     if (e.pointerId !== pointer) {
       const [hx, hy] = toPage(...local(e));
-      overText = tool === "text" ? (page.source ? docOver(hx, hy) : overTextAt(hx, hy)) : !!pickers[tool] && editing() && overTextAt(hx, hy);
+      overText = tool === "text" ? (page.source ? docOver(hx, hy) : (overTextAt(hx, hy) || (!!docText && !!docText.ink && docOver(hx, hy))))
+        : !!pickers[tool] && editing() && overTextAt(hx, hy);
       linkOver = linkAt(hx, hy);
       // a pen or an eraser over a link: how to follow it, said where the pointer is (a click there draws)
       const hint = linkOver && tool !== "text" ? "Ctrl + click to follow the link" : "";
@@ -7184,6 +7258,10 @@ span.lname { cursor: default; }
     for (let i = 0; i < ix.length; i++) if (!i || ix[i] !== ix[i - 1] + 1) runs++;
     return { total: k, selected: ix.length, lo: ix[0], hi: ix[ix.length - 1], runs };
   };
+  // (the handwriting as read, what of it is selected, and where a page point is in the window: for a look from outside)
+  window.pdInkText = () => (docText && docText.ink ? docText.text : null);
+  window.pdInkSelected = () => (docSel && docText && docText.ink ? docSelText() : null);
+  window.pdToWindow = (x, y) => { const r = vp.getBoundingClientRect(), p = toScreen(x, y); return [r.left + p[0], r.top + p[1]]; };
   window.pdPickHandles = () => {                              // (the selection's handles in the window, for a look from outside)
     if (!pick) return null;
     const r = vp.getBoundingClientRect(), H = handlesOf(pick.frame), at = p => [p[0] + r.left, p[1] + r.top];
@@ -8746,7 +8824,7 @@ span.lname { cursor: default; }
     if (!whole) try { GL.inkDone(inkList(), inkTick); } catch (e) { gpuDown(e); whole = true; }
     if (whole) rebuild(); else drawnTick = inkTick;           // (the page as drawn is the page: a scroll moves it)
     if (filerOk) filerAsk({ op: "load", buf: I.buf, uids: uidsOf(page.layers.map(L => L.lines)), version, mirror: MIRROR }, [I.buf]);
-    largeCheck(); loaded = true;
+    largeCheck(); loaded = true; inkSettle(0);         // (the handwriting read once the page is in)
     savedAt = changes;                                        // as read: nothing to save until something changes
     inkLoad = { first: I.first, frames: I.frames, longest: I.longest, total: performance.now() - I.t0 };
     if (swipeWaits.length) { const w = swipeWaits.splice(0); queueMicrotask(() => { for (const f of w) f(); }); }
@@ -8784,7 +8862,7 @@ span.lname { cursor: default; }
       else {
         if (filerOk) filerAsk({ op: "load", buf, uids: uidsOf(page.layers.map(L => L.lines)), version, mirror: MIRROR }, [buf]);
         if (THUMB_W) { drawThumb(); return; }
-        largeCheck(); loaded = true;
+        largeCheck(); loaded = true; inkSettle(0);         // (the handwriting read once the page is in)
         savedAt = changes;                                    // as read: nothing to save until something changes
       }
       if (!headShown) { loadTemplate(); loadSource().then(loadLinks); }   // (shown with the page's head already)

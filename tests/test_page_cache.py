@@ -71,3 +71,33 @@ def test_a_job_asked_for_on_a_tagged_page_goes_back_in_the_queue(monkeypatch):
     assert e["status"] == "pending" and e["handled_sha"] is None and e["retry"] == {"asked": True, "note": "wrote: hi"}
     assert L.run_again("d", "p2") == "working" and led["entries"]["d/p2"]["status"] == "working"
     assert L.run_again("d", "p3") is None
+
+
+def test_handwriting_is_read_as_selectable_text():
+    """11-16: handwriting selected like text in the editor. The engine reads the page the editor sends (its binary form)
+    into the shape of a PDF page's text layer -- a box per character, its lines -- with each word's box; big writing is
+    drawn smaller for the reader first (drawn at its usual size it read as nothing)."""
+    import pytest
+    from paperdaemon import reader, server
+    from paperdaemon.remarkable import fastrm
+    if reader.pick() is None:
+        pytest.skip("no handwriting reader on this computer")
+    import shutil
+    from paperdaemon.remarkable import local
+    src = os.path.join(CASES, "ink-question", "mirror")
+    doc = next(f[:-8] for f in os.listdir(src) if f.endswith(".content"))
+    made = []
+    for f in os.listdir(src):                        # (the fixture in the test session's mirror, taken out after)
+        p, dest = os.path.join(src, f), os.path.join(local.M, f)
+        if not os.path.exists(dest):
+            (shutil.copytree if os.path.isdir(p) else shutil.copyfile)(p, dest)
+            made.append(dest)
+    try:
+        sc = local.scene_of(doc, 1, arrays=True)
+    finally:
+        for d in made:
+            shutil.rmtree(d, ignore_errors=True) if os.path.isdir(d) else os.remove(d)
+    got = server.ink_text(fastrm.scene_bytes(sc))
+    assert [got["text"][s:e] for s, e in got["lines"]] == ["How many legs does a spider have?"]
+    assert len(got["boxes"]) == len(got["text"]) and len(got["words"]) == 7
+    assert all(w["box"][0] < w["box"][2] and w["box"][1] < w["box"][3] for w in got["words"])

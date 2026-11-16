@@ -66,14 +66,15 @@ def pick(engine_id=None):
     return usable[0] if usable else None
 
 
-def read(strokes, engine=None):
+def read(strokes, engine=None, scale=None):
     """Read a page's ink. `strokes` is [{"points": [(x, y), ...], "width": w}] in page coordinates.
     -> [Line] in page coordinates, top to bottom and left to right; [] when there is no ink.
-    Raises LookupError when no engine can run here, so the host can record that handwriting was not read."""
+    Raises LookupError when no engine can run here, so the host can record that handwriting was not read. `scale`:
+    image pixels per page unit (render.SCALE when not given) -- big writing reads only drawn smaller."""
     engine = engine or pick()
     if engine is None:
         raise LookupError("no handwriting reader can run on this computer")
-    image, tf = render.ink_image(strokes)
+    image, tf = render.ink_image(strokes, scale) if scale else render.ink_image(strokes)
     if image is None:
         return []
     lines = []

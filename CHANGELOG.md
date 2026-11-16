@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.5
+
+- Handwriting can be selected like text. With the Pointer, drag across handwritten words, yours or PaperDaemon's: they highlight as text does, and Ctrl+C copies them as text. Ctrl+X or Delete removes the strokes of the words selected, and Ctrl+Z brings them back. The page is read on the processor once it has loaded and again a moment after your strokes settle; drawing is never held up for it. Ctrl+A doesn't select handwriting.
+- Big handwriting is read too. PaperDaemon's reader read nothing when letters were large; the page is now drawn at a size it reads first.
+
 ## 0.3.4
 
 - The page editor shows a blank page from the first moment a page opens, where the page will be, until the page itself arrives. Before, there was often a moment of the gray background with two lines at the top.
