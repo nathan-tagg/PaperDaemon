@@ -670,6 +670,10 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="fm.save">Speichern</string>
   <string name="fm.selected_n">Ausgewählt: {n}</string>
   <string name="fm.duplicate">Duplizieren</string>
+  <string name="fm.run_job">Auftrag ausführen</string>
+  <string name="fm.run_queued">In der Warteschlange: {n}</string>
+  <string name="fm.run_working">Der Auftrag dieser Seite läuft gerade</string>
+  <string name="fm.run_untagged">Kein Tag beobachtet diese Seiten</string>
   <string name="fm.delete_n_q">Auswahl ({n}) löschen?</string>
   <string name="fm.select_all">Alle auswählen</string>
   <string name="fm.delete_pages_q.one">Ausgewählte Seite löschen?</string>

@@ -684,6 +684,10 @@
   <string name="fm.save">Сохранить</string>
   <string name="fm.selected_n">Выбрано: {n}</string>
   <string name="fm.duplicate">Дублировать</string>
+  <string name="fm.run_job">Запустить задание</string>
+  <string name="fm.run_queued">В очереди: {n}</string>
+  <string name="fm.run_working">Задание этой страницы уже выполняется</string>
+  <string name="fm.run_untagged">Ни один тег не следит за этими страницами</string>
   <string name="fm.delete_n_q">Удалить выбранное ({n})?</string>
   <string name="fm.select_all">Выбрать все</string>
   <string name="fm.delete_pages_q.one">Удалить выбранную страницу?</string>

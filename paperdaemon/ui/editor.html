@@ -4226,7 +4226,7 @@ span.lname { cursor: default; }
   // over one the pointer is a hand
   let links = null, linkLayer = null;
   async function loadLinks() {
-    if (!page.source || THUMB_W) return;
+    if (THUMB_W) return;                                      // (a PDF's or a book's page, or one PaperDaemon drew with links)
     try {
       const r = await fetch("/api/v1" + BASE + "/library/" + encodeURIComponent(DOC) + "/links/" + PAGE, { headers: { Authorization: "Bearer " + token() } });
       if (!r.ok) return;
@@ -6269,8 +6269,8 @@ span.lname { cursor: default; }
     // So it is with the text tool in hand and no keys held, as in a browser: a click there follows the link (finish), and a
     // drag is the I-beam again and selects the text, as anywhere else (the hand stays only while a press holds still). A
     // pen or an eraser in hand draws or erases over a link; only Ctrl follows it
-    const textLink = tool === "text" && !!page.source && !held.ctrlKey && !held.shiftKey && !held.altKey &&
-      (pointer === null || (!!docDrag && !!docDrag.link && !docDrag.moved));
+    const textLink = tool === "text" && !held.ctrlKey && !held.shiftKey && !held.altKey &&
+      (pointer === null || (!!docDrag && !!docDrag.link && !docDrag.moved) || (!!linkPress && !linkPress.moved));
     vp.classList.toggle("linkhand", !!linkOver && (textLink || (held.ctrlKey && !held.shiftKey && !held.altKey && !poly && !shapeAt && (pointer === null || !!linkPress))));
     const lit = linkLitNow();
     if (lit.link !== linkLit.link || lit.pressed !== linkLit.pressed) { linkLit = lit; paint(); }   // (the link a click follows, lit: drawLinkLit)
@@ -6326,7 +6326,7 @@ span.lname { cursor: default; }
     const [x, y] = toPage(...local(e));
     if (e.button === 2) { e.preventDefault(); openMenu(e, x, y); return; }   // THE RIGHT BUTTON IS A MENU (openMenu)
     // THE SECOND CLICK OF A DOUBLE-CLICK ON A LINK: the picture under it, selected (the link's follow called off)
-    if (linkWait && e.button === 0 && e.detail >= 2 && (tool === "text" || tool === "pick") && pictureAt(x, y) >= 0) {
+    if (linkWait && e.button === 0 && (tool === "text" || tool === "pick") && pictureAt(x, y) >= 0) {   // (a press while a link's click waits)
       clearTimeout(linkWait); linkWait = null;
       e.preventDefault(); docSel = null;
       pickDown(e, x, y, true); return;
@@ -6366,8 +6366,16 @@ span.lname { cursor: default; }
     }
     // A PICTURE UNDER THE POINTER, off the typed text: a click selects it and a drag moves it, as with Capture (11-16:
     // "Clicking on an image with the cursor or either selection tool should select the image for moving")
-    if (tool === "text" && e.button === 0 && !e.ctrlKey && !e.altKey && !e.shiftKey &&
-        (page.source ? !linkAt(x, y) : !overTextAt(x, y)) && ((pick && hitPick(...local(e))) || pictureAt(x, y) >= 0)) {
+    // THE POINTER ON A LINK of a page that is no PDF's or book's (one PaperDaemon drew with links: an ink adventure's
+    // journal): followed when let go without a drag (finish), as a PDF's is
+    if (tool === "text" && !page.source && e.button === 0 && !e.ctrlKey && !e.altKey && !e.shiftKey && linkAt(x, y) &&
+        !overTextAt(x, y)) {
+      e.preventDefault();
+      linkPress = { link: linkAt(x, y), at: local(e), moved: false };
+      pointer = e.pointerId; vp.setPointerCapture(e.pointerId); updateCursor(); return;
+    }
+    if (tool === "text" && e.button === 0 && !e.ctrlKey && !e.altKey && !e.shiftKey && !linkAt(x, y) &&
+        (page.source || !overTextAt(x, y)) && ((pick && hitPick(...local(e))) || pictureAt(x, y) >= 0)) {
       e.preventDefault(); if (cursors.length) setCursors([]); pickDown(e, x, y, true); return;
     }
     if (tool === "text" && pick && e.button === 0) clearPick();   // a press elsewhere lets the selection go
@@ -6531,7 +6539,7 @@ span.lname { cursor: default; }
     pointer = null; textDrag = false; fillSweep = null;
     if (linkPress) {                                          // Ctrl and a click on a link: followed when let go without a drag
       const p = linkPress; linkPress = null;
-      if (e.type === "pointerup" && !p.moved) followLink(p.link);
+      if (e.type === "pointerup" && !p.moved) followSoon(p.link, ...toPage(...p.at));     // (a double-click: the picture under it)
       updateCursor(); return;
     }
     if (docDrag) {                                            // the selection stays, drawn, to be copied; a click on a link
@@ -7483,12 +7491,12 @@ span.lname { cursor: default; }
     if (hit) {                                                // a handle or the inside: the selection moves, scales or turns
       pickDrag = { ...hit, start: [x, y], f0: { ...pick.frame } };
       if (pick.kind === "strokes") moveStart();
-      else { hiddenPics.add(page.images[pick.index]); rebuild(); }
+      else pickDrag.lift = true;                              // (a picture: lifted out once it really moves -- no flash)
       return;
     }
     if (pickMode === "capture" || pictures) {                 // a click on a picture selects it; a loop captures
       const i = pictureAt(x, y);
-      if (i >= 0) { selectPicture(i); pickDrag = { op: "move", start: [x, y], f0: { ...pick.frame } }; hiddenPics.add(page.images[i]); rebuild(); return; }
+      if (i >= 0) { selectPicture(i); pickDrag = { op: "move", start: [x, y], f0: { ...pick.frame }, lift: true }; return; }
     }
     pick = null;
     pickLoop = { pts: [[x, y]], shape: shapeKind >= 2 && shapeKind <= 5 ? shapeKind : 0 };
@@ -7509,6 +7517,12 @@ span.lname { cursor: default; }
       // DRAWN WHERE THE POINTER IS: a guess at where it will be next put the selection ahead while held and back where
       // it truly was at let-go, a jump; what is drawn held is where it lands
       pick.frame = dragFrame(pickDrag, x, y, e.altKey);
+      if (pickDrag.lift) {                                   // A PICTURE IS LIFTED OUT ONLY ONCE IT MOVES: a click that
+        const f0 = pickDrag.f0, f = pick.frame;              // just selects it draws nothing again (no flash)
+        if (f.cx !== f0.cx || f.cy !== f0.cy || f.w !== f0.w || f.a !== f0.a) {
+          pickDrag.lift = false; hiddenPics.add(page.images[pick.index]); rebuild();
+        }
+      }
       if (pick.kind === "strokes") moveSoon(); else paint();
       return true;
     }
@@ -7567,6 +7581,7 @@ span.lname { cursor: default; }
       if (pick.kind === "strokes") { moveDrop(); return true; }
       const f0 = d.f0, f1 = pick.frame;                       // a picture: moved in the page, which is drawn again
       hiddenPics.clear();
+      if (d.lift) { paint(); return true; }                   // (never lifted: a click that selected it, nothing to draw again)
       if (f0.cx !== f1.cx || f0.cy !== f1.cy || f0.w !== f1.w || f0.a !== f1.a) {
         const before = clone(page.images), m = mapper(f0, f1);
         page.images[pick.index].quad = page.images[pick.index].quad.map(m);
@@ -7860,6 +7875,8 @@ span.lname { cursor: default; }
       item("Paste as strokes", "Ctrl+Shift+V", () => readClipboard(true));
       item("Select all", "", selectAll, !layer().lines.length);
     }
+    // A JOB ASKED FOR on this page (a tagged page: as its retry box asks), said where the editor says what it did
+    if (!VIEW && !THUMB_W) item("Run a job on this page", "", runJob);
     cmenu.innerHTML = items.map((it, i) => '<button role="menuitem" data-i="' + i + '"' + (it.off ? " disabled" : "") + "><span>" + it.label + "</span><kbd>" + it.keys + "</kbd></button>").join("");
     cmenu.onclick = ev => { const b = ev.target.closest("button"); if (!b || b.disabled) return; closeMenu(); items[Number(b.dataset.i)].fn(); };
     cmenu.hidden = false;
@@ -7870,6 +7887,13 @@ span.lname { cursor: default; }
   window.addEventListener("pointerdown", e => { if (!cmenu.hidden && !cmenu.contains(e.target)) closeMenu(); }, true);
   window.addEventListener("keydown", e => { if (e.key === "Escape" && !cmenu.hidden) { e.preventDefault(); e.stopImmediatePropagation(); closeMenu(); } }, true);
   window.addEventListener("blur", closeMenu);
+  async function runJob() {
+    const r = await fetch("/api/v1" + BASE + "/library/" + encodeURIComponent(DOC) + "/run", { method: "POST",
+      headers: { Authorization: "Bearer " + token(), "Content-Type": "application/json" }, body: JSON.stringify({ pages: [PAGE] }) }).catch(() => null);
+    const got = r && r.ok ? await r.json().catch(() => null) : null;
+    tell(!got ? "The job could not be asked for" : got.queued ? "A job on this page is in the queue"
+         : got.working ? "This page's job is being worked now" : "No tag watches this page, so it is not a job", 3500);
+  }
   function selectAll(which) {                                 // every stroke of the layer in hand (or those `which` takes), with
     const lines = layer().lines.filter(which || (() => true));   // Select in hand
     if (!lines.length) { tell("No strokes like that on this layer"); return; }

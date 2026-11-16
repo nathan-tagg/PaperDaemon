@@ -670,6 +670,10 @@ Luego guíame para instalar SearXNG si hace falta, escribe el archivo .bat con u
   <string name="fm.save">Guardar</string>
   <string name="fm.selected_n">Seleccionados: {n}</string>
   <string name="fm.duplicate">Duplicar</string>
+  <string name="fm.run_job">Ejecutar un trabajo</string>
+  <string name="fm.run_queued">En la cola: {n}</string>
+  <string name="fm.run_working">El trabajo de esa página ya se está haciendo</string>
+  <string name="fm.run_untagged">Ninguna etiqueta vigila estas páginas</string>
   <string name="fm.delete_n_q">¿Eliminar lo seleccionado ({n})?</string>
   <string name="fm.select_all">Seleccionar todo</string>
   <string name="fm.delete_pages_q.one">¿Eliminar la página seleccionada?</string>

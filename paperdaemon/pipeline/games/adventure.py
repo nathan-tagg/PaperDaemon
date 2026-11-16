@@ -2473,7 +2473,17 @@ def _inline_journal(doc, state, workdir, log=None, force=False):
         own = {"scene": _page_no(doc, state["page_id"]), "sheet": _page_no(doc, state["sheet"]["page_id"]),
                "log": _page_no(doc, state["log_page"])}
         nums = [_page_no(doc, p) for p in ids]
-        pages, _links, pics = _journal_pages(state, plan, number=lambda k: own.get(k) if isinstance(k, str) else nums[k])
+        # THE PAGES' OWN LINKS, for the window (a notebook page holds none on the tablet): each to a page by its id
+        to = {"scene": state["page_id"], "sheet": state["sheet"]["page_id"], "log": state["log_page"]}
+        pages, links, pics = _journal_pages(state, plan, number=lambda k: own.get(k) if isinstance(k, str) else nums[k],
+                                            link=lambda k: to.get(k) if isinstance(k, str) else ids[k] if 0 <= k < len(ids) else None)
+        for i, pid in enumerate(ids):
+            try:
+                paths.write_json_atomic(paths.own_links_file(doc, pid), {"aspect": PAGE_H / float(PAGE_W), "links": [
+                    {"box": [round(b[0] / PAGE_W, 5), round(b[1] / PAGE_H, 5), round(b[2] / PAGE_W, 5), round(b[3] / PAGE_H, 5)],
+                     "page_id": t} for b, t in links.get(i) or [] if t]})
+            except OSError:
+                pass
         drawn = {} if force else dict(state.get("journal_drawn") or {})
         again = 0
         for i, (im, pid) in enumerate(zip(pages, ids)):

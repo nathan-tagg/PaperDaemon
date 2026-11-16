@@ -670,6 +670,10 @@
   <string name="fm.save">保存</string>
   <string name="fm.selected_n">選択中: {n}</string>
   <string name="fm.duplicate">複製</string>
+  <string name="fm.run_job">ジョブを実行</string>
+  <string name="fm.run_queued">キューに追加: {n}</string>
+  <string name="fm.run_working">そのページのジョブは実行中です</string>
+  <string name="fm.run_untagged">これらのページを見ているタグはありません</string>
   <string name="fm.delete_n_q">選択したもの ({n}) を削除しますか?</string>
   <string name="fm.select_all">すべて選択</string>
   <string name="fm.delete_pages_q.one">選択したページを削除しますか?</string>

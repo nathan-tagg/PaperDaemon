@@ -670,6 +670,10 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="fm.save">Save</string>
   <string name="fm.selected_n">Selected: {n}</string>
   <string name="fm.duplicate">Duplicate</string>
+  <string name="fm.run_job">Run a job</string>
+  <string name="fm.run_queued">Queued: {n}</string>
+  <string name="fm.run_working">That page's job is being worked now</string>
+  <string name="fm.run_untagged">No tag watches these pages</string>
   <string name="fm.delete_n_q">Delete what is selected ({n})?</string>
   <string name="fm.select_all">Select all</string>
   <string name="fm.delete_pages_q.one">Delete the selected page?</string>

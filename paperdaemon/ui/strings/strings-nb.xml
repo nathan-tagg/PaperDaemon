@@ -670,6 +670,10 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="fm.save">Lagre</string>
   <string name="fm.selected_n">Valgt: {n}</string>
   <string name="fm.duplicate">Dupliser</string>
+  <string name="fm.run_job">Kjør en jobb</string>
+  <string name="fm.run_queued">I køen: {n}</string>
+  <string name="fm.run_working">Jobben for den siden jobbes med nå</string>
+  <string name="fm.run_untagged">Ingen tagg følger disse sidene</string>
   <string name="fm.delete_n_q">Slette det som er valgt ({n})?</string>
   <string name="fm.select_all">Velg alle</string>
   <string name="fm.delete_pages_q.one">Slette den valgte siden?</string>

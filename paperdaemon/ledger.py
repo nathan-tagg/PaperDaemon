@@ -921,6 +921,25 @@ def reorder(keys):
     return queue(led)
 
 
+def run_again(doc_id, page_id):
+    """THE USER ASKS FOR A JOB ON A TAGGED PAGE (the page grid's selection, the page editor's menu): the page goes back in
+    the queue as the retry box puts it, asked for again -- the job is told so, and how the last one ended. -> "queued",
+    "working" (its job is being worked now), or None (no tag watches the page)."""
+    with locked():
+        led = load()
+        key, e = next(((k, v) for k, v in led["entries"].items()
+                       if v.get("doc_id") == doc_id and v.get("page_id") == page_id), (None, None))
+        if e is None:
+            return None
+        if e.get("status") == "working":
+            return "working"
+        e["retry"] = {"asked": True, "note": str(e.get("note") or "")[:600]}
+        e.update(status="pending", why="asked again", handled_sha=None, handled_raw=None)
+        e.pop("checked", None)
+        save(led)
+    return "queued"
+
+
 REMOVED = "removed from the queue by you: not a job; an edit brings it back"
 ABANDONED = "stopped and abandoned by you: what it had written was put back; an edit brings it back"
 

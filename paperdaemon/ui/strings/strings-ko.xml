@@ -670,6 +670,10 @@
   <string name="fm.save">저장</string>
   <string name="fm.selected_n">선택됨: {n}</string>
   <string name="fm.duplicate">복제</string>
+  <string name="fm.run_job">작업 실행</string>
+  <string name="fm.run_queued">대기열에 추가: {n}</string>
+  <string name="fm.run_working">그 페이지의 작업이 지금 진행 중입니다</string>
+  <string name="fm.run_untagged">이 페이지를 지켜보는 태그가 없습니다</string>
   <string name="fm.delete_n_q">선택한 항목 ({n})을(를) 삭제할까요?</string>
   <string name="fm.select_all">모두 선택</string>
   <string name="fm.delete_pages_q.one">선택한 페이지를 삭제할까요?</string>

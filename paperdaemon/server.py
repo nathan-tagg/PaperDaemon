@@ -1156,14 +1156,25 @@ def get_library_links(doc: str, page: int):
     if not re.fullmatch(r"[0-9a-fA-F-]{36}", doc) or page < 1:
         return JSONResponse({"error": "not a document page"}, status_code=400)
     pdf = os.path.join(library.M, doc + ".pdf")
-    if not os.path.isfile(pdf):
-        return none
     try:
         with open(os.path.join(library.M, doc + ".content"), encoding="utf-8") as f:
             live = _live(json.load(f))
     except (OSError, ValueError):
         return none
     if page > len(live):
+        return none
+    # A PAGE PAPERDAEMON DREW WITH LINKS (an ink adventure's journal): kept beside it in PaperDaemon's own data, each to a
+    # page by its id -- answered as a PDF's are, the page numbers as the viewer counts them now
+    try:
+        with open(paths.own_links_file(doc, live[page - 1].get("id")), encoding="utf-8") as f:
+            own = json.load(f)
+        at = {pg.get("id"): i + 1 for i, pg in enumerate(live)}
+        out = [{"box": l["box"], "go": at[l["page_id"]], "uri": None} for l in own.get("links") or [] if l.get("page_id") in at]
+        if out:
+            return {"aspect": own.get("aspect"), "links": out}
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    if not os.path.isfile(pdf):
         return none
     idx = (live[page - 1].get("redir") or {}).get("value")
     if idx is None:
@@ -1535,6 +1546,24 @@ def _end_worker(key):
     except OSError:
         pass
     return True
+
+
+@app.post(API + "/library/{doc}/run")
+def post_library_run(doc: str, body: dict = Body(default={})):
+    """A job on each tagged page asked for ({pages: [page numbers]}), as the retry box asks for one: -> {queued: n,
+    working: n, untagged: n} (a page no tag watches is not a job; one being worked is left to its job)."""
+    from .remarkable import local
+    if not _doc_ok(doc):
+        return _bad("not a document id")
+    out = {"queued": 0, "working": 0, "untagged": 0}
+    for n in [int(x) for x in body.get("pages") or [] if str(x).isdigit()]:
+        try:
+            pid = local.page_id(doc, n)
+        except (ValueError, KeyError, OSError):
+            continue
+        got = ledger.run_again(doc, pid)
+        out[got or "untagged"] += 1
+    return out
 
 
 @app.post(API + "/queue/abandon")

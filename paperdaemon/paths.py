@@ -177,6 +177,13 @@ def job_progress(doc):
     return os.path.join(state_dir(), "run", "progress", "%s.json" % doc)
 
 
+def own_links_file(doc, pid):
+    """The links PaperDaemon drew on one of its own notebook pages (a notebook page holds none on the tablet; the window
+    follows them): {"aspect": the page picture's height over its width, "links": [{"box": [x0, y0, x1, y1] fractions of
+    the picture from its top left, "page_id": the page it goes to}]}."""
+    return os.path.join(state_dir(), "links", doc, "%s.json" % pid)
+
+
 def note_made(u):
     """A document the job this process works has made (its .metadata written for the first time): it is that job's --
     it goes to the tablet with that job's record, and goes with it if the job is abandoned. PD_JOB names the job."""

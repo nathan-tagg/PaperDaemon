@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.3
+
+- Jobs see your newest typing again. On a page where you had edited inside older text, PaperDaemon's two ways of reading typed text put some paragraphs in different orders, and pairing them by position gave paragraphs each other's words. A new request could go unseen, so jobs were skipped as having "nothing new". They're now matched paragraph by paragraph, in the order the tablet shows.
+- You can ask for a job on a tagged page yourself: select pages in the page grid (right-click or long-press) and choose "Run a job", or right-click in the page editor and choose "Run a job on this page". The page goes back in the queue the way ticking a note's retry box puts it there.
+- Selecting a picture no longer makes the page flash. The picture is lifted out only once you actually move it.
+- PaperDaemon's own pages can have links in the window. An ink adventure's contents page leads to each page, its characters page to each person, and every journal page's title back to the contents. Click a link with the Pointer to follow it; double-click to select the picture under it. An adventure gets its links the next time its journal is drawn, which is its next turn.
+
 ## 0.3.2
 
 - The pages a job makes, like an ink adventure's character sheet, story and journal, are no longer taken as requests. They took the notebook's tag, so each one became a job of its own, was skipped, and got the daemon's note written across its title: text over text on every page. They're now settled as the job left them, and if you write on one later, that's a request like any other.

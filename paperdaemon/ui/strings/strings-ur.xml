@@ -670,6 +670,10 @@
   <string name="fm.save">محفوظ کریں</string>
   <string name="fm.selected_n">منتخب: {n}</string>
   <string name="fm.duplicate">نقل بنائیں</string>
+  <string name="fm.run_job">کام چلائیں</string>
+  <string name="fm.run_queued">قطار میں: {n}</string>
+  <string name="fm.run_working">اس صفحے کا کام ابھی ہو رہا ہے</string>
+  <string name="fm.run_untagged">کوئی ٹیگ ان صفحات کو نہیں دیکھ رہا</string>
   <string name="fm.delete_n_q">منتخب ({n}) حذف کریں؟</string>
   <string name="fm.select_all">سب منتخب کریں</string>
   <string name="fm.delete_pages_q.one">منتخب صفحہ حذف کریں؟</string>

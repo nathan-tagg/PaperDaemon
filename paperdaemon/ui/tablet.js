@@ -679,6 +679,7 @@
       }
       strip.innerHTML = '<span class="pick-name" role="status">' + esc(PD.t("fm.selected_n", { n: S.pp.length })) + '</span><span class="pick-acts">' +
         (S.pp.length < pageCount() ? btn("all", PD.t("fm.select_all")) : "") +
+        btn("run", PD.t("fm.run_job")) +
         (nb ? btn("duplicate", PD.t("fm.duplicate")) + btn("move", PD.t("fm.move")) : "") + btn("tags", PD.t("fm.tag")) +
         btn("delete", PD.t("common.delete"), "danger") + "</span>";
     }
@@ -763,6 +764,15 @@
         await pagesChanged();
       };
       if (act === "all") { S.pp = Array.from({ length: pageCount() }, (_, i) => i + 1); paintPagePick(); return; }
+      if (act === "run") {                                     // A JOB ASKED FOR on each tagged page chosen (the retry box's way)
+        const [got, e] = await PD.safe(api("POST", "/library/" + doc + "/run", { pages }));
+        if (e) { fail(e); return; }
+        if (msg) {
+          msg.textContent = got.queued ? PD.t("fm.run_queued", { n: got.queued }) : got.working ? PD.t("fm.run_working") : PD.t("fm.run_untagged");
+          msg.classList.toggle("attn", !got.queued);
+        }
+        return;
+      }
       if (act === "duplicate") { await run("duplicate"); return; }
       if (act === "delete") {
         if (!await PD.confirm({ title: PD.count("fm.delete_pages_q", pages.length),

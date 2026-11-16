@@ -156,3 +156,16 @@ def test_a_book_imported_to_the_mirror_is_filed_as_the_desktop_app_files_one(mon
     assert con["fileType"] == "epub" and con["pageCount"] == 3 and len(con["pages"]) == 3 and "cPages" not in con
     assert _meta(u)["visibleName"] == "My book" and os.path.isfile(os.path.join(local.M, u + ".epub"))
     assert _sent() == [] and cloud["new"] == [u]
+
+
+def test_a_page_paperdaemon_drew_with_links_answers_them(monkeypatch):
+    """11-16: the ink adventure's journal had no links. A notebook page PaperDaemon drew keeps its links beside it, each
+    to a page by its id; /links answers them with the page numbers as they are now."""
+    from paperdaemon import paths
+    from paperdaemon.remarkable import local
+    c, doc, cloud = _setup(monkeypatch)
+    pid = local.page_id(doc, 1)
+    paths.write_json_atomic(paths.own_links_file(doc, pid), {"aspect": 4 / 3.0, "links": [
+        {"box": [0.1, 0.2, 0.9, 0.25], "page_id": pid}, {"box": [0.1, 0.3, 0.9, 0.35], "page_id": "gone"}]})
+    r = c.get("/api/v1/library/%s/links/1" % doc)
+    assert r.status_code == 200 and r.json() == {"aspect": 4 / 3.0, "links": [{"box": [0.1, 0.2, 0.9, 0.25], "go": 1, "uri": None}]}, r.text

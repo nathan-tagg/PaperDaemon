@@ -670,6 +670,10 @@
   <string name="fm.save">सहेजें</string>
   <string name="fm.selected_n">चुने गए: {n}</string>
   <string name="fm.duplicate">डुप्लिकेट</string>
+  <string name="fm.run_job">काम चलाएं</string>
+  <string name="fm.run_queued">कतार में: {n}</string>
+  <string name="fm.run_working">उस पेज का काम अभी चल रहा है</string>
+  <string name="fm.run_untagged">कोई टैग इन पेजों को नहीं देख रहा</string>
   <string name="fm.delete_n_q">चुने गए ({n}) हटाएँ?</string>
   <string name="fm.select_all">सब चुनें</string>
   <string name="fm.delete_pages_q.one">चुना गया पेज हटाएँ?</string>

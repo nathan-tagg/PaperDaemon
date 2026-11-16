@@ -344,9 +344,13 @@ def _measured(doc_name, page_no, ps, data=None):
     baseline at 627 and the measured layout at 792, and 165 units is a paragraph of the user's writing to
     land on.
 
-    Both walk the same paragraphs in the same order, so they are matched by INDEX -- and only if
-    the counts agree. The paragraph's own identity (start_id, used for anchored groups) stays with
-    the old parse, which is where it was derived and verified.
+    They are matched BY IDENTITY: the measured reader's style key is the id of the newline before the
+    paragraph -- its start id less one (the first paragraph's key is 0:0) -- and the paragraphs come in
+    the measured reader's order, with its words (11-16: matched by index, a page edited inside older
+    text gave 13 of 192 paragraphs each other's words and identities, the old parse's order being wrong
+    there, and the user's newest typing went unseen). The paragraph's own identity (start_id, used for
+    anchored groups) stays with the old parse. A shape that cannot be matched (a paragraph either reader
+    lacks) is matched by index only where every pair's words agree, else the old model stands.
     """
     eng = _engine()
     if not eng or not ps:
@@ -356,13 +360,17 @@ def _measured(doc_name, page_no, ps, data=None):
         if mapped is None:
             return ps
         got = mapped["paragraphs"]
-        if len(got) != len(ps):
-            got = _split_at_line_separators(got)
-            norm = lambda s: " ".join(str(s or "").split())
+        norm = lambda s: " ".join(str(s or "").split())
+        pairs = _by_identity(ps, got)
+        if pairs is None:
+            if len(got) != len(ps):
+                got = _split_at_line_separators(got)
             if got is None or len(got) != len(ps) or \
                     any(norm(a.get("text")) != norm(b.get("text")) for a, b in zip(ps, got)):
                 return ps              # a shape we cannot line up: leave the old model alone
-        for old, new in zip(ps, got):
+            pairs = list(zip(ps, got))
+        ps[:] = [o for o, _n in pairs]                 # (the measured reader's order: the tablet's)
+        for old, new in pairs:
             rows = new.get("lines") or []
             old["y"] = new["bbox"][1]
             old["lh"] = 76.0 if new["style_code"] == 2 else 45.0
@@ -380,6 +388,27 @@ def _measured(doc_name, page_no, ps, data=None):
     except Exception:
         pass                           # refused or unreadable: the old geometry still stands
     return ps
+
+
+def _by_identity(ps, got):
+    """[(old paragraph, measured paragraph)] in the measured reader's order, each pair the same paragraph by its id (the
+    measured style key is the newline before it: start id less one; 0:0 the first), or None when not every paragraph
+    of both is matched once."""
+    if len(got) != len(ps):
+        return None
+    by = {tuple(p.get("start_id") or ()): p for p in ps}
+    out, used = [], set()
+    for i, g in enumerate(got):
+        try:
+            a, b = (int(x) for x in str(g.get("style_key") or "").split(":"))
+        except ValueError:
+            return None
+        o = ps[0] if (a, b) == (0, 0) and i == 0 else by.get((a, b + 1))
+        if o is None or id(o) in used:
+            return None
+        used.add(id(o))
+        out.append((o, g))
+    return out
 
 
 def _erased(doc_name, page_no, skip):

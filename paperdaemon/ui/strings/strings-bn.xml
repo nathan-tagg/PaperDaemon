@@ -670,6 +670,10 @@
   <string name="fm.save">সংরক্ষণ</string>
   <string name="fm.selected_n">নির্বাচিত: {n}</string>
   <string name="fm.duplicate">ডুপ্লিকেট</string>
+  <string name="fm.run_job">কাজ চালান</string>
+  <string name="fm.run_queued">সারিতে: {n}</string>
+  <string name="fm.run_working">ওই পৃষ্ঠার কাজ এখন চলছে</string>
+  <string name="fm.run_untagged">কোনো ট্যাগ এই পৃষ্ঠাগুলো দেখছে না</string>
   <string name="fm.delete_n_q">নির্বাচিতগুলো ({n}) মুছবেন?</string>
   <string name="fm.select_all">সব নির্বাচন</string>
   <string name="fm.delete_pages_q.one">নির্বাচিত পৃষ্ঠাটি মুছবেন?</string>

@@ -670,6 +670,10 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="fm.save">Cadw</string>
   <string name="fm.selected_n">Wedi'u dewis: {n}</string>
   <string name="fm.duplicate">Dyblygu</string>
+  <string name="fm.run_job">Rhedeg tasg</string>
+  <string name="fm.run_queued">Yn y ciw: {n}</string>
+  <string name="fm.run_working">Mae tasg y dudalen honno'n cael ei gwneud nawr</string>
+  <string name="fm.run_untagged">Does dim tag yn gwylio'r tudalennau hyn</string>
   <string name="fm.delete_n_q">Dileu'r hyn a ddewiswyd ({n})?</string>
   <string name="fm.select_all">Dewis y cyfan</string>
   <string name="fm.delete_pages_q.one">Dileu'r dudalen a ddewiswyd?</string>
