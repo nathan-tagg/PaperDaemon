@@ -113,7 +113,7 @@ def _run(exe, args, stdin=None, folder=None):
 def _run_folder():
     """A new, empty folder for one run of the program, its working folder, in PaperDaemon's cache. Made as a PLAIN
     folder that takes its access from the cache's (the user's own): Python's mkdtemp locks a folder on Windows to its
-    files' owners alone, and a program that writes as another account -- a sandbox, as Codex's does -- left a picture
+    files' owners alone, and a program that writes as another account -- a sandbox -- left a picture
     there the user could not read (11-15: "left no picture in its folder", Permission denied)."""
     root = paths.sub("cache", "cli")
     while True:
