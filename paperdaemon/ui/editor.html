@@ -4359,6 +4359,58 @@ span.lname { cursor: default; }
     docSel = { a: Math.min(D.anchor, c), b: Math.max(D.anchor, c) };
     paint();
   }
+  // CLICKS IN A ROW ON TEXT (11-16): 2 the word under the pointer, 3 its paragraph, 4 or more all of it. A press counts
+  // as the next click when it comes within half a second of the last and a few pixels from it (a pointer's press carries
+  // no count of its own)
+  let clickN = 0, clickT = 0, clickXY = null;
+  function countClick(e) {
+    const t = performance.now(), near = clickXY && Math.hypot(e.clientX - clickXY[0], e.clientY - clickXY[1]) <= 5;
+    clickN = near && t - clickT <= 500 ? clickN + 1 : 1; clickT = t; clickXY = [e.clientX, e.clientY];
+    return clickN;
+  }
+  const isWordChar = c => /[\p{L}\p{N}_'\u2019]/u.test(c);
+  function runAround(at, n, charOf) {                         // [start, end) of the word (or the spaces, or the marks) at `at`
+    if (!n) return [0, 0];
+    const i = Math.max(0, Math.min(at, n - 1)), kind = c => isWordChar(c) ? 1 : /\s/.test(c) ? 2 : 3, k = kind(charOf(i));
+    let a = i, b = i + 1;
+    while (a > 0 && kind(charOf(a - 1)) === k) a--;
+    while (b < n && kind(charOf(b)) === k) b++;
+    return [a, b];
+  }
+  function typedClicks(n) {                                   // the caret just placed: its word, its paragraph, or all
+    if (n >= 4) { allText(); return; }
+    const c = primary().caret, P = page.text.paras[c.p], len = P.chars.length;
+    let a = 0, b = len;
+    if (n === 2) {
+      // (the caret sits between two characters: the word it touches, the one before it when it ends there)
+      const at = c.o < len && (isWordChar(P.chars[c.o].c) || !(c.o > 0 && isWordChar(P.chars[c.o - 1].c))) ? c.o : c.o - 1;
+      [a, b] = runAround(at, len, i => P.chars[i].c);
+    }
+    setCursors([{ anchor: { p: c.p, o: a }, caret: { p: c.p, o: b } }]); caretOn = true; paint();
+  }
+  function docClicks(D, n) {                                  // a click's character: its word, its paragraph, or all
+    if (!docText || !docText.text) return;
+    const T = docText, N = T.text.length;
+    if (n >= 4) { docSel = { a: 0, b: N - 1 }; paint(); return; }
+    if (!docOver(...D.pt)) return;
+    const at = D.anchor >= 0 ? D.anchor : docCharAt(...D.pt);
+    if (at < 0) return;
+    if (n === 2) {
+      const [a, b] = runAround(at, N, i => T.text[i]);
+      if (b > a) { docSel = { a, b: b - 1 }; paint(); }
+      return;
+    }
+    // a paragraph: the line's neighbors as long as each sits close under the one before (no more than most of a line's
+    // height between them)
+    const band = ([s, e]) => { let y0 = Infinity, y1 = -Infinity; for (let k = s; k < e; k++) { const q = T.boxes[k]; if (q) { y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[3]); } } return [y0, y1]; };
+    const L = T.lines, li = L.findIndex(([s, e]) => at >= s && at < Math.max(e, s + 1));
+    if (li < 0) return;
+    const close = (i, j) => { const A = band(L[i]), B = band(L[j]); return isFinite(A[0]) && isFinite(B[0]) && B[0] - A[1] <= 0.75 * (A[1] - A[0]); };
+    let i0 = li, i1 = li;
+    while (i0 > 0 && close(i0 - 1, i0)) i0--;
+    while (i1 < L.length - 1 && close(i1, i1 + 1)) i1++;
+    docSel = { a: L[i0][0], b: Math.max(L[i0][0], L[i1][1] - 1) }; paint();
+  }
   function docSelText() {                                     // the selected characters, a line break between lines
     if (!docText || !docSel) return "";
     const out = [];
@@ -6399,6 +6451,7 @@ span.lname { cursor: default; }
     window.focus();                                           // in the viewer too, so a key let go is heard here
     heldKeys(e);
     const [x, y] = toPage(...local(e));
+    if (e.button === 0) countClick(e);
     if (e.button === 2) { e.preventDefault(); openMenu(e, x, y); return; }   // THE RIGHT BUTTON IS A MENU (openMenu)
     // THE SECOND CLICK OF A DOUBLE-CLICK ON A LINK: the picture under it, selected (the link's follow called off)
     if (linkWait && e.button === 0 && (tool === "text" || tool === "pick") && pictureAt(x, y) >= 0) {   // (a press while a link's click waits)
@@ -6481,7 +6534,9 @@ span.lname { cursor: default; }
       const box = tool === "text" ? checkboxAt(x, y) : -1;
       if (box >= 0) { edit(() => { const P = page.text.paras[box]; P.list = P.list === "check" ? "checked" : "check"; }); return; }
       if (!drawable(x, y)) return;
-      placeCaret(x, y); caretOn = true; textDrag = true; pointer = e.pointerId; vp.setPointerCapture(e.pointerId); paint(); return;
+      placeCaret(x, y); caretOn = true;
+      if (clickN >= 2 && hasText() && editing()) { typedClicks(clickN); return; }   // (2 the word, 3 its paragraph, 4 all)
+      textDrag = true; pointer = e.pointerId; vp.setPointerCapture(e.pointerId); paint(); return;
     }
     if (!layer().visible) return;                               // a hidden layer can't be drawn on or erased
     if (tool === "eraser" && eraseMode === "zone") {
@@ -6629,6 +6684,7 @@ span.lname { cursor: default; }
     }
     if (docDrag) {                                            // the selection stays, drawn, to be copied; a click on a link
       const D = docDrag; docDrag = null;                      // (let go without a drag) follows it instead
+      if (!D.link && !D.moved && e.type === "pointerup" && clickN >= 2) docClicks(D, clickN);   // (2 the word, 3 its paragraph, 4 all)
       if (D.link && !D.moved && e.type === "pointerup") { docSel = null; paint(); followSoon(D.link, ...D.pt); }
       if (D.link) updateCursor();                              // (the press's light goes with it, a cancel's too)
       return;
@@ -7264,6 +7320,12 @@ span.lname { cursor: default; }
   // (the handwriting as read, what of it is selected, and where a page point is in the window: for a look from outside)
   window.pdInkText = () => (docText && docText.ink ? docText.text : null);
   window.pdInkSelected = () => (docSel && docText && docText.ink ? docSelText() : null);
+  window.pdTextSelected = () => {                            // (the typed text selected, and the document's: for a look from outside)
+    const c = cursors.length ? primary() : null, sel = c ? selOf(c) : null;
+    const typed = sel ? page.text.paras.slice(sel[0].p, sel[1].p + 1).map((P, i, A) => P.chars.slice(i ? 0 : sel[0].o, i === A.length - 1 ? sel[1].o : undefined).map(ch => ch.c).join("")).join("\n") : null;
+    return { typed, doc: docSel && docText ? docSelText() : null };
+  };
+  window.pdTextAt = (p, o) => { const q = caretPoint({ p, o }); return [q.x, q.y, q.h]; };   // (a typed character's place on the page)
   window.pdToWindow = (x, y) => { const r = vp.getBoundingClientRect(), p = toScreen(x, y); return [r.left + p[0], r.top + p[1]]; };
   window.pdPickHandles = () => {                              // (the selection's handles in the window, for a look from outside)
     if (!pick) return null;

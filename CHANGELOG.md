@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.8
+
+- Clicking text selects as it does everywhere else: a double-click selects the word, a triple-click the paragraph, and four clicks all the text. It works on your typed text, on a PDF's or a book's text, and on handwriting.
+
 ## 0.3.7
 
 - A notebook's instructions are recognized when a job quotes them with different quotation marks. Tagging a page "ignore", as the coloring book's instructions ask, was refused when the quote came back as 'ignore', and the job had to plan again, about 40 seconds lost each time.
