@@ -137,6 +137,7 @@
   <string name="tablet.my_files">내 파일</string>
   <string name="tablet.arriving">아직 받는 중…</string>
   <string name="tablet.empty">이 폴더는 비어 있습니다.</string>
+  <string name="tablet.sending">태블릿으로 보내는 중…</string>
   <string name="viewer.pages">페이지</string>
   <string name="viewer.chapters">장</string>
   <string name="viewer.goto">페이지로 이동 (1 - {last})</string>

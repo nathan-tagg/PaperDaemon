@@ -143,6 +143,7 @@
   <string name="tablet.my_files">Мои файлы</string>
   <string name="tablet.arriving">Ещё поступает…</string>
   <string name="tablet.empty">Эта папка пуста.</string>
+  <string name="tablet.sending">Отправка на планшет…</string>
   <string name="viewer.pages">Страницы</string>
   <string name="viewer.chapters">Главы</string>
   <string name="viewer.goto">Перейти к странице (1 - {last})</string>

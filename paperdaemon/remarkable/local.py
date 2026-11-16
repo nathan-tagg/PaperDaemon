@@ -120,14 +120,15 @@ def page_id(doc, page_no):
 
 # ---------------------------------------------------------------- notebooks, folders, pages
 
-def new_notebook(name, parent="", template="Blank", cover="last", tags=(), tablet=False):
+def new_notebook(name, parent="", template="Blank", cover="last", tags=(), tablet=False, send=True):
     """A notebook with one page, in the Paper Pro's frame, as the tablet makes one: its cover the page last visited
     (`cover` "last") or its first page ("first"), its page's `template` (the tablet's file name, "P Grid medium";
     "Blank" for none). -> its id.
 
     `tablet`: ON THE TABLET'S OWN LIBRARY (the Mirror; the caller has checked that Mirror editing is on). Its page is
     one of the user's own tablet's, and the notebook is sent to the tablet at once, a document the cloud has never
-    seen; a push that does not go through is said, and the notebook goes up with the next sync."""
+    seen; a push that does not go through is said, and the notebook goes up with the next sync. `send` False: made in
+    the tablet's frame, and sent by the caller (inplace.library_change, in the background)."""
     if not tablet:
         _guard()
     from paperdaemon import studio
@@ -148,7 +149,7 @@ def new_notebook(name, parent="", template="Blank", cover="last", tags=(), table
     paths.write_atomic(os.path.join(M, doc + ".pagedata"), template + "\n")
     if tags:
         _set_tags(doc, tags)                         # the notebook's own tags, as New notebook was given them
-    if tablet:
+    if tablet and send:
         from . import sync
         r = sync.send_new(doc)
         if r.get("root_put") != 200:
@@ -164,7 +165,7 @@ def quick_sheets_doc():
     return docs[0] if how == "quick sheets" else None
 
 
-def quick_sheets(tablet=False):
+def quick_sheets(tablet=False, send=True):
     """QUICK SHEETS, as the tablet's button opens them: the library's one Quick sheets (the document of that name at the
     root; made when there is none) on a new page at its end. -> (its id, the new page's number). `tablet`: one made is
     made in the tablet's frame and sent to it, as new_notebook's."""
@@ -173,11 +174,11 @@ def quick_sheets(tablet=False):
         _guard()
     doc = quick_sheets_doc()
     if doc is None:
-        return new_notebook(studio.QUICK_SHEETS, "", tablet=tablet), 1
+        return new_notebook(studio.QUICK_SHEETS, "", tablet=tablet, send=send), 1
     return doc, new_page(doc)
 
 
-def new_folder(name, parent="", tablet=False):
+def new_folder(name, parent="", tablet=False, send=True):
     """A folder named `name` in `parent` ("" the library's top). `tablet`: in the tablet's own library (the Mirror),
     sent to the tablet at once, as new_notebook sends a notebook. -> its id."""
     if not tablet:
@@ -188,7 +189,7 @@ def new_folder(name, parent="", tablet=False):
         "createdTime": now, "lastModified": now, "new": False, "parent": parent, "pinned": False, "source": "",
         "type": "CollectionType", "visibleName": (name or "Folder").strip() or "Folder"})
     paths.write_json_atomic(os.path.join(M, u + ".content"), {"tags": []})
-    if tablet:
+    if tablet and send:
         from . import sync
         r = sync.send_new(u)
         if r.get("root_put") != 200:

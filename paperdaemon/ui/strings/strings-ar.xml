@@ -137,6 +137,7 @@
   <string name="tablet.my_files">ملفاتي</string>
   <string name="tablet.arriving">ما زال يصل…</string>
   <string name="tablet.empty">هذا المجلد فارغ.</string>
+  <string name="tablet.sending">جارٍ الإرسال إلى الجهاز اللوحي…</string>
   <string name="viewer.pages">الصفحات</string>
   <string name="viewer.chapters">الفصول</string>
   <string name="viewer.goto">الانتقال إلى صفحة (1 - {last})</string>

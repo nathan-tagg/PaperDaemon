@@ -137,6 +137,7 @@
   <string name="tablet.my_files">我的文件</string>
   <string name="tablet.arriving">仍在接收…</string>
   <string name="tablet.empty">此文件夹为空。</string>
+  <string name="tablet.sending">正在发送到平板…</string>
   <string name="viewer.pages">页面</string>
   <string name="viewer.chapters">章节</string>
   <string name="viewer.goto">转到页面（1 - {last}）</string>

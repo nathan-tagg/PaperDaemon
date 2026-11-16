@@ -36,8 +36,10 @@ import hashlib
 import io
 import json
 import os
+import queue
 import shutil
 import struct
+import threading
 
 import numpy as np
 from rmscene import SceneTree, write_blocks
@@ -947,12 +949,60 @@ def _item_files(u):
     return [n for n in (u + ".metadata", u + ".content") if os.path.exists(os.path.join(local.M, n))]
 
 
+# THE LIBRARY'S CHANGES GO UP IN THE BACKGROUND (11-16: Create stayed gray for the 5 s a send takes): made here at once,
+# then sent one at a time, in the order they were made, by one thread; what did not go is kept for the screen
+# (sending()), and goes up with the next sync
+_sends = queue.Queue()
+_sender = {"thread": None, "errors": []}
+_sender_lock = threading.Lock()
+
+
+def _send_later(fn, name):
+    _sends.put((fn, name))
+    with _sender_lock:
+        t = _sender["thread"]
+        if t is None or not t.is_alive():
+            t = _sender["thread"] = threading.Thread(target=_send_all, name="mirror-sends", daemon=True)
+            t.start()
+
+
+def _send_all():
+    while True:
+        fn, name = _sends.get()
+        try:
+            r = fn() or {}
+            bad = r.get("error") or (r.get("root_put") not in (None, 200) and r.get("root_put"))
+        except Exception as ex:
+            bad = str(ex)
+        if bad:
+            why = "%s was not sent to the tablet (%s); it goes up with the next sync" % (name, str(bad)[:160])
+            print("[mirror] " + why, flush=True)
+            _sender["errors"].append(why)
+        _sends.task_done()
+
+
+def sending():
+    """Once every change made so far is sent: what did not go, said once. -> [sentences]"""
+    _sends.join()
+    out, _sender["errors"] = _sender["errors"], []
+    return out
+
+
+def _name_of(u):
+    try:
+        with open(os.path.join(local.M, u + ".metadata"), encoding="utf-8") as f:
+            return '"%s"' % (json.load(f).get("visibleName") or "it")
+    except (OSError, ValueError):
+        return "it"
+
+
 def library_change(fn, changes=(), made=None, what="it was not changed"):
     """A CHANGE TO THE TABLET'S OWN LIBRARY (Mirror editing on; the caller checks): `fn` is local.py's own function for
     it (a move, a delete to the trash, tags, a notebook's pages), run as in the False Mirror, with a page's safety for
     each item it changes (`changes`): never when the tablet changed the item since PaperDaemon pulled it, and the item
-    backed up first. Then each changed item is pushed, and each item it made (`made`(its answer) -> ids) sent as new.
-    -> fn's answer (a dict gets "push"). Raises a Refused, or local.NotHere in the False Mirror."""
+    backed up first. Then each changed item is pushed, and each item it made (`made`(its answer) -> ids) sent as new --
+    in the background (_send_later). -> fn's answer (a dict gets "sending": true). Raises a Refused, or local.NotHere in
+    the False Mirror."""
     _mirror_only()
     from . import sync
     changes = [u for u in dict.fromkeys(changes) if u]
@@ -968,19 +1018,14 @@ def library_change(fn, changes=(), made=None, what="it was not changed"):
             backup(u)
         with local.on_tablet():
             got = fn()
-    pushed = {}
     for u in changes:
         _record_written(u)
-        pushed[u] = push(u)
+        _send_later(lambda u=u: push(u), _name_of(u))
     for u in (made(got) if made else []):
         if u and u not in sync._state().get("docs", {}):
-            r = sync.send_new(u)
-            if r.get("root_put") != 200:
-                raise ValueError("it is made here and was not sent to the tablet (%s); it goes up with the next sync"
-                                 % str(r.get("error") or r.get("root_put") or "no answer")[:120])
-            pushed[u] = r
+            _send_later(lambda u=u: sync.send_new(u), _name_of(u))
     if isinstance(got, dict):
-        got = dict(got, push=pushed)
+        got = dict(got, sending=True)
     return got
 
 

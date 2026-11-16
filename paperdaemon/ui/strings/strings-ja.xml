@@ -137,6 +137,7 @@
   <string name="tablet.my_files">マイファイル</string>
   <string name="tablet.arriving">まだ届いています…</string>
   <string name="tablet.empty">このフォルダーは空です。</string>
+  <string name="tablet.sending">タブレットに送信しています…</string>
   <string name="viewer.pages">ページ</string>
   <string name="viewer.chapters">章</string>
   <string name="viewer.goto">ページへ移動 (1 - {last})</string>

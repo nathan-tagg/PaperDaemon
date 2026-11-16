@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.91
+
+- New notebook, New folder and every other library change on the Mirror happen at once. Create used to stay gray for about 5 seconds while the change went to the tablet. Now the dialog closes right away and the notebook shows. The change goes to the tablet in the background, with "Sending to the tablet…" under the title until it's there. If a change can't go, that line says which one and why, and it goes up with the next sync.
+- Enter creates from anywhere in the New notebook and New folder dialogs, even after you've clicked a template or a cover option. Enter saves the other library dialogs the same way.
+- The New lineup and Rename lineup dialogs are laid out like the rest: the label at normal size, and the name box the full width of the dialog.
+
 ## 0.2.90
 
 - The Mirror's library does what the False Mirror's does while Edit the Mirror is on in Settings. You get the + menu (Quick sheet, New notebook, New folder, Import), files dropped on the screen are imported into the folder open, and a right-click or a long press selects notebooks and folders for Export, Duplicate, Move, Tag and Delete. In the viewer you can add pages, tag pages and work on the page grid's selection. Each change goes straight to the tablet. Before PaperDaemon changes something already on the tablet, it checks that the tablet hasn't changed it since, and backs it up first. A book you import is filed the way the desktop app files one, and the tablet lays it out. With Edit the Mirror off, none of this shows.

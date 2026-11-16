@@ -742,11 +742,12 @@
         : '<input class="field' + (f.mono ? " mono" : "") + '" id="' + id + '" name="' + f.name + '" value="' + esc(f.value || "") +
           '" autocomplete="off" spellcheck="false"' + (f.placeholder ? ' placeholder="' + esc(f.placeholder) + '"' : "") +
           (f.kind === "number" ? ' type="number" inputmode="numeric" step="1"' + (f.min != null ? ' min="' + f.min + '"' : "") + (f.max != null ? ' max="' + f.max + '"' : "") : "") + ">";
-      return '<div class="stack-field" style="margin-top: var(--s3)"><label for="' + id + '" class="meta" style="display:block;margin-bottom:4px">' + esc(f.label) + "</label>" + ctl +
-        (f.hint ? '<p class="meta" style="margin-top:4px">' + esc(f.hint) + "</p>" : "") + "</div>";
+      // (as the library's sheets: the label over a field the sheet's width)
+      return '<div class="field-row"><label for="' + id + '">' + esc(f.label) + "</label>" + ctl +
+        (f.hint ? '<p class="meta">' + esc(f.hint) + "</p>" : "") + "</div>";
     }).join("");
     const dlg = sheet(title, '<form novalidate>' + (intro ? "<p>" + intro + "</p>" : "") + rows +
-      '<p class="msg err" role="alert" style="margin-top: var(--s3)"></p>' +
+      '<p class="msg err" role="alert"></p>' +
       '<div class="actions"><button type="button" class="btn" data-v="cancel">' + esc(PD.t("common.cancel")) + '</button><button type="submit" class="btn primary">' + esc(action) + "</button></div></form>");
     let result = null;
     const form = $("form", dlg), msg = $(".msg", dlg), go = $('button[type="submit"]', dlg);

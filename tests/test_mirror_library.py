@@ -51,9 +51,16 @@ def _setup(monkeypatch):
     monkeypatch.setattr(sync, "changed_files", lambda d=None: [])
     monkeypatch.setattr(sync, "pull", lambda *a, **k: None)
     monkeypatch.setattr(sync, "_state", lambda: {"docs": {doc: "h"}, "files": {}})
+    inplace.sending()                                         # (nothing left over from another test)
     c = TestClient(server.app)
     c.headers["Authorization"] = "Bearer " + server.pairing_token()
     return c, doc, cloud
+
+
+def _sent():
+    """Once the background sends are done: what did not go."""
+    from paperdaemon.remarkable import inplace
+    return inplace.sending()
 
 
 def _meta(u):
@@ -88,11 +95,12 @@ def test_with_edit_the_mirror_on_each_change_is_checked_backed_up_and_sent(monke
     r = c.post(A + "/folder", json={"name": "Projects"})
     assert r.status_code == 200, r.text
     folder = r.json()["id"]
+    assert r.json()["sending"] is True and _sent() == []
     assert cloud["new"] == [folder] and _meta(folder)["type"] == "CollectionType"
     # the notebook moved into it: its .metadata checked, backed up, changed, pushed
     r = c.post(A + "/%s/move" % doc, json={"parent": folder})
     assert r.status_code == 200 and r.json()["moved"] is True, r.text
-    assert _meta(doc)["parent"] == folder and cloud["edited"] == [doc]
+    assert _sent() == [] and _meta(doc)["parent"] == folder and cloud["edited"] == [doc]
     assert doc + ".metadata" in cloud["asked"] and doc + ".content" in cloud["asked"]
     assert os.path.isfile(os.path.join(paths.data_dir(), "mirror-backups", doc, doc + ".metadata"))
     # its tags, a new page, a page's tags
@@ -105,18 +113,26 @@ def test_with_edit_the_mirror_on_each_change_is_checked_backed_up_and_sent(monke
     assert any(t["name"] == "ignore" for t in _content(doc)["pageTags"])
     # a copy: sent as new
     r = c.post(A + "/%s/duplicate" % doc)
-    assert r.status_code == 200, r.text
+    assert r.status_code == 200 and _sent() == [], r.text
     assert cloud["new"][-1] == r.json()["id"]
     # deleted: into the trash, as the tablet deletes
     r = c.delete(A + "/" + r.json()["id"])
     assert r.status_code == 200 and _meta(cloud["new"][-1])["parent"] == "trash", r.text
     # the tablet changed it since: nothing written, nothing sent
+    assert _sent() == []
     cloud["newer"] = True
     sent = list(cloud["edited"])
     r = c.post(A + "/%s/move" % doc, json={"parent": ""})
     assert r.status_code == 409 and r.json()["reason"] == "tablet" and "moved" in r.json()["error"], r.text
-    assert _meta(doc)["parent"] == folder and cloud["edited"] == sent
+    assert _sent() == [] and _meta(doc)["parent"] == folder and cloud["edited"] == sent
     assert n0 is None or n0 >= 1
+    # a send that does not go through is said once, by name, and the change stays here
+    from paperdaemon.remarkable import sync
+    monkeypatch.setattr(sync, "push_new_doc", lambda d, dry_run=True: {"root_put": 412})
+    r = c.post(A + "/folder", json={"name": "Later"})
+    assert r.status_code == 200 and _meta(r.json()["id"])["visibleName"] == "Later", r.text
+    errs = _sent()
+    assert len(errs) == 1 and '"Later" was not sent to the tablet' in errs[0] and _sent() == []
 
 
 def test_a_book_imported_to_the_mirror_is_filed_as_the_desktop_app_files_one(monkeypatch):
@@ -139,4 +155,4 @@ def test_a_book_imported_to_the_mirror_is_filed_as_the_desktop_app_files_one(mon
     con = _content(u)
     assert con["fileType"] == "epub" and con["pageCount"] == 3 and len(con["pages"]) == 3 and "cPages" not in con
     assert _meta(u)["visibleName"] == "My book" and os.path.isfile(os.path.join(local.M, u + ".epub"))
-    assert cloud["new"] == [u]
+    assert _sent() == [] and cloud["new"] == [u]

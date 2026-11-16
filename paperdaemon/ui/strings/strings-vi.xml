@@ -137,6 +137,7 @@
   <string name="tablet.my_files">Tệp của tôi</string>
   <string name="tablet.arriving">Vẫn đang tải về…</string>
   <string name="tablet.empty">Thư mục này trống.</string>
+  <string name="tablet.sending">Đang gửi lên máy tính bảng…</string>
   <string name="viewer.pages">Trang</string>
   <string name="viewer.chapters">Chương</string>
   <string name="viewer.goto">Đến trang (1 - {last})</string>

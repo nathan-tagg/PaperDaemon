@@ -137,6 +137,7 @@
   <string name="tablet.my_files">Dosyalarım</string>
   <string name="tablet.arriving">Hâlâ geliyor…</string>
   <string name="tablet.empty">Bu klasör boş.</string>
+  <string name="tablet.sending">Tablete gönderiliyor…</string>
   <string name="viewer.pages">Sayfalar</string>
   <string name="viewer.chapters">Bölümler</string>
   <string name="viewer.goto">Sayfaya git (1 - {last})</string>

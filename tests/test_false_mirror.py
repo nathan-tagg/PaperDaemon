@@ -779,7 +779,8 @@ def test_a_notebook_is_made_on_the_tablet_s_library_with_mirror_editing_on(monke
     r = c.post("/api/v1/library/notebook", json={"name": "Sonnet 5.5", "parent": "a-folder", "tags": ["Sonnet"]})
     assert r.status_code == 200, r.text
     doc = r.json()["id"]
-    assert sent == [(doc, False)]                                       # up to the tablet, for real, at once
+    from paperdaemon.remarkable import inplace
+    assert inplace.sending() == [] and sent == [(doc, False)]          # up to the tablet, for real, in the background
     meta = json.load(open(os.path.join(local.M, doc + ".metadata"), encoding="utf-8"))
     content = json.load(open(os.path.join(local.M, doc + ".content"), encoding="utf-8"))
     assert meta["visibleName"] == "Sonnet 5.5" and meta["parent"] == "a-folder" and meta["type"] == "DocumentType"
@@ -787,11 +788,12 @@ def test_a_notebook_is_made_on_the_tablet_s_library_with_mirror_editing_on(monke
     assert os.path.getsize(os.path.join(local.M, doc, content["cPages"]["pages"][0]["id"] + ".rm")) > 0
     monkeypatch.setattr(sync, "push_new_doc", lambda doc, dry_run=True: {"root_put": 412})
     r = c.post("/api/v1/library/notebook", json={"name": "Haiku 5.5"})
-    assert r.status_code == 400 and "was not sent to the tablet" in r.json()["error"]
+    assert r.status_code == 200                                         # made here at once; the send that failed is said
+    assert any('"Haiku 5.5" was not sent to the tablet' in e for e in c.get("/api/v1/mirror/sending").json()["errors"])
     # and a folder, as the rest of the library's actions (add-mirror-library-actions; tests/test_mirror_library.py)
     monkeypatch.setattr(sync, "push_new_doc", lambda doc, dry_run=True: (sent.append((doc, dry_run)), {"root_put": 200})[1])
     r = c.post("/api/v1/library/folder", json={"name": "Projects"})
-    assert r.status_code == 200 and sent[-1] == (r.json()["id"], False), r.text
+    assert r.status_code == 200 and inplace.sending() == [] and sent[-1] == (r.json()["id"], False), r.text
 
 
 def test_his_layer_carries_the_tablets_second_record_and_his_note_its_low_number():

@@ -137,6 +137,7 @@
   <string name="tablet.my_files">Berkas saya</string>
   <string name="tablet.arriving">Masih berdatangan…</string>
   <string name="tablet.empty">Folder ini kosong.</string>
+  <string name="tablet.sending">Mengirim ke tablet…</string>
   <string name="viewer.pages">Halaman</string>
   <string name="viewer.chapters">Bab</string>
   <string name="viewer.goto">Ke halaman (1 - {last})</string>

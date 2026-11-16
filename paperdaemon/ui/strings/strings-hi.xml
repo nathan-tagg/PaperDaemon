@@ -137,6 +137,7 @@
   <string name="tablet.my_files">मेरी फ़ाइलें</string>
   <string name="tablet.arriving">अभी आ रहा है…</string>
   <string name="tablet.empty">यह फ़ोल्डर खाली है।</string>
+  <string name="tablet.sending">टैबलेट पर भेजा जा रहा है…</string>
   <string name="viewer.pages">पेज</string>
   <string name="viewer.chapters">अध्याय</string>
   <string name="viewer.goto">पेज पर जाएँ (1 - {last})</string>

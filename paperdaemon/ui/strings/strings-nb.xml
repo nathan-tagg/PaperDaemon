@@ -137,6 +137,7 @@
   <string name="tablet.my_files">Mine filer</string>
   <string name="tablet.arriving">Kommer fortsatt…</string>
   <string name="tablet.empty">Denne mappen er tom.</string>
+  <string name="tablet.sending">Sender til nettbrettet …</string>
   <string name="viewer.pages">Sider</string>
   <string name="viewer.chapters">Kapitler</string>
   <string name="viewer.goto">Gå til side (1 - {last})</string>

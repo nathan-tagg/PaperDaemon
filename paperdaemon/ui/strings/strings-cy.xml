@@ -137,6 +137,7 @@
   <string name="tablet.my_files">Fy ffeiliau</string>
   <string name="tablet.arriving">Yn dal i gyrraedd…</string>
   <string name="tablet.empty">Mae'r ffolder hon yn wag.</string>
+  <string name="tablet.sending">Yn anfon i'r llechen…</string>
   <string name="viewer.pages">Tudalennau</string>
   <string name="viewer.chapters">Penodau</string>
   <string name="viewer.goto">Mynd i dudalen (1 - {last})</string>

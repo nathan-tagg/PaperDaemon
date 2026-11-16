@@ -136,6 +136,7 @@
   <string name="tablet.my_files">Mes fichiers</string>
   <string name="tablet.arriving">Encore en cours d'arrivée…</string>
   <string name="tablet.empty">Ce dossier est vide.</string>
+  <string name="tablet.sending">Envoi vers la tablette…</string>
   <string name="viewer.pages">Pages</string>
   <string name="viewer.chapters">Chapitres</string>
   <string name="viewer.goto">Aller à la page (1 - {last})</string>

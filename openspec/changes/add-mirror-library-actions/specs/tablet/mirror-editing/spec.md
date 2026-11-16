@@ -7,7 +7,7 @@ press or a right-click selecting a notebook or folder for the selection's action
 through reMarkable's cloud as PaperDaemon's page edits do: a new item pushed, and an item already on the tablet
 checked against the cloud before it is changed, never written over a change the tablet made since it was read, and
 backed up before PaperDaemon first changes it; a book SHALL be filed as the desktop app files one, for the tablet to
-lay out. A change that cannot reach the tablet SHALL be said in plain words. With Mirror editing off the Mirror's
+lay out. A change SHALL be made in the Mirror at once and sent to the tablet in the background, one at a time in the order made (11-16: Create stayed gray while a send took 5 s); the screen SHALL say while changes are being sent, and SHALL say in plain words, by name, a change that could not reach the tablet. With Mirror editing off the Mirror's
 library SHALL offer none of them.
 
 In either library, while anything is selected a plain click on a notebook or folder SHALL open it and let the

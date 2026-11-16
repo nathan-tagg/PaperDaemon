@@ -33,7 +33,23 @@
     let R = null, seen = null;
     const S = { list: null, err: "", at: "", doc: null, page: 1, view: "page", tags: null, chapters: null, hist: [1], hpos: 0,
                 picked: null, held: false, pp: [], ppHeld: false };
-    const api = (m, p, b) => PD.api(m, base + p, b);
+    // THE MIRROR'S CHANGES GO TO THE TABLET IN THE BACKGROUND: the line under the head says so while they go, and what
+    // did not go
+    let sendsWatched = 0;
+    async function watchSends() {
+      const n = ++sendsWatched, msg = $("#" + id + "-import", R);
+      if (msg) { msg.textContent = PD.t("tablet.sending"); msg.className = "hint import-msg"; }
+      const [got] = await PD.safe(PD.api("GET", "/mirror/sending"));
+      if (n !== sendsWatched || !msg) return;                 // (a later change watches now)
+      const errs = (got && got.errors) || [];
+      msg.textContent = errs.join(" ");
+      msg.className = "hint import-msg" + (errs.length ? " attn" : "");
+    }
+    const api = (m, p, b) => {
+      const r = PD.api(m, base + p, b);
+      if (!fm && m !== "GET") r.then(got => { if (got && got.sending) watchSends(); }, () => {});
+      return r;
+    };
     // THE MAKING AND CHANGING: always in the False Mirror; in the Mirror while Edit the Mirror is on
     const can = () => fm || !!PD.getK(PD.settings || {}, "mirror.edit");
     const byId = x => (S.list || []).find(d => d.id === x);
@@ -819,7 +835,13 @@
         if (err) { msg.textContent = PD.errText(err); msg.className = "hint attn"; return; }
         dlg.close();
       });
-      dlg.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.matches("input[type=text]")) { e.preventDefault(); dlg.querySelector("[data-v=ok]").click(); } });
+      // ENTER CREATES (saves), wherever the focus is in the sheet: a template chosen, a cover ticked (11-16) -- not on
+      // Cancel, a link or a remove button
+      dlg.addEventListener("keydown", e => {
+        if (e.key !== "Enter" || e.shiftKey || e.isComposing || e.target.closest("textarea, a, [data-v=cancel], .chip-x, [data-doc-export]")) return;
+        const ok = dlg.querySelector("[data-v=ok]"); if (!ok || ok.disabled) return;
+        e.preventDefault(); ok.click();
+      });
       dlg.addEventListener("close", () => dlg.remove());
       document.body.append(dlg);
       dlg.showModal();

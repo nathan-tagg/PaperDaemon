@@ -1798,10 +1798,8 @@ def post_library_notebook(body: dict = Body(default={})):
     cover = "first" if body.get("cover") == "first" else "last"
     tags = [str(t) for t in body.get("tags") or [] if str(t).strip()][:20]
     tablet = not paths.local_only()
-    if tablet and not _mirror_edit():
-        return _mirror_edit_off()
-    return _local(lambda: {"id": local.new_notebook(str(body.get("name") or ""), str(body.get("parent") or ""),
-                                                    template, cover, tags, tablet=tablet)})
+    return _lib(lambda: {"id": local.new_notebook(str(body.get("name") or ""), str(body.get("parent") or ""),
+                                                  template, cover, tags, tablet=tablet, send=False)}, (), _new_id)
 
 
 @app.post(API + "/library/quick-sheets")
@@ -1812,15 +1810,26 @@ def post_library_quick_sheets():
         return _local(lambda: dict(zip(("id", "page"), local.quick_sheets())))
     qs = local.quick_sheets_doc()
     if qs is None:                                    # none yet: one made in the tablet's frame and sent to it
-        return _lib(lambda: dict(zip(("id", "page"), local.quick_sheets(tablet=True))))
-    return _lib(lambda: dict(zip(("id", "page"), local.quick_sheets(tablet=True))), [qs])
+        return _lib(lambda: dict(zip(("id", "page"), local.quick_sheets(tablet=True, send=False))), (), _new_id)
+    return _lib(lambda: dict(zip(("id", "page"), local.quick_sheets(tablet=True, send=False))), [qs])
 
 
 @app.post(API + "/library/folder")
 def post_library_folder(body: dict = Body(default={})):
     from .remarkable import local
     tablet = not paths.local_only()
-    return _lib(lambda: {"id": local.new_folder(str(body.get("name") or ""), str(body.get("parent") or ""), tablet=tablet)})
+    return _lib(lambda: {"id": local.new_folder(str(body.get("name") or ""), str(body.get("parent") or ""), tablet=tablet,
+                                                send=False)}, (), _new_id)
+
+
+@app.get(API + "/mirror/sending")
+def get_library_sending():
+    """Once the library's changes made so far are sent to the tablet (the Mirror's, in the background): what did not go.
+    -> {errors: [sentences]}"""
+    from .remarkable import inplace
+    if paths.local_only():
+        return {"errors": []}
+    return {"errors": inplace.sending()}
 
 
 @app.post(API + "/library/import")
