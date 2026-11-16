@@ -121,9 +121,18 @@ def drop(lineup):
             _save(d)
 
 
+_applying = threading.Lock()                          # (two jobs of one lineup may remember at once)
+
+
 def apply(lineup, changes):
     """The model's `remember` list from one decision: each {"text"} adds, {"text", "replaces": id} replaces,
-    {"replaces": id} with no text removes -> [what was done, for the job's log]."""
+    {"replaces": id} with no text removes -> [what was done, for the job's log]. One job's list at a time: jobs run at
+    once, and each change reads and writes the lineup's whole file."""
+    with _applying:
+        return _apply(lineup, changes)
+
+
+def _apply(lineup, changes):
     done = []
     for c in changes or []:
         if not isinstance(c, dict):

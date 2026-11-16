@@ -26,7 +26,7 @@ ASK_MAX_TOKENS = 1500
 # --------------------------------------------------------------- the server
 def server_up(timeout=3):
     try:
-        with urllib.request.urlopen(H.LLM + "/health", timeout=timeout) as r:
+        with urllib.request.urlopen(urllib.request.Request(H.LLM + "/health", headers=lineup_header()), timeout=timeout) as r:
             return b'"ok"' in r.read()
     except Exception:
         return False
@@ -42,8 +42,15 @@ def ensure_server():
     return False
 
 
+def lineup_header():
+    """The job's lineup, named on every call to the engine (X-PD-Lineup): the engine answers it for that lineup, whatever
+    other jobs run at once (run-jobs-in-parallel)."""
+    name = (H.RUN or {}).get("_chosen")
+    return {"X-PD-Lineup": name} if name else {}
+
+
 def _studio_open(path, body=None, timeout=None):
-    headers = {"Content-Type": "application/json"}
+    headers = dict({"Content-Type": "application/json"}, **lineup_header())
     if STUDIO_TOKEN:
         headers["Authorization"] = "Bearer " + STUDIO_TOKEN
 
@@ -100,7 +107,7 @@ def chat(messages, tool_choice="required", temperature=None, allowed=None):
         body["chat_template_kwargs"] = {"enable_thinking": False}
     req = urllib.request.Request(H.LLM + "/v1/chat/completions",
                                  data=json.dumps(body).encode(),
-                                 headers={"Content-Type": "application/json"})
+                                 headers=dict({"Content-Type": "application/json"}, **lineup_header()))
     JOB.turns = JOB.turns + 1
     _t0 = time.time()
     try:
@@ -224,7 +231,7 @@ def plain(body):
     runaway guard as a turn -- tokens and repetition, never a clock. -> (text, finish reason)."""
     body = dict(body, stream=True)
     req = urllib.request.Request(H.LLM + "/v1/chat/completions", data=json.dumps(body).encode(),
-                                 headers={"Content-Type": "application/json"})
+                                 headers=dict({"Content-Type": "application/json"}, **lineup_header()))
     content, reasoning, finish, n = [], [], None, 0
     with urllib.request.urlopen(req) as resp:
         for raw in resp:
@@ -275,7 +282,7 @@ def keep_prefix(doc_id):
     if NOTHINK:
         body["chat_template_kwargs"] = {"enable_thinking": False}
     req = urllib.request.Request(H.LLM + "/v1/chat/completions", data=json.dumps(body).encode(),
-                                 headers={"Content-Type": "application/json"})
+                                 headers=dict({"Content-Type": "application/json"}, **lineup_header()))
     with urllib.request.urlopen(req) as r:
         r.read()
     return True
@@ -299,7 +306,7 @@ def keep_prefix_later(doc_id):
 def _llm_up():
     """Is the text model answering? A game plays without it; only its talk and written moves wait."""
     try:
-        with urllib.request.urlopen(H.LLM + "/health", timeout=3) as r:
+        with urllib.request.urlopen(urllib.request.Request(H.LLM + "/health", headers=lineup_header()), timeout=3) as r:
             return r.status == 200
     except Exception:
         return False

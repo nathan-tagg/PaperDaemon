@@ -95,8 +95,11 @@ SAFE_DEFAULT = PL.SAFE                      # rm_page.SAFE_AREA, the one definit
 PAD = 30.0                          # ink stays this far inside any box or edge it is written against
 
 
+_LOG_TAG = ""                                    # a worker's notebook, before each line (several jobs at once)
+
+
 def log(msg):
-    line = "[%s] %s" % (time.strftime("%H:%M:%S"), msg)
+    line = "[%s] %s%s" % (time.strftime("%H:%M:%S"), ("[%s] " % _LOG_TAG) if _LOG_TAG else "", msg)
     print(line, flush=True)
     try:
         paths.cap_file(LOG)
@@ -972,9 +975,8 @@ def run_job_pages(job):
             continue
         log("JOB %s p%s (%s)" % (name, page, k[:13]))
         try:
-            from paperdaemon import paths as _paths
             from paperdaemon.pipeline.host import steps as _ST
-            _ST.begin(os.path.join(_paths.state_dir(), "run", "progress.json"), doc_id, page)
+            _ST.begin(progress_path(doc_id), doc_id, page)
         except Exception:
             pass
         _fresh_run_file()
@@ -1356,8 +1358,17 @@ def converse(doc_id, page, name, keys=(), extra=None, conflict=None):
     return outcome, note, dt, msgs
 
 
+progress_path = paths.job_progress                 # (one file per notebook: several jobs at once)
+jobs_dir = paths.jobs_dir
+job_file_key = paths.job_id
+
+
 class Host:
-    """The host process: it takes the jobs the daemon queues, one at a time, and works each to a recorded end."""
+    """The host process: a DISPATCHER (run-jobs-in-parallel, D1). It takes the jobs the daemon queues and starts one
+    worker process for each, which works it to a recorded end and stops: jobs on different notebooks at once, a
+    notebook's one at a time, and a LOCAL job (its lineup's model on this computer's graphics card: slots.uses_card)
+    only when no other local job runs -- here or in the other library's host (the data folder's lock, paths.one_job,
+    held by the local worker for its whole job)."""
 
     def start(self):
         """A fresh log, the queue folder, and the time this host started: the daemon hands a job the last host
@@ -1375,32 +1386,19 @@ class Host:
         except OSError:
             pass
         # A JOB A HOST STOPPED IN THE MIDDLE OF left its progress behind: no job is running yet, so it goes (a cover
-        # showed a working bar for good)
-        try:
-            os.remove(os.path.join(paths.state_dir(), "run", "progress.json"))
-        except OSError:
-            pass
-        ensure_server()
-
-    def next_job(self):
-        """The oldest queued job, or None. A file that does not read as a job is dropped."""
-        try:
-            names = sorted(f for f in os.listdir(QUEUE) if f.endswith(".json"))
-        except OSError:
-            return None
-        for n in names:
-            p = os.path.join(QUEUE, n)
-            try:
-                with open(p, encoding="utf-8") as f:
-                    job = json.load(f)
-                job["_path"] = p
-                return job
-            except Exception:
+        # showed a working bar for good) -- and the files its workers held
+        import shutil
+        shutil.rmtree(os.path.join(paths.state_dir(), "run", "progress"), ignore_errors=True)
+        for n in os.listdir(jobs_dir()):
+            if n.endswith((".pid", ".json")):
                 try:
-                    os.remove(p)
+                    os.remove(os.path.join(jobs_dir(), n))
                 except OSError:
                     pass
-        return None
+        for n in os.listdir(QUEUE):
+            if n.startswith("work-"):
+                shutil.rmtree(os.path.join(QUEUE, n), ignore_errors=True)
+        ensure_server()
 
     def work(self, job):
         """One job, start to finish. A crash is recorded like any other outcome (skipped, with the error), never
@@ -1426,21 +1424,164 @@ class Host:
                     except Exception:
                         pass
 
+    def queued(self):
+        """Every queued job, oldest first."""
+        out = []
+        try:
+            names = sorted(f for f in os.listdir(QUEUE) if f.endswith(".json"))
+        except OSError:
+            return out
+        for n in names:
+            p = os.path.join(QUEUE, n)
+            try:
+                with open(p, encoding="utf-8") as f:
+                    job = json.load(f)
+                job["_path"] = p
+                out.append(job)
+            except Exception:
+                try:
+                    os.remove(p)
+                except OSError:
+                    pass
+        return out
+
+    @staticmethod
+    def doc_and_lineup(job):
+        """The notebook a job works, and its lineup (by its first page's tag)."""
+        from paperdaemon import settings as _S
+        keys = job.get("keys") or []
+        e = (S.load()["entries"].get(keys[0]) or {}) if keys else {}
+        try:
+            name = _S.lineup_name_for(_S.load(), e.get("tag"))
+        except Exception:
+            name = None
+        return e.get("doc_id") or (keys[0] if keys else ""), name
+
+    @staticmethod
+    def is_local(lineup):
+        from paperdaemon import settings as _S
+        from paperdaemon.models import slots as _slots
+        try:
+            return _slots.uses_card(_S.load(), lineup)
+        except Exception:
+            return True
+
+    def start_worker(self, job, running):
+        """The job's file moved out of the queue (no one takes it twice) and a worker started on it."""
+        if os.path.exists(paths.abandoned_mark(paths.job_id((job.get("keys") or [""])[0]))):
+            try:
+                os.remove(job["_path"])                   # abandoned while it waited: never started
+            except OSError:
+                pass
+            return
+        doc, lineup = self.doc_and_lineup(job)
+        local = self.is_local(lineup)
+        held = os.path.join(jobs_dir(), os.path.basename(job["_path"]))
+        try:
+            os.replace(job["_path"], held)
+        except OSError:
+            return                                        # abandoned or taken meanwhile
+        from paperdaemon import loop as _L
+        cmd = _L.pipeline_command("paperdaemon.pipeline.host", "--job", held) + (["--local"] if local else [])
+        kw = dict(env=os.environ.copy(), stdin=subprocess.DEVNULL)
+        try:
+            kw.update(stdout=sys.stdout, stderr=subprocess.STDOUT)
+            sys.stdout.fileno()
+        except Exception:
+            kw.update(stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if sys.platform == "win32":
+            kw["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+        proc = subprocess.Popen(cmd, **kw)
+        running[doc] = {"proc": proc, "local": local, "keys": job.get("keys") or [], "where": job.get("where")}
+        log("%s on %s%s -- worker %d" % (job.get("where") or doc[:8], lineup or "?", " (local)" if local else "", proc.pid))
+
+    def reap(self, running):
+        """Workers that ended: a job one left working (its process died) is recorded as failed."""
+        for doc, r in list(running.items()):
+            code = r["proc"].poll()
+            if code is None:
+                continue
+            del running[doc]
+            if code == 0:
+                continue
+            led = S.load()["entries"]
+            for k in r["keys"]:
+                if (led.get(k) or {}).get("status") == "working":
+                    try:
+                        S.mark(k, "skipped", failed=True, note="Failed: the job's process stopped (exit code %s)" % code)
+                    except Exception:
+                        pass
+
+    def choose(self, jobs, running):
+        """Which of the queued `jobs` start now, oldest first: one per notebook (none of a notebook a worker has), and
+        a local job only while no local one runs (the other library's waits on the lock). -> [job]."""
+        out, docs, local = [], set(running), any(r["local"] for r in running.values())
+        for job in jobs:
+            doc, lineup = self.doc_and_lineup(job)
+            if doc in docs:
+                continue                                  # ONE JOB PER NOTEBOOK
+            mine = self.is_local(lineup)
+            if mine and local:
+                continue                                  # ONE LOCAL JOB AT A TIME
+            docs.add(doc)
+            local = local or mine
+            out.append(job)
+        return out
+
     def serve(self):
         self.start()
-        from paperdaemon import paths as _paths
+        running = {}
         while True:
-            job = self.next_job()
-            if job is None:
-                time.sleep(1)
-                continue
-            # ONE JOB AT A TIME ACROSS THE MIRRORS: the Mirror's host and the false mirror's share the model, so a job
-            # waits here while the other host works one (the lock is the data folder's; the system frees it if a
-            # host dies)
-            with _paths.one_job():
-                if os.path.exists(job["_path"]):          # still queued: not abandoned while it waited
-                    self.work(job)
+            self.reap(running)
+            for job in self.choose(self.queued(), running):
+                self.start_worker(job, running)
+            time.sleep(0.5)
 
 
-def main():
+def work_one(path, local):
+    """A WORKER (run-jobs-in-parallel, D1): the one job in `path`, worked as the host always worked a job, with files
+    of its own -- its pictures in a folder of its own, its process id for Abandon, its notebook's id before its log
+    lines -- and, for a local job, the data folder's lock held for the whole job."""
+    global QUEUE, _LOG_TAG
+    import contextlib
+    import shutil
+    with open(path, encoding="utf-8") as f:
+        job = json.load(f)
+    job["_path"] = path
+    keys = job.get("keys") or []
+    doc = (S.load()["entries"].get(keys[0]) or {}).get("doc_id") if keys else None
+    _LOG_TAG = (doc or "")[:8]
+    jid = job_file_key(keys[0] if keys else os.getpid())
+    os.environ["PD_JOB"] = jid                       # (the documents this job makes are its own: paths.note_made)
+    pidf = os.path.join(jobs_dir(), jid + ".pid")
+    with open(pidf, "w", encoding="utf-8") as f:
+        f.write(str(os.getpid()))
+    if os.path.exists(paths.abandoned_mark(jid)):        # abandoned before it started: nothing of it is done
+        log("%s was abandoned before it started" % (job.get("where") or jid))
+        for p in (pidf, path):
+            try:
+                os.remove(p)
+            except OSError:
+                pass
+        return
+    QUEUE = os.path.join(QUEUE, "work-%d" % os.getpid())
+    os.makedirs(QUEUE, exist_ok=True)
+    try:
+        with (paths.one_job() if local else contextlib.nullcontext()):
+            if os.path.exists(path):                     # still there: not abandoned while it waited for the card
+                Host().work(job)
+    finally:
+        shutil.rmtree(QUEUE, ignore_errors=True)
+        for p in (pidf, path, progress_path(doc) if doc else None):
+            try:
+                if p:
+                    os.remove(p)
+            except OSError:
+                pass
+
+
+def main(argv=None):
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if "--job" in argv:
+        return work_one(argv[argv.index("--job") + 1], "--local" in argv)
     Host().serve()

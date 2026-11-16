@@ -364,10 +364,10 @@ def _new_notebook(mirror, pipeline, doc, name, parent, now):
     content.update(pageCount=0, pageTags=[], coverPageNumber=-1, sizeInBytes="0", tags=[])
     with open(os.path.join(mirror, doc + ".content"), "w", encoding="utf-8") as f:
         json.dump(content, f, indent=4)
-    with open(os.path.join(mirror, doc + ".metadata"), "w", encoding="utf-8") as f:
-        json.dump({"createdTime": str(now), "lastModified": str(now), "lastOpened": "", "lastOpenedPage": 0,
-                   "parent": parent, "pinned": False, "source": "", "type": "DocumentType", "visibleName": name},
-                  f, indent=4)
+    # (written whole, and -- a job's new notebook -- recorded as that job's: paths.note_made)
+    paths.write_json_atomic(os.path.join(mirror, doc + ".metadata"),
+                            {"createdTime": str(now), "lastModified": str(now), "lastOpened": "", "lastOpenedPage": 0,
+                             "parent": parent, "pinned": False, "source": "", "type": "DocumentType", "visibleName": name})
 
 
 def _decomposer_cache():

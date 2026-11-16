@@ -91,7 +91,7 @@
     }).join("") + "</ol>");
   }
 
-  // BOTH MIRRORS' JOBS, the Mirror's first, then the False Mirror's (marked), each run one at a time across both. A job
+  // BOTH MIRRORS' JOBS, the Mirror's first, then the False Mirror's (marked); several run at once, one per notebook. A job
   // moves only among its own mirror's, and its controls go to its own mirror's engine.
   const qbase = j => (j && j.fm ? "/fm" : "");
   const mine = (list, fm) => (list || []).map(j => Object.assign(j, { fm }));

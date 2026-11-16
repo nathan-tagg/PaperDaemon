@@ -102,6 +102,8 @@ def write_atomic(path, data):
         data = data.encode("utf-8")
     d = os.path.dirname(os.path.abspath(path))
     os.makedirs(d, exist_ok=True)
+    if path.endswith(".metadata") and os.environ.get("PD_JOB") and not os.path.exists(path):
+        note_made(os.path.basename(path)[:-len(".metadata")])
     import threading
     # its own name for each write: two writes of one file at once (two threads of the engine) never share a part file
     tmp = "%s.%d.%d.part" % (path, os.getpid(), threading.get_ident())
@@ -154,6 +156,75 @@ def state_dir():
     """Where the pipeline keeps its working state: RM_STATE (set by the engine for its children), else the
     data folder."""
     return os.environ.get("RM_STATE") or data_dir()
+
+
+# ---------------------------------------------------------------- jobs running at once (run-jobs-in-parallel)
+def jobs_dir():
+    """What the jobs being worked hold: each one's job file, its worker's process id (<job>.pid, for Abandon) and the
+    documents it made (<job>.made)."""
+    d = os.path.join(state_dir(), "run", "jobs")
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+def job_id(key):
+    """A job's name in jobs_dir: its first page's key, made a file name."""
+    return "".join(c if c.isalnum() or c in "-_" else "_" for c in str(key))[:120]
+
+
+def job_progress(doc):
+    """How far the job on notebook `doc` is (host/steps.py writes it; the daemon's notes and the window read it)."""
+    return os.path.join(state_dir(), "run", "progress", "%s.json" % doc)
+
+
+def note_made(u):
+    """A document the job this process works has made (its .metadata written for the first time): it is that job's --
+    it goes to the tablet with that job's record, and goes with it if the job is abandoned. PD_JOB names the job."""
+    jid = os.environ.get("PD_JOB")
+    if not jid or not u:
+        return
+    try:
+        with open(os.path.join(jobs_dir(), jid + ".made"), "a", encoding="utf-8") as f:
+            f.write(u + "\n")
+    except OSError:
+        pass
+
+
+def abandoned_mark(jid):
+    """Abandon's mark for job `jid`: a worker that finds it does not start the job (or stops before it starts)."""
+    return os.path.join(jobs_dir(), jid + ".abandoned")
+
+
+def note_files_had(jid, doc, mirror):
+    """The files notebook `doc` has as job `jid` is handed over (<doc>/... names): what an abandon of it never removes."""
+    top = os.path.join(mirror, doc)
+    names = []
+    for dirpath, _dirs, files in os.walk(top):
+        for fn in files:
+            names.append(doc + "/" + os.path.relpath(os.path.join(dirpath, fn), top).replace(os.sep, "/"))
+    try:
+        with open(os.path.join(jobs_dir(), jid + ".had"), "w", encoding="utf-8") as f:
+            f.write("\n".join(names))
+    except OSError:
+        pass
+
+
+def files_had(jid):
+    """The files the job's notebook had when it was handed over -> set, or None when not recorded."""
+    try:
+        with open(os.path.join(jobs_dir(), jid + ".had"), encoding="utf-8") as f:
+            return {ln.strip() for ln in f if ln.strip()}
+    except OSError:
+        return None
+
+
+def made_by(jid):
+    """The documents job `jid` made -> [ids]."""
+    try:
+        with open(os.path.join(jobs_dir(), jid + ".made"), encoding="utf-8") as f:
+            return [ln.strip() for ln in f if ln.strip()]
+    except OSError:
+        return []
 
 
 # THE FALSE MIRROR: a library kept only on this computer, beside the Mirror (a sibling folder, never inside it), with

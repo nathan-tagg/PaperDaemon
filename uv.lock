@@ -654,7 +654,7 @@ wheels = [
 
 [[package]]
 name = "paperdaemon"
-version = "0.2.93"
+version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi" },

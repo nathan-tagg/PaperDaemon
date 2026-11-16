@@ -68,7 +68,7 @@ def fresh(tmp_path, monkeypatch):
     harnesses._user.update(key=None, made=(), errors=[])
     with card._cond:
         card._inflight.update(text=0, image=0)
-        card._run.update(loading=None, wanted="text")
+        card._run.update(loading=None, wanted={})
         for st in card._state.values():
             st.update(phase="idle", msg="", since=None)
     yield ring

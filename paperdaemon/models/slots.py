@@ -57,6 +57,30 @@ def pages_go_to(role, s, m):
     return S.host_of(loc) if not S.loopback(loc) else None
 
 
+def runs_here(m):
+    """A slot whose model runs on this computer, on its graphics card: started by a start script, or served at this
+    computer's address. A command-line program is not one: it runs as a program of its own, beside other jobs (the
+    maintainer, 11-16: command lines and APIs run in parallel)."""
+    from .. import scripts
+    if not m or m.get("api") == "cli":
+        return False
+    if scripts.has_script(m):
+        return True
+    loc = str(m.get("location") or "").strip()
+    return bool(loc) and S.loopback(loc)
+
+
+def uses_card(s, name):
+    """A LOCAL lineup (run-jobs-in-parallel, D2): its text model runs on this computer's graphics card, where a job
+    spends its time. Its jobs run one at a time, across both libraries; every other lineup's run beside them. A picture
+    from an image model on the card is one call of a job, and takes its turn on the card through the engine (card.py)
+    without holding the job. A lineup that is not there counts as local (nothing is known of it)."""
+    lu = S.lineup(s, name) if name else None
+    if lu is None:
+        return True
+    return runs_here(lu.get("text") or {})
+
+
 def script_text(m):
     """The text of a slot's start script (for the harness guess), or ""."""
     from .. import scripts

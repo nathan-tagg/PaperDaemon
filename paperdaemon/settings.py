@@ -17,6 +17,7 @@ The settings keep a list of lineups, every one of them live: a page's tag picks 
 (lineup_of_tag), and the engine uses that lineup's slots for the job's model calls (use()). Tags are unique
 across PaperDaemon, and none may be the ignore or the standing instructions tag (both in Settings).
 """
+import contextvars
 import copy
 import json
 import os
@@ -472,6 +473,22 @@ def lineup(s=None, name=None):
 
 _forced = {"name": None}
 _in_use = {"name": None}
+# THE LINEUP OF ONE REQUEST (run-jobs-in-parallel, D3): a job names its lineup on every call to the engine (the header
+# X-PD-Lineup), and the engine sets it for that request alone -- jobs on two lineups run at once, each with its own
+_request = contextvars.ContextVar("pd_request_lineup", default=None)
+
+
+def for_request(name):
+    """The lineup of the request being answered (the server's middleware) -> a token for end_request."""
+    return _request.set(str(name) if name else None)
+
+
+def end_request(token):
+    _request.reset(token)
+
+
+def of_request():
+    return _request.get()
 
 
 def force(name):
@@ -491,10 +508,11 @@ def in_use():
 
 
 def active(s=None):
-    """The lineup in use: the one forced for a benchmark run, else the current job's, else the last one
-    saved as in use, else the first."""
+    """The lineup in use: the one forced for a benchmark run, else the one the request being answered names (its
+    job's), else the one named last, else the first."""
     s = s or load()
     lu = lineup(s, _forced["name"]) if _forced["name"] else None
+    lu = lu or (lineup(s, _request.get()) if _request.get() else None)
     lu = lu or (lineup(s, _in_use["name"]) if _in_use["name"] else None)
     lu = lu or lineup(s)
     if lu is None:

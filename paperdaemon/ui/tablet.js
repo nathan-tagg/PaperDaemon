@@ -348,7 +348,7 @@
     // takes seconds), then the bar is the job's again. No count until the model's plan is in; a sync fills by the push's
     // requests to the cloud and a sync that failed shows nothing (its reason is by the document's name)
     function barOf(doc) {
-      const s = S.sync, p = S.progress;
+      const s = S.sync, p = (S.progress || []).find(x => x.doc === doc);     // (every job being worked: one per notebook)
       if (s && s.doc === doc) return { busy: s.busy, frac: s.frac };
       if (p && p.doc === doc) return { busy: !p.total, frac: p.total ? p.done / p.total : 0, done: p.done, total: p.total };
       return null;
@@ -435,7 +435,7 @@
     }
     async function loadProgress() {
       const [p] = await PD.safe(api("GET", "/progress"));
-      S.progress = p && p.doc ? p : null;
+      S.progress = Array.isArray(p) ? p : (p && p.doc ? [p] : []);
       paintProgress();
     }
 

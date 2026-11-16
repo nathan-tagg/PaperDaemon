@@ -715,7 +715,7 @@ def changed_files(doc_uuid=None):
     return out
 
 
-def revert_since(doc_uuid, since, token=None):
+def revert_since(doc_uuid, since, token=None, had=None):
     """Undo what was written to one document in the mirror since `since` (seconds) and never pushed: each of its
     files changed since then goes back to the bytes the cloud has, and each file of it the cloud never had (a page or
     a picture a job added) goes. Writes from before `since` -- an earlier job's push still owed -- are left alone.
@@ -737,28 +737,27 @@ def revert_since(doc_uuid, since, token=None):
         for fn in files:
             path = os.path.join(dirpath, fn)
             name = doc_uuid + "/" + os.path.relpath(path, top).replace(os.sep, "/")
-            if name not in st["files"] and os.path.getmtime(path) >= since:
+            # `had`: the files the notebook had when the job was handed over (paths.files_had): none of them is
+            # the job's to take away -- the daemon's "On it" note touches the user's own page at the start, and by its
+            # time alone an abandon took that page with it
+            if name not in st["files"] and os.path.getmtime(path) >= since and (had is None or name not in had):
                 os.remove(path)
                 out.append(name)
     return out
 
 
-def drop_new_since(since):
-    """Remove every document the cloud never had that was made in the mirror since `since` (seconds): what an
-    abandoned job created (a new notebook, a PDF document, a folder) goes with it. -> [document ids]."""
+def drop_docs(ids):
+    """Remove the documents `ids` the cloud never had from the mirror: what an abandoned job made (paths.made_by) goes
+    with it. A document the cloud has stays. -> [document ids removed]."""
+    import shutil
     st, out = _state(), []
-    for f in os.listdir(MIRROR):
-        if not f.endswith(".metadata"):
-            continue
-        u = f[:-len(".metadata")]
-        path = os.path.join(MIRROR, f)
-        if u in st.get("docs", {}) or os.path.getmtime(path) < since:
+    for u in ids:
+        if not u or u in st.get("docs", {}) or not os.path.exists(os.path.join(MIRROR, u + ".metadata")):
             continue
         for g in os.listdir(MIRROR):
             if g.split(".")[0] == u and os.path.isfile(os.path.join(MIRROR, g)):
                 os.remove(os.path.join(MIRROR, g))
         if os.path.isdir(os.path.join(MIRROR, u)):
-            import shutil
             shutil.rmtree(os.path.join(MIRROR, u))
         out.append(u)
     return out
@@ -800,7 +799,7 @@ def unpushed():
     return new, changed
 
 
-def push_pending(dry_run=False, log=None):
+def push_pending(dry_run=False, log=None, hold=()):
     """Push everything unpushed (unpushed()): new documents created, changed ones stamped -- so the tablet re-fetches
     the pages edited -- and updated. -> {"pushed": [(id, result)], "owed": True when the tablet changed some of
     them meanwhile (the next pull brings its change, and they go again)}.
@@ -810,6 +809,11 @@ def push_pending(dry_run=False, log=None):
     if os.environ.get("RM_HOST_DRY_DOCS") == "1" or paths.local_only():      # the false mirror: never the cloud
         return {"pushed": [], "owed": False}
     new, changed = unpushed()
+    # `hold`: what other jobs still running are working or made (run-jobs-in-parallel, D6) -- it goes with their own
+    # record, never half done with another job's
+    hold = set(hold or ())
+    new = [u for u in new if u not in hold]
+    changed = {d: p for d, p in changed.items() if d not in hold}
     out, owed = [], False
     for u in new:
         r = push_new_doc(u, dry_run=dry_run)

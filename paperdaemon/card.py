@@ -40,7 +40,7 @@ EDIT_MODES = ("ref", "img2img", "inpaint")
 
 _cond = threading.Condition(threading.RLock())
 _inflight = {role: 0 for role in slots.ROLES}
-_run = {"loading": None, "wanted": "text"}
+_run = {"loading": None, "wanted": {}}            # wanted: lineup -> the model its job wants next
 _state = {role: {"phase": "idle", "msg": "", "since": None} for role in slots.ROLES}
 
 
@@ -153,6 +153,21 @@ def call(role, s=None, on_wait=None):
         _release(role)
 
 
+_on_card = threading.Lock()
+
+
+@contextlib.contextmanager
+def picture(role, s):
+    """ONE PICTURE AT A TIME ON THIS COMPUTER'S CARD (run-jobs-in-parallel, D2): jobs run at once, and a picture from a
+    model served here waits for the one being made; a picture from a service elsewhere goes at once."""
+    if slots.runs_here(slots.slot(role, s)):
+        with _on_card, call(role, s):
+            yield
+    else:
+        with call(role, s):
+            yield
+
+
 def ensure(role, s=None, on_wait=None):
     """Make `role` ready now, without holding it (the model check, the API's start button)."""
     with call(role, s, on_wait) as srv:
@@ -169,7 +184,7 @@ def load(key):
     if key == "image" and slots.images_from_text():
         key = "text"                                 # THE TEXT MODEL MAKES THE PICTURES: no image model to start
     with _cond:
-        _run["wanted"] = key
+        _run["wanted"][S.active()["name"]] = key       # (each job's, by its lineup: several run at once)
         if _state[key]["phase"] == "error":
             _state[key].update(phase="idle", msg="")
     return status()
@@ -180,7 +195,7 @@ def status(s=None):
     start is under way (`phase`)."""
     s = s or S.load()
     with _cond:
-        key, busy = _run["wanted"], _run["loading"]
+        key, busy = _run["wanted"].get(S.active(s)["name"], "text"), _run["loading"]
         states = {r: dict(_state[r]) for r in slots.ROLES}
     if busy:
         phase, msg = "loading", states[busy]["msg"]
@@ -366,7 +381,7 @@ def generate(p, s=None):
     if wf["reference"]:
         raise ValueError("the %s workflow starts from a picture: send it to /edit with the picture"
                          % wf["workflow"])
-    with call("text" if slots.images_from_text(s) else "image", s):
+    with picture("text" if slots.images_from_text(s) else "image", s):
         caps = slots.caps("image", s)
         ad = adapters.for_slot("image", s)
         seed = _seed(p.get("seed"))
@@ -446,7 +461,7 @@ def edit(p, s=None):
     with Image.open(io.BytesIO(base64.b64decode(src))) as im:
         size = im.size
     wf = workflow_request(p, s) if p.get("workflow") else None
-    with call("image", s):
+    with picture("image", s):
         caps = slots.caps("image", s)
         ad = adapters.for_slot("image", s)
         if ad.family != "sdapi":

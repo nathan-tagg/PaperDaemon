@@ -180,8 +180,9 @@ PENDING = {"sync": False, "at": 0.0}
 REQUEUE = set()
 
 
-def sync(why="", doc_id=None):
-    """Push local changes to the tablet.
+def sync(why="", doc_id=None, hold=()):
+    """Push local changes to the tablet -- but what `hold` names (the notebooks other jobs still work, and the
+    documents they made): those go with their own job's record (run-jobs-in-parallel, D6).
 
     Three HTTPS PUTs and a pointer move: no window, no clicks.
     """
@@ -192,7 +193,7 @@ def sync(why="", doc_id=None):
     try:
         # THE ONE WAY TO THE TABLET (sync.push_pending): every document the mirror holds that the cloud does not --
         # created by a job, or changed -- goes up here, new ones first
-        got = cloud.push_pending(log=log)
+        got = cloud.push_pending(log=log, hold=hold)
         for d, r in got["pushed"]:
             r = r or {}
             log("  pushed %s: %s%s" % (d[:8], r.get("files") or r.get("skipped") or r.get("error"),
@@ -454,7 +455,7 @@ def _note_in_place(doc, pid, lines, what, push=False):
             data = open(path, "rb").read()
         except OSError:
             return
-        job = INFLIGHT.get("job") or {}
+        job = (FLIGHTS.get(doc) or {}).get("job") or {}
         base = job.get("note_base")
         if push and base is not None and _without_notes(data) != _without_notes(base):
             log("  the %s note waits: the job has written the page" % what)
@@ -508,22 +509,22 @@ def prepare_page(job):
     _note_copy(doc, pid, clean, [head], "on-it")
 
 
-def progress_note():
+def progress_note(fl):
     """While a job runs: the latest thing the host reports (host/steps.event: what it read, its plan, each step as it
-    ends) replaces the last, on the same one line after "Saw it"."""
+    ends) replaces the last, on the same one line after "Saw it". `fl`: the job's record in FLIGHTS."""
     if not notes_on():
         return
+    job = fl["job"]
+    doc, pid, _path = _page_of(job)
     try:
-        with open(os.path.join(_STATE, "run", "progress.json"), encoding="utf-8") as f:
+        with open(paths.job_progress(doc), encoding="utf-8") as f:
             pr = json.load(f)
     except (OSError, ValueError):
         return
-    job = INFLIGHT["job"]
-    doc, pid, _path = _page_of(job)
     events = [str(e) for e in (pr.get("events") or [])]
-    if pr.get("doc") != doc or not events or events == INFLIGHT.get("noted"):
+    if pr.get("doc") != doc or not events or events == fl.get("noted"):
         return
-    INFLIGHT["noted"] = events
+    fl["noted"] = events
     _note_copy(doc, pid, job.get("note_base"), ["%s Now: %s" % (job.get("note_head") or "Saw it.", events[-1])], "progress")
 
 
@@ -573,10 +574,24 @@ def final_note(job, since):
 # job: it could not notice new work, could not see the user editing a page, and
 # any exception in there took the whole daemon down with it.
 #
-# Now it hands the job over and returns. One job is in flight at a time (still
-# serial), and the queue needs no file: a claimed ledger entry
-# with status "working" IS the queue, and it survives a restart.
-INFLIGHT = {}
+# Now it hands the job over and returns. SEVERAL JOBS ARE IN FLIGHT AT ONCE, ONE PER NOTEBOOK (run-jobs-in-parallel):
+# FLIGHTS holds each one's record by its notebook; the host decides which of the handed over run now (a local lineup's
+# one at a time). A claimed ledger entry with status "working" IS the queue, and it survives a restart.
+FLIGHTS = {}
+
+
+def _doc_of(job):
+    return job.get("doc_id") or (job.get("batch") or [{}])[0].get("doc_id") or job.get("key")
+
+
+def held_by_others(doc):
+    """What the jobs in flight but the one on `doc` still work: their notebooks and the documents they made."""
+    out = set()
+    for d, fl in FLIGHTS.items():
+        if d != doc:
+            out.add(d)
+            out.update(paths.made_by(paths.job_id(fl["keys"][0] if fl.get("keys") else fl.get("key"))))
+    return out
 
 
 def elapsed(t):
@@ -644,12 +659,17 @@ def hand_over(job):
     with open(os.path.join(QUEUE, stamp + ".json"), "w", encoding="utf-8") as f:
         json.dump(body, f)
     log("QUEUED %s" % where(job))
+    try:                                             # (what an abandon of it must never take away)
+        from paperdaemon.remarkable.sync import MIRROR as _M
+        paths.note_files_had(paths.job_id(keys[0]), _doc_of(job), _M)
+    except Exception:
+        pass
     _mark(INHAND, True)
-    INFLIGHT.update(job=job, keys=keys, key=key, since=time.time(),
-                    seen={r["key"]: (r["doc_id"], r.get("page_id"),
-                                     r["state"]["sha"])
-                          for r in (job.get("batch") or [job])},
-                    moved={})
+    FLIGHTS[_doc_of(job)] = dict(job=job, keys=keys, key=key, since=time.time(),
+                                 seen={r["key"]: (r["doc_id"], r.get("page_id"),
+                                                  r["state"]["sha"])
+                                       for r in (job.get("batch") or [job])},
+                                 moved={})
     return True
 
 
@@ -682,31 +702,32 @@ def hand_over_conflict():
     return True
 
 
-def watch_inflight():
+def watch_inflight(fl):
     """Notice the user editing a page while its job runs, so the page is queued again once the job is
-    recorded.
+    recorded. `fl`: the job's record in FLIGHTS.
     """
-    for k, (doc, pid, was) in list(INFLIGHT["seen"].items()):
+    for k, (doc, pid, was) in list(fl["seen"].items()):
         try:
             cur = rm_scan.page_state(doc, pid)["sha"]
         except OSError:
             continue                    # being written this instant: read again next second, never fail the job
         if cur != was:
-            INFLIGHT["seen"][k] = (doc, pid, cur)
-            INFLIGHT["moved"][k] = time.time()
+            fl["seen"][k] = (doc, pid, cur)
+            fl["moved"][k] = time.time()
 
 
-def finish_job(attempts):
-    """The in-flight job has recorded. Sync, re-anchor, re-queue, clear."""
-    job, keys, key = INFLIGHT["job"], INFLIGHT["keys"], INFLIGHT["key"]
-    log("  finished in %s" % elapsed(INFLIGHT["since"]))
+def finish_job(fl, attempts):
+    """A job in flight has recorded. Sync (its own work, not the other jobs'), re-anchor, re-queue, clear."""
+    job, keys, key = fl["job"], fl["keys"], fl["key"]
+    doc = _doc_of(job)
+    log("  %s finished in %s" % (where(job), elapsed(fl["since"])))
     done_at = time.time()
-    requeue = {k for k, when in INFLIGHT["moved"].items()
+    requeue = {k for k, when in fl["moved"].items()
                if done_at - when > SELF_WRITE}
     attempts.pop(key, None)
     # Sync BEFORE re-anchoring: the push makes the app re-serialize the page and
     # move its hash, so anchoring first would re-open the directive.
-    sync("job %s" % key)
+    sync("job %s" % key, hold=held_by_others(doc))
     with rm_scan.locked():                 # nobody writes the ledger between this read and write
         led = rm_scan.load()
         touched = False
@@ -758,11 +779,25 @@ def finish_job(attempts):
             rm_scan.save(led)
     if notes_on():
         try:
-            final_note(job, INFLIGHT["since"])
+            final_note(job, fl["since"])
         except Exception as ex:
             log("  could not write the daemon's note: %s" % str(ex)[:120])
-    INFLIGHT.clear()
-    _mark(INHAND, False)
+    _land(doc)
+
+
+def _land(doc):
+    """The job on `doc` is off the books: its record and its files go; with none left in flight, no job is in hand."""
+    fl = FLIGHTS.pop(doc, None)
+    if fl:
+        jid = paths.job_id(fl["keys"][0] if fl.get("keys") else fl.get("key"))
+        for p in (os.path.join(paths.jobs_dir(), jid + ".made"), os.path.join(paths.jobs_dir(), jid + ".had"),
+                  paths.abandoned_mark(jid)):
+            try:
+                os.remove(p)
+            except OSError:
+                pass
+    if not FLIGHTS:
+        _mark(INHAND, False)
 
 
 # ------------------------------------------------------------------- main loop
@@ -828,7 +863,7 @@ def main():
     release_dead()
     while True:
         cycles += 1
-        if not INFLIGHT and cycles % 60 == 0:
+        if not FLIGHTS and cycles % 60 == 0:
             release_dead()
         try:
             # UNDER THE LEDGER LOCK: this cycle writes back the whole ledger it read, and a host
@@ -896,14 +931,15 @@ def main():
                                       claimed[0].get("claim_owner", "?"))
         now = time.time()
 
-        if INFLIGHT:
-            watch_inflight()
+        working = []
+        for doc_, fl in list(FLIGHTS.items()):
+            watch_inflight(fl)
             try:
-                progress_note()
+                progress_note(fl)
             except Exception as ex:
                 log("  could not note the host's progress: %s" % str(ex)[:120])
             ents = rm_scan.load()["entries"]
-            sts = [ents.get(k, {}).get("status") for k in INFLIGHT["keys"]]
+            sts = [ents.get(k, {}).get("status") for k in fl["keys"]]
             # RECORDED BY THE HOST: done or skipped -- or already reopened by a scan (the page changed while the job
             # worked: the host recorded it, flagged "checked", and the scan made it pending again before this look).
             # Waiting for done or skipped alone, the daemon then waited for good, and no job ran again. "Checked" alone
@@ -911,49 +947,53 @@ def main():
             # record, the job was wrapped up early, the host's own answer seen as a change, and the page answered
             # itself over and over.
             if all(x in ("done", "skipped") or (x == "pending" and ents.get(k, {}).get("checked"))
-                   for k, x in zip(INFLIGHT["keys"], sts)):
-                finish_job(attempts)
+                   for k, x in zip(fl["keys"], sts)):
+                finish_job(fl, attempts)
                 last_fp = None
-            elif host_started_at() > INFLIGHT["since"] and not (set(INFLIGHT["keys"]) & queued_keys()):
+            elif host_started_at() > fl["since"] and not (set(fl["keys"]) & queued_keys()):
                 # THE HOST STARTED AGAIN AFTER TAKING THIS JOB, and never recorded it: it died or
                 # was restarted mid-job, and the job went with it. Waiting for its record is waiting
                 # forever (until the pages are marked by hand). The pages
                 # are released and the job handed over again -- not counted as a failed attempt,
                 # because nothing about the page failed.
-                log("  the host restarted while it had %s -- handing it over again" % where(INFLIGHT["job"]))
+                log("  the host restarted while it had %s -- handing it over again" % where(fl["job"]))
                 with rm_scan.locked():
                     led = rm_scan.load()
-                    for k in INFLIGHT["keys"]:
+                    for k in fl["keys"]:
                         e = led["entries"].get(k)
                         if e and e.get("status") not in ("done", "skipped"):
                             e["status"] = "pending"
                             e.pop("claim_owner", None)
                             e.pop("claim_at", None)
                     rm_scan.save(led)
-                k0 = INFLIGHT.get("key")
+                k0 = fl.get("key")
                 if k0 in attempts:
                     attempts[k0] = max(0, attempts[k0] - 1)
-                INFLIGHT.clear()
-                _mark(INHAND, False)
+                _land(doc_)
             else:
-                note = "%s  %s" % (where(INFLIGHT["job"]),
-                                   elapsed(INFLIGHT["since"]))
-        elif os.path.exists(HOLD):
+                working.append("%s  %s" % (where(fl["job"]), elapsed(fl["since"])))
+        if working:
+            note = " | ".join(working)
+        if os.path.exists(HOLD):
             note = "held for an update"              # no new job: the engine is about to stop for an update
         else:
+          handed = set(FLIGHTS)                      # ONE JOB PER NOTEBOOK: a notebook with one in flight waits
           for job in batch(todo):
             keys = job["keys"]
             key = job["bkey"]
+            if _doc_of(job) in handed:
+                continue
+            handed.add(_doc_of(job))
             if attempts.get(key, 0) >= MAX_ATTEMPTS:
                 log("  GIVING UP on %s -- writing a note on the page" % key)
                 from paperdaemon import i18n
                 report_failure(job, i18n.say("page.gave_up", {"n": MAX_ATTEMPTS}))
                 attempts.pop(key, None)
                 note = "%s needs a human" % where(job)
-                break
+                continue
             if DRY:
                 note = "would dispatch %s" % where(job)
-                break                 # a dry run must not touch state
+                continue              # a dry run must not touch state
             attempts[key] = attempts.get(key, 0) + 1
             taken = []
             for k in keys:
@@ -966,7 +1006,7 @@ def main():
                 taken = None
                 break
             if taken is None:
-                break
+                continue
             try:
                 prepare_page(job)
             except Exception as ex:
@@ -974,9 +1014,8 @@ def main():
             if not hand_over(job):
                 for t in taken:
                     rm_scan.release(t, "daemon")
-            break                      # one job at a time, always
           # CONFLICTS WAIT BEHIND EVERY OTHER JOB: handed over only when nothing else is owed
-          if not todo and not DRY and not INFLIGHT:
+          if not todo and not DRY and not FLIGHTS:
               hand_over_conflict()
 
         # ---- the mirror: the engine keeps it current (keeper.py); the daemon only reads it ----
@@ -985,7 +1024,7 @@ def main():
         # Only while nothing else is happening, and a minute between goes.
         if (PENDING["sync"] and not DRY and not todo
                 and not claimed and (now - PENDING["at"]) >= 60):
-            if sync("deferred push") == SYNC_OK:
+            if sync("deferred push", hold=held_by_others(None)) == SYNC_OK:
                 last_fp = None
                 note = "deferred sync completed"
             else:

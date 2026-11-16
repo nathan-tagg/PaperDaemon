@@ -169,6 +169,32 @@ def host_token():
     return _host["token"]
 
 
+class _RequestLineup:
+    """THE LINEUP A JOB NAMES (X-PD-Lineup) holds for that request alone (settings.for_request): every slot, harness
+    and capability the request reads is that lineup's, whatever other jobs ask meanwhile (run-jobs-in-parallel)."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        name = None
+        if scope.get("type") == "http":
+            for k, v in scope.get("headers") or []:
+                if k == b"x-pd-lineup":
+                    name = v.decode("utf-8", "replace").strip() or None
+                    break
+        if not name:
+            return await self.app(scope, receive, send)
+        token = settings.for_request(name)
+        try:
+            return await self.app(scope, receive, send)
+        finally:
+            settings.end_request(token)
+
+
+app.add_middleware(_RequestLineup)
+
+
 @app.middleware("http")
 async def require_pairing(request: Request, call_next):
     path = request.url.path
@@ -509,9 +535,6 @@ async def fm_proxy(rest: str, request: Request):
         code, data, ctype, heads = await run_in_threadpool(go)
     except OSError as ex:
         return JSONResponse({"error": "the false mirror's engine did not answer: %s" % str(ex)[:160]}, status_code=502)
-    # the job abandoned is the false mirror's host's: that host is the one to stop (its engine runs no loop)
-    if rest == "queue/abandon" and request.method == "POST" and code == 200:
-        await run_in_threadpool(lambda: loop.restart_host(who="fm-host"))
     if code == 304:
         return Response(status_code=304, headers={"ETag": heads["ETag"]} if heads.get("ETag") else None)
     return Response(content=data, status_code=code, media_type=ctype, headers=heads or None)
@@ -1448,17 +1471,20 @@ async def post_fill(request: Request, w: int, h: int, ppg: float, flat: int = 0)
 
 @app.get(API + "/progress")
 def get_progress():
-    """The page a job is working on and how far it is: {doc, page, done, total} (done and total null until the
-    model's plan is in), or null when no job is being worked."""
-    p = os.path.join(paths.state_dir(), "run", "progress.json")
-    try:
-        with open(p, encoding="utf-8") as f:
-            got = json.load(f)
-    except (OSError, ValueError):
-        return None
-    if not any(e.get("status") == "working" and e.get("doc_id") == got.get("doc") for e in ledger.entries().values()):
-        return None                                   # a host that stopped mid-job left it behind
-    return got
+    """Every job being worked and how far it is: [{doc, page, done, total}] (done and total null until the model's plan
+    is in), one per notebook being worked -- several at once (run-jobs-in-parallel); [] when none is."""
+    folder = os.path.dirname(paths.job_progress("x"))
+    working = {e.get("doc_id") for e in ledger.entries().values() if e.get("status") == "working"}
+    out = []
+    for n in sorted(os.listdir(folder)) if os.path.isdir(folder) else []:
+        try:
+            with open(os.path.join(folder, n), encoding="utf-8") as f:
+                got = json.load(f)
+        except (OSError, ValueError):
+            continue
+        if got.get("doc") in working:                 # (one a job that stopped mid-way left behind is not shown)
+            out.append(got)
+    return out
 
 
 @app.get(API + "/queue")
@@ -1486,31 +1512,69 @@ def post_queue_drop(body: dict = Body(...)):
     return out
 
 
+def _end_worker(key):
+    """The worker working the job of page `key` ended, by the process id it wrote when it took the job (its tree:
+    its model call and drawing go with it). -> True when one was running."""
+    pidf = os.path.join(paths.jobs_dir(), paths.job_id(key) + ".pid")
+    try:
+        with open(pidf, encoding="utf-8") as f:
+            pid = int(f.read().strip())
+    except (OSError, ValueError):
+        return False
+    if not loop._alive(pid):
+        return False
+    if os.name == "nt":
+        import subprocess
+        subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True,
+                       creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    else:
+        import signal
+        os.kill(pid, signal.SIGTERM)
+    try:
+        os.remove(pidf)
+    except OSError:
+        pass
+    return True
+
+
 @app.post(API + "/queue/abandon")
 def post_queue_abandon(body: dict = Body(...)):
-    """The job being worked, stopped at once and thrown away: the host ends (and with it the job's model call and
-    drawing), what the job wrote to its notebook goes back to the cloud's copy, the page is settled, and the host
-    starts again for the next job (unless paused). A job writes its page at its commit, its last step; what some
+    """A job being worked, stopped at once and thrown away: ITS worker ends (and with it the job's model call and
+    drawing; every other job runs on), what the job wrote to its notebook goes back to the cloud's copy and the
+    documents it made go, and the page is settled. A job writes its page at its commit, its last step; what some
     steps write before it (a game clearing its page, pages a job adds) is what is put back. A document a job pushed
     as its own (an adventure's journal) is already on the tablet and stays."""
     from .remarkable import sync
     key = body.get("key") if isinstance(body, dict) else None
     if not isinstance(key, str) or (ledger.load()["entries"].get(key) or {}).get("status") != "working":
         return JSONResponse({"error": "not the job being worked"}, status_code=400)
-    loop.restart_host(then_start=False)
+    jid = paths.job_id(key)
+    # THE MARK FIRST, THEN THE WORKER: a worker writes its id and then looks for the mark, so whichever comes first --
+    # a worker just starting, or one well under way -- the job stops (a job claimed but not yet started had no worker
+    # to end, and its worker then started and recorded the page anyway)
+    with open(paths.abandoned_mark(jid), "w", encoding="utf-8") as f:
+        f.write(key)
+    _end_worker(key)
     try:
-        out = ledger.abandon(key, revert=lambda doc, since: sync.revert_since(doc, since) + sync.drop_new_since(since))
+        out = ledger.abandon(key, revert=lambda doc, since: sync.revert_since(doc, since, had=paths.files_had(jid))
+                             + sync.drop_docs(paths.made_by(jid)))
     finally:
-        q = os.path.join(paths.state_dir(), "rm-queue")
-        for n in (os.listdir(q) if os.path.isdir(q) else []):
-            if n.endswith(".json"):
-                try:
-                    with open(os.path.join(q, n), encoding="utf-8") as f:
-                        if key in (json.load(f).get("keys") or []):
-                            os.remove(os.path.join(q, n))
-                except (OSError, ValueError):
-                    pass
-        loop.restart_host()
+        # its job file, wherever it waits: in the queue, or held for a worker that had not started it
+        for d in (os.path.join(paths.state_dir(), "rm-queue"), paths.jobs_dir()):
+            for n in (os.listdir(d) if os.path.isdir(d) else []):
+                p = os.path.join(d, n)
+                if n in (jid + ".made", jid + ".had"):
+                    try:
+                        os.remove(p)
+                    except OSError:
+                        pass
+                elif n.endswith(".json"):
+                    try:
+                        with open(p, encoding="utf-8") as f:
+                            if key in (json.load(f).get("keys") or []):
+                                os.remove(p)
+                    except (OSError, ValueError):
+                        pass
     if out is None:
         return JSONResponse({"error": "not the job being worked"}, status_code=400)
     return out

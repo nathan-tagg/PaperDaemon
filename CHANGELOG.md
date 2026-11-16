@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.0
+
+PaperDaemon now works on several notebooks at the same time.
+
+- Jobs on different notebooks run in parallel, each in its own process. A notebook has one job at a time: its next page waits for the one being worked.
+- Lineups whose text model is a cloud service or a command-line program run side by side, as many at once as there are notebooks waiting, even several notebooks on the same lineup.
+- A local lineup, one whose text model runs on this computer's graphics card, still runs one job at a time across the Mirror and the False Mirror. Cloud and command-line jobs run beside it. A picture from an image model on the card takes its turn there, one picture at a time, without holding up the rest of its job.
+- Each job's model calls, pictures and searches go to its own lineup's models, whatever else is running.
+- When a job finishes, only its own work goes to the tablet. A notebook another job is still working on, and anything that job made, waits for that job to finish.
+- Stopping a job from the queue stops that job alone. What it wrote and anything it made are put back, and the other jobs keep going. A job stopped before it really started now stays stopped. Before, it could still run and write its answer.
+- Stopping a job no longer takes away a page that was already in the notebook. Its note at the start of the job made an existing page look like one the job had added.
+- Every notebook being worked shows its own progress bar, and the queue shows every job being worked.
+- An update waits for every job in progress.
+
 ## 0.2.93
 
 - No message pops up while an update downloads. The tray icon's tip still shows how far it is.

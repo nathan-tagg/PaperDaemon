@@ -11,8 +11,8 @@ def test_the_queue_is_read_oldest_first_and_junk_is_dropped(tmp_path, monkeypatc
     (tmp_path / "0-junk.json").write_text("{not json", encoding="utf-8")
     (tmp_path / "1-a.json").write_text(json.dumps({"keys": ["a"]}), encoding="utf-8")
     (tmp_path / "2-b.json").write_text(json.dumps({"keys": ["b"]}), encoding="utf-8")
-    job = H.Host().next_job()
-    assert job["keys"] == ["a"] and not os.path.exists(tmp_path / "0-junk.json")
+    jobs = H.Host().queued()
+    assert [j["keys"] for j in jobs] == [["a"], ["b"]] and not os.path.exists(tmp_path / "0-junk.json")
 
 
 def test_a_crash_is_recorded_not_left_working(tmp_path, monkeypatch):

@@ -460,7 +460,7 @@ def test_on_the_mirror_each_note_goes_into_the_page_with_new_ids_and_up_to_the_t
     monkeypatch.setattr(D, "log", lambda *a, **k: None)
     monkeypatch.setattr(D, "_frame_of", lambda d, p: FRAME)
     monkeypatch.setattr(D, "_push_copy", lambda d, p, data, what: sent.append(data))
-    monkeypatch.setitem(D.INFLIGHT, "job", {"note_base": page})
+    monkeypatch.setitem(D.FLIGHTS, DOC, {"job": {"note_base": page}})
     D._note_copy(DOC, PID, page, ["On it"], "on-it")
     first = _his_strokes(f.read_bytes())
     D._note_copy(DOC, PID, page, ["Now: reading"], "progress")
