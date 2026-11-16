@@ -552,22 +552,25 @@ textarea.field { height: auto; padding: 8px 10px; }
 .job-bar.busy i { animation: job-busy 1.4s ease-in-out infinite; }
 @keyframes job-busy { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
 dialog.viewer > .job-bar { height: 4px; }
-/* the selection's make-up, from the page editor: brush icons (or color swatches) with their counts, right of the
-   selection, over the viewer (past the editor's frame where they must); slid in from the right */
-.sel-makeup { position: fixed; z-index: 5; display: flex; flex-direction: column; gap: 6px; pointer-events: none;
-  opacity: 0; transform: translateX(12px); transition: opacity 0.18s ease-out, transform 0.22s ease-out; }
+/* the selection's make-up, from the page editor: brush icons (or color swatches) with their counts, docked beside the
+   viewer (tablet.js places it: right of it, else left, else inside its right edge); slid in from the viewer's side */
+.sel-makeup { position: fixed; z-index: 5; display: flex; flex-direction: column; gap: 6px;
+  padding: 8px; background: var(--paper); border: 1px solid var(--edge); border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4); box-sizing: border-box; pointer-events: auto;
+  opacity: 0; transform: translateX(-8px); transition: opacity 0.18s ease-out, transform 0.22s ease-out; }
+.sel-makeup[data-side="left"] { transform: translateX(8px); }
 .sel-makeup.on { opacity: 1; transform: none; }
 .sel-makeup button { display: flex; align-items: center; gap: 6px; padding: 0; border: 0; background: none; color: var(--ink);
   font: inherit; font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; cursor: pointer; pointer-events: auto; }
-.sel-makeup .mi { width: 36px; height: 36px; display: grid; place-items: center; background: var(--paper); border: 1px solid var(--edge);
-  border-radius: 6px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); }
+.sel-makeup .mi { width: 32px; height: 32px; display: grid; place-items: center; background: var(--paper); border: 1px solid var(--edge);
+  border-radius: 6px; }
 .sel-makeup button:hover .mi { background: var(--field); border-color: var(--ink-2); }
 .sel-makeup .mi > svg { width: 24px; height: 24px; display: block; }
 .sel-makeup .sw { width: 18px; height: 18px; border-radius: 50%; box-sizing: border-box; }
 .sel-makeup .sw.ring { border: 1.5px solid currentColor; }
 .sel-makeup .sw.split { overflow: hidden; display: grid; grid-template-rows: 1fr 1fr; }
 .sel-makeup .sw.split i { display: block; }
-.sel-makeup .mn { padding: 2px 6px; background: var(--paper); border-radius: 4px; }
+.sel-makeup .mn { padding: 2px 0; }
 /* a Mirror sync's progress: along the bottom of the viewer's bar, or over the top edge of the cover, adding no height */
 /* the start script help: a wider sheet that scrolls, and the note shown where the pointer is */
 dialog.sheet.wide { width: min(720px, calc(100vw / var(--pd-zoom, 1) - 48px)); }

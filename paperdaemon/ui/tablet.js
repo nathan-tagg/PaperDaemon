@@ -399,9 +399,11 @@
       s.busy = false; s.frac = 1; paintSync();
       setTimeout(() => { if (S.sync === s) { S.sync = null; paintSync(); } }, 700);
     }
-    // THE SELECTION'S MAKE-UP, as the page editor tells it: brush icons (or color swatches) with their counts, to the
-    // right of the selection, drawn here over the viewer so they reach past the editor's frame; a press keeps only those
-    // strokes selected (the editor does it)
+    // THE SELECTION'S MAKE-UP, as the page editor tells it: brush icons (or color swatches) with their counts, up to six,
+    // DOCKED BESIDE THE VIEWER, always in the same place (11-16: beside the selection they landed somewhere different
+    // every time; "we just dock it next to the modal"): a column outside its right edge, level with the top of the
+    // page; the left edge when the window has no room on the right; inside its right edge when it has room on neither
+    // side (a window about the viewer's width). A press keeps only those strokes selected (the editor does it)
     function paintMakeUp(d) {
       const dlg = $("#" + VIEWER), fr = editorFrame();
       let box = dlg && dlg.querySelector(":scope > .sel-makeup");
@@ -421,8 +423,14 @@
           '"><span class="mi">' + r.icon + '</span><span class="mn">' + esc(r.label) + "</span></button>").join("");
         box.classList.remove("on"); box.hidden = true;
       }
-      const at = fr.getBoundingClientRect();
-      box.style.left = Math.round(at.left + d.x) + "px"; box.style.top = Math.round(at.top + d.y) + "px";
+      const at = dlg.getBoundingClientRect(), pg = fr.getBoundingClientRect(), gap = 12;
+      const was = box.hidden; box.hidden = false;
+      const w = box.offsetWidth;
+      box.hidden = was;
+      const side = window.innerWidth - at.right >= w + 2 * gap ? "right" : at.left >= w + 2 * gap ? "left" : "inside";
+      box.dataset.side = side;
+      box.style.left = Math.round(side === "right" ? at.right + gap : side === "left" ? at.left - gap - w : at.right - gap - w) + "px";
+      box.style.top = Math.round(Math.max(at.top, pg.top) + gap) + "px";
       if (box.hidden) { box.hidden = false; requestAnimationFrame(() => { if (!box.hidden) box.classList.add("on"); }); }
     }
     async function loadProgress() {

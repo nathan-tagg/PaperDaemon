@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.92
+
+- A selection's stroke counts (a brush or color icon with each count) are docked beside the page viewer in one place, a column just outside its right edge and level with the top of the page. They used to sit next to the selection and land somewhere different every time. When the window has no room on the right they go on the left, and when there's no room on either side they sit inside the viewer along its right edge. Clicking one still keeps only those strokes selected.
+
 ## 0.2.91
 
 - New notebook, New folder and every other library change on the Mirror happen at once. Create used to stay gray for about 5 seconds while the change went to the tablet. Now the dialog closes right away and the notebook shows. The change goes to the tablet in the background, with "Sending to the tablet…" under the title until it's there. If a change can't go, that line says which one and why, and it goes up with the next sync.
