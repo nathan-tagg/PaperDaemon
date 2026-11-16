@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.86
+
+- A lineup whose text model makes the pictures (Image tab empty, Image generation ticked) gets them. The picture step asked for the image model first and was refused: "the image slot has no location".
+
 ## 0.2.85
 
 - Check for updates > Update says what it is doing. It tells you it is downloading, the tray icon's tip shows how far, and if a job is in progress it says the update installs as soon as that job is finished. Before, nothing showed while the 180 MB installer downloaded, and it looked like nothing happened.

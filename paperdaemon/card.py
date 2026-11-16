@@ -166,6 +166,8 @@ def load(key):
     engine rule), so this only records the wish and clears an old failure."""
     if key not in slots.ROLES:
         raise ValueError("no such model: %r" % (key,))
+    if key == "image" and slots.images_from_text():
+        key = "text"                                 # THE TEXT MODEL MAKES THE PICTURES: no image model to start
     with _cond:
         _run["wanted"] = key
         if _state[key]["phase"] == "error":
@@ -188,7 +190,10 @@ def status(s=None):
         phase, msg = "ready", ""
     else:
         phase, msg = "error", "the %s slot has no location" % key
-    return {"key": key, "phase": phase, "msg": msg, "tablet": {"image": "image"}, "llm_ctx": None,
+    # where the host's pictures come from: the image model, or the text model when it makes them (11-15: a command
+    # line that makes pictures had its picture step refused, "the image slot has no location")
+    return {"key": key, "phase": phase, "msg": msg,
+            "tablet": {"image": "text" if slots.images_from_text(s) else "image"}, "llm_ctx": None,
             "llm_kv": None, "loaded": {"harness": image_harness_id(s)}, "states": states,
             "in_flight": in_flight()}
 

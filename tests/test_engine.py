@@ -213,3 +213,16 @@ def test_the_host_starts_before_the_daemon(monkeypatch, tmp_path):
     monkeypatch.setattr(loop, "spawn", fake_spawn)
     procs = loop.spawn_halves({}, state=str(tmp_path))
     assert order == ["host", "daemon"] and set(procs) == {"host", "daemon"}
+
+
+def test_pictures_made_by_the_text_model_never_ask_for_an_image_model(monkeypatch):
+    """With the Image tab empty and the text model making pictures, the host's request for the picture model is the
+    text model's, and the status says pictures come from it (11-15: a command line that makes pictures had its picture
+    step refused, "the image slot has no location")."""
+    from paperdaemon.models import slots
+    monkeypatch.setattr(slots, "images_from_text", lambda s=None, lu=None: True)
+    monkeypatch.setattr(slots, "configured", lambda role, s=None: role == "text")
+    st = card.load("image")
+    assert st["key"] == "text" and st["phase"] == "ready" and st["tablet"] == {"image": "text"}
+    monkeypatch.setattr(slots, "images_from_text", lambda s=None, lu=None: False)
+    assert card.status()["tablet"] == {"image": "image"}
