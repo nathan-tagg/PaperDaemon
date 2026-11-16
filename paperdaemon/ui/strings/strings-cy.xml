@@ -766,4 +766,5 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="slot.cap.image_generation.tip">Yn dweud wrth PaperDaemon y gall y model hwn greu lluniau ar ei ben ei hun. Defnyddir model delwedd a osodir ar y tab Delwedd yn ei le.</string>
   <string name="help.harness.caps_intro">Ychwanegwch beth all y model hwn ei wneud ar ei ben ei hun. Mae harnais newydd yn dechrau gyda'i rai ei hun.</string>
   <string name="help.harness.mismatch">Mae harnais sy'n rhy gryf i'r model yn gwneud iddo hepgor gwaith neu gynllunio'n wael. Mae un sy'n rhy wan i'r model yn costio mwy o docynnau ac amser.</string>
+  <string name="lineup.test_no_program">Ni all PaperDaemon ddod o hyd i'r rhaglen {program} ar y cyfrifiadur hwn. Gwiriwch ei bod wedi'i gosod (mae where {program} mewn terfynell yn dod o hyd iddi), neu rhowch ei llwybr llawn ar ddechrau'r gorchymyn.</string>
 </resources>

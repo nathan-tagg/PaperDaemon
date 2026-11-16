@@ -72,13 +72,32 @@ def with_model(command, model):
 
 
 def find(command):
-    """-> (the program's file or None, the user's own arguments): the command as a file, else on the PATH."""
+    """-> (the program's file or None, the user's own arguments): the command as a file, else on the PATH -- this
+    process's, else the system's as it is NOW: a program installed after PaperDaemon started is on the latter only
+    (11-15: a program installed while PaperDaemon ran, and its lineup's test said no answer)."""
     parts = split(command)
     if not parts:
         return None, []
     prog = os.path.expandvars(os.path.expanduser(parts[0]))
-    hit = prog if os.path.isfile(prog) else shutil.which(prog)
+    hit = prog if os.path.isfile(prog) else (shutil.which(prog) or shutil.which(prog, path=_path_now()))
     return hit, parts[1:]
+
+
+def _path_now():
+    """The PATH as Windows holds it now (the user's, then the machine's), its %NAMES% filled in; elsewhere, this
+    process's."""
+    if os.name != "nt":
+        return os.environ.get("PATH", "")
+    import winreg
+    out = []
+    for root, key in ((winreg.HKEY_CURRENT_USER, r"Environment"),
+                      (winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment")):
+        try:
+            with winreg.OpenKey(root, key) as k:
+                out.append(os.path.expandvars(str(winreg.QueryValueEx(k, "Path")[0] or "")))
+        except OSError:
+            pass
+    return os.pathsep.join(x for x in out if x) or os.environ.get("PATH", "")
 
 
 def _run(exe, args, stdin=None, folder=None):

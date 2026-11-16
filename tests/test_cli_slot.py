@@ -140,3 +140,23 @@ def test_calls_written_in_tool_call_markup_are_read():
     assert [(c["name"], c["arguments"]) for c in r["tool_calls"]] == [("answer", {"answers": ["para:1"], "lines": ["Lima is the capital."]})]
     plain = '<invoke name="skip"><parameter name="note">nothing here</parameter></invoke>'
     assert C.CommandLine.parse(plain, TOOLS)["tool_calls"][0]["arguments"] == {"note": "nothing here"}
+
+
+def test_a_program_installed_after_paperdaemon_started_is_found(monkeypatch, tmp_path):
+    """A program put on the PATH after PaperDaemon started is found on the system's PATH as it is now (11-15: a program
+    installed while PaperDaemon ran, and its lineup's test said no answer)."""
+    exe = tmp_path / ("newprog.exe" if os.name == "nt" else "newprog")
+    exe.write_text("")
+    exe.chmod(0o755)
+    monkeypatch.setenv("PATH", "")
+    monkeypatch.setattr(C, "_path_now", lambda: str(tmp_path))
+    assert C.find("newprog -p")[0] and C.ready("newprog")[0]
+    monkeypatch.setattr(C, "_path_now", lambda: "")
+    assert C.find("newprog -p")[0] is None
+
+
+def test_the_test_names_a_program_that_is_not_found(monkeypatch):
+    from paperdaemon.models import hotswap
+    m = dict(SLOT, location="no-such-program-here -p")
+    st = hotswap.status("text", None, m)
+    assert st["answering"] is False and st["missing_program"] == "no-such-program-here"

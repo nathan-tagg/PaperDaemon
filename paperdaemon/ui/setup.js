@@ -192,12 +192,14 @@
       S.test.search = e ? PD.errText(e) : d && d.ok ? "ok" : (d && d.error) || PD.t("common.no_answer");
       paintModels(); return;
     }
+    let missing = null;               // a command line whose program is not found: said by its name
     for (let i = 0; i < 4; i++) {
       const [m] = await PD.safe(PD.api("GET", "/models?lineup=" + encodeURIComponent((S.lineup && S.lineup.name) || "")));
       if (m && m[role] && m[role].server && m[role].server.answering) { S.test[role] = "ok"; paintModels(); return; }
+      if (m && m[role] && m[role].server && m[role].server.missing_program) { missing = m[role].server.missing_program; break; }
       await sleep(1500);
     }
-    S.test[role] = PD.t("lineup.test_no_answer"); paintModels();
+    S.test[role] = missing ? PD.t("lineup.test_no_program", { program: missing }) : PD.t("lineup.test_no_answer"); paintModels();
   }
 
   // ---- 4: finish: everything chosen so far, and one way on

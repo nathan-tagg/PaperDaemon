@@ -138,12 +138,14 @@
       S.test.search = e ? PD.errText(e) : d && d.ok ? "ok" : (d && d.error) || PD.t("common.no_answer");
       paint(); return;
     }
+    let missing = null;               // a command line whose program is not found: said by its name
     for (let i = 0; i < 4; i++) {
       const [m] = await PD.safe(PD.api("GET", "/models" + q));
       if (m && m[role] && m[role].server && m[role].server.answering) { S.test[role] = "ok"; paint(); return; }
+      if (m && m[role] && m[role].server && m[role].server.missing_program) { missing = m[role].server.missing_program; break; }
       await new Promise(r => setTimeout(r, 1500));
     }
-    S.test[role] = PD.t("lineup.test_no_answer"); paint();
+    S.test[role] = missing ? PD.t("lineup.test_no_program", { program: missing }) : PD.t("lineup.test_no_answer"); paint();
   }
 
   async function act(a, el) {

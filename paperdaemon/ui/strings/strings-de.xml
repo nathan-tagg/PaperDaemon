@@ -766,4 +766,5 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="slot.cap.image_generation.tip">Sagt PaperDaemon, dass dieses Modell selbst Bilder erzeugen kann. Ein Bildmodell im Tab Bild wird stattdessen verwendet.</string>
   <string name="help.harness.caps_intro">Füge hinzu, was dieses Modell selbst kann. Ein neuer Harness beginnt mit seinen eigenen.</string>
   <string name="help.harness.mismatch">Ist der Harness zu stark für das Modell, lässt es Arbeit aus oder plant schlecht. Ist er zu schwach für das Modell, kostet das mehr Tokens und Zeit.</string>
+  <string name="lineup.test_no_program">PaperDaemon findet das Programm {program} auf diesem Computer nicht. Prüfe, ob es installiert ist (where {program} in einem Terminal findet es), oder setze seinen vollständigen Pfad an den Anfang des Befehls.</string>
 </resources>

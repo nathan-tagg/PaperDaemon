@@ -766,4 +766,5 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="slot.cap.image_generation.tip">Dice a PaperDaemon che questo modello può creare immagini da solo. Un modello di immagini impostato nella scheda Immagine viene usato al suo posto.</string>
   <string name="help.harness.caps_intro">Aggiungi ciò che questo modello sa fare da solo. Un nuovo harness parte con le sue.</string>
   <string name="help.harness.mismatch">Un harness troppo forte per il modello gli fa saltare lavoro o pianificare male. Uno troppo debole per il modello costa più token e più tempo.</string>
+  <string name="lineup.test_no_program">PaperDaemon non trova il programma {program} su questo computer. Controlla che sia installato (where {program} in un terminale lo trova), oppure metti il suo percorso completo all'inizio del comando.</string>
 </resources>

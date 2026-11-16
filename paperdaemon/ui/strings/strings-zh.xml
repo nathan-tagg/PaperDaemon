@@ -766,4 +766,5 @@
   <string name="slot.cap.image_generation.tip">告诉 PaperDaemon 这个模型能自己生成图片。如果“图片”标签页设置了图片模型，就用那个。</string>
   <string name="help.harness.caps_intro">添加这个模型自己能做的事。新的适配框架从它自带的能力开始。</string>
   <string name="help.harness.mismatch">适配框架对模型来说太强，模型会漏做工作或计划不好。太弱则会多花令牌和时间。</string>
+  <string name="lineup.test_no_program">PaperDaemon 在这台电脑上找不到程序 {program}。请确认它已安装（在终端里运行 where {program} 能找到它），或在命令开头写上它的完整路径。</string>
 </resources>

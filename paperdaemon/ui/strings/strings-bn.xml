@@ -766,4 +766,5 @@
   <string name="slot.cap.image_generation.tip">PaperDaemon-কে জানায় এই মডেল নিজে ছবি বানাতে পারে। ছবি ট্যাবে কোনো ছবির মডেল সেট থাকলে সেটি ব্যবহার হয়।</string>
   <string name="help.harness.caps_intro">এই মডেল নিজে যা পারে তা যোগ করুন। নতুন হারনেস তার নিজের সক্ষমতা দিয়ে শুরু হয়।</string>
   <string name="help.harness.mismatch">মডেলের তুলনায় খুব শক্তিশালী হারনেস মডেলকে কাজ বাদ দিতে বা খারাপ পরিকল্পনা করতে বাধ্য করে। খুব দুর্বল হারনেসে বেশি টোকেন ও সময় লাগে।</string>
+  <string name="lineup.test_no_program">PaperDaemon এই কম্পিউটারে {program} প্রোগ্রামটি খুঁজে পাচ্ছে না। দেখুন এটি ইনস্টল করা আছে কি না (টার্মিনালে where {program} এটি খুঁজে পায়), অথবা কমান্ডের শুরুতে এর পুরো পথ লিখুন।</string>
 </resources>

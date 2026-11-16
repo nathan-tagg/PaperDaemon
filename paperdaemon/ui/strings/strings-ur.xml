@@ -766,4 +766,5 @@
   <string name="slot.cap.image_generation.tip">PaperDaemon کو بتاتا ہے کہ یہ ماڈل خود تصویریں بنا سکتا ہے۔ تصویر ٹیب میں سیٹ کیا گیا تصویری ماڈل اس کی جگہ استعمال ہوتا ہے۔</string>
   <string name="help.harness.caps_intro">وہ شامل کریں جو یہ ماڈل خود کر سکتا ہے۔ نیا Harness اپنی صلاحیتوں سے شروع ہوتا ہے۔</string>
   <string name="help.harness.mismatch">ماڈل کے لیے بہت طاقتور Harness اسے کام چھوڑنے یا برا منصوبہ بنانے پر مجبور کرتا ہے۔ ماڈل کے لیے بہت کمزور Harness زیادہ ٹوکن اور وقت لیتا ہے۔</string>
+  <string name="lineup.test_no_program">PaperDaemon اس کمپیوٹر پر پروگرام {program} نہیں ڈھونڈ پاتا۔ دیکھیں کہ وہ انسٹال ہے (ٹرمینل میں where {program} اسے ڈھونڈ لیتا ہے)، یا کمانڈ کے شروع میں اس کا پورا راستہ لکھیں۔</string>
 </resources>

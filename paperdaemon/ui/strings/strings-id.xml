@@ -766,4 +766,5 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="slot.cap.image_generation.tip">Memberi tahu PaperDaemon bahwa model ini bisa membuat gambar sendiri. Model gambar yang diatur di tab Gambar dipakai sebagai gantinya.</string>
   <string name="help.harness.caps_intro">Tambahkan apa yang bisa dilakukan model ini sendiri. Harness baru dimulai dengan miliknya sendiri.</string>
   <string name="help.harness.mismatch">Harness yang terlalu kuat untuk model membuatnya melewatkan pekerjaan atau merencanakan dengan buruk. Harness yang terlalu lemah untuk model memakan lebih banyak token dan waktu.</string>
+  <string name="lineup.test_no_program">PaperDaemon tidak menemukan program {program} di komputer ini. Pastikan program sudah terpasang (where {program} di terminal menemukannya), atau tulis path lengkapnya di awal perintah.</string>
 </resources>

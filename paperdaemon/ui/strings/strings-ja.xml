@@ -766,4 +766,5 @@
   <string name="slot.cap.image_generation.tip">このモデルが自分で画像を作れることを PaperDaemon に伝えます。画像タブに画像モデルが設定されていれば、そちらが使われます。</string>
   <string name="help.harness.caps_intro">このモデルが自分でできることを追加します。新しいハーネスはそのハーネス自身の機能から始まります。</string>
   <string name="help.harness.mismatch">モデルに対して強すぎるハーネスでは、作業を飛ばしたり計画を誤ったりします。弱すぎるハーネスでは、トークンと時間が余計にかかります。</string>
+  <string name="lineup.test_no_program">PaperDaemon はこのコンピューターでプログラム {program} を見つけられません。インストールされているか確認するか（ターミナルで where {program} を実行すると見つかります）、コマンドの先頭にフルパスを書いてください。</string>
 </resources>

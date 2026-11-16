@@ -788,4 +788,5 @@
   <string name="slot.cap.image_generation.tip">يخبر PaperDaemon أن هذا النموذج يستطيع إنشاء الصور بنفسه. يُستخدم نموذج الصور المضبوط في تبويب الصورة بدلًا منه.</string>
   <string name="help.harness.caps_intro">أضف ما يستطيع هذا النموذج فعله بنفسه. يبدأ الإطار الجديد بقدراته الخاصة.</string>
   <string name="help.harness.mismatch">الإطار الأقوى من النموذج يجعله يتخطى العمل أو يخطط بشكل سيئ. والإطار الأضعف من النموذج يكلّف رموزًا ووقتًا أكثر.</string>
+  <string name="lineup.test_no_program">لا يجد PaperDaemon البرنامج {program} على هذا الحاسوب. تأكد من أنه مثبَّت (يجده الأمر where {program} في الطرفية)، أو اكتب مساره الكامل في بداية الأمر.</string>
 </resources>

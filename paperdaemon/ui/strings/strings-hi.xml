@@ -766,4 +766,5 @@
   <string name="slot.cap.image_generation.tip">PaperDaemon को बताता है कि यह मॉडल खुद चित्र बना सकता है। चित्र टैब में सेट किया गया चित्र मॉडल इसकी जगह इस्तेमाल होता है।</string>
   <string name="help.harness.caps_intro">वह जोड़ें जो यह मॉडल खुद कर सकता है। नया हार्नेस अपनी क्षमताओं से शुरू होता है।</string>
   <string name="help.harness.mismatch">मॉडल के लिए बहुत मज़बूत हार्नेस उससे काम छुड़वाता है या खराब योजना बनवाता है। मॉडल के लिए बहुत कमज़ोर हार्नेस ज़्यादा टोकन और समय लेता है।</string>
+  <string name="lineup.test_no_program">PaperDaemon इस कंप्यूटर पर प्रोग्राम {program} नहीं ढूंढ पा रहा। जांचें कि वह इंस्टॉल है (टर्मिनल में where {program} उसे ढूंढ लेता है), या कमांड की शुरुआत में उसका पूरा पथ लिखें।</string>
 </resources>

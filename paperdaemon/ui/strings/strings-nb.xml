@@ -766,4 +766,5 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="slot.cap.image_generation.tip">Sier til PaperDaemon at denne modellen kan lage bilder selv. En bildemodell satt i fanen Bilde brukes i stedet.</string>
   <string name="help.harness.caps_intro">Legg til det denne modellen kan gjøre selv. En ny sele starter med sine egne.</string>
   <string name="help.harness.mismatch">En sele som er for sterk for modellen, får den til å hoppe over arbeid eller planlegge dårlig. En som er for svak for modellen, koster flere tokens og mer tid.</string>
+  <string name="lineup.test_no_program">PaperDaemon finner ikke programmet {program} på denne datamaskinen. Sjekk at det er installert (where {program} i en terminal finner det), eller sett hele stien til det først i kommandoen.</string>
 </resources>

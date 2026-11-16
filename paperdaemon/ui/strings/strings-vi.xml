@@ -766,4 +766,5 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="slot.cap.image_generation.tip">Cho PaperDaemon biết mô hình này tự tạo ảnh được. Nếu thẻ Ảnh có mô hình ảnh thì dùng cái đó.</string>
   <string name="help.harness.caps_intro">Thêm những gì mô hình này tự làm được. Một harness mới bắt đầu với các khả năng của chính nó.</string>
   <string name="help.harness.mismatch">Harness quá mạnh so với mô hình khiến nó bỏ sót việc hoặc lập kế hoạch kém. Harness quá yếu so với mô hình tốn thêm token và thời gian.</string>
+  <string name="lineup.test_no_program">PaperDaemon không tìm thấy chương trình {program} trên máy tính này. Hãy kiểm tra rằng nó đã được cài (lệnh where {program} trong terminal tìm thấy nó), hoặc đặt đường dẫn đầy đủ của nó ở đầu lệnh.</string>
 </resources>

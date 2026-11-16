@@ -332,7 +332,12 @@ def last(role):
 def status(role, s=None, m=None):
     srv = ours(role)
     up = answering(role, s, m)
-    return {"answering": up, "started_by_paperdaemon": srv is not None,
+    m = m if m is not None else slots.slot(role, s)
+    missing = None
+    if not up and m.get("api") == "cli" and str(m.get("location") or "").strip():
+        from .cli import find, split
+        missing = None if find(m["location"])[0] else (split(m["location"]) or [""])[0]
+    return {"answering": up, "missing_program": missing, "started_by_paperdaemon": srv is not None,
             "loading": bool(srv is not None and not srv.ready),
             "since": srv.started if srv else None,
             "pid": srv.proc.pid if srv else None,
