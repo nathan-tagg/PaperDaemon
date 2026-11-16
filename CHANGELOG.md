@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.89
+
+- Ctrl+A in the page editor just works with the Pointer. With no text highlighted or typed it selects all the typed text; on a page with no text it selects all the strokes, as it does with a pen in hand.
+- A click on a picture selects it for moving, with the Pointer, Select or Capture. Drag it from there; with the Pointer or Capture, pressing on it and dragging moves it at once. With Select, a loop drawn over a picture still selects the strokes.
+
 ## 0.2.88
 
 - The page grid shows each page's tags on its picture, as a notebook's cover shows its own.

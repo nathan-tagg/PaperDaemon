@@ -5793,6 +5793,11 @@ span.lname { cursor: default; }
   let cursors = [], caret = null, anchor = null, caretOn = true, typingB = false, typingI = false;
   const editing = () => cursors.length > 0;
   const paraLen = p => page.text.paras[p].chars.length;
+  const hasText = () => page.text.paras.some(P => P.chars.length);
+  function allText() {                                        // every character of the typed text, selected
+    const n = page.text.paras.length;
+    clearPick(); setCursors([{ anchor: { p: 0, o: 0 }, caret: { p: n - 1, o: paraLen(n - 1) } }]); caretOn = true; paint();
+  }
   const cmp = (a, b) => a.p - b.p || a.o - b.o;
   const selOf = c => c.anchor && cmp(c.anchor, c.caret) ? (cmp(c.anchor, c.caret) < 0 ? [c.anchor, c.caret] : [c.caret, c.anchor]) : null;
   const selection = () => selOf({ caret, anchor });
@@ -6089,7 +6094,7 @@ span.lname { cursor: default; }
       eachPara(P => { const on = kin.includes(P.list); P.style = "body"; P.list = on ? null : want; }); return true;
     }
     if (ctrl && (k === "b" || k === "i")) { toggleFormat(k); return true; }
-    if (ctrl && k === "a") { const n = page.text.paras.length; if (n) { setCursors([{ anchor: { p: 0, o: 0 }, caret: { p: n - 1, o: paraLen(n - 1) } }]); paint(); } return true; }
+    if (ctrl && k === "a") { if (hasText()) allText(); else { setCursors([]); paint(); selectAll(); } return true; }
     if (ctrl && k === "Enter") { eachPara(P => { if (P.list === "check") P.list = "checked"; else if (P.list === "checked") P.list = "check"; }); return true; }
     if (ctrl && k === "Backspace") { edit(() => each(wordBack)); return true; }      // with or without Shift
     if (ctrl && k === "Delete") { edit(() => each(wordForward)); return true; }
@@ -6336,6 +6341,13 @@ span.lname { cursor: default; }
       if (hit) { setCursors(cursors.concat([{ caret: hit, anchor: null }])); caretOn = true; paint(); }
       return;
     }
+    // A PICTURE UNDER THE POINTER, off the typed text: a click selects it and a drag moves it, as with Capture (11-16:
+    // "Clicking on an image with the cursor or either selection tool should select the image for moving")
+    if (tool === "text" && !page.source && e.button === 0 && !e.ctrlKey && !e.altKey && !e.shiftKey && !overTextAt(x, y) &&
+        ((pick && hitPick(...local(e))) || pictureAt(x, y) >= 0)) {
+      e.preventDefault(); if (cursors.length) setCursors([]); pickDown(e, x, y, true); return;
+    }
+    if (tool === "text" && pick && e.button === 0) clearPick();   // a press elsewhere lets the selection go
     if (tool === "text" && page.source) {                     // the I-beam on a PDF's or a book's page: its own text, selected (docLoad)
       e.preventDefault();
       docSel = null; paint();                                  // a press elsewhere lets the selection go
@@ -6996,6 +7008,9 @@ span.lname { cursor: default; }
     // with Shift and Alt those of its kind and color (in text, Ctrl+A is all the text)
     if (ctrl && e.code === "KeyA" && !editing()) {
       e.preventDefault();
+      // THE POINTER IN HAND, no caret: all the typed text, as with one (11-16: "It should just work"); with no text on the
+      // page, all the strokes
+      if (tool === "text" && !e.shiftKey && !page.source && hasText()) { allText(); return; }
       const pk = pickers[tool] || pickers.a, pen = PEN[pk.pen].pen, c = choiceOf(pk), rgba = JSON.stringify(c[2] || null);
       const kind = e.shiftKey ? L => L.pen === pen : () => true;
       const color = e.shiftKey && e.altKey ? L => L.color === c[1] && JSON.stringify(L.colorRgba || null) === rgba : () => true;
@@ -7432,7 +7447,7 @@ span.lname { cursor: default; }
     putTimes = { lines: T[1] - T[0], undoStep: T[2] - T[1], hand: T[3] - T[2], swap: T.length > 6 ? T[4] - T[3] : 0, restore: T.length > 6 ? T[5] - T[4] : 0, rest: T[T.length - 1] - T[T.length - 2] };
   }
   let putTimes = null;
-  function pickDown(e, x, y) {
+  function pickDown(e, x, y, pictures) {
     const [sx, sy] = local(e), hit = hitPick(sx, sy);
     pointer = e.pointerId; vp.setPointerCapture(e.pointerId);
     if (hit) {                                                // a handle or the inside: the selection moves, scales or turns
@@ -7441,7 +7456,7 @@ span.lname { cursor: default; }
       else { hiddenPics.add(page.images[pick.index]); rebuild(); }
       return;
     }
-    if (pickMode === "capture") {                             // a click on a picture selects it; a loop captures
+    if (pickMode === "capture" || pictures) {                 // a click on a picture selects it; a loop captures
       const i = pictureAt(x, y);
       if (i >= 0) { selectPicture(i); pickDrag = { op: "move", start: [x, y], f0: { ...pick.frame } }; hiddenPics.add(page.images[i]); rebuild(); return; }
     }
@@ -7492,6 +7507,11 @@ span.lname { cursor: default; }
     if (pickLoop) {
       const l = pickLoop, loop = pickRing(l); pickLoop = null;
       if (l.shape) setShape(1);
+      // A CLICK ON A PICTURE with Select in hand selects it (a loop drawn over it still selects the strokes)
+      if (!l.shape && l.pts.every(([px, py]) => Math.hypot(px - l.pts[0][0], py - l.pts[0][1]) * scale() < 4)) {
+        const i = pictureAt(...l.pts[0]);
+        if (i >= 0) { selectPicture(i); return true; }
+      }
       if (loop.length < 3 || (l.shape && (!l.end || Math.hypot(l.end[0] - l.pts[0][0], l.end[1] - l.pts[0][1]) < 2))) { paint(); return true; }
       if (pickMode === "capture") { captureLoop(loop); paint(); return true; }
       // a stroke whose box misses the loop's is out at once; the rest are in when half their points are
