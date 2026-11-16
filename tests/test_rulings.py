@@ -130,6 +130,21 @@ def test_c18_c19_a_quote_vouches_for_the_users_number_and_tag(page):
     assert any("not on this page" in x for x in made_up)
 
 
+def test_a_quote_copied_with_other_quotation_marks_still_vouches(page):
+    # 11-16: the coloring book's instructions say tag that page "ignore"; quoted with 'ignore' or curly marks it is
+    # the same words, not a made-up quote
+    J.JOB.sprompt = 'Once a coloring page is generated, tag that page "ignore".'
+    rs = [rule("para:1")]
+    for quote in ["Once a coloring page is generated, tag that page 'ignore'.", "tag that page “ignore”",
+                  'tag that page "ignore"']:
+        p = RU.problems("plan", {"steps": [{"do": "tag", "what": "ignore", "answers": [], "quote": quote}],
+                                 "rulings": rs})
+        assert not any("not on this page" in x for x in p), (quote, p)
+    p = RU.problems("plan", {"steps": [{"do": "tag", "what": "ignore", "answers": [],
+                                        "quote": "the instructions say to tag the page ignore"}], "rulings": rs})
+    assert any("not on this page" in x for x in p)
+
+
 def test_rule_8_replaces_is_a_picture_of_yours_and_once(page):
     rs = [rule("para:1"), rule("line:1", "note", "keep")]
     p = RU.problems("plan", {"steps": [{"do": "chart", "what": "a", "answers": [], "replaces": "picture:2"}],

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.7
+
+- A notebook's instructions are recognized when a job quotes them with different quotation marks. Tagging a page "ignore", as the coloring book's instructions ask, was refused when the quote came back as 'ignore', and the job had to plan again, about 40 seconds lost each time.
+
 ## 0.3.6
 
 - Long pages draw all the way down. Past a certain length (about seven and a half page heights), the window drew every stroke further down on one flat line, so a long page's last replies looked cut off under a rule. The page itself was fine; the window now draws pages of any length.

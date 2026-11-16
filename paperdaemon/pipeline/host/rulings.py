@@ -190,16 +190,25 @@ def problems(kind, args, offered=None):
     return out
 
 
+_QUOTE_MARKS = str.maketrans("", "", "\"'`‘’‚‛“”„‟«»‹›")
+
+
+def _unquoted(s):
+    return _norm(str(s or "").translate(_QUOTE_MARKS))
+
+
 def _quote_problem(quote, value):
     """Why a quote does not vouch for `value` (C18, C19), or None: it must be found in the notebook's
     instructions, the typed text or the reading of the user's ink, and must contain the value."""
-    q = _norm(quote)
+    # (quotation marks are not words: tag that page "ignore" copied as 'ignore', or with curly marks, is the same words --
+    # 11-16, the coloring book's plans refused for that and planned again, about 40 seconds each)
+    q = _unquoted(quote)
     if not q:
         return "needs quote: the user's own words that ask for it, copied exactly."
-    if _norm(value) not in q:
+    if _unquoted(value) not in q:
         return "-- the quote %r does not say %s." % (str(quote)[:60], value)
-    sources = [_norm(t.get("text")) for k, t in (JOB.listing or {}).items() if t.get("owner") == "user"]
-    sources.append(_norm(JOB.sprompt or ""))
+    sources = [_unquoted(t.get("text")) for k, t in (JOB.listing or {}).items() if t.get("owner") == "user"]
+    sources.append(_unquoted(JOB.sprompt or ""))
     if not any(q in s for s in sources if s):
         return "-- %r is not on this page or in this notebook's instructions; quote the user's words." % str(quote)[:60]
     return None
