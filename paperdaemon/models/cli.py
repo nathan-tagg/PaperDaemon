@@ -19,7 +19,6 @@ import re
 import shlex
 import shutil
 import subprocess
-import tempfile
 import uuid
 
 from .. import paths
@@ -109,6 +108,21 @@ def _run(exe, args, stdin=None, folder=None):
                               errors="replace", cwd=folder or paths.sub("cache", "cli"), **kw)
     except OSError as ex:
         raise AdapterError("%s could not be started (%s)" % (os.path.basename(exe), ex))
+
+
+def _run_folder():
+    """A new, empty folder for one run of the program, its working folder, in PaperDaemon's cache. Made as a PLAIN
+    folder that takes its access from the cache's (the user's own): Python's mkdtemp locks a folder on Windows to its
+    files' owners alone, and a program that writes as another account -- a sandbox, as Codex's does -- left a picture
+    there the user could not read (11-15: "left no picture in its folder", Permission denied)."""
+    root = paths.sub("cache", "cli")
+    while True:
+        path = os.path.join(root, "run-" + uuid.uuid4().hex[:10])
+        try:
+            os.makedirs(path)
+            return path
+        except FileExistsError:
+            continue
 
 
 def ready(command):
@@ -207,7 +221,7 @@ class CommandLine(Adapter):
         name = os.path.basename(exe) if exe else (split(self.command) or ["the program"])[0]
         if not exe:
             raise AdapterError("the program `%s` was not found on this computer" % name)
-        folder = tempfile.mkdtemp(prefix="run-", dir=paths.sub("cache", "cli"))    # empty: nobody's project files
+        folder = _run_folder()                                # empty: nobody's project files
         try:
             args, stdin, system, dropped = self.request(system, messages, tools, force_tool, caps, harness,
                                                         temperature, max_tokens, folder=folder)
@@ -277,7 +291,7 @@ class CommandLineImages(Adapter):
         name = os.path.basename(exe) if exe else (split(self.command) or ["the program"])[0]
         if not exe:
             raise AdapterError("the program `%s` was not found on this computer" % name)
-        folder = tempfile.mkdtemp(prefix="run-", dir=paths.sub("cache", "cli"))
+        folder = _run_folder()
         try:
             p = _run(exe, own, self.request(prompt, width, height), folder)
             png = self.picture_in(folder)

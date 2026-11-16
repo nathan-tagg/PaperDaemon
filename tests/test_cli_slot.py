@@ -195,3 +195,20 @@ def test_a_command_lines_pictures_come_from_it_when_it_can_make_them(monkeypatch
     monkeypatch.setattr(slots, "images_from_text", lambda s=None, lu=None: True)
     monkeypatch.setattr(slots, "slot", lambda role, s=None: dict(SLOT))
     assert type(adapters.for_slot("image", {})).__name__ == "CommandLineImages"
+
+
+def test_a_run_folder_takes_the_users_own_access():
+    """A run's folder inherits the cache's access (the user's): Python's mkdtemp locked it to each file's owner, and a
+    program writing as another account (a sandbox) left a picture the user could not read (11-15)."""
+    import subprocess
+    import shutil
+    folder = C._run_folder()
+    try:
+        assert os.path.isdir(folder) and os.listdir(folder) == []
+        if os.name == "nt":
+            # every entry is the cache folder's, inherited: none of its own (mkdtemp's were OWNER RIGHTS alone)
+            lines = [ln.strip() for ln in subprocess.run(["icacls", folder], capture_output=True, text=True).stdout.splitlines()
+                     if ":(" in ln]
+            assert lines and all("(I)" in ln for ln in lines), lines
+    finally:
+        shutil.rmtree(folder, ignore_errors=True)
