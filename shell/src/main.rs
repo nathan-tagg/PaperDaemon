@@ -509,8 +509,7 @@ fn check_for_updates(app: AppHandle) {
         }
         let app2 = app.clone();
         let app3 = app.clone();
-        tell(&app, "PaperDaemon is downloading the update. It closes, updates and starts again by itself when it is \
-                    ready; the tray icon's tip shows how far it is.");
+        // (no message while it downloads -- 11-16, the maintainer: "I actually HATE it"; the tray tip shows how far)
         let mut got: u64 = 0;
         let mut shown: u64 = 101;
         // the signature is verified before anything is installed; a download that does not match is refused
