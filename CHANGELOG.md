@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+- A page written the very moment PaperDaemon was checking it could be taken for a blank page for good, and its job never ran. PaperDaemon now judges a page by the exact bytes it read, so the request is seen on the next look.
+
 ## 0.3.0
 
 PaperDaemon now works on several notebooks at the same time.

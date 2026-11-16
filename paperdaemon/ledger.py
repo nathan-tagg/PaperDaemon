@@ -267,7 +267,7 @@ def page_state(doc, pid):
     raw = hashlib.sha256(data).hexdigest()[:16]
     return {"exists": True, "size": len(data),
             "sha": _content_sha(path, data, raw), "raw": raw,
-            "empty": _is_empty(path, data)}
+            "empty": _is_empty(path, data, raw)}
 
 
 def _read_page(path):
@@ -283,25 +283,24 @@ def _read_page(path):
             time.sleep(0.05)
 
 
-_CONTENT_CACHE = {}        # path -> ((mtime_ns, size), content_sha)
+_CONTENT_CACHE = {}        # path -> (the bytes read: their sha, content_sha)
 
 
 def _content_sha(path, data, raw):
     """Digest of what is ON the page: strokes and typed text, not file layout.
 
     Parsing every tagged page at 1 Hz would be wasteful, so this is cached on
-    (mtime_ns, size) exactly like `_is_empty` -- it only re-parses when the file
+    the bytes read (their sha) exactly like `_is_empty` -- it only re-parses when the file
     genuinely changes on disk. If parsing fails for any reason it falls back to
     the raw sha, which is the old behavior: a spurious re-open, never a missed
     one.
     """
-    try:
-        st = os.stat(path)
-        key = (st.st_mtime_ns, st.st_size)
-    except OSError:
-        key = None
+    # KEYED BY THE BYTES READ (their sha), never by the file's time and size looked up after: a page written between the
+    # read and the look (11-16, a typed request saved the instant its notebook was made) had the blank page's answer
+    # filed under the new file's time and size -- the page was taken for blank, and its job never ran
+    key = raw
     hit = _CONTENT_CACHE.get(path)
-    if key is not None and hit is not None and hit[0] == key:
+    if hit is not None and hit[0] == key:
         return hit[1]
     try:
         import io as _io
@@ -376,11 +375,11 @@ def _content_sha(path, data, raw):
     return sha
 
 
-_EMPTY_CACHE = {}          # path -> ((mtime_ns, size), bool)
+_EMPTY_CACHE = {}          # path -> (the bytes read: their sha, bool)
 _BIG = 4000                # above this a page obviously has content
 
 
-def _is_empty(path, data):
+def _is_empty(path, data, raw=None):
     """True only if the page really has nothing on it.
 
     This used to be a size threshold (`size <= 800`), which cannot tell an empty
@@ -397,13 +396,9 @@ def _is_empty(path, data):
             return False
     except Exception:
         pass
-    try:
-        st = os.stat(path)
-        key = (st.st_mtime_ns, st.st_size)
-    except OSError:
-        key = None
-    hit = _EMPTY_CACHE.get(path)
-    if key is not None and hit is not None and hit[0] == key:
+    key = raw or hashlib.sha256(data).hexdigest()[:16]     # (the bytes read, as _content_sha: never the file's
+    hit = _EMPTY_CACHE.get(path)                           # time and size looked up after)
+    if hit is not None and hit[0] == key:
         return hit[1]
     empty = True
     try:
