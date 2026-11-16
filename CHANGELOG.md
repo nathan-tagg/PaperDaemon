@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.4
+
+- The page editor shows a blank page from the first moment a page opens, where the page will be, until the page itself arrives. Before, there was often a moment of the gray background with two lines at the top.
+
 ## 0.3.3
 
 - Jobs see your newest typing again. On a page where you had edited inside older text, PaperDaemon's two ways of reading typed text put some paragraphs in different orders, and pairing them by position gave paragraphs each other's words. A new request could go unseen, so jobs were skipped as having "nothing new". They're now matched paragraph by paragraph, in the order the tablet shows.

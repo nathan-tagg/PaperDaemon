@@ -52,6 +52,13 @@ img, a, svg, canvas { -webkit-user-drag: none; }
 .embedded .pop { top: 2px; }
 .embedded #saved { display: none; }
 .viewport { position: relative; overflow: hidden; touch-action: none; cursor: crosshair; }
+/* THE PAGE IS THERE FROM THE FIRST PAINT (11-16: "I should never see the background gray color where the canvas would
+   be"): its box white and the size layout() gives it -- 3:4, as tall as fits -- before a line of script runs or a byte
+   of the page is read; layout() then sets the same size exactly */
+.viewport { background: #FFFFFF; aspect-ratio: 3 / 4; width: min(calc(100vw - 32px), calc((100vh - 90px) * 3 / 4)); }
+.in-viewer .viewport, .embedded .viewport { width: min(100vw, 75vh); }
+.in-viewer .bar { display: none; }
+.in-viewer .body { padding: 0; }
 /* UNTIL THE PAGE'S STROKES COME a clear cover over it takes every press: nothing is drawn, typed or pasted onto a page
    that is not all there yet. No spinner: the page shows as soon as the engine says what it is, its strokes landing */
 .loading { position: absolute; inset: 0; z-index: 5; cursor: progress; }
@@ -154,6 +161,7 @@ span.lname { cursor: default; }
 .cmenu kbd { font: inherit; color: var(--ink-3); }
 .cmenu hr { margin: 4px 0; border: 0; border-top: 1px solid var(--rule); }
 </style>
+<script>/* in the viewer (its frame): the page box laid out as the viewer shows it from the first paint */try { if (window.parent !== window && window.parent.PD) document.documentElement.classList.add("in-viewer"); } catch (e) { /* (another window: not the viewer) */ }</script>
 </head>
 <body>
 <div class="dialog" id="dlg">
