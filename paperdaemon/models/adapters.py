@@ -16,6 +16,7 @@ mistake cannot leak a page to a model that cannot use it.
 import base64
 import json
 import re
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -30,10 +31,11 @@ MODEL_CALL = None
 
 
 class AdapterError(Exception):
-    def __init__(self, message, status=None, body=""):
+    def __init__(self, message, status=None, body="", retry_after=None):
         super().__init__(message)
         self.status = status
         self.body = body
+        self.retry_after = retry_after          # (seconds the server asked to be left alone for, when it said)
 
 
 def _where(url):
@@ -51,7 +53,12 @@ def _request(method, url, body=None, headers=None, timeout=LIST_TIMEOUT, raw=Fal
             payload = r.read()
     except urllib.error.HTTPError as ex:
         text = ex.read().decode("utf-8", "replace")[:600]
-        raise AdapterError("%s answered %d" % (_where(url), ex.code), ex.code, text)
+        after = None
+        try:
+            after = float((ex.headers or {}).get("Retry-After") or "")
+        except (TypeError, ValueError):
+            pass
+        raise AdapterError("%s answered %d" % (_where(url), ex.code), ex.code, text, after)
     except (urllib.error.URLError, OSError) as ex:
         reason = getattr(ex, "reason", ex)
         raise AdapterError("%s did not answer (%s)" % (_where(url), reason))
@@ -81,6 +88,19 @@ def api_base(url):
     return url + "/v1" if urlparse(url).path in ("", "/") else url
 
 
+# A SERVER TOO BUSY TO ANSWER: rate limited (429), overloaded (503, Anthropic's 529), or a gateway that got no answer
+# in time (502, 504) -- worth asking again; anything else is the answer
+BUSY = (429, 502, 503, 504, 529)
+PAUSE_FIRST, PAUSE_MOST, ASKED_MOST = 5.0, 60.0, 300.0
+
+
+def pause_before(n, ex):
+    """Seconds to wait before try n + 2, after `ex`: what the server asked for (Retry-After), else 5, 10, 20, 40, 60, 60 ..."""
+    if ex.retry_after is not None and ex.retry_after >= 0:
+        return min(ex.retry_after, ASKED_MOST)
+    return min(PAUSE_FIRST * (2 ** n), PAUSE_MOST)
+
+
 class Adapter:
     family = ""
 
@@ -89,6 +109,21 @@ class Adapter:
         self.api = api_base(url)          # the /v1 routes (models, chat, messages, images); base is the server's root
         self.key = key or None
         self.model = model or ""
+        # (a model that isn't on this computer: set from its slot by for_slot -- how long one call waits for a reply,
+        # None as long as it takes, and how many more times a busy or silent server is asked)
+        self.wait, self.retries = None, 0
+
+    def call(self, method, url, body=None, headers=None, raw=False):
+        """A MODEL CALL: _request with the slot's wait, asked again -- after a pause -- when the server is busy (BUSY) or
+        gave no reply, as many times as its retries say. Any other answer, an error too, is the answer."""
+        tries = 1 + max(0, int(self.retries or 0))
+        for n in range(tries):
+            try:
+                return _request(method, url, body, headers, self.wait or MODEL_CALL, raw)
+            except AdapterError as ex:
+                if n == tries - 1 or not (ex.status in BUSY or ex.status is None):
+                    raise
+                time.sleep(pause_before(n, ex))
 
     def headers(self):
         return {}
@@ -196,12 +231,12 @@ class OpenAIChat(Adapter):
         body, dropped = self.request(system, messages, tools, force_tool, caps, harness, temperature, max_tokens)
         refused = False
         try:
-            d = _request("POST", self.api + "/chat/completions", body, self.headers(), MODEL_CALL)
+            d = self.call("POST", self.api + "/chat/completions", body, self.headers())
         except AdapterError as ex:
             # a server that cannot force a tool call says so with a 400 naming tool_choice
             if ex.status == 400 and body.get("tool_choice") == "required" and "tool_choice" in ex.body:
                 body["tool_choice"], refused = "auto", True
-                d = _request("POST", self.api + "/chat/completions", body, self.headers(), MODEL_CALL)
+                d = self.call("POST", self.api + "/chat/completions", body, self.headers())
             else:
                 raise
         r = self.parse(d)
@@ -296,11 +331,11 @@ class AnthropicChat(Adapter):
         body, dropped = self.request(system, messages, tools, force_tool, caps, harness, temperature, max_tokens)
         refused = False
         try:
-            d = _request("POST", self.api + "/messages", body, self.headers(), MODEL_CALL)
+            d = self.call("POST", self.api + "/messages", body, self.headers())
         except AdapterError as ex:
             if ex.status == 400 and body.get("tool_choice", {}).get("type") == "any" and "tool_choice" in ex.body:
                 body["tool_choice"], refused = {"type": "auto"}, True
-                d = _request("POST", self.api + "/messages", body, self.headers(), MODEL_CALL)
+                d = self.call("POST", self.api + "/messages", body, self.headers())
             else:
                 raise
         r = self.parse(d)
@@ -401,7 +436,7 @@ class SDAPI(Adapter):
 
     def generate(self, prompt, width, height, steps, cfg, sampler, scheduler=None, seed=-1, shift=None):
         body = self.request(prompt, width, height, steps, cfg, sampler, scheduler, seed, shift)
-        d = _request("POST", self.base + "/sdapi/v1/txt2img", body, timeout=MODEL_CALL)
+        d = self.call("POST", self.base + "/sdapi/v1/txt2img", body)
         imgs = d.get("images") or []
         if not imgs:
             raise AdapterError("%s returned no image" % _where(self.base))
@@ -427,13 +462,13 @@ class OpenAIImages(Adapter):
 
     def generate(self, prompt, width, height, steps=None, cfg=None, sampler=None, scheduler=None, seed=-1,
                  shift=None):
-        d = _request("POST", self.api + "/images/generations", self.request(prompt, width, height),
-                     self.headers(), MODEL_CALL)
+        d = self.call("POST", self.api + "/images/generations", self.request(prompt, width, height),
+                     self.headers())
         item = (d.get("data") or [{}])[0]
         if item.get("b64_json"):
             return base64.b64decode(item["b64_json"])
         if item.get("url"):
-            return _request("GET", item["url"], timeout=MODEL_CALL, raw=True)
+            return self.call("GET", item["url"], raw=True)
         raise AdapterError("%s returned no image" % _where(self.base))
 
 
@@ -458,13 +493,13 @@ class TextModelImages(Adapter):
 
     def generate(self, prompt, width, height, steps=None, cfg=None, sampler=None, scheduler=None, seed=-1,
                  shift=None):
-        d = _request("POST", self.api + "/chat/completions", self.request(prompt, width, height), self.headers(),
-                     MODEL_CALL)
+        d = self.call("POST", self.api + "/chat/completions", self.request(prompt, width, height),
+                      self.headers())
         got = picture_in_reply(d)
         if got is None:
             raise AdapterError("%s answered without a picture: the model may not make images" % _where(self.base))
         if got.startswith(("http://", "https://")):
-            return _request("GET", got, timeout=MODEL_CALL, raw=True)
+            return self.call("GET", got, raw=True)
         return base64.b64decode(got.split(",", 1)[1] if got.startswith("data:") else got)
 
 
@@ -525,11 +560,30 @@ def for_slot(role, s=None, m=None):
         if t.get("api") == "cli":                    # a command line: the picture is the file it leaves in its folder
             from .cli import CommandLineImages
             return CommandLineImages(t.get("location") or "")
-        return TextModelImages(t.get("location") or "", vault.get(slots.key_of("text", t)), t.get("model") or "")
+        return paced(TextModelImages(t.get("location") or "", vault.get(slots.key_of("text", t)), t.get("model") or ""), t)
     m = m if m is not None else slots.slot(role, s)
     api = m.get("api") or ("openai" if role == "text" else "sdapi")
     cls = _chat_class(api) if role == "text" else IMAGE[api]
     if role == "text" and api == "cli":
         # a command, not a server: no key is PaperDaemon's to hold, and its harness says how the program is spoken to
         return cls(m.get("location") or "", None, harness=slots.pick(role, s, m)[0])
-    return cls(m.get("location") or "", vault.get(slots.key_of(role, m)), m.get("model") or "")
+    return paced(cls(m.get("location") or "", vault.get(slots.key_of(role, m)), m.get("model") or ""), m)
+
+
+def paced(a, m):
+    """The adapter with its slot's wait and retries -- a model that isn't on this computer (11-16): the slot's
+    `reply_wait` (seconds; 0 or none: as long as it takes) and `retries` (absent: RETRIES)."""
+    if m and m.get("api") != "cli" and not slots.runs_here(m):
+        try:
+            w = float(m.get("reply_wait") or 0)
+        except (TypeError, ValueError):
+            w = 0.0
+        try:
+            r = int(m["retries"]) if m.get("retries") not in (None, "") else RETRIES
+        except (TypeError, ValueError):
+            r = RETRIES
+        a.wait, a.retries = (w if w > 0 else None), max(0, min(r, RETRIES_MOST))
+    return a
+
+
+RETRIES, RETRIES_MOST = 3, 20

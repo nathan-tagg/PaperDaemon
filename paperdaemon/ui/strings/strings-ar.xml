@@ -322,6 +322,8 @@
   <string name="slot.provider">المزوّد</string>
   <string name="slot.address">العنوان</string>
   <string name="slot.model">النموذج</string>
+  <string name="slot.wait">انتظار الرد</string>
+  <string name="slot.retries">إعادة المحاولة</string>
   <string name="slot.saved">محفوظ</string>
   <string name="common.test">اختبار</string>
   <string name="slot.script_label">Start.bat - اتركه فارغًا إن لم تكن هناك حاجة إلى نص تشغيل</string>
@@ -630,6 +632,9 @@
   <string name="slot.provider.help">الجهة التي تشغّل النموذج. أخرى: أي خدمة تتحدث واجهة OpenAI البرمجية، على العنوان الذي تعطيه.</string>
   <string name="slot.address.help_hosted">عنوان واجهة الخدمة البرمجية، مثلًا https://api.example.com/v1.</string>
   <string name="slot.model.help">اسم النموذج كما يكتبه المزوّد تمامًا.</string>
+  <string name="slot.wait.help">عدد الثواني التي ينتظر فيها الطلب رد النموذج قبل إرساله مرة أخرى. اتركه فارغًا للانتظار مهما استغرق النموذج.</string>
+  <string name="slot.wait.blank">مهما استغرق</string>
+  <string name="slot.retries.help">عدد المرات الإضافية التي يُرسل فيها الطلب عندما يكون الخادم مشغولًا أو لا يرد. يتوقف PaperDaemon بين المحاولات، وللمدة التي يطلبها الخادم إن ذكرها.</string>
   <string name="slot.api_key.help">يُحفظ في مدير بيانات الاعتماد في Windows، ولا يُكتب في ملف أبدًا. التشكيلات التي تستخدم الخادم نفسه تتشارك مفتاحه.</string>
   <string name="slot.address.help_local">حيث يجيب خادم نموذجك، مثلًا http://127.0.0.1:8080. إن لم يجب شيء هناك، يشغّل PaperDaemon سكربت البدء أدناه.</string>
   <string name="slot.harness.help">طريقة PaperDaemon في تنفيذ المهام بهذا النموذج. اضبطه حسب قوة النموذج.</string>

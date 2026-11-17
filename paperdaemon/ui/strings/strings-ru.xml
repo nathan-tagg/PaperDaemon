@@ -330,6 +330,8 @@
   <string name="slot.provider">Поставщик</string>
   <string name="slot.address">Адрес</string>
   <string name="slot.model">Модель</string>
+  <string name="slot.wait">Ждать ответа</string>
+  <string name="slot.retries">Повторы</string>
   <string name="slot.saved">сохранён</string>
   <string name="common.test">Проверить</string>
   <string name="slot.script_label">Start.bat — оставьте пустым, если скрипт запуска не нужен</string>
@@ -623,6 +625,9 @@
   <string name="slot.provider.help">Кто запускает модель. Другой: любой сервис, говорящий на API OpenAI, по указанному вами адресу.</string>
   <string name="slot.address.help_hosted">Адрес API сервиса, например https://api.example.com/v1.</string>
   <string name="slot.model.help">Название модели в точности так, как его пишет поставщик.</string>
+  <string name="slot.wait.help">Сколько секунд запрос ждёт ответа модели, прежде чем отправиться снова. Оставьте пустым, чтобы ждать столько, сколько нужно модели.</string>
+  <string name="slot.wait.blank">Сколько потребуется</string>
+  <string name="slot.retries.help">Сколько ещё раз отправить запрос, если сервер занят или не отвечает. PaperDaemon делает паузу между попытками — столько, сколько просит сервер, если он это указывает.</string>
   <string name="slot.api_key.help">Хранится в диспетчере учётных данных Windows и никогда не попадает в файл. Составы, использующие один и тот же сервер, делят его ключ.</string>
   <string name="slot.address.help_local">Где отвечает сервер вашей модели, например http://127.0.0.1:8080. Если там ничего не отвечает, PaperDaemon запускает скрипт запуска ниже.</string>
   <string name="slot.harness.help">Как PaperDaemon выполняет задания с этой моделью. Выберите по силе модели.</string>

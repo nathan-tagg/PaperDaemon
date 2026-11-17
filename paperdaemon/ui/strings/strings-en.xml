@@ -321,6 +321,8 @@
   <string name="slot.provider">Provider</string>
   <string name="slot.address">Address</string>
   <string name="slot.model">Model</string>
+  <string name="slot.wait">Wait for a reply</string>
+  <string name="slot.retries">Retries</string>
   <string name="slot.saved">saved</string>
   <string name="common.test">Test</string>
   <string name="slot.script_label">Start.bat - leave blank if no start script is needed</string>
@@ -609,6 +611,9 @@ Then walk me through installing SearXNG if needed, and write the .bat file with 
   <string name="slot.provider.help">Who runs the model. Other: any service that speaks the OpenAI API, at the address you give.</string>
   <string name="slot.address.help_hosted">The service's API address, for example https://api.example.com/v1.</string>
   <string name="slot.model.help">The model's name exactly as the provider writes it.</string>
+  <string name="slot.wait.help">Seconds one request waits for the model's reply before it's sent again. Leave it blank to wait as long as the model takes.</string>
+  <string name="slot.wait.blank">As long as it takes</string>
+  <string name="slot.retries.help">How many more times a request is sent when the server is busy or doesn't reply. PaperDaemon pauses between tries, as long as the server asks when it says.</string>
   <string name="slot.api_key.help">Kept in Windows Credential Manager, never in a file. Lineups that use the same server share its key.</string>
   <string name="slot.address.help_local">Where your model's server answers, for example http://127.0.0.1:8080. If nothing answers there, PaperDaemon runs the start script below.</string>
   <string name="slot.harness.help">How PaperDaemon runs jobs with this model. Set it to the model's strength.</string>

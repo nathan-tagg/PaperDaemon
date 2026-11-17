@@ -322,6 +322,8 @@
   <string name="slot.provider">Darparwr</string>
   <string name="slot.address">Cyfeiriad</string>
   <string name="slot.model">Model</string>
+  <string name="slot.wait">Aros am ateb</string>
+  <string name="slot.retries">Ailgeisio</string>
   <string name="slot.saved">wedi'i chadw</string>
   <string name="common.test">Profi</string>
   <string name="slot.script_label">Start.bat - gadewch yn wag os nad oes angen sgript gychwyn</string>
@@ -609,6 +611,9 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="slot.provider.help">Pwy sy'n rhedeg y model. Arall: unrhyw wasanaeth sy'n siarad API OpenAI, yn y cyfeiriad a roddwch.</string>
   <string name="slot.address.help_hosted">Cyfeiriad API y gwasanaeth, er enghraifft https://api.example.com/v1.</string>
   <string name="slot.model.help">Enw'r model yn union fel mae'r darparwr yn ei ysgrifennu.</string>
+  <string name="slot.wait.help">Sawl eiliad mae cais yn aros am ateb y model cyn ei anfon eto. Gadewch yn wag i aros cyhyd ag y mae'r model yn ei gymryd.</string>
+  <string name="slot.wait.blank">Cyhyd ag y mae'n ei gymryd</string>
+  <string name="slot.retries.help">Sawl gwaith arall mae cais yn cael ei anfon pan fydd y gweinydd yn brysur neu heb ateb. Mae PaperDaemon yn oedi rhwng ceisiau, cyhyd ag y mae'r gweinydd yn ei ofyn pan fydd yn dweud.</string>
   <string name="slot.api_key.help">Yn cael ei chadw yn Rheolwr Manylion Adnabod Windows, byth mewn ffeil. Mae timau sy'n defnyddio'r un gweinydd yn rhannu ei allwedd.</string>
   <string name="slot.address.help_local">Ble mae gweinydd eich model yn ateb, er enghraifft http://127.0.0.1:8080. Os nad oes dim yn ateb yno, mae PaperDaemon yn rhedeg y sgript gychwyn isod.</string>
   <string name="slot.harness.help">Sut mae PaperDaemon yn rhedeg swyddi gyda'r model hwn. Gosodwch ef yn ôl cryfder y model.</string>

@@ -322,6 +322,8 @@
   <string name="slot.provider">Sağlayıcı</string>
   <string name="slot.address">Adres</string>
   <string name="slot.model">Model</string>
+  <string name="slot.wait">Yanıt bekleme</string>
+  <string name="slot.retries">Yeniden deneme</string>
   <string name="slot.saved">kaydedildi</string>
   <string name="common.test">Test et</string>
   <string name="slot.script_label">Start.bat - başlatma betiği gerekmiyorsa boş bırakın</string>
@@ -609,6 +611,9 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="slot.provider.help">Modeli kimin çalıştırdığı. Diğer: verdiğiniz adreste OpenAI API'sini konuşan herhangi bir hizmet.</string>
   <string name="slot.address.help_hosted">Hizmetin API adresi, örneğin https://api.example.com/v1.</string>
   <string name="slot.model.help">Modelin adı, tam olarak sağlayıcının yazdığı gibi.</string>
+  <string name="slot.wait.help">Bir isteğin yeniden gönderilmeden önce modelin yanıtını kaç saniye beklediği. Model ne kadar sürerse beklemek için boş bırakın.</string>
+  <string name="slot.wait.blank">Ne kadar sürerse</string>
+  <string name="slot.retries.help">Sunucu meşgulken ya da yanıt vermediğinde isteğin kaç kez daha gönderileceği. PaperDaemon denemeler arasında bekler; sunucu belirtirse istediği kadar.</string>
   <string name="slot.api_key.help">Windows Kimlik Bilgisi Yöneticisi'nde saklanır, asla bir dosyada değil. Aynı sunucuyu kullanan dizilimler onun anahtarını paylaşır.</string>
   <string name="slot.address.help_local">Modelinizin sunucusunun yanıt verdiği yer, örneğin http://127.0.0.1:8080. Orada hiçbir şey yanıt vermezse PaperDaemon aşağıdaki başlatma betiğini çalıştırır.</string>
   <string name="slot.harness.help">PaperDaemon'un bu modelle işleri nasıl yürüttüğü. Modelin gücüne göre ayarlayın.</string>

@@ -322,6 +322,8 @@
   <string name="slot.provider">Penyedia</string>
   <string name="slot.address">Alamat</string>
   <string name="slot.model">Model</string>
+  <string name="slot.wait">Tunggu balasan</string>
+  <string name="slot.retries">Coba lagi</string>
   <string name="slot.saved">tersimpan</string>
   <string name="common.test">Uji</string>
   <string name="slot.script_label">Start.bat - kosongkan jika tidak perlu skrip mulai</string>
@@ -609,6 +611,9 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="slot.provider.help">Siapa yang menjalankan model. Lainnya: layanan apa pun yang memakai API OpenAI, di alamat yang Anda berikan.</string>
   <string name="slot.address.help_hosted">Alamat API layanan, misalnya https://api.example.com/v1.</string>
   <string name="slot.model.help">Nama model persis seperti yang ditulis penyedia.</string>
+  <string name="slot.wait.help">Detik sebuah permintaan menunggu balasan model sebelum dikirim lagi. Kosongkan untuk menunggu selama yang dibutuhkan model.</string>
+  <string name="slot.wait.blank">Selama yang dibutuhkan</string>
+  <string name="slot.retries.help">Berapa kali lagi permintaan dikirim saat server sibuk atau tidak membalas. PaperDaemon berhenti sejenak di antara percobaan, selama yang diminta server jika server menyebutkannya.</string>
   <string name="slot.api_key.help">Disimpan di Pengelola Kredensial Windows, tidak pernah di berkas. Formasi yang memakai server yang sama berbagi kuncinya.</string>
   <string name="slot.address.help_local">Tempat server model Anda menjawab, misalnya http://127.0.0.1:8080. Jika tidak ada yang menjawab di sana, PaperDaemon menjalankan skrip mulai di bawah.</string>
   <string name="slot.harness.help">Cara PaperDaemon menjalankan pekerjaan dengan model ini. Atur sesuai kekuatan model.</string>

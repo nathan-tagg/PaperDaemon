@@ -322,6 +322,8 @@
   <string name="slot.provider">プロバイダー</string>
   <string name="slot.address">アドレス</string>
   <string name="slot.model">モデル</string>
+  <string name="slot.wait">応答を待つ時間</string>
+  <string name="slot.retries">再試行回数</string>
   <string name="slot.saved">保存済み</string>
   <string name="common.test">テスト</string>
   <string name="slot.script_label">Start.bat - 起動スクリプトが不要なら空欄のまま</string>
@@ -609,6 +611,9 @@
   <string name="slot.provider.help">モデルを動かしている事業者です。その他: 指定したアドレスで OpenAI API を話す任意のサービスです。</string>
   <string name="slot.address.help_hosted">サービスの API アドレス。例: https://api.example.com/v1</string>
   <string name="slot.model.help">事業者が表記しているとおりのモデル名です。</string>
+  <string name="slot.wait.help">モデルの応答を待つ秒数です。過ぎると、リクエストをもう一度送ります。空欄にすると、モデルが応答するまで待ちます。</string>
+  <string name="slot.wait.blank">応答があるまで</string>
+  <string name="slot.retries.help">サーバーが混雑しているときや応答がないときに、リクエストをさらに何回送るか。PaperDaemon は試行の間に少し待ちます。サーバーが待ち時間を示したときはその時間だけ待ちます。</string>
   <string name="slot.api_key.help">Windows 資格情報マネージャーに保存され、ファイルには書かれません。同じサーバーを使うラインナップはそのキーを共有します。</string>
   <string name="slot.address.help_local">モデルのサーバーが応答する場所。例: http://127.0.0.1:8080。そこで何も応答しなければ、PaperDaemon は下の起動スクリプトを実行します。</string>
   <string name="slot.harness.help">PaperDaemon がこのモデルでジョブをどう進めるか。モデルの強さに合わせて設定します。</string>

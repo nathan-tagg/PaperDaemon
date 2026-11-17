@@ -11,7 +11,9 @@ configuration of one model:
 A slot may also carry, for less common setups: `script_text` (an inline script, used when `script` is
 empty), `api` (how the server is spoken to: openai or anthropic for text, sdapi or openai-images for
 pictures), `model` (the model name to ask for), and `overrides`/`tested` (capability values set by the
-user or accepted from a model check).
+user or accepted from a model check). A model that isn't on this computer may carry `reply_wait` (seconds
+one call waits for its reply; 0: as long as it takes) and `retries` (how many more times a busy or silent server is
+asked, 0 to 20; absent: 3).
 
 The settings keep a list of lineups, every one of them live: a page's tag picks the lineup that works it
 (lineup_of_tag), and the engine uses that lineup's slots for the job's model calls (use()). Tags are unique
@@ -537,6 +539,10 @@ def check_slot(role, m, where="slot"):
     for k in ("script", "script_text", "model"):
         if not isinstance(m.get(k), str):
             errs.append("%s: %s must be text" % (where, k))
+    for k, top in (("reply_wait", 86400), ("retries", 20)):
+        v = m.get(k)
+        if v not in (None, "") and (isinstance(v, bool) or not isinstance(v, (int, float)) or not 0 <= v <= top):
+            errs.append("%s: %s is a number from 0 to %d" % (where, k, top))
     errs.extend(slots.check_harness_and_overrides(role, m, where))
     return errs
 

@@ -322,6 +322,8 @@
   <string name="slot.provider">Leverandør</string>
   <string name="slot.address">Adresse</string>
   <string name="slot.model">Modell</string>
+  <string name="slot.wait">Vent på svar</string>
+  <string name="slot.retries">Nye forsøk</string>
   <string name="slot.saved">lagret</string>
   <string name="common.test">Test</string>
   <string name="slot.script_label">Start.bat - la stå tom hvis det ikke trengs noe startskript</string>
@@ -609,6 +611,9 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="slot.provider.help">Hvem som kjører modellen. Annen: enhver tjeneste som snakker OpenAI-API-et, på adressen du oppgir.</string>
   <string name="slot.address.help_hosted">Tjenestens API-adresse, for eksempel https://api.example.com/v1.</string>
   <string name="slot.model.help">Modellens navn nøyaktig slik leverandøren skriver det.</string>
+  <string name="slot.wait.help">Sekunder en forespørsel venter på svar fra modellen før den sendes på nytt. La feltet stå tomt for å vente så lenge modellen trenger.</string>
+  <string name="slot.wait.blank">Så lenge det tar</string>
+  <string name="slot.retries.help">Hvor mange ganger til en forespørsel sendes når serveren er opptatt eller ikke svarer. PaperDaemon tar en pause mellom forsøkene, så lenge serveren ber om når den sier det.</string>
   <string name="slot.api_key.help">Lagres i Windows Legitimasjonsbehandling, aldri i en fil. Oppstillinger som bruker samme server, deler nøkkelen.</string>
   <string name="slot.address.help_local">Der modellens server svarer, for eksempel http://127.0.0.1:8080. Hvis ingenting svarer der, kjører PaperDaemon oppstartsskriptet nedenfor.</string>
   <string name="slot.harness.help">Hvordan PaperDaemon kjører jobber med denne modellen. Sett den etter hvor sterk modellen er.</string>

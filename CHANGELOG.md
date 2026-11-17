@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.9
+
+- A model reached with an API key has two new settings, on its Text or Image tab: **Wait for a reply** (how many seconds one request waits; blank waits as long as the model takes) and **Retries** (how many more times a request is sent; 3 unless you change it). When the server says it's busy, like Gemini's "high demand", or doesn't reply in time, PaperDaemon pauses and asks again, for as long as the server asks if it says. Before, the job was skipped after one try. Models on this computer and command lines work as before.
+
 ## 0.3.8
 
 - Clicking text selects as it does everywhere else: a double-click selects the word, a triple-click the paragraph, and four clicks all the text. It works on your typed text, on a PDF's or a book's text, and on handwriting.

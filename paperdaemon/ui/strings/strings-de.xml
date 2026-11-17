@@ -322,6 +322,8 @@
   <string name="slot.provider">Anbieter</string>
   <string name="slot.address">Adresse</string>
   <string name="slot.model">Modell</string>
+  <string name="slot.wait">Auf Antwort warten</string>
+  <string name="slot.retries">Wiederholungen</string>
   <string name="slot.saved">gespeichert</string>
   <string name="common.test">Testen</string>
   <string name="slot.script_label">Start.bat - leer lassen, wenn kein Startskript nötig ist</string>
@@ -609,6 +611,9 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="slot.provider.help">Wer das Modell betreibt. Andere: jeder Dienst, der die OpenAI-API spricht, unter der Adresse, die du angibst.</string>
   <string name="slot.address.help_hosted">Die API-Adresse des Dienstes, zum Beispiel https://api.example.com/v1.</string>
   <string name="slot.model.help">Der Name des Modells, genau so, wie der Anbieter ihn schreibt.</string>
+  <string name="slot.wait.help">Sekunden, die eine Anfrage auf die Antwort des Modells wartet, bevor sie erneut gesendet wird. Leer lassen, um so lange zu warten, wie das Modell braucht.</string>
+  <string name="slot.wait.blank">So lange wie nötig</string>
+  <string name="slot.retries.help">Wie oft eine Anfrage erneut gesendet wird, wenn der Server ausgelastet ist oder nicht antwortet. PaperDaemon pausiert zwischen den Versuchen, so lange, wie der Server es verlangt, wenn er es sagt.</string>
   <string name="slot.api_key.help">Wird in der Windows-Anmeldeinformationsverwaltung aufbewahrt, nie in einer Datei. Aufstellungen, die denselben Server nutzen, teilen sich seinen Schlüssel.</string>
   <string name="slot.address.help_local">Wo der Server deines Modells antwortet, zum Beispiel http://127.0.0.1:8080. Antwortet dort nichts, startet PaperDaemon das Startskript unten.</string>
   <string name="slot.harness.help">Wie PaperDaemon Aufträge mit diesem Modell ausführt. Stelle es auf die Stärke des Modells ein.</string>

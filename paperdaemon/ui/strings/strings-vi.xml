@@ -322,6 +322,8 @@
   <string name="slot.provider">Nhà cung cấp</string>
   <string name="slot.address">Địa chỉ</string>
   <string name="slot.model">Mô hình</string>
+  <string name="slot.wait">Chờ phản hồi</string>
+  <string name="slot.retries">Thử lại</string>
   <string name="slot.saved">đã lưu</string>
   <string name="common.test">Kiểm tra</string>
   <string name="slot.script_label">Start.bat - để trống nếu không cần tập lệnh khởi động</string>
@@ -609,6 +611,9 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="slot.provider.help">Ai chạy mô hình. Khác: bất kỳ dịch vụ nào dùng API của OpenAI, tại địa chỉ bạn nhập.</string>
   <string name="slot.address.help_hosted">Địa chỉ API của dịch vụ, ví dụ https://api.example.com/v1.</string>
   <string name="slot.model.help">Tên mô hình đúng như nhà cung cấp viết.</string>
+  <string name="slot.wait.help">Số giây một yêu cầu chờ phản hồi của mô hình trước khi được gửi lại. Để trống để chờ lâu bao nhiêu tùy mô hình.</string>
+  <string name="slot.wait.blank">Lâu bao nhiêu cũng được</string>
+  <string name="slot.retries.help">Gửi lại yêu cầu thêm bao nhiêu lần khi máy chủ bận hoặc không phản hồi. PaperDaemon dừng giữa các lần thử, lâu như máy chủ yêu cầu nếu máy chủ có báo.</string>
   <string name="slot.api_key.help">Được giữ trong Trình quản lý thông tin xác thực của Windows, không bao giờ trong tệp. Các đội hình dùng cùng máy chủ sẽ dùng chung khóa của nó.</string>
   <string name="slot.address.help_local">Nơi máy chủ mô hình của bạn phản hồi, ví dụ http://127.0.0.1:8080. Nếu không có gì phản hồi ở đó, PaperDaemon chạy tập lệnh khởi động bên dưới.</string>
   <string name="slot.harness.help">Cách PaperDaemon chạy công việc với mô hình này. Đặt theo sức mạnh của mô hình.</string>

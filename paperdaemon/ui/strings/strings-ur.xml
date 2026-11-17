@@ -322,6 +322,8 @@
   <string name="slot.provider">فراہم کنندہ</string>
   <string name="slot.address">پتا</string>
   <string name="slot.model">ماڈل</string>
+  <string name="slot.wait">جواب کا انتظار</string>
+  <string name="slot.retries">دوبارہ کوشش</string>
   <string name="slot.saved">محفوظ</string>
   <string name="common.test">ٹیسٹ کریں</string>
   <string name="slot.script_label">Start.bat - اگر شروعاتی اسکرپٹ کی ضرورت نہیں تو خالی چھوڑیں</string>
@@ -609,6 +611,9 @@
   <string name="slot.provider.help">ماڈل کون چلاتا ہے۔ دیگر: کوئی بھی سروس جو آپ کے دیے پتے پر OpenAI API بولتی ہو۔</string>
   <string name="slot.address.help_hosted">سروس کی API کا پتا، مثلاً https://api.example.com/v1۔</string>
   <string name="slot.model.help">ماڈل کا نام بالکل ویسا جیسا فراہم کنندہ لکھتا ہے۔</string>
+  <string name="slot.wait.help">دوبارہ بھیجنے سے پہلے ایک درخواست ماڈل کے جواب کا کتنے سیکنڈ انتظار کرے۔ ماڈل جتنا وقت لے اتنا انتظار کرنے کے لیے خالی چھوڑیں۔</string>
+  <string name="slot.wait.blank">جتنا وقت لگے</string>
+  <string name="slot.retries.help">سرور مصروف ہو یا جواب نہ دے تو درخواست کتنی بار مزید بھیجی جائے۔ PaperDaemon ہر کوشش کے درمیان رکتا ہے، سرور بتائے تو اتنی دیر جتنی وہ کہے۔</string>
   <string name="slot.api_key.help">Windows کریڈینشل مینیجر میں رکھی جاتی ہے، کبھی کسی فائل میں نہیں۔ ایک ہی سرور استعمال کرنے والی لائن اپس اس کی کلید مشترک رکھتی ہیں۔</string>
   <string name="slot.address.help_local">جہاں آپ کے ماڈل کا سرور جواب دیتا ہے، مثلاً http://127.0.0.1:8080۔ اگر وہاں کوئی جواب نہ دے تو PaperDaemon نیچے والا شروعاتی اسکرپٹ چلاتا ہے۔</string>
   <string name="slot.harness.help">PaperDaemon اس ماڈل کے ساتھ کام کیسے چلاتا ہے۔ اسے ماڈل کی طاقت کے مطابق رکھیں۔</string>

@@ -322,6 +322,8 @@
   <string name="slot.provider">提供商</string>
   <string name="slot.address">地址</string>
   <string name="slot.model">模型</string>
+  <string name="slot.wait">等待回复</string>
+  <string name="slot.retries">重试次数</string>
   <string name="slot.saved">已保存</string>
   <string name="common.test">测试</string>
   <string name="slot.script_label">Start.bat - 如果不需要启动脚本请留空</string>
@@ -609,6 +611,9 @@
   <string name="slot.provider.help">运行模型的服务商。其他：任何在您给出的地址上使用 OpenAI API 的服务。</string>
   <string name="slot.address.help_hosted">该服务的 API 地址，例如 https://api.example.com/v1。</string>
   <string name="slot.model.help">模型名称，与服务商的写法完全一致。</string>
+  <string name="slot.wait.help">一次请求等待模型回复的秒数，超过后会重新发送。留空则一直等到模型回复。</string>
+  <string name="slot.wait.blank">一直等待</string>
+  <string name="slot.retries.help">服务器繁忙或没有回复时，请求再发送几次。PaperDaemon 会在两次尝试之间暂停；服务器说明了等待时间时，按它说的时间等待。</string>
   <string name="slot.api_key.help">保存在 Windows 凭据管理器中，从不写入文件。使用同一服务器的阵容共用其密钥。</string>
   <string name="slot.address.help_local">模型服务器应答的地址，例如 http://127.0.0.1:8080。如果那里没有应答，PaperDaemon 会运行下方的启动脚本。</string>
   <string name="slot.harness.help">PaperDaemon 用这个模型处理任务的方式。按模型的强弱来设定。</string>

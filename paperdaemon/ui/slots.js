@@ -51,7 +51,8 @@
     if (role === "text" && slot.api === CLI_API) return { kind: "cli", provider: HOSTED[role][0].id, at: loc, model: "", harness, caps };
     if (!loc) return { kind: role === "image" ? "none" : "hosted", provider: HOSTED[role][0].id, at: "", model: slot.model || "", harness, caps };
     const p = HOSTED[role].filter(h => h.at && loc.startsWith(h.at)).sort((a, b) => b.at.length - a.at.length)[0];   // (the longest address that fits)
-    if (p || !PD.isLocal(loc)) return { kind: "hosted", provider: p ? p.id : "other", at: loc, model: slot.model || "", harness, caps };
+    if (p || !PD.isLocal(loc)) return { kind: "hosted", provider: p ? p.id : "other", at: loc, model: slot.model || "", harness, caps,
+      wait: slot.reply_wait ? String(slot.reply_wait) : "", retries: slot.retries === undefined || slot.retries === null || slot.retries === "" ? "3" : String(slot.retries) };
     return { kind: "local", provider: HOSTED[role][0].id, at: loc, model: slot.model || "", scriptText: slot.script_text || "", harness, caps };
   }
 
@@ -188,7 +189,10 @@
       out += '<div class="grid2">' + lab(id + "-provider", "slot.provider", "slot.provider.help") + select(id + "-provider", HOSTED[role].map(h => [h.id, h.label]), pr.id) + "</label>" +
         (pr.id === "other" ? lab(id + "-at", "slot.address", "slot.address.help_hosted") + '<input class="field" id="' + id + '-at" value="' + esc(f.at) + '" placeholder="https://…"></label>' : "") +
         lab(id + "-model", "slot.model", "slot.model.help") + '<input class="field" id="' + id + '-model" value="' + esc(f.model) + '"></label>' +
-        lab(id + "-key", "slot.api_key", "slot.api_key.help") + '<input class="field" type="password" id="' + id + '-key" autocomplete="off" value="' + esc(f.key || "") + '" placeholder="' + (keyKept(role, keyWhere(role, f)) ? esc(PD.t("slot.saved")) : "") + '"></label>' + "</div>" +
+        lab(id + "-key", "slot.api_key", "slot.api_key.help") + '<input class="field" type="password" id="' + id + '-key" autocomplete="off" value="' + esc(f.key || "") + '" placeholder="' + (keyKept(role, keyWhere(role, f)) ? esc(PD.t("slot.saved")) : "") + '"></label>' +
+        // how long one call waits for a reply, and how many more times a busy or silent server is asked (11-16)
+        lab(id + "-wait", "slot.wait", "slot.wait.help") + '<input class="field" type="number" min="0" step="1" inputmode="numeric" id="' + id + '-wait" value="' + esc(f.wait || "") + '" placeholder="' + esc(PD.t("slot.wait.blank")) + '"></label>' +
+        lab(id + "-retries", "slot.retries", "slot.retries.help") + '<input class="field" type="number" min="0" max="20" step="1" inputmode="numeric" id="' + id + '-retries" value="' + esc(f.retries === undefined ? "3" : f.retries) + '"></label>' + "</div>" +
         harnessRow(p, role, f, harnesses) +
         '<div class="actions"><button type="button" class="btn small" data-act="test" data-role="' + role + '">' + esc(PD.t("common.test")) + '</button><span id="' + id + '-test">' + (test || "") + "</span></div>";
     } else if (f.kind === "cli") {
@@ -211,7 +215,7 @@
   /** What is typed in the form -> f (so a repaint or a tab switch keeps it). */
   function read(root, p, role, f) {
     const v = s => { const el = $("#" + p + "-" + role + s, root); return el ? el.value.trim() : null; };
-    for (const [k, s] of [["kind", "-kind"], ["provider", "-provider"], ["at", "-at"], ["model", "-model"], ["key", "-key"]]) {
+    for (const [k, s] of [["kind", "-kind"], ["provider", "-provider"], ["at", "-at"], ["model", "-model"], ["key", "-key"], ["wait", "-wait"], ["retries", "-retries"]]) {
       const x = v(s); if (x !== null) f[k] = x;
     }
     const h = v("-harness");
@@ -246,7 +250,9 @@
     if (f.kind === "local") return Object.assign(o, { location: f.at, script: "", script_text: (f.scriptText || "").replace(/\r?\n/g, "\r\n"), api: LOCAL_API[role], model: f.model || "" });
     if (f.kind === "cli") return Object.assign(o, { location: f.at || "", script: "", script_text: "", api: CLI_API, model: "" });
     const pr = HOSTED[role].find(h => h.id === f.provider) || HOSTED[role][0];
-    return Object.assign(o, { location: pr.id === "other" ? f.at : pr.at, script: "", script_text: "", api: pr.api, model: f.model });
+    const n = (v, d) => { const x = parseInt(v, 10); return isFinite(x) && x >= 0 ? x : d; };
+    return Object.assign(o, { location: pr.id === "other" ? f.at : pr.at, script: "", script_text: "", api: pr.api, model: f.model,
+      reply_wait: n(f.wait, 0), retries: Math.min(n(f.retries, 3), 20) });
   }
 
   /** The API keys typed into the forms, saved to the credential store; each is cleared once saved. -> error or "". */
