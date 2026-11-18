@@ -407,6 +407,11 @@ def restore(entry_path, doc_name=None, page_no=None):
 #
 # The signature is translation-invariant, which is what makes this survive the
 # app: re-anchoring MOVES strokes, and a recorded signature still matches.
+def _ident(s):
+    """A stroke's place in its file: its layer and its item id (a snapshot's stroke)."""
+    return (str(s.get("parent")), str(s.get("item_id")))
+
+
 def record_provenance(doc_name, page_no, strokes=None, what="", kind="text",
                       since=None, only=None):
     """Remember that these strokes are MINE, and what they were.
@@ -432,10 +437,12 @@ def record_provenance(doc_name, page_no, strokes=None, what="", kind="text",
     from rmscene.scene_items import Line, Point, Pen, PenColor
     sigs = []
     if since is not None:
-        had = set()
-        for s in since["strokes"]:
-            had.add(s["sig"])
-        sigs = [s["sig"] for s in snap["strokes"] if s["sig"] not in had and (only is None or only(s))]
+        # NEW BY IDENTITY, not by shape: a stroke is new when its place in the file (its layer and item id) was not
+        # there before. By shape, a new stroke drawn exactly like one already on the page -- a lettered dash like
+        # the dashes of the daemon's note -- went unrecorded and later read as the user's (11-17, Blue Origin: a
+        # job that erased its stale replies left their dashes behind as "::" marks)
+        had = {_ident(s) for s in since["strokes"]}
+        sigs = [s["sig"] for s in snap["strokes"] if _ident(s) not in had and (only is None or only(s))]
     for s in (strokes or []):
         tool, color, rgba = Pen.FINELINER_2, PenColor.BLACK, None
         pts = s

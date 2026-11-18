@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.10
+
+- When a job takes back one of its own earlier replies, all of it goes now. Some of PaperDaemon's strokes, small dashes shaped exactly like ones already on the page, weren't recorded as its own, so they were treated as yours and left behind as stray "::" marks. PaperDaemon now records every stroke it writes by its place in the page, not by its shape.
+
 ## 0.3.9
 
 - A model reached with an API key has two new settings, on its Text or Image tab: **Wait for a reply** (how many seconds one request waits; blank waits as long as the model takes) and **Retries** (how many more times a request is sent; 3 unless you change it). When the server says it's busy, like Gemini's "high demand", or doesn't reply in time, PaperDaemon pauses and asks again, for as long as the server asks if it says. Before, the job was skipped after one try. Models on this computer and command lines work as before.
