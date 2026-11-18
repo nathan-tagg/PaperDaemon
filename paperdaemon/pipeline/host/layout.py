@@ -179,13 +179,22 @@ def _clamp(x0, y0, x1, y1, safe):
     return x0, y0, x1, y1
 
 
-def _anchored(p, anchor, side, safe, obstacles, what):
+def _in_column(kind, safe, col):
+    """The safe area a place of `kind` may use: text keeps to the typed column (11-18: replies placed by a mark or in
+    a corner ran into the margins); everything else keeps the safe width."""
+    if kind != "text":
+        return safe
+    return (max(safe[0], col[0]), safe[1], min(safe[2], col[1]), safe[3])
+
+
+def _anchored(p, anchor, side, safe, obstacles, what, col=TEXT_COL):
     """A box of the place's appetite on `side` of `anchor`, shrunk until it clears the obstacles.
 
     `anchor` is a bbox dict; `what` names it for the refusal. side="on" is the anchor itself, inset
     a little -- "write HELLO inside this box", "color in the circle" -- and is never shrunk.
     """
     kind, pid = p["kind"], p["id"]
+    safe = _in_column(kind, safe, col)
     if side == "on":
         w, h = anchor["x1"] - anchor["x0"], anchor["y1"] - anchor["y0"]
         d = min(w, h) * 0.08
@@ -240,8 +249,9 @@ def _anchored(p, anchor, side, safe, obstacles, what):
            (" -- and something else is already there" if tried else "")))
 
 
-def _corner(p, near, safe, obstacles):
+def _corner(p, near, safe, obstacles, col=TEXT_COL):
     kind, pid = p["kind"], p["id"]
+    safe = _in_column(kind, safe, col)
     h = MIN_H[kind] * ANCHORED[p["size"]]
     while h >= MIN_H[kind] - 1e-6:
         w = (safe[2] - safe[0]) / 2.0 if kind == "text" else min(h * ASPECT[kind], safe[2] - safe[0])
@@ -340,9 +350,9 @@ def solve(places, first_free_y=None, safe=SAFE, arrow_tip=None, marks=None, obst
                                 % (p["id"], mid, (", ".join(str(k) for k in sorted(marks)) or "(none)")))
             anchor = marks[mid]
             others = [o for o in obstacles if not _same(o, anchor)] + boxes
-            b = _anchored(p, anchor, p["side"], safe, others, "mark %d" % mid)
+            b = _anchored(p, anchor, p["side"], safe, others, "mark %d" % mid, tcol)
         else:
-            b = _corner(p, p["near"], safe, obstacles + boxes)
+            b = _corner(p, p["near"], safe, obstacles + boxes, tcol)
         boxes.append(b)
         out[p["id"]] = b
 

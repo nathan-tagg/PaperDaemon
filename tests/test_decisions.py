@@ -188,3 +188,22 @@ def test_a_picture_after_a_short_reply_goes_right_below_it():
     H.JOB.draw.stroke([(np.float32(-200), np.float32(800)), (np.float32(200), np.float32(900))])
     H.JOB.steps[1].update(status="done", draw_from=2, draw_to=3)
     json.dumps(H._landed_box(H.JOB.steps[1]))
+
+
+def test_a_place_pointed_at_never_takes_a_typed_paragraph_its_ruling_keeps(monkeypatch):
+    # 11-18, Blue Origin: an erase step meant for "the blank typed lines above the prompt" was grounded onto the prompt
+    # paragraph itself, and the user's prompt was erased. A typed paragraph comes off only by its own ruling
+    J.begin(doc="d", page=1)
+    logs = []
+    monkeypatch.setattr(H, "log", lambda m: logs.append(m))
+    monkeypatch.setattr(H, "_drain_host_steps", lambda *a, **k: None)
+    monkeypatch.setattr(H, "_at_ground", lambda whats: {w: ("box", (-685, 81, -89, 2832)) for w in whats})
+    monkeypatch.setattr(H, "_at_resolve", lambda b, exclude=(): {"pictures": [], "paras": [1], "keys": [("k", 1)]})
+    monkeypatch.setattr(H, "_off_steps", lambda steps: None)
+    monkeypatch.setattr(H, "_resolve_lines", lambda what: what)
+    monkeypatch.setattr(H, "_pictures", lambda doc, page, hidden_too=False: [])
+    steps = ST.build([{"do": "erase", "what": "the blank lines", "answers": ["para:2"],
+                       "at": "the empty typed lines above the prompt"}])
+    H._plan(steps, [{"id": "para:1", "is": "note", "then": "keep"}, {"id": "para:2", "is": "request", "then": "erase"}])
+    assert "para:1" not in steps[0]["what"], steps[0]["what"]
+    assert any("para:1 stays" in m for m in logs), logs

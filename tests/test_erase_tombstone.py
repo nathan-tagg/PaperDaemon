@@ -267,3 +267,46 @@ def test_a_range_erased_by_one_author_never_buries_another_authors_strokes(tmp_p
     assert out.returncode == 0, out.stderr[-3000:]
     d = json.loads(out.stdout.strip().splitlines()[-1])
     assert d == {"before": 3, "after": 4, "fast": 4}, d
+
+
+def test_an_erased_paragraph_takes_its_empty_lines(tmp_path):
+    """11-18, Blue Origin: erasing typed paragraphs left their empty lines behind as a gap. A paragraph goes with the
+    empty lines in front of it; the first text of the page with the ones after it too."""
+    code = textwrap.dedent("""
+        import io, json, os, sys, uuid
+        sys.path.insert(0, %r)
+        import paperdaemon.pipeline  # noqa: F401
+        from paperdaemon import paths
+        from paperdaemon.pipeline import page as P
+        from rmscene import read_blocks, write_blocks, simple_text_document
+        from rmscene import scene_stream as ss
+        M = paths.mirror_dir()
+        doc, pid = str(uuid.uuid4()), str(uuid.uuid4())
+        os.makedirs(os.path.join(M, doc))
+        N = chr(10)
+        buf = io.BytesIO()
+        write_blocks(buf, list(simple_text_document(N * 3 + "Top note" + N * 3 + "Keep this" + N * 3 + "Take this" + N * 3 + "End")))
+        open(os.path.join(M, doc, pid + ".rm"), "wb").write(buf.getvalue())
+        json.dump({"cPages": {"pages": [{"id": pid, "idx": {"timestamp": "1:2", "value": "ba"}}]}, "fileType": "notebook",
+                   "pageCount": 1}, open(os.path.join(M, doc + ".content"), "w"))
+        json.dump({"visibleName": "T", "parent": "", "type": "DocumentType"}, open(os.path.join(M, doc + ".metadata"), "w"))
+
+        def text():
+            for b in read_blocks(io.BytesIO(open(os.path.join(M, doc, pid + ".rm"), "rb").read())):
+                if isinstance(b, ss.RootTextBlock):
+                    return "".join(it.value for it in b.value.items._items.values()
+                                   if isinstance(it.value, str) and it.value and not it.deleted_length)
+        P.erase_text(doc, 1, contains="Take this")
+        middle = text()
+        P.erase_text(doc, 1, contains="Top note")
+        print(json.dumps({"middle": middle, "top": text()}))
+    """) % ROOT
+    env = dict(os.environ, PAPERDAEMON_HOME=str(tmp_path / "home"), PYTHON_KEYRING_BACKEND="keyring.backends.null.Keyring")
+    for k in ("RM_STATE", "RM_MIRROR", "RM_CACHE", "RM_RUN"):
+        env.pop(k, None)
+    out = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True, timeout=300)
+    assert out.returncode == 0, out.stderr[-3000:]
+    d = json.loads(out.stdout.strip().splitlines()[-1])
+    n = chr(10)
+    assert d["middle"] == n * 3 + "Top note" + n * 3 + "Keep this" + n * 3 + "End", d["middle"]
+    assert d["top"] == "Keep this" + n * 3 + "End", d["top"]

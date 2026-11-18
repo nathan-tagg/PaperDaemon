@@ -124,3 +124,15 @@ def test_pages_a_job_made_are_settled_not_worked(monkeypatch, tmp_path):
     left = D.settle_made(todo)
     assert marked == [("doc1/sheet", "done")]
     assert [q["key"] for q in left] == ["doc1/story", "doc2/req"] and D.MADE == {}
+
+
+def test_a_new_page_a_request_was_handed_to_is_worked(monkeypatch):
+    """11-18, Blue Origin: an elsewhere step put the work on a new page 2; the page, made by the job, was settled as a
+    made page and the request handed to it never ran."""
+    import paperdaemon.pipeline.daemon as D
+    marked = []
+    monkeypatch.setattr(D.rm_scan, "mark", lambda k, status, note, **kw: marked.append((k, status)))
+    monkeypatch.setattr(D, "log", lambda *a, **k: None)
+    monkeypatch.setattr(D, "MADE", {"doc1/p2": "empty"})
+    left = D.settle_made([{"key": "doc1/p2", "doc": "N", "page": 2, "state": {"sha": "empty"}, "why": "asked"}])
+    assert marked == [] and [q["key"] for q in left] == ["doc1/p2"]

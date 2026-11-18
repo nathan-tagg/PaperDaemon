@@ -247,6 +247,15 @@ def _plan(plan_steps, rulings=(), places=None):
             exc = ([w2[1] for i2, w2 in _where.items() if i2 != q["id"] and w2[0] == "box"]
                    if q.get("because") == "request" else [])
             got = H._at_resolve(b, exclude=exc)
+            # A TYPED PARAGRAPH COMES OFF ONLY BY ITS RULING: a place pointed at takes ink, never the user's typed
+            # words around it (11-18, Blue Origin: "the blank typed lines above the prompt" landed on the prompt
+            # itself, and the prompt was erased)
+            ruled_off = {e["id"] for e in RU.erase_of(rulings)}
+            spared = [n for n in got["paras"] if "para:%d" % n not in ruled_off]
+            if spared:
+                H.log("  step %d: %s stays -- typed words come off only by their ruling"
+                      % (q["id"], " ".join("para:%d" % n for n in spared)))
+            got["paras"] = [n for n in got["paras"] if n not in spared]
             refs = ["picture:%d" % n for n in got["pictures"]] + ["para:%d" % n for n in got["paras"]]
             if got["keys"]:
                 JOB.at_ink[len(JOB.at_ink) + 1] = got["keys"]

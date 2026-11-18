@@ -718,9 +718,17 @@ def erase_text(doc_name, page_no, keep=None, contains=None, dry_run=False, data=
                 return None
             whole = [w for w in (_alone(a_, b_) for a_, b_ in spans) if w]
             spans = whole if whole else (spans if len(spans) == 1 else [])
-            # A PARAGRAPH GOES WITH THE NEWLINE IN FRONT OF IT (its style is keyed to that newline),
-            # so no empty line is left where it was
-            spans = [(a_ - 1 if a_ > 0 and full[a_ - 1] == "\n" else a_, b_) for a_, b_ in spans]
+            # A PARAGRAPH GOES WITH THE EMPTY LINES IN FRONT OF IT (its style is keyed to the newline before it), and
+            # the first text of the page with the empty lines after it too, so no gap is left where it was (11-18,
+            # Blue Origin: "you failed to delete all the returns" -- one newline went, the empty lines stayed)
+            def _with_gap(a_, b_):
+                while a_ > 0 and full[a_ - 1].isspace():
+                    a_ -= 1
+                if a_ == 0:
+                    while b_ < len(full) and full[b_].isspace():
+                        b_ += 1
+                return a_, b_
+            spans = [_with_gap(a_, b_) for a_, b_ in spans]
             # EXACTLY THE MATCHED CHARACTERS, never a whole item. An item is one edit RUN, not one
             # paragraph: typed in one go, five paragraphs were a single item, and erasing the last
             # one -- the request -- as a whole item took the four paragraphs of notes above it with

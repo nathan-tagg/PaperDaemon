@@ -78,3 +78,14 @@ def test_additions_drawn_onto_one_drawing_never_crowd_each_other():
     beside = places[:2] + [{"id": "t", "kind": "text", "size": "small", "near": "mark:1", "side": "right"}]
     out = LY.solve(beside, first_free_y=1350.0, marks={1: snowman}, obstacles=[snowman])
     assert out["t"]["x0"] >= out["s0"]["x1"] - 1e-6
+
+
+def test_text_placed_by_a_mark_or_in_a_corner_keeps_to_the_typed_column():
+    # 11-18, Blue Origin ("Okay, This is NOT how you place strokes"): a reply placed below a mark took the safe area's
+    # full width, x -800..800, into the margins
+    mark = {"x0": -600.0, "y0": 300.0, "x1": 600.0, "y1": 400.0}
+    out = LY.solve([{"id": "t", "kind": "text", "size": "medium", "near": "mark:1", "side": "below"},
+                    {"id": "c", "kind": "text", "size": "small", "near": "bottom-left"}],
+                   first_free_y=450.0, marks={1: mark}, obstacles=[mark])
+    for k in ("t", "c"):
+        assert out[k]["x0"] >= LY.TEXT_COL[0] - 1e-6 and out[k]["x1"] <= LY.TEXT_COL[1] + 1e-6, (k, out[k])

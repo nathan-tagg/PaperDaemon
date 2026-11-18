@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.11
+
+- A job never erases your typed words by pointing at a spot. Your typed paragraphs come off only when the job rules that paragraph should go. Before, a job asked to remove the blank lines above your pasted writing prompt erased the prompt itself.
+- When a typed paragraph is erased, the empty lines around it go too, so no big gap is left where it was.
+- Replies placed above, below or beside something on the page stay inside the typed column. Before, they could run the full width of the page, into the margins.
+- A request a job hands to a new page now runs there. Before, the new page was treated as one of the job's own made pages and its request never ran, so the job looked skipped.
+
 ## 0.3.10
 
 - When a job takes back one of its own earlier replies, all of it goes now. Some of PaperDaemon's strokes, small dashes shaped exactly like ones already on the page, weren't recorded as its own, so they were treated as yours and left behind as stray "::" marks. PaperDaemon now records every stroke it writes by its place in the page, not by its shape.

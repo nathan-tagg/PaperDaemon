@@ -748,6 +748,11 @@ def settle_made(todo):
     out = []
     for q in todo:
         sha = MADE.pop(q["key"], None)
+        # A PAGE MADE TO TAKE A REQUEST (an elsewhere step: "on a new page") is a job, not a made page: its request
+        # is in its entry (11-18, Blue Origin: the new page 2 was settled and the work handed to it never ran)
+        if q.get("why") == "asked":
+            out.append(q)
+            continue
         if sha is not None and q["state"]["sha"] == sha:
             rm_scan.mark(q["key"], "done", "a page PaperDaemon made for a job; nothing on it is a request")
             log("  %s: made by its notebook's job -- settled as it is" % where(q))
