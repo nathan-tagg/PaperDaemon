@@ -860,6 +860,7 @@ def _turn(msgs, allowed, tries=3, choice="required", accept_prose=False, final=N
     """
     last = None
     looks = 0
+    asked = tries + 1                  # (how many times the model may be asked for a call: the log says how many it was)
     helpers = 0
     # THE DECISION'S LOOKING IS BOUNDED BY TOKENS, never by a count or a clock: what the inspections add to the
     # conversation and what the model writes, against the harness's budget; the same look twice is refused
@@ -899,7 +900,7 @@ def _turn(msgs, allowed, tries=3, choice="required", accept_prose=False, final=N
             msgs.extend(H._H().nudge_no_call(said, allowed))
             tries -= 1
             if tries < 0:
-                return None, None, {"error": "no tool call in %d tries" % (tries + 1)}
+                return None, None, {"error": "no tool call, asked %d times" % asked}
             continue
         msgs.append({"role": "assistant", "content": m.get("content"), "tool_calls": calls})
         got = None

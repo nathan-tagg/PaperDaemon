@@ -162,6 +162,13 @@ def problems(kind, args, offered=None):
     for a in answered:
         if a not in listing:
             out.append("answers names %s, which is not on this page." % a)
+    # WHAT A STEP ANSWERS IS PART OF WHAT WAS ASKED, never "other" or a "note" to keep (11-21, the coloring book: the
+    # prompt's line was ruled a request, the seven marks of it the step also answered "other" -- a stroke of the prompt
+    # stayed on the finished page)
+    for a in sorted(set(answered)):
+        if a in seen and seen[a][0] in ("other", "note"):
+            out.append("%s is in what a step answers, so it is part of what was asked, not %s: rule it request (or "
+                       "command, or question), or take it out of answers." % (a, seen[a][0]))
     # A QUESTION ANSWERED IN WORDS STAYS, whatever else it says -- the brief's rule, held here: "What should I pack ...?
     # Give me a checklist." was ruled a request and erased, the checklist left under nothing. One the job answers some
     # other way is the request it reads as ("Can you draw a cat?" comes off once the cat is drawn)

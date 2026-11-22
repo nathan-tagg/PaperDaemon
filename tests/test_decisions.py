@@ -207,3 +207,21 @@ def test_a_place_pointed_at_never_takes_a_typed_paragraph_its_ruling_keeps(monke
     H._plan(steps, [{"id": "para:1", "is": "note", "then": "keep"}, {"id": "para:2", "is": "request", "then": "erase"}])
     assert "para:1" not in steps[0]["what"], steps[0]["what"]
     assert any("para:1 stays" in m for m in logs), logs
+
+
+def test_rule_10_keeps_a_handwritten_request_its_answer_names_by_line(monkeypatch):
+    # 11-21, Luna p2: the answer named the handwriting as line:1..5, its erases had been resolved to marks
+    # (mark:3..9), the two never matched, and the whole request came off with nothing written
+    J.begin()
+    undone = []
+    monkeypatch.setattr(H, "_unstage", lambda op: undone.append(op))
+    J.JOB.plan = {"erase_sigs": ["a", "b", "c"]}
+    J.JOB.steps = [{"id": 1, "do": "erase", "what": "mark:1", "because": "request", "status": "done", "ops": [],
+                    "sigs": ["a"]},
+                   {"id": 2, "do": "erase", "what": "mark:3..9", "because": "request", "status": "done", "ops": [],
+                    "sigs": ["b"]},
+                   {"id": 3, "do": "search", "what": "x", "answers": ["line:1"], "status": "done"},
+                   {"id": 4, "do": "write", "what": "findings", "answers": ["line:1", "line:2"], "status": "failed"}]
+    H._keep_unanswered()
+    assert J.JOB.plan["erase_sigs"] == ["c"]
+    assert [q["status"] for q in J.JOB.steps[:2]] == ["failed", "failed"]

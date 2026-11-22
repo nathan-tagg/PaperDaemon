@@ -258,3 +258,12 @@ def test_a_request_with_its_numbers_comes_off_and_a_question_only_stays_when_ans
     write = [{"do": "write", "what": "an answer", "answers": ["para:1"]}]
     probs = RU.problems("plan", {"steps": write, "rulings": [rule("para:1"), rule("line:1", "note", "keep")]})
     assert any("para:1 asks something" in p for p in probs)
+
+
+def test_what_a_step_answers_is_not_ruled_other(page):
+    # 11-21, the coloring book: the prompt's line was ruled a request but seven marks of it, also in the step's
+    # answers, "other" -- one stroke of the prompt stayed on the finished page
+    rs = [rule("para:1"), rule("line:1", "other", "keep")]
+    p = RU.problems("plan", {"steps": [{"do": "image", "what": "a dragon", "answers": ["para:1", "line:1"]}],
+                             "rulings": rs})
+    assert any("line:1 is in what a step answers" in x for x in p), p

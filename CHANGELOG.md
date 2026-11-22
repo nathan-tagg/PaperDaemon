@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.12
+
+- A handwritten request stays on the page when the work answering it fails. Before, if the written answer failed, the request was erased anyway and the page was left blank: the check only worked for typed requests.
+- A retry knows what it's retrying. A job that fails keeps the request it read, and the next try is told that request, even if it's no longer on the page, and exactly which step failed, so it doesn't fail the same way again. Before, a retry only got the start of the last try's summary, often without the failure, and on a blank page it found nothing to do.
+- A plan can't list part of your prompt as what it answers and also keep that part on the page. Before, the coloring book's plan could erase the prompt's main line and leave its small marks, like dots, on the finished picture.
+- Command-line models are told plainly that PaperDaemon carries out the calls they name. Before, a model asked for a call in the middle of a job could answer that it had no tool for it, and the step failed.
+
 ## 0.3.11
 
 - A job never erases your typed words by pointing at a spot. Your typed paragraphs come off only when the job rules that paragraph should go. Before, a job asked to remove the blank lines above your pasted writing prompt erased the prompt itself.

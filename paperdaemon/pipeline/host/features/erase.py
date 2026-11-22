@@ -253,16 +253,18 @@ def _keep_unanswered():
     request answered by a step that failed is undone -- its typed text and pictures un-staged, its ink kept -- so
     the page still says what was asked. What the user asked to have removed, and stale work, are not affected."""
     steps = JOB.steps or []
-    failed = set(a for q in steps if q["status"] == "failed" for a in q.get("answers") or [])
+    failed = set(a for q in steps if q["status"] == "failed" and q["do"] != "erase" for a in q.get("answers") or [])
     if not failed:
         return
+    # THE WHOLE REQUEST STAYS when a step answering it failed: every erase of a request, not only those naming an id
+    # the failed step listed. An answer names a handwritten line as line:N while its erase was resolved to marks
+    # (mark:A..B), so the two never matched and a handwritten request came off with nothing written (11-21, Luna
+    # p2: 149 strokes erased, the page left blank, and the retry found nothing to do)
     plan = JOB.plan or {}
     for q in steps:
         if q["do"] != "erase" or q["status"] != "done" or q.get("because") != "request":
             continue
         ids = set("%s:%d" % (k, v) for k, v in ST.erase_targets(q["what"]) if k != "at")
-        if not ids & failed:
-            continue
         for op in q.get("ops") or []:
             H._unstage(op)
         if q.get("sigs"):

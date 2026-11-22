@@ -985,9 +985,17 @@ def run_job_pages(job):
         # A RETRY says so: the user asked for the page again (the daemon's retry box), or the last try failed and the
         # settings' Retries allow another; the model is told how the last try ended
         retry = job.get("retry")
-        extra = ("THIS PAGE IS BEING TRIED AGAIN (%s). The last try ended: %s" % (
-            "the user asked for it" if retry.get("asked") else "try %d after a failure" % int(retry.get("n") or 1),
-            str(retry.get("note") or "")[:600])) if isinstance(retry, dict) else None
+        extra = None
+        if isinstance(retry, dict):
+            extra = "THIS PAGE IS BEING TRIED AGAIN (%s). The last try ended: %s" % (
+                "the user asked for it" if retry.get("asked") else "try %d after a failure" % int(retry.get("n") or 1),
+                str(retry.get("note") or "")[:900])
+            if retry.get("request"):
+                # what the last try read as the request, whether or not the page still shows it
+                extra += ("\nTHE REQUEST the last try read on this page, in the user's words: %s\nCarry it out now, "
+                          "even if it is no longer on the page (the last try may have taken it off). Do not do again "
+                          "what failed the same way: if a step failed, do that work another way."
+                          % str(retry["request"])[:1200])
         if isinstance(e.get("asked"), dict):                # the work was handed here from another page (elsewhere)
             from paperdaemon.pipeline.host.features import elsewhere as _EW
             extra = _EW.asked_text(e["asked"]) + (("\n\n" + extra) if extra else "")
@@ -1010,6 +1018,13 @@ def run_job_pages(job):
             if k in led["entries"]:
                 led["entries"][k]["checked"] = True
                 led["entries"][k]["lineup"] = RUN.get("lineup") or ""   # the Jobs tab of that lineup lists it
+                # A FAILED JOB KEEPS THE REQUEST IT READ, in the user's words, for the try after it: the page may no
+                # longer say it (11-21, Luna p2: the request came off, the answer did not land, the retry saw a blank
+                # page). A job that did its work drops it.
+                if JOB.failed and (JOB.scratch or {}).get("request"):
+                    led["entries"][k]["last_request"] = str(JOB.scratch["request"])[:1200]
+                elif not JOB.failed:
+                    led["entries"][k].pop("last_request", None)
                 if foreign:
                     led["entries"][k]["requeue"] = True
                 S.save(led)

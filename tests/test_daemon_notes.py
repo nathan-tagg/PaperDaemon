@@ -360,7 +360,7 @@ def test_a_failed_job_is_tried_again_as_many_times_as_allowed(monkeypatch):
     e = {"status": "skipped", "failed": True, "note": "step 1 failed: nobody to text"}
     assert D.next_try(dict(e), 0) is False                   # Retries 0: left as it is
     for n in (1, 2):                                         # Retries 2: twice, then left
-        assert D.next_try(e, 2) and e["status"] == "pending" and e["retry"] == {"n": n, "note": e["note"]}
+        assert D.next_try(e, 2) and e["status"] == "pending" and e["retry"] == {"n": n, "note": e["note"], "request": ""}
         e.update(status="skipped", failed=True)
     assert D.next_try(e, 2) and e["status"] == "skipped" and "retry" not in e
     e.update(status="done", failed=False)                    # it worked: the count starts again
@@ -473,3 +473,17 @@ def test_on_the_mirror_each_note_goes_into_the_page_with_new_ids_and_up_to_the_t
     f.write_bytes(host)                                               # the host wrote the page
     D._note_copy(DOC, PID, page, ["Now: drawing"], "progress")
     assert f.read_bytes() == host and len(sent) == 2                  # the note waits for the final one
+
+
+def test_a_retry_carries_the_request_and_leads_with_what_failed(monkeypatch):
+    """11-21, Luna p2: the request came off, the answer never landed, and the retry found a blank page. A retry carries
+    the request the failed try read, and its note leads with what did not happen (it had been cut off after 600
+    characters of what was done)."""
+    import paperdaemon.pipeline.daemon as D
+    monkeypatch.setattr(D, "log", lambda *a, **k: None)
+    done = "; ".join("erase mark %d" % n for n in range(60))
+    e = {"status": "done", "failed": True, "note": done + " [NOT DONE: step 31 (write) failed: no tool call]",
+         "last_request": "Research the unsteady vortex particle method"}
+    assert D.next_try(e, 1)
+    assert e["retry"]["note"].startswith("[NOT DONE: step 31 (write) failed")
+    assert e["retry"]["request"] == "Research the unsteady vortex particle method"

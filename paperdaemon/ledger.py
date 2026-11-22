@@ -827,8 +827,9 @@ def classify(found, led):
                     e["why"] = "changed"
             else:
                 # A PAGE ANOTHER PAGE HANDED WORK TO (an elsewhere step) is a job though nothing is on it yet: its
-                # request is in its entry ("asked")
-                status = "WAITING" if st.get("empty") and not e.get("asked") else "PENDING"
+                # request is in its entry ("asked"); so is a retry's, the request the failed try read ("last_request")
+                status = "WAITING" if st.get("empty") and not e.get("asked") and not (
+                    e.get("retry") and e.get("last_request")) else "PENDING"
         f["status"] = status
         f["why"] = entries[f["key"]].get("why")
         queue.append(f)

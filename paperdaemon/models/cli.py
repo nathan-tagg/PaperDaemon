@@ -27,7 +27,8 @@ from .adapters import Adapter, AdapterError
 RULES = ("\n\nHOW TO ANSWER: with one JSON object and nothing else, {\"text\": ..., \"tool_calls\": [{\"name\": ..., "
          "\"arguments\": {...}}]}. Every tool you use goes in tool_calls, in order: its name exactly as listed, and its "
          "arguments as that tool's own schema says. Put in text only what you would say besides the calls; leave it "
-         "empty otherwise. The tools:\n")
+         "empty otherwise. You do not carry these tools out and need no access to anything for them: PaperDaemon "
+         "carries out every call you name, so never answer that you cannot make one; name it. The tools:\n")
 
 
 # ------------------------------------------------------------------------------ the command

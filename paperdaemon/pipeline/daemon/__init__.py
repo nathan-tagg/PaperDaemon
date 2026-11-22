@@ -355,6 +355,14 @@ def _setting(path, default):
         return default
 
 
+def failure_first(note):
+    """A job's note for the try after it, what did not happen first: the note leads with what was done, and its
+    "[NOT DONE: ...]" came after 600 characters of it and was cut off."""
+    note = str(note or "")
+    i = note.find("[NOT DONE")
+    return ((note[i:] + "  " + note[:i]) if i > 0 else note)[:900]
+
+
 def next_try(e, allowed):
     """A recorded job's ledger entry, and the Retries allowed: a job that FAILED goes back in the queue while tries are
     left (its "retry" says which, and how the last one ended); a success starts the count again. -> True when the
@@ -363,7 +371,7 @@ def next_try(e, allowed):
         used = int(e.get("retries_used") or 0)
         if used < allowed:
             e["retries_used"] = used + 1
-            e["retry"] = {"n": used + 1, "note": str(e.get("note") or "")[:600]}
+            e["retry"] = {"n": used + 1, "note": failure_first(e.get("note")), "request": e.get("last_request") or ""}
             e["status"], e["why"], e["handled_sha"], e["handled_raw"] = "pending", "retry", None, None
             log("  it failed -- trying again (%d of %d)" % (used + 1, allowed))
             return True
@@ -499,7 +507,7 @@ def prepare_page(job):
     if clean is not data:
         log("  erased the daemon's notes%s" % (" and the tick in its retry box" if ticks else ""))
     if ticks:
-        job["retry"] = {"asked": True, "note": ent.get("note") or ""}
+        job["retry"] = {"asked": True, "note": failure_first(ent.get("note")), "request": ent.get("last_request") or ""}
         log("  the user ticked the retry box -- trying %s again" % where(job))
     # ONE MESSAGE, one line, rewritten each time: when he saw the job, what it is doing now, and how it ended
     head = "Saw it %s%s." % (N.clock(), " (asked again)" if ticks else
