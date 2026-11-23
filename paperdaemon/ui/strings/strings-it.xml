@@ -704,10 +704,8 @@ Poi guidami nell'installazione di SearXNG se serve, scrivi il file .bat con un b
   <string name="settings.retries">Nuovi tentativi</string>
   <string name="settings.retries.help">Quante altre volte un lavoro non riuscito viene ritentato da solo prima di essere lasciato. Una pagina senza nulla da fare non è un errore e non viene mai ritentata.</string>
   <string name="settings.page_notes">Note del daemon</string>
-  <string name="settings.page_notes.help">Il daemon scrive sulla pagina mentre lavora: che ha ricevuto il lavoro, il lavoro da fare e come è finito, con una casella da spuntare per riprovare. In piccolo, in cima sotto la barra degli strumenti del tablet, su un livello tutto suo che nient'altro legge.</string>
+  <string name="settings.page_notes.help">Il daemon scrive sulla pagina mentre lavora: che ha preso il lavoro, cosa sta facendo e come è finito, con una casella da spuntare per riprovare. In piccolo, in cima sotto la barra degli strumenti del tablet. PaperDaemon riconosce le sue note dall'autore, quindi non vengono mai lette come tua scrittura.</string>
   <string name="settings.page_notes.on">Scrivi sulla pagina mentre lavora</string>
-  <string name="settings.daemon_layer">Livello del daemon</string>
-  <string name="settings.daemon_layer.help">Il nome del livello su cui il daemon scrive le sue note. PaperDaemon non legge mai un livello con questo nome come parte della pagina; solo l'editor di pagina lo mostra.</string>
   <string name="settings.inbox_tag">Tag della posta in arrivo</string>
   <string name="settings.inbox_tag.help">Invia al tablet aggiunge la sua pagina a ogni quaderno con questo tag, nello Specchio e nel Falso specchio, o ai Fogli rapidi dove nessuno lo ha. Niente in un quaderno con questo tag viene mai elaborato.</string>
   <string name="settings.logs.sent_inbox">Inviato: {pages} nelle tue caselle di arrivo.</string>

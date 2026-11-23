@@ -126,12 +126,8 @@ SCHEMA = [
              "is not a failure, and is never tried again."},
     {"path": "daemon.page_notes", "type": "bool", "default": False, "label": "Daemon notes",
      "help": "The daemon writes on the page as he works: that he got the job, the work at hand, and how it ended, with "
-             "a box to tick to try it again. Small, across the very top, under the tablet's toolbar, on a layer of his "
-             "own that nothing else reads."},
-    {"path": "daemon.layer", "type": "text", "default": "Daemon", "required": True, "label": "Daemon layer",
-     "message": "the daemon's layer needs a name",
-     "help": "The name of the layer the daemon writes his notes on. PaperDaemon never reads a layer of this name as "
-             "part of the page; only the page editor shows it."},
+             "a box to tick to try it again. Small, across the very top, under the tablet's toolbar. PaperDaemon "
+             "knows its notes by their author, so they are never read as yours."},
     # THE RENDERER: where jobs draw the pages they read -- the graphics card (pipeline/page/gpu.py), or the processor
     # (render.c), the card left to the models -- and which card. One setting for PaperDaemon, not a lineup's. The page
     # editor draws on the card chosen either way (on the processor only where that card has no WebGPU).

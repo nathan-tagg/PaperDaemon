@@ -1,5 +1,5 @@
-"""The daemon's notes on a page (pipeline/daemon/notes.py): written on a layer of his own inside the band across the
-top, under his own author id; every write erasing everything of his first, including what he put on the page in a
+"""The daemon's notes on a page (pipeline/daemon/notes.py): written on the page's own first layer inside the band
+across the top, told by his own author id alone (11-22: no layer of his); every write erasing everything of his first, including what he put on the page in a
 copy the page never showed back; the user's writing on his layer theirs; a tick in the retry box found; his notes
 invisible to the renderer and to the fingerprint that says whether a page changed. And the host's account of its work,
 and its reading of the handwriting, where it is."""
@@ -70,12 +70,42 @@ def _counts(data):
 
 
 def _his_strokes(data):
-    """His live strokes' ids: on his layer, under PaperDaemon's author (the page's author table ties it to PaperDaemon)."""
+    """His live strokes' ids: under PaperDaemon's notes author (the page's author table ties it), on any layer."""
     from paperdaemon.pipeline.page import render as R
     blocks = _blocks(data)
-    his, own = _his_layers(blocks), N._notes_of(R.author_table(blocks))
+    own = N._notes_of(R.author_table(blocks))
     return {N._key(b.item.item_id) for b in blocks if isinstance(b, ss.SceneLineItemBlock) and b.item.value is not None
-            and N._key(b.parent_id) in his and b.item.item_id.part1 in own}
+            and b.item.item_id.part1 in own}
+
+
+def _first_layer(data):
+    """The page's first layer (Layer 1 of the bundled page)."""
+    return next(N._key(b.group.node_id) for b in _blocks(data) if isinstance(b, ss.TreeNodeBlock)
+                and getattr(b.group.label, "value", None) == "Layer 1")
+
+
+def _parents_of_his(data):
+    from paperdaemon.pipeline.page import render as R
+    blocks = _blocks(data)
+    own = N._notes_of(R.author_table(blocks))
+    return {N._key(b.parent_id) for b in blocks if isinstance(b, ss.SceneLineItemBlock) and b.item.value is not None
+            and b.item.item_id.part1 in own}
+
+
+def _with_daemon_layer(data, author=1):
+    """The page with a layer named "Daemon" made by the tablet (as the old notes made one), last in its list -> (bytes,
+    the layer's node id)."""
+    blocks = _blocks(data)
+    lay = CrdtId(author, 300_000)
+    last = [b for b in blocks if isinstance(b, ss.SceneGroupItemBlock) and b.parent_id == CrdtId(0, 1)][-1].item.item_id
+    g = si.Group(node_id=lay)
+    g.label = LwwValue(timestamp=CrdtId(author, 300_001), value="Daemon")
+    g.visible = LwwValue(timestamp=CrdtId(author, 300_002), value=True)
+    blocks += [ss.SceneTreeBlock(tree_id=lay, node_id=CrdtId(0, 0), is_update=True, parent_id=CrdtId(0, 1)),
+               ss.TreeNodeBlock(group=g),
+               ss.SceneGroupItemBlock(parent_id=CrdtId(0, 1), item=CrdtSequenceItem(
+                   item_id=CrdtId(author, 300_003), left_id=last, right_id=CrdtId(0, 0), deleted_length=0, value=lay))]
+    return _write(blocks), lay
 
 
 def _his_place(blocks):
@@ -109,84 +139,66 @@ def _sha(f, data):
     return L.page_state(DOC, PID)["sha"]
 
 
-def test_a_note_is_his_own_and_every_write_erases_everything_of_his_first():
+
+
+
+
+
+
+
+
+
+
+def test_a_note_is_his_own_on_the_first_layer_and_every_note_replaces_the_last():
+    """11-22, the user's ruling: one page, no layer of his -- "the stroke author is sufficient to know the daemons
+    writing". The note goes on the page's first layer under his notes' number (8), tied in the author table to
+    PaperDaemon's id for notes; the next note erases the last by that author alone; no layer is made."""
     page = _page([(0.0, 900.0), (60.0, 950.0)], [(-300.0, 500.0), (-250.0, 520.0)])
     strokes, box = N.letter(["On it 2:31 PM -- Notebook p1"], FRAME)
     assert box is None
-    state = {}
-    a = N.with_note(page, strokes, state)
-    assert _counts(a) == (len(strokes), 2, 1)
+    a = N.with_note(page, strokes, {})
+    assert _counts(a) == (len(strokes), 2, 0)
     blocks = _blocks(a)
-    # HE WRITES UNDER HIS NOTES' OWN NUMBER (8, of 2 to 10), tied in its author table to PaperDaemon's id for notes; the
-    # user's strokes stay the tablet's (1)
     from paperdaemon.pipeline.page import render as R
     table = next(b for b in blocks if isinstance(b, ss.AuthorIdsBlock)).author_uuids
-    d = 8
-    assert sorted(table) == [1, d] and table[d] == R.uuid_of("notes") and table[1] != R.uuid_of("notes")
-    his = _his_layers(blocks)
-    assert {N._key(b.item.item_id)[0] for b in blocks if isinstance(b, ss.SceneLineItemBlock)
-            and N._key(b.parent_id) in his} == {d}
-    assert {N._key(b.item.item_id)[0] for b in blocks if isinstance(b, ss.SceneLineItemBlock)
-            and N._key(b.parent_id) not in his} == {1}
-    assert {N._key(b.tree_id)[0] for b in blocks if isinstance(b, ss.SceneTreeBlock) and N._key(b.tree_id) in his} == {d}
-    # his layer goes at the bottom of the list of layers, under the user's
-    place = _his_place(blocks).item
-    assert N._key(place.left_id) == (0, 13) and N._key(place.right_id) == (0, 0)   # last in the list, as the tablet adds a layer
-    b = N.with_note(a, strokes[:3], state)                      # the next note: everything of the last one erased
-    assert _counts(b) == (3, 2, 1)
-    assert _his_strokes(a) <= _dead(b)
-    c, n = N.erase(b, state)
-    assert n == 3 and _counts(c) == (0, 2, 1)                   # his layer stays: the user may have written on it
-    assert N.erase(c, state) == (c, 0)                          # nothing of his left: the page as it is
+    assert sorted(table) == [1, 8] and table[8] == R.uuid_of("notes") and table[1] != R.uuid_of("notes")
+    assert _parents_of_his(a) == {_first_layer(a)}
+    groups = lambda d: sorted(N._key(b.item.value) for b in _blocks(d) if isinstance(b, ss.SceneGroupItemBlock)
+                              and b.parent_id == CrdtId(0, 1) and b.item.value is not None)
+    assert groups(a) == groups(page)                             # the page's list of layers as it was
+    b = N.with_note(a, strokes[:3], {})
+    assert _counts(b) == (3, 2, 0) and _his_strokes(a) <= _dead(b)
+    c, n = N.erase(b, {})
+    assert n == 3 and _counts(c) == (0, 2, 0)
+    assert N.erase(c, {}) == (c, 0)
 
 
-def test_every_note_wipes_his_layer_and_keeps_one_layer():
-    """The user's word (11-11): wipe the Daemon layer EVERY time a note is written. Each note erases everything the
-    one before put there, and the page keeps one layer of his, the same one."""
-    base = _page([(0.0, 900.0), (60.0, 950.0)])
-    s1, _ = N.letter(["On it"], FRAME, latest=True)
-    s2, _ = N.letter(["On it", "Read: wrote 'hello'"], FRAME, latest=True)
-    c1 = N.with_note(base, s1)
-    c2 = N.with_note(c1, s2)
-    assert _his_strokes(c1) and _his_strokes(c1) <= _dead(c2)
-    assert _counts(c2) == (len(s2), 1, 1)
-    assert _his_place(_blocks(c1)).item.value == _his_place(_blocks(c2)).item.value
-
-
-def test_a_layer_the_user_deleted_is_made_anew():
-    strokes, _ = N.letter(["On it."], FRAME)
-    blocks = _blocks(N.with_note(_page([(0.0, 900.0)]), strokes))
-    place = _his_place(blocks)
-    first = place.item.value
-    blocks = [ss.SceneGroupItemBlock(parent_id=b.parent_id, item=dataclasses.replace(b.item, deleted_length=1, value=None))
-              if b is place else b for b in blocks]
-    again = N.with_note(_write(blocks), strokes)
-    assert _his_place(_blocks(again)).item.value != first and _counts(again) == (len(strokes), 1, 1)
-
-
-def test_a_note_finds_the_pages_daemon_layer_again_and_makes_no_second():
-    """The page says which layer is his: the next note goes on the layer the page already has, never a new one."""
-    strokes, _ = N.letter(["On it."], FRAME)
-    page = N.with_note(_page([(0.0, 900.0)]), strokes)
-    again = N.with_note(page, strokes)
-    assert _counts(again) == (len(strokes), 1, 1)
-    assert _his_place(_blocks(again)).item.value == _his_place(_blocks(page)).item.value
-
-
-def test_whatever_is_on_his_layer_goes_with_his_next_note(tmp_path, monkeypatch):
-    """The user's word (11-11): "It should not care what is on that layer, it should wipe it EVERY time". A stroke of
-    the user's on his layer (the tablet's author, 1) is read as the page's until then, and erased by his next note."""
+def test_the_users_writing_on_an_old_daemon_layer_is_theirs_and_stays(tmp_path, monkeypatch):
+    """11-22, Luna p2: the tablet kept drawing on the Daemon layer, each note wiped that layer whole, and the user's
+    request went with it -- the job then saw a blank page. On a page whose notes have their own author, a layer named
+    "Daemon" is an ordinary layer: what the user writes there is read as the page's and no note erases it; only the
+    notes' own strokes, wherever they are, are replaced."""
     from paperdaemon.pipeline.page import render as R
     f = _mirror(tmp_path, monkeypatch)
     strokes, _ = N.letter(["On it."], FRAME)
-    page = N.with_note(_page([(0.0, 900.0), (60.0, 950.0)]), strokes)
-    layer = _his_place(_blocks(page)).item.value
-    written = _write(_blocks(page) + [_line([(10.0, 600.0), (90.0, 640.0)], layer, CrdtId(1, 5000))])
-    assert _sha(f, page) != _sha(f, written)                    # the user's stroke is part of the page until then
-    assert len(R.strokes(DOC, 1)) == 2 and len(R.strokes(DOC, 1, arrays=True)) == 2
+    noted = N.with_note(_page([(0.0, 900.0), (60.0, 950.0)]), strokes)      # his notes' author is in the table now
+    page, lay = _with_daemon_layer(noted)
+    written = _write(_blocks(page) + [_line([(10.0, 600.0), (90.0, 640.0)], lay, CrdtId(1, 5000))])
+    assert _sha(f, page) != _sha(f, written)                    # the user's stroke there is part of the page
+    assert len(R.strokes(DOC, 1)) == 2
     again = N.with_note(written, strokes)
-    assert _counts(again) == (len(strokes), 1, 1)               # his next note: everything on his layer erased
-    assert (1, 5000) in _dead(again)
+    assert (1, 5000) not in _dead(again) and _counts(again)[:2] == (len(strokes), 2)
+    assert _his_strokes(noted) <= _dead(again)                  # the last note, erased by its author
+    assert _parents_of_his(again) == {_first_layer(again)}
+
+
+def test_a_page_with_no_layer_gets_layer_1_for_the_note():
+    """A page whose list of layers is empty gets one, named as the tablet names its first (Layer 1); no Daemon layer."""
+    blocks = [b for b in _blocks(_page()) if not (isinstance(b, ss.SceneGroupItemBlock) and b.parent_id == CrdtId(0, 1))]
+    strokes, _ = N.letter(["On it."], FRAME)
+    page = N.with_note(_write(blocks), strokes)
+    names = [getattr(b.group.label, "value", None) for b in _blocks(page) if isinstance(b, ss.TreeNodeBlock)]
+    assert "Daemon" not in names and _counts(page)[0] == len(strokes)
 
 
 def test_on_a_page_from_before_everything_on_his_layer_goes_with_the_first_note(tmp_path, monkeypatch):
@@ -265,7 +277,7 @@ def test_what_is_left_under_his_old_author_goes_out_of_the_file():
     assert not [k for k in ids if k[0] == 218]
     from paperdaemon.pipeline.page import render as R
     assert sorted(next(b for b in after if isinstance(b, ss.AuthorIdsBlock)).author_uuids) == [1, 8]
-    assert _counts(page) == (len(strokes), 1, 1)
+    assert _counts(page) == (len(strokes), 1, 0)
     clean, n = N.erase(_write(blocks), {})
     assert n == 1 and _counts(clean) == (0, 1, 0)
 
@@ -301,7 +313,7 @@ def test_a_tick_in_the_retry_box_is_found_and_erased_with_the_note():
     assert len(tick) == 1
     assert N.box_marks(N.with_note(_page([(0.0, 900.0), (60.0, 950.0)]), strokes, {}), box) == []
     clean, n = N.erase(page, state, also=tick)
-    assert n == len(strokes) + 1 and _counts(clean) == (0, 1, 1)
+    assert n == len(strokes) + 1 and _counts(clean) == (0, 1, 0)
     # on a page with typed text the tablet keeps a tick in a group anchored to the text, stored far from where it is
     # drawn: it is found where it is drawn
     layer = next(b.group.node_id for b in _blocks(page) if isinstance(b, ss.TreeNodeBlock)
@@ -338,7 +350,7 @@ def test_in_the_false_mirror_the_note_goes_into_the_page_as_it_is_now(tmp_path, 
     monkeypatch.setattr(D, "_frame_of", lambda d, p: FRAME)
     D._note_copy(DOC, PID, page, ["On it"], "start")
     mine, users, placed = _counts(f.read_bytes())
-    assert mine > 0 and users == 1 and placed == 1
+    assert mine > 0 and users == 1 and placed == 0
     from paperdaemon import ledger as L
     L._CONTENT_CACHE.clear()
     assert L.page_state(DOC, PID)["sha"] == before                # the host and the fingerprint never see it
@@ -349,9 +361,9 @@ def test_in_the_false_mirror_the_note_goes_into_the_page_as_it_is_now(tmp_path, 
     assert users == 2 and mine > 0                                 # the host's stroke kept, the note on the page
 
 
-def test_settings_notes_and_retries_are_off_and_his_layer_is_named_daemon():
+def test_settings_notes_and_retries_are_off():
     from paperdaemon import settings as S
-    assert S.DEFAULTS["daemon"] == {"retries": 0, "page_notes": False, "layer": "Daemon"}
+    assert S.DEFAULTS["daemon"] == {"retries": 0, "page_notes": False}        # (no layer of his since 11-22)
 
 
 def test_a_failed_job_is_tried_again_as_many_times_as_allowed(monkeypatch):
@@ -426,22 +438,6 @@ def test_the_retry_box_is_on_the_notes_line_at_its_right_end():
     assert max(left_of_box) < box[0]                                       # nothing of the note runs into it
 
 
-def test_a_note_wipes_his_one_layer_and_leaves_the_list_of_layers_as_it_is():
-    """The user's word (11-11): only operate on the one layer and erase everything on it; never remove or re-add a layer.
-    A page whose list names his layer twice (the tablet put it in again) keeps its list; the note wipes the layer and
-    goes on it."""
-    strokes, _ = N.letter(["On it."], FRAME)
-    page = N.with_note(_page([(0.0, 900.0)]), strokes)
-    blocks = _blocks(page)
-    lay = _his_place(blocks).item.value
-    blocks.append(ss.SceneGroupItemBlock(parent_id=CrdtId(0, 1), item=CrdtSequenceItem(
-        item_id=CrdtId(1, 9000), left_id=CrdtId(0, 13), right_id=CrdtId(0, 0), deleted_length=0, value=lay)))
-    two = _write(blocks)
-    again = N.with_note(two, strokes)
-    assert _counts(again) == (len(strokes), 1, 2)            # the new note alone on the layer; the list untouched
-    places = lambda d: sorted((b.item.item_id.part1, b.item.item_id.part2) for b in _blocks(d)
-                              if isinstance(b, ss.SceneGroupItemBlock) and b.item.value is not None and not b.item.deleted_length)
-    assert places(again) == places(two)
 
 
 def test_on_the_mirror_each_note_goes_into_the_page_with_new_ids_and_up_to_the_tablet(tmp_path, monkeypatch):

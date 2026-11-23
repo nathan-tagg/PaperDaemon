@@ -704,10 +704,8 @@ Depois me guie na instalação do SearXNG se precisar, escreva o arquivo .bat co
   <string name="settings.retries">Novas tentativas</string>
   <string name="settings.retries.help">Quantas vezes mais um trabalho que falhou é tentado por si só antes de ser deixado. Uma página sem nada para fazer não é uma falha e nunca é tentada de novo.</string>
   <string name="settings.page_notes">Notas do daemon</string>
-  <string name="settings.page_notes.help">O daemon escreve na página enquanto trabalha: que recebeu o trabalho, a tarefa em curso e como terminou, com uma caixa para assinalar e tentar de novo. Em pequeno, no topo, sob a barra de ferramentas do tablet, numa camada só dele que mais nada lê.</string>
+  <string name="settings.page_notes.help">O daemon escreve na página enquanto trabalha: que recebeu o trabalho, o que está fazendo e como terminou, com uma caixa para marcar e tentar de novo. Em letra pequena, bem no alto, sob a barra de ferramentas do tablet. O PaperDaemon reconhece as notas pelo autor, então elas nunca são lidas como sua escrita.</string>
   <string name="settings.page_notes.on">Escrever na página enquanto trabalha</string>
-  <string name="settings.daemon_layer">Camada do daemon</string>
-  <string name="settings.daemon_layer.help">O nome da camada onde o daemon escreve as suas notas. O PaperDaemon nunca lê uma camada com este nome como parte da página; só o editor de páginas a mostra.</string>
   <string name="settings.inbox_tag">Etiqueta da caixa de entrada</string>
   <string name="settings.inbox_tag.help">Enviar para o tablet adiciona a sua página a cada caderno com esta etiqueta, no Espelho e no Falso Espelho, ou às Folhas rápidas onde nenhum a tiver. Nada num caderno com ela é alguma vez tratado.</string>
   <string name="settings.logs.sent_inbox">Enviado: {pages} para as suas caixas de entrada.</string>

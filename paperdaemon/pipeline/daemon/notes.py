@@ -3,8 +3,10 @@ does with it, step by step, and how it ended, lettered small in the band across 
 tablet's toolbar, and signed.
 
 THE BAND IS HIS AND NOTHING ELSE IS: every stroke lies above the page's safe area (page.safe_area: the toolbar's zone,
-which nothing the user or the host writes may enter), on a layer of his own, named as the user chose (Settings:
-daemon.layer, "Daemon" unless they changed it), at the bottom of the tablet's list of layers. The renderer never draws
+which nothing the user or the host writes may enter), ON THE PAGE'S OWN FIRST LAYER, told apart by its author alone
+(the user's ruling, 11-22: "stop doing a separate layer for the daemon message ... the stroke author is sufficient to
+know the daemons writing" -- the tablet kept drawing on the Daemon layer, and wiping that layer took his writing with
+it). No layer of his is made; one a page already has is an ordinary layer. The renderer never draws
 what is his (render.daemon_stroke), and the fingerprint that says whether a page changed leaves it out
 (ledger._content_sha), so a note can neither start a job nor be read as the user's writing. Only the page editor shows
 it.
@@ -119,21 +121,48 @@ def _old_layers(blocks):
     return R.daemon_layer_ids(blocks)
 
 
-def _his_layer(blocks):
-    """THE ONE LAYER HE WRITES ON: the first named as his (not under his old author) that is in the page's list of
-    layers -> (part1, part2), or None when the page has none."""
-    named = {k for k in _old_layers(blocks) if k[0] != LEGACY}
-    listed = {_key(b.item.value) for b in blocks if isinstance(b, ss.SceneGroupItemBlock) and _key(b.parent_id) == ROOT
-              and b.item.value is not None and not b.item.deleted_length}
-    have = sorted(named & listed)
-    return have[0] if have else None
+def _first_layer_of(blocks):
+    """THE LAYER A NOTE GOES ON: the page's first layer, as the tablet lists them (its own drawing layer) ->
+    (part1, part2), or None when the page has none."""
+    items = [b.item for b in blocks if isinstance(b, ss.SceneGroupItemBlock) and _key(b.parent_id) == ROOT
+             and b.item.value is not None and not b.item.deleted_length]
+    if not items:
+        return None
+    from rmscene.crdt_sequence import CrdtSequence
+    try:
+        first = list(CrdtSequence(items).values())[0]
+    except Exception:
+        first = items[0].value
+    return _key(first)
 
 
-def _mine(r, layers, notes):
-    """Is a stroke (a C-pass row) his to erase: ON HIS LAYER, whoever drew it (the user's word, 11-11: "it should not
-    care what is on that layer, it should wipe it EVERY time"), or under his notes' author anywhere, or under his old
-    one. `layers`: his layers on the page (by name); `notes`: his notes' author numbers there."""
-    return (r[5], r[6]) in layers or r[7] in notes or r[7] == LEGACY
+def _legacy_layers(blocks):
+    """Layers whose every stroke is his: a Daemon layer on a page from before his notes had an author of their own
+    (render.notes_own_layers) -- his old notes there are under the tablet's author. On any other page, none."""
+    from paperdaemon.pipeline.page import render as R
+    return set(R.notes_own_layers(blocks))
+
+
+def _drawn(data, r):
+    """Was a stroke (a C-pass row) drawn by a machine, as every note of his was: each point at the synthetic pressure,
+    speed 0 and direction 0 (render.synthetic)."""
+    import numpy as np
+    from paperdaemon.remarkable import fastrm
+    from paperdaemon.pipeline.page import render as R
+    if not r[20]:
+        return False
+    P = np.frombuffer(data, dtype=fastrm.POINT, count=r[20] // fastrm.POINT.itemsize, offset=r[19])
+    return R.synthetic(P)
+
+
+def _mine(r, layers, notes, data=None):
+    """Is a stroke (a C-pass row) his to erase: BY ITS AUTHOR -- his notes' author numbers (`notes`), or his old one --
+    wherever it is; on a page from before his notes had an author, a machine-drawn stroke on that page's old layer of
+    his (`layers`: _legacy_layers; his old notes there are under the tablet's author). Never a stroke for the layer it
+    is on alone (11-22: the user's writing on the Daemon layer was wiped with it)."""
+    if r[7] in notes or r[7] == LEGACY:
+        return True
+    return (r[5], r[6]) in layers and data is not None and _drawn(data, r)
 
 
 def _notes_of(authors):
@@ -149,9 +178,8 @@ def _live_counts(data):
     if got is None:
         return None
     rows, rest = got
-    one = _his_layer(rest)
-    layers, notes = ({one} if one else set()), _notes_of(R.author_table(rest))
-    mine = sum(1 for r in rows if r[0] == LINE and r[14] and _mine(r, layers, notes))
+    layers, notes = _legacy_layers(rest), _notes_of(R.author_table(rest))
+    mine = sum(1 for r in rows if r[0] == LINE and r[14] and _mine(r, layers, notes, data))
     return mine, sum(1 for r in rows if r[0] == LINE and r[14]) - mine
 
 
@@ -166,13 +194,13 @@ def _write(data, state=None, strokes=None, also=()):
     from paperdaemon.pipeline.page import render as R
     data, rows, blocks = _parts(data)
     others = [b for b in blocks if b is not None]
-    one = _his_layer(others)                         # THE layer: wiped, and where the note goes
-    layers = {one} if one else set()
+    one = _first_layer_of(others)                    # where the note goes: the page's own first layer
+    layers = _legacy_layers(others)                  # (only a page from before his notes had an author)
     authors = R.author_table(others)
     notes = _notes_of(authors)
     me = R.page_author(authors, "notes")           # his notes' number on this page, tied to PaperDaemon's id for notes
     also = set(also)
-    theirs0 = sum(1 for r in rows if r[0] == LINE and r[14] and not _mine(r, layers, notes) and (r[7], r[8]) not in also
+    theirs0 = sum(1 for r in rows if r[0] == LINE and r[14] and not _mine(r, layers, notes, data) and (r[7], r[8]) not in also
                   and r[5] != LEGACY)                # (what is on his old author's layer goes out with it)
     frames, kinds = [], []
     seen, trees, nodes, linked = set(), set(), set(), set()
@@ -187,7 +215,7 @@ def _write(data, state=None, strokes=None, also=()):
                 changed = True
                 continue
             seen.add(k)
-            if r[14] and (_mine(r, layers, notes) or k in also):
+            if r[14] and (_mine(r, layers, notes, data) or k in also):
                 raw, erased, changed = _tomb(r), erased + 1, True
         elif isinstance(b, ss.SceneGroupItemBlock):
             it = b.item
@@ -230,17 +258,17 @@ def _write(data, state=None, strokes=None, also=()):
         if str(authors.get(me)) != str(R.uuid_of("notes")):   # the page's author table names his notes' author
             frames[table] = _frame(ss.AuthorIdsBlock(author_uuids={
                 **{a: u for a, u in authors.items() if a != LEGACY}, me: R.uuid_of("notes")}))
-        # HIS LAYER, AS THE PAGE HAS IT; with none, a new one, ADDED AS THE TABLET ADDS A LAYER: last in the list, after
-        # the last layer there is
+        # THE PAGE'S FIRST LAYER; a page with no layer at all gets one, as the tablet makes its first (Layer 1)
         if one:
             la, ln = one
         else:
             la, ln = me, n
-            news += _layer_blocks(la, ln, layer_name(), _last_layer(root_items))
+            news += _layer_blocks(la, ln, "Layer 1", _last_layer(root_items))
             n += 4
         # THE TABLET'S SECOND RECORD OF A LAYER IT MAKES (tree: the layer's node, not an update, under nothing): without
-        # it the tablet listed no Daemon layer and drew nothing on it (the Sonnet page, 11-11)
-        if (la, ln) not in linked:
+        # it the tablet listed no Daemon layer and drew nothing on it (the Sonnet page, 11-11). Only for a layer made here:
+        # the page's own layer is left as the tablet keeps it
+        if not one and (la, ln) not in linked:
             news.append((ss.SceneTreeBlock.BLOCK_TYPE, _frame(ss.SceneTreeBlock(
                 tree_id=CrdtId(me, n), node_id=CrdtId(la, ln), is_update=False, parent_id=CrdtId(0, 0)))))
             n += 1

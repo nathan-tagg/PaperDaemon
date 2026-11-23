@@ -822,6 +822,7 @@ def scene_of(doc, page_no, arrays=False, data=None, columns=False):
     # renderer places it). Read at their stored coordinates, a drawing anchored below the text sat at the top left,
     # over the text -- and a save from the editor wrote it there.
     offs = R._anchor_offsets(doc, page_no, blocks)
+    legacy_own = set(R.notes_own_layers(blocks))       # (his old layer, on a page from before his notes had an author)
 
     def lines_in(group, out):
         dx, dy = offs.get(group.node_id, (0.0, 0.0))
@@ -852,10 +853,12 @@ def scene_of(doc, page_no, arrays=False, data=None, columns=False):
                 lines = [dict(ln, points=_moved(_rows(ln["points"], arrays), dx, dy)) for ln in parts[1].get(g.node_id, [])]
             else:
                 lines = lines_in(g, [])
-            # THE DAEMON'S LAYER (named as his, or under his old author): shown, and marked, so the editor leaves it to him
+            # A LAYER IS THE DAEMON'S only where every stroke on it is his: under his old author, or his old layer on a
+            # page from before his notes had an author (render.notes_own_layers). A layer named "Daemon" on any other
+            # page is an ordinary layer (11-22: notes are told by their author, and the user's writing there is theirs)
             layers.append({"label": g.label.value or "Layer %d" % (len(layers) + 1), "visible": bool(g.visible.value),
                            **({"lines": lines} if lines is not None else extra), "daemon": g.node_id.part1 == R.DAEMON_AUTHOR
-                           or g.label.value in (R.daemon_layer_name(), R.DAEMON_LEGACY),
+                           or (g.node_id.part1, g.node_id.part2) in legacy_own,
                            "id": [g.node_id.part1, g.node_id.part2]})
     if not layers:
         layers = [{"label": "Layer 1", "visible": True, "lines": []}]

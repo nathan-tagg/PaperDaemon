@@ -704,10 +704,8 @@ Los meg så gjennom installasjonen av SearXNG om nødvendig, skriv .bat-filen me
   <string name="settings.retries">Nye forsøk</string>
   <string name="settings.retries.help">Hvor mange ganger til en jobb som mislyktes, prøves på egen hånd før den blir liggende. En side uten noe å gjøre er ikke en feil og prøves aldri igjen.</string>
   <string name="settings.page_notes">Daemon-notater</string>
-  <string name="settings.page_notes.help">Daemonen skriver på siden mens han jobber: at han fikk jobben, arbeidet som skal gjøres, og hvordan det endte, med en boks å krysse av for å prøve igjen. Smått, helt øverst under nettbrettets verktøylinje, på et eget lag som ingenting annet leser.</string>
+  <string name="settings.page_notes.help">Daemonen skriver på siden mens han jobber: at han fikk jobben, hva han holder på med og hvordan det gikk, med en boks du kan krysse av for å prøve igjen. Smått, helt øverst under nettbrettets verktøylinje. PaperDaemon kjenner igjen notatene sine på forfatteren, så de blir aldri lest som din skrift.</string>
   <string name="settings.page_notes.on">Skriv på siden mens han jobber</string>
-  <string name="settings.daemon_layer">Daemonens lag</string>
-  <string name="settings.daemon_layer.help">Navnet på laget daemonen skriver notatene sine på. PaperDaemon leser aldri et lag med dette navnet som en del av siden; bare sideredigereren viser det.</string>
   <string name="settings.inbox_tag">Innboks-merke</string>
   <string name="settings.inbox_tag.help">Send til nettbrett legger siden sin til i hver notatbok med dette merket, i Speilet og det Falske speilet, eller i Hurtigark der ingen har den. Ingenting i en notatbok med den blir noen gang behandlet.</string>
   <string name="settings.logs.sent_inbox">Sendt: {pages} til innboksene dine.</string>

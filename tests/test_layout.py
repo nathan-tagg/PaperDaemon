@@ -89,3 +89,13 @@ def test_text_placed_by_a_mark_or_in_a_corner_keeps_to_the_typed_column():
                    first_free_y=450.0, marks={1: mark}, obstacles=[mark])
     for k in ("t", "c"):
         assert out[k]["x0"] >= LY.TEXT_COL[0] - 1e-6 and out[k]["x1"] <= LY.TEXT_COL[1] + 1e-6, (k, out[k])
+
+
+def test_a_page_used_past_its_first_screen_gets_a_screen_below_for_what_is_stacked():
+    # 11-22, Opus 5.5 p1: the free page began at y 7958, the stacked band ended at the first screen's 2150, and a large
+    # drawing got a 240-unit box (then every part of it was refused). With less than a quarter screen left there, the
+    # band is a screen's height below what is on the page
+    out = LY.solve([{"id": "d", "kind": "drawing", "size": "large", "near": "stack"}], first_free_y=7958.0)
+    assert out["d"]["y0"] >= 7958.0 and out["d"]["h"] >= 600, out["d"]
+    room = LY.solve([{"id": "d", "kind": "drawing", "size": "large", "near": "stack"}], first_free_y=600.0)
+    assert room["d"]["y1"] <= LY.SAFE[3] + 1e-6                 # with room on the first screen, as before

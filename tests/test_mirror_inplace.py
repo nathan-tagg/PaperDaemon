@@ -690,10 +690,10 @@ def test_a_page_the_pipeline_wrote_with_the_daemons_layer_a_picture_and_a_new_la
     assert got["none"] == ["none", 1, True, False, False] and got["made"] == [1, 1, IP_AUTHOR], got
 
 
-def test_the_user_draws_on_his_layer_of_a_mirror_page_and_his_next_note_wipes_it():
-    """On a Mirror page his layer takes the user's stroke as any layer does, and his next note wipes the layer, the
-    user's stroke with it (the user's word, 11-11: "it should wipe it EVERY time"), on any page: one with the daemon's note under
-    its number, his old note under the tablet's author, or his layer under his old author (218)."""
+def test_the_users_stroke_on_his_old_layer_of_a_mirror_page_is_saved_as_theirs():
+    """On a Mirror page an old layer of his takes the user's stroke as any layer does, saved as the user's; on a page from
+    before his notes' author, his next note takes his old notes by their author and the user's stroke stays (11-22: no
+    note wipes a layer)."""
     got = _run("""
         import uuid
         from rmscene import write_blocks
@@ -747,7 +747,7 @@ def test_the_user_draws_on_his_layer_of_a_mirror_page_and_his_next_note_wipes_it
                     "his_layers": sum(1 for L in back["layers"] if L.get("daemon")), "old_page": bool(R.notes_own_layers(bl))}
 
         res = {}
-        for name, build in (("byte", a_note), ("tablet", old_layer(1, 900, [40, 70])), ("218", old_layer(R.DAEMON_AUTHOR, 1, [40]))):
+        for name, build in (("tablet", old_layer(1, 900, [40, 70])), ("218", old_layer(R.DAEMON_AUTHOR, 1, [40]))):
             doc, path = page(build)
             before = open(path, "rb").read()
             sc = IP.read_page(doc, 1)
@@ -757,14 +757,19 @@ def test_the_user_draws_on_his_layer_of_a_mirror_page_and_his_next_note_wipes_it
             drawn = dict(his(doc, path), added=w["added"], erased=w["erased"], prefix=open(path, "rb").read().startswith(before))
             note, _ = N.letter(["Saw it 1:05 PM."], (1620.0, 2160.0))
             data = N.with_note(open(path, "rb").read(), note, {}); open(path, "wb").write(data)
-            res[name] = {"drawn": drawn, "noted": his(doc, path), "note": len(note)}
+            bl = list(read_blocks(io.BytesIO(open(path, "rb").read())))
+            notes = N._notes_of(R.author_table(bl))
+            live = [b.item.item_id.part1 for b in bl if isinstance(b, ss.SceneLineItemBlock) and isinstance(b.item.value, si.Line)]
+            res[name] = {"drawn": drawn, "noted": {"mine": sum(1 for a in live if a in notes),
+                                                   "users": sorted(a for a in live if a not in notes)}, "note": len(note)}
         out(**res)
     """)
-    byte, tablet, old = got["byte"], got["tablet"], got["218"]
-    assert byte["drawn"]["prefix"] and byte["drawn"]["erased"] == 0, byte
-    for case in (byte, tablet, old):                      # the stroke saved on his layer as the user's
+    tablet, old = got["tablet"], got["218"]
+    for case in (tablet, old):                            # the stroke saved on his old layer as the user's
         assert case["drawn"]["added"] == 1 and IP_AUTHOR in case["drawn"]["on_his"], case
-        assert case["noted"]["on_his"] == [8] * case["note"] and case["noted"]["his_layers"] == 1, case   # all wiped
+    # 11-22: a page from before his notes' author (his old notes under the tablet's): the save adopts the layer, and the
+    # next note takes his old notes by their author -- the user's stroke stays
+    assert IP_AUTHOR in tablet["noted"]["users"] and tablet["noted"]["mine"] == tablet["note"], tablet
 
 
 def test_a_page_the_c_reader_does_not_cover_is_written_the_same():

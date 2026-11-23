@@ -315,6 +315,11 @@ def solve(places, first_free_y=None, safe=SAFE, arrow_tip=None, marks=None, obst
         return {places[0]["id"]: _finish(places[0]["id"], "coloring", *(float(v) for v in screen))}
     top = max(float(first_free_y if first_free_y is not None else safe[1]), safe[1])
     bottom = float(safe[3])
+    # THE PAGE GOES ON BELOW ITS FIRST SCREEN: with less than a quarter of a screen left there, what is stacked gets a
+    # screen's height below what is on the page (11-22: drawings were squeezed into 240 units at y 7958, and refused)
+    screen_h = float(safe[3]) - float(safe[1])
+    if bottom - top < screen_h / 4.0:
+        bottom = top + screen_h
     band_h, band_w = bottom - top, safe[2] - safe[0]
     marks = {int(k): _dict_box(v) for k, v in (marks or {}).items()}
     obstacles = [_dict_box(o) for o in (obstacles or [])]

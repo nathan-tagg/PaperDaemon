@@ -704,10 +704,8 @@
   <string name="settings.retries">পুনরায় চেষ্টা</string>
   <string name="settings.retries.help">ব্যর্থ হওয়া কাজ ছেড়ে দেওয়ার আগে নিজে থেকে আরও কতবার চেষ্টা করা হবে। যে পৃষ্ঠায় করার কিছু নেই সেটি ব্যর্থতা নয় এবং কখনও আবার চেষ্টা করা হয় না।</string>
   <string name="settings.page_notes">ডেমনের নোট</string>
-  <string name="settings.page_notes.help">ডেমন কাজ করার সময় পৃষ্ঠায় লেখে: সে কাজটি পেয়েছে, কী কাজ করা হচ্ছে, আর কীভাবে শেষ হলো, সাথে আবার চেষ্টার জন্য টিক দেওয়ার একটি বাক্স। ছোট করে, একেবারে উপরে ট্যাবলেটের টুলবারের নিচে, তার নিজের একটি স্তরে যা আর কিছু পড়ে না।</string>
+  <string name="settings.page_notes.help">কাজের সময় daemon পাতায় লেখে: সে কাজটি পেয়েছে, এখন কী করছে, আর কীভাবে শেষ হলো, সঙ্গে আবার চেষ্টা করার জন্য টিক দেওয়ার একটি বাক্স। ছোট করে, একেবারে ওপরে ট্যাবলেটের টুলবারের নিচে। PaperDaemon তার নোট চেনে লেখক দেখে, তাই সেগুলো কখনও আপনার লেখা হিসেবে পড়া হয় না।</string>
   <string name="settings.page_notes.on">কাজ করার সময় পৃষ্ঠায় লিখুন</string>
-  <string name="settings.daemon_layer">ডেমনের স্তর</string>
-  <string name="settings.daemon_layer.help">যে স্তরে ডেমন তার নোট লেখে তার নাম। PaperDaemon এই নামের স্তরকে কখনও পৃষ্ঠার অংশ হিসেবে পড়ে না; শুধু পৃষ্ঠা সম্পাদক এটি দেখায়।</string>
   <string name="settings.inbox_tag">ইনবক্স ট্যাগ</string>
   <string name="settings.inbox_tag.help">ট্যাবলেটে পাঠান তার পৃষ্ঠা এই ট্যাগ থাকা প্রতিটি নোটবুকে যোগ করে, মিরর ও ফলস মিররে, অথবা যেখানে কোনোটিতেই নেই সেখানে কুইক শিটে। এটি থাকা নোটবুকের কিছুতেই কখনও কাজ করা হয় না।</string>
   <string name="settings.logs.sent_inbox">পাঠানো হয়েছে: {pages} আপনার ইনবক্সে।</string>

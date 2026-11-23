@@ -704,10 +704,8 @@ Führe mich dann, falls nötig, durch die Installation von SearXNG, schreib die 
   <string name="settings.retries">Wiederholungen</string>
   <string name="settings.retries.help">Wie oft ein fehlgeschlagener Auftrag von selbst erneut versucht wird, bevor er liegen bleibt. Eine Seite, auf der nichts zu tun ist, ist kein Fehlschlag und wird nie erneut versucht.</string>
   <string name="settings.page_notes">Daemon-Notizen</string>
-  <string name="settings.page_notes.help">Der Daemon schreibt bei der Arbeit auf die Seite: dass er den Auftrag hat, was zu tun ist und wie es ausging, mit einem Kästchen zum Ankreuzen für einen neuen Versuch. Klein, ganz oben unter der Werkzeugleiste des Tablets, auf einer eigenen Ebene, die sonst nichts liest.</string>
+  <string name="settings.page_notes.help">Der Daemon schreibt bei der Arbeit auf die Seite: dass er den Auftrag hat, was zu tun ist und wie es ausging, mit einem Kästchen zum Ankreuzen für einen neuen Versuch. Klein, ganz oben unter der Werkzeugleiste des Tablets. PaperDaemon erkennt seine Notizen an ihrem Autor, deshalb werden sie nie als deine Schrift gelesen.</string>
   <string name="settings.page_notes.on">Bei der Arbeit auf die Seite schreiben</string>
-  <string name="settings.daemon_layer">Daemon-Ebene</string>
-  <string name="settings.daemon_layer.help">Der Name der Ebene, auf die der Daemon seine Notizen schreibt. PaperDaemon liest eine Ebene dieses Namens nie als Teil der Seite; nur der Seiteneditor zeigt sie.</string>
   <string name="settings.inbox_tag">Eingangs-Tag</string>
   <string name="settings.inbox_tag.help">„An Tablet senden“ fügt seine Seite jedem Notizbuch mit diesem Tag hinzu, im Spiegel und im Falschen Spiegel, oder den Schnellnotizen, wo keines ihn trägt. In einem Notizbuch mit diesem Tag wird nie etwas bearbeitet.</string>
   <string name="settings.logs.sent_inbox">Gesendet: {pages} an Ihre Eingänge.</string>

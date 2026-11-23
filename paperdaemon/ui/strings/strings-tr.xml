@@ -704,10 +704,8 @@ Sonra gerekirse SearXNG kurulumunda bana adım adım yol göster, .bat dosyasın
   <string name="settings.retries">Yeniden denemeler</string>
   <string name="settings.retries.help">Başarısız olan bir işin bırakılmadan önce kendiliğinden kaç kez daha deneneceği. Yapılacak bir şey olmayan sayfa başarısızlık değildir ve asla yeniden denenmez.</string>
   <string name="settings.page_notes">Daemon notları</string>
-  <string name="settings.page_notes.help">Daemon çalışırken sayfaya yazar: işi aldığını, yapılacak işi ve nasıl bittiğini, yeniden denemek için işaretlenecek bir kutuyla birlikte. Küçük harflerle, en üstte tabletin araç çubuğunun altında, başka hiçbir şeyin okumadığı kendine ait bir katmanda.</string>
+  <string name="settings.page_notes.help">Daemon çalışırken sayfaya yazar: işi aldığını, şu an ne yaptığını ve nasıl bittiğini, yeniden denemek için işaretlenecek bir kutuyla birlikte. Küçük harflerle, en üstte tabletin araç çubuğunun altında. PaperDaemon notlarını yazarından tanır, bu yüzden asla sizin yazınız olarak okunmazlar.</string>
   <string name="settings.page_notes.on">Çalışırken sayfaya yaz</string>
-  <string name="settings.daemon_layer">Daemon katmanı</string>
-  <string name="settings.daemon_layer.help">Daemon'un notlarını yazdığı katmanın adı. PaperDaemon bu adı taşıyan bir katmanı asla sayfanın parçası olarak okumaz; onu yalnızca sayfa düzenleyici gösterir.</string>
   <string name="settings.inbox_tag">Gelen kutusu etiketi</string>
   <string name="settings.inbox_tag.help">Tablete Gönder, sayfasını Ayna'da ve Sahte Ayna'da bu etiketi taşıyan her deftere, hiçbirinde yoksa Hızlı sayfalar'a ekler. Bu etiketi taşıyan bir defterdeki hiçbir şey asla işlenmez.</string>
   <string name="settings.logs.sent_inbox">Gönderildi: {pages} gelen kutularınıza.</string>

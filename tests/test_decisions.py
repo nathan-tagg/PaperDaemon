@@ -225,3 +225,17 @@ def test_rule_10_keeps_a_handwritten_request_its_answer_names_by_line(monkeypatc
     H._keep_unanswered()
     assert J.JOB.plan["erase_sigs"] == ["c"]
     assert [q["status"] for q in J.JOB.steps[:2]] == ["failed", "failed"]
+
+
+def test_need_step_takes_a_steps_own_fields(monkeypatch):
+    # 11-22, Opus 5.5 p1: handing a drawing to another page mid-job failed -- need_step took no page ("unexpected
+    # keyword argument 'page'"), and without one the elsewhere step was refused for having none
+    J.begin(doc="d", page=1)
+    J.JOB.steps = [{"id": 1, "do": "write", "what": "x", "status": "doing"}]
+    seen = {}
+    monkeypatch.setattr(H, "_add_step", lambda raw: seen.update(raw) or dict(raw, id=2, status="todo"))
+    monkeypatch.setattr(H, "_drain_host_steps", lambda *a, **k: None)
+    out = H.t_need_step(do="elsewhere", what="draw the flow diagrams", page="new")
+    assert out.get("ok") and seen["page"] == "new", out
+    bad = H.t_need_step(do="write", what="x", page="new")
+    assert "has no page" in bad["error"], bad

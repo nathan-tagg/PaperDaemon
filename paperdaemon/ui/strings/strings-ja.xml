@@ -704,10 +704,8 @@
   <string name="settings.retries">再試行</string>
   <string name="settings.retries.help">失敗したジョブを、あきらめる前に自動でさらに何回試すか。やることのないページは失敗ではなく、再試行されることはありません。</string>
   <string name="settings.page_notes">デーモンのメモ</string>
-  <string name="settings.page_notes.help">デーモンが作業しながらページに書き込みます。ジョブを受け取ったこと、取り組む作業、どう終わったか、そして再試行するためのチェックボックス。小さく、タブレットのツールバーの下の一番上に、ほかの何も読まない専用のレイヤーに書きます。</string>
+  <string name="settings.page_notes.help">daemon は作業しながらページに書きます。仕事を受けたこと、いま何をしているか、どう終わったか、そしてもう一度試すためのチェック用の枠です。小さく、タブレットのツールバーのすぐ下、ページのいちばん上に書きます。PaperDaemon は自分のメモを書き手で見分けるので、あなたの文字として読まれることはありません。</string>
   <string name="settings.page_notes.on">作業しながらページに書く</string>
-  <string name="settings.daemon_layer">デーモンのレイヤー</string>
-  <string name="settings.daemon_layer.help">デーモンがメモを書き込むレイヤーの名前。PaperDaemon はこの名前のレイヤーをページの一部として読むことはなく、ページエディターだけが表示します。</string>
   <string name="settings.inbox_tag">受信箱タグ</string>
   <string name="settings.inbox_tag.help">「タブレットに送信」は、このタグの付いたすべてのノートブック（ミラーとフォールスミラーの両方）に、どれにも付いていなければクイックシートに、そのページを追加します。このタグの付いたノートブックの内容が処理されることはありません。</string>
   <string name="settings.logs.sent_inbox">送信しました: {pages}を受信箱へ。</string>

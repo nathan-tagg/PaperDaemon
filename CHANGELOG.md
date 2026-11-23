@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.13
+
+- No more Daemon layer. PaperDaemon's notes go on the page's own layer, and PaperDaemon knows its own writing by its author. Before, the tablet kept drawing on the Daemon layer, so your writing could land there, and the next note wiped the whole layer, your writing with it. A job then saw a blank page.
+- A Daemon layer a page already has is now an ordinary layer: what you write there is read by every job and kept by every note. On very old pages, only PaperDaemon's own old notes on that layer are cleared.
+- The "Daemon layer" name setting is gone, since there's no layer to name.
+- Drawings can go below the first screen of a page. Before, every drawing placed lower on a long page was refused, and the model told you drawings couldn't go there. A page with little room left on its first screen now gets a full screen's worth of space below what's on it.
+- A job can hand work to another page partway through. Before, that call failed every time.
+
 ## 0.3.12
 
 - A handwritten request stays on the page when the work answering it fails. Before, if the written answer failed, the request was erased anyway and the page was left blank: the check only worked for typed requests.

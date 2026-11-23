@@ -704,10 +704,8 @@ Lalu pandu saya memasang SearXNG jika perlu, tulis berkas .bat dengan komentar s
   <string name="settings.retries">Coba lagi</string>
   <string name="settings.retries.help">Berapa kali lagi tugas yang gagal dicoba dengan sendirinya sebelum ditinggalkan. Halaman yang tidak perlu dikerjakan bukan kegagalan dan tidak pernah dicoba lagi.</string>
   <string name="settings.page_notes">Catatan daemon</string>
-  <string name="settings.page_notes.help">Daemon menulis di halaman sambil bekerja: bahwa ia menerima tugas, pekerjaan yang sedang dilakukan, dan bagaimana hasilnya, dengan kotak yang bisa dicentang untuk mencoba lagi. Kecil, di bagian paling atas di bawah bilah alat tablet, di lapisan miliknya sendiri yang tidak dibaca apa pun.</string>
+  <string name="settings.page_notes.help">Daemon menulis di halaman saat bekerja: bahwa ia menerima tugas, pekerjaan yang sedang berjalan, dan bagaimana hasilnya, dengan kotak untuk dicentang agar dicoba lagi. Kecil, di bagian paling atas di bawah bilah alat tablet. PaperDaemon mengenali catatannya dari penulisnya, jadi catatan itu tidak pernah dibaca sebagai tulisan Anda.</string>
   <string name="settings.page_notes.on">Tulis di halaman sambil bekerja</string>
-  <string name="settings.daemon_layer">Lapisan daemon</string>
-  <string name="settings.daemon_layer.help">Nama lapisan tempat daemon menulis catatannya. PaperDaemon tidak pernah membaca lapisan dengan nama ini sebagai bagian dari halaman; hanya editor halaman yang menampilkannya.</string>
   <string name="settings.inbox_tag">Tag kotak masuk</string>
   <string name="settings.inbox_tag.help">Kirim ke Tablet menambahkan halamannya ke setiap buku catatan dengan tag ini, di Cermin dan Cermin Palsu, atau ke Lembar cepat bila tak ada yang memilikinya. Tidak ada apa pun dalam buku catatan dengan tag ini yang pernah dikerjakan.</string>
   <string name="settings.logs.sent_inbox">Terkirim: {pages} ke kotak masuk Anda.</string>

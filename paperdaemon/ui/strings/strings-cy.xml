@@ -704,10 +704,8 @@ Yna tywys fi drwy osod SearXNG os oes angen, ysgrifenna'r ffeil .bat gyda sylw b
   <string name="settings.retries">Ailgeisio</string>
   <string name="settings.retries.help">Sawl gwaith eto y rhoddir cynnig ar swydd a fethodd ohoni ei hun cyn ei gadael. Nid methiant yw tudalen heb ddim i'w wneud, ac ni roddir cynnig arall arni byth.</string>
   <string name="settings.page_notes">Nodiadau'r daemon</string>
-  <string name="settings.page_notes.help">Mae'r daemon yn ysgrifennu ar y dudalen wrth weithio: iddo gael y swydd, y gwaith dan sylw, a sut y daeth i ben, gyda blwch i'w dicio i roi cynnig arall arni. Yn fach, ar draws y brig o dan far offer y dabled, ar haen ei hun nad oes dim arall yn ei darllen.</string>
+  <string name="settings.page_notes.help">Mae'r daemon yn ysgrifennu ar y dudalen wrth weithio: iddo gael y gwaith, y gwaith dan sylw, a sut y daeth i ben, gyda blwch i'w dicio i roi cynnig arall arni. Yn fach, ar draws y brig o dan far offer y dabled. Mae PaperDaemon yn adnabod ei nodiadau wrth eu hawdur, felly ni chânt eu darllen fel eich ysgrifen chi.</string>
   <string name="settings.page_notes.on">Ysgrifennu ar y dudalen wrth weithio</string>
-  <string name="settings.daemon_layer">Haen y daemon</string>
-  <string name="settings.daemon_layer.help">Enw'r haen y mae'r daemon yn ysgrifennu ei nodiadau arni. Nid yw PaperDaemon byth yn darllen haen o'r enw hwn fel rhan o'r dudalen; dim ond golygydd y dudalen sy'n ei dangos.</string>
   <string name="settings.inbox_tag">Tag y mewnflwch</string>
   <string name="settings.inbox_tag.help">Mae Anfon i'r Dabled yn ychwanegu ei dudalen at bob llyfr nodiadau gyda'r tag hwn, yn y Drych a'r Drych Ffug, neu at y Taflenni cyflym lle nad oes gan yr un ef. Ni weithir byth ar ddim mewn llyfr nodiadau sydd ag ef.</string>
   <string name="settings.logs.sent_inbox">Wedi'i anfon: {pages} i'ch mewnflychau.</string>

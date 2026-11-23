@@ -704,10 +704,8 @@
   <string name="settings.retries">重试</string>
   <string name="settings.retries.help">失败的任务在放弃之前自动再尝试几次。没有任何要做的页面不算失败，也永远不会重试。</string>
   <string name="settings.page_notes">守护进程备注</string>
-  <string name="settings.page_notes.help">守护进程在工作时写在页面上：他已收到任务、手头的工作以及结果如何，并附一个可勾选以重试的方框。字很小，写在最顶部平板工具栏下方，位于只属于他、其他任何东西都不读取的图层上。</string>
+  <string name="settings.page_notes.help">daemon 工作时会在页面上写字：它接到了任务、正在做什么、结果如何，还有一个可勾选以重试的小方框。字很小，写在页面最上方、平板工具栏下面。PaperDaemon 通过作者识别自己的笔记，所以它们永远不会被当作你的字来读。</string>
   <string name="settings.page_notes.on">工作时在页面上书写</string>
-  <string name="settings.daemon_layer">守护进程图层</string>
-  <string name="settings.daemon_layer.help">守护进程书写备注所用图层的名称。PaperDaemon 从不把这个名称的图层当作页面的一部分读取；只有页面编辑器会显示它。</string>
   <string name="settings.inbox_tag">收件箱标签</string>
   <string name="settings.inbox_tag.help">“发送到平板”会把页面添加到镜像和伪镜像中每个带此标签的笔记本；若都没有，则添加到快速便签。带此标签的笔记本中的内容永远不会被处理。</string>
   <string name="settings.logs.sent_inbox">已发送：{pages}到你的收件箱。</string>

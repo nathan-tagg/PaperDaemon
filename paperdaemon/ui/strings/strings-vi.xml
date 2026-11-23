@@ -704,10 +704,8 @@ Sau đó hướng dẫn tôi cài SearXNG nếu cần, viết tệp .bat với m
   <string name="settings.retries">Thử lại</string>
   <string name="settings.retries.help">Một tác vụ thất bại sẽ tự được thử thêm bao nhiêu lần trước khi bị bỏ lại. Một trang không có gì để làm không phải là thất bại và không bao giờ được thử lại.</string>
   <string name="settings.page_notes">Ghi chú của daemon</string>
-  <string name="settings.page_notes.help">Daemon viết lên trang trong lúc làm việc: rằng anh ấy đã nhận tác vụ, công việc đang làm và kết quả ra sao, kèm một ô để đánh dấu nếu muốn thử lại. Chữ nhỏ, ở trên cùng dưới thanh công cụ của máy tính bảng, trên một lớp riêng mà không gì khác đọc.</string>
+  <string name="settings.page_notes.help">Daemon viết lên trang khi làm việc: rằng nó đã nhận việc, việc đang làm và kết thúc ra sao, kèm một ô để đánh dấu nếu muốn thử lại. Chữ nhỏ, ở trên cùng ngay dưới thanh công cụ của máy tính bảng. PaperDaemon nhận ra ghi chú của mình qua tác giả, nên chúng không bao giờ bị đọc như chữ của bạn.</string>
   <string name="settings.page_notes.on">Viết lên trang trong lúc làm việc</string>
-  <string name="settings.daemon_layer">Lớp của daemon</string>
-  <string name="settings.daemon_layer.help">Tên của lớp mà daemon viết ghi chú lên. PaperDaemon không bao giờ đọc một lớp có tên này như một phần của trang; chỉ trình chỉnh sửa trang hiển thị nó.</string>
   <string name="settings.inbox_tag">Thẻ hộp thư đến</string>
   <string name="settings.inbox_tag.help">Gửi tới máy tính bảng thêm trang của nó vào mọi sổ tay có thẻ này, trong Gương và Gương giả, hoặc vào Trang nhanh nếu không sổ nào có. Không gì trong sổ tay có thẻ này từng được xử lý.</string>
   <string name="settings.logs.sent_inbox">Đã gửi: {pages} tới các hộp thư đến của bạn.</string>

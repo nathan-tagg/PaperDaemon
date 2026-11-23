@@ -532,7 +532,7 @@ def _plan(plan_steps, rulings=(), places=None):
 
 
 def t_need_step(do, what=None, size=None, near=None, side=None, query=None, place=None,
-                about=None, prompt=None):
+                about=None, prompt=None, **fields):
     """Ask for a step the plan did not have (the search came back useless, say).
 
     A plan written before the data is in cannot know what the data will say; this is the way to change it,
@@ -543,6 +543,13 @@ def t_need_step(do, what=None, size=None, near=None, side=None, query=None, plac
         return dict({"error": "plan() first."}, **H._did())
     raw = {"do": do, "what": what or query or about or prompt, "size": size, "near": near,
            "side": side, "place": place}
+    # THE STEP'S OWN FIELDS, as plan() takes them (an elsewhere step's page or notebook, ...): anything else is refused
+    own = set(ST.fields_of(do)) if do in ST.KINDS else set()
+    odd = sorted(k for k in fields if k not in own)
+    if odd:
+        return dict({"error": "a %s step has no %s; its fields are %s." % (do, ", ".join(odd), ", ".join(sorted(own)))},
+                    **H._did())
+    raw.update(fields)
     raw = dict((k, v) for k, v in raw.items() if v is not None)
     try:
         added = H._add_step(raw)
@@ -1110,6 +1117,8 @@ TOOLS = [
   "now know you need. Adds one step BEFORE the one you are on; same shape as a step in plan().",
   {"do": {"type": "string", "enum": STEP_KINDS}, "what": {"type": "string"},
    "size": {"type": "string", "optional": True}, "near": {"type": "string", "optional": True},
-   "side": {"type": "string", "optional": True}},
+   "side": {"type": "string", "optional": True}, "page": {"type": "string", "optional": True},
+   "notebook": {"type": "string", "optional": True}, "after": {"type": "string", "optional": True},
+   "folder": {"type": "string", "optional": True}},
   t_need_step),
 ]

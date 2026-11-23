@@ -431,41 +431,40 @@ def test_deleted_pages_are_gone_for_the_library_too_and_a_notebook_opens_beside_
     assert got["mended"] == 1 and got["after"] == [True, 0]
 
 
-def test_the_editor_leaves_the_daemons_layer_to_him():
-    """The editor shows the daemon's note and saves the page around it: his layer, his strokes and their ids stay his,
-    so his next note replaces the last rather than piling on top of a copy he can no longer erase."""
+def test_the_editor_keeps_the_daemons_note_his_and_no_layer_is_made():
+    """11-22: one page. The editor shows the daemon's note (on the page's own layer, under his notes' author) and saves
+    the page around it: his strokes and their ids stay his, so his next note replaces the last rather than piling on top
+    of a copy he can no longer erase; no Daemon layer is made."""
     got = _run("""
         import io, json
         from rmscene import read_blocks, scene_stream as ss, scene_items as si
         from paperdaemon.remarkable import local
         from paperdaemon.pipeline.daemon import notes as N
+        from paperdaemon.pipeline.page import render as R
         a = local.new_notebook("A")
         scene = local.scene_of(a, 1)
         scene["layers"][0]["lines"].append({"pen": "FINELINER_2", "penCode": 17, "color": 0, "thicknessScale": 1.0,
                                             "points": [[0, 900, 0, 0, 16, 190], [60, 950, 0, 0, 16, 190]]})
         local.write_scene(a, 1, scene)
         path = local._rm(a, 1)
-        state = {}
         first, _ = N.letter(["Saw it 1:02 PM. Now: read the page"], (1620.0, 2160.0))
-        data = N.with_note(open(path, "rb").read(), first, state); open(path, "wb").write(data)
+        data = N.with_note(open(path, "rb").read(), first, {}); open(path, "wb").write(data)
         sc = local.scene_of(a, 1)                                  # the editor opens the page and saves it
         marked = [L["label"] for L in sc["layers"] if L.get("daemon")]
-        sc["layers"][[i for i, L in enumerate(sc["layers"]) if not L.get("daemon")][0]]["lines"].append(
-            {"pen": "FINELINER_2", "penCode": 17, "color": 0, "thicknessScale": 1.0,
-             "points": [[-300, 500, 0, 0, 16, 190], [-250, 520, 0, 0, 16, 190]]})
+        sc["layers"][0]["lines"].append({"pen": "FINELINER_2", "penCode": 17, "color": 0, "thicknessScale": 1.0,
+                                         "points": [[-300, 500, 0, 0, 16, 190], [-250, 520, 0, 0, 16, 190]]})
         local.write_scene(a, 1, sc)
         last, _ = N.letter(["Saw it 1:02 PM. Finished 1:04 PM in 2 min: answered"], (1620.0, 2160.0))
-        data = N.with_note(open(path, "rb").read(), last, state); open(path, "wb").write(data)
+        data = N.with_note(open(path, "rb").read(), last, {}); open(path, "wb").write(data)
         bl = list(read_blocks(io.BytesIO(open(path, "rb").read())))
-        names = {(b.group.node_id.part1, b.group.node_id.part2): b.group.label.value for b in bl if isinstance(b, ss.TreeNodeBlock)}
+        notes = N._notes_of(R.author_table(bl))
+        names = [b.group.label.value for b in bl if isinstance(b, ss.TreeNodeBlock) and b.group.label is not None]
         live = [b for b in bl if isinstance(b, ss.SceneLineItemBlock) and isinstance(b.item.value, si.Line)]
-        daemon_layers = [k for k, v in names.items() if v == "Daemon"]
-        print(json.dumps({"marked": marked, "daemon_layers": len(daemon_layers),
-                          "his": sum(1 for b in live if (b.parent_id.part1, b.parent_id.part2) in daemon_layers), "want": len(last),
-                          "users": sum(1 for b in live if (b.parent_id.part1, b.parent_id.part2) not in daemon_layers)}))
+        print(json.dumps({"marked": marked, "daemon_layers": names.count("Daemon"), "want": len(last),
+                          "his": sum(1 for b in live if b.item.item_id.part1 in notes),
+                          "users": sum(1 for b in live if b.item.item_id.part1 not in notes)}))
     """)
-    assert got["marked"] == ["Daemon"]
-    assert got["daemon_layers"] == 1
+    assert got["marked"] == [] and got["daemon_layers"] == 0
     assert got["his"] == got["want"]
     assert got["users"] == 2
 
@@ -491,26 +490,28 @@ _ON_HIS = textwrap.dedent("""
 """)
 
 
-def test_the_user_draws_on_his_layer_and_his_next_note_wipes_it():
-    """A stroke the editor adds on the daemon's layer is saved there as the user's, and the daemon's next note wipes the
-    layer, that stroke with it (the user's word, 11-11: "it should wipe it EVERY time")."""
+def test_the_users_stroke_on_an_old_daemon_layer_stays_through_the_next_note():
+    """11-22, Luna p2: the user's writing landed on the Daemon layer (the tablet's layer in use) and the next note wiped
+    it. A layer named "Daemon" on a page whose notes have their author is an ordinary layer: the editor saves the user's
+    stroke there as theirs, and the next note keeps it."""
     got = _run(_ON_HIS + textwrap.dedent("""
         a = local.new_notebook("A")
         path = local._rm(a, 1)
         local.write_scene(a, 1, local.scene_of(a, 1))
-        state = {}
         first, _ = N.letter(["Saw it 1:02 PM."], (1620.0, 2160.0))
-        data = N.with_note(open(path, "rb").read(), first, state); open(path, "wb").write(data)
+        data = N.with_note(open(path, "rb").read(), first, {}); open(path, "wb").write(data)
         sc = local.scene_of(a, 1)
-        next(L for L in sc["layers"] if L.get("daemon"))["lines"].append(stroke(1500))
+        sc["layers"].append({"label": "Daemon", "visible": True, "lines": [stroke(1500)]})
         local.write_scene(a, 1, sc)
         saved = on_his(path)
         last, _ = N.letter(["Saw it 1:02 PM. Finished 1:04 PM in 2 min: answered"], (1620.0, 2160.0))
-        data = N.with_note(open(path, "rb").read(), last, state); open(path, "wb").write(data)
-        print(json.dumps({"first": len(first), "last": len(last), "saved": saved, "after": on_his(path)}))
+        data = N.with_note(open(path, "rb").read(), last, {}); open(path, "wb").write(data)
+        print(json.dumps({"saved": saved, "after": on_his(path),
+                          "flagged": [L["label"] for L in local.scene_of(a, 1)["layers"] if L.get("daemon")]}))
     """))
-    assert got["saved"]["authors"] == [1] + [8] * got["first"] and got["saved"]["layers"] == 1
-    assert got["after"]["authors"] == [8] * got["last"] and got["after"]["layers"] == 1
+    assert got["saved"]["authors"] == [1] and got["saved"]["layers"] == 1
+    assert got["after"]["authors"] == [1] and not got["after"]["old_page"]       # the user's stroke stays
+    assert got["flagged"] == []
 
 
 def test_on_a_page_from_before_his_byte_the_users_first_stroke_there_stays_theirs():
@@ -544,7 +545,8 @@ def test_on_a_page_from_before_his_byte_the_users_first_stroke_there_stays_their
     assert got["elsewhere"] == {"authors": [1, 1], "old_page": True, "layers": 1}, got
     assert got["adopted"] == {"authors": [1, 8, 8], "old_page": False, "layers": 1}, got
     assert got["again"] == got["adopted"], got            # his old note stays his, though the save's ids said the tablet's
-    assert got["after"]["authors"] == [8] * got["note"] and not got["after"]["old_page"], got
+    # 11-22: the first layer is his old one here, so the note goes on it beside the user's stroke, which stays
+    assert got["after"]["authors"] == [1] + [8] * got["note"] and not got["after"]["old_page"], got
 
 
 def test_what_a_job_writes_is_remembered_as_its_own():
@@ -796,10 +798,10 @@ def test_a_notebook_is_made_on_the_tablet_s_library_with_mirror_editing_on(monke
     assert r.status_code == 200 and inplace.sending() == [] and sent[-1] == (r.json()["id"], False), r.text
 
 
-def test_his_layer_carries_the_tablets_second_record_and_his_note_its_low_number():
-    """11-11, the Sonnet page on his tablet: nothing under 128-159 was drawn, and the Daemon layer was not listed until
-    it had the second tree record the tablet writes for a layer it makes. A note now goes up under 8 (2 to 10), and his
-    layer has that record once, however many notes follow."""
+def test_a_note_makes_no_layer_and_goes_up_under_its_low_number():
+    """11-11, the Sonnet page: nothing under 128-159 was drawn. A note goes up under 8 (2 to 10); since 11-22 it goes on
+    the page's own first layer, and no layer, nor a second tree record for the page's layer, is made, however many
+    notes follow."""
     got = _run("""
         import io, json
         from rmscene import read_blocks
@@ -809,13 +811,15 @@ def test_his_layer_carries_the_tablets_second_record_and_his_note_its_low_number
         a = local.new_notebook("A")
         local.write_scene(a, 1, local.scene_of(a, 1))
         path = local._rm(a, 1)
+        before = [[b.node_id.part1, b.node_id.part2] for b in read_blocks(io.BytesIO(open(path, "rb").read()))
+                  if isinstance(b, ss.SceneTreeBlock) and not b.is_update]
         note, _ = N.letter(["Saw it 1:02 PM."], (1620.0, 2160.0))
         for _ in range(2):
             data = N.with_note(open(path, "rb").read(), note, {}); open(path, "wb").write(data)
         bl = list(read_blocks(io.BytesIO(open(path, "rb").read())))
-        lay = [[b.group.node_id.part1, b.group.node_id.part2] for b in bl if isinstance(b, ss.TreeNodeBlock) and b.group.label.value == "Daemon"]
+        lay = [[b.group.node_id.part1, b.group.node_id.part2] for b in bl if isinstance(b, ss.TreeNodeBlock) and b.group.label is not None and b.group.label.value == "Daemon"]
         links = [[b.node_id.part1, b.node_id.part2] for b in bl if isinstance(b, ss.SceneTreeBlock) and not b.is_update]
         authors = sorted({b.item.item_id.part1 for b in bl if isinstance(b, ss.SceneLineItemBlock) and b.item.value is not None})
-        print(json.dumps({"lay": lay, "links": links, "authors": authors}))
+        print(json.dumps({"lay": lay, "links": links, "before": before, "authors": authors}))
     """)
-    assert len(got["lay"]) == 1 and got["links"] == got["lay"] and got["authors"] == [8], got
+    assert got["lay"] == [] and got["links"] == got["before"] and got["authors"] == [8], got

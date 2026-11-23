@@ -338,11 +338,14 @@ def _draw_figure(parts, place):
         fitted = H._fit_paths(paths_all, box, top=stacked)
         if fitted is not None:
             paths_all = fitted
+    # THE PAGE GOES ON BELOW ITS FIRST SCREEN: a part may reach as low as the box it was given (11-22: every part of a
+    # figure placed below the first screen was refused, and nothing was drawn)
+    low = max(H._safe()[3], float((box or {}).get("y1") or 0.0) + 1.0)
     for pth, ink in zip(paths_all, inks):
         ys = [p[1] for p in pth]
-        if min(ys) < H._safe()[1] or max(ys) > H._safe()[3]:
+        if min(ys) < H._safe()[1] or max(ys) > low:
             bad.append("a part runs off the page (y %d..%d, page is %d..%d)"
-                       % (min(ys), max(ys), H._safe()[1], H._safe()[3]))
+                       % (min(ys), max(ys), H._safe()[1], low))
             continue
         JOB.draw.stroke(pth, width=A.prof_swell(7, 12), color=ink)
         drawn += 1

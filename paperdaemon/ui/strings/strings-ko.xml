@@ -704,10 +704,8 @@
   <string name="settings.retries">재시도</string>
   <string name="settings.retries.help">실패한 작업을 포기하기 전에 자동으로 몇 번 더 시도할지. 할 일이 없는 페이지는 실패가 아니며 다시 시도하지 않습니다.</string>
   <string name="settings.page_notes">데몬 메모</string>
-  <string name="settings.page_notes.help">데몬이 작업하면서 페이지에 적습니다: 작업을 받았다는 것, 진행 중인 작업, 어떻게 끝났는지, 그리고 다시 시도하려면 체크할 상자. 작게, 태블릿 도구 모음 아래 맨 위에, 다른 무엇도 읽지 않는 자기만의 레이어에 적습니다.</string>
+  <string name="settings.page_notes.help">daemon은 작업하면서 페이지에 씁니다. 작업을 받았다는 것, 지금 하는 일, 어떻게 끝났는지, 그리고 다시 시도하려면 체크하는 상자입니다. 작게, 태블릿 도구 모음 바로 아래 맨 위에 씁니다. PaperDaemon은 작성자로 자기 메모를 알아보므로 당신의 글로 읽히지 않습니다.</string>
   <string name="settings.page_notes.on">작업하면서 페이지에 쓰기</string>
-  <string name="settings.daemon_layer">데몬 레이어</string>
-  <string name="settings.daemon_layer.help">데몬이 메모를 적는 레이어의 이름. PaperDaemon은 이 이름의 레이어를 페이지의 일부로 읽지 않으며, 페이지 편집기만 이를 표시합니다.</string>
   <string name="settings.inbox_tag">받은편지함 태그</string>
   <string name="settings.inbox_tag.help">태블릿으로 보내기는 이 태그가 있는 모든 노트북(미러와 폴스 미러 모두)에, 아무 노트북에도 없으면 퀵 시트에 페이지를 추가합니다. 이 태그가 있는 노트북의 내용은 절대 처리되지 않습니다.</string>
   <string name="settings.logs.sent_inbox">보냄: {pages}을(를) 받은편지함으로.</string>
