@@ -4662,6 +4662,82 @@ span.lname { cursor: default; }
     } else alert(title + "\n\n" + body);
     fetch(url, { method: "POST", headers: H }).catch(() => {});
   }
+  // PRINTING (11-23): Ctrl+P opens the print sheet in the window -- the printers Windows has (its default chosen), and
+  // which pages: this one, a range, or the whole notebook, each with its page numbers to the right of it. The engine
+  // draws the pages as the tablet does and prints them through Windows itself (printing.py)
+  let printing = false;
+  async function openPrint() {
+    const W = window.parent && window.parent.PD;
+    if (printing || !W || !W.sheet) return;
+    printing = true;
+    const H = { Authorization: "Bearer " + token() }, t = k => W.t(k), esc = W.esc;
+    try {
+      const [pr, doc] = await Promise.all([
+        fetch("/api/v1" + BASE + "/printers", { headers: H }).then(r => r.json()),
+        fetch("/api/v1" + BASE + "/library/" + encodeURIComponent(DOC), { headers: H }).then(r => r.json()).catch(() => ({}))]);
+      const total = Math.max(PAGE, (doc.page_tags || []).length || PAGE);
+      const list = pr.printers || [];
+      const num = (id, v) => '<input class="field num w-xs" type="number" inputmode="numeric" min="1" max="' + total + '" step="1" id="' + id +
+                             '" value="' + v + '" aria-label="' + esc(t("print.page")) + '">';
+      const radio = (v, label, right, on) => '<div class="print-row"><label class="check-label"><input type="radio" name="print-which" value="' + v + '"' +
+                                             (on ? " checked" : "") + "> " + esc(label) + '</label><span class="print-nums">' + right + "</span></div>";
+      const body = (list.length
+        ? '<div class="field-row"><label for="print-printer">' + esc(t("print.printer")) + '</label><span class="select"><select class="field" id="print-printer">' +
+          list.map(n => '<option value="' + esc(n) + '"' + (n === pr.default ? " selected" : "") + ">" + esc(n) + "</option>").join("") + "</select></span></div>" +
+          '<fieldset class="print-pages"><legend>' + esc(t("print.pages")) + "</legend>" +
+          radio("one", t("print.one"), num("print-one", PAGE), true) +
+          radio("range", t("print.range"), num("print-from", PAGE) + ' <span class="meta">' + esc(t("print.to")) + "</span> " + num("print-to", total), false) +
+          radio("all", t("print.all"), '<span class="meta">' + esc(W.count ? W.count("count.page", total) : total + " pages") + "</span>", false) +
+          "</fieldset>"
+        : "<p>" + esc(t("print.none")) + "</p>") +
+        '<p class="msg err" role="alert"></p><div class="actions"><button type="button" class="btn" data-v="cancel">' + esc(t("common.cancel")) + "</button>" +
+        (list.length ? '<button type="button" class="btn primary" data-v="print">' + esc(t("print.go")) + "</button>" : "") + "</div>";
+      const dlg = W.sheet(t("print.title"), body), $d = s => dlg.querySelector(s), msg = $d(".msg");
+      const pick = v => { const r = $d('input[name="print-which"][value="' + v + '"]'); if (r) r.checked = true; };
+      for (const [id, v] of [["#print-one", "one"], ["#print-from", "range"], ["#print-to", "range"]]) {
+        const el = $d(id); if (el) el.addEventListener("focus", () => pick(v));
+      }
+      const pages = () => {
+        const which = ($d('input[name="print-which"]:checked') || {}).value, n = id => Math.round(Number($d(id).value));
+        const ok = v => Number.isFinite(v) && v >= 1 && v <= total;
+        if (which === "all") return Array.from({ length: total }, (_, i) => i + 1);
+        if (which === "one") return ok(n("#print-one")) ? [n("#print-one")] : null;
+        const a = n("#print-from"), b = n("#print-to");
+        return ok(a) && ok(b) && a <= b ? Array.from({ length: b - a + 1 }, (_, i) => a + i) : null;
+      };
+      dlg.addEventListener("click", async e => {
+        const b = e.target.closest("button[data-v]");
+        if (!b) return;
+        if (b.dataset.v === "cancel") { dlg.close(); return; }
+        const want = pages();
+        if (!want) { msg.textContent = t("print.bad_pages").replace("{n}", total); return; }
+        msg.textContent = ""; b.disabled = true; b.setAttribute("aria-busy", "true"); b.textContent = t("print.busy");
+        try {
+          const r = await fetch("/api/v1" + BASE + "/library/" + encodeURIComponent(DOC) + "/print", { method: "POST",
+            headers: Object.assign({ "Content-Type": "application/json" }, H), body: JSON.stringify({ pages: want, printer: $d("#print-printer").value }) });
+          const d = await r.json();
+          if (!r.ok || d.error) throw new Error(d.error || ("HTTP " + r.status));
+          dlg.close();
+          tell(t("print.sent"));
+        } catch (err) {
+          msg.textContent = String(err && err.message || err);
+          b.disabled = false; b.removeAttribute("aria-busy"); b.textContent = t("print.go");
+        }
+      });
+      dlg.addEventListener("close", () => { dlg.remove(); printing = false; });
+      window.parent.document.body.append(dlg);
+      dlg.showModal();
+      const go = $d("button[data-v=print]"); if (go) go.focus();
+    } catch (e) {
+      printing = false;
+    }
+  }
+  window.addEventListener("keydown", e => {
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === "p" || e.key === "P")) {
+      e.preventDefault(); e.stopImmediatePropagation(); openPrint();
+    }
+  }, true);
+  window.pdPrint = openPrint;                                 // (the print sheet, opened from outside)
   // LAYERS: the page's layer nodes, painted bottom to top; the pens and the eraser work on the one in hand
   const snapLayers = () => ({ list: page.layers.map(L => ({ L, visible: L.visible, label: L.label, lines: L.lines.slice() })), active: activeLayer,
                               text: page.textVisible, template: page.templateVisible });

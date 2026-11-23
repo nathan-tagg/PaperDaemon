@@ -2047,6 +2047,29 @@ def get_library_export(doc: str):
     return got if isinstance(got, JSONResponse) else Response(content=got, media_type="application/pdf")
 
 
+@app.get(API + "/printers")
+def get_printers():
+    """The printers Windows has, and its default (printing.printers)."""
+    from . import printing
+    try:
+        return printing.printers()
+    except OSError as ex:
+        return _bad("the printers could not be listed: %s" % str(ex)[:200])
+
+
+@app.post(API + "/library/{doc}/print")
+async def post_library_print(doc: str, body: dict = Body(default={})):
+    """Pages of a document printed (Ctrl+P in the page editor) -> {"pages", "sheets"}: body {"pages": [numbers from 1],
+    "printer": a name from /printers}."""
+    from . import printing
+    if not _doc_ok(doc):
+        return _bad("not a document id")
+    try:
+        return await run_in_threadpool(printing.print_pages, doc, body.get("pages") or [], str(body.get("printer") or ""))
+    except (printing.PrintError, ValueError, OSError) as ex:
+        return _bad(str(ex)[:300])
+
+
 @app.post(API + "/library/{u}/move")
 def post_library_move(u: str, body: dict = Body(default={})):
     from .remarkable import local

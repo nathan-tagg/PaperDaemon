@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.14
+
+- Print from the page editor: Ctrl+P opens a print window with the printers Windows has (your default chosen) and which pages to print: this page, a range, or the whole notebook, each with its page numbers beside it. Pages print the way the tablet draws them: your ink, typed text and pictures, without PaperDaemon's notes. A normal page is one sheet; a page written past its first screen runs on over a sheet for each screen.
+
 ## 0.3.13
 
 - No more Daemon layer. PaperDaemon's notes go on the page's own layer, and PaperDaemon knows its own writing by its author. Before, the tablet kept drawing on the Daemon layer, so your writing could land there, and the next note wiped the whole layer, your writing with it. A job then saw a blank page.
