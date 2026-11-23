@@ -326,6 +326,14 @@
   <string name="print.none">لا توجد طابعة معدّة في Windows.</string>
   <string name="print.bad_pages">اختر صفحات من 1 إلى {n}.</string>
   <string name="print.page">رقم الصفحة</string>
+  <string name="print.size">الحجم</string>
+  <string name="print.fill">ملء الورقة</string>
+  <string name="print.fit">ملاءمة الورقة</string>
+  <string name="print.actual">الحجم الفعلي</string>
+  <string name="print.will.one">ستُطبع صفحة واحدة</string>
+  <string name="print.will.other">ستُطبع {n} صفحات</string>
+  <string name="print.total.one">ستُطبع صفحة واحدة في المجموع</string>
+  <string name="print.total.other">ستُطبع {n} صفحات في المجموع</string>
   <string name="slot.other_provider">آخر (متوافق مع OpenAI)</string>
   <string name="slot.harness">الإطار</string>
   <string name="slot.none">لا شيء</string>

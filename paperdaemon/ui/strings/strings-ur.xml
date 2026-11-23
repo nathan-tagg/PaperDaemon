@@ -326,6 +326,14 @@
   <string name="print.none">Windows میں کوئی پرنٹر سیٹ نہیں ہے۔</string>
   <string name="print.bad_pages">1 سے {n} تک صفحات چنیں۔</string>
   <string name="print.page">صفحہ نمبر</string>
+  <string name="print.size">سائز</string>
+  <string name="print.fill">صفحہ بھر دیں</string>
+  <string name="print.fit">صفحے میں فٹ کریں</string>
+  <string name="print.actual">اصل سائز</string>
+  <string name="print.will.one">{n} صفحہ پرنٹ ہوگا</string>
+  <string name="print.will.other">{n} صفحات پرنٹ ہوں گے</string>
+  <string name="print.total.one">کل {n} صفحہ پرنٹ ہوگا</string>
+  <string name="print.total.other">کل {n} صفحات پرنٹ ہوں گے</string>
   <string name="slot.other_provider">دیگر (OpenAI سے ہم آہنگ)</string>
   <string name="slot.harness">Harness</string>
   <string name="slot.none">کوئی نہیں</string>

@@ -326,6 +326,14 @@
   <string name="print.none">Windows'ta kurulu yazıcı yok.</string>
   <string name="print.bad_pages">1 ile {n} arasında sayfa seçin.</string>
   <string name="print.page">Sayfa numarası</string>
+  <string name="print.size">Boyut</string>
+  <string name="print.fill">Sayfayı doldur</string>
+  <string name="print.fit">Sayfaya sığdır</string>
+  <string name="print.actual">Gerçek boyut</string>
+  <string name="print.will.one">{n} sayfa yazdırılacak</string>
+  <string name="print.will.other">{n} sayfa yazdırılacak</string>
+  <string name="print.total.one">Toplam {n} sayfa yazdırılacak</string>
+  <string name="print.total.other">Toplam {n} sayfa yazdırılacak</string>
   <string name="slot.other_provider">Diğer (OpenAI uyumlu)</string>
   <string name="slot.harness">Harness</string>
   <string name="slot.none">Yok</string>

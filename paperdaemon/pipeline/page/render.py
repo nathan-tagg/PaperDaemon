@@ -1007,6 +1007,31 @@ def _draw(d, L, col, pts):
     d.ellipse([x-r, y-r, x+r, y+r], fill=col)
 
 
+def frame_size(doc, page_no):
+    """The size (width, height, page units = pixels) render() would draw page `page_no` at -- the whole page and
+    anything past it, typed text and pictures counted -- worked out without drawing it (printing's sheet count)."""
+    S = strokes(doc, page_no, arrays=True)
+    extra = []
+    try:
+        from paperdaemon.pipeline.page import typed as _TY
+        tb, _paras = _TY.paragraphs(doc, page_no)
+        if tb is not None:
+            bot = _TY.text_bottom(doc, page_no) or tb.pos_y
+            extra = [(tb.pos_x, tb.pos_y), (tb.pos_x + tb.width, bot)]
+    except Exception:
+        pass
+    try:
+        from paperdaemon.pipeline.page import images as _IM
+        for im in _IM.items(doc, page_no):
+            if im.get("path"):
+                x0, y0, x1, y1 = im["box"]
+                extra += [(x0, y0), (x1, y1)]
+    except Exception:
+        pass
+    W, H, _T = _frame(S, page_frame(doc, page_no), extra=extra)
+    return W, H
+
+
 def render(doc, page_no, out, typed=True, hide=None, hide_typed=None, hide_images=None,
            mark_typed=False, blank_ok=False):
     """Render a page to PNG -- strokes AND typed text -- at one pixel a page unit, the whole page and anything past

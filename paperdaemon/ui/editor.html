@@ -4684,10 +4684,16 @@ span.lname { cursor: default; }
       const body = (list.length
         ? '<div class="field-row"><label for="print-printer">' + esc(t("print.printer")) + '</label><span class="select"><select class="field" id="print-printer">' +
           list.map(n => '<option value="' + esc(n) + '"' + (n === pr.default ? " selected" : "") + ">" + esc(n) + "</option>").join("") + "</select></span></div>" +
+          // THE SIZE, above the pages: fill the sheet (the default), fit each page on one, or as big as on the tablet
+          '<div class="field-row"><label for="print-size">' + esc(t("print.size")) + '</label><span class="select"><select class="field" id="print-size">' +
+          [["fill", "print.fill"], ["fit", "print.fit"], ["actual", "print.actual"]].map(([v, k]) => '<option value="' + v + '">' + esc(t(k)) + "</option>").join("") +
+          "</select></span></div>" +
           '<fieldset class="print-pages"><legend>' + esc(t("print.pages")) + "</legend>" +
           radio("one", t("print.one"), num("print-one", PAGE), true) +
           radio("range", t("print.range"), num("print-from", PAGE) + ' <span class="meta">' + esc(t("print.to")) + "</span> " + num("print-to", total), false) +
           radio("all", t("print.all"), '<span class="meta">' + esc(W.count ? W.count("count.page", total) : total + " pages") + "</span>", false) +
+          // how many sheets will come out, said under the choices and kept up to date as they change
+          '<p class="print-count meta" role="status" aria-live="polite"></p>' +
           "</fieldset>"
         : "<p>" + esc(t("print.none")) + "</p>") +
         '<p class="msg err" role="alert"></p><div class="actions"><button type="button" class="btn" data-v="cancel">' + esc(t("common.cancel")) + "</button>" +
@@ -4695,7 +4701,7 @@ span.lname { cursor: default; }
       const dlg = W.sheet(t("print.title"), body), $d = s => dlg.querySelector(s), msg = $d(".msg");
       const pick = v => { const r = $d('input[name="print-which"][value="' + v + '"]'); if (r) r.checked = true; };
       for (const [id, v] of [["#print-one", "one"], ["#print-from", "range"], ["#print-to", "range"]]) {
-        const el = $d(id); if (el) el.addEventListener("focus", () => pick(v));
+        const el = $d(id); if (el) el.addEventListener("focus", () => { pick(v); recount(); });
       }
       const pages = () => {
         const which = ($d('input[name="print-which"]:checked') || {}).value, n = id => Math.round(Number($d(id).value));
@@ -4705,6 +4711,31 @@ span.lname { cursor: default; }
         const a = n("#print-from"), b = n("#print-to");
         return ok(a) && ok(b) && a <= b ? Array.from({ length: b - a + 1 }, (_, i) => a + i) : null;
       };
+      // THE COUNT: asked of the engine (the pages' own lengths, the printer's paper, the size) each time a choice changes
+      const count = $d(".print-count");
+      let asked = 0, countTimer = 0;
+      const recount = () => {
+        if (!count) return;
+        clearTimeout(countTimer);
+        countTimer = setTimeout(async () => {
+          const n = ++asked, want = pages(), which = ($d('input[name="print-which"]:checked') || {}).value;
+          if (!want) { count.textContent = t("print.bad_pages").replace("{n}", total); return; }
+          count.textContent = "…";
+          try {
+            const r = await fetch("/api/v1" + BASE + "/library/" + encodeURIComponent(DOC) + "/print-plan", { method: "POST",
+              headers: Object.assign({ "Content-Type": "application/json" }, H),
+              body: JSON.stringify({ pages: want, printer: $d("#print-printer").value, size: $d("#print-size").value }) });
+            const d = await r.json();
+            if (n !== asked) return;
+            if (!r.ok || d.error) { count.textContent = d.error || ""; return; }
+            const many = which === "one" ? "print.will" : "print.total";
+            count.textContent = t(many + (d.sheets === 1 ? ".one" : ".other")).replace("{n}", d.sheets);
+          } catch (err) { if (n === asked) count.textContent = ""; }
+        }, 200);
+      };
+      dlg.addEventListener("change", recount);
+      dlg.addEventListener("input", recount);
+      recount();
       dlg.addEventListener("click", async e => {
         const b = e.target.closest("button[data-v]");
         if (!b) return;
@@ -4714,7 +4745,8 @@ span.lname { cursor: default; }
         msg.textContent = ""; b.disabled = true; b.setAttribute("aria-busy", "true"); b.textContent = t("print.busy");
         try {
           const r = await fetch("/api/v1" + BASE + "/library/" + encodeURIComponent(DOC) + "/print", { method: "POST",
-            headers: Object.assign({ "Content-Type": "application/json" }, H), body: JSON.stringify({ pages: want, printer: $d("#print-printer").value }) });
+            headers: Object.assign({ "Content-Type": "application/json" }, H),
+            body: JSON.stringify({ pages: want, printer: $d("#print-printer").value, size: $d("#print-size").value }) });
           const d = await r.json();
           if (!r.ok || d.error) throw new Error(d.error || ("HTTP " + r.status));
           dlg.close();

@@ -326,6 +326,14 @@
   <string name="print.none">In Windows ist kein Drucker eingerichtet.</string>
   <string name="print.bad_pages">Wähle Seiten von 1 bis {n}.</string>
   <string name="print.page">Seitenzahl</string>
+  <string name="print.size">Größe</string>
+  <string name="print.fill">Seite füllen</string>
+  <string name="print.fit">An Seite anpassen</string>
+  <string name="print.actual">Originalgröße</string>
+  <string name="print.will.one">{n} Seite wird gedruckt</string>
+  <string name="print.will.other">{n} Seiten werden gedruckt</string>
+  <string name="print.total.one">Insgesamt wird {n} Seite gedruckt</string>
+  <string name="print.total.other">Insgesamt werden {n} Seiten gedruckt</string>
   <string name="slot.other_provider">Andere (OpenAI-kompatibel)</string>
   <string name="slot.harness">Harness</string>
   <string name="slot.none">Keines</string>

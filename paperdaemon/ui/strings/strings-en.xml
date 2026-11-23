@@ -325,6 +325,14 @@
   <string name="print.none">Windows has no printer set up.</string>
   <string name="print.bad_pages">Choose pages from 1 to {n}.</string>
   <string name="print.page">Page number</string>
+  <string name="print.size">Size</string>
+  <string name="print.fill">Fill the page</string>
+  <string name="print.fit">Fit to page</string>
+  <string name="print.actual">Actual size</string>
+  <string name="print.will.one">{n} page will be printed</string>
+  <string name="print.will.other">{n} pages will be printed</string>
+  <string name="print.total.one">{n} page will be printed in total</string>
+  <string name="print.total.other">{n} pages will be printed in total</string>
   <string name="slot.other_provider">Other (OpenAI-compatible)</string>
   <string name="slot.harness">Harness</string>
   <string name="slot.none">None</string>

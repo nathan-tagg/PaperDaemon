@@ -334,6 +334,14 @@
   <string name="print.none">В Windows не настроен ни один принтер.</string>
   <string name="print.bad_pages">Выберите страницы с 1 по {n}.</string>
   <string name="print.page">Номер страницы</string>
+  <string name="print.size">Размер</string>
+  <string name="print.fill">Заполнить лист</string>
+  <string name="print.fit">Вписать в лист</string>
+  <string name="print.actual">Реальный размер</string>
+  <string name="print.will.one">Будет напечатана {n} страница</string>
+  <string name="print.will.other">Будет напечатано страниц: {n}</string>
+  <string name="print.total.one">Всего будет напечатана {n} страница</string>
+  <string name="print.total.other">Всего будет напечатано страниц: {n}</string>
   <string name="slot.other_provider">Другой (совместимый с OpenAI)</string>
   <string name="slot.harness">Обвязка</string>
   <string name="slot.none">Нет</string>

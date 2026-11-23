@@ -326,6 +326,14 @@
   <string name="print.none">Does dim argraffydd wedi'i osod yn Windows.</string>
   <string name="print.bad_pages">Dewiswch dudalennau o 1 i {n}.</string>
   <string name="print.page">Rhif y dudalen</string>
+  <string name="print.size">Maint</string>
+  <string name="print.fill">Llenwi'r dudalen</string>
+  <string name="print.fit">Ffitio i'r dudalen</string>
+  <string name="print.actual">Maint go iawn</string>
+  <string name="print.will.one">Bydd {n} dudalen yn cael ei hargraffu</string>
+  <string name="print.will.other">Bydd {n} tudalen yn cael eu hargraffu</string>
+  <string name="print.total.one">Bydd {n} dudalen yn cael ei hargraffu i gyd</string>
+  <string name="print.total.other">Bydd {n} tudalen yn cael eu hargraffu i gyd</string>
   <string name="slot.other_provider">Arall (sy'n gydnaws ag OpenAI)</string>
   <string name="slot.harness">Harnais</string>
   <string name="slot.none">Dim</string>

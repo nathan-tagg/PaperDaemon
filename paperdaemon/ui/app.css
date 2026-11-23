@@ -227,6 +227,7 @@ dialog.sheet fieldset.field-row legend { padding: 0; margin-bottom: var(--s1); }
 .print-row { display: flex; align-items: center; gap: 12px; min-height: 36px; }
 .print-row .check-label { flex: 0 0 9.5em; }
 .print-nums { display: flex; align-items: center; gap: 8px; }
+.print-count { margin: 8px 0 0; min-height: 1.4em; }
 .page-editor { flex: 1; width: 100%; height: 100%; border: 0; display: block; position: relative; z-index: 1; }
 /* A BLANK PAGE BEHIND THE EDITOR'S FRAME while the frame loads (page to page, a new frame each time): where the page
    will be, as the editor lays it out (3:4, as tall as fits, at the top, centered), so the gray never shows there */

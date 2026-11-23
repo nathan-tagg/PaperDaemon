@@ -326,6 +326,14 @@
   <string name="print.none">Windows-এ কোনো প্রিন্টার সেট করা নেই।</string>
   <string name="print.bad_pages">1 থেকে {n} পর্যন্ত পাতা বেছে নিন।</string>
   <string name="print.page">পাতার নম্বর</string>
+  <string name="print.size">আকার</string>
+  <string name="print.fill">পাতা ভরে</string>
+  <string name="print.fit">পাতায় মানিয়ে</string>
+  <string name="print.actual">আসল আকার</string>
+  <string name="print.will.one">{n}টি পাতা প্রিন্ট হবে</string>
+  <string name="print.will.other">{n}টি পাতা প্রিন্ট হবে</string>
+  <string name="print.total.one">মোট {n}টি পাতা প্রিন্ট হবে</string>
+  <string name="print.total.other">মোট {n}টি পাতা প্রিন্ট হবে</string>
   <string name="slot.other_provider">অন্য (OpenAI-সামঞ্জস্যপূর্ণ)</string>
   <string name="slot.harness">হারনেস</string>
   <string name="slot.none">কিছুই না</string>

@@ -2060,12 +2060,26 @@ def get_printers():
 @app.post(API + "/library/{doc}/print")
 async def post_library_print(doc: str, body: dict = Body(default={})):
     """Pages of a document printed (Ctrl+P in the page editor) -> {"pages", "sheets"}: body {"pages": [numbers from 1],
-    "printer": a name from /printers}."""
+    "printer": a name from /printers, "size": fill, fit or actual}."""
     from . import printing
     if not _doc_ok(doc):
         return _bad("not a document id")
     try:
-        return await run_in_threadpool(printing.print_pages, doc, body.get("pages") or [], str(body.get("printer") or ""))
+        return await run_in_threadpool(printing.print_pages, doc, body.get("pages") or [], str(body.get("printer") or ""),
+                                       str(body.get("size") or "fill"))
+    except (printing.PrintError, ValueError, OSError) as ex:
+        return _bad(str(ex)[:300])
+
+
+@app.post(API + "/library/{doc}/print-plan")
+async def post_library_print_plan(doc: str, body: dict = Body(default={})):
+    """How many sheets a print would come to, nothing printed -> {"sheets", "per_page"}: body as /print's."""
+    from . import printing
+    if not _doc_ok(doc):
+        return _bad("not a document id")
+    try:
+        return await run_in_threadpool(printing.check_plan, doc, body.get("pages") or [], str(body.get("printer") or ""),
+                                       str(body.get("size") or "fill"))
     except (printing.PrintError, ValueError, OSError) as ex:
         return _bad(str(ex)[:300])
 

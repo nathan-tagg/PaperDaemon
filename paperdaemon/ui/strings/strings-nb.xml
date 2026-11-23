@@ -326,6 +326,14 @@
   <string name="print.none">Windows har ingen skriver satt opp.</string>
   <string name="print.bad_pages">Velg sider fra 1 til {n}.</string>
   <string name="print.page">Sidetall</string>
+  <string name="print.size">Størrelse</string>
+  <string name="print.fill">Fyll siden</string>
+  <string name="print.fit">Tilpass siden</string>
+  <string name="print.actual">Faktisk størrelse</string>
+  <string name="print.will.one">{n} side blir skrevet ut</string>
+  <string name="print.will.other">{n} sider blir skrevet ut</string>
+  <string name="print.total.one">{n} side blir skrevet ut totalt</string>
+  <string name="print.total.other">{n} sider blir skrevet ut totalt</string>
   <string name="slot.other_provider">Annen (OpenAI-kompatibel)</string>
   <string name="slot.harness">Sele</string>
   <string name="slot.none">Ingen</string>

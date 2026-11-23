@@ -326,6 +326,14 @@
   <string name="print.none">Windows에 설정된 프린터가 없습니다.</string>
   <string name="print.bad_pages">1~{n} 페이지를 고르세요.</string>
   <string name="print.page">페이지 번호</string>
+  <string name="print.size">크기</string>
+  <string name="print.fill">용지 채우기</string>
+  <string name="print.fit">용지에 맞추기</string>
+  <string name="print.actual">실제 크기</string>
+  <string name="print.will.one">{n}쪽이 인쇄됩니다</string>
+  <string name="print.will.other">{n}쪽이 인쇄됩니다</string>
+  <string name="print.total.one">모두 {n}쪽이 인쇄됩니다</string>
+  <string name="print.total.other">모두 {n}쪽이 인쇄됩니다</string>
   <string name="slot.other_provider">기타 (OpenAI 호환)</string>
   <string name="slot.harness">하네스</string>
   <string name="slot.none">없음</string>

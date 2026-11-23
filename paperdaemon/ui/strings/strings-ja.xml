@@ -326,6 +326,14 @@
   <string name="print.none">Windows にプリンターが設定されていません。</string>
   <string name="print.bad_pages">1～{n} のページを選んでください。</string>
   <string name="print.page">ページ番号</string>
+  <string name="print.size">サイズ</string>
+  <string name="print.fill">用紙いっぱい</string>
+  <string name="print.fit">用紙に合わせる</string>
+  <string name="print.actual">実寸</string>
+  <string name="print.will.one">{n} ページを印刷します</string>
+  <string name="print.will.other">{n} ページを印刷します</string>
+  <string name="print.total.one">合計 {n} ページを印刷します</string>
+  <string name="print.total.other">合計 {n} ページを印刷します</string>
   <string name="slot.other_provider">その他 (OpenAI 互換)</string>
   <string name="slot.harness">ハーネス</string>
   <string name="slot.none">なし</string>

@@ -325,6 +325,14 @@
   <string name="print.none">Aucune imprimante n'est configurée dans Windows.</string>
   <string name="print.bad_pages">Choisissez des pages de 1 à {n}.</string>
   <string name="print.page">Numéro de page</string>
+  <string name="print.size">Taille</string>
+  <string name="print.fill">Remplir la page</string>
+  <string name="print.fit">Ajuster à la page</string>
+  <string name="print.actual">Taille réelle</string>
+  <string name="print.will.one">{n} page sera imprimée</string>
+  <string name="print.will.other">{n} pages seront imprimées</string>
+  <string name="print.total.one">{n} page sera imprimée au total</string>
+  <string name="print.total.other">{n} pages seront imprimées au total</string>
   <string name="slot.other_provider">Autre (compatible OpenAI)</string>
   <string name="slot.harness">Harnais</string>
   <string name="slot.none">Aucun</string>

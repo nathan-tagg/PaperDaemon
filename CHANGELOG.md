@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.15
+
+- The print window has a Size choice above the pages: Fill the page (the default), Fit to page, or Actual size. Fill covers the sheet with a normal page and runs a long page on at full width; Fit puts each page on one sheet; Actual size prints it as big as on the tablet. Anything smaller than its sheet is centered.
+- Under the page choices, a line says how many pages will come out of the printer, like "2 pages will be printed" or, for a range or the whole notebook, "4 pages will be printed in total". It updates as you change the choices.
+
 ## 0.3.14
 
 - Print from the page editor: Ctrl+P opens a print window with the printers Windows has (your default chosen) and which pages to print: this page, a range, or the whole notebook, each with its page numbers beside it. Pages print the way the tablet draws them: your ink, typed text and pictures, without PaperDaemon's notes. A normal page is one sheet; a page written past its first screen runs on over a sheet for each screen.

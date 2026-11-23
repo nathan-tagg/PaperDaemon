@@ -326,6 +326,14 @@
   <string name="print.none">Windows chưa có máy in nào.</string>
   <string name="print.bad_pages">Chọn trang từ 1 đến {n}.</string>
   <string name="print.page">Số trang</string>
+  <string name="print.size">Kích thước</string>
+  <string name="print.fill">Lấp đầy trang</string>
+  <string name="print.fit">Vừa trang</string>
+  <string name="print.actual">Kích thước thật</string>
+  <string name="print.will.one">Sẽ in {n} trang</string>
+  <string name="print.will.other">Sẽ in {n} trang</string>
+  <string name="print.total.one">Sẽ in tổng cộng {n} trang</string>
+  <string name="print.total.other">Sẽ in tổng cộng {n} trang</string>
   <string name="slot.other_provider">Khác (tương thích OpenAI)</string>
   <string name="slot.harness">Harness</string>
   <string name="slot.none">Không có</string>

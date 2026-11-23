@@ -326,6 +326,14 @@
   <string name="print.none">Windows belum punya printer.</string>
   <string name="print.bad_pages">Pilih halaman 1 sampai {n}.</string>
   <string name="print.page">Nomor halaman</string>
+  <string name="print.size">Ukuran</string>
+  <string name="print.fill">Penuhi halaman</string>
+  <string name="print.fit">Muat di halaman</string>
+  <string name="print.actual">Ukuran asli</string>
+  <string name="print.will.one">{n} halaman akan dicetak</string>
+  <string name="print.will.other">{n} halaman akan dicetak</string>
+  <string name="print.total.one">Total {n} halaman akan dicetak</string>
+  <string name="print.total.other">Total {n} halaman akan dicetak</string>
   <string name="slot.other_provider">Lainnya (kompatibel dengan OpenAI)</string>
   <string name="slot.harness">Harness</string>
   <string name="slot.none">Tidak ada</string>

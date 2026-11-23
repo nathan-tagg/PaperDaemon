@@ -326,6 +326,14 @@
   <string name="print.none">Windows में कोई प्रिंटर सेट नहीं है।</string>
   <string name="print.bad_pages">1 से {n} तक के पेज चुनें।</string>
   <string name="print.page">पेज नंबर</string>
+  <string name="print.size">आकार</string>
+  <string name="print.fill">पेज भरें</string>
+  <string name="print.fit">पेज में फ़िट करें</string>
+  <string name="print.actual">असली आकार</string>
+  <string name="print.will.one">{n} पेज प्रिंट होगा</string>
+  <string name="print.will.other">{n} पेज प्रिंट होंगे</string>
+  <string name="print.total.one">कुल {n} पेज प्रिंट होगा</string>
+  <string name="print.total.other">कुल {n} पेज प्रिंट होंगे</string>
   <string name="slot.other_provider">अन्य (OpenAI-संगत)</string>
   <string name="slot.harness">हार्नेस</string>
   <string name="slot.none">कोई नहीं</string>
