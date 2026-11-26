@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.16
+
+- Dragging a selection no longer squashes it. Since 0.3.6, while a selection was being dragged, every stroke right of the page's middle was pinned to one vertical line, and it stayed there when you let go. Dragging now draws exactly as it did before 0.3.6.
+
 ## 0.3.15
 
 - The print window has a Size choice above the pages: Fill the page (the default), Fit to page, or Actual size. Fill covers the sheet with a normal page and runs a long page on at full width; Fit puts each page on one sheet; Actual size prints it as big as on the tablet. Anything smaller than its sheet is centered.

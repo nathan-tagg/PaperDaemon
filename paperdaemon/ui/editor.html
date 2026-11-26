@@ -1000,7 +1000,7 @@ span.lname { cursor: default; }
     // 1/16). A block whose points do not fit one corner keeps them ASIDE: two words a point, in two blocks' room of its
     // own (asideAt: where), held with its block's place (b.side, b.sb) -- decoded, the same numbers either way
     const RB = 80, recBytes = n => n / BLK * RB;              // (a block's bytes; n records' bytes, n a whole number of blocks)
-    const OX = -2048, OY = -1024, OYS = -2048, OXS = -16384;
+    const OX = -2048, OY = -1024, OYS = -2048, OXS = -8192;   // (OXS: x -8192..24576, room for a drag parked PARK to the right)
     const gq = v => Math.floor(Math.fround(v * 32 + 0.5)), wq = v => Math.floor(Math.fround(v * 16 + 0.5));   // (rounded as the card rounds)
     const asideAt = new Map();
     // A BLOCK'S WORDS: the engine's records of f (four words each) r + k0 .. r + k1 -- the first its stroke's number s0,
