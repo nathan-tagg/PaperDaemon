@@ -325,13 +325,42 @@ def _json_in(text):
     """The JSON object in a model's words: the words themselves, a fenced block, or the outermost braces."""
     t = str(text or "").strip()
     for cand in (t, re.sub(r"^```[a-zA-Z]*\s*|\s*```$", "", t), t[t.find("{"):t.rfind("}") + 1] if "{" in t and "}" in t else ""):
-        try:
-            d = json.loads(cand)
-        except ValueError:
-            continue
-        if isinstance(d, dict):
-            return d
+        for c in (cand, _closed(cand)):
+            try:
+                d = json.loads(c, strict=False)          # (strict=False: a raw line break inside a string is read)
+            except ValueError:
+                continue
+            if isinstance(d, dict):
+                return d
     return {}
+
+
+def _closed(text):
+    """JSON that stops before its brackets close, closed: the object as written, with the quote and the brackets it left
+    open added at its end, in order. 11-25, Luna: a whole plan, its last "]}" missing, was read as no call at all. Only
+    what is missing at the end is added; anything else wrong stays wrong. "" when nothing is open."""
+    t = str(text or "").strip()
+    if not t.startswith("{"):
+        return ""
+    open_, in_str, esc = [], False, False
+    for ch in t:
+        if in_str:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == '"':
+                in_str = False
+        elif ch == '"':
+            in_str = True
+        elif ch in "{[":
+            open_.append("}" if ch == "{" else "]")
+        elif ch in "}]":
+            if not open_ or open_.pop() != ch:
+                return ""                                # a bracket closed that was not open: not ours to mend
+    if not open_ and not in_str:
+        return ""
+    return t + ('"' if in_str else "") + "".join(reversed(open_))
 
 
 __all__ = ["CommandLine", "CommandLineImages", "find", "ready", "split", "name_of", "model_of", "with_model", "turns_of"]

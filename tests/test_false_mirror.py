@@ -823,3 +823,47 @@ def test_a_note_makes_no_layer_and_goes_up_under_its_low_number():
         print(json.dumps({"lay": lay, "links": links, "before": before, "authors": authors}))
     """)
     assert got["lay"] == [] and got["links"] == got["before"] and got["authors"] == [8], got
+
+
+def test_pictures_brought_forward_in_the_false_mirror_stack_in_the_saves_order():
+    """11-25: bring to front, send back. A save writes the page's pictures as a chain in its order, each after the last,
+    so they stack that way whoever their authors are; the page reads back in that order, and a save of it as read keeps
+    it."""
+    got = _run("""
+        import io, json
+        from PIL import Image
+        from paperdaemon.remarkable import local
+        from paperdaemon.pipeline.page import images as IM
+        doc = local.new_notebook("Order")
+        names = []
+        for c in ((200, 0, 0), (0, 200, 0), (0, 0, 200)):
+            buf = io.BytesIO(); Image.new("RGB", (8, 8), c).save(buf, "PNG")
+            names.append(local.add_picture(doc, 1, buf.getvalue())["name"])
+        scene = local.scene_of(doc, 1)
+        q = lambda i: [[-100 + 40 * i, 400], [100 + 40 * i, 400], [100 + 40 * i, 600], [-100 + 40 * i, 600]]
+        scene["images"] = [{"name": n, "quad": q(i)} for i, n in enumerate(names)]
+        local.write_scene(doc, 1, scene)
+        s2 = local.scene_of(doc, 1)
+        s2["images"] = [s2["images"][1], s2["images"][2], s2["images"][0]]     # the bottom one brought to the front
+        local.write_scene(doc, 1, s2)
+        back = local.scene_of(doc, 1)
+        local.write_scene(doc, 1, back)
+        again = local.scene_of(doc, 1)
+        print(json.dumps({"names": names, "first": [im["name"] for im in local.scene_of(doc, 1)["images"]],
+                          "back": [im["name"] for im in back["images"]], "again": [im["name"] for im in again["images"]]}))
+    """)
+    n = got["names"]
+    assert got["back"] == [n[1], n[2], n[0]] == got["again"], got
+
+
+def test_a_chain_of_pictures_stacks_in_its_order_and_linked_by_nothing_by_id():
+    """The tablet's order of a layer's pictures: by their links (each after the one it names), and by id among those
+    that name none -- a page with no chain is ordered as before."""
+    from paperdaemon.pipeline.page import images as IM
+    h = lambda i: bytes([i]) * 16
+    head = b"\x00" * 43
+    plain = head + IM.item_block((0, 11), (1, 20), (1, 1), h(1), (0, 0, 1, 1)) + IM.item_block((0, 11), (1, 10), (1, 2), h(2), (0, 0, 1, 1))
+    assert IM._picture_order(plain) == {(1, 10): (1, 10), (1, 20): (1, 20)}
+    chain = (head + IM.item_block((0, 11), (1, 20), (1, 1), h(1), (0, 0, 1, 1))
+             + IM.item_block((0, 11), (1, 10), (1, 2), h(2), (0, 0, 1, 1), left=(1, 20)))
+    assert IM._picture_order(chain) == {(1, 20): (1, 10), (1, 10): (1, 20)}     # 20 under 10: 10 follows it

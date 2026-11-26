@@ -212,3 +212,16 @@ def test_a_run_folder_takes_the_users_own_access():
             assert lines and all("(I)" in ln for ln in lines), lines
     finally:
         shutil.rmtree(folder, ignore_errors=True)
+
+
+def test_a_call_one_bracket_short_is_read_and_one_that_cannot_be_read_is_said_so():
+    """11-25, Luna: a whole plan with its last "]}" missing was taken for no call; told "Prose is not an outcome", it
+    gave up the plan and answered that the page asked for something not offered."""
+    short = '{"text":"","tool_calls":[{"name":"plan","arguments":{"steps":[{"do":"image","what":"a fairy"}]}}'
+    r = C.CommandLine.parse(short, [{"name": "plan"}])
+    assert [c["name"] for c in r["tool_calls"]] == ["plan"] and r["tool_calls"][0]["arguments"]["steps"][0]["do"] == "image"
+    assert C._closed('{"a": "x}') == '{"a": "x}"}' and C._closed('{"a": 1}}') == "" and C._closed("words") == ""
+    from paperdaemon.harnesses.text import TextProtocols
+    if True:
+        said = TextProtocols().nudge_no_call('{"text":"","tool_calls":[{"name":"plan", "arguments": {', ["plan", "skip"])[-1]["content"]
+        assert "could not be read" in said and "Prose" not in said

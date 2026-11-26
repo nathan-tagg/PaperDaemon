@@ -136,6 +136,32 @@ def _first_layer_of(blocks):
     return _key(first)
 
 
+def _empty_old_layers(data, rows, blocks, others, first, layers, notes, also):
+    """The old Daemon layers of a page (named as his, not his old author's: that one goes out whole) left with nothing
+    on them once this write is done -> {(part1, part2)}: no live stroke but those erased now, no picture, no group;
+    never the page's first layer."""
+    from paperdaemon.pipeline.page import render as R
+    from paperdaemon.pipeline.page import images as IM
+    named = {k for k in R.daemon_layer_ids(others) if k[0] != LEGACY and k != first}
+    if not named:
+        return set()
+    held = set()
+    for r in rows:
+        if r[0] == LINE and r[14] and (r[5], r[6]) in named and not (_mine(r, layers, notes, data) or (r[7], r[8]) in also):
+            held.add((r[5], r[6]))
+    for b in others:
+        if isinstance(b, ss.SceneGroupItemBlock) and b.item.value is not None and not b.item.deleted_length \
+                and _key(b.parent_id) in named:
+            held.add(_key(b.parent_id))
+    try:
+        for im in IM.parse(data):
+            if not im.get("deleted") and im.get("parent") and tuple(im["parent"]) in named:
+                held.add(tuple(im["parent"]))
+    except Exception:
+        return set()                                 # (the pictures could not be read: nothing is taken away)
+    return named - held
+
+
 def _legacy_layers(blocks):
     """Layers whose every stroke is his: a Daemon layer on a page from before his notes had an author of their own
     (render.notes_own_layers) -- his old notes there are under the tablet's author. On any other page, none."""
@@ -205,7 +231,7 @@ def _write(data, state=None, strokes=None, also=()):
     frames, kinds = [], []
     seen, trees, nodes, linked = set(), set(), set(), set()
     erased, changed, table = 0, False, None
-    root_items = []
+    root_items, root_at = [], []
     for r, b in zip(rows, blocks):
         raw = data[r[1] - 8:r[2]]
         if r[0] == LINE:
@@ -226,6 +252,8 @@ def _write(data, state=None, strokes=None, also=()):
             seen.add(k)
             if _key(b.parent_id) == ROOT:
                 root_items.append(it)
+                if it.value is not None and not it.deleted_length:
+                    root_at.append((len(frames), b))
         elif isinstance(b, ss.SceneTreeBlock):
             if b.tree_id.part1 == LEGACY:
                 changed = True
@@ -246,6 +274,14 @@ def _write(data, state=None, strokes=None, also=()):
         frames.append(raw)
         kinds.append(r[0])
     news = []
+    # AN OLD DAEMON LAYER WITH NOTHING ON IT GOES (11-25): out of the page's list of layers, as the tablet records a
+    # layer the user deletes; the page's first layer stays whatever its name, and so does one that holds anything
+    gone = _empty_old_layers(data, rows, blocks, others, one, layers, notes, also)
+    for i, b in root_at:
+        if _key(b.item.value) in gone:
+            frames[i] = _frame(ss.SceneGroupItemBlock(parent_id=b.parent_id, item=CrdtSequenceItem(
+                item_id=b.item.item_id, left_id=b.item.left_id, right_id=b.item.right_id, deleted_length=1, value=None)))
+            changed = True
     # HIS LAYER IS FOUND, NEVER REMOVED OR PUT IN AGAIN (the user's word, 11-11: "you don't need to completely remove the
     # layer, just only let the daemon operate on the one layer and erase literally everything on that layer"): the
     # first of his the page has is the one he writes on; the page's list of layers is left as it is

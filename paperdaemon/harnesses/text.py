@@ -196,8 +196,15 @@ class TextProtocols:
 
     def nudge_no_call(self, said, allowed):
         """What goes back after prose where a call was wanted (SHORT: a long reply once cost 16k prompt tokens)."""
+        # A CALL THAT COULD NOT BE READ IS NOT PROSE: told only "Prose is not an outcome", Luna took its whole plan for
+        # wrong (11-25: one bracket short) and answered that the page asked for something not offered
+        if said.lstrip().startswith("{") and "tool_calls" in said:
+            ask = ("Your last turn could not be read: it is not one whole JSON object (every bracket and quote has to "
+                   "close). Nothing was done. Send the same decision again, whole -- one of %s." % ", ".join(allowed))
+        else:
+            ask = "Make the call now -- one of %s. Prose is not an outcome." % ", ".join(allowed)
         return [{"role": "assistant", "content": ((said[:400] + " ...") if len(said) > 400 else said) or "(nothing)"},
-                {"role": "user", "content": "Make the call now -- one of %s. Prose is not an outcome." % ", ".join(allowed)}]
+                {"role": "user", "content": ask}]
 
     def nudge_refused(self, allowed):
         """The tool result for a call that is not allowed right now."""

@@ -483,3 +483,21 @@ def test_a_retry_carries_the_request_and_leads_with_what_failed(monkeypatch):
     assert D.next_try(e, 1)
     assert e["retry"]["note"].startswith("[NOT DONE: step 31 (write) failed")
     assert e["retry"]["request"] == "Research the unsteady vortex particle method"
+
+
+def test_an_old_daemon_layer_with_nothing_on_it_goes_out_of_the_list_of_layers():
+    """11-25, Luna p3: the page kept its old Daemon layer, empty, and the tablet kept it the layer in use, so the eraser
+    (which works on that layer only) touched nothing. A note takes an old Daemon layer with nothing on it out of the
+    page's list of layers, as the tablet records a layer the user deletes; one with the user's stroke on it stays."""
+    strokes, _ = N.letter(["On it."], FRAME)
+    noted = N.with_note(_page([(0.0, 900.0), (60.0, 950.0)]), strokes)
+    page, lay = _with_daemon_layer(noted)
+    listed = lambda d: {N._key(b.item.value) for b in _blocks(d) if isinstance(b, ss.SceneGroupItemBlock)
+                        and b.parent_id == CrdtId(0, 1) and b.item.value is not None}
+    assert N._key(lay) in listed(page)
+    again = N.with_note(page, strokes)
+    assert listed(again) == {_first_layer(again)} and _counts(again)[:2] == (len(strokes), 1)
+    assert N.erase(again)[1] == len(strokes) and N._key(lay) not in listed(N.erase(again)[0])
+    written = _write(_blocks(page) + [_line([(10.0, 600.0), (90.0, 640.0)], lay, CrdtId(1, 5000))])
+    kept = N.with_note(written, strokes)
+    assert N._key(lay) in listed(kept) and (1, 5000) not in _dead(kept)

@@ -169,6 +169,14 @@ def problems(kind, args, offered=None):
         if a in seen and seen[a][0] in ("other", "note"):
             out.append("%s is in what a step answers, so it is part of what was asked, not %s: rule it request (or "
                        "command, or question), or take it out of answers." % (a, seen[a][0]))
+    # WHAT IS ANSWERED IS RULED: whether it comes off or stays is the model's to say, never left out (11-25, Luna: its
+    # plan answered the typed instructions, which said "be sure to erase these instructions", ruled only another
+    # paragraph, and the instructions stayed on the finished page)
+    unruled = [a for a in sorted(set(answered)) if a in listing and a not in seen]
+    if unruled:
+        out.append("rule what the job answers: %s %s no ruling (a request that is done comes off -- then: erase; a "
+                   "question answered in words stays -- then: keep)." % (", ".join(unruled),
+                                                                       "has" if len(unruled) == 1 else "have"))
     # A QUESTION ANSWERED IN WORDS STAYS, whatever else it says -- the brief's rule, held here: "What should I pack ...?
     # Give me a checklist." was ruled a request and erased, the checklist left under nothing. One the job answers some
     # other way is the request it reads as ("Can you draw a cat?" comes off once the cat is drawn)

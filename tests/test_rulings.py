@@ -267,3 +267,13 @@ def test_what_a_step_answers_is_not_ruled_other(page):
     p = RU.problems("plan", {"steps": [{"do": "image", "what": "a dragon", "answers": ["para:1", "line:1"]}],
                              "rulings": rs})
     assert any("line:1 is in what a step answers" in x for x in p), p
+
+
+def test_what_a_step_answers_has_a_ruling(page):
+    """11-25, Luna: its plan answered the typed instructions ("be sure to erase these instructions") and ruled only
+    another paragraph, so the instructions stayed on the finished page. What a job answers is ruled, every time."""
+    J.JOB.new_refs = []
+    steps = [{"do": "write", "what": "a reply", "answers": ["para:1"], "lines": ["Done."]}]
+    bad = RU.problems("plan", {"steps": steps, "rulings": [rule("para:2", "note", "keep")]})
+    assert any("para:1 has no ruling" in p for p in bad)
+    assert not RU.problems("plan", {"steps": steps, "rulings": [rule("para:1")]})

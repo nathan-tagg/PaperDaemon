@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.17
+
+- Pictures can be stacked. Right-click a selected picture in the page editor for Bring to front, Bring forward, Send backward and Send to back (or Ctrl+Shift+], Ctrl+], Ctrl+[ and Ctrl+Shift+[). A picture moves among the pictures of its own layer, and the tablet shows the same order. Typed text is always drawn over pictures, on the tablet too, so a picture can't go behind or in front of it.
+- The eraser works again on pages that still had an old, empty Daemon layer. The tablet kept that layer selected, so the eraser touched nothing on Layer 1. The next time PaperDaemon writes on such a page, it deletes the empty Daemon layer, the same way the tablet records you deleting one. A Daemon layer that still has anything of yours on it stays.
+- A model reply that leaves off its last closing brackets is now read. A correct plan from Luna was thrown away for that, and Luna then gave up on the page.
+- When a model's reply can't be read at all, the model is told exactly that and asked to send it again. Before, it was told it had written prose, and Luna decided its plan was wrong.
+- A plan has to say whether each request it carries out comes off the page. A plan that skipped this left "be sure to erase these instructions" on the finished page.
+
 ## 0.3.16
 
 - Dragging a selection no longer squashes it. Since 0.3.6, while a selection was being dragged, every stroke right of the page's middle was pinned to one vertical line, and it stayed there when you let go. Dragging now draws exactly as it did before 0.3.6.

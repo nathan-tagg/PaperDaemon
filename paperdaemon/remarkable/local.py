@@ -935,12 +935,19 @@ def pictures_of(doc, page_no, data=None):
         got = IM.items(doc, page_no, page_id=pid)
     except Exception:
         return []
+    try:                                              # IN THE ORDER THE TABLET STACKS THEM (a picture brought forward
+        st = IM.stacking(_rm(doc, page_no))           # is drawn over the ones under it, in the editor as on the tablet)
+        got = sorted(got, key=lambda im: st.get(tuple(im.get("item") or ()), (0, 0, 0, 0)))
+    except Exception:
+        pass
     out = []
     for im in got:
         if im.get("name") and PICTURE_NAME.match(im["name"]) and im.get("path"):
             pic = {"name": im["name"], "key": im.get("hash") or "", "quad": [[float(x), float(y)] for x, y in im["quad"]]}
             if im.get("item"):
                 pic["id"] = list(im["item"])           # its item id, for a page written in place (inplace.py)
+            if im.get("parent"):
+                pic["layer"] = list(im["parent"])      # the layer (or group) it is in: it is ordered among those beside it
             out.append(pic)
     return out
 
@@ -977,7 +984,7 @@ def _picture_blocks(doc, page_no, pictures, layer, nid, oid=None):
     the new id of something that had `id` (a picture of PaperDaemon's stays under its author byte)."""
     import hashlib
     from paperdaemon.pipeline.page import images as IM
-    out, n = b"", 0
+    out, n, prev = b"", 0, (0, 0)
     for pic in pictures or []:
         name, quad = pic.get("name"), pic.get("quad") or []
         if not picture_path(doc, page_no, name) or len(quad) != 4:
@@ -990,7 +997,12 @@ def _picture_blocks(doc, page_no, pictures, layer, nid, oid=None):
             h = hashlib.md5(name.encode("ascii")).digest()
         asset, item = (oid(pic.get("id")), oid(pic.get("id"))) if oid else (nid(), nid())
         out += IM.asset_block(h, name, (asset.part1, asset.part2))
-        out += IM.item_block_quad((layer.part1, layer.part2), (item.part1, item.part2), (asset.part1, asset.part2), h, quad)
+        # A CHAIN, EACH AFTER THE LAST: the pictures stack in the save's order (brought forward, sent back) whoever their
+        # authors are -- linked (0,0) they would stack by id, and a picture of PaperDaemon's and one of the user's by
+        # their author bytes
+        out += IM.item_block_quad((layer.part1, layer.part2), (item.part1, item.part2), (asset.part1, asset.part2), h,
+                                  quad, left=prev)
+        prev = (item.part1, item.part2)
         n += 1
     return out, n
 

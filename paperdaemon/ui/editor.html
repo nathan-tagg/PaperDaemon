@@ -8119,6 +8119,12 @@ span.lname { cursor: default; }
       item("Copy", "Ctrl+C", () => document.execCommand("copy"));
       item("Delete", "Delete", deletePick);
       item("Duplicate", "", duplicatePick);
+      if (pick.kind === "picture") {
+        item("Bring to front", "Ctrl+Shift+]", () => restack("front"), !restackTo("front"));
+        item("Bring forward", "Ctrl+]", () => restack("forward"), !restackTo("forward"));
+        item("Send backward", "Ctrl+[", () => restack("backward"), !restackTo("backward"));
+        item("Send to back", "Ctrl+Shift+[", () => restack("back"), !restackTo("back"));
+      }
     } else if (!page.source && (editing() || overTextAt(x, y))) {
       const hit = overTextAt(x, y) ? hitText(x, y) : null;   // on the text, outside what is selected: the caret goes there
       if (hit && !selections().some(s => cmp(s[0], hit) <= 0 && cmp(hit, s[1]) <= 0)) { clearPick(); setCursors([{ caret: hit, anchor: null }]); caretOn = true; paint(); }
@@ -8311,7 +8317,39 @@ span.lname { cursor: default; }
     if (!pick || editing() || live) return;
     if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); e.stopImmediatePropagation(); deletePick(); }
     else if (e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); clearPick(); }
+    else if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.code === "BracketRight" || e.code === "BracketLeft") && pick.kind === "picture") {
+      e.preventDefault(); e.stopImmediatePropagation();         // Ctrl+] forward, Ctrl+[ backward; with Shift, to the front or back
+      restack(e.code === "BracketRight" ? (e.shiftKey ? "front" : "forward") : (e.shiftKey ? "back" : "backward"));
+    }
   }, true);
+  // BRING TO FRONT, BRING FORWARD, SEND BACKWARD, SEND TO BACK (11-25): a picture over or under the others in its layer
+  // (the tablet stacks a layer's pictures in order; a picture never leaves its layer, and typed text is drawn over every
+  // picture). page.images is lowest first; the pictures of other layers keep their places.
+  function picLayer(im) {
+    if (!MIRROR) return "";                                   // (a False Mirror page's pictures all go on its first layer)
+    const ids = page.layers.map(L => String(L.fileId || "")), own = String(im.layer || "");
+    return ids.includes(own) && own ? own : ids[0] || "";
+  }
+  function restackTo(how) {                                   // -> the new order of the page's pictures, or null when none
+    if (!pick || pick.kind !== "picture") return null;
+    const at = pick.index, lay = picLayer(page.images[at]);
+    const slots = page.images.map((im, i) => i).filter(i => picLayer(page.images[i]) === lay);
+    const sub = slots.map(i => page.images[i]), k = slots.indexOf(at), me = sub[k];
+    const to = how === "front" ? sub.length - 1 : how === "back" ? 0 : how === "forward" ? k + 1 : k - 1;
+    if (k < 0 || to < 0 || to >= sub.length || to === k) return null;
+    sub.splice(k, 1); sub.splice(to, 0, me);
+    const out = page.images.slice();
+    slots.forEach((i, j) => { out[i] = sub[j]; });
+    return { images: out, index: slots[to] };
+  }
+  function restack(how) {
+    const got = restackTo(how);
+    if (!got) return;
+    const before = clone(page.images);
+    page.images = got.images;
+    record({ type: "pics", before, after: clone(page.images) }); lastType = null;
+    rebuild(); selectPicture(got.index);
+  }
 
   // ================================================================ the page's pictures
   // A PAGE'S PICTURES (captures, pasted images, the daemon's coloring pages and chess pieces) are drawn over the template
@@ -8322,7 +8360,8 @@ span.lname { cursor: default; }
   // a picture that came after the page's first draw was never drawn (a daemon's chart, there in the thumbnail, not here)
   let picsTick = 0;
   const picturesIn = sc => (sc.images || []).filter(im => im && im.name && (im.quad || []).length === 4)
-    .map(im => ({ name: im.name, key: im.key || "", quad: im.quad.map(p => [Number(p[0]), Number(p[1])]), ...(MIRROR && im.id ? { id: im.id } : {}) }));
+    .map(im => ({ name: im.name, key: im.key || "", quad: im.quad.map(p => [Number(p[0]), Number(p[1])]), ...(MIRROR && im.id ? { id: im.id } : {}),
+                  ...(MIRROR && im.layer ? { layer: im.layer } : {}) }));
   function pictureUrl(name) {
     return "/api/v1" + BASE + "/library/" + encodeURIComponent(DOC) + "/page/" + PAGE + "/picture/" + encodeURIComponent(name);
   }

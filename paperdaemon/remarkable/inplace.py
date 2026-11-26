@@ -588,6 +588,28 @@ def edit(doc, page_no, data, scene):
                 left.discard(key)
                 continue
             news.append(p)
+        # BROUGHT FORWARD, SENT BACK (11-25): pictures stack in their layer's sequence, and one only goes on above the
+        # rest. Where the save orders a layer's pictures otherwise than the page would end up (those it keeps where
+        # they are, then those it adds), every picture of that layer goes on again, as a chain in the save's order,
+        # each after the last -- in its own layer: a picture never leaves its layer
+        first = file_layers[0] if file_layers else None
+        to = {}                                          # id(p) -> the layer a picture goes on again in
+        # (a picture in a group tied to the text is put on the first layer, at its corners on the page, as a moved one is)
+        layer_of = lambda p: (lambda L: L if L in file_layers else None)(
+            tuple(had[tuple(p["id"])].get("layer") or ()) if p.get("id") and tuple(p["id"]) in had else None)
+        for lay in {layer_of(p) or first for p in scene.get("images") or []}:
+            want = [p for p in scene.get("images") or [] if (layer_of(p) or first) == lay]
+            was = {tuple(q["id"]): k for k, q in enumerate(before.get("images") or []) if q.get("id")}
+            stays = sorted((p for p in want if not any(p is q for q in news)), key=lambda p: was[tuple(p["id"])])
+            gets = [p for p in want if any(p is q for q in news)]
+            if [id(p) for p in want] == [id(p) for p in stays + gets]:
+                continue
+            for p in want:
+                if p.get("id") and tuple(p["id"]) in had:
+                    left.add(tuple(p["id"]))
+                to[id(p)] = lay
+            news = [q for q in news if not any(q is p for p in want)] + want
+        chain = {}                                       # layer -> the last picture written on it again
         if left or news:
             frame_of = {(heads[k][1].part1, heads[k][1].part2): k for k, (t, _s, _e) in enumerate(frames) if t == 15 and k in heads}
             for key in left:
@@ -607,7 +629,7 @@ def edit(doc, page_no, data, scene):
                 name, quad = p.get("name"), sig(p)[2]
                 if not local.picture_path(doc, page_no, name) or len(quad) != 4:
                     raise CannotWrite("a picture of the save has no file beside the page")
-                if not file_layers:
+                if not file_layers and id(p) not in to:
                     raise CannotWrite("the page has no layer to put a picture on")
                 try:
                     h = bytes.fromhex(p.get("key") or "")
@@ -620,10 +642,15 @@ def edit(doc, page_no, data, scene):
                     assets[h] = (aid.part1, aid.part2)
                     pic_blocks.append(IM.asset_block(h, name, assets[h]))
                 item = nid()
-                pic_blocks.append(IM.item_block_quad(file_layers[0], (item.part1, item.part2), assets[h], h, quad))
+                lay = to.get(id(p), file_layers[0] if file_layers else None)
+                pic_blocks.append(IM.item_block_quad(lay, (item.part1, item.part2), assets[h], h, quad,
+                                                     left=chain.get(lay, (0, 0)) if id(p) in to else (0, 0)))
+                if id(p) in to:
+                    chain[lay] = (item.part1, item.part2)
             pics_meant = len([1 for im in IM.parse(data) if not im["deleted"]]) - len(left) + len(news)
             done["pictures"] = {"erased": len(left) - sum(1 for p in news if p.get("id") and tuple(p["id"]) in left),
                                 "moved": sum(1 for p in news if p.get("id") and tuple(p["id"]) in left),
+                                "restacked": len(to),
                                 "added": sum(1 for p in news if not (p.get("id") and tuple(p["id"]) in left))}
 
     # ---- new layers, then new strokes, after every block of the page

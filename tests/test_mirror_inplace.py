@@ -684,9 +684,9 @@ def test_a_page_the_pipeline_wrote_with_the_daemons_layer_a_picture_and_a_new_la
     assert got["on_his"] == [218], got
     assert got["back_pics"] == 1 and got["rm"] > 0
     moved, live, shown, erased, left, dead = got["picture"]
-    assert moved == {"erased": 0, "moved": 1, "added": 1} and live == 2, got["picture"]
+    assert moved == {"erased": 0, "moved": 1, "restacked": 0, "added": 1} and live == 2, got["picture"]
     assert shown == [[False, [-50, 900], True], [True, [300, 300], True]], got["picture"]
-    assert erased == {"erased": 1, "moved": 0, "added": 0} and left == 1 and dead == [0, 1, 1], got["picture"]
+    assert erased == {"erased": 1, "moved": 0, "restacked": 0, "added": 0} and left == 1 and dead == [0, 1, 1], got["picture"]
     assert got["none"] == ["none", 1, True, False, False] and got["made"] == [1, 1, IP_AUTHOR], got
 
 
@@ -896,3 +896,42 @@ def test_ctrl_s_on_a_mirror_page_also_brings_the_tablets_latest_down(monkeypatch
     monkeypatch.setattr(S, "pull", lambda *a, **k: calls.append(("pull",)))
     r = IP.push("a-doc")
     assert calls == [("push", ()), ("pull",)] and r == {"pushed": []}
+
+
+
+def test_a_picture_sent_to_the_back_of_a_mirror_page_goes_on_again_under_the_others():
+    """11-25, the user: "bring to front / send to back / bring forward / send backward controls on images ... within a
+    layer". A save that orders a layer's pictures otherwise puts every picture of that layer on again, a chain in the
+    save's order (each naming the last as its left), the old items tombstones; the page reads back in that order."""
+    got = _run("""
+        import uuid
+        from paperdaemon.pipeline import TEMPLATES
+        from paperdaemon.pipeline.page import images as IM
+        from PIL import Image
+        doc, pid = str(uuid.uuid4()), str(uuid.uuid4())
+        os.makedirs(os.path.join(M, doc))
+        shutil.copyfile(os.path.join(TEMPLATES, "blank-page.rm"), os.path.join(M, doc, pid + ".rm"))
+        json.dump({"cPages": {"pages": [{"id": pid, "idx": {"timestamp": "1:2", "value": "ba"}}]},
+                   "fileType": "notebook", "pageCount": 1}, open(os.path.join(M, doc + ".content"), "w"))
+        json.dump({"visibleName": "T", "parent": "", "type": "DocumentType"}, open(os.path.join(M, doc + ".metadata"), "w"))
+        for i, c in enumerate(((200, 0, 0), (0, 200, 0), (0, 0, 200))):
+            png = os.path.join(M, "p%d.png" % i); Image.new("RGB", (8, 8), c).save(png)
+            IM.insert(doc, 1, png, (-100 + 40 * i, 900, 100 + 40 * i, 1100))
+        s = IP.read_page(doc, 1)
+        names = [p["name"] for p in s["images"]]
+        s["images"] = [s["images"][2]] + s["images"][:2]           # the top one sent to the back
+        w = IP.write_in_place(doc, 1, s, s["stamp"])
+        back = IP.read_page(doc, 1)
+        data = page_bytes(doc)
+        links = [IM._links_of(body) for bt, body in IM.blocks(data) if bt == 15 and not IM._is_deleted(body)]
+        again = IP.read_page(doc, 1)
+        same = IP.write_in_place(doc, 1, json.loads(json.dumps(again)), again["stamp"])
+        out(names=names, after=[p["name"] for p in back["images"]], done=w["pictures"], links=links,
+            dead=sum(1 for bt, body in IM.blocks(data) if bt == 15 and IM._is_deleted(body)), same=same["changed"])
+    """)
+    n = got["names"]
+    assert got["after"] == [n[2], n[0], n[1]], got
+    assert got["done"]["restacked"] == 3 and got["done"]["erased"] == 0 and got["dead"] == 3, got
+    lk = got["links"]
+    assert lk[0][2] == [0, 0] and lk[1][2] == lk[0][1] and lk[2][2] == lk[1][1], lk    # a chain, each after the last
+    assert got["same"] is False, got                                             # read again and saved: nothing to do

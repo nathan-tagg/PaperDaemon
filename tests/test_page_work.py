@@ -175,7 +175,7 @@ def test_a_long_reply_runs_past_the_first_screen_whole(work):
     """)
     lines = ["This is line %d of a long answer that will not fit in the room left on the page." % i for i in range(14)]
     r = _job(work, "typed-question", [
-        ("answer", {"answers": replay.NEW, "lines": lines, "rulings": replay.RULE("note", "keep")})])
+        ("answer", {"answers": replay.NEW, "lines": lines, "rulings": replay.RULE("question", "keep")})])
     assert r["status"] == "done", r["note"]
     assert "outside" not in (r["note"] or "")
     d = _look(work, PAGE + """

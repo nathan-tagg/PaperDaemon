@@ -272,6 +272,21 @@ def _item_of(body):
         return None
 
 
+def _links_of(body):
+    """A block-15 item's four ids in order -> (parent, item, left, right), each (part1, part2); None when the body is not
+    laid out that way. left and right are its neighbors in its parent's sequence, (0, 0) for none."""
+    try:
+        i, out = 0, []
+        for tag in (0x1F, 0x2F, 0x3F, 0x4F):
+            if body[i] != tag:
+                return None
+            c, i = _read_cid(body, i + 1)
+            out.append(c)
+        return tuple(out)
+    except IndexError:
+        return None
+
+
 def _deleted_of(body):
     """A block-15 item's deleted_length: tag id 5 (0x54, a 4-byte value) read IN ORDER after its four
     ids (parent, item, left, right) -> the length, or None when the body is not laid out that way.
@@ -608,16 +623,59 @@ def stacking(path):
             if v is not None:
                 where[(v.part1, v.part2)] = ((b.item.item_id.part1, b.item.item_id.part2),
                                              (b.parent_id.part1, b.parent_id.part2))
+    data = open(path, "rb").read()
+    eff = _picture_order(data)
     out = {}
-    for im in parse(open(path, "rb").read()):
+    for im in parse(data):
         if im["deleted"] or not im.get("item"):
             continue
         own = tuple(im["item"])
+        at = eff.get(own, own)
         g = where.get(tuple(im.get("parent") or ()))
         # a picture right on a LAYER (a group that sits in the page's root) is one of the layer's children: ordered
         # by its own id among the groups beside it. One inside a group sits where its group sits, then by its own.
         on_layer = g is None or g[1] in ((0, 1), (0, 0))
-        out[own] = (own + (0, 0)) if on_layer else (g[0] + own)
+        out[own] = (at + (0, 0)) if on_layer else (g[0] + at)
+    return out
+
+
+def _picture_order(data):
+    """{picture item: the id whose place it takes} -- the pictures of each parent in their sequence's order. Pictures
+    linked (0,0)/(0,0) stack by id; ones written as a chain (each naming the one before it as its left: a picture
+    brought forward or sent back, local._picture_blocks, inplace) stack in the chain's order, whatever their ids. Each
+    picture takes the id of the place it holds among its parent's pictures' ids, so a page with no chain is ordered
+    exactly as before."""
+    import heapq
+    by_parent = {}
+    for bt, body in blocks(data):
+        if bt == 15:
+            ln = _links_of(body)
+            if ln:
+                by_parent.setdefault(ln[0], []).append((ln[1], ln[2], not _is_deleted(body)))
+    out = {}
+    for members in by_parent.values():
+        known = {k for k, _l, _live in members}
+        after = {}
+        need = {}
+        for k, left, _live in members:
+            if left in known and left != k:
+                after.setdefault(left, []).append(k)
+                need[k] = 1
+        ready = [k for k, _l, _live in members if not need.get(k)]
+        heapq.heapify(ready)
+        order = []
+        while ready:
+            k = heapq.heappop(ready)
+            order.append(k)
+            for n in after.get(k, ()):
+                need[n] -= 1
+                if not need[n]:
+                    heapq.heappush(ready, n)
+        if len(order) != len(members):                    # a loop of links: as they were, by id
+            order = sorted(k for k, _l, _live in members)
+        live = {k for k, _l, alive in members if alive}
+        order = [k for k in order if k in live]
+        out.update(zip(order, sorted(order)))
     return out
 
 
@@ -721,7 +779,7 @@ def asset_block(hash16, name, asset_id):
     return _block(14, _sub(1, b"\x01" + _sub(0, inner)), 3, 3)
 
 
-def item_block(layer_id, item_id, asset_id, hash16, box):
+def item_block(layer_id, item_id, asset_id, hash16, box, left=(0, 0)):
     x0, y0, x1, y1 = (float(v) for v in box)
     corners = [(x0, y0, 0.0, 0.0), (x1, y0, 1.0, 0.0), (x1, y1, 1.0, 1.0), (x0, y1, 0.0, 1.0)]
     verts = b"\x10" + b"".join(struct.pack("<4f", *c) for c in corners)
@@ -731,14 +789,16 @@ def item_block(layer_id, item_id, asset_id, hash16, box):
              + _id(2, *asset_id)
              + _sub(3, verts)
              + _sub(4, tris))
-    body = (_id(1, *layer_id) + _id(2, *item_id) + _id(3, 0, 0) + _id(4, 0, 0)
+    body = (_id(1, *layer_id) + _id(2, *item_id) + _id(3, *left) + _id(4, 0, 0)
             + _u4(5, 0) + _sub(6, value))
     return _block(15, body, 2, 2)
 
 
-def item_block_quad(layer_id, item_id, asset_id, hash16, quad):
+def item_block_quad(layer_id, item_id, asset_id, hash16, quad, left=(0, 0)):
     """item_block for a picture at any four corners (turned, as the tablet turns one): quad = the corners of the
-    picture's top left, top right, bottom right and bottom left, in that order."""
+    picture's top left, top right, bottom right and bottom left, in that order. `left`: the item it follows in its
+    layer's sequence ((0, 0): none named) -- pictures written as a chain, each after the last, stack in that order
+    whoever their authors are."""
     uv = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
     verts = b"\x10" + b"".join(struct.pack("<4f", float(x), float(y), u, v) for (x, y), (u, v) in zip(quad, uv))
     tris = b"\x06" + struct.pack("<6I", 0, 1, 2, 2, 3, 0)
@@ -747,7 +807,7 @@ def item_block_quad(layer_id, item_id, asset_id, hash16, quad):
              + _id(2, *asset_id)
              + _sub(3, verts)
              + _sub(4, tris))
-    body = (_id(1, *layer_id) + _id(2, *item_id) + _id(3, 0, 0) + _id(4, 0, 0)
+    body = (_id(1, *layer_id) + _id(2, *item_id) + _id(3, *left) + _id(4, 0, 0)
             + _u4(5, 0) + _sub(6, value))
     return _block(15, body, 2, 2)
 
